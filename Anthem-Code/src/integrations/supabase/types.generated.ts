@@ -194,18 +194,21 @@ export type Database = {
           project_id: string
           added_at: string
           community_post_id: string | null
+          position: number | null
         }
         Insert: {
           collection_id: string
           project_id: string
           added_at?: string
           community_post_id?: string | null
+          position?: number | null
         }
         Update: {
           collection_id?: string
           project_id?: string
           added_at?: string
           community_post_id?: string | null
+          position?: number | null
         }
         Relationships: []
       }

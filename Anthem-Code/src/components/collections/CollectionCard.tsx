@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
-import { Layers3, Lock } from "lucide-react";
+import { Layers3, Lock, Share2 } from "lucide-react";
+import SharePopover from "@/components/SharePopover";
 import { cn } from "@/lib/utils";
 import type { CollectionWithCovers } from "@/hooks/useCollections";
 
@@ -75,7 +76,6 @@ const CollectionCard = ({
         </h3>
         <p className="text-[11px] text-muted-foreground mt-0.5">
           {collection.item_count} ผลงาน
-          {collection.category ? ` · ${collection.category}` : ""}
         </p>
       </div>
     </>
@@ -111,24 +111,41 @@ const CollectionCard = ({
           )}
         >
           <span>{collection.item_count} ผลงาน</span>
-          {collection.category && <span className="truncate ml-2">{collection.category}</span>}
         </div>
       </div>
     </>
   );
 
-  if (onSelect) {
-    return (
-      <button type="button" onClick={() => onSelect(collection)} className={shellClass}>
-        {body}
-      </button>
-    );
-  }
-
-  return (
+  const main = onSelect ? (
+    <button type="button" onClick={() => onSelect(collection)} className={shellClass}>
+      {body}
+    </button>
+  ) : (
     <Link to={href} className={shellClass}>
       {body}
     </Link>
+  );
+
+  // Only public collections have a link worth sharing. The button sits beside the link, not inside it.
+  if (!collection.is_public) return main;
+
+  const shareUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/collections/${collection.id}`;
+  return (
+    <div className="relative">
+      {main}
+      <div className={cn("absolute z-10", list ? "right-3 top-1/2 -translate-y-1/2" : "right-2 top-2")}>
+        <SharePopover url={shareUrl} title={collection.name} label="แชร์คอลเลกชัน">
+          <button
+            type="button"
+            aria-label={`แชร์คอลเลกชัน ${collection.name}`}
+            title="แชร์"
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-border/70 bg-background/90 text-foreground shadow-sm backdrop-blur-sm hover:bg-background"
+          >
+            <Share2 className="h-4 w-4" aria-hidden />
+          </button>
+        </SharePopover>
+      </div>
+    </div>
   );
 };
 

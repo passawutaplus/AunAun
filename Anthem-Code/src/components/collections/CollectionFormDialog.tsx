@@ -23,14 +23,12 @@ const CollectionFormDialog = ({ open, onOpenChange, initial, onCreated }: Props)
   const isEdit = !!initial;
 
   const [name, setName] = useState("");
-  const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
   const [isPublic, setIsPublic] = useState(false);
 
   useEffect(() => {
     if (open) {
       setName(initial?.name ?? "");
-      setCategory(initial?.category ?? "");
       setDescription(initial?.description ?? "");
       setIsPublic(initial?.is_public ?? false);
     }
@@ -45,7 +43,7 @@ const CollectionFormDialog = ({ open, onOpenChange, initial, onCreated }: Props)
       if (isEdit && initial) {
         await update.mutateAsync({
           id: initial.id,
-          patch: { name: name.trim(), category: category.trim(), description: description.trim(), is_public: isPublic },
+          patch: { name: name.trim(), description: description.trim(), is_public: isPublic },
         });
         toast.success("บันทึกแล้ว");
       } else {
@@ -53,7 +51,6 @@ const CollectionFormDialog = ({ open, onOpenChange, initial, onCreated }: Props)
         const created = await create.mutateAsync({
           ownerId: user.id,
           name: name.trim(),
-          category: category.trim(),
           description: description.trim(),
           isPublic,
         });
@@ -61,8 +58,8 @@ const CollectionFormDialog = ({ open, onOpenChange, initial, onCreated }: Props)
         onCreated?.(created.id);
       }
       onOpenChange(false);
-    } catch (e: any) {
-      toast.error(e?.message ?? "เกิดข้อผิดพลาด");
+    } catch (e) {
+      toast.error((e as Error)?.message ?? "เกิดข้อผิดพลาด");
     }
   };
 
@@ -77,10 +74,6 @@ const CollectionFormDialog = ({ open, onOpenChange, initial, onCreated }: Props)
           <div className="space-y-1.5">
             <Label htmlFor="col-name">ชื่อคอลเลกชัน *</Label>
             <Input id="col-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="เช่น Branding Inspo" maxLength={60} />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="col-cat">หมวด / นิทรรศการ</Label>
-            <Input id="col-cat" value={category} onChange={(e) => setCategory(e.target.value)} placeholder="เช่น Minimal, Y2K, Poster" maxLength={40} />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="col-desc">คำอธิบาย</Label>

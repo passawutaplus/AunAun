@@ -148,7 +148,6 @@ export default function CollectionsManagePanel({ userId, embedded }: Props) {
         <ProfileTabHeading
           title="Collections"
           count={collections.length}
-          description="เลือกคอลเลกชันเพื่อดูรายละเอียด หรือปรับขนาดการ์ดได้"
           actions={newCollectionButton}
         />
       )}

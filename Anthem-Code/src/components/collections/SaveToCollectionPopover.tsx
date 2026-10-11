@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Layers3, Plus, Check, Lock } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CompactLoader } from "@/components/ui/BanterLoader";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { mapWriteFlowError } from "@/lib/writeFlowErrors";
@@ -11,11 +12,30 @@ import { useAuth } from "@/hooks/useAuth";
 import { useAuthDialog } from "@/stores/authDialogStore";
 import {
   useCollections,
+  useCreateCollection,
   useProjectCollectionIds,
   useToggleCollectionItem,
 } from "@/hooks/useCollections";
 import { trackProductEvent } from "@/lib/productEvents";
-import CollectionFormDialog from "./CollectionFormDialog";
+
+const lastUsedKey = (userId: string) => `collection:last-used:${userId}`;
+
+const readLastUsed = (userId: string | undefined): string | null => {
+  if (!userId) return null;
+  try {
+    return localStorage.getItem(lastUsedKey(userId));
+  } catch {
+    return null;
+  }
+};
+
+const writeLastUsed = (userId: string, collectionId: string) => {
+  try {
+    localStorage.setItem(lastUsedKey(userId), collectionId);
+  } catch {
+    /* private mode / storage disabled — the shortcut is optional */
+  }
+};
 
 interface Props {
   projectId: string | undefined;
@@ -32,7 +52,10 @@ const SaveToCollectionPopover = ({ projectId, children, triggerClassName, align 
   const { user } = useAuth();
   const openAuth = useAuthDialog((s) => s.openSignup);
   const [open, setOpen] = useState(false);
-  const [formOpen, setFormOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [lastUsedId, setLastUsedId] = useState<string | null>(() => readLastUsed(user?.id));
+  const newNameRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     onOpenChange?.(open);
@@ -50,6 +73,31 @@ const SaveToCollectionPopover = ({ projectId, children, triggerClassName, align 
     enabled ? user?.id : undefined,
   );
   const toggle = useToggleCollectionItem();
+  const create = useCreateCollection();
+
+  useEffect(() => {
+    if (open) setLastUsedId(readLastUsed(user?.id));
+    else {
+      setCreating(false);
+      setNewName("");
+    }
+  }, [open, user?.id]);
+
+  useEffect(() => {
+    if (creating) newNameRef.current?.focus();
+  }, [creating]);
+
+  // The collection you saved into last goes first, so a repeat save is one tap.
+  const ordered = useMemo(() => {
+    if (!lastUsedId) return collections;
+    return [...collections].sort((a, b) => Number(b.id === lastUsedId) - Number(a.id === lastUsedId));
+  }, [collections, lastUsedId]);
+
+  const remember = (collectionId: string) => {
+    if (!user?.id) return;
+    writeLastUsed(user.id, collectionId);
+    setLastUsedId(collectionId);
+  };
 
   const handleTriggerClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -71,6 +119,7 @@ const SaveToCollectionPopover = ({ projectId, children, triggerClassName, align 
     try {
       await toggle.mutateAsync({ collectionId: cid, projectId, remove: isIn });
       if (!isIn) {
+        remember(cid);
         void trackProductEvent(
           "collection_save",
           { project_id: projectId, collection_id: cid },
@@ -83,13 +132,35 @@ const SaveToCollectionPopover = ({ projectId, children, triggerClassName, align 
     }
   };
 
+  const createAndSave = async () => {
+    const name = newName.trim();
+    if (!name || !user?.id || create.isPending) return;
+    try {
+      const created = await create.mutateAsync({ ownerId: user.id, name });
+      if (projectId) {
+        await toggle.mutateAsync({ collectionId: created.id, projectId });
+        void trackProductEvent(
+          "collection_save",
+          { project_id: projectId, collection_id: created.id },
+          { debounceMs: 1_000 },
+        );
+      }
+      remember(created.id);
+      toast.success(`เพิ่มเข้า “${name}” แล้ว`);
+      setCreating(false);
+      setNewName("");
+    } catch (e: unknown) {
+      toast.error(mapWriteFlowError(e, "สร้างคอลเลกชันไม่สำเร็จ"));
+    }
+  };
+
   const trigger = children ? (
     <span className="flex min-w-0" onClick={handleTriggerClick}>{children}</span>
   ) : (
     <button
       onClick={handleTriggerClick}
-      aria-label="Keep Collection"
-      title="Keep Collection"
+      aria-label="เก็บเข้าคอลเลกชัน"
+      title="เก็บเข้าคอลเลกชัน"
       className={cn(
         "p-2 rounded-md hover:bg-accent transition-colors",
         triggerClassName,
@@ -110,7 +181,7 @@ const SaveToCollectionPopover = ({ projectId, children, triggerClassName, align 
           onClick={(e) => e.stopPropagation()}
         >
           <div className="px-3 py-2.5 border-b border-border/60 flex items-center justify-between">
-            <p className="text-sm font-semibold">Keep Collection</p>
+            <p className="text-sm font-semibold">เก็บเข้าคอลเลกชัน</p>
             <Layers3 className="w-4 h-4 text-primary" />
           </div>
 
@@ -124,13 +195,13 @@ const SaveToCollectionPopover = ({ projectId, children, triggerClassName, align 
                   ลองใหม่
                 </Button>
               </div>
-            ) : collections.length === 0 ? (
+            ) : ordered.length === 0 ? (
               <p className="text-xs text-muted-foreground text-center py-6 px-3">
                 ยังไม่มีคอลเลกชัน — สร้างอันแรกของคุณ
               </p>
             ) : (
               <ul className="py-1">
-                {collections.map((c) => {
+                {ordered.map((c) => {
                   const isIn = activeIds.includes(c.id);
                   return (
                     <li key={c.id}>
@@ -138,6 +209,7 @@ const SaveToCollectionPopover = ({ projectId, children, triggerClassName, align 
                         type="button"
                         onClick={() => void toggleItem(c.id, isIn)}
                         disabled={toggle.isPending}
+                        aria-pressed={isIn}
                         className="w-full flex items-center gap-3 px-3 py-2 hover:bg-accent text-left transition-colors"
                       >
                         <div className="w-10 h-10 rounded-md bg-muted overflow-hidden grid grid-cols-2 grid-rows-2 gap-px shrink-0">
@@ -155,7 +227,9 @@ const SaveToCollectionPopover = ({ projectId, children, triggerClassName, align 
                             {c.name}
                             {!c.is_public && <Lock className="w-3 h-3 text-muted-foreground" />}
                           </p>
-                          <p className="text-[11px] text-muted-foreground">{c.item_count} ผลงาน</p>
+                          <p className="text-[11px] text-muted-foreground">
+                            {c.item_count} ผลงาน{c.id === lastUsedId ? " · ใช้ล่าสุด" : ""}
+                          </p>
                         </div>
                         <div
                           className={cn(
@@ -174,33 +248,52 @@ const SaveToCollectionPopover = ({ projectId, children, triggerClassName, align 
           </ScrollArea>
 
           <div className="border-t border-border/60 p-2">
-            <Button
-              variant="ghost"
-              className="w-full justify-start text-primary hover:text-primary hover:bg-primary/10"
-              onClick={() => setFormOpen(true)}
-            >
-              <Plus className="w-4 h-4 mr-1.5" /> สร้างคอลเลกชันใหม่
-            </Button>
+            {creating ? (
+              <form
+                className="flex items-center gap-1.5"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  void createAndSave();
+                }}
+              >
+                <Input
+                  ref={newNameRef}
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  placeholder="ชื่อคอลเลกชันใหม่"
+                  aria-label="ชื่อคอลเลกชันใหม่"
+                  maxLength={60}
+                  className="h-9 flex-1"
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") {
+                      e.stopPropagation();
+                      setCreating(false);
+                      setNewName("");
+                    }
+                  }}
+                />
+                <Button type="submit" size="sm" className="h-9 rounded-full" disabled={!newName.trim() || create.isPending}>
+                  {create.isPending ? "..." : "สร้าง"}
+                </Button>
+              </form>
+            ) : (
+              <Button
+                variant="ghost"
+                className="w-full justify-start text-primary hover:text-primary hover:bg-primary/10"
+                onClick={() => setCreating(true)}
+              >
+                <Plus className="w-4 h-4 mr-1.5" /> สร้างคอลเลกชันใหม่
+              </Button>
+            )}
+            {creating ? (
+              <p className="px-1 pt-1.5 text-[11px] text-muted-foreground">
+                เริ่มเป็นส่วนตัว — ตั้งเป็นสาธารณะได้ทีหลัง และผลงานนี้จะถูกเพิ่มเข้าให้ทันที
+              </p>
+            ) : null}
           </div>
         </PopoverContent>
       </Popover>
 
-      <CollectionFormDialog
-        open={formOpen}
-        onOpenChange={setFormOpen}
-        onCreated={async (id) => {
-          await refetchCollections();
-          if (projectId) {
-            await toggle.mutateAsync({ collectionId: id, projectId });
-            void trackProductEvent(
-              "collection_save",
-              { project_id: projectId, collection_id: id },
-              { debounceMs: 1_000 },
-            );
-            toast.success("เพิ่มเข้าคอลเลกชันใหม่แล้ว");
-          }
-        }}
-      />
     </>
   );
 };
