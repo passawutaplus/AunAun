@@ -16,7 +16,7 @@ import { categoryDbFilterValues, normalizeProjectCategory } from "@/data/project
 
 export const CREATOR_SERVICES_MAX = 6;
 export const CREATOR_SERVICES_GALLERY_MAX = 6;
-export const CREATOR_SERVICES_REF_PROJECTS_MAX = 6;
+export const CREATOR_SERVICES_REF_PROJECTS_MAX = 3;
 
 export type CreatorServiceStatus = "Draft" | "Published";
 

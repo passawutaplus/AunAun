@@ -1021,41 +1021,51 @@ export default function ServiceEditorDialog({
         onChange={(tiers) => setForm((f) => ({ ...f, tiers }))}
       />
 
-      <PackageExtrasEditor
-        addons={form.addons ?? []}
-        faq={form.faq ?? []}
-        disabled={!!busy || uploading}
-        onChange={(next) => setForm((f) => ({ ...f, ...next }))}
-      />
-
-      {user?.id ? (
-        <ServicePackageWorksPicker
-          userId={user.id}
-          selectedIds={form.reference_project_ids ?? []}
-          required
-          disabled={!!busy || uploading}
-          onChange={(ids) => setForm((f) => ({ ...f, reference_project_ids: ids }))}
-        />
-      ) : null}
     </>
   );
 
+  const extrasProps = {
+    addons: form.addons ?? [],
+    faq: form.faq ?? [],
+    disabled: !!busy || uploading,
+    onChange: (next: Partial<Pick<CreatorServiceInput, "addons" | "faq">>) => setForm((f) => ({ ...f, ...next })),
+  };
+  const addonsBlock = <PackageExtrasEditor part="addons" {...extrasProps} />;
+  const faqBlock = <PackageExtrasEditor part="faq" {...extrasProps} />;
+  const worksBlock = user?.id ? (
+    <ServicePackageWorksPicker
+      userId={user.id}
+      selectedIds={form.reference_project_ids ?? []}
+      required
+      disabled={!!busy || uploading}
+      onChange={(ids) => setForm((f) => ({ ...f, reference_project_ids: ids }))}
+    />
+  ) : null;
+  const sectionCard = "space-y-4 rounded-2xl border border-border/60 bg-card/40 p-4 sm:p-5";
+
   const formFields = isPage ? (
     <div className="grid grid-cols-1 gap-6 p-4 sm:p-6 lg:grid-cols-2 lg:gap-8 lg:items-start">
-      <section className="space-y-4">
-        {pageMediaBlock}
-        {titleBlock}
-        {summaryBlock}
-      </section>
-      <section className="space-y-4 rounded-2xl border border-border/60 bg-card/40 p-4 sm:p-5">
-        <div>
-          <h2 className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground">
-            <PackagesIcon className="h-3.5 w-3.5 text-primary" />
-            ข้อมูลแพ็กเกจ
-          </h2>
-        </div>
-        {detailsBlocks}
-      </section>
+      <div className="space-y-4">
+        <section className="space-y-4">
+          {pageMediaBlock}
+          {titleBlock}
+          {summaryBlock}
+        </section>
+        <section className={sectionCard}>{faqBlock}</section>
+        {worksBlock ? <section className={sectionCard}>{worksBlock}</section> : null}
+      </div>
+      <div className="space-y-4">
+        <section className={sectionCard}>
+          <div>
+            <h2 className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground">
+              <PackagesIcon className="h-3.5 w-3.5 text-primary" />
+              ข้อมูลแพ็กเกจ
+            </h2>
+          </div>
+          {detailsBlocks}
+        </section>
+        <section className={sectionCard}>{addonsBlock}</section>
+      </div>
     </div>
   ) : (
     <div className="space-y-4 p-4 sm:p-5">
@@ -1063,7 +1073,10 @@ export default function ServiceEditorDialog({
       {galleryBlock}
       {titleBlock}
       {detailsBlocks}
+      {addonsBlock}
       {summaryBlock}
+      {faqBlock}
+      {worksBlock}
     </div>
   );
 
