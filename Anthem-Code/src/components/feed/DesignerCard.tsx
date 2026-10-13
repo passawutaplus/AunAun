@@ -1,16 +1,16 @@
 import BriefcaseIcon from "../icons/BriefcaseIcon";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, ChevronLeft, ChevronRight, Handshake, MapPin } from "lucide-react";
 import { PlusOneControl } from "@/components/brand/PlusOneControl";
 import UserAvatar from "@/components/UserAvatar";
 import VerifiedBadge from "@/components/profile/VerifiedBadge";
 import type { DesignerCardData } from "@/hooks/useDesigners";
-import FollowButton from "@/components/FollowButton";
 import { useFollowState } from "@/hooks/useFollow";
 import { useAuth } from "@/hooks/useAuth";
-import { useSavedDesignerIds, useToggleSavedDesigner } from "@/hooks/useSavedDesigners";
+import { FOLLOWED_DESIGNERS_PATH } from "@/hooks/useFollowedDesigners";
 import { BRAND_NAME } from "@/lib/brandConfig";
 import { highlight } from "@/lib/highlight";
 import { naturalFeedCoverUrl, thumbFeedCoverUrl } from "@/lib/feedProjectCover";
@@ -52,11 +52,8 @@ const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
   const safeIndex = Math.min(index, Math.max(0, projects.length - 1));
   const active = projects[safeIndex] ?? featured;
   const { user } = useAuth();
-  const { followers } = useFollowState(profileUserId);
-  const { data: savedIds } = useSavedDesignerIds();
-  const toggleSave = useToggleSavedDesigner();
-  const isSelf = user?.id === profileUserId;
-  const isSaved = !!savedIds?.has(profileUserId);
+  const { followers, isFollowing, isSelf, toggle: toggleFollow, isPending: followPending } =
+    useFollowState(profileUserId);
 
   const likeCount = data.likeCount ?? projects.reduce((sum, p) => sum + (p.likes ?? 0), 0);
 
@@ -120,22 +117,34 @@ const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
     return wide ? naturalFeedCoverUrl(src) : thumbFeedCoverUrl(src);
   };
 
-  const onToggleSave = () =>
+  const onToggleFollow = () =>
     requireAuth(user, () =>
-      toggleSave.mutate({ designerId: profileUserId, saved: isSaved, name }),
+      toggleFollow(undefined, {
+        onSuccess: (result) => {
+          if (result.followed) {
+            toast.success(`ติดตาม ${name} แล้ว`, {
+              description: `${name} จะได้รับแจ้งเตือน · ดูรวมได้ที่ Portfolio → Designers`,
+              action: { label: "ดูทั้งหมด", onClick: () => navigate(FOLLOWED_DESIGNERS_PATH) },
+            });
+          } else {
+            toast.success(`เลิกติดตาม ${name} แล้ว`);
+          }
+        },
+        onError: () => toast.error("ทำรายการไม่สำเร็จ", { description: "ลองใหม่อีกครั้ง" }),
+      }),
     );
 
-  /** Heart = keep this designer in Portfolio → Designers (not a like on one of their works). */
-  const saveHeart = (className: string) =>
+  /** Heart = Follow: the designer is notified, and lands in Portfolio → Designers. */
+  const followHeart = (className: string) =>
     isSelf ? null : (
       <motion.div whileTap={{ scale: 0.92 }}>
         <PlusOneControl
-          active={isSaved}
+          active={isFollowing}
           showCount={false}
-          disabled={toggleSave.isPending}
-          ariaLabel={isSaved ? `เอา ${name} ออกจากดีไซเนอร์ที่บันทึก` : `บันทึก ${name} ไว้ใน Portfolio`}
-          title={isSaved ? "บันทึกไว้แล้ว — กดอีกครั้งเพื่อเอาออก" : "บันทึกดีไซเนอร์ไว้ดูทีหลัง"}
-          onClick={onToggleSave}
+          disabled={followPending}
+          ariaLabel={isFollowing ? `เลิกติดตาม ${name}` : `ติดตาม ${name}`}
+          title={isFollowing ? "กำลังติดตาม — กดอีกครั้งเพื่อเลิกติดตาม" : "ติดตาม (เก็บไว้ใน Portfolio → Designers)"}
+          onClick={onToggleFollow}
           className={className}
         />
       </motion.div>
@@ -166,8 +175,7 @@ const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
 
         <div className="flex-1 min-w-0 flex flex-col items-end gap-1.5 pt-0.5">
           <div className="flex items-center gap-1">
-            <FollowButton freelancerId={profileUserId} iconOnly tone="muted" />
-            {saveHeart("w-9 h-9 justify-center rounded-full glass-panel hover:bg-accent/40 transition")}
+            {followHeart("w-9 h-9 justify-center rounded-full glass-panel hover:bg-accent/40 transition")}
           </div>
           {presence ? (
             <p
@@ -419,13 +427,7 @@ const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
               <VerifiedBadge verified={!!(profile as { is_verified?: boolean }).is_verified} />
             </div>
             <div className="absolute right-3 top-3 z-20 flex items-center gap-1">
-              <FollowButton
-                freelancerId={profileUserId}
-                iconOnly
-                tone="muted"
-                className="bg-background/95 text-foreground"
-              />
-              {saveHeart("h-9 w-9 justify-center rounded-full bg-background/95 text-foreground shadow-sm hover:bg-background")}
+              {followHeart("h-9 w-9 justify-center rounded-full bg-background/95 text-foreground shadow-sm hover:bg-background")}
             </div>
             <button
               type="button"

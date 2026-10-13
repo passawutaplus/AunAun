@@ -100,7 +100,7 @@ const STEPS: Step[] = [
   {
     id: "designers",
     title: "Designers",
-    body: "ดีไซเนอร์ที่คุณกด ♡ ไว้จากหน้า Designers เก็บไว้กลับมาจ้างงานหรือชวนคอลแลปทีหลัง มีแค่คุณที่เห็นรายการนี้",
+    body: "ดีไซเนอร์ที่คุณกด ♡ ติดตามจากหน้า Designers รวมไว้ที่นี่ กลับมาจ้างงานหรือชวนคอลแลปได้ทุกเมื่อ",
     target: "profile-tab-designers",
     tab: "designers",
   },

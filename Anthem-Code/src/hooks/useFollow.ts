@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { notifyAnthem } from "@/lib/notifyAnthem";
 import { createBatchLoader } from "@/lib/batchLoader";
+import { FOLLOWED_DESIGNERS_KEY } from "@/hooks/useFollowedDesigners";
 
 type FollowSummary = { followers: number; following: number; isFollowing: boolean };
 
@@ -77,10 +78,13 @@ export const useFollowState = (followingId: string | undefined) => {
         notifyAnthem({ event: "follow", following_id: followingId! });
       }
       qc.invalidateQueries({ queryKey: ["follow-counts", followingId] });
+      // The viewer's own "following" count changes too (profile header, Portfolio → Designers tab).
+      qc.invalidateQueries({ queryKey: ["follow-counts", user?.id] });
       qc.invalidateQueries({ queryKey: ["is-following", followingId, user?.id] });
       qc.invalidateQueries({ queryKey: ["followers-list"] });
       qc.invalidateQueries({ queryKey: ["following-list"] });
       qc.invalidateQueries({ queryKey: ["followed-user-ids", user?.id] });
+      qc.invalidateQueries({ queryKey: [FOLLOWED_DESIGNERS_KEY, user?.id] });
     },
   });
 

@@ -18,10 +18,9 @@ import ProfileOverallWorksPanel from "@/components/profile/ProfileOverallWorksPa
 import InspireManagePanel from "@/components/inspire/InspireManagePanel";
 import PortfolioBookingPanel from "@/components/portfolio/PortfolioBookingPanel";
 import PortfolioHiringPanel from "@/components/portfolio/PortfolioHiringPanel";
-import PortfolioSavedDesignersPanel from "@/components/portfolio/PortfolioSavedDesignersPanel";
+import PortfolioFollowedDesignersPanel from "@/components/portfolio/PortfolioFollowedDesignersPanel";
 import { useMyApplications, useMySavedJobs } from "@/hooks/useJobs";
 import { useSavedCreatorServiceIds } from "@/hooks/useCreatorServiceBookmarks";
-import { useSavedDesignerIds } from "@/hooks/useSavedDesigners";
 import type { ExperienceItem } from "@/lib/validators";
 import { normalizeExperienceItem } from "@/lib/validators";
 import ProfileAboutPanel from "@/components/profile/ProfileAboutPanel";
@@ -79,7 +78,6 @@ const PortfolioProfilePage = () => {
   const { followers, following } = useFollowState(user?.id);
   const { data: collections = [] } = useCollections(user?.id);
   const { data: savedPackageIds } = useSavedCreatorServiceIds();
-  const { data: savedDesignerIds } = useSavedDesignerIds();
   // Tabs that are switched off at launch don't need their data either.
   const { data: myApplications = [] } = useMyApplications({ enabled: hiringBoardEnabled });
   const { data: mySavedJobs = [] } = useMySavedJobs({ enabled: hiringBoardEnabled });
@@ -204,7 +202,7 @@ const PortfolioProfilePage = () => {
   const tabs: { id: ProfileTab; label: string; count?: number }[] = [
     { id: "overall", label: "My Projects", count: published.length },
     { id: "collections", label: "Collections", count: collections.length },
-    { id: "designers", label: "Designers", count: savedDesignerIds?.size ?? 0 },
+    { id: "designers", label: "Designers", count: following },
     { id: "booking", label: "Packages Saved", count: savedPackageIds?.size ?? 0 },
     ...(hiringBoardEnabled
       ? [{ id: "hiring" as const, label: "Hiring", count: myApplications.length + mySavedJobs.length }]
@@ -374,7 +372,7 @@ const PortfolioProfilePage = () => {
             <CollectionsManagePanel userId={user!.id} embedded />
           ) : null}
 
-          {activeTab === "designers" ? <PortfolioSavedDesignersPanel /> : null}
+          {activeTab === "designers" ? <PortfolioFollowedDesignersPanel /> : null}
 
           {activeTab === "booking" ? (
             <PortfolioBookingPanel userId={user!.id} />

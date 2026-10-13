@@ -19,8 +19,8 @@ export type CollectionListSortMode = "newest" | "oldest" | "items";
 export type CollectionItemsSortMode = "manual" | "newest" | "oldest" | "likes" | "views";
 /** Sort options on saved packages. */
 export type SavedPackagesSortMode = "newest" | "oldest" | "price_asc" | "price_desc";
-/** Sort options on saved designers. */
-export type SavedDesignersSortMode = "newest" | "oldest" | "active" | "projects";
+/** Sort options on followed designers (Portfolio → Designers). */
+export type FollowedDesignersSortMode = "newest" | "oldest" | "active" | "projects";
 /** Sort options on the owner's own works: the same plus the portfolio order visitors see. */
 export type ProfileWorksSortMode = "portfolio" | Exclude<CollectionItemsSortMode, "manual">;
 
@@ -45,9 +45,9 @@ const PACKAGES_SORT_OPTIONS: { value: SavedPackagesSortMode; label: string }[] =
   { value: "price_desc", label: "ราคาสูง → ต่ำ" },
 ];
 
-const DESIGNERS_SORT_OPTIONS: { value: SavedDesignersSortMode; label: string }[] = [
-  { value: "newest", label: "บันทึกล่าสุด" },
-  { value: "oldest", label: "บันทึกเก่าสุด" },
+const DESIGNERS_SORT_OPTIONS: { value: FollowedDesignersSortMode; label: string }[] = [
+  { value: "newest", label: "ติดตามล่าสุด" },
+  { value: "oldest", label: "ติดตามเก่าสุด" },
   { value: "active", label: "ออนไลน์ล่าสุด" },
   { value: "projects", label: "ผลงานเยอะสุด" },
 ];
@@ -101,8 +101,8 @@ type PackagesSortProps = BaseProps & {
 
 type DesignersSortProps = BaseProps & {
   mode: "designers";
-  sortMode: SavedDesignersSortMode;
-  onSortModeChange: (value: SavedDesignersSortMode) => void;
+  sortMode: FollowedDesignersSortMode;
+  onSortModeChange: (value: FollowedDesignersSortMode) => void;
 };
 
 export type CollectionBrowseToolbarProps =
@@ -166,7 +166,7 @@ export function CollectionBrowseToolbar(props: CollectionBrowseToolbarProps) {
               } else if (props.mode === "packages") {
                 props.onSortModeChange(v as SavedPackagesSortMode);
               } else if (props.mode === "designers") {
-                props.onSortModeChange(v as SavedDesignersSortMode);
+                props.onSortModeChange(v as FollowedDesignersSortMode);
               } else {
                 props.onSortModeChange(v as CollectionItemsSortMode);
               }

@@ -11,41 +11,41 @@ import HireDialog from "@/components/HireDialog";
 import CollabDialog from "@/components/CollabDialog";
 import {
   CollectionBrowseToolbar,
-  type SavedDesignersSortMode,
+  type FollowedDesignersSortMode,
 } from "@/components/collections/CollectionBrowseToolbar";
-import { useSavedDesigners, type SavedDesigner } from "@/hooks/useSavedDesigners";
+import { useFollowedDesigners, type FollowedDesigner } from "@/hooks/useFollowedDesigners";
 import { fuzzyMatchAll } from "@/lib/fuzzyMatch";
 
 const DESIGNERS_FEED_PATH = "/?mode=designers";
 
-const designerUserId = (d: SavedDesigner) =>
+const designerUserId = (d: FollowedDesigner) =>
   (d.profile as { user_id?: string }).user_id ?? d.profile.id;
 
-const lastActive = (d: SavedDesigner) => {
+const lastActive = (d: FollowedDesigner) => {
   const t = Date.parse((d.profile as { last_active_at?: string | null }).last_active_at ?? "");
   return Number.isNaN(t) ? 0 : t;
 };
 
-function sortDesigners(list: SavedDesigner[], mode: SavedDesignersSortMode): SavedDesigner[] {
+function sortDesigners(list: FollowedDesigner[], mode: FollowedDesignersSortMode): FollowedDesigner[] {
   const next = [...list];
   switch (mode) {
     case "oldest":
-      return next.sort((a, b) => a.savedAt.localeCompare(b.savedAt));
+      return next.sort((a, b) => a.followedAt.localeCompare(b.followedAt));
     case "active":
       return next.sort((a, b) => lastActive(b) - lastActive(a));
     case "projects":
       return next.sort((a, b) => b.projectCount - a.projectCount);
     case "newest":
     default:
-      return next.sort((a, b) => b.savedAt.localeCompare(a.savedAt));
+      return next.sort((a, b) => b.followedAt.localeCompare(a.followedAt));
   }
 }
 
-/** Portfolio → Designers: the designers you hearted on the Designers feed. Private to you. */
-export default function PortfolioSavedDesignersPanel() {
-  const { data: designers = [], isLoading, isError, refetch } = useSavedDesigners();
+/** Portfolio → Designers: the designers you follow (the ♡ on a designer card). */
+export default function PortfolioFollowedDesignersPanel() {
+  const { data: designers = [], isLoading, isError, refetch } = useFollowedDesigners();
   const [query, setQuery] = useState("");
-  const [sortMode, setSortMode] = useState<SavedDesignersSortMode>("newest");
+  const [sortMode, setSortMode] = useState<FollowedDesignersSortMode>("newest");
   const [hire, setHire] = useState<{ id: string; name: string } | null>(null);
   const [collab, setCollab] = useState<{ id: string; name: string } | null>(null);
 
@@ -68,7 +68,7 @@ export default function PortfolioSavedDesignersPanel() {
   if (isError) {
     return (
       <div className="text-center py-16 glass-panel rounded-2xl space-y-3">
-        <p className="text-foreground font-medium">โหลดดีไซเนอร์ที่บันทึกไม่สำเร็จ</p>
+        <p className="text-foreground font-medium">โหลดดีไซเนอร์ที่ติดตามไม่สำเร็จ</p>
         <p className="text-sm text-muted-foreground">ลองใหม่อีกครั้ง หรือตรวจการเชื่อมต่อ</p>
         <Button variant="outline" className="rounded-full" onClick={() => void refetch()}>
           ลองใหม่
@@ -82,15 +82,15 @@ export default function PortfolioSavedDesignersPanel() {
       <ProfileTabHeading
         title="Designers"
         count={designers.length}
-        description="ดีไซเนอร์ที่คุณกด ♡ ไว้ — มีแค่คุณที่เห็นรายการนี้"
+        description="ดีไซเนอร์ที่คุณกด ♡ ติดตาม — ผลงานใหม่ของพวกเขาขึ้นในฟีด Following"
         actions={designers.length > 0 ? findMore : undefined}
       />
 
       {designers.length === 0 ? (
         <EmptyState
           icon={Heart}
-          title="ยังไม่มีดีไซเนอร์ที่บันทึก"
-          description="กด ♡ บนการ์ดดีไซเนอร์ในหน้า Designers แล้วคนนั้นจะมาอยู่ที่นี่ กลับมาจ้างงานหรือชวนคอลแลปได้ทุกเมื่อ"
+          title="ยังไม่ได้ติดตามดีไซเนอร์"
+          description="กด ♡ บนการ์ดดีไซเนอร์ในหน้า Designers เพื่อติดตาม แล้วคนนั้นจะมาอยู่ที่นี่ กลับมาจ้างงานหรือชวนคอลแลปได้ทุกเมื่อ"
           action={
             <Button asChild variant="gradient" className="rounded-full">
               <Link to={DESIGNERS_FEED_PATH}>
@@ -113,7 +113,7 @@ export default function PortfolioSavedDesignersPanel() {
           {filtered.length === 0 ? (
             <FilterEmptyState
               title="ไม่พบดีไซเนอร์ที่ตรงกับคำค้น"
-              description={`ไม่มีผลลัพธ์สำหรับ "${query}" ในดีไซเนอร์ที่คุณบันทึกไว้`}
+              description={`ไม่มีผลลัพธ์สำหรับ "${query}" ในดีไซเนอร์ที่คุณติดตาม`}
               onClear={() => setQuery("")}
               clearLabel="ล้างคำค้น"
             />
