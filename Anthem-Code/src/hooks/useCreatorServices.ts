@@ -81,9 +81,9 @@ export function tiersOf(svc: Pick<
       name: "Basic",
       summary: "",
       price_thb: Math.max(0, Math.round(svc.price_min_thb || svc.price_thb || 0)),
-      duration_days: Number.parseInt(String(svc.duration_label ?? "").replace(/[^d]/g, ""), 10) || 0,
+      duration_days: Number.parseInt(digitsOnly(svc.duration_label), 10) || 0,
       deliverables: (svc.deliverables ?? []).filter((d) => d.trim() && d.trim() !== "—"),
-      revisions: Number.parseInt(String(svc.revisions_label ?? "").replace(/[^d]/g, ""), 10) || 0,
+      revisions: Number.parseInt(digitsOnly(svc.revisions_label), 10) || 0,
       exclusions: svc.exclusions_note ?? "",
     },
   ];
@@ -106,7 +106,8 @@ export function applyTiersToInput(patch: CreatorServiceInput): CreatorServiceInp
     duration_label: first.duration_days ? String(first.duration_days) : "",
     deliverables: first.deliverables,
     revisions_label: first.revisions ? String(first.revisions) : "",
-    exclusions_note: first.exclusions,
+    // Tiers no longer carry their own exclusions; keep the package-wide note saved before tiers existed.
+    exclusions_note: first.exclusions.trim() || patch.exclusions_note,
   };
 }
 
@@ -528,7 +529,7 @@ export function useSimilarCreatorServices(
       const { data, error } = await q;
       if (error) throw error;
 
-      let rows = asCreatorServiceRows(data).map(mapCreatorServiceRow);
+      const rows = asCreatorServiceRows(data).map(mapCreatorServiceRow);
 
       // Soft fallback when taxonomy is empty / no same-category peers.
       if (rows.length < limit) {

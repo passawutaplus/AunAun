@@ -101,7 +101,8 @@ export default function ServiceDetailView({
       : formatServicePriceRange(service.price_min_thb, service.price_thb);
   const shownDuration = tier?.duration_days ? `${tier.duration_days} วัน` : duration;
   const revisions = tier ? (tier.revisions ? formatServiceRevisions(String(tier.revisions)) : "") : flatRevisions;
-  const exclusions = tier ? tier.exclusions.trim() : flatExclusions;
+  // Package-wide note (saved before tiers existed) shows under every tier.
+  const exclusions = tier?.exclusions.trim() || flatExclusions;
   const deliverables = tier?.deliverables.length ? tier.deliverables : service.deliverables;
   const responseLabel =
     responseMinutes == null
