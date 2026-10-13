@@ -98,6 +98,13 @@ const STEPS: Step[] = [
     tab: "collections",
   },
   {
+    id: "designers",
+    title: "Designers",
+    body: "ดีไซเนอร์ที่คุณกด ♡ ไว้จากหน้า Designers เก็บไว้กลับมาจ้างงานหรือชวนคอลแลปทีหลัง มีแค่คุณที่เห็นรายการนี้",
+    target: "profile-tab-designers",
+    tab: "designers",
+  },
+  {
     id: "booking",
     title: "Packages Saved",
     body: "แพ็กเกจของครีเอเตอร์คนอื่นที่คุณบันทึกไว้ ใส่สถานะ โน้ต และเปรียบเทียบก่อนตัดสินใจจ้างได้ (ไม่ใช่แพ็กเกจที่คุณขาย)",

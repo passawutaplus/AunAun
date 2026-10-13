@@ -1,0 +1,150 @@
+import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { ArrowRight, Heart } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import EmptyState from "@/components/ui/EmptyState";
+import { FilterEmptyState } from "@/components/ui/QueryStatusPanel";
+import { InlineLoader } from "@/components/ui/BanterLoader";
+import ProfileTabHeading from "@/components/profile/ProfileTabHeading";
+import DesignerCard from "@/components/feed/DesignerCard";
+import HireDialog from "@/components/HireDialog";
+import CollabDialog from "@/components/CollabDialog";
+import {
+  CollectionBrowseToolbar,
+  type SavedDesignersSortMode,
+} from "@/components/collections/CollectionBrowseToolbar";
+import { useSavedDesigners, type SavedDesigner } from "@/hooks/useSavedDesigners";
+import { fuzzyMatchAll } from "@/lib/fuzzyMatch";
+
+const DESIGNERS_FEED_PATH = "/?mode=designers";
+
+const designerUserId = (d: SavedDesigner) =>
+  (d.profile as { user_id?: string }).user_id ?? d.profile.id;
+
+const lastActive = (d: SavedDesigner) => {
+  const t = Date.parse((d.profile as { last_active_at?: string | null }).last_active_at ?? "");
+  return Number.isNaN(t) ? 0 : t;
+};
+
+function sortDesigners(list: SavedDesigner[], mode: SavedDesignersSortMode): SavedDesigner[] {
+  const next = [...list];
+  switch (mode) {
+    case "oldest":
+      return next.sort((a, b) => a.savedAt.localeCompare(b.savedAt));
+    case "active":
+      return next.sort((a, b) => lastActive(b) - lastActive(a));
+    case "projects":
+      return next.sort((a, b) => b.projectCount - a.projectCount);
+    case "newest":
+    default:
+      return next.sort((a, b) => b.savedAt.localeCompare(a.savedAt));
+  }
+}
+
+/** Portfolio → Designers: the designers you hearted on the Designers feed. Private to you. */
+export default function PortfolioSavedDesignersPanel() {
+  const { data: designers = [], isLoading, isError, refetch } = useSavedDesigners();
+  const [query, setQuery] = useState("");
+  const [sortMode, setSortMode] = useState<SavedDesignersSortMode>("newest");
+  const [hire, setHire] = useState<{ id: string; name: string } | null>(null);
+  const [collab, setCollab] = useState<{ id: string; name: string } | null>(null);
+
+  const filtered = useMemo(() => {
+    const q = query.trim();
+    const rows = q ? designers.filter((d) => fuzzyMatchAll(q, d.searchHaystack)) : designers;
+    return sortDesigners(rows, sortMode);
+  }, [designers, query, sortMode]);
+
+  const findMore = (
+    <Button asChild size="sm" variant="outline" className="rounded-full shrink-0">
+      <Link to={DESIGNERS_FEED_PATH}>
+        หาดีไซเนอร์เพิ่ม <ArrowRight className="ml-1 h-3.5 w-3.5" aria-hidden />
+      </Link>
+    </Button>
+  );
+
+  if (isLoading) return <InlineLoader />;
+
+  if (isError) {
+    return (
+      <div className="text-center py-16 glass-panel rounded-2xl space-y-3">
+        <p className="text-foreground font-medium">โหลดดีไซเนอร์ที่บันทึกไม่สำเร็จ</p>
+        <p className="text-sm text-muted-foreground">ลองใหม่อีกครั้ง หรือตรวจการเชื่อมต่อ</p>
+        <Button variant="outline" className="rounded-full" onClick={() => void refetch()}>
+          ลองใหม่
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <ProfileTabHeading
+        title="Designers"
+        count={designers.length}
+        description="ดีไซเนอร์ที่คุณกด ♡ ไว้ — มีแค่คุณที่เห็นรายการนี้"
+        actions={designers.length > 0 ? findMore : undefined}
+      />
+
+      {designers.length === 0 ? (
+        <EmptyState
+          icon={Heart}
+          title="ยังไม่มีดีไซเนอร์ที่บันทึก"
+          description="กด ♡ บนการ์ดดีไซเนอร์ในหน้า Designers แล้วคนนั้นจะมาอยู่ที่นี่ กลับมาจ้างงานหรือชวนคอลแลปได้ทุกเมื่อ"
+          action={
+            <Button asChild variant="gradient" className="rounded-full">
+              <Link to={DESIGNERS_FEED_PATH}>
+                ไปหน้า Designers <ArrowRight className="ml-1 h-4 w-4" aria-hidden />
+              </Link>
+            </Button>
+          }
+        />
+      ) : (
+        <>
+          <CollectionBrowseToolbar
+            mode="designers"
+            searchPlaceholder="ค้นหาชื่อ ตำแหน่ง ทักษะ หรือเครื่องมือ..."
+            query={query}
+            onQueryChange={setQuery}
+            sortMode={sortMode}
+            onSortModeChange={setSortMode}
+            resultCount={filtered.length}
+          />
+          {filtered.length === 0 ? (
+            <FilterEmptyState
+              title="ไม่พบดีไซเนอร์ที่ตรงกับคำค้น"
+              description={`ไม่มีผลลัพธ์สำหรับ "${query}" ในดีไซเนอร์ที่คุณบันทึกไว้`}
+              onClear={() => setQuery("")}
+              clearLabel="ล้างคำค้น"
+            />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-3 md:gap-x-4 gap-y-[22px] md:gap-y-[26px]">
+              {filtered.map((d) => (
+                <DesignerCard
+                  key={designerUserId(d)}
+                  data={d}
+                  search={query}
+                  onHire={(id, name) => setHire({ id, name })}
+                  onCollab={(id, name) => setCollab({ id, name })}
+                />
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      <HireDialog
+        open={!!hire}
+        onOpenChange={(open) => !open && setHire(null)}
+        projectTitle={hire?.name ?? ""}
+        freelancerId={hire?.id}
+      />
+      <CollabDialog
+        open={!!collab}
+        onOpenChange={(open) => !open && setCollab(null)}
+        recipientId={collab?.id}
+        recipientName={collab?.name ?? ""}
+      />
+    </div>
+  );
+}

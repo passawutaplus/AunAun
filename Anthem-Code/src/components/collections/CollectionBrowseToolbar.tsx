@@ -19,6 +19,8 @@ export type CollectionListSortMode = "newest" | "oldest" | "items";
 export type CollectionItemsSortMode = "manual" | "newest" | "oldest" | "likes" | "views";
 /** Sort options on saved packages. */
 export type SavedPackagesSortMode = "newest" | "oldest" | "price_asc" | "price_desc";
+/** Sort options on saved designers. */
+export type SavedDesignersSortMode = "newest" | "oldest" | "active" | "projects";
 /** Sort options on the owner's own works: the same plus the portfolio order visitors see. */
 export type ProfileWorksSortMode = "portfolio" | Exclude<CollectionItemsSortMode, "manual">;
 
@@ -43,6 +45,13 @@ const PACKAGES_SORT_OPTIONS: { value: SavedPackagesSortMode; label: string }[] =
   { value: "price_desc", label: "ราคาสูง → ต่ำ" },
 ];
 
+const DESIGNERS_SORT_OPTIONS: { value: SavedDesignersSortMode; label: string }[] = [
+  { value: "newest", label: "บันทึกล่าสุด" },
+  { value: "oldest", label: "บันทึกเก่าสุด" },
+  { value: "active", label: "ออนไลน์ล่าสุด" },
+  { value: "projects", label: "ผลงานเยอะสุด" },
+];
+
 const WORKS_SORT_OPTIONS: { value: ProfileWorksSortMode; label: string }[] = [
   { value: "portfolio", label: "ลำดับพอร์ต" },
   { value: "newest", label: "ใหม่สุด" },
@@ -55,8 +64,9 @@ type BaseProps = {
   searchPlaceholder: string;
   query: string;
   onQueryChange: (value: string) => void;
-  density: CollectionGridDensity;
-  onDensityChange: (value: CollectionGridDensity) => void;
+  /** Leave both out to hide the grid density menu (e.g. fixed-layout cards). */
+  density?: CollectionGridDensity;
+  onDensityChange?: (value: CollectionGridDensity) => void;
   resultCount?: number;
   className?: string;
   /** Profile page grid: 1/2 columns on mobile, Small/Medium/Extra large/Details on PC. */
@@ -89,11 +99,18 @@ type PackagesSortProps = BaseProps & {
   onSortModeChange: (value: SavedPackagesSortMode) => void;
 };
 
+type DesignersSortProps = BaseProps & {
+  mode: "designers";
+  sortMode: SavedDesignersSortMode;
+  onSortModeChange: (value: SavedDesignersSortMode) => void;
+};
+
 export type CollectionBrowseToolbarProps =
   | CollectionsSortProps
   | ItemsSortProps
   | WorksSortProps
-  | PackagesSortProps;
+  | PackagesSortProps
+  | DesignersSortProps;
 
 /** Same layout as Inspiration: search + grid density menu + sort select. */
 export function CollectionBrowseToolbar(props: CollectionBrowseToolbarProps) {
@@ -116,7 +133,9 @@ export function CollectionBrowseToolbar(props: CollectionBrowseToolbarProps) {
         ? WORKS_SORT_OPTIONS
         : props.mode === "packages"
           ? PACKAGES_SORT_OPTIONS
-          : ITEMS_SORT_OPTIONS;
+          : props.mode === "designers"
+            ? DESIGNERS_SORT_OPTIONS
+            : ITEMS_SORT_OPTIONS;
 
   return (
     <div className={cn("space-y-2", className)}>
@@ -130,11 +149,13 @@ export function CollectionBrowseToolbar(props: CollectionBrowseToolbarProps) {
           />
         </div>
         <div className="flex w-full items-center gap-2 sm:w-auto sm:shrink-0">
-          <InspireViewDensityMenu
-            value={density as InspireGridDensity}
-            onChange={(v) => onDensityChange(v as CollectionGridDensity)}
-            preset={densityPreset}
-          />
+          {density && onDensityChange ? (
+            <InspireViewDensityMenu
+              value={density as InspireGridDensity}
+              onChange={(v) => onDensityChange(v as CollectionGridDensity)}
+              preset={densityPreset}
+            />
+          ) : null}
           <Select
             value={props.sortMode}
             onValueChange={(v) => {
@@ -144,6 +165,8 @@ export function CollectionBrowseToolbar(props: CollectionBrowseToolbarProps) {
                 props.onSortModeChange(v as ProfileWorksSortMode);
               } else if (props.mode === "packages") {
                 props.onSortModeChange(v as SavedPackagesSortMode);
+              } else if (props.mode === "designers") {
+                props.onSortModeChange(v as SavedDesignersSortMode);
               } else {
                 props.onSortModeChange(v as CollectionItemsSortMode);
               }

@@ -1,11 +1,12 @@
 import SavedBookmarkIcon from "@/components/icons/SavedBookmarkIcon";
-import { Box, Briefcase, LayoutGrid, Layers3, Library, Lightbulb, Package, Star, UserRound, type LucideIcon } from "lucide-react";
+import { Box, Briefcase, Heart, LayoutGrid, Layers3, Library, Lightbulb, Package, Star, UserRound, type LucideIcon } from "lucide-react";
 
 /** One icon per profile tab, looked up by the tab's title so the tab row and the big heading always match. */
 const PROFILE_TAB_ICONS: Record<string, LucideIcon> = {
   "my projects": LayoutGrid,
   projects: LayoutGrid,
   collections: Layers3,
+  designers: Heart,
   packages: Package,
   "packages saved": SavedBookmarkIcon,
   catalog: Library,

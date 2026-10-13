@@ -1,5 +1,5 @@
 import BriefcaseIcon from "../icons/BriefcaseIcon";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, ChevronLeft, ChevronRight, Handshake, MapPin } from "lucide-react";
@@ -9,9 +9,13 @@ import VerifiedBadge from "@/components/profile/VerifiedBadge";
 import type { DesignerCardData } from "@/hooks/useDesigners";
 import FollowButton from "@/components/FollowButton";
 import { useFollowState } from "@/hooks/useFollow";
-import { useProjectLike } from "@/hooks/useProjectInteractions";
+import { useAuth } from "@/hooks/useAuth";
+import { useSavedDesignerIds, useToggleSavedDesigner } from "@/hooks/useSavedDesigners";
+import { BRAND_NAME } from "@/lib/brandConfig";
 import { highlight } from "@/lib/highlight";
-import { thumbFeedCoverUrl } from "@/lib/feedProjectCover";
+import { naturalFeedCoverUrl, thumbFeedCoverUrl } from "@/lib/feedProjectCover";
+import { requireAuth } from "@/lib/requireAuth";
+import { cn } from "@/lib/utils";
 import { formatDesignerPresence } from "@/lib/format";
 import {
   imageCrossfadeVariants,
@@ -47,13 +51,14 @@ const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
   const canFlip = projects.length > PREVIEW;
   const safeIndex = Math.min(index, Math.max(0, projects.length - 1));
   const active = projects[safeIndex] ?? featured;
-  const like = useProjectLike(flipped ? active?.id : featured?.id);
+  const { user } = useAuth();
   const { followers } = useFollowState(profileUserId);
+  const { data: savedIds } = useSavedDesignerIds();
+  const toggleSave = useToggleSavedDesigner();
+  const isSelf = user?.id === profileUserId;
+  const isSaved = !!savedIds?.has(profileUserId);
 
-  const totalLikes = useMemo(
-    () => projects.reduce((sum, p) => sum + (p.likes ?? 0), 0),
-    [projects],
-  );
+  const likeCount = data.likeCount ?? projects.reduce((sum, p) => sum + (p.likes ?? 0), 0);
 
   const openGallery = () => {
     setSlideDir(1);
@@ -89,7 +94,9 @@ const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
   const workCount = data.projectCount || projects.length;
   const packageCount = data.packageCount ?? 0;
   const objectCount = data.objectCount ?? 0;
-  const previewSlots = Array.from({ length: PREVIEW }, (_, i) => projects[i] ?? null);
+  // Fewer than 3 works: the ones there are share the row instead of leaving grey placeholder boxes.
+  const previewProjects = projects.slice(0, PREVIEW);
+  const previewFill = previewProjects.length < PREVIEW;
 
   const goto = (id: string) => navigate(`/project/${id}`);
   const profilePath = `/u/${profileUserId}`;
@@ -107,10 +114,32 @@ const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
     ? { duration: 0 }
     : { duration: 0.42, ease: smoothEase };
 
-  const coverOf = (proj: (typeof projects)[number] | undefined) => {
+  const coverOf = (proj: (typeof projects)[number] | undefined, wide = false) => {
     if (!proj) return "";
-    return thumbFeedCoverUrl(proj.cover_url || proj.gallery_urls?.[0] || "");
+    const src = proj.cover_url || proj.gallery_urls?.[0] || "";
+    return wide ? naturalFeedCoverUrl(src) : thumbFeedCoverUrl(src);
   };
+
+  const onToggleSave = () =>
+    requireAuth(user, () =>
+      toggleSave.mutate({ designerId: profileUserId, saved: isSaved, name }),
+    );
+
+  /** Heart = keep this designer in Portfolio → Designers (not a like on one of their works). */
+  const saveHeart = (className: string) =>
+    isSelf ? null : (
+      <motion.div whileTap={{ scale: 0.92 }}>
+        <PlusOneControl
+          active={isSaved}
+          showCount={false}
+          disabled={toggleSave.isPending}
+          ariaLabel={isSaved ? `เอา ${name} ออกจากดีไซเนอร์ที่บันทึก` : `บันทึก ${name} ไว้ใน Portfolio`}
+          title={isSaved ? "บันทึกไว้แล้ว — กดอีกครั้งเพื่อเอาออก" : "บันทึกดีไซเนอร์ไว้ดูทีหลัง"}
+          onClick={onToggleSave}
+          className={className}
+        />
+      </motion.div>
+    );
 
   return (
     <div className="min-w-0 [perspective:1200px]">
@@ -138,15 +167,7 @@ const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
         <div className="flex-1 min-w-0 flex flex-col items-end gap-1.5 pt-0.5">
           <div className="flex items-center gap-1">
             <FollowButton freelancerId={profileUserId} iconOnly tone="muted" />
-            <motion.div whileTap={{ scale: 0.92 }}>
-              <PlusOneControl
-                active={like.isLiked}
-                showCount={false}
-                ariaLabel={like.isLiked ? "เลิกถูกใจ" : "ถูกใจ"}
-                onClick={() => featured && like.toggle()}
-                className="w-9 h-9 justify-center rounded-full glass-panel hover:bg-accent/40 transition"
-              />
-            </motion.div>
+            {saveHeart("w-9 h-9 justify-center rounded-full glass-panel hover:bg-accent/40 transition")}
           </div>
           {presence ? (
             <p
@@ -188,15 +209,22 @@ const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
           {highlight(role, search)}
         </p>
 
-        <p className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-foreground/80">
-          <span>{followers.toLocaleString("th-TH")} Followers</span>
-          <PlusOneControl
-            active={false}
-            count={totalLikes}
-            showCount
-            className="text-xs"
-            ariaLabel="Likes"
-          />
+        {/* Zero counts read as "nobody cares" — a newcomer gets a welcome line instead. */}
+        <p className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-foreground/80 tabular-nums">
+          {followers > 0 ? (
+            <span>
+              {followers.toLocaleString("th-TH")} {followers === 1 ? "Follower" : "Followers"}
+            </span>
+          ) : null}
+          {followers > 0 && likeCount > 0 ? <span aria-hidden>·</span> : null}
+          {likeCount > 0 ? (
+            <span>
+              {likeCount.toLocaleString("th-TH")} {likeCount === 1 ? "Like" : "Likes"}
+            </span>
+          ) : null}
+          {followers === 0 && likeCount === 0 ? (
+            <span className="text-muted-foreground">New on {BRAND_NAME}</span>
+          ) : null}
         </p>
         <div className="mt-2 border-t border-border/60" />
         <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
@@ -206,7 +234,7 @@ const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
             className="group inline-flex items-center gap-0.5 transition-colors hover:text-primary"
             aria-label="Open projects on profile"
           >
-            {workCount.toLocaleString("th-TH")} Projects
+            {workCount.toLocaleString("th-TH")} {workCount === 1 ? "Project" : "Projects"}
             <ArrowRight
               className="h-3 w-3 transition-transform duration-200 group-hover:translate-x-1"
               strokeWidth={2.2}
@@ -222,7 +250,7 @@ const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
                 className="group inline-flex items-center gap-0.5 transition-colors hover:text-primary"
                 aria-label="Open packages on profile"
               >
-                {packageCount.toLocaleString("th-TH")} Packages
+                {packageCount.toLocaleString("th-TH")} {packageCount === 1 ? "Package" : "Packages"}
                 <ArrowRight
                   className="h-3 w-3 transition-transform duration-200 group-hover:translate-x-1"
                   strokeWidth={2.2}
@@ -240,7 +268,7 @@ const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
                 className="group inline-flex items-center gap-0.5 transition-colors hover:text-primary"
                 aria-label="Open objects on profile"
               >
-                {objectCount.toLocaleString("th-TH")} Objects
+                {objectCount.toLocaleString("th-TH")} {objectCount === 1 ? "Object" : "Objects"}
                 <ArrowRight
                   className="h-3 w-3 transition-transform duration-200 group-hover:translate-x-1"
                   strokeWidth={2.2}
@@ -254,18 +282,30 @@ const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
 
       {featured ? (
         <div className="relative">
-          <div className="grid grid-cols-3 gap-2">
-            {previewSlots.map((proj, i) => {
-              if (!proj) {
-                return <div key={`empty-${i}`} className="aspect-[4/3] rounded-none bg-muted/70" />;
-              }
-              const src = coverOf(proj);
+          {previewFill ? (
+            // Invisible 4:3 tile keeps the row as tall as three tiles, so cards in a grid row stay aligned.
+            <div className="grid grid-cols-3 gap-2" aria-hidden>
+              <div className="aspect-[4/3]" />
+            </div>
+          ) : null}
+          <div
+            className={cn(
+              "grid gap-2",
+              previewProjects.length === 1 ? "grid-cols-1" : previewProjects.length === 2 ? "grid-cols-2" : "grid-cols-3",
+              previewFill && "absolute inset-0",
+            )}
+          >
+            {previewProjects.map((proj) => {
+              const src = coverOf(proj, previewFill);
               return (
                 <button
                   key={proj.id}
                   type="button"
                   onClick={() => goto(proj.id)}
-                  className="group relative aspect-[4/3] overflow-hidden rounded-none bg-muted"
+                  className={cn(
+                    "group relative overflow-hidden rounded-none bg-muted",
+                    previewFill ? "h-full" : "aspect-[4/3]",
+                  )}
                   aria-label={`ดูผลงาน: ${proj.title}`}
                   title={proj.title}
                 >
@@ -277,7 +317,7 @@ const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
                       height={270}
                       loading="lazy"
                       decoding="async"
-                      sizes="120px"
+                      sizes={previewFill ? "(min-width: 1280px) 30vw, (min-width: 768px) 45vw, 100vw" : "120px"}
                       variants={imageCrossfadeVariants}
                       initial="initial"
                       animate="animate"
@@ -385,15 +425,7 @@ const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
                 tone="muted"
                 className="bg-background/95 text-foreground"
               />
-              <motion.div whileTap={{ scale: 0.92 }}>
-                <PlusOneControl
-                  active={like.isLiked}
-                  showCount={false}
-                  ariaLabel={like.isLiked ? "เลิกถูกใจ" : "ถูกใจ"}
-                  onClick={() => like.toggle()}
-                  className="h-9 w-9 justify-center rounded-full bg-background/95 text-foreground shadow-sm hover:bg-background"
-                />
-              </motion.div>
+              {saveHeart("h-9 w-9 justify-center rounded-full bg-background/95 text-foreground shadow-sm hover:bg-background")}
             </div>
             <button
               type="button"
