@@ -7,11 +7,8 @@ import UserAvatar from "@/components/UserAvatar";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import {
-  fetchMutualFollowCandidates,
-  type TaggedUserSummary,
-} from "@/lib/communityTaggedUsers";
-import { MAX_PORTFOLIO_COLLAB_USERS } from "@/lib/portfolioCollabInvites";
+import type { TaggedUserSummary } from "@/lib/communityTaggedUsers";
+import { fetchTaggableCollabCandidates, MAX_PORTFOLIO_COLLAB_USERS } from "@/lib/portfolioCollabInvites";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -23,6 +20,8 @@ type Props = {
   pendingUsers?: TaggedUserSummary[];
   /** Said no to this work: shown for the poster's information, cannot be tagged again here. */
   declinedUsers?: TaggedUserSummary[];
+  /** Cancel a tag nobody has answered yet (saved works only). */
+  onCancelPending?: (user: TaggedUserSummary) => void;
 };
 
 function userLabel(u: TaggedUserSummary) {
@@ -38,6 +37,7 @@ export function PortfolioCollabUserPicker({
   acceptedUsers = [],
   pendingUsers = [],
   declinedUsers = [],
+  onCancelPending,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -45,7 +45,7 @@ export function PortfolioCollabUserPicker({
   const { data: candidates = [], isLoading } = useQuery({
     queryKey: ["mutual-follow-candidates", userId],
     enabled: open && !!userId,
-    queryFn: () => fetchMutualFollowCandidates(userId),
+    queryFn: () => fetchTaggableCollabCandidates(userId),
   });
 
   const lockedIds = useMemo(
@@ -135,9 +135,10 @@ export function PortfolioCollabUserPicker({
               )}
               {!isLoading && candidates.length === 0 && (
                 <div className="py-6 px-4 text-center">
-                  <p className="text-sm text-foreground">ยังไม่มีคนที่ติดตามกันทั้งคู่</p>
+                  <p className="text-sm text-foreground">ยังไม่มีคนที่แท็กได้</p>
                   <p className="mt-1 text-xs text-muted-foreground">
                     ติดตามดีไซเนอร์ที่ร่วมงานด้วย เมื่อเขาติดตามกลับ จะแท็กกันในผลงานได้
+                    (คนที่ปิดรับการแท็กจะไม่ขึ้นในรายชื่อ)
                   </p>
                   <Link
                     to="/?mode=designers"
@@ -214,6 +215,17 @@ export function PortfolioCollabUserPicker({
               <Badge variant="outline" className="text-[9px] h-4 px-1 gap-0.5 border-amber-500/40 text-amber-600">
                 <Clock className="w-2.5 h-2.5" /> รอตอบรับ
               </Badge>
+              {onCancelPending ? (
+                <button
+                  type="button"
+                  onClick={() => onCancelPending(u)}
+                  className="-mr-1 p-1 rounded-full hover:bg-destructive/10 hover:text-destructive"
+                  aria-label={`ยกเลิกการแท็ก ${u.display_name}`}
+                  title="ยกเลิกการแท็ก (เขายังไม่ได้ตอบ)"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              ) : null}
             </span>
           ))}
           {declinedUsers.map((u) => (

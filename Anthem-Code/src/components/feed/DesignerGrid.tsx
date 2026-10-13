@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useDesigners, type DesignerCardData } from "@/hooks/useDesigners";
 import { useAuth } from "@/hooks/useAuth";
 import { useFollowedUserIds } from "@/hooks/useFollow";
+import { useFollowedBy } from "@/hooks/useFollowedBy";
 import { useFeedInterestSurvey } from "@/hooks/useFeedInterests";
 import { useAuthDialog } from "@/stores/authDialogStore";
 import DesignerCard from "./DesignerCard";
@@ -114,6 +115,9 @@ const DesignerGrid = ({
     return [...rows].sort((a, b) => scoreSort(b, sort) - scoreSort(a, sort));
   }, [data, search, categories, tools, sort, feedSource, user, followedIds, interests, opportunityFilter]);
 
+  const visibleIds = useMemo(() => filtered.map(designerUserId), [filtered]);
+  const followedBy = useFollowedBy(visibleIds);
+
   const loading = isLoading || (feedSource === "following" && !!user && followingLoading);
   const slow = useSlowLoadFallback(loading);
 
@@ -202,6 +206,7 @@ const DesignerGrid = ({
             onHire={onHire}
             onCollab={onCollab}
             search={search}
+            followedBy={followedBy.get(designerUserId(d))}
           />
         ))}
       </StaggerGrid>

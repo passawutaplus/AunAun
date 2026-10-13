@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import {
   CollectionBrowseToolbar,
   type FollowedDesignersSortMode,
 } from "@/components/collections/CollectionBrowseToolbar";
+import { useAuth } from "@/hooks/useAuth";
 import { useFollowedDesigners, type FollowedDesigner } from "@/hooks/useFollowedDesigners";
 import { fuzzyMatchAll } from "@/lib/fuzzyMatch";
 import { cn } from "@/lib/utils";
@@ -23,6 +24,32 @@ type FollowBackFilter = "all" | "mutual" | "not_back";
 
 const designerUserId = (d: FollowedDesigner) =>
   (d.profile as { user_id?: string }).user_id ?? d.profile.id;
+
+const latestWork = (d: FollowedDesigner) => {
+  const t = Date.parse(d.projects[0]?.created_at ?? "");
+  return Number.isNaN(t) ? 0 : t;
+};
+
+const SEEN_KEY = (userId: string) => `samecor.followedDesigners.seenAt.${userId}`;
+
+/**
+ * When this browser last opened the tab, read once per visit, then moved to now.
+ * Per-browser on purpose: it only decides which works get a "ผลงานใหม่" mark.
+ */
+function useLastSeenAt(userId: string | undefined): number | null {
+  const [seenAt, setSeenAt] = useState<number | null>(null);
+  useEffect(() => {
+    if (!userId) return;
+    try {
+      const prev = Number(localStorage.getItem(SEEN_KEY(userId)));
+      setSeenAt(Number.isFinite(prev) && prev > 0 ? prev : null);
+      localStorage.setItem(SEEN_KEY(userId), String(Date.now()));
+    } catch {
+      setSeenAt(null);
+    }
+  }, [userId]);
+  return seenAt;
+}
 
 const lastActive = (d: FollowedDesigner) => {
   const t = Date.parse((d.profile as { last_active_at?: string | null }).last_active_at ?? "");
@@ -39,21 +66,36 @@ function sortDesigners(list: FollowedDesigner[], mode: FollowedDesignersSortMode
     case "projects":
       return next.sort((a, b) => b.projectCount - a.projectCount);
     case "newest":
-    default:
       return next.sort((a, b) => b.followedAt.localeCompare(a.followedAt));
+    case "latest_work":
+    default:
+      return next.sort((a, b) => latestWork(b) - latestWork(a));
   }
 }
 
 /** Portfolio → Designers: the designers you follow, with who follows you back. */
 export default function PortfolioFollowedDesignersPanel() {
+  const { user } = useAuth();
   const { data: designers = [], isLoading, isError, refetch } = useFollowedDesigners();
+  const seenAt = useLastSeenAt(user?.id);
   const [query, setQuery] = useState("");
-  const [sortMode, setSortMode] = useState<FollowedDesignersSortMode>("newest");
+  const [sortMode, setSortMode] = useState<FollowedDesignersSortMode>("latest_work");
   const [followBack, setFollowBack] = useState<FollowBackFilter>("all");
   const [hire, setHire] = useState<{ id: string; name: string } | null>(null);
   const [collab, setCollab] = useState<{ id: string; name: string } | null>(null);
 
   const mutualCount = useMemo(() => designers.filter((d) => d.followsYou).length, [designers]);
+
+  /** Works posted since the last visit, per designer (counted within the latest few shown on the card). */
+  const newWorks = useMemo(() => {
+    const out = new Map<string, number>();
+    if (!seenAt) return out;
+    for (const d of designers) {
+      const n = d.projects.filter((p) => Date.parse(p.created_at ?? "") > seenAt).length;
+      if (n > 0) out.set(designerUserId(d), n);
+    }
+    return out;
+  }, [designers, seenAt]);
 
   const filtered = useMemo(() => {
     const q = query.trim();
@@ -134,6 +176,12 @@ export default function PortfolioFollowedDesignersPanel() {
             onSortModeChange={setSortMode}
             resultCount={filtered.length}
           />
+          {newWorks.size > 0 ? (
+            <p className="flex items-center gap-2 text-sm text-foreground" aria-live="polite">
+              <span className="h-2 w-2 shrink-0 rounded-full bg-primary" aria-hidden />
+              มีผลงานใหม่จาก {newWorks.size.toLocaleString("th-TH")} คน ตั้งแต่คุณเข้ามาครั้งก่อน
+            </p>
+          ) : null}
           <div role="group" aria-label="กรองตามการติดตามกลับ" className="flex flex-wrap gap-2">
             {followBackChips.map((chip) => {
               const on = followBack === chip.value;
@@ -182,6 +230,7 @@ export default function PortfolioFollowedDesignersPanel() {
                   search={query}
                   onHire={(id, name) => setHire({ id, name })}
                   onCollab={(id, name) => setCollab({ id, name })}
+                  newWorkCount={newWorks.get(designerUserId(d))}
                 />
               ))}
             </div>

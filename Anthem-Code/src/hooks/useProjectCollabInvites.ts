@@ -1,7 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { respondProjectCollabInvite, type ProjectCollabInvite } from "@/lib/portfolioCollabInvites";
+import {
+  fetchCollabTagPermission,
+  respondProjectCollabInvite,
+  saveCollabTagPermission,
+  withdrawProjectCollab,
+  type CollabTagPermission,
+  type ProjectCollabInvite,
+} from "@/lib/portfolioCollabInvites";
 import { toast } from "sonner";
 
 export function useRespondProjectCollabInvite() {
@@ -46,4 +53,45 @@ export function useMyPendingCollabInvite(projectId: string | undefined) {
       return (data as ProjectCollabInvite | null) ?? null;
     },
   });
+}
+
+/** Take your own name off a work (collaborator side). */
+export function useWithdrawProjectCollab() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (projectId: string) => withdrawProjectCollab(projectId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["project"] });
+      qc.invalidateQueries({ queryKey: ["my-collab-invite"] });
+      toast.success("ถอนชื่อแล้ว", { description: "ชื่อคุณจะไม่ขึ้นในผลงานนี้ และเจ้าของผลงานได้รับแจ้งแล้ว" });
+    },
+    onError: () => toast.error("ถอนชื่อไม่สำเร็จ", { description: "ลองใหม่อีกครั้ง" }),
+  });
+}
+
+/** "Who can tag me" setting. */
+export function useCollabTagPermission() {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  const key = ["collab-tag-permission", user?.id];
+  const query = useQuery({
+    queryKey: key,
+    enabled: !!user?.id,
+    queryFn: () => fetchCollabTagPermission(user!.id),
+  });
+  const save = useMutation({
+    mutationFn: (allow: CollabTagPermission) => saveCollabTagPermission(user!.id, allow),
+    onMutate: async (allow) => {
+      const previous = qc.getQueryData<CollabTagPermission>(key);
+      qc.setQueryData(key, allow);
+      return { previous };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.previous) qc.setQueryData(key, ctx.previous);
+      toast.error("บันทึกไม่สำเร็จ");
+    },
+    onSuccess: (_d, allow) =>
+      toast.success(allow === "nobody" ? "ปิดรับการแท็กแล้ว" : "เปิดให้คนที่ติดตามกันทั้งคู่แท็กได้"),
+  });
+  return { permission: query.data ?? "mutual", isLoading: query.isLoading, save };
 }

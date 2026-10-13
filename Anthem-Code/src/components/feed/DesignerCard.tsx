@@ -8,6 +8,7 @@ import UserAvatar from "@/components/UserAvatar";
 import VerifiedBadge from "@/components/profile/VerifiedBadge";
 import type { DesignerCardData } from "@/hooks/useDesigners";
 import { useFollowState, useFollowsYou } from "@/hooks/useFollow";
+import type { FollowedByPerson } from "@/hooks/useFollowedBy";
 import { BRAND_NAME } from "@/lib/brandConfig";
 import { highlight } from "@/lib/highlight";
 import { naturalFeedCoverUrl, thumbFeedCoverUrl } from "@/lib/feedProjectCover";
@@ -27,14 +28,20 @@ interface Props {
   onHire: (recipientId: string, recipientName: string) => void;
   onCollab: (recipientId: string, recipientName: string) => void;
   search?: string;
+  /** People you follow who also follow this designer ("ติดตามโดย …"). */
+  followedBy?: FollowedByPerson[];
+  /** Works posted since you last looked (Portfolio → Designers). */
+  newWorkCount?: number;
 }
 
 const PREVIEW = 3;
+/** Cards carry the latest 6 works, so "new" counts stop there. */
+const PREVIEW_MAX = 6;
 
 const arrowButtonClass =
   "absolute top-1/2 z-20 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-background/95 text-foreground shadow-sm ring-1 ring-border/70 hover:bg-background";
 
-const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
+const DesignerCard = ({ data, onHire, onCollab, search = "", followedBy = [], newWorkCount = 0 }: Props) => {
   const navigate = useNavigate();
   const { profile, projects } = data;
   const profileUserId =
@@ -113,16 +120,16 @@ const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
   };
 
   return (
-    <div className="min-w-0 [perspective:1200px]">
+    <div className="h-full min-w-0 [perspective:1200px]">
       <motion.div
-        className="relative"
+        className="relative h-full"
         animate={{ rotateY: flipped ? 180 : 0 }}
         transition={flipTransition}
         style={{ transformStyle: "preserve-3d" }}
       >
     <article
       inert={flipped ? "" : undefined}
-      className="relative overflow-hidden rounded-none glass-panel p-4 flex flex-col gap-3.5 min-w-0 !shadow-none [backface-visibility:hidden]"
+      className="relative h-full overflow-hidden rounded-none glass-panel p-4 flex flex-col gap-3.5 min-w-0 !shadow-none [backface-visibility:hidden]"
     >
       <div className="flex items-start gap-3">
         <div className="shrink-0">
@@ -144,17 +151,27 @@ const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
             announceName={name}
             className="h-9 px-4 text-xs"
           />
+          {newWorkCount > 0 ? (
+            <p className="inline-flex items-center gap-1.5 rounded-full bg-primary px-2.5 py-0.5 text-[11px] font-medium text-primary-foreground">
+              ผลงานใหม่ {newWorkCount >= PREVIEW_MAX ? `${PREVIEW_MAX}+` : newWorkCount.toLocaleString("th-TH")}
+            </p>
+          ) : null}
           {presence ? (
             <p
-              className="inline-flex max-w-full items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-foreground/70"
+              className={cn(
+                "inline-flex max-w-full items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]",
+                presence.live ? "text-foreground/80" : "text-muted-foreground",
+              )}
               aria-label={presence.live ? "ออนไลน์อยู่ตอนนี้" : presence.label}
             >
+              {/* Only someone online right now glows; "active 6 days ago" is a quiet grey dot. */}
               <span
-                className={`h-2 w-2 rounded-full shrink-0 ${
+                className={cn(
+                  "h-2 w-2 rounded-full shrink-0",
                   presence.live
                     ? "bg-emerald-500 shadow-[0_0_7px_2px_rgba(16,185,129,0.65)]"
-                    : "bg-sky-500 shadow-[0_0_7px_2px_rgba(14,165,233,0.55)]"
-                }`}
+                    : "bg-muted-foreground/40",
+                )}
                 aria-hidden
               />
               <span className="truncate">{presence.label}</span>
@@ -206,6 +223,28 @@ const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
             <span className="text-muted-foreground">New on {BRAND_NAME}</span>
           ) : null}
         </p>
+        {followedBy.length > 0 ? (
+          <p
+            className="mt-1.5 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground"
+            title={followedBy.map((p) => p.name).join(", ")}
+          >
+            <span className="flex shrink-0 -space-x-1.5" aria-hidden>
+              {followedBy.slice(0, 3).map((p) => (
+                <UserAvatar
+                  key={p.id}
+                  src={p.avatar}
+                  name={p.name}
+                  className="h-5 w-5 ring-2 ring-background"
+                  fallbackClassName="text-[8px]"
+                />
+              ))}
+            </span>
+            <span className="min-w-0 truncate">
+              ติดตามโดย <span className="text-foreground/80">{followedBy[0].name}</span>
+              {followedBy.length > 1 ? ` และอีก ${followedBy.length - 1} คน` : ""}
+            </span>
+          </p>
+        ) : null}
         <div className="mt-2 border-t border-border/60" />
         <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
           <button
@@ -260,6 +299,8 @@ const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
         </div>
       </div>
 
+      {/* Works + actions sit at the bottom, so extra lines above never misalign cards in a row. */}
+      <div className="mt-auto flex flex-col gap-3.5">
       {featured ? (
         <div className="relative">
           {previewFill ? (
@@ -326,7 +367,7 @@ const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
         </div>
       ) : null}
 
-      <div className="grid grid-cols-2 gap-2 mt-auto">
+      <div className="grid grid-cols-2 gap-2">
         <button
           type="button"
           onClick={() => onHire(profileUserId, name)}
@@ -343,6 +384,7 @@ const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
           <Handshake className="w-3.5 h-3.5 shrink-0" />
           <span className="truncate">สนใจคอลแลป</span>
         </button>
+      </div>
       </div>
     </article>
 

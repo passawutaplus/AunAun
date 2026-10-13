@@ -390,6 +390,9 @@ const ProjectDetailPage = () => {
               (ownerProfile as { username?: string | null } | null | undefined)?.username ||
               "เจ้าของผลงาน"
             }
+            isCollaborator={(
+              (dbProject as { collab_user_ids?: string[] | null }).collab_user_ids ?? []
+            ).includes(user.id)}
           />
         ) : null}
         {sponsorAd && sponsorAdId ? (

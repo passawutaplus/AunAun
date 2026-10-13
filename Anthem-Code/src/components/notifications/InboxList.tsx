@@ -49,11 +49,11 @@ function isPendingCollabInvite(n: Notification): boolean {
   return md.status === "pending" && typeof md.invite_id === "string";
 }
 
-/** "accepted" / "declined" once the tagged person answered (the database updates the row). */
-function collabInviteAnswer(n: Notification): "accepted" | "declined" | null {
+/** How a tag ended once answered (the database updates the row): accepted, declined, or cancelled by the poster. */
+function collabInviteAnswer(n: Notification): "accepted" | "declined" | "cancelled" | null {
   if (n.kind !== "project_collab_invite") return null;
   const status = (n.metadata ?? {}).status;
-  return status === "accepted" || status === "declined" ? status : null;
+  return status === "accepted" || status === "declined" || status === "cancelled" ? status : null;
 }
 
 interface Props {
@@ -235,9 +235,13 @@ const InboxList = ({ items, loading, onOpen, onDismiss, onBeforeNavigate, englis
                   ? english
                     ? "Accepted — your name is on this work"
                     : "ยอมรับแล้ว — ชื่อคุณขึ้นในผลงานนี้"
-                  : english
-                    ? "Declined — your name is not on this work"
-                    : "ปฏิเสธแล้ว — ผลงานนี้จะไม่มีชื่อคุณ"}
+                  : inviteAnswer === "cancelled"
+                    ? english
+                      ? "The poster cancelled this tag"
+                      : "เจ้าของผลงานยกเลิกการแท็กนี้แล้ว"
+                    : english
+                      ? "Declined — your name is not on this work"
+                      : "ปฏิเสธแล้ว — ผลงานนี้จะไม่มีชื่อคุณ"}
               </p>
             ) : null}
           </div>

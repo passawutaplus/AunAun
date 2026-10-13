@@ -1,16 +1,70 @@
 import { Handshake } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useMyPendingCollabInvite, useRespondProjectCollabInvite } from "@/hooks/useProjectCollabInvites";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  useMyPendingCollabInvite,
+  useRespondProjectCollabInvite,
+  useWithdrawProjectCollab,
+} from "@/hooks/useProjectCollabInvites";
 
 type Props = {
   projectId: string;
   ownerName: string;
+  /** Signed-in user is already credited on this work. */
+  isCollaborator: boolean;
 };
 
-/** Shown to someone tagged on this work who has not answered yet. */
-export default function ProjectCollabInviteBanner({ projectId, ownerName }: Props) {
-  const { data: invite } = useMyPendingCollabInvite(projectId);
+/**
+ * For someone tagged on this work: accept / decline while it is pending,
+ * and a way to take their name off later.
+ */
+export default function ProjectCollabInviteBanner({ projectId, ownerName, isCollaborator }: Props) {
+  const { data: invite } = useMyPendingCollabInvite(isCollaborator ? undefined : projectId);
   const respond = useRespondProjectCollabInvite();
+  const withdraw = useWithdrawProjectCollab();
+
+  if (isCollaborator) {
+    return (
+      <div className="mb-4 flex flex-col gap-2 rounded-xl border border-border/70 bg-muted/30 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="flex items-center gap-2 text-sm text-foreground">
+          <Handshake className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+          คุณเป็นผู้ร่วมงานในผลงานนี้ของ {ownerName}
+        </p>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button type="button" size="sm" variant="ghost" className="h-9 self-start rounded-full text-muted-foreground sm:self-auto">
+              ถอนชื่อ
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>ถอนชื่อออกจากผลงานนี้?</AlertDialogTitle>
+              <AlertDialogDescription>
+                ชื่อคุณจะไม่ขึ้นในผลงานนี้อีก และ {ownerName} จะได้รับแจ้ง เจ้าของผลงานแท็กคุณซ้ำในผลงานนี้ไม่ได้
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+              <AlertDialogAction disabled={withdraw.isPending} onClick={() => withdraw.mutate(projectId)}>
+                ถอนชื่อ
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    );
+  }
+
   if (!invite) return null;
 
   return (
@@ -24,7 +78,7 @@ export default function ProjectCollabInviteBanner({ projectId, ownerName }: Prop
         <div>
           <p className="text-sm font-medium text-foreground">{ownerName} แท็กคุณเป็นผู้ร่วมงานในผลงานนี้</p>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            กดยอมรับแล้วชื่อคุณจะขึ้นในผลงาน ถ้าปฏิเสธ ผลงานยังเผยแพร่ตามปกติแต่จะไม่มีชื่อคุณ
+            กดยอมรับแล้วชื่อคุณจะขึ้นในผลงาน (ถอนชื่อทีหลังได้) ถ้าปฏิเสธ ผลงานยังเผยแพร่ตามปกติแต่จะไม่มีชื่อคุณ
           </p>
         </div>
       </div>

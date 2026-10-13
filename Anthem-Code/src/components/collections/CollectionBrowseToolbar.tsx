@@ -20,7 +20,7 @@ export type CollectionItemsSortMode = "manual" | "newest" | "oldest" | "likes" |
 /** Sort options on saved packages. */
 export type SavedPackagesSortMode = "newest" | "oldest" | "price_asc" | "price_desc";
 /** Sort options on followed designers (Portfolio → Designers). */
-export type FollowedDesignersSortMode = "newest" | "oldest" | "active" | "projects";
+export type FollowedDesignersSortMode = "latest_work" | "newest" | "oldest" | "active" | "projects";
 /** Sort options on the owner's own works: the same plus the portfolio order visitors see. */
 export type ProfileWorksSortMode = "portfolio" | Exclude<CollectionItemsSortMode, "manual">;
 
@@ -46,6 +46,7 @@ const PACKAGES_SORT_OPTIONS: { value: SavedPackagesSortMode; label: string }[] =
 ];
 
 const DESIGNERS_SORT_OPTIONS: { value: FollowedDesignersSortMode; label: string }[] = [
+  { value: "latest_work", label: "ผลงานล่าสุด" },
   { value: "newest", label: "ติดตามล่าสุด" },
   { value: "oldest", label: "ติดตามเก่าสุด" },
   { value: "active", label: "ออนไลน์ล่าสุด" },
