@@ -7,7 +7,6 @@ import { InlineLoader } from "@/components/ui/BanterLoader";
 import UserAvatar from "@/components/UserAvatar";
 import FollowButton from "@/components/FollowButton";
 import { Button } from "@/components/ui/button";
-import { CHAT_CARD_DECLINE_LABEL } from "@/components/chat/ChatCardShell";
 import { useRespondProjectCollabInvite } from "@/hooks/useProjectCollabInvites";
 import { useProfilesByIds } from "@/core/profiles";
 import { useMemo } from "react";
@@ -48,6 +47,13 @@ function isPendingCollabInvite(n: Notification): boolean {
   if (n.kind !== "project_collab_invite") return false;
   const md = n.metadata ?? {};
   return md.status === "pending" && typeof md.invite_id === "string";
+}
+
+/** "accepted" / "declined" once the tagged person answered (the database updates the row). */
+function collabInviteAnswer(n: Notification): "accepted" | "declined" | null {
+  if (n.kind !== "project_collab_invite") return null;
+  const status = (n.metadata ?? {}).status;
+  return status === "accepted" || status === "declined" ? status : null;
 }
 
 interface Props {
@@ -126,6 +132,8 @@ const InboxList = ({ items, loading, onOpen, onDismiss, onBeforeNavigate, englis
         const isFollow = n.kind.includes("follow");
         const collabInvite = isPendingCollabInvite(n);
         const inviteId = collabInvite ? extractCollabInviteId(n) : null;
+        const inviteAnswer = collabInviteAnswer(n);
+        const answering = respondCollab.isPending && respondCollab.variables?.inviteId === inviteId;
         const followerId = isFollow ? extractFollowerId(n) : null;
         const followerProfile = followerId ? profileMap[followerId] : undefined;
         const followerName = followerProfile?.display_name || followerProfile?.username || n.title;
@@ -197,17 +205,15 @@ const InboxList = ({ items, loading, onOpen, onDismiss, onBeforeNavigate, englis
                 {english ? "Hide" : "ซ่อน"}
               </button>
             </div>
+            {/* Stays until the answer is saved, so a failed request can be retried. */}
             {collabInvite && inviteId && (
               <div className="flex gap-2 pl-[52px]">
                 <Button
                   type="button"
                   size="sm"
-                  className="h-7 rounded-full text-xs"
-                  disabled={respondCollab.isPending}
-                  onClick={() => {
-                    respondCollab.mutate({ inviteId, accept: true });
-                    onDismiss(n.id);
-                  }}
+                  className="h-8 rounded-full text-xs"
+                  disabled={answering}
+                  onClick={() => respondCollab.mutate({ inviteId, accept: true })}
                 >
                   {english ? "Accept" : "ยอมรับ"}
                 </Button>
@@ -215,17 +221,25 @@ const InboxList = ({ items, loading, onOpen, onDismiss, onBeforeNavigate, englis
                   type="button"
                   size="sm"
                   variant="outline"
-                  className="h-7 rounded-full text-xs"
-                  disabled={respondCollab.isPending}
-                  onClick={() => {
-                    respondCollab.mutate({ inviteId, accept: false });
-                    onDismiss(n.id);
-                  }}
+                  className="h-8 rounded-full text-xs"
+                  disabled={answering}
+                  onClick={() => respondCollab.mutate({ inviteId, accept: false })}
                 >
-                  {english ? "Decline" : CHAT_CARD_DECLINE_LABEL}
+                  {english ? "Decline" : "ปฏิเสธ"}
                 </Button>
               </div>
             )}
+            {inviteAnswer ? (
+              <p className="pl-[52px] text-xs text-muted-foreground">
+                {inviteAnswer === "accepted"
+                  ? english
+                    ? "Accepted — your name is on this work"
+                    : "ยอมรับแล้ว — ชื่อคุณขึ้นในผลงานนี้"
+                  : english
+                    ? "Declined — your name is not on this work"
+                    : "ปฏิเสธแล้ว — ผลงานนี้จะไม่มีชื่อคุณ"}
+              </p>
+            ) : null}
           </div>
         );
           })}

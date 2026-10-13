@@ -1,20 +1,16 @@
 import BriefcaseIcon from "../icons/BriefcaseIcon";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, ChevronLeft, ChevronRight, Handshake, MapPin } from "lucide-react";
-import { PlusOneControl } from "@/components/brand/PlusOneControl";
+import FollowButton from "@/components/FollowButton";
 import UserAvatar from "@/components/UserAvatar";
 import VerifiedBadge from "@/components/profile/VerifiedBadge";
 import type { DesignerCardData } from "@/hooks/useDesigners";
-import { useFollowState } from "@/hooks/useFollow";
-import { useAuth } from "@/hooks/useAuth";
-import { FOLLOWED_DESIGNERS_PATH } from "@/hooks/useFollowedDesigners";
+import { useFollowState, useFollowsYou } from "@/hooks/useFollow";
 import { BRAND_NAME } from "@/lib/brandConfig";
 import { highlight } from "@/lib/highlight";
 import { naturalFeedCoverUrl, thumbFeedCoverUrl } from "@/lib/feedProjectCover";
-import { requireAuth } from "@/lib/requireAuth";
 import { cn } from "@/lib/utils";
 import { formatDesignerPresence } from "@/lib/format";
 import {
@@ -51,9 +47,8 @@ const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
   const canFlip = projects.length > PREVIEW;
   const safeIndex = Math.min(index, Math.max(0, projects.length - 1));
   const active = projects[safeIndex] ?? featured;
-  const { user } = useAuth();
-  const { followers, isFollowing, isSelf, toggle: toggleFollow, isPending: followPending } =
-    useFollowState(profileUserId);
+  const { followers } = useFollowState(profileUserId);
+  const followsYou = useFollowsYou(profileUserId);
 
   const likeCount = data.likeCount ?? projects.reduce((sum, p) => sum + (p.likes ?? 0), 0);
 
@@ -117,39 +112,6 @@ const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
     return wide ? naturalFeedCoverUrl(src) : thumbFeedCoverUrl(src);
   };
 
-  const onToggleFollow = () =>
-    requireAuth(user, () =>
-      toggleFollow(undefined, {
-        onSuccess: (result) => {
-          if (result.followed) {
-            toast.success(`ติดตาม ${name} แล้ว`, {
-              description: `${name} จะได้รับแจ้งเตือน · ดูรวมได้ที่ Portfolio → Designers`,
-              action: { label: "ดูทั้งหมด", onClick: () => navigate(FOLLOWED_DESIGNERS_PATH) },
-            });
-          } else {
-            toast.success(`เลิกติดตาม ${name} แล้ว`);
-          }
-        },
-        onError: () => toast.error("ทำรายการไม่สำเร็จ", { description: "ลองใหม่อีกครั้ง" }),
-      }),
-    );
-
-  /** Heart = Follow: the designer is notified, and lands in Portfolio → Designers. */
-  const followHeart = (className: string) =>
-    isSelf ? null : (
-      <motion.div whileTap={{ scale: 0.92 }}>
-        <PlusOneControl
-          active={isFollowing}
-          showCount={false}
-          disabled={followPending}
-          ariaLabel={isFollowing ? `เลิกติดตาม ${name}` : `ติดตาม ${name}`}
-          title={isFollowing ? "กำลังติดตาม — กดอีกครั้งเพื่อเลิกติดตาม" : "ติดตาม (เก็บไว้ใน Portfolio → Designers)"}
-          onClick={onToggleFollow}
-          className={className}
-        />
-      </motion.div>
-    );
-
   return (
     <div className="min-w-0 [perspective:1200px]">
       <motion.div
@@ -174,9 +136,14 @@ const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
         </div>
 
         <div className="flex-1 min-w-0 flex flex-col items-end gap-1.5 pt-0.5">
-          <div className="flex items-center gap-1">
-            {followHeart("w-9 h-9 justify-center rounded-full glass-panel hover:bg-accent/40 transition")}
-          </div>
+          <FollowButton
+            freelancerId={profileUserId}
+            size="sm"
+            showFollowerCount={false}
+            showFollowingLabel
+            announceName={name}
+            className="h-9 px-4 text-xs"
+          />
           {presence ? (
             <p
               className="inline-flex max-w-full items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-foreground/70"
@@ -212,6 +179,11 @@ const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
             {highlight(name, search)}
           </button>
           <VerifiedBadge verified={!!(profile as { is_verified?: boolean }).is_verified} />
+          {followsYou ? (
+            <span className="ml-0.5 shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium tracking-normal text-muted-foreground">
+              ติดตามคุณ
+            </span>
+          ) : null}
         </h3>
         <p className="mt-0.5 text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground truncate">
           {highlight(role, search)}
@@ -427,7 +399,13 @@ const DesignerCard = ({ data, onHire, onCollab, search = "" }: Props) => {
               <VerifiedBadge verified={!!(profile as { is_verified?: boolean }).is_verified} />
             </div>
             <div className="absolute right-3 top-3 z-20 flex items-center gap-1">
-              {followHeart("h-9 w-9 justify-center rounded-full bg-background/95 text-foreground shadow-sm hover:bg-background")}
+              <FollowButton
+                freelancerId={profileUserId}
+                iconOnly
+                tone="muted"
+                announceName={name}
+                className="bg-background/95 text-foreground"
+              />
             </div>
             <button
               type="button"

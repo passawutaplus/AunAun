@@ -10,14 +10,18 @@ import {
 import { profilesPublicFrom } from "@/lib/profileAccess";
 import { isOptionalQueryError, isSchemaMismatchError } from "@/lib/supabaseErrors";
 
-/** Cards for Portfolio → Designers (the ♡ on a designer card is Follow). */
+/** Cards for Portfolio → Designers (everyone you follow). */
 export const FOLLOWED_DESIGNERS_KEY = "followed-designers";
 export const FOLLOWED_DESIGNERS_PATH = "/portfolio?tab=designers";
 
 /** Plenty for one person's follow list; loaded in feed-sized chunks. */
 const FOLLOWED_DESIGNERS_MAX = 240;
 
-export type FollowedDesigner = DesignerCardData & { followedAt: string };
+export type FollowedDesigner = DesignerCardData & {
+  followedAt: string;
+  /** They follow the signed-in user too (mutual follows can tag each other on works). */
+  followsYou: boolean;
+};
 
 const designerUserId = (d: DesignerCardData) =>
   (d.profile as { user_id?: string }).user_id ?? d.profile.id;
@@ -57,16 +61,32 @@ export const useFollowedDesigners = () => {
       const chunks: string[][] = [];
       for (let i = 0; i < ids.length; i += DESIGNERS_PAGE) chunks.push(ids.slice(i, i + DESIGNERS_PAGE));
 
-      const cards = (
-        await Promise.all(
+      const [cardChunks, backChunks] = await Promise.all([
+        Promise.all(
           chunks.map(async (chunk) =>
             buildDesignerCards(await fetchDesignerProfiles(chunk), { keepWithoutWorks: true }),
           ),
-        )
-      ).flat();
+        ),
+        Promise.all(
+          chunks.map(async (chunk) => {
+            const { data: back } = await supabase
+              .from("follows")
+              .select("follower_id")
+              .eq("following_id", user!.id)
+              .in("follower_id", chunk);
+            return (back ?? []).map((r) => r.follower_id);
+          }),
+        ),
+      ]);
+      const followsBack = new Set(backChunks.flat());
 
-      return cards
-        .map((card) => ({ ...card, followedAt: followedAt.get(designerUserId(card)) ?? "" }))
+      return cardChunks
+        .flat()
+        .map((card) => ({
+          ...card,
+          followedAt: followedAt.get(designerUserId(card)) ?? "",
+          followsYou: followsBack.has(designerUserId(card)),
+        }))
         .sort((a, b) => b.followedAt.localeCompare(a.followedAt));
     },
   });

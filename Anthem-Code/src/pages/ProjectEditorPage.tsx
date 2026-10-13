@@ -427,6 +427,7 @@ const ProjectEditorPage = () => {
   const [collabSelected, setCollabSelected] = useState<TaggedUserSummary[]>([]);
   const [collabAccepted, setCollabAccepted] = useState<TaggedUserSummary[]>([]);
   const [collabPending, setCollabPending] = useState<TaggedUserSummary[]>([]);
+  const [collabDeclined, setCollabDeclined] = useState<TaggedUserSummary[]>([]);
   const collabRequestHydratedRef = useRef<string | null>(null);
   const collabConversationHydratedRef = useRef<string | null>(null);
   const [projectContext, setProjectContext] = useState<ProjectContextForm>({
@@ -858,6 +859,12 @@ const ProjectEditorPage = () => {
             if (pendingIds.length) {
               setCollabPending(await fetchTaggedUserSummaries(pendingIds));
             }
+            const declinedIds = invites
+              .filter((i: ProjectCollabInvite) => i.status === "declined")
+              .map((i) => i.invited_user_id);
+            if (declinedIds.length) {
+              setCollabDeclined(await fetchTaggedUserSummaries(declinedIds));
+            }
           }
         } catch {
           /* migration may be pending */
@@ -980,13 +987,6 @@ const ProjectEditorPage = () => {
         const ownIds = await resolveLinkedPostIds(user.id, linkedOwnPosts.map((p) => p.id));
         await syncProjectMentionsOnPosts(projectId, ownIds, user.id);
 
-        const { data: prof } = await supabase
-          .from("profiles")
-          .select("display_name, username")
-          .eq("user_id", user.id)
-          .maybeSingle();
-        const ownerName = prof?.display_name ?? prof?.username ?? "ผู้ใช้";
-
         const desiredIds = [
           ...collabSelected,
           ...collabPending,
@@ -996,8 +996,6 @@ const ProjectEditorPage = () => {
         await syncProjectCollabInvites({
           projectId,
           ownerId: user.id,
-          ownerName,
-          projectTitle: title.trim() || "ผลงาน",
           desiredUserIds: desiredIds,
           acceptedUserIds: collabAccepted.map((u) => u.user_id),
         });
@@ -1025,7 +1023,7 @@ const ProjectEditorPage = () => {
         }
       }
     },
-    [user, linkedOwnPosts, collabSelected, collabPending, collabAccepted, title, seriesId, queryClient],
+    [user, linkedOwnPosts, collabSelected, collabPending, collabAccepted, seriesId, queryClient],
   );
 
   const draftStatusForSave = useCallback((): Status => {
@@ -3033,6 +3031,7 @@ const ProjectEditorPage = () => {
                 onChange={setCollabSelected}
                 acceptedUsers={collabAccepted}
                 pendingUsers={collabPending}
+                declinedUsers={collabDeclined}
               />
             )}
     </>

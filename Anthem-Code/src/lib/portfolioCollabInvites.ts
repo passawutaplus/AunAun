@@ -1,5 +1,4 @@
 import { supabase } from "@/integrations/supabase/client";
-import { notifyCommunityEvent } from "@/lib/communityNotify";
 import {
   fetchMutualFollowCandidates,
   type TaggedUserSummary,
@@ -54,11 +53,14 @@ export async function resolveCollabUserIds(
   return valid;
 }
 
+/**
+ * Create invites for newly tagged people. The database tells them (only once the work is
+ * Published) and tells the poster when they accept or decline. A decline is final for that
+ * work, so the poster cannot re-tag the same person over and over.
+ */
 export async function syncProjectCollabInvites(input: {
   projectId: string;
   ownerId: string;
-  ownerName: string;
-  projectTitle: string;
   desiredUserIds: string[];
   acceptedUserIds: string[];
 }): Promise<void> {
@@ -79,61 +81,19 @@ export async function syncProjectCollabInvites(input: {
   if (!target.length) return;
 
   const existing = await fetchProjectCollabInvites(input.projectId);
-  const existingByUser = new Map(existing.map((i) => [i.invited_user_id, i]));
-
-  const toInvite = target.filter((id) => {
-    const row = existingByUser.get(id);
-    return !row || row.status === "declined";
-  });
-
+  const invitedAlready = new Set(existing.map((i) => i.invited_user_id));
+  const toInvite = target.filter((id) => !invitedAlready.has(id));
   if (!toInvite.length) return;
 
-  const inserted: { id: string; invited_user_id: string }[] = [];
-
-  for (const invited_user_id of toInvite) {
-    const prev = existingByUser.get(invited_user_id);
-    if (prev?.status === "declined") {
-      const { data, error: uErr } = await supabase
-        .from("project_collab_invites")
-        .update({ status: "pending", responded_at: null })
-        .eq("id", prev.id)
-        .select("id, invited_user_id")
-        .single();
-      if (uErr) throw uErr;
-      if (data) inserted.push(data);
-      continue;
-    }
-    const { data, error: iErr } = await supabase
-      .from("project_collab_invites")
-      .insert({
-        project_id: input.projectId,
-        invited_user_id,
-        invited_by: input.ownerId,
-        status: "pending",
-      })
-      .select("id, invited_user_id")
-      .single();
-    if (iErr) throw iErr;
-    if (data) inserted.push(data);
-  }
-
-  const link = `/portfolio/${input.projectId}`;
-  await Promise.all(
-    (inserted ?? []).map((inv) =>
-      notifyCommunityEvent({
-        recipientId: inv.invited_user_id,
-        kind: "project_collab_invite",
-        title: "เชิญร่วมงานในผลงาน",
-        body: `${input.ownerName} แท็กคุณในผลงาน "${input.projectTitle}"`,
-        link,
-        metadata: {
-          invite_id: inv.id,
-          project_id: input.projectId,
-          status: "pending",
-        },
-      }),
-    ),
+  const { error } = await supabase.from("project_collab_invites").insert(
+    toInvite.map((invited_user_id) => ({
+      project_id: input.projectId,
+      invited_user_id,
+      invited_by: input.ownerId,
+      status: "pending",
+    })),
   );
+  if (error) throw error;
 }
 
 export async function respondProjectCollabInvite(inviteId: string, accept: boolean): Promise<void> {
