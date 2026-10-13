@@ -239,7 +239,7 @@ const DesktopTopNav = () => {
         isLearn
           ? "border-b border-[#e4e1db] bg-[#f5f5f5] text-[#2f2e2c] shadow-none"
           : isHome
-            ? "border-0 bg-transparent text-[#2f2e2c] shadow-none"
+            ? "border-0 bg-transparent text-foreground shadow-none"
             : glass
               ? DESKTOP_TOP_NAV_GLASS
               : "border-0 bg-transparent shadow-none",
@@ -255,7 +255,7 @@ const DesktopTopNav = () => {
           className="shrink-0 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring"
           aria-label={`${BRAND_NAME} หน้าแรก`}
         >
-          <BrandLogo size="sm" tone={isHome || isLearn ? "ink" : "brand"} />
+          <BrandLogo size="sm" tone={isLearn ? "ink" : isHome ? "theme" : "brand"} />
         </button>
 
         {!isHome && !isGuestHome ? mainNav : null}
@@ -264,7 +264,7 @@ const DesktopTopNav = () => {
           {isHome ? (
             <NavLink
               to="/learn"
-              className="text-[13px] font-medium text-[#2f2e2c] transition-opacity hover:opacity-70"
+              className="text-[13px] font-medium text-foreground transition-opacity hover:opacity-70"
             >
               Get in Touch
             </NavLink>
@@ -331,9 +331,11 @@ const DesktopTopNav = () => {
               size="sm"
               onClick={() => navigate("/auth")}
               className={
-                isHome || isLearn
+                isLearn
                   ? "h-8 rounded-sm bg-[#2f2e2c] px-3 text-[13px] font-normal text-[#f5f5f5] hover:bg-[#2f2e2c]/90"
-                  : "h-8 rounded-full bg-foreground px-4 text-[13px] font-normal text-background hover:bg-foreground/90"
+                  : isHome
+                    ? "h-8 rounded-sm bg-foreground px-3 text-[13px] font-normal text-background hover:bg-foreground/90"
+                    : "h-8 rounded-full bg-foreground px-4 text-[13px] font-normal text-background hover:bg-foreground/90"
               }
             >
               เข้าสู่ระบบ

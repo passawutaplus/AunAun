@@ -4,8 +4,8 @@ import { BRAND_MARK, BRAND_NAME } from "@/lib/brandConfig";
 type Props = {
   showWordmark?: boolean;
   size?: "sm" | "md";
-  /** Ink on paper, or paper on the dark homepage field. Brand keeps the orange tile. */
-  tone?: "brand" | "ink" | "paper";
+  /** Ink on paper, or paper on a dark field. "theme" is ink in light mode and paper in dark. Brand keeps the orange tile. */
+  tone?: "brand" | "ink" | "paper" | "theme";
   className?: string;
 };
 
@@ -21,7 +21,13 @@ export function BrandLogo({ showWordmark = true, size = "md", tone = "brand", cl
       <div
         className={cn(
           box,
-          tone === "paper" ? "bg-[#f5f5f5] text-[#2f2e2c]" : tone === "ink" ? "bg-[#2f2e2c] text-white" : "bg-gradient-brand text-white",
+          tone === "paper"
+            ? "bg-[#f5f5f5] text-[#2f2e2c]"
+            : tone === "ink"
+              ? "bg-[#2f2e2c] text-white"
+              : tone === "theme"
+                ? "bg-foreground text-white dark:text-background"
+                : "bg-gradient-brand text-white",
           "flex items-center justify-center font-medium leading-none",
           tone === "brand" && "shadow-sm",
         )}
