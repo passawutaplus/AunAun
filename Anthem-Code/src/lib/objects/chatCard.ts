@@ -5,6 +5,9 @@ export type ObjectChatCard = {
   title: string;
   price_thb: number;
   cover_url: string | null;
+  /** Reserve via chat: what the buyer picked. */
+  option?: string;
+  qty?: number;
 };
 
 export function formatObjectChatCard(card: ObjectChatCard): string {
@@ -13,6 +16,8 @@ export function formatObjectChatCard(card: ObjectChatCard): string {
     title: card.title,
     price_thb: Math.max(0, Math.round(card.price_thb)),
     cover_url: card.cover_url,
+    ...(card.option ? { option: card.option.slice(0, 60) } : {}),
+    ...(card.qty && card.qty > 1 ? { qty: Math.min(20, Math.round(card.qty)) } : {}),
   })}`;
 }
 
@@ -29,6 +34,8 @@ export function parseObjectChatCard(content: string | null | undefined): ObjectC
       title,
       price_thb: Math.max(0, Math.round(Number(parsed.price_thb) || 0)),
       cover_url: parsed.cover_url ? String(parsed.cover_url) : null,
+      option: parsed.option ? String(parsed.option).slice(0, 60) : undefined,
+      qty: Number(parsed.qty) > 1 ? Math.min(20, Math.round(Number(parsed.qty))) : undefined,
     };
   } catch {
     return null;

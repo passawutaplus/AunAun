@@ -89,6 +89,7 @@ export function catalogProjectId(i) {
  *   seriesIds?: string[],
  *   jobIds?: string[],
  *   serviceIds?: string[],
+ *   objectIds?: string[],
  *   explorePaths?: string[],
  *   images?: { loc: string, imageLoc: string, title?: string }[],
  * }} [opts]
@@ -108,6 +109,7 @@ export function buildSitemapUrls(opts = {}) {
   const seriesIds = opts.seriesIds || [];
   const collectionIds = opts.collectionIds || [];
   const serviceIds = opts.serviceIds || [];
+  const objectIds = opts.objectIds || [];
   const jobIds = hiringBoard ? opts.jobIds || [] : [];
   const explorePaths = opts.explorePaths || [];
 
@@ -162,6 +164,12 @@ export function buildSitemapUrls(opts = {}) {
       priority: "0.7",
       changefreq: "weekly",
       group: "packages",
+    })),
+    ...objectIds.map((id) => ({
+      loc: `/object/${id}`,
+      priority: "0.7",
+      changefreq: "weekly",
+      group: "objects",
     })),
     ...explorePaths.map((loc) => ({
       loc,
@@ -248,6 +256,7 @@ export function buildSitemapBundles(base, opts = {}) {
     series: urls.filter((u) => u.group === "series"),
     collections: urls.filter((u) => u.group === "collections"),
     packages: urls.filter((u) => u.group === "packages"),
+    objects: urls.filter((u) => u.group === "objects"),
     explore: urls.filter((u) => u.group === "explore"),
     jobs: urls.filter((u) => u.group === "jobs"),
     studios: urls.filter((u) => u.group === "studios"),

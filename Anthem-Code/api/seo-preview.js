@@ -85,6 +85,7 @@ function isKnownPublicPath(pathname) {
   if (/^\/u\/[0-9a-f-]{36}$/i.test(pathname)) return true;
   if (/^\/series\/[0-9a-f-]{36}$/i.test(pathname)) return true;
   if (/^\/service\/[0-9a-f-]{36}$/i.test(pathname)) return true;
+  if (/^\/object\/[0-9a-f-]{36}$/i.test(pathname)) return true;
   return false;
 }
 
@@ -358,6 +359,82 @@ async function resolveMeta(pathname, base) {
                 lowPrice: low,
                 highPrice: high,
               },
+            }
+          : {}),
+      },
+    };
+  }
+
+  const objectMatch = pathname.match(/^\/object\/([0-9a-f-]{36})$/i);
+  if (objectMatch) {
+    const id = objectMatch[1];
+    const rows = await fetchJson(
+      `${rest}/creator_objects?select=id,title,summary,cover_url,gallery_urls,price_thb,owner_id,fulfillment,edition,edition_label,sold_count,finishes&id=eq.${id}&status=eq.Published&limit=1`,
+      anthemHeaders,
+    );
+    const o = rows?.[0];
+    if (!o) {
+      return {
+        ...defaultMeta,
+        noindex: true,
+        title: "ไม่พบสินค้า | SAMECOR",
+        status: 404,
+      };
+    }
+    const owners = await fetchJson(
+      `${rest}/profiles_public?select=display_name,username&user_id=eq.${o.owner_id}&limit=1`,
+      headers,
+    );
+    const ownerName = owners?.[0]?.display_name || owners?.[0]?.username || "ครีเอเตอร์";
+    const raw = o.cover_url || o.gallery_urls?.[0] || "";
+    const image = raw
+      ? raw.startsWith("http")
+        ? raw
+        : `${base}${raw.startsWith("/") ? "" : "/"}${raw}`
+      : defaultMeta.image;
+    const options = Array.isArray(o.finishes) ? o.finishes : [];
+    const prices = [Number(o.price_thb) || 0, ...options.map((f) => Number(f?.price_thb) || 0)].filter((p) => p > 0);
+    const low = prices.length ? Math.min(...prices) : 0;
+    const high = prices.length ? Math.max(...prices) : 0;
+    // Same stock rule as the shop: option stock wins, else edition total minus paid copies.
+    const optionStocks = options.filter((f) => typeof f?.stock === "number");
+    let left = null;
+    if (optionStocks.length) left = optionStocks.reduce((sum, f) => sum + Math.max(0, f.stock), 0);
+    else if (o.edition === "unique") left = Math.max(0, 1 - (Number(o.sold_count) || 0));
+    else if (o.edition === "limited") {
+      const m = String(o.edition_label || "").match(/(\d+)\s*$/);
+      if (m) left = Math.max(0, Number(m[1]) - (Number(o.sold_count) || 0));
+    }
+    const availability =
+      left === 0
+        ? "https://schema.org/SoldOut"
+        : o.fulfillment === "preorder"
+          ? "https://schema.org/PreOrder"
+          : "https://schema.org/InStock";
+    const priceText = low > 0 ? ` · ฿${low.toLocaleString("th-TH")}` : "";
+    const url = `${base}/object/${o.id}`;
+    return {
+      title: `${o.title} · โดย ${ownerName} | SAMECOR`,
+      description: `${(o.summary || o.title || "").trim()}${priceText}`.slice(0, 160),
+      url,
+      image,
+      noindex: false,
+      status: 200,
+      type: "product",
+      jsonLd: {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        name: o.title,
+        url,
+        image,
+        description: (o.summary || "").slice(0, 300) || undefined,
+        brand: { "@type": "Brand", name: ownerName },
+        ...(low > 0
+          ? {
+              offers:
+                low === high
+                  ? { "@type": "Offer", priceCurrency: "THB", price: low, availability, url }
+                  : { "@type": "AggregateOffer", priceCurrency: "THB", lowPrice: low, highPrice: high, availability, url },
             }
           : {}),
       },

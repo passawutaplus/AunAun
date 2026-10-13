@@ -55,7 +55,7 @@ async function fetchLiveCatalog(supabaseUrl, anonKey) {
   };
   const rest = `${supabaseUrl.replace(/\/$/, "")}/rest/v1`;
 
-  const [projectsRes, profilesRes, seriesRes, collectionsRes, jobsRes, servicesRes] = await Promise.all([
+  const [projectsRes, profilesRes, seriesRes, collectionsRes, jobsRes, servicesRes, objectsRes] = await Promise.all([
     fetch(
       `${rest}/projects?select=id,cover_url,title&status=eq.Published&order=created_at.desc&limit=120`,
       { headers: anthemHeaders },
@@ -81,6 +81,10 @@ async function fetchLiveCatalog(supabaseUrl, anonKey) {
       : Promise.resolve({ ok: true, json: async () => [] }),
     fetch(
       `${rest}/creator_services?select=id&status=eq.Published&order=updated_at.desc&limit=120`,
+      { headers: anthemHeaders },
+    ),
+    fetch(
+      `${rest}/creator_objects?select=id&status=eq.Published&order=updated_at.desc&limit=200`,
       { headers: anthemHeaders },
     ),
   ]);
@@ -145,7 +149,15 @@ async function fetchLiveCatalog(supabaseUrl, anonKey) {
     console.warn(`services fetch ${servicesRes.status} — skipping package URLs`);
   }
 
-  return { projectIds, profileUserIds, vanityHandles, seriesIds, collectionIds, jobIds, serviceIds, images };
+  let objectIds = [];
+  if (objectsRes.ok) {
+    const objects = await objectsRes.json();
+    objectIds = objects.map((o) => o.id).filter(Boolean);
+  } else {
+    console.warn(`objects fetch ${objectsRes.status} — skipping object URLs`);
+  }
+
+  return { projectIds, profileUserIds, vanityHandles, seriesIds, collectionIds, jobIds, serviceIds, objectIds, images };
 }
 
 loadDotEnv();
@@ -161,7 +173,7 @@ if (supabaseUrl && anonKey) {
   try {
     live = await fetchLiveCatalog(supabaseUrl, anonKey);
     console.log(
-      `Live catalog: ${live.projectIds.length} projects, ${live.profileUserIds.length} profiles, ${live.vanityHandles.length} @handles, ${live.seriesIds.length} series, ${live.collectionIds.length} collections, ${live.serviceIds.length} packages, ${live.jobIds.length} jobs`,
+      `Live catalog: ${live.projectIds.length} projects, ${live.profileUserIds.length} profiles, ${live.vanityHandles.length} @handles, ${live.seriesIds.length} series, ${live.collectionIds.length} collections, ${live.serviceIds.length} packages, ${live.objectIds.length} objects, ${live.jobIds.length} jobs`,
     );
   } catch (err) {
     console.warn(`Live catalog fetch failed — using seed catalog. (${err.message})`);

@@ -807,6 +807,11 @@ const MessageBubble = ({
                       <span className="truncate text-sm font-medium">{objectCard.title}</span>
                       <span className="shrink-0 text-sm">{formatBaht(objectCard.price_thb)}</span>
                     </div>
+                    {objectCard.option || objectCard.qty ? (
+                      <p className={cn("truncate text-xs", mine ? "opacity-80" : "text-muted-foreground")}>
+                        {[objectCard.option, objectCard.qty ? `${objectCard.qty} ชิ้น` : ""].filter(Boolean).join(" · ")}
+                      </p>
+                    ) : null}
                   </div>
                 </Link>
               </div>
