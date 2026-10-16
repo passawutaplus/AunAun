@@ -1,4 +1,5 @@
 import LegalLayout from "@/components/LegalLayout";
+import FreeLaunchMoneyNotice from "@/components/legal/FreeLaunchMoneyNotice";
 import {
   ATTESTATION_BULLETS,
   ATTESTATION_TITLE,
@@ -26,6 +27,7 @@ const TermsPage = () => (
       <a href="/legal/packages">นโยบายแพ็กเกจบริการ</a> และ{" "}
       <a href="/legal/ip">นโยบายลิขสิทธิ์</a>
     </p>
+    <FreeLaunchMoneyNotice scope="terms" />
 
     <h2>1. คำนิยาม</h2>
     <ul>

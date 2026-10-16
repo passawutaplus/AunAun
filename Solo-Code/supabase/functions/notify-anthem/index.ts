@@ -3,6 +3,7 @@ import { z } from "npm:zod@3";
 import { corsHeadersForRequest } from "../_shared/cors.ts";
 import { anthemSiteUrl } from "../_shared/anthem-email-html.ts";
 import { dispatchAnthemNotification } from "../_shared/anthem-notify-dispatch.ts";
+import { anthemDb, sharedDb } from "../_shared/ecosystem-db.ts";
 
 const BodySchema = z.discriminatedUnion("event", [
   z.object({
@@ -74,11 +75,13 @@ Deno.serve(async (req) => {
   }
 
   const admin = createClient(supabaseUrl, serviceKey);
+  const shared = sharedDb(admin);
+  const anthem = anthemDb(admin);
   const siteUrl = anthemSiteUrl();
 
   switch (body.event) {
     case "gift": {
-      const { data: tx } = await admin
+      const { data: tx } = await shared
         .from("gift_transactions")
         .select("id, sender_id, recipient_id, gift_id, price_px, message, project_id")
         .eq("id", body.transaction_id)
@@ -88,12 +91,12 @@ Deno.serve(async (req) => {
 
       const [{ data: sender }, { data: gift }] = await Promise.all([
         admin.from("profiles").select("display_name").eq("user_id", tx.sender_id).maybeSingle(),
-        admin.from("gifts").select("name_th").eq("id", tx.gift_id).maybeSingle(),
+        shared.from("gifts").select("name_th").eq("id", tx.gift_id).maybeSingle(),
       ]);
 
       let projectTitle = "";
       if (tx.project_id) {
-        const { data: project } = await admin
+        const { data: project } = await anthem
           .from("projects")
           .select("title")
           .eq("id", tx.project_id)
@@ -133,7 +136,7 @@ Deno.serve(async (req) => {
     }
 
     case "follow": {
-      const { data: row } = await admin
+      const { data: row } = await anthem
         .from("follows")
         .select("follower_id, following_id")
         .eq("follower_id", callerId)
@@ -170,7 +173,7 @@ Deno.serve(async (req) => {
     }
 
     case "job_application": {
-      const { data: app } = await admin
+      const { data: app } = await anthem
         .from("job_applications")
         .select("id, job_id, applicant_id, cover_letter")
         .eq("id", body.application_id)
@@ -178,7 +181,7 @@ Deno.serve(async (req) => {
       if (!app) return json(req, { error: "not_found" }, 404);
       if (app.applicant_id !== callerId) return json(req, { error: "forbidden" }, 403);
 
-      const { data: job } = await admin
+      const { data: job } = await anthem
         .from("job_posts")
         .select("id, title, posted_by")
         .eq("id", app.job_id)
@@ -218,12 +221,12 @@ Deno.serve(async (req) => {
 
     case "topup": {
       const { data: topup } = body.topup_id
-        ? await admin
+        ? await shared
             .from("wallet_topups")
             .select("id, user_id, amount_px, created_at")
             .eq("id", body.topup_id)
             .maybeSingle()
-        : await admin
+        : await shared
             .from("wallet_topups")
             .select("id, user_id, amount_px, created_at")
             .eq("user_id", callerId)
@@ -255,7 +258,7 @@ Deno.serve(async (req) => {
     }
 
     case "cashout": {
-      const { data: cashout } = await admin
+      const { data: cashout } = await shared
         .from("cashout_requests")
         .select("id, user_id, gross_px, net_px, status")
         .eq("id", body.request_id)

@@ -37,19 +37,34 @@ export async function openConnectChat(senderId: string, otherId: string, note: s
       } as never)
       .select("id")
       .single();
-    if (error) throw error;
+    if (error) {
+      if (String(error.message).includes("CONNECT_DAILY_LIMIT")) {
+        throw new Error("วันนี้ทักแชทใหม่ครบจำนวนแล้ว — ลองใหม่พรุ่งนี้");
+      }
+      if (String(error.message).includes("CHAT_BLOCKED")) {
+        throw new Error("ส่งข้อความหาผู้ใช้นี้ไม่ได้");
+      }
+      throw error;
+    }
     conversationId = data.id as string;
   }
 
   const text = note.trim();
   if (text) {
-    const { error } = await supabase.from("messages").insert({
-      conversation_id: conversationId,
-      sender_id: senderId,
-      content: text,
-      message_type: "text",
-    } as never);
+    const { data: inserted, error } = await supabase
+      .from("messages")
+      .insert({
+        conversation_id: conversationId,
+        sender_id: senderId,
+        content: text,
+        message_type: "text",
+      } as never)
+      .select("id")
+      .single();
     if (error) throw error;
+    void supabase.functions.invoke("notify-anthem-chat", {
+      body: { conversation_id: conversationId, message_id: (inserted as { id: string }).id },
+    });
   }
   return conversationId;
 }

@@ -1,4 +1,5 @@
 import LegalLayout from "@/components/LegalLayout";
+import FreeLaunchMoneyNotice from "@/components/legal/FreeLaunchMoneyNotice";
 import { LEGAL_APP_NAME, LEGAL_COMPANY_ADDRESS, LEGAL_COMPANY_NAME, LEGAL_COMPANY_TAX_ID, LEGAL_DPO_EMAIL, LEGAL_SOLO_NAME, LEGAL_SOLO_URL, LEGAL_WEBSITE } from "@/lib/legalConfig";
 
 const PrivacyPage = () => (
@@ -11,6 +12,7 @@ const PrivacyPage = () => (
     <p className="text-sm text-muted-foreground">
       เราเขียนนโยบายนี้ให้อ่านเข้าใจง่าย — หากมีคำถาม ติดต่อ DPO ได้ที่ด้านล่าง
     </p>
+    <FreeLaunchMoneyNotice scope="privacy" />
 
     <h2>1. ผู้ควบคุมข้อมูลส่วนบุคคล</h2>
     <p>

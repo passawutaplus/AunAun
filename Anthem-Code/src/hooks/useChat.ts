@@ -366,6 +366,9 @@ export const useSendMessage = () => {
         if (String(error.message).includes("HIRE_CHAT_LOCKED")) {
           throw new Error("แชทนี้ปิดแล้ว — ทั้งสองฝ่ายพิมพ์ต่อไม่ได้");
         }
+        if (String(error.message).includes("CHAT_BLOCKED")) {
+          throw new Error("ส่งข้อความหาผู้ใช้นี้ไม่ได้");
+        }
         throw error;
       }
 
