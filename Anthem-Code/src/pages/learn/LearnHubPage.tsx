@@ -25,7 +25,7 @@ import {
 } from "@/data/learnContent";
 import { BRAND_NAME } from "@/lib/brandConfig";
 import { optimizedFeedImageUrl } from "@/lib/feedProjectCover";
-import { isAplus1PxEnabled } from "@/lib/aplus1Launch";
+import { isAplus1PxEnabled, isCommerceEnabled } from "@/lib/aplus1Launch";
 import { cn } from "@/lib/utils";
 
 const HERO_FACE: Record<LearnHeroFace, string> = {
@@ -102,6 +102,11 @@ function PlusLink({
   );
 }
 
+/** Packages / Objects modes belong to the selling phase. */
+const VISIBLE_LEARN_MODES = LEARN_MODES.filter(
+  (m) => isCommerceEnabled() || (m.id !== "mode-packages" && m.id !== "mode-objects"),
+);
+
 const MODE_ICONS: Record<(typeof LEARN_MODES)[number]["id"], LucideIcon> = {
   "mode-projects": LayoutGrid,
   "mode-designers": Users,
@@ -123,7 +128,7 @@ function LearnModePill({
       aria-label="Site modes"
       className="flex max-w-full min-w-0 items-center overflow-x-auto rounded-full border border-[#e4e1db] bg-white p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
     >
-      {LEARN_MODES.map((mode) => {
+      {VISIBLE_LEARN_MODES.map((mode) => {
         const selected = mode.id === active;
         const Icon = MODE_ICONS[mode.id];
         return (
@@ -553,7 +558,7 @@ export default function LearnHubPage() {
       if (performance.now() < modeLock.current) return;
       const line = window.innerHeight * 0.4;
       const hit =
-        [...LEARN_MODES].reverse().find((item) => {
+        [...VISIBLE_LEARN_MODES].reverse().find((item) => {
           const rect = document.getElementById(item.id)?.getBoundingClientRect();
           return rect ? rect.top <= line : false;
         }) ?? LEARN_MODES[0];
@@ -632,19 +637,23 @@ export default function LearnHubPage() {
         </section>
       </div>
 
-      <section id="mode-packages" className="scroll-mt-0">
-        <LearnPackagesStage works={trailSources} />
-      </section>
+      {isCommerceEnabled() ? (
+        <>
+          <section id="mode-packages" className="scroll-mt-0">
+            <LearnPackagesStage works={trailSources} />
+          </section>
 
-      <div id="mode-objects">
-        <section id="objects" className="scroll-mt-0">
-          <LearnObjectsStage />
-        </section>
+          <div id="mode-objects">
+            <section id="objects" className="scroll-mt-0">
+              <LearnObjectsStage />
+            </section>
 
-        <section id="earn" className="scroll-mt-24">
-          <LearnEarnMap />
-        </section>
-      </div>
+            <section id="earn" className="scroll-mt-24">
+              <LearnEarnMap />
+            </section>
+          </div>
+        </>
+      ) : null}
 
       <section id="trust" className="scroll-mt-32 px-4 py-14 sm:px-6 lg:px-10 lg:py-20">
         <div className="mx-auto grid max-w-[80rem] gap-10 lg:grid-cols-[minmax(0,20rem)_1fr] lg:gap-16">

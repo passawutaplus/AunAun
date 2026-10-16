@@ -222,6 +222,7 @@ const PortfolioProfilePage = () => {
   }
 
   const isVerified = !!(profile as { is_verified?: boolean }).is_verified;
+  const commerce = isCommerceEnabled();
   const shareUrl = profilePublicUrl({ user_id: user!.id, username: profile.username });
   const shareTitle = profileShareTitle({
     user_id: user!.id,
@@ -249,13 +250,13 @@ const PortfolioProfilePage = () => {
           <ProfileOwnerActions
             compact
             onPost={() => navigate("/portfolio/new")}
-            onBecomeCreator={!isVerified ? () => navigate("/verify") : undefined}
+            onBecomeCreator={commerce && !isVerified ? () => navigate("/verify") : undefined}
             onStudio={() => navigate("/dashboard")}
             onPreview={() =>
               navigate(profileVisitorPreviewPath({ user_id: user!.id, username: profile.username }))
             }
             onSettings={() => navigate("/settings")}
-            onWallet={isVerified ? () => navigate("/earnings") : undefined}
+            onWallet={commerce && isVerified ? () => navigate("/earnings") : undefined}
             shareUrl={shareUrl}
             shareTitle={shareTitle}
             shareMessage={shareMessage}
@@ -277,7 +278,7 @@ const PortfolioProfilePage = () => {
           disciplines={disciplines}
           onOpportunityEdit={() => setOpportunityOpen(true)}
           onPost={() => navigate("/portfolio/new")}
-          onBecomeCreator={!isVerified ? () => navigate("/verify") : undefined}
+          onBecomeCreator={commerce && !isVerified ? () => navigate("/verify") : undefined}
           onStudio={() => navigate("/dashboard")}
           onPreview={() =>
             navigate(profileVisitorPreviewPath({ user_id: user!.id, username: profile.username }))
@@ -288,7 +289,7 @@ const PortfolioProfilePage = () => {
           sharePathLabel={sharePathLabel}
           onShareInteract={() => markOnboardingVisit(user!.id, "share_profile")}
           onSettings={() => navigate("/settings")}
-          onWallet={isVerified ? () => navigate("/earnings") : undefined}
+          onWallet={commerce && isVerified ? () => navigate("/earnings") : undefined}
           onFollowersClick={() => navigate("/portfolio/followers")}
           onFollowingClick={() => navigate("/portfolio/followers?tab=following")}
           showFollowStats

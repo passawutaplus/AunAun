@@ -30,6 +30,7 @@ import { ProfileVisibilitySection } from "@/components/settings/ProfileVisibilit
 import BillingSettingsPanel from "@/components/settings/BillingSettingsPanel";
 import { PrivacySecuritySection } from "@/components/settings/PrivacySecuritySection";
 import { ChangePasswordSection } from "@/components/settings/ChangePasswordSection";
+import { isCommerceEnabled } from "@/lib/aplus1Launch";
 import { AccountSecurityIntro } from "@/components/settings/AccountSecurityIntro";
 import { WithdrawPinSettingsSection } from "@/components/settings/WithdrawPinSettingsSection";
 import SettingsSideNav, { useSettingsPanelState } from "@/components/settings/SettingsSideNav";
@@ -344,7 +345,7 @@ const SettingsPage = () => {
           </>
         ) : null}
 
-        {panel === "billing" && user?.id ? (
+        {panel === "billing" && user?.id && isCommerceEnabled() ? (
           <BillingSettingsPanel
             userId={user.id}
             profile={profile as Record<string, unknown> | null | undefined}
@@ -402,9 +403,9 @@ const SettingsPage = () => {
 
         {panel === "account" ? (
           <div className="space-y-6">
-            <AccountSecurityIntro />
+            <AccountSecurityIntro showWithdrawPin={isCommerceEnabled()} />
             {user ? <ChangePasswordSection user={user} /> : null}
-            {user ? <WithdrawPinSettingsSection user={user} /> : null}
+            {user && isCommerceEnabled() ? <WithdrawPinSettingsSection user={user} /> : null}
             <section className="rounded-2xl glass-panel p-6 space-y-4">
               <SectionTitle icon={LogOut} title="บัญชี" />
               <p className="text-xs text-muted-foreground">

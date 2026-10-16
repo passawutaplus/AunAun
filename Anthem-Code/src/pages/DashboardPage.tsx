@@ -1,3 +1,4 @@
+import { isCommerceEnabled } from "@/lib/aplus1Launch";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -218,7 +219,7 @@ export default function DashboardPage({ mode: modeProp }: Props) {
             </div>
           )}
 
-          {mode === "hire" ? (
+          {mode === "hire" && isCommerceEnabled() ? (
             <p className="text-xs text-muted-foreground">
               เอกสารใบเสร็จ 50 ทวิ และประมาณการภาษีอยู่ที่{" "}
               <Link to="/dashboard/documents" className="font-medium text-primary hover:underline">

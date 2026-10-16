@@ -27,6 +27,7 @@ import { formatMoneyLabel } from "@/lib/payments/fxDisplay";
 import { satangToThb } from "@/lib/payments/fees";
 import { withdrawStartPath } from "@/lib/payments/withdrawPin";
 import { getProjectStatsRangeBounds, type ProjectStatsDateRange } from "@/lib/projectStatsDateRange";
+import { isCommerceEnabled } from "@/lib/aplus1Launch";
 import { STUDIO_HIRE_PATH, STUDIO_PROJECTS_PATH } from "@/lib/studioNav";
 
 type Props = {
@@ -136,7 +137,7 @@ export default function StudioHomePanel({ userId }: Props) {
         <StudioTodoPanel userId={userId} queue={statsLoading ? [] : queue} />
         <div className="space-y-4">
           <StudioNoteCard userId={userId} />
-          {walletLoading ? (
+          {!isCommerceEnabled() ? null : walletLoading ? (
             <InlineLoader />
           ) : (
             <EarningsHireBalanceCard

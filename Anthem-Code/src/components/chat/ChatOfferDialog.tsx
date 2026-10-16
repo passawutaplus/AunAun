@@ -817,14 +817,16 @@ export function ChatOfferDialog({
                       </p>
                     </div>
                   </div>
-                  <Link
-                    to="/settings#billing"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="shrink-0 text-sm text-primary hover:underline"
-                  >
-                    แก้ไข
-                  </Link>
+                  {paid ? (
+                    <Link
+                      to="/settings#billing"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="shrink-0 text-sm text-primary hover:underline"
+                    >
+                      แก้ไข
+                    </Link>
+                  ) : null}
                 </div>
                 <div className="space-y-2.5 rounded-xl bg-muted/30 p-3">
                   <div className="flex flex-wrap items-center gap-2">

@@ -2,6 +2,7 @@
 
 import type { LucideIcon } from "lucide-react";
 import { LayoutDashboard, Settings2, Shield, UserRound } from "lucide-react";
+import { isCommerceEnabled } from "@/lib/aplus1Launch";
 
 export type SettingsPanelId =
   | "profile"
@@ -128,6 +129,8 @@ export function resolveSettingsPanel(
   if (!raw) return DEFAULT_SETTINGS_PANEL;
   const mapped = HASH_TO_PANEL[raw] ?? (isSettingsPanelId(raw) ? raw : DEFAULT_SETTINGS_PANEL);
   if (mapped === "admin" && !opts?.isAdmin) return DEFAULT_SETTINGS_PANEL;
+  // Billing / tax documents belong to the money phase.
+  if (mapped === "billing" && !isCommerceEnabled()) return DEFAULT_SETTINGS_PANEL;
   return mapped;
 }
 
@@ -149,9 +152,12 @@ export function settingsPanelHash(panel: SettingsPanelId): string {
 }
 
 export function buildSettingsNavGroups(isAdmin?: boolean): SettingsNavGroup[] {
-  if (!isAdmin) return SETTINGS_NAV_GROUPS;
+  const groups = isCommerceEnabled()
+    ? SETTINGS_NAV_GROUPS
+    : SETTINGS_NAV_GROUPS.map((g) => ({ ...g, items: g.items.filter((i) => i.id !== "billing") }));
+  if (!isAdmin) return groups;
   return [
-    ...SETTINGS_NAV_GROUPS,
+    ...groups,
     {
       id: "group-admin",
       label: "ระบบ",
