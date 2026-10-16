@@ -13,10 +13,10 @@ import {
 } from "@/lib/objects/taxonomy";
 
 export const CREATOR_OBJECTS_SELECT =
-  "id, owner_id, title, code, summary, story, kind, subtype, material, fulfillment, edition, edition_label, price_thb, lead_time, cover_url, gallery_urls, finishes, specs, downloads, license_note, reference_project_ids, status, created_at, updated_at";
+  "id, owner_id, title, code, summary, story, kind, subtype, material, fulfillment, edition, edition_label, price_thb, lead_time, cover_url, gallery_urls, finishes, specs, downloads, license_note, reference_project_ids, shipping_thb, sold_count, status, created_at, updated_at";
 
 export const OBJECT_ORDERS_SELECT =
-  "id, object_id, object_title, buyer_id, seller_id, qty, finish, note, status, tracking_code, unit_price_thb, amount_satang, platform_fee_satang, seller_net_satang, fulfillment, ship_name, ship_phone, ship_address, payment_status, charge_id, paid_at, received_at, seller_release, created_at, updated_at";
+  "id, object_id, object_title, buyer_id, seller_id, qty, finish, note, status, tracking_code, unit_price_thb, shipping_satang, amount_satang, platform_fee_satang, seller_net_satang, fulfillment, ship_name, ship_phone, ship_address, payment_status, charge_id, paid_at, received_at, shipped_at, seller_release, created_at, updated_at";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnthemTableClient = { from: (table: string) => any };
@@ -27,6 +27,11 @@ export function fromCreatorObjects() {
 
 export function fromObjectOrders() {
   return (supabase as unknown as AnthemTableClient).from("object_orders");
+}
+
+/** File links of a download product. Readable only by the owner, admins and buyers with a paid order. */
+export function fromObjectDownloads() {
+  return (supabase as unknown as AnthemTableClient).from("creator_object_downloads");
 }
 
 function asSpecs(value: unknown): ObjectSpec[] {
@@ -64,7 +69,7 @@ function asFinishes(value: unknown): ObjectFinish[] {
   });
 }
 
-function asDownloads(value: unknown): ObjectDownload[] {
+export function asDownloads(value: unknown): ObjectDownload[] {
   if (!Array.isArray(value)) return [];
   return value.flatMap((item) => {
     if (!item || typeof item !== "object") return [];
@@ -107,6 +112,8 @@ export function mapCreatorObject(row: Record<string, unknown>): CreatorObject | 
     reference_project_ids: Array.isArray(row.reference_project_ids)
       ? row.reference_project_ids.map(String).filter(Boolean)
       : [],
+    shipping_thb: Math.max(0, Number(row.shipping_thb ?? 0) || 0),
+    sold_count: Math.max(0, Number(row.sold_count ?? 0) || 0),
     status,
     created_at: String(row.created_at ?? ""),
     updated_at: String(row.updated_at ?? ""),
@@ -128,6 +135,7 @@ export function mapObjectOrder(row: Record<string, unknown>): ObjectOrder | null
     status,
     tracking_code: String(row.tracking_code ?? ""),
     unit_price_thb: Number(row.unit_price_thb ?? 0),
+    shipping_satang: Number(row.shipping_satang ?? 0),
     amount_satang: Number(row.amount_satang ?? 0),
     platform_fee_satang: Number(row.platform_fee_satang ?? 0),
     seller_net_satang: Number(row.seller_net_satang ?? 0),
@@ -140,6 +148,7 @@ export function mapObjectOrder(row: Record<string, unknown>): ObjectOrder | null
     charge_id: String(row.charge_id ?? ""),
     paid_at: row.paid_at ? String(row.paid_at) : null,
     received_at: row.received_at ? String(row.received_at) : null,
+    shipped_at: row.shipped_at ? String(row.shipped_at) : null,
     seller_release:
       row.seller_release === "pending" || row.seller_release === "available" ? row.seller_release : "held",
     created_at: String(row.created_at ?? ""),

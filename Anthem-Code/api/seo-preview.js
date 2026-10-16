@@ -37,7 +37,7 @@ function shell({ title, description, url, image, noindex, jsonLd, type }) {
   <meta name="description" content="${escapeHtml(description)}" />
   <meta name="robots" content="${robots}" />
   <link rel="canonical" href="${escapeHtml(url)}" />
-  <meta property="og:site_name" content="Aplus1" />
+  <meta property="og:site_name" content="SAMECOR" />
   <meta property="og:title" content="${escapeHtml(title)}" />
   <meta property="og:description" content="${escapeHtml(description)}" />
   <meta property="og:url" content="${escapeHtml(url)}" />
@@ -56,7 +56,7 @@ function shell({ title, description, url, image, noindex, jsonLd, type }) {
   <main>
     <h1>${escapeHtml(title)}</h1>
     <p>${escapeHtml(description)}</p>
-    <p><a href="${escapeHtml(url)}">เปิดใน Aplus1</a></p>
+    <p><a href="${escapeHtml(url)}">เปิดใน SAMECOR</a></p>
   </main>
 </body>
 </html>`;
@@ -85,14 +85,15 @@ function isKnownPublicPath(pathname) {
   if (/^\/u\/[0-9a-f-]{36}$/i.test(pathname)) return true;
   if (/^\/series\/[0-9a-f-]{36}$/i.test(pathname)) return true;
   if (/^\/service\/[0-9a-f-]{36}$/i.test(pathname)) return true;
+  if (/^\/object\/[0-9a-f-]{36}$/i.test(pathname)) return true;
   return false;
 }
 
 async function resolveMeta(pathname, base) {
   const defaultMeta = {
-    title: "Aplus1 — 1 โปรไฟล์ สู่ 100+ โอกาส",
+    title: "SAMECOR — 1 โปรไฟล์ สู่ 100+ โอกาส",
     description:
-      "Aplus1 ช่วยค้นหาครีเอเตอร์จากผลงานจริง — ดูสไตล์และบริบทงานก่อนคุยโอกาส ไม่ใช่แพ็กเกจราคา",
+      "SAMECOR ช่วยค้นหาครีเอเตอร์จากผลงานจริง — ดูสไตล์และบริบทงานก่อนคุยโอกาส ไม่ใช่แพ็กเกจราคา",
     url: `${base}${pathname === "/" ? "/" : pathname}`,
     image: `${base}/icons/icon-512.png`,
     noindex: false,
@@ -104,8 +105,8 @@ async function resolveMeta(pathname, base) {
   if (!isKnownPublicPath(pathname)) {
     return {
       ...defaultMeta,
-      title: "ไม่พบหน้า | Aplus1",
-      description: "หน้าที่คุณค้นหาไม่มีบน Aplus1",
+      title: "ไม่พบหน้า | SAMECOR",
+      description: "หน้าที่คุณค้นหาไม่มีบน SAMECOR",
       noindex: true,
       status: 404,
     };
@@ -140,7 +141,7 @@ async function resolveMeta(pathname, base) {
       return {
         ...defaultMeta,
         noindex: true,
-        title: "ไม่พบผลงาน | Aplus1",
+        title: "ไม่พบผลงาน | SAMECOR",
         status: 404,
       };
     }
@@ -150,7 +151,7 @@ async function resolveMeta(pathname, base) {
         : `${base}${p.cover_url.startsWith("/") ? "" : "/"}${p.cover_url}`
       : defaultMeta.image;
     return {
-      title: `${p.title} | Aplus1`,
+      title: `${p.title} | SAMECOR`,
       description: (p.description || p.title || "").slice(0, 160),
       url: `${base}/project/${p.id}`,
       image: cover,
@@ -179,13 +180,13 @@ async function resolveMeta(pathname, base) {
       return {
         ...defaultMeta,
         noindex: true,
-        title: "ไม่พบงาน | Aplus1",
+        title: "ไม่พบงาน | SAMECOR",
         status: 404,
       };
     }
     const open = j.status === "open";
     return {
-      title: `${j.title} | Aplus1`,
+      title: `${j.title} | SAMECOR`,
       description: (j.description || j.title || "").slice(0, 160),
       url: `${base}/jobs/${j.id}`,
       image: j.cover_image_url || defaultMeta.image,
@@ -219,7 +220,7 @@ async function resolveMeta(pathname, base) {
       return {
         ...defaultMeta,
         noindex: true,
-        title: "ไม่พบโปรไฟล์ | Aplus1",
+        title: "ไม่พบโปรไฟล์ | SAMECOR",
         status: 404,
       };
     }
@@ -227,8 +228,8 @@ async function resolveMeta(pathname, base) {
     const path = profile.username ? `/@${profile.username}` : `/u/${profile.user_id}`;
     const thin = !(profile.bio && profile.bio.trim().length >= 40);
     return {
-      title: `${name} | Aplus1`,
-      description: (profile.bio || `ดูพอร์ตโฟลิโอของ ${name} บน Aplus1`).slice(0, 160),
+      title: `${name} | SAMECOR`,
+      description: (profile.bio || `ดูพอร์ตโฟลิโอของ ${name} บน SAMECOR`).slice(0, 160),
       url: `${base}${path}`,
       image: profile.avatar_url || defaultMeta.image,
       noindex: thin,
@@ -255,7 +256,7 @@ async function resolveMeta(pathname, base) {
       return {
         ...defaultMeta,
         noindex: true,
-        title: "ไม่พบคอลเลกชัน | Aplus1",
+        title: "ไม่พบคอลเลกชัน | SAMECOR",
         status: 404,
       };
     }
@@ -287,8 +288,8 @@ async function resolveMeta(pathname, base) {
       : defaultMeta.image;
     const url = `${base}/collections/${c.id}`;
     return {
-      title: `${c.name} · คอลเลกชันโดย ${ownerName} | Aplus1`,
-      description: (c.description?.trim() || `${c.item_count} ผลงานที่คัดโดย ${ownerName} บน Aplus1`).slice(0, 160),
+      title: `${c.name} · คอลเลกชันโดย ${ownerName} | SAMECOR`,
+      description: (c.description?.trim() || `${c.item_count} ผลงานที่คัดโดย ${ownerName} บน SAMECOR`).slice(0, 160),
       url,
       image,
       // Same bar as the sitemap (3+ works): thinner collections stay out of search, links still preview.
@@ -301,6 +302,141 @@ async function resolveMeta(pathname, base) {
         url,
         image,
         author: { "@type": "Person", name: ownerName },
+      },
+    };
+  }
+
+  const serviceMatch = pathname.match(/^\/service\/([0-9a-f-]{36})$/i);
+  if (serviceMatch) {
+    const id = serviceMatch[1];
+    const rows = await fetchJson(
+      `${rest}/creator_services?select=id,title,summary,cover_url,gallery_urls,price_min_thb,price_thb,owner_id&id=eq.${id}&status=eq.Published&limit=1`,
+      anthemHeaders,
+    );
+    const s = rows?.[0];
+    if (!s) {
+      return {
+        ...defaultMeta,
+        noindex: true,
+        title: "ไม่พบแพ็กเกจ | SAMECOR",
+        status: 404,
+      };
+    }
+    const owners = await fetchJson(
+      `${rest}/profiles_public?select=display_name,username&user_id=eq.${s.owner_id}&limit=1`,
+      headers,
+    );
+    const ownerName = owners?.[0]?.display_name || owners?.[0]?.username || "ครีเอเตอร์";
+    const raw = s.cover_url || s.gallery_urls?.[0] || "";
+    const image = raw
+      ? raw.startsWith("http")
+        ? raw
+        : `${base}${raw.startsWith("/") ? "" : "/"}${raw}`
+      : defaultMeta.image;
+    const low = Number(s.price_min_thb) || Number(s.price_thb) || 0;
+    const high = Math.max(low, Number(s.price_thb) || 0);
+    const priceText = low > 0 ? ` · เริ่มต้น ฿${low.toLocaleString("th-TH")}` : "";
+    const url = `${base}/service/${s.id}`;
+    return {
+      title: `${s.title} · แพ็กเกจโดย ${ownerName} | SAMECOR`,
+      description: `${(s.summary || s.title || "").trim()}${priceText}`.slice(0, 160),
+      url,
+      image,
+      noindex: false,
+      status: 200,
+      jsonLd: {
+        "@context": "https://schema.org",
+        "@type": "Service",
+        name: s.title,
+        url,
+        image,
+        provider: { "@type": "Person", name: ownerName },
+        ...(low > 0
+          ? {
+              offers: {
+                "@type": "AggregateOffer",
+                priceCurrency: "THB",
+                lowPrice: low,
+                highPrice: high,
+              },
+            }
+          : {}),
+      },
+    };
+  }
+
+  const objectMatch = pathname.match(/^\/object\/([0-9a-f-]{36})$/i);
+  if (objectMatch) {
+    const id = objectMatch[1];
+    const rows = await fetchJson(
+      `${rest}/creator_objects?select=id,title,summary,cover_url,gallery_urls,price_thb,owner_id,fulfillment,edition,edition_label,sold_count,finishes&id=eq.${id}&status=eq.Published&limit=1`,
+      anthemHeaders,
+    );
+    const o = rows?.[0];
+    if (!o) {
+      return {
+        ...defaultMeta,
+        noindex: true,
+        title: "ไม่พบสินค้า | SAMECOR",
+        status: 404,
+      };
+    }
+    const owners = await fetchJson(
+      `${rest}/profiles_public?select=display_name,username&user_id=eq.${o.owner_id}&limit=1`,
+      headers,
+    );
+    const ownerName = owners?.[0]?.display_name || owners?.[0]?.username || "ครีเอเตอร์";
+    const raw = o.cover_url || o.gallery_urls?.[0] || "";
+    const image = raw
+      ? raw.startsWith("http")
+        ? raw
+        : `${base}${raw.startsWith("/") ? "" : "/"}${raw}`
+      : defaultMeta.image;
+    const options = Array.isArray(o.finishes) ? o.finishes : [];
+    const prices = [Number(o.price_thb) || 0, ...options.map((f) => Number(f?.price_thb) || 0)].filter((p) => p > 0);
+    const low = prices.length ? Math.min(...prices) : 0;
+    const high = prices.length ? Math.max(...prices) : 0;
+    // Same stock rule as the shop: option stock wins, else edition total minus paid copies.
+    const optionStocks = options.filter((f) => typeof f?.stock === "number");
+    let left = null;
+    if (optionStocks.length) left = optionStocks.reduce((sum, f) => sum + Math.max(0, f.stock), 0);
+    else if (o.edition === "unique") left = Math.max(0, 1 - (Number(o.sold_count) || 0));
+    else if (o.edition === "limited") {
+      const m = String(o.edition_label || "").match(/(\d+)\s*$/);
+      if (m) left = Math.max(0, Number(m[1]) - (Number(o.sold_count) || 0));
+    }
+    const availability =
+      left === 0
+        ? "https://schema.org/SoldOut"
+        : o.fulfillment === "preorder"
+          ? "https://schema.org/PreOrder"
+          : "https://schema.org/InStock";
+    const priceText = low > 0 ? ` · ฿${low.toLocaleString("th-TH")}` : "";
+    const url = `${base}/object/${o.id}`;
+    return {
+      title: `${o.title} · โดย ${ownerName} | SAMECOR`,
+      description: `${(o.summary || o.title || "").trim()}${priceText}`.slice(0, 160),
+      url,
+      image,
+      noindex: false,
+      status: 200,
+      type: "product",
+      jsonLd: {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        name: o.title,
+        url,
+        image,
+        description: (o.summary || "").slice(0, 300) || undefined,
+        brand: { "@type": "Brand", name: ownerName },
+        ...(low > 0
+          ? {
+              offers:
+                low === high
+                  ? { "@type": "Offer", priceCurrency: "THB", price: low, availability, url }
+                  : { "@type": "AggregateOffer", priceCurrency: "THB", lowPrice: low, highPrice: high, availability, url },
+            }
+          : {}),
       },
     };
   }
@@ -323,14 +459,14 @@ async function resolveMeta(pathname, base) {
     );
     const cover = rows?.[0]?.cover_url || "";
     const image = cover ? (cover.startsWith("http") ? cover : `${base}${cover.startsWith("/") ? "" : "/"}${cover}`) : defaultMeta.image;
-    const title = kind === "tool" ? `ผลงานที่ใช้ ${value} | Aplus1` : `ผลงานแท็ก #${value} | Aplus1`;
+    const title = kind === "tool" ? `ผลงานที่ใช้ ${value} | SAMECOR` : `ผลงานแท็ก #${value} | SAMECOR`;
     return {
       ...defaultMeta,
       title,
       description:
         kind === "tool"
-          ? `ค้นพบผลงานครีเอเตอร์ที่ใช้ ${value} บน Aplus1`
-          : `ค้นพบผลงานแท็ก #${value} บน Aplus1`,
+          ? `ค้นพบผลงานครีเอเตอร์ที่ใช้ ${value} บน SAMECOR`
+          : `ค้นพบผลงานแท็ก #${value} บน SAMECOR`,
       url: `${base}${pathname}`,
       image,
     };
@@ -339,8 +475,8 @@ async function resolveMeta(pathname, base) {
   if (pathname.startsWith("/explore/")) {
     return {
       ...defaultMeta,
-      title: `สำรวจผลงาน | Aplus1`,
-      description: "สำรวจผลงานตามเครื่องมือและแท็กบน Aplus1",
+      title: `สำรวจผลงาน | SAMECOR`,
+      description: "สำรวจผลงานตามเครื่องมือและแท็กบน SAMECOR",
       url: `${base}${pathname}`,
     };
   }

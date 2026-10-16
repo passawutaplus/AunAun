@@ -57,6 +57,9 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (!id.includes("node_modules")) return;
+          // Class helpers used by the app shell. Unassigned, Rollup folds them into "recharts" (a dependency
+          // of it), and every page then preloads the whole chart library just for cn().
+          if (/node_modules\/(clsx|tailwind-merge|class-variance-authority)\//.test(id)) return "ui-utils";
           if (id.includes("recharts")) return "recharts";
           if (id.includes("@radix-ui")) return "radix";
           if (id.includes("@supabase")) return "supabase";

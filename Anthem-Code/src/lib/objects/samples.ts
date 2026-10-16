@@ -2,11 +2,13 @@ import type { CreatorObject } from "@/lib/objects/taxonomy";
 
 const now = "2026-01-01T00:00:00.000Z";
 
-function sample(partial: Omit<CreatorObject, "sample" | "maker_name" | "maker_username" | "created_at" | "updated_at" | "gallery_urls" | "owner_id" | "status" | "reference_project_ids"> & Partial<CreatorObject>): CreatorObject {
+function sample(partial: Omit<CreatorObject, "sample" | "maker_name" | "maker_username" | "created_at" | "updated_at" | "gallery_urls" | "owner_id" | "status" | "reference_project_ids" | "shipping_thb" | "sold_count"> & Partial<CreatorObject>): CreatorObject {
   return {
     owner_id: "sample",
     gallery_urls: [],
     reference_project_ids: [],
+    shipping_thb: 0,
+    sold_count: 0,
     status: "Published",
     created_at: now,
     updated_at: now,

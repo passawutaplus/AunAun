@@ -9,9 +9,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import ObjectPaySheet from "@/components/objects/ObjectPaySheet";
-import { useCreatorObject, useObjectOrders } from "@/hooks/useCreatorObjects";
+import { useCreatorObject, useObjectDownloads, useObjectOrders } from "@/hooks/useCreatorObjects";
 import { openObjectChat } from "@/lib/objects/openObjectChat";
 import { objectErrorText } from "@/lib/objects/db";
+import { objectPayEnabled } from "@/lib/objects/pay";
 import { findSampleObject } from "@/lib/objects/samples";
 import { profilePublicPath } from "@/lib/profileRoutes";
 import { requireAuth } from "@/lib/requireAuth";
@@ -21,9 +22,12 @@ import {
   formatEditionQuantity,
   formatBaht,
   fulfillmentLabel,
-  isEditionSoldOut,
+  isObjectSoldOut,
   isSampleObjectId,
   kindLabel,
+  lowestPrice,
+  objectRemaining,
+  optionAxisLabel,
   subtypeLabel,
 } from "@/lib/objects/taxonomy";
 
@@ -45,15 +49,50 @@ export default function ObjectDetailPage() {
   const selectedFinish = item?.finishes.find((row) => row.name === activeFinish);
   const unitPrice =
     selectedFinish?.price_thb && selectedFinish.price_thb > 0 ? selectedFinish.price_thb : item?.price_thb ?? 0;
-  const optionSoldOut = selectedFinish?.stock === 0;
+  const optionLeft = item ? objectRemaining(item, selectedFinish?.name) : null;
+  const optionSoldOut = optionLeft === 0;
+  const maxQty = Math.max(1, Math.min(20, optionLeft ?? 20));
   const loading = !sample && query.isLoading;
-  const soldOut = item ? isEditionSoldOut(item.edition, item.edition_label) : false;
+  const soldOut = item ? isObjectSoldOut(item) : false;
   const isOwner = !!user && !!item && user.id === item.owner_id;
   const paidForFile =
     !!item &&
     (myOrders.data ?? []).some(
       (order) => order.object_id === item.id && order.payment_status === "paid" && order.status !== "cancelled",
     );
+  // Links come from a table only the owner and paying buyers can read.
+  const downloads = useObjectDownloads(item?.id, !!user && !!item && !item.sample && item.kind === "files" && (isOwner || paidForFile));
+  const payOn = objectPayEnabled();
+  const shipping = item && item.fulfillment !== "download" ? item.shipping_thb : 0;
+  const buyQty = item?.fulfillment === "download" ? 1 : Math.min(qty, maxQty);
+  const optionName = item ? optionAxisLabel(item) : "";
+
+  const reserveInChat = () =>
+    requireAuth(user, () => {
+      if (!item) return;
+      setChatting(true);
+      const pick = [selectedFinish?.name, buyQty > 1 ? `${buyQty} ชิ้น` : ""].filter(Boolean).join(" ");
+      const text = note.trim() || `สนใจสั่งจอง${pick ? ` ${pick}` : ""} ค่ะ/ครับ`;
+      void openObjectChat(
+        user!.id,
+        item.owner_id,
+        {
+          id: item.id,
+          title: item.title,
+          price_thb: unitPrice,
+          cover_url: item.cover_url,
+          option: selectedFinish?.name,
+          qty: buyQty,
+        },
+        text,
+      )
+        .then((conversationId) => {
+          toast.success("ส่งคำขอสั่งจองในแชทแล้ว");
+          navigate(`/chat/${conversationId}`);
+        })
+        .catch((error: unknown) => toast.error(objectErrorText(error)))
+        .finally(() => setChatting(false));
+    });
 
   return (
     <main className="min-h-screen bg-[#f7f7f5] text-foreground">
@@ -83,7 +122,7 @@ export default function ObjectDetailPage() {
                 <Fact label={item.kind === "files" ? "ฟอร์แมต" : "วัสดุ"} value={axisLabel(item.material)} />
                 <Fact label="ได้ของ" value={fulfillmentLabel(item.fulfillment)} />
                 <Fact label="จำนวน" value={formatEditionQuantity(item.edition, item.edition_label) || editionLabel(item.edition)} />
-                <Fact label="ราคา" value={`ตั้งแต่ ${formatBaht(item.price_thb)}`} />
+                <Fact label="ราคา" value={`ตั้งแต่ ${formatBaht(lowestPrice(item))}`} />
                 <Fact label="ระยะเวลา" value={item.lead_time || "—"} />
               </dl>
             </header>
@@ -101,7 +140,7 @@ export default function ObjectDetailPage() {
                   <>
                     {item.finishes.length > 0 ? (
                       <div>
-                        <p className="text-xs text-muted-foreground">ฟินิช</p>
+                        <p className="text-xs text-muted-foreground">{optionName}</p>
                         <div className="mt-2 flex flex-wrap gap-2">
                           {item.finishes.map((swatch) => (
                             <button
@@ -123,8 +162,13 @@ export default function ObjectDetailPage() {
                       </div>
                     ) : null}
                     <p className="text-2xl font-medium">{formatBaht(unitPrice)}</p>
-                    {typeof selectedFinish?.stock === "number" ? (
-                      <p className="text-xs text-muted-foreground">คงเหลือ {selectedFinish.stock}</p>
+                    {item.fulfillment !== "download" ? (
+                      <p className="text-xs text-muted-foreground">
+                        {shipping > 0 ? `ค่าส่ง ${formatBaht(shipping)} ต่อคำสั่ง` : "ส่งฟรี"}
+                      </p>
+                    ) : null}
+                    {optionLeft != null ? (
+                      <p className="text-xs text-muted-foreground">คงเหลือ {optionLeft}</p>
                     ) : null}
                     {item.fulfillment !== "download" ? (
                       <label className="grid gap-1 text-xs text-muted-foreground">
@@ -132,9 +176,9 @@ export default function ObjectDetailPage() {
                         <input
                           type="number"
                           min={1}
-                          max={20}
-                          value={qty}
-                          onChange={(event) => setQty(Math.min(20, Math.max(1, Number(event.target.value) || 1)))}
+                          max={maxQty}
+                          value={buyQty}
+                          onChange={(event) => setQty(Math.min(maxQty, Math.max(1, Number(event.target.value) || 1)))}
                           className="h-10 w-24 rounded-md border bg-card px-3 text-sm text-foreground"
                         />
                       </label>
@@ -143,15 +187,28 @@ export default function ObjectDetailPage() {
                       ข้อความถึงคนทำ
                       <Textarea value={note} onChange={(event) => setNote(event.target.value)} rows={3} />
                     </label>
-                    <Button type="button" className="w-full" onClick={() => requireAuth(user, () => setPayOpen(true))}>
-                      {item.fulfillment === "download" ? "ซื้อไฟล์" : "สั่งซื้อ"}
-                    </Button>
-                    <p className="text-xs leading-5 text-muted-foreground">
-                      จ่ายผ่าน Payso คนขายส่งของเองแล้วใส่เลขติดตามให้ดูในคำสั่งที่ซื้อ
-                    </p>
+                    {payOn ? (
+                      <>
+                        <Button type="button" className="w-full" onClick={() => requireAuth(user, () => setPayOpen(true))}>
+                          {item.fulfillment === "download" ? "ซื้อไฟล์" : "สั่งซื้อ"}
+                        </Button>
+                        <p className="text-xs leading-5 text-muted-foreground">
+                          เงินของคุณถูกพักไว้กับ SAMECOR จนกว่าจะกดรับของ ถ้าไม่ได้ของ ทักทีมงานได้
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <Button type="button" className="w-full" disabled={chatting} onClick={reserveInChat}>
+                          {chatting ? "กำลังเปิดแชท" : "สั่งจองผ่านแชท"}
+                        </Button>
+                        <p className="text-xs leading-5 text-muted-foreground">
+                          ส่งตัวเลือกและจำนวนนี้ให้คนทำในแชท คนทำจะยืนยันของ ค่าส่ง และวิธีชำระกับคุณ
+                        </p>
+                      </>
+                    )}
                   </>
                 )}
-                {!item.sample && !isOwner ? (
+                {!item.sample && !isOwner && (payOn || soldOut || optionSoldOut) ? (
                   <Button
                     type="button"
                     variant="outline"
@@ -183,9 +240,9 @@ export default function ObjectDetailPage() {
                     {chatting ? "กำลังเปิดแชท" : "ทักคนทำ"}
                   </Button>
                 ) : null}
-                {(isOwner || paidForFile) && item.downloads.length > 0 ? (
+                {(isOwner || paidForFile) && (downloads.data ?? []).length > 0 ? (
                   <ul className="space-y-1 text-sm">
-                    {item.downloads.map((file) => (
+                    {(downloads.data ?? []).map((file) => (
                       <li key={file.label}>
                         <a href={file.url} className="underline underline-offset-2">
                           {file.label}
@@ -263,17 +320,19 @@ export default function ObjectDetailPage() {
                   ))}
                 </div>
               ) : null}
-              <p className="mt-6 text-[11px] text-muted-foreground">
-                ขนาดเป็นเซนติเมตร สีบนจอต่างจากของจริง
-              </p>
+              {item.kind !== "files" ? (
+                <p className="mt-6 text-[11px] text-muted-foreground">
+                  ขนาดเป็นเซนติเมตร สีบนจอต่างจากของจริง
+                </p>
+              ) : null}
             </section>
-            {user && !item.sample && !isOwner && !soldOut ? (
+            {user && payOn && !item.sample && !isOwner && !soldOut ? (
               <ObjectPaySheet
                 open={payOpen}
                 onOpenChange={setPayOpen}
                 item={{ ...item, price_thb: unitPrice }}
                 buyerId={user.id}
-                qty={item.fulfillment === "download" ? 1 : qty}
+                qty={buyQty}
                 finish={activeFinish}
                 note={note}
               />

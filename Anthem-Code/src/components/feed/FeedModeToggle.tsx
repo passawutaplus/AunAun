@@ -111,7 +111,7 @@ const FeedModeToggle = ({
     <div
       ref={trackRef}
       className={cn(
-        "relative shrink-0 flex items-center rounded-full border border-border bg-white p-0.5 shadow-none transition-[width] duration-200",
+        "relative shrink-0 flex items-center rounded-full border border-border bg-white p-0.5 shadow-none transition-[width] duration-200 dark:bg-card",
         packed && visible.length === 2 && "w-[14.5rem]",
         packed && visible.length === 3 && "w-[21.75rem]",
         !compact && visible.length >= 4 && "w-max",
@@ -163,7 +163,7 @@ const FeedModeToggle = ({
               visibility,
               packed && "flex-1",
               active
-                ? "text-white"
+                ? "text-white dark:text-primary-foreground"
                 : "text-foreground/75 hover:text-foreground",
             )}
           >

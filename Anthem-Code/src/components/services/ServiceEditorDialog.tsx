@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import PackageExtrasEditor from "@/components/services/PackageExtrasEditor";
 import { useNavigate } from "react-router-dom";
 import {
   Dialog,
@@ -20,7 +21,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ChevronLeft, ChevronRight, Eye, ImagePlus, Loader2, Plus, Trash2, Video } from "lucide-react";
+import {
+  AlignLeft,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  Image as ImageIcon,
+  ImagePlus,
+  Images,
+  Loader2,
+  Save,
+  Shapes,
+  Trash2,
+  Type,
+  Video,
+} from "lucide-react";
+import PackageTiersEditor, { blankTier } from "@/components/services/PackageTiersEditor";
+import { MascotCharacter } from "@/components/project/TourMascot";
 import PackagesIcon from "@/components/icons/PackagesIcon";
 import { toast } from "sonner";
 import { CommunityImageCropDialog } from "@/components/community/CommunityImageCropDialog";
@@ -34,6 +51,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import {
   CREATOR_SERVICES_GALLERY_MAX,
+  applyTiersToInput,
+  normalizeAddons,
+  normalizeFaq,
+  normalizeTiers,
+  tierProblems,
+  tiersOf,
   type CreatorService,
   type CreatorServiceInput,
   type CreatorServiceStatus,
@@ -94,6 +117,9 @@ const empty = (): CreatorServiceInput => ({
   tags: [],
   reference_project_ids: [],
   status: "Draft",
+  tiers: [blankTier()],
+  addons: [],
+  faq: [],
 });
 
 function sameList(a: string[], b: string[]) {
@@ -118,7 +144,6 @@ export default function ServiceEditorDialog({
   const coverInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState<CreatorServiceInput>(empty());
-  const [deliverables, setDeliverables] = useState<string[]>(["", "", ""]);
   const [categoryParentId, setCategoryParentId] = useState<CategoryParentId | null>(null);
   const [categorySubId, setCategorySubId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -133,10 +158,7 @@ export default function ServiceEditorDialog({
   const [publishChecklistTick, setPublishChecklistTick] = useState(0);
   const [publishPopupOpaque, setPublishPopupOpaque] = useState(false);
   const [gallerySlideIdx, setGallerySlideIdx] = useState(0);
-  const [baseline, setBaseline] = useState<{
-    form: CreatorServiceInput;
-    deliverables: string[];
-  } | null>(null);
+  const [baseline, setBaseline] = useState<{ form: CreatorServiceInput } | null>(null);
 
   useEffect(() => {
     if (!isPage && !open) return;
@@ -157,19 +179,17 @@ export default function ServiceEditorDialog({
           tags: initial.tags ?? [],
           reference_project_ids: initial.reference_project_ids ?? [],
           status: initial.status,
+          tiers: tiersOf(initial).map((t) => ({ ...t, exclusions: "", deliverables: t.deliverables.length ? [...t.deliverables] : [""] })),
+          addons: initial.addons ?? [],
+          faq: initial.faq ?? [],
         }
       : empty();
-    const nextDel = initial?.deliverables?.length
-      ? [...initial.deliverables]
-      : ["", "", ""];
-    while (nextDel.length < 3) nextDel.push("");
     const inferred = inferTaxonomySelection(nextForm.category, nextForm.tags);
-    nextForm.tags = mergeCategorySubTag([], inferred.subId);
+    nextForm.tags = mergeCategorySubTag(nextForm.tags ?? [], inferred.subId);
     setForm(nextForm);
-    setDeliverables(nextDel);
     setCategoryParentId(inferred.parentId);
     setCategorySubId(inferred.subId);
-    setBaseline({ form: nextForm, deliverables: nextDel });
+    setBaseline({ form: nextForm });
     setExitAskOpen(false);
     setPublishConfirmOpen(false);
     setPublishAttestChecked(false);
@@ -201,23 +221,16 @@ export default function ServiceEditorDialog({
     const b = baseline.form;
     return (
       f.title !== b.title ||
-      f.price_thb !== b.price_thb ||
-      (f.price_min_thb ?? 0) !== (b.price_min_thb ?? 0) ||
       f.summary !== b.summary ||
-      (f.duration_label ?? "") !== (b.duration_label ?? "") ||
-      (f.revisions_label ?? "") !== (b.revisions_label ?? "") ||
-      (f.exclusions_note ?? "") !== (b.exclusions_note ?? "") ||
       (f.cover_url ?? "") !== (b.cover_url ?? "") ||
       (f.category ?? "") !== (b.category ?? "") ||
       !sameList(f.tags ?? [], b.tags ?? []) ||
+      JSON.stringify([f.tiers ?? [], f.addons ?? [], f.faq ?? []]) !==
+        JSON.stringify([b.tiers ?? [], b.addons ?? [], b.faq ?? []]) ||
       !sameList(f.reference_project_ids ?? [], b.reference_project_ids ?? []) ||
-      !sameList(f.gallery_urls ?? [], b.gallery_urls ?? []) ||
-      !sameList(
-        deliverables.map((d) => d.trim()).filter(Boolean),
-        baseline.deliverables.map((d) => d.trim()).filter(Boolean),
-      )
+      !sameList(f.gallery_urls ?? [], b.gallery_urls ?? [])
     );
-  }, [baseline, form, deliverables]);
+  }, [baseline, form]);
 
   const leaveToPrevious = () => {
     setExitAskOpen(false);
@@ -268,14 +281,14 @@ export default function ServiceEditorDialog({
   };
 
   const livePreview = useMemo((): CreatorService => {
-    let max = Math.max(0, Math.round(form.price_thb));
-    let min = Math.max(0, Math.round(form.price_min_thb ?? max));
-    if (min > max) [min, max] = [max, min];
-    const items = deliverables.map((d) => d.trim()).filter(Boolean);
+    const derived = applyTiersToInput(form);
+    const max = Math.max(0, Math.round(derived.price_thb));
+    const min = Math.max(0, Math.round(derived.price_min_thb ?? max));
+    const items = derived.deliverables.map((d) => d.trim()).filter(Boolean);
     const category = categoryParentId
       ? resolveDbCategory(categoryParentId, categorySubId)
       : (form.category ?? "").trim();
-    const tags = mergeCategorySubTag([], categorySubId);
+    const tags = mergeCategorySubTag(form.tags ?? [], categorySubId);
     return {
       id: initial?.id ?? "preview",
       owner_id: user?.id ?? "",
@@ -284,10 +297,10 @@ export default function ServiceEditorDialog({
       price_min_thb: min || max,
       summary: form.summary.trim() || "—",
       deliverables: items.length ? items : ["—"],
-      duration_label: (form.duration_label ?? "").replace(/[^\d]/g, ""),
+      duration_label: (derived.duration_label ?? "").replace(/[^\d]/g, ""),
       concepts_label: "",
-      revisions_label: (form.revisions_label ?? "").replace(/[^\d]/g, ""),
-      exclusions_note: (form.exclusions_note ?? "").trim(),
+      revisions_label: (derived.revisions_label ?? "").replace(/[^\d]/g, ""),
+      exclusions_note: (derived.exclusions_note ?? "").trim(),
       cover_url: form.cover_url?.trim() || null,
       gallery_urls: gallery,
       category,
@@ -297,10 +310,12 @@ export default function ServiceEditorDialog({
       sort_order: 0,
       created_at: "",
       updated_at: "",
+      tiers: derived.tiers ?? [],
+      addons: normalizeAddons(form.addons ?? []),
+      faq: normalizeFaq(form.faq ?? []),
     };
   }, [
     form,
-    deliverables,
     gallery,
     categoryParentId,
     categorySubId,
@@ -314,14 +329,7 @@ export default function ServiceEditorDialog({
     if (!form.summary.trim()) checklist.push("กรอกรายละเอียด");
     if (!form.cover_url?.trim()) checklist.push("อัปโหลดภาพปก");
     if (!categoryParentId) checklist.push("เลือกหมวดหมู่");
-    const items = deliverables.map((d) => d.trim()).filter(Boolean);
-    if (!items.length) checklist.push("ใส่สิ่งที่ส่งมอบงานอย่างน้อย 1 ข้อ");
-    let max = Math.max(0, Math.round(form.price_thb));
-    let min = Math.max(0, Math.round(form.price_min_thb ?? max));
-    if (min > max) [min, max] = [max, min];
-    if (max <= 0 && min <= 0) checklist.push("ใส่ราคาอย่างน้อย 1 ช่อง");
-    const days = Number.parseInt(String(form.duration_label ?? "").replace(/[^\d]/g, ""), 10);
-    if (!Number.isFinite(days) || days <= 0) checklist.push("ใส่จำนวนวันทำงาน");
+    checklist.push(...tierProblems(normalizeTiers(form.tiers ?? []), true));
     if (!(form.reference_project_ids ?? []).length) {
       checklist.push("เลือกผลงานตัวอย่างอย่างน้อย 1 ชิ้น");
     }
@@ -329,35 +337,33 @@ export default function ServiceEditorDialog({
   };
 
   const submit = async (status: CreatorServiceStatus, thenClose = false) => {
-    const items = deliverables.map((d) => d.trim()).filter(Boolean);
     if (status === "Published") {
       const gaps = collectPublishGaps();
       if (gaps.length) {
         toast.error(gaps[0]);
         return;
       }
-    } else if (!items.length) {
-      toast.error("ใส่สิ่งที่ส่งมอบงานอย่างน้อย 1 ข้อ");
-      return;
+    } else {
+      const issue = tierProblems(normalizeTiers(form.tiers ?? []), false)[0];
+      if (issue) {
+        toast.error(issue);
+        return;
+      }
     }
     const category = categoryParentId
       ? resolveDbCategory(categoryParentId, categorySubId)
       : (form.category ?? "").trim();
-    const tags = mergeCategorySubTag([], categorySubId);
+    const tags = mergeCategorySubTag(form.tags ?? [], categorySubId);
     await onSubmit(
       {
-        ...form,
-        deliverables: items,
+        ...applyTiersToInput(form),
         status,
         category,
         tags,
         reference_project_ids: form.reference_project_ids ?? [],
         concepts_label: "",
-        revisions_label: (form.revisions_label ?? "").replace(/[^\d]/g, ""),
-        exclusions_note: (form.exclusions_note ?? "").trim().slice(0, 500),
         cover_url: form.cover_url?.trim() || null,
         gallery_urls: gallery,
-        duration_label: (form.duration_label ?? "").replace(/[^\d]/g, ""),
       },
       initial?.id,
     );
@@ -488,7 +494,7 @@ export default function ServiceEditorDialog({
   const creatorName =
     profile?.display_name?.trim() || profile?.username?.trim() || "ครีเอเตอร์";
 
-  const editorTitle = initial ? "แก้ไขแพ็กเกจ" : "ลงแพ็กเกจใหม่";
+  const editorTitle = initial ? "Edit Package" : "New Package";
 
   const headerActions = (
     <div className="flex flex-wrap items-center justify-end gap-1.5 sm:gap-2 shrink-0">
@@ -533,14 +539,16 @@ export default function ServiceEditorDialog({
       <Button
         type="button"
         variant="outline"
-        size="sm"
         disabled={actionBusy}
-        className="rounded-full"
+        className="group h-10 min-w-10 gap-0 rounded-full px-[11px]"
         onClick={() => void submit("Draft")}
+        aria-label="บันทึกร่าง"
+        title="บันทึกร่าง"
       >
-        {busy ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
-        <span className="hidden sm:inline">บันทึกร่าง</span>
-        <span className="sm:hidden">ร่าง</span>
+        {busy ? <Loader2 className="h-4 w-4 shrink-0 animate-spin" /> : <Save className="h-4 w-4 shrink-0" />}
+        <span className="max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-200 group-hover:ml-1.5 group-hover:max-w-24 group-hover:opacity-100 group-focus-visible:ml-1.5 group-focus-visible:max-w-24 group-focus-visible:opacity-100">
+          บันทึกร่าง
+        </span>
       </Button>
       <Button
         type="button"
@@ -610,22 +618,27 @@ export default function ServiceEditorDialog({
   const pageMediaBlock = (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <Label>พรีวิวภาพพรีเซ้น ({gallery.length}/{CREATOR_SERVICES_GALLERY_MAX})</Label>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          className="rounded-full"
-          disabled={uploading || busy || gallery.length >= CREATOR_SERVICES_GALLERY_MAX}
-          onClick={() => galleryInputRef.current?.click()}
-        >
-          {uploading ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
-          ) : (
-            <ImagePlus className="w-3.5 h-3.5 mr-1" />
-          )}
-          เพิ่มสื่อ
-        </Button>
+        <Label className="inline-flex items-center gap-1.5">
+          <Images className="h-3.5 w-3.5 text-primary" aria-hidden />
+          ภาพพรีเซ้นต์ ({gallery.length}/{CREATOR_SERVICES_GALLERY_MAX})
+        </Label>
+        {gallery.length > 0 ? (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="rounded-full"
+            disabled={uploading || busy || gallery.length >= CREATOR_SERVICES_GALLERY_MAX}
+            onClick={() => galleryInputRef.current?.click()}
+          >
+            {uploading ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
+            ) : (
+              <ImagePlus className="w-3.5 h-3.5 mr-1" />
+            )}
+            เพิ่มสื่อ
+          </Button>
+        ) : null}
       </div>
       <p className="text-[11px] text-muted-foreground leading-relaxed">
         {PORTFOLIO_IMAGE_FORMAT_HINT} หรือวิดีโอ MP4/MOV/WebM · สูงสุด {CREATOR_SERVICES_GALLERY_MAX}{" "}
@@ -690,10 +703,27 @@ export default function ServiceEditorDialog({
             type="button"
             disabled={uploading || busy}
             onClick={() => galleryInputRef.current?.click()}
-            className="flex aspect-[4/3] w-full flex-col items-center justify-center gap-2 text-sm text-muted-foreground hover:bg-muted/40"
+            className="group flex aspect-[4/3] w-full flex-col items-center justify-center gap-3 px-6 text-center hover:bg-muted/40"
           >
-            {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImagePlus className="h-6 w-6" />}
-            อัปโหลดภาพพรีเซ้นเพื่อพรีวิวแพ็กเกจ
+            {uploading ? (
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            ) : (
+              <MascotCharacter className="h-24 w-24 transition-transform duration-300 group-hover:-translate-y-1" />
+            )}
+            <span className="space-y-1">
+              <span className="block text-sm font-semibold text-foreground">
+                {uploading ? "กำลังอัปโหลด… แป๊บนึงนะ" : "โชว์งานให้ลูกค้าเห็นภาพกันหน่อย!"}
+              </span>
+              <span className="block text-xs text-muted-foreground">
+                แตะเพื่อเลือกภาพหรือวิดีโอ — ภาพแรกจะเป็นภาพหลักของแพ็กเกจ
+              </span>
+            </span>
+            {!uploading ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3.5 py-1.5 text-xs font-medium text-primary-foreground">
+                <ImagePlus className="h-3.5 w-3.5" aria-hidden />
+                เลือกไฟล์
+              </span>
+            ) : null}
           </button>
         )}
       </div>
@@ -715,7 +745,8 @@ export default function ServiceEditorDialog({
       ) : null}
 
       <div className="space-y-1.5">
-        <Label>
+        <Label className="inline-flex items-center gap-1.5">
+          <ImageIcon className="h-3.5 w-3.5 text-primary" aria-hidden />
           ภาพปก {ReqAsterisk()} (thumbnail)
         </Label>
         <input
@@ -921,7 +952,8 @@ export default function ServiceEditorDialog({
 
   const titleBlock = (
     <div className="space-y-1.5">
-      <Label htmlFor="svc-title">
+      <Label htmlFor="svc-title" className="inline-flex items-center gap-1.5">
+        <Type className="h-3.5 w-3.5 text-primary" aria-hidden />
         ชื่อบริการ {ReqAsterisk()}
       </Label>
       <Input
@@ -936,7 +968,8 @@ export default function ServiceEditorDialog({
 
   const summaryBlock = (
     <div className="space-y-1.5">
-      <Label htmlFor="svc-summary">
+      <Label htmlFor="svc-summary" className="inline-flex items-center gap-1.5">
+        <AlignLeft className="h-3.5 w-3.5 text-primary" aria-hidden />
         รายละเอียด {ReqAsterisk()}
       </Label>
       <Textarea
@@ -953,7 +986,8 @@ export default function ServiceEditorDialog({
   const detailsBlocks = (
     <>
       <div className="space-y-1.5">
-        <Label>
+        <Label className="inline-flex items-center gap-1.5">
+          <Shapes className="h-3.5 w-3.5 text-primary" aria-hidden />
           หมวดหมู่ {ReqAsterisk()}
         </Label>
         <ProjectTaxonomyPicker
@@ -968,177 +1002,70 @@ export default function ServiceEditorDialog({
               setForm((f) => ({
                 ...f,
                 category: resolveDbCategory(parentId, subId),
-                tags: mergeCategorySubTag([], subId),
+                tags: mergeCategorySubTag(f.tags ?? [], subId),
               }));
             } else {
               setForm((f) => ({
                 ...f,
                 category: "",
-                tags: [],
+                tags: mergeCategorySubTag(f.tags ?? [], null),
               }));
             }
           }}
         />
       </div>
 
-      <div className="space-y-1.5">
-        <Label>
-          ราคา (บาท) {ReqAsterisk()}
-        </Label>
-        <div className="grid grid-cols-2 gap-2">
-          <Input
-            type="number"
-            min={0}
-            value={form.price_min_thb || ""}
-            onChange={(e) =>
-              setForm((f) => ({
-                ...f,
-                price_min_thb: Number(e.target.value) || 0,
-              }))
-            }
-            placeholder="ต่ำสุด"
-          />
-          <Input
-            type="number"
-            min={0}
-            value={form.price_thb || ""}
-            onChange={(e) =>
-              setForm((f) => ({
-                ...f,
-                price_thb: Number(e.target.value) || 0,
-              }))
-            }
-            placeholder="สูงสุด"
-          />
-        </div>
-      </div>
+      <PackageTiersEditor
+        tiers={form.tiers ?? []}
+        disabled={!!busy || uploading}
+        onChange={(tiers) => setForm((f) => ({ ...f, tiers }))}
+      />
 
-      <div className="space-y-1.5">
-        <Label htmlFor="svc-duration">
-          จำนวนวันทำงาน {ReqAsterisk()}
-        </Label>
-        <Input
-          id="svc-duration"
-          type="number"
-          min={1}
-          inputMode="numeric"
-          value={form.duration_label || ""}
-          onChange={(e) =>
-            setForm((f) => ({
-              ...f,
-              duration_label: e.target.value.replace(/[^\d]/g, ""),
-            }))
-          }
-          placeholder="14"
-          required
-        />
-      </div>
-
-      <div className="space-y-2">
-        <div className="flex items-center justify-between gap-2">
-          <Label>
-            สิ่งที่ส่งมอบงาน {ReqAsterisk()}
-          </Label>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="rounded-full h-8"
-            onClick={() => setDeliverables((rows) => [...rows, ""])}
-          >
-            <Plus className="w-3.5 h-3.5 mr-1" />
-            เพิ่มรายการ
-          </Button>
-        </div>
-        <div className="space-y-2">
-          {deliverables.map((row, idx) => (
-            <div key={`del-${idx}`} className="flex gap-2">
-              <Input
-                value={row}
-                onChange={(e) =>
-                  setDeliverables((rows) => rows.map((r, i) => (i === idx ? e.target.value : r)))
-                }
-                placeholder={`รายการที่ ${idx + 1}`}
-              />
-              <Button
-                type="button"
-                size="icon"
-                variant="ghost"
-                className="shrink-0 text-muted-foreground hover:text-destructive"
-                disabled={deliverables.length <= 1}
-                onClick={() => setDeliverables((rows) => rows.filter((_, i) => i !== idx))}
-                aria-label="ลบรายการ"
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="space-y-1.5">
-        <Label htmlFor="svc-revisions">จำนวนรอบแก้ไข (ไม่บังคับ)</Label>
-        <Input
-          id="svc-revisions"
-          type="number"
-          min={0}
-          inputMode="numeric"
-          value={form.revisions_label || ""}
-          onChange={(e) =>
-            setForm((f) => ({
-              ...f,
-              revisions_label: e.target.value.replace(/[^\d]/g, ""),
-            }))
-          }
-          placeholder="เช่น 2"
-        />
-      </div>
-
-      <div className="space-y-1.5">
-        <Label htmlFor="svc-exclusions">สิ่งที่ไม่รวม (ไม่บังคับ)</Label>
-        <Textarea
-          id="svc-exclusions"
-          value={form.exclusions_note || ""}
-          onChange={(e) =>
-            setForm((f) => ({
-              ...f,
-              exclusions_note: e.target.value.slice(0, 500),
-            }))
-          }
-          placeholder="เช่น ไม่รวม source file, ไม่รวมเร่งด่วนภายใน 3 วัน"
-          rows={2}
-          maxLength={500}
-        />
-      </div>
-
-      {user?.id ? (
-        <ServicePackageWorksPicker
-          userId={user.id}
-          selectedIds={form.reference_project_ids ?? []}
-          required
-          disabled={!!busy || uploading}
-          onChange={(ids) => setForm((f) => ({ ...f, reference_project_ids: ids }))}
-        />
-      ) : null}
     </>
   );
 
+  const extrasProps = {
+    addons: form.addons ?? [],
+    faq: form.faq ?? [],
+    disabled: !!busy || uploading,
+    onChange: (next: Partial<Pick<CreatorServiceInput, "addons" | "faq">>) => setForm((f) => ({ ...f, ...next })),
+  };
+  const addonsBlock = <PackageExtrasEditor part="addons" {...extrasProps} />;
+  const faqBlock = <PackageExtrasEditor part="faq" {...extrasProps} />;
+  const worksBlock = user?.id ? (
+    <ServicePackageWorksPicker
+      userId={user.id}
+      selectedIds={form.reference_project_ids ?? []}
+      required
+      disabled={!!busy || uploading}
+      onChange={(ids) => setForm((f) => ({ ...f, reference_project_ids: ids }))}
+    />
+  ) : null;
+  const sectionCard = "space-y-4 rounded-2xl border border-border/60 bg-card/40 p-4 sm:p-5";
+
   const formFields = isPage ? (
     <div className="grid grid-cols-1 gap-6 p-4 sm:p-6 lg:grid-cols-2 lg:gap-8 lg:items-start">
-      <section className="space-y-4">
-        {pageMediaBlock}
-        {titleBlock}
-        {summaryBlock}
-      </section>
-      <section className="space-y-4 rounded-2xl border border-border/60 bg-card/40 p-4 sm:p-5">
-        <div>
-          <h2 className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground">
-            <PackagesIcon className="h-3.5 w-3.5 text-primary" />
-            ข้อมูลแพ็กเกจ
-          </h2>
-        </div>
-        {detailsBlocks}
-      </section>
+      <div className="space-y-4">
+        <section className="space-y-4">
+          {pageMediaBlock}
+          {titleBlock}
+          {summaryBlock}
+        </section>
+        <section className={sectionCard}>{faqBlock}</section>
+        {worksBlock ? <section className={sectionCard}>{worksBlock}</section> : null}
+      </div>
+      <div className="space-y-4">
+        <section className={sectionCard}>
+          <div>
+            <h2 className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground">
+              <PackagesIcon className="h-3.5 w-3.5 text-primary" />
+              ข้อมูลแพ็กเกจ
+            </h2>
+          </div>
+          {detailsBlocks}
+        </section>
+        <section className={sectionCard}>{addonsBlock}</section>
+      </div>
     </div>
   ) : (
     <div className="space-y-4 p-4 sm:p-5">
@@ -1146,7 +1073,10 @@ export default function ServiceEditorDialog({
       {galleryBlock}
       {titleBlock}
       {detailsBlocks}
+      {addonsBlock}
       {summaryBlock}
+      {faqBlock}
+      {worksBlock}
     </div>
   );
 
@@ -1334,7 +1264,7 @@ export default function ServiceEditorDialog({
                   <PackagesIcon className="h-3.5 w-3.5 shrink-0" />
                   Packages
                 </p>
-                <h1 className="truncate text-base font-semibold text-foreground">
+                <h1 className="truncate text-lg font-bold tracking-tight text-foreground sm:text-xl">
                   {editorTitle}
                 </h1>
               </div>

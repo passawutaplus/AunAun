@@ -851,17 +851,10 @@
   }
 
   /* These overrides pin the fill to ink in every mode, so the label must stay paper-light
-     (otherwise .dark's dark --primary-foreground lands on #2f2e2c and the text vanishes). */
-  html.learn-paper .bg-gradient-brand,
-  .dark [data-studio-home] .bg-gradient-brand,
-  [data-studio-home] .bg-gradient-brand {
+     (otherwise .dark's dark --primary-foreground lands on #2f2e2c and the text vanishes).
+     The studio home follows the theme now, so it uses the plain .bg-gradient-brand (ink in light, paper in dark). */
+  html.learn-paper .bg-gradient-brand {
     color: #f5f5f5 !important;
-  }
-
-  .dark [data-studio-home] .bg-gradient-brand,
-  [data-studio-home] .bg-gradient-brand {
-    background-image: none;
-    background-color: #2f2e2c;
   }
 
 
@@ -1990,6 +1983,16 @@ strong, b,
   .hero-mode-slot { transition: none; }
 }
 
+/* Home (html[data-feed-home]): hero -> catalog sheet.
+   Header spacing is the flush size from the start; only paint-only cues follow the scroll
+   (--feed-flush-p on the sheet, --feed-nav-line on the top nav; written per frame by FeedPage). Growing gaps / padding while scrolling
+   pushed the grid down under the finger and made the title bounce. */
+@property --feed-flush-p {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+
 html [data-feed-sheet] {
   border-top-left-radius: calc((1 - var(--feed-flush-p, 0)) * 2.75rem);
   border-top-right-radius: calc((1 - var(--feed-flush-p, 0)) * 2.75rem);
@@ -2000,19 +2003,51 @@ html [data-desktop-top-nav] {
 }
 
 html [data-desktop-top-nav] > div {
-  height: calc(3.5rem + var(--feed-flush-p, 0) * 1.25rem);
+  height: 3.5rem;
+}
+
+html[data-feed-home] [data-desktop-top-nav] > div {
+  height: 4.75rem;
+}
+
+/* Hairline under the nav once the sheet is flush (opacity only). */
+html[data-feed-home] [data-desktop-top-nav]::after {
+  content: "";
+  position: absolute;
+  top: calc(4.75rem - 1px);
+  left: calc(max(0px, (100% - 1920px) / 2) + 1.5rem + 25px);
+  right: calc(max(0px, (100% - 1920px) / 2) + 1.5rem + 25px);
+  height: 1px;
+  background: hsl(var(--border));
+  opacity: var(--feed-nav-line, 0);
+  pointer-events: none;
+}
+
+@media (min-width: 1536px) {
+  html[data-feed-home] [data-desktop-top-nav]::after {
+    left: calc(max(0px, (100% - 1920px) / 2) + 2.5rem + 25px);
+    right: calc(max(0px, (100% - 1920px) / 2) + 2.5rem + 25px);
+  }
 }
 
 html [data-feed-catalog-head] {
-  row-gap: calc(0.25rem + var(--feed-flush-p, 0) * 2rem);
+  row-gap: 0.25rem;
 }
 
-html [data-feed-mode-cluster] {
-  padding-top: calc(var(--feed-flush-p, 0) * 3.5rem);
+html [data-feed-sheet] [data-feed-catalog-head] {
+  row-gap: 2.25rem;
+}
+
+html [data-feed-sheet] [data-feed-mode-cluster] {
+  padding-top: 3.5rem;
 }
 
 html [data-feed-catalog-head] .gap-y-1 {
-  row-gap: calc(0.25rem + var(--feed-flush-p, 0) * 0.25rem);
+  row-gap: 0.25rem;
+}
+
+html [data-feed-sheet] [data-feed-catalog-head] .gap-y-1 {
+  row-gap: 0.5rem;
 }
 
 .hero-poster-title {
@@ -2021,7 +2056,7 @@ html [data-feed-catalog-head] .gap-y-1 {
   align-items: center;
   gap: 0.06em;
   margin: 0;
-  color: #2f2e2c;
+  color: hsl(var(--foreground));
   font-family: "IBM Plex Sans Thai", "Sarabun", "IBM Plex Sans Thai Looped", ui-sans-serif, system-ui, sans-serif;
   font-weight: 400;
   font-size: clamp(3.25rem, 7vw, 6.5rem);
@@ -2127,7 +2162,7 @@ html [data-feed-catalog-head] .gap-y-1 {
 
 .hero-looking-label {
   flex: none;
-  color: #2f2e2c;
+  color: hsl(var(--foreground));
   font-family: "Newsreader", "Iowan Old Style", Palatino, Georgia, serif;
   font-weight: 400;
   font-synthesis: none;
@@ -2150,10 +2185,10 @@ html [data-feed-catalog-head] .gap-y-1 {
 .hero-looking-input {
   width: 100%;
   border: 0;
-  border-bottom: 1px solid rgba(47, 46, 44, 0.35);
+  border-bottom: 1px solid hsl(var(--foreground) / 0.35);
   border-radius: 0;
   background: transparent;
-  color: #2f2e2c;
+  color: hsl(var(--foreground));
   font-family: "IBM Plex Sans Thai", "Sarabun", "IBM Plex Sans Thai Looped", ui-sans-serif, system-ui, sans-serif;
   font-size: clamp(1.2rem, 2.1vw, 1.65rem);
   font-weight: 400;
@@ -2163,7 +2198,7 @@ html [data-feed-catalog-head] .gap-y-1 {
 }
 
 .hero-looking-input:focus {
-  border-bottom-color: #2f2e2c;
+  border-bottom-color: hsl(var(--foreground));
 }
 
 .hero-looking-search {
@@ -2177,7 +2212,7 @@ html [data-feed-catalog-head] .gap-y-1 {
   padding: 0;
   border: 0;
   background: transparent;
-  color: #2f2e2c;
+  color: hsl(var(--foreground));
   cursor: pointer;
 }
 
@@ -2209,6 +2244,14 @@ html [data-feed-catalog-head] .gap-y-1 {
   0%, 100% { transform: translate(0, 0) rotate(0deg); }
   40% { transform: translate(-2px, -1px) rotate(-16deg); }
   70% { transform: translate(1px, 1px) rotate(8deg); }
+}
+
+.home-hero-wash {
+  background: radial-gradient(ellipse at 50% 28%, rgba(229, 228, 226, 0.95) 0%, rgba(188, 186, 180, 0.28) 42%, transparent 70%);
+}
+
+.dark .home-hero-wash {
+  background: radial-gradient(ellipse at 50% 28%, rgba(74, 72, 68, 0.55) 0%, rgba(58, 56, 53, 0.2) 42%, transparent 70%);
 }
 
 .hero-cover-field {

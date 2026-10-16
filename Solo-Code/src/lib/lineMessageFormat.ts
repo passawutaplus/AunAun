@@ -2,7 +2,7 @@ import type { LineNotifyKind } from "@/lib/lineNotificationKinds";
 import { SITE_URL } from "@/lib/siteUrl";
 
 export const LINE_NOTIFICATION_HEADER = "[So1o Freelancer Notification]";
-export const APLUS1_LINE_HEADER = "[Aplus1 Notification]";
+export const APLUS1_LINE_HEADER = "[SAMECOR Notification]";
 /** @deprecated use APLUS1_LINE_HEADER */
 export const ANTHEM_LINE_HEADER = APLUS1_LINE_HEADER;
 
@@ -34,7 +34,7 @@ const ANTHEM_BASE = APLUS1_BASE;
 type KindCopy = {
   hook: string;
   cta: string;
-  /** Path on So1o or Aplus1 (leading slash). */
+  /** Path on So1o or SAMECOR (leading slash). */
   path: string;
   app: "solo" | "anthem";
 };

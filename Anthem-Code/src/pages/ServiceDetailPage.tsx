@@ -1,13 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { Share2 } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
-import SharePopover from "@/components/SharePopover";
 import { Button } from "@/components/ui/button";
 import PageLoader from "@/components/ui/PageLoader";
-import { useChatAboutPackage } from "@/hooks/useChatAboutPackage";
+import { useChatAboutPackage, type PackageChoice } from "@/hooks/useChatAboutPackage";
 import ServiceDetailView from "@/components/services/ServiceDetailView";
 import ServiceRelatedPackages from "@/components/services/ServiceRelatedPackages";
+import ServicePackageReviews from "@/components/services/ServicePackageReviews";
+import {
+  recordGuestServiceView,
+  useCreatorResponseMinutes,
+  usePackageHireCount,
+} from "@/hooks/usePackageSignals";
 import SeoHead from "@/components/SeoHead";
 import { useAuth } from "@/hooks/useAuth";
 import { useCreatorService } from "@/hooks/useCreatorServices";
@@ -16,7 +20,7 @@ import { recordCreatorServiceView } from "@/hooks/usePackageOverviewSeries";
 import { HeaderAccountActions } from "@/components/HeaderAccountActions";
 import Footer from "@/components/Footer";
 import { navigateToAuth } from "@/lib/authRedirect";
-import { absoluteUrl, truncateDescription } from "@/lib/seo";
+import { truncateDescription } from "@/lib/seo";
 import { BRAND_NAME } from "@/lib/brandConfig";
 import { PACKAGE_INQUIRY_PLATFORM_DISCLAIMER } from "@/lib/legalSignupCopy";
 import { isLocalDevSelfHirePreview } from "@/lib/localDevSelfHire";
@@ -31,6 +35,8 @@ export default function ServiceDetailPage() {
   const { user } = useAuth();
   const { data: service, isLoading, isError, refetch, isFetching } = useCreatorService(id);
   const { data: ownerProfile } = useProfile(service?.owner_id);
+  const { data: hireCount = 0 } = usePackageHireCount(service?.status === "Published" ? service.id : undefined);
+  const { data: responseMinutes = null } = useCreatorResponseMinutes(service?.owner_id);
   // A package already carries its brief, so "ขอใช้บริการนี้" opens the chat directly — no hire form.
   const { start: startPackageChat, busyId: chatBusyId } = useChatAboutPackage();
 
@@ -50,6 +56,12 @@ export default function ServiceDetailPage() {
     setSearchParams(next, { replace: true });
     void startPackageChat(service, ownerProfile?.display_name || ownerProfile?.username);
   }, [wantsHire, service, user, searchParams, setSearchParams, startPackageChat, ownerProfile]);
+
+  // Guests count too (once per browser); signed-in views go through recordCreatorServiceView below.
+  useEffect(() => {
+    if (!service?.id || user?.id || service.status !== "Published") return;
+    void recordGuestServiceView(service.id);
+  }, [service?.id, service?.status, user?.id]);
 
   useEffect(() => {
     if (!service?.id || !user?.id) return;
@@ -90,6 +102,7 @@ export default function ServiceDetailPage() {
   if (!visible) {
     return (
       <div className="min-h-screen bg-app-ambient flex items-center justify-center px-4">
+        <SeoHead title="ไม่พบแพ็กเกจ" description="แพ็กเกจนี้อาจถูกลบ หรือยังไม่เผยแพร่" path={`/service/${id ?? ""}`} noindex />
         <div className="text-center space-y-3 max-w-sm">
           <p className="font-medium text-foreground">ไม่พบแพ็กเกจนี้</p>
           <p className="text-sm text-muted-foreground">อาจถูกลบ หรือยังไม่เผยแพร่</p>
@@ -105,11 +118,10 @@ export default function ServiceDetailPage() {
     ownerProfile?.display_name?.trim() ||
     ownerProfile?.username?.trim() ||
     "ครีเอเตอร์";
-  const shareUrl = absoluteUrl(`/service/${service.id}`);
   const desc = truncateDescription(service.summary || `${service.title} — แพ็กเกจบน ${BRAND_NAME}`);
   const profilePackagesHref = `/u/${ownerProfile?.username || service.owner_id}?tab=services`;
 
-  const requestService = () => {
+  const requestService = (choice?: PackageChoice) => {
     if (!user) {
       navigateToAuth(navigate);
       return;
@@ -120,8 +132,9 @@ export default function ServiceDetailPage() {
     ) {
       return;
     }
-    void startPackageChat(service, creatorName);
+    void startPackageChat(service, creatorName, choice);
   };
+  const ownerCanEdit = isOwner && !isLocalDevSelfHirePreview(ownerProfile?.username);
 
   return (
     <div className="min-h-screen bg-app-ambient pb-28 md:pb-8">
@@ -130,6 +143,7 @@ export default function ServiceDetailPage() {
         description={desc}
         path={`/service/${service.id}`}
         type="website"
+        noindex={service.status !== "Published"}
         image={service.cover_url || service.gallery_urls[0] || undefined}
       />
 
@@ -145,11 +159,6 @@ export default function ServiceDetailPage() {
             ) : null}
           </div>
           <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-            <SharePopover url={shareUrl} title={service.title}>
-              <Button type="button" variant="ghost" size="icon" className="shrink-0" aria-label="แชร์">
-                <Share2 className="h-4 w-4" />
-              </Button>
-            </SharePopover>
             <HeaderAccountActions />
           </div>
         </div>
@@ -165,12 +174,16 @@ export default function ServiceDetailPage() {
             creatorRole={ownerProfile?.role}
             creatorId={service.owner_id}
             variant="page"
-            onRequest={() => requestService()}
+            onRequest={(_svc, choice) => requestService(choice)}
+            onEdit={ownerCanEdit ? () => navigate(`/portfolio/packages/${service.id}/edit`) : undefined}
+            hireCount={hireCount}
+            responseMinutes={responseMinutes}
             busy={chatBusyId === service.id}
           />
         </div>
 
         <div className="px-4 py-8 md:px-5 lg:px-6 space-y-8">
+          <ServicePackageReviews serviceId={service.id} />
           <ServiceRelatedPackages
             service={service}
             creatorName={creatorName}

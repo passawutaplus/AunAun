@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useMyKycRequests } from "@/hooks/useKyc";
 import { useHasPublishedProject } from "@/hooks/useHasPublishedProject";
-import { useUpsertObject, type ObjectWriteInput } from "@/hooks/useCreatorObjects";
+import { useObjectDownloads, useUpsertObject, type ObjectWriteInput } from "@/hooks/useCreatorObjects";
 import { useMyProjects } from "@/hooks/useProjects";
 import { objectErrorText } from "@/lib/objects/db";
 import { uploadProjectImage } from "@/lib/uploadImage";
@@ -103,6 +103,7 @@ export default function ObjectEditorDialog({ ownerId, open, object, onOpenChange
   const [edition, setEdition] = useState<ObjectWriteInput["edition"]>("open");
   const [editionLabel, setEditionLabel] = useState("");
   const [price, setPrice] = useState("");
+  const [shipping, setShipping] = useState("");
   const [leadDays, setLeadDays] = useState("");
   const [summary, setSummary] = useState("");
   const [story, setStory] = useState("");
@@ -145,6 +146,7 @@ export default function ObjectEditorDialog({ ownerId, open, object, onOpenChange
     setEdition(object?.edition ?? "open");
     setEditionLabel(object?.edition_label ?? "");
     setPrice(object ? String(object.price_thb) : "");
+    setShipping(object && object.shipping_thb > 0 ? String(object.shipping_thb) : "");
     setLeadDays(daysFromLead(object?.lead_time ?? ""));
     setSummary(object?.summary ?? "");
     setStory(object?.story ?? "");
@@ -159,6 +161,12 @@ export default function ObjectEditorDialog({ ownerId, open, object, onOpenChange
     setDownloads(object?.downloads ?? []);
     setProjectIds(object?.reference_project_ids ?? []);
   }, [open, object]);
+
+  // File links are not on the public row any more; the owner reads them from the private table.
+  const savedDownloads = useObjectDownloads(object?.id, open && object?.kind === "files");
+  useEffect(() => {
+    if (open && savedDownloads.data?.length) setDownloads(savedDownloads.data);
+  }, [open, savedDownloads.data]);
 
   const changeKind = (next: ObjectKind) => {
     setKind(next);
@@ -233,6 +241,7 @@ export default function ObjectEditorDialog({ ownerId, open, object, onOpenChange
       edition: hasOptions ? (optionStocks.length ? "limited" : "open") : edition,
       edition_label: hasOptions ? (optionStocks.length ? String(optionStocks.reduce((sum, value) => sum + value, 0)) : "") : editionLabel,
       price_thb: listedPrice,
+      shipping_thb: kind === "files" ? 0 : Math.min(5000, Math.max(0, Math.round(Number(shipping) || 0))),
       lead_time: lead,
       cover_url: photos[0] ?? null,
       gallery_urls: photos.slice(1),
@@ -646,6 +655,18 @@ export default function ObjectEditorDialog({ ownerId, open, object, onOpenChange
                           </>
                         ) : null}
                       </div>
+                    )}
+                    {kind === "files" ? null : (
+                      <label className="mt-1 grid gap-1 text-xs text-muted-foreground">
+                        ค่าส่งต่อคำสั่ง (บาท) — เว้นว่าง = ส่งฟรี
+                        <Input
+                          inputMode="numeric"
+                          value={shipping}
+                          placeholder="เช่น 50"
+                          className="h-9 w-32"
+                          onChange={(event) => setShipping(event.target.value.replace(/[^\d]/g, "").slice(0, 4))}
+                        />
+                      </label>
                     )}
                   </fieldset>
                   {hasOptions ? null : <div className="grid min-w-0 content-start gap-2">

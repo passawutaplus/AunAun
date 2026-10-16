@@ -145,12 +145,10 @@ const HomeHeroWash = ({
           aria-hidden
         >
           <div
-            className="absolute left-1/2 top-[-18%] h-[70vw] w-[100vw] max-h-[40rem] max-w-[68rem] origin-top"
+            className="home-hero-wash absolute left-1/2 top-[-18%] h-[70vw] w-[100vw] max-h-[40rem] max-w-[68rem] origin-top"
             style={{
               opacity: opacity * 0.9,
               transform: `translateX(-50%) scale(${scale})`,
-              background:
-                "radial-gradient(ellipse at 50% 28%, rgba(229,228,226,0.95) 0%, rgba(188,186,180,0.28) 42%, transparent 70%)",
             }}
           />
         </div>

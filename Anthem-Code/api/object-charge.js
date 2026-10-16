@@ -164,7 +164,7 @@ export default async function handler(req, res) {
     const params = new URLSearchParams();
     params.set("amount", String(amountSatang));
     params.set("currency", "thb");
-    params.set("description", String(body.title || order.object_title || "Aplus1 object").slice(0, 240));
+    params.set("description", String(body.title || order.object_title || "SAMECOR object").slice(0, 240));
     params.set("source[type]", "promptpay");
     params.set("metadata[object_order_id]", orderId);
     params.set("metadata[buyer_user_id]", String(user.id));

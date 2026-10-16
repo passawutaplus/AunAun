@@ -542,9 +542,9 @@ const FeedToolbar = ({
             inert={!homeScrolled ? "" : undefined}
             style={{ pointerEvents: homeScrolled ? "auto" : "none" }}
           >
-            <div className="border-b border-[#e4e1db] bg-[#f5f5f5]/95 backdrop-blur-md">
+            <div className="border-b border-border bg-background/95 backdrop-blur-md">
               <div className="mx-auto flex max-w-[1920px] flex-col px-[calc(1.5rem+25px)] 2xl:px-[calc(2.5rem+25px)]">
-                <div className="relative flex h-14 items-center gap-3 border-b border-[#e4e1db]/80">
+                <div className="relative flex h-14 items-center gap-3 border-b border-border/80">
                   <button
                     type="button"
                     className="relative z-10 shrink-0 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -555,7 +555,7 @@ const FeedToolbar = ({
                       useFeedHomeNavStore.getState().setScrolled(false);
                     }}
                   >
-                    <BrandLogo size="sm" tone="ink" />
+                    <BrandLogo size="sm" tone="theme" />
                   </button>
                   <div className="pointer-events-none absolute inset-x-0 top-0 flex h-14 items-center justify-center">
                     <div className="pointer-events-auto flex items-center gap-3">

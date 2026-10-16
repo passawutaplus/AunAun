@@ -336,7 +336,16 @@ function OrderCards({
                   {row.finish ? `${row.finish} · ` : ""}
                   จำนวน {row.qty}
                   {amount ? ` · ${amount}` : ""}
+                  {row.shipping_satang > 0 ? ` (รวมค่าส่ง ${formatBaht(Math.round(row.shipping_satang / 100))})` : ""}
+                  {role === "seller" && row.seller_net_satang > 0
+                    ? ` · รับสุทธิ ${formatBaht(Math.round(row.seller_net_satang / 100))}`
+                    : ""}
                 </p>
+                {role === "buyer" && row.status === "shipped" ? (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    ได้ของแล้วกดรับของ ถ้าไม่กด ระบบยืนยันให้อัตโนมัติ 7 วันหลังส่ง
+                  </p>
+                ) : null}
                 {row.note ? <p className="mt-1 text-xs text-muted-foreground">{row.note}</p> : null}
                 {role === "seller" && row.ship_address ? (
                   <p className="mt-2 text-xs leading-5">

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef, type CSSProperties } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -155,81 +155,142 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
     const { body, documentElement } = document;
     const prevBody = body.style.backgroundColor;
     const prevHtml = documentElement.style.backgroundColor;
-    body.style.backgroundColor = "#f5f5f5";
-    documentElement.style.backgroundColor = "#f5f5f5";
+    body.style.backgroundColor = "hsl(var(--background))";
+    documentElement.style.backgroundColor = "hsl(var(--background))";
     return () => {
       body.style.backgroundColor = prevBody;
       documentElement.style.backgroundColor = prevHtml;
     };
   }, [studioHome]);
 
+  // Hero -> catalog sheet.
+  // Settle: once the user has stopped scrolling down (wheel, trackpad momentum, touch all finished) with the
+  // sheet near the top, ease it flush. Any new input cancels the ease at once, and scrolling up never pulls.
+  // The old version scrolled *while* the user was scrolling and locked for 700 ms, so the two fought and the
+  // sheet jumped. CSS scroll-snap was tried too: Chrome pulls each wheel notch back to the nearest snap point.
+  // Paint: corner radius / nav hairline follow --feed-flush-p, written once per frame.
   useEffect(() => {
     if (!studioHome) return;
+    const root = document.documentElement;
+    root.setAttribute("data-feed-home", "");
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let raf = 0;
+    let flushed: boolean | null = null;
     let lastY = window.scrollY;
-    let locking = false;
-    let releaseTimer = 0;
-    let slideFrame = 0;
+    let lastDir = 0;
+    let idleTimer = 0;
+    let ease = 0;
+    let touching = false;
 
-    const release = () => {
-      locking = false;
-      lastY = window.scrollY;
-      window.cancelAnimationFrame(slideFrame);
-    };
-
-    const markFlush = (sheet: HTMLElement, top: number) => {
+    const paint = () => {
+      raf = 0;
+      const sheet = document.querySelector<HTMLElement>("[data-feed-sheet]");
+      if (!sheet) return;
+      const top = sheet.getBoundingClientRect().top;
       const flush = top <= 1;
-      sheet.toggleAttribute("data-flush", flush);
-      document.documentElement.toggleAttribute("data-feed-flush", flush);
-      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (flush !== flushed) {
+        flushed = flush;
+        sheet.toggleAttribute("data-flush", flush);
+        root.toggleAttribute("data-feed-flush", flush);
+      }
       const span = Math.min(200, window.innerHeight * 0.24);
       const travel = Math.min(1, Math.max(0, (span - top) / span));
       const eased = travel * travel * (3 - 2 * travel);
-      const progress = reduce ? (flush ? 1 : 0) : eased;
-      document.documentElement.style.setProperty("--feed-flush-p", progress.toFixed(4));
+      const progress = (reduce ? (flush ? 1 : 0) : eased).toFixed(3);
+      // Written on the sheet (--feed-flush-p is registered inherits: false, so its grid is not restyled)
+      // and on the small nav (inherited, for its ::after hairline) — never on <html>.
+      sheet.style.setProperty("--feed-flush-p", progress);
+      document.querySelector<HTMLElement>("[data-desktop-top-nav]")?.style.setProperty("--feed-nav-line", progress);
+    };
+    const schedule = () => {
+      if (!raf) raf = window.requestAnimationFrame(paint);
     };
 
-    const trackSlide = () => {
+    const stopEase = () => {
+      if (!ease) return;
+      window.cancelAnimationFrame(ease);
+      ease = 0;
+      lastY = window.scrollY;
+    };
+
+    const settle = () => {
+      idleTimer = 0;
+      if (touching || ease || lastDir <= 0) return;
       const sheet = document.querySelector<HTMLElement>("[data-feed-sheet]");
-      if (sheet) markFlush(sheet, sheet.getBoundingClientRect().top);
-      if (locking) slideFrame = window.requestAnimationFrame(trackSlide);
+      if (!sheet) return;
+      const top = sheet.getBoundingClientRect().top;
+      if (top <= 1 || top > window.innerHeight * 0.35) return;
+      const from = window.scrollY;
+      const to = from + top;
+      if (reduce) {
+        window.scrollTo(0, to);
+        lastY = window.scrollY;
+        return;
+      }
+      const start = performance.now();
+      const duration = Math.min(420, 180 + top * 0.8);
+      const step = (now: number) => {
+        const t = Math.min(1, (now - start) / duration);
+        const eased = 1 - (1 - t) ** 3;
+        window.scrollTo(0, Math.round(from + (to - from) * eased));
+        lastY = window.scrollY;
+        ease = t < 1 ? window.requestAnimationFrame(step) : 0;
+      };
+      ease = window.requestAnimationFrame(step);
+    };
+
+    const armSettle = () => {
+      window.clearTimeout(idleTimer);
+      idleTimer = window.setTimeout(settle, 140);
     };
 
     const onScroll = () => {
+      schedule();
+      if (ease) return; // our own easing
       const y = window.scrollY;
-      const delta = y - lastY;
+      if (Math.abs(y - lastY) > 0.5) lastDir = Math.sign(y - lastY);
       lastY = y;
-      const sheet = document.querySelector<HTMLElement>("[data-feed-sheet]");
-      if (sheet) markFlush(sheet, sheet.getBoundingClientRect().top);
-      if (locking) {
-        if (delta < -2) {
-          window.clearTimeout(releaseTimer);
-          window.scrollTo({ top: y, behavior: "auto" });
-          release();
-        }
-        return;
-      }
-      if (delta <= 0.5) return;
-      if (!sheet) return;
-      const top = sheet.getBoundingClientRect().top;
-      const zone = Math.min(180, window.innerHeight * 0.2);
-      if (top <= 1 || top > zone) return;
-      locking = true;
-      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      window.scrollTo({ top: y + top, behavior: reduce ? "auto" : "smooth" });
-      window.cancelAnimationFrame(slideFrame);
-      slideFrame = window.requestAnimationFrame(trackSlide);
-      window.clearTimeout(releaseTimer);
-      releaseTimer = window.setTimeout(release, reduce ? 40 : 700);
+      if (!touching) armSettle();
+    };
+    // The user took over: drop the ease and wait for the next pause.
+    const onInput = () => {
+      stopEase();
+      window.clearTimeout(idleTimer);
+    };
+    const onTouchStart = () => {
+      touching = true;
+      onInput();
+    };
+    const onTouchEnd = () => {
+      touching = false;
+      armSettle();
     };
 
     window.addEventListener("scroll", onScroll, { passive: true });
-    onScroll();
+    window.addEventListener("resize", schedule);
+    window.addEventListener("wheel", onInput, { passive: true });
+    window.addEventListener("keydown", onInput);
+    window.addEventListener("pointerdown", onInput);
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchend", onTouchEnd, { passive: true });
+    window.addEventListener("touchcancel", onTouchEnd, { passive: true });
+    paint();
     return () => {
-      document.documentElement.removeAttribute("data-feed-flush");
-      document.documentElement.style.removeProperty("--feed-flush-p");
+      root.removeAttribute("data-feed-home");
+      root.removeAttribute("data-feed-flush");
+      document.querySelector<HTMLElement>("[data-feed-sheet]")?.style.removeProperty("--feed-flush-p");
+      document.querySelector<HTMLElement>("[data-desktop-top-nav]")?.style.removeProperty("--feed-nav-line");
       window.removeEventListener("scroll", onScroll);
-      window.cancelAnimationFrame(slideFrame);
-      window.clearTimeout(releaseTimer);
+      window.removeEventListener("resize", schedule);
+      window.removeEventListener("wheel", onInput);
+      window.removeEventListener("keydown", onInput);
+      window.removeEventListener("pointerdown", onInput);
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchend", onTouchEnd);
+      window.removeEventListener("touchcancel", onTouchEnd);
+      window.cancelAnimationFrame(raf);
+      window.cancelAnimationFrame(ease);
+      window.clearTimeout(idleTimer);
     };
   }, [studioHome]);
 
@@ -741,32 +802,6 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
     <main
       id="main-content"
       data-studio-home={studioHome ? "" : undefined}
-      style={
-        studioHome
-          ? ({
-              "--background": "0 0% 96%",
-              "--foreground": "40 3% 18%",
-              "--muted-foreground": "30 4% 41%",
-              "--card": "0 0% 100%",
-              "--card-foreground": "40 3% 18%",
-              "--popover": "0 0% 100%",
-              "--popover-foreground": "40 3% 18%",
-              "--border": "40 5% 86%",
-              "--input": "40 5% 86%",
-              "--muted": "40 6% 92%",
-              "--secondary": "40 6% 92%",
-              "--secondary-foreground": "40 3% 18%",
-              "--accent": "40 6% 92%",
-              "--accent-foreground": "40 3% 18%",
-              "--primary": "40 3% 18%",
-              "--primary-foreground": "0 0% 96%",
-              "--primary-bright": "40 3% 18%",
-              "--ring": "40 3% 18%",
-              color: "#2f2e2c",
-              backgroundColor: "#f5f5f5",
-            } as CSSProperties)
-          : undefined
-      }
       className={cn("relative min-h-screen bg-app-ambient", MOBILE_PAGE_BOTTOM_CLASS)}
     >
       {(shouldNoindexSearchParams(searchParams) || search.trim().length > 0 || Boolean(colorQuery)) && (
@@ -785,7 +820,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
           data-feed-sheet={studioHome ? "" : undefined}
           className={
             studioHome
-              ? "relative z-10 min-h-[100dvh] !-mt-[calc(100dvh-8px)] -mx-3 rounded-t-[2.75rem] bg-[#f5f5f5] px-3 pt-6 shadow-[0_-32px_70px_-40px_rgba(47,46,44,0.55)] sm:-mx-[calc(1rem+25px)] sm:px-[calc(1rem+25px)] lg:-mx-[calc(1.5rem+25px)] lg:px-[calc(1.5rem+25px)] 2xl:-mx-[calc(2.5rem+25px)] 2xl:px-[calc(2.5rem+25px)]"
+              ? "relative z-10 min-h-[100dvh] !-mt-[calc(100dvh-8px)] -mx-3 rounded-t-[2.75rem] bg-background px-3 pt-6 shadow-[0_-32px_70px_-40px_rgba(47,46,44,0.55)] dark:border-t dark:border-white/[0.06] dark:shadow-[0_-32px_70px_-40px_rgba(0,0,0,0.9)] sm:-mx-[calc(1rem+25px)] sm:px-[calc(1rem+25px)] lg:-mx-[calc(1.5rem+25px)] lg:px-[calc(1.5rem+25px)] 2xl:-mx-[calc(2.5rem+25px)] 2xl:px-[calc(2.5rem+25px)]"
               : undefined
           }
         >
