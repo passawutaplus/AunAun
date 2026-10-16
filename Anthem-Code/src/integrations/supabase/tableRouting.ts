@@ -38,6 +38,7 @@ export const SHARED_TABLE_NAMES = [
   "collab_plan_change_requests",
   "collab_plan_activity_log",
   "collab_plan_versions",
+  "collab_tasks",
   "collab_end_requests",
   "collab_end_request_events",
   "collab_group_expand_requests",

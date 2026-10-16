@@ -6,6 +6,7 @@ import {
   FileText,
   Handshake,
   Info,
+  ListChecks,
   Megaphone,
   MoreVertical,
   PanelRightOpen,
@@ -136,6 +137,8 @@ import {
 import MessageBubble, { DateSeparator } from "@/components/chat/MessageBubble";
 import ChatComposer from "@/components/chat/ChatComposer";
 import { CollabPlanSheet } from "@/components/chat/CollabPlanSheet";
+import CollabTasksSheet from "@/components/chat/CollabTasksSheet";
+import { trackProductEvent } from "@/lib/productEvents";
 import { parseChatOffer, type ChatOfferPayload, type OfferPartyInfo } from "@/lib/chatOffer";
 import { billingToParty, type BillingProfileFields } from "@/lib/billingProfile";
 import {
@@ -237,6 +240,7 @@ const ChatThreadView = ({
   const [collabEndEditRow, setCollabEndEditRow] = useState<CollabEndRequestRow | null>(null);
   const [collabRejectOpen, setCollabRejectOpen] = useState(false);
   const collabPlanUi = useCollabPlanUi();
+  const [tasksOpen, setTasksOpen] = useState(false);
   const collabPlanOpen =
     collabPlanUi.open && collabPlanUi.conversationId === conv.id;
   const showCollabPlanUi = isCollab || (!!isGroup && !isStudio && groupTag === "collab");
@@ -1566,6 +1570,27 @@ const ChatThreadView = ({
               <span className="hidden sm:inline">วางแผนงาน</span>
             </Button>
           )}
+          {(isCollab || (!!isGroup && !isStudio && groupTag === "collab")) && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setTasksOpen(true);
+                void trackProductEvent("workspace_open", { conversation_id: conv.id }, { debounceMs: 60_000 });
+              }}
+              className={cn(
+                "inline-flex items-center gap-1 text-xs font-medium px-2.5 h-8 rounded-full ml-0.5",
+                "border-[hsl(var(--chat-collab)/0.7)] bg-transparent text-[hsl(var(--chat-collab))]",
+                "hover:bg-[hsl(var(--chat-collab))] hover:text-[hsl(var(--chat-collab-foreground))] hover:border-[hsl(var(--chat-collab))]",
+                "transition-colors duration-200",
+              )}
+              aria-label="Tasks"
+            >
+              <ListChecks className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Tasks</span>
+            </Button>
+          )}
           {(canCreateCollabProject ||
             canCreateGroupCollabProject ||
             canCancelRequest ||
@@ -1862,6 +1887,21 @@ const ChatThreadView = ({
         onClearReply={() => setReplyTo(null)}
         lockedHint={composerLockedHint}
       />
+
+      {(isCollab || (!!isGroup && !isStudio && groupTag === "collab")) && (
+        <CollabTasksSheet
+          open={tasksOpen}
+          onOpenChange={setTasksOpen}
+          conversationId={conv.id}
+          publishPath={
+            canCreateGroupCollabProject
+              ? `/portfolio/new?collab_conversation_id=${encodeURIComponent(conv.id)}`
+              : canCreateCollabProject && conv.request_id
+                ? `/portfolio/new?collab_request_id=${encodeURIComponent(conv.request_id)}`
+                : null
+          }
+        />
+      )}
 
       {(isCollab || (!!isGroup && !isStudio && groupTag === "collab")) && (
         <CollabPlanSheet
