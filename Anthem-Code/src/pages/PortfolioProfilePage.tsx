@@ -1,7 +1,7 @@
 import { useMemo, useEffect, useRef, useState } from "react";
 import { CircleHelp } from "lucide-react";
 import { ProfileTour, hasSeenProfileTour } from "@/components/profile/ProfileTour";
-import { isInspireEnabled } from "@/lib/aplus1Launch";
+import { isCommerceEnabled, isInspireEnabled } from "@/lib/aplus1Launch";
 import { profileTabIcon } from "@/lib/profileTabIcons";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
@@ -62,6 +62,7 @@ const TAB_IDS: ProfileTab[] = ["overall", "collections", "designers", "booking",
 function resolveTab(raw: string | null, hiringEnabled: boolean): ProfileTab {
   if (raw === "hiring" && !hiringEnabled) return "overall";
   if (raw === "inspire" && !isInspireEnabled()) return "overall";
+  if (raw === "booking" && !isCommerceEnabled()) return "overall";
   if (raw && (TAB_IDS as string[]).includes(raw)) return raw as ProfileTab;
   return "overall";
 }
@@ -203,7 +204,9 @@ const PortfolioProfilePage = () => {
     { id: "overall", label: "My Projects", count: published.length },
     { id: "collections", label: "Collections", count: collections.length },
     { id: "designers", label: "Designers", count: following },
-    { id: "booking", label: "Packages Saved", count: savedPackageIds?.size ?? 0 },
+    ...(isCommerceEnabled()
+      ? [{ id: "booking" as const, label: "Packages Saved", count: savedPackageIds?.size ?? 0 }]
+      : []),
     ...(hiringBoardEnabled
       ? [{ id: "hiring" as const, label: "Hiring", count: myApplications.length + mySavedJobs.length }]
       : []),

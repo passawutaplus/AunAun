@@ -1,7 +1,7 @@
 import { NavLink } from "react-router-dom";
 import { Settings } from "lucide-react";
 import { SignOutNavItem } from "@/components/SignOutNavItem";
-import { STUDIO_NAV_GROUPS } from "@/lib/studioNav";
+import { studioNavGroups } from "@/lib/studioNav";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -36,7 +36,7 @@ export default function StudioSidebar({ className, onNavigate, variant = "panel"
         className,
       )}
     >
-      {STUDIO_NAV_GROUPS.map((group, index) => {
+      {studioNavGroups().map((group, index) => {
         const Icon = group.icon;
         return (
           <div key={group.id} className={cn(index > 0 && "border-t border-border/70")}>

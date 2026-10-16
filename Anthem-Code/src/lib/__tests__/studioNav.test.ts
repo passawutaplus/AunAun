@@ -1,5 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { isStudioPath, matchStudioItem, studioNavItems } from "@/lib/studioNav";
+
+// These suites describe the full (commerce-on) route map; the free-launch gate has its own tests in commerceGate.test.ts.
+beforeEach(() => {
+  vi.stubEnv("VITE_SAMECOR_COMMERCE_ENABLED", "true");
+});
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
 describe("studio nav", () => {
   it("has unique paths for every My Studio page", () => {

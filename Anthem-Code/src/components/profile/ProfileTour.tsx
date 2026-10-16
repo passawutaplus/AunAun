@@ -110,6 +110,8 @@ const STEPS: Step[] = [
     body: "แพ็กเกจของครีเอเตอร์คนอื่นที่คุณบันทึกไว้ ใส่สถานะ โน้ต และเปรียบเทียบก่อนตัดสินใจจ้างได้ (ไม่ใช่แพ็กเกจที่คุณขาย)",
     target: "profile-tab-booking",
     tab: "booking",
+    // Hidden while Packages are off — the tour skips steps whose tab is not on screen.
+    optional: true,
   },
   {
     id: "about",

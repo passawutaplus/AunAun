@@ -76,7 +76,7 @@ import { navigateToAuth, stripSearchParams } from "@/lib/authRedirect";
 import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
 import { toast } from "sonner";
 import { formatThaiDate } from "@/lib/format";
-import { isLaunchCreatorSupportEnabled } from "@/lib/aplus1Launch";
+import { isCommerceEnabled, isLaunchCreatorSupportEnabled } from "@/lib/aplus1Launch";
 import { isLocalDevSelfHirePreview } from "@/lib/localDevSelfHire";
 import {
   loadProfileVisibility,
@@ -128,16 +128,19 @@ const PublicProfilePage = () => {
   );
   const PROFILE_TABS = ["works", "series", "services", "objects", "collections", "about", "reviews"] as const;
   type ProfileTab = (typeof PROFILE_TABS)[number];
+  // Packages / Objects tabs return with the commerce phase; old ?tab= links fall back to Projects.
+  const isOpenTab = (t: string | null): t is ProfileTab =>
+    !!t && (PROFILE_TABS as readonly string[]).includes(t) && (isCommerceEnabled() || (t !== "services" && t !== "objects"));
   const tabFromUrl = params.get("tab");
   const [activeTab, setActiveTab] = useState<ProfileTab>(() =>
-    tabFromUrl && (PROFILE_TABS as readonly string[]).includes(tabFromUrl)
+    isOpenTab(tabFromUrl)
       ? (tabFromUrl as ProfileTab)
       : "works",
   );
 
   useEffect(() => {
     const t = params.get("tab");
-    if (t && (PROFILE_TABS as readonly string[]).includes(t) && t !== activeTab) {
+    if (isOpenTab(t) && t !== activeTab) {
       setActiveTab(t as ProfileTab);
     }
   }, [params, activeTab]);
@@ -809,8 +812,12 @@ const PublicProfilePage = () => {
           tabs={[
             { value: "works", label: "Projects", count: portfolioProjects.length },
             { value: "series", label: "Catalog", count: seriesList.length },
-            { value: "services", label: "Packages", count: servicesTabCount },
-            { value: "objects", label: "Objects", count: profileObjects.length },
+            ...(isCommerceEnabled()
+              ? [
+                  { value: "services", label: "Packages", count: servicesTabCount },
+                  { value: "objects", label: "Objects", count: profileObjects.length },
+                ]
+              : []),
             ...(publicCollections.length > 0
               ? [{ value: "collections", label: "Collections", count: publicCollections.length }]
               : []),

@@ -22,6 +22,7 @@ import {
   smoothEase,
 } from "@/lib/motion";
 import { displayProfileAddress } from "@/lib/profileAddress";
+import { isCommerceEnabled } from "@/lib/aplus1Launch";
 
 interface Props {
   data: DesignerCardData;
@@ -91,8 +92,9 @@ const DesignerCard = ({ data, onHire, onCollab, search = "", followedBy = [], ne
     "short",
   );
   const workCount = data.projectCount || projects.length;
-  const packageCount = data.packageCount ?? 0;
-  const objectCount = data.objectCount ?? 0;
+  // Packages / Objects counts return with the commerce phase.
+  const packageCount = isCommerceEnabled() ? (data.packageCount ?? 0) : 0;
+  const objectCount = isCommerceEnabled() ? (data.objectCount ?? 0) : 0;
   // Fewer than 3 works: the ones there are share the row instead of leaving grey placeholder boxes.
   const previewProjects = projects.slice(0, PREVIEW);
   const previewFill = previewProjects.length < PREVIEW;

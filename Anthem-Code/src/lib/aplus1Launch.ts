@@ -22,11 +22,42 @@ export function isInspireEnabled(): boolean {
   return import.meta.env.VITE_INSPIRE_ENABLED === "true";
 }
 
+/**
+ * Free MVP launch: no money moves through SAMECOR, and the selling surfaces (Packages, Objects)
+ * plus the forum stay hidden. Data is kept — phase 2 turns it back on with
+ * VITE_SAMECOR_COMMERCE_ENABLED=true. Fail-closed: off unless set.
+ */
+export function isCommerceEnabled(): boolean {
+  return import.meta.env.VITE_SAMECOR_COMMERCE_ENABLED === "true";
+}
+
+/** Routes that belong to the money / selling phase. */
+export const COMMERCE_ROUTE_PATTERNS: readonly RegExp[] = [
+  /^\/earnings(\/|$)/,
+  /^\/dashboard\/(payout|documents|packages|objects)(\/|$)/,
+  /^\/portfolio\/packages(\/|$)/,
+  /^\/service\/[^/]+$/,
+  /^\/object\/[^/]+$/,
+  /^\/contracts(\/|$)/,
+  /^\/forum(\/|$)/,
+];
+
+export function isCommercePath(pathname: string): boolean {
+  return !isCommerceEnabled() && COMMERCE_ROUTE_PATTERNS.some((re) => re.test(pathname));
+}
+
+const COMMERCE_FEED_MODES: readonly FeedMode[] = ["packages", "objects"];
+
+/** Packages / Objects feed tabs are part of the selling phase. */
+export function isFeedModeVisible(mode: FeedMode): boolean {
+  return isCommerceEnabled() || !COMMERCE_FEED_MODES.includes(mode);
+}
+
 export const LAUNCH_FEED_MODES = ["projects", "designers", "packages", "objects"] as const;
 export type LaunchFeedMode = (typeof LAUNCH_FEED_MODES)[number];
 
 export function isLaunchFeedMode(mode: FeedMode): mode is LaunchFeedMode {
-  return (LAUNCH_FEED_MODES as readonly string[]).includes(mode);
+  return (LAUNCH_FEED_MODES as readonly string[]).includes(mode) && isFeedModeVisible(mode);
 }
 
 export function coerceLaunchFeedMode(mode: FeedMode): LaunchFeedMode {
@@ -137,6 +168,7 @@ export function isLaunchAllowedPath(pathname: string): boolean {
  */
 export function isLaunchHiddenPath(pathname: string): boolean {
   if (isRetiredPublicPath(pathname)) return true;
+  if (isCommercePath(pathname)) return true;
   if (isHiringBoardPath(pathname)) return !isAplus1HiringBoardEnabled();
   if (!isAplus1LaunchMinimal()) return false;
   if (isLaunchAllowedPath(pathname)) return false;

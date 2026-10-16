@@ -18,6 +18,14 @@ import {
   isSoloEcosystemEnabled,
 } from "@/lib/aplus1Launch";
 
+// These suites describe the full (commerce-on) route map; the free-launch gate has its own tests in commerceGate.test.ts.
+beforeEach(() => {
+  vi.stubEnv("VITE_SAMECOR_COMMERCE_ENABLED", "true");
+});
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
+
 describe("aplus1Launch flags (fail-closed)", () => {
   afterEach(() => {
     vi.unstubAllEnvs();

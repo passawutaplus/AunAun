@@ -22,6 +22,7 @@ import {
 import { cn } from "@/lib/utils";
 import { getSupabaseErrorMessage } from "@/lib/supabaseErrors";
 import { toast } from "sonner";
+import { isCommerceEnabled } from "@/lib/aplus1Launch";
 import { useChatPortfolio, type ChatPortfolioProject } from "@/components/chat/useChatPortfolio";
 
 const PREVIEW_COUNT = 4;
@@ -41,6 +42,8 @@ function KindToggle({
   worksCount: number;
   packagesCount: number;
 }) {
+  // Sending packages in chat comes back with the commerce phase.
+  if (!isCommerceEnabled()) return null;
   return (
     <div
       role="tablist"

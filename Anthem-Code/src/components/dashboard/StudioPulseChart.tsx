@@ -20,6 +20,7 @@ import {
 } from "@/lib/projectStatsDateRange";
 import { defaultViewGranularity } from "@/lib/projectViewSeries";
 import { cn } from "@/lib/utils";
+import { isCommerceEnabled } from "@/lib/aplus1Launch";
 import { smoothEase } from "@/lib/motion";
 
 export type StudioPulseScope = "projects" | "packages";
@@ -225,7 +226,7 @@ export default function StudioPulseChart({
             onChange={onDateRangeChange}
             className="h-8 max-w-[8.5rem]"
           />
-          <StudioScopeToggle scope={scope} onScopeChange={onScopeChange} />
+          {isCommerceEnabled() ? <StudioScopeToggle scope={scope} onScopeChange={onScopeChange} /> : null}
         </div>
       </div>
 

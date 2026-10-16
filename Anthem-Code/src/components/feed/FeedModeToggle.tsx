@@ -4,7 +4,7 @@ import { Box, LayoutGrid, Target, Users } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import PackagesIcon from "@/components/icons/PackagesIcon";
-import { isLaunchDesignDrillEnabled } from "@/lib/aplus1Launch";
+import { isFeedModeVisible, isLaunchDesignDrillEnabled } from "@/lib/aplus1Launch";
 
 export type FeedMode = "projects" | "designers" | "packages" | "objects" | "studios" | "community";
 
@@ -58,7 +58,8 @@ const FeedModeToggle = ({
   const [indicator, setIndicator] = useState<IndicatorBox | null>(null);
 
   const visible = items.filter(
-    (item) => item.id !== "drill" || isLaunchDesignDrillEnabled(),
+    (item) =>
+      item.id === "drill" ? isLaunchDesignDrillEnabled() : isFeedModeVisible(item.id as FeedMode),
   );
 
   /** Equal-width segments → pill mostly translates X (feels like a clean L/R slide). */

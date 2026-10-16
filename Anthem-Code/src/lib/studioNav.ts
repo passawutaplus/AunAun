@@ -7,6 +7,7 @@ import {
   WalletCards,
   type LucideIcon,
 } from "lucide-react";
+import { isCommerceEnabled } from "@/lib/aplus1Launch";
 
 export type StudioNavItem = {
   id: string;
@@ -17,6 +18,8 @@ export type StudioNavItem = {
   hint: string;
   /** Match pathname exactly (no prefix). */
   end: boolean;
+  /** Part of the money / selling phase — hidden during the free launch. */
+  commerce?: boolean;
 };
 
 export type StudioNavGroup = {
@@ -28,6 +31,7 @@ export type StudioNavGroup = {
   heroTitle?: string;
   hint?: string;
   end?: boolean;
+  commerce?: boolean;
   items: StudioNavItem[];
 };
 
@@ -77,6 +81,7 @@ export const STUDIO_NAV_GROUPS: StudioNavGroup[] = [
         heroTitle: "Packages",
         hint: "จัดการแพ็กเกจบริการที่เปิดรับงาน",
         end: true,
+        commerce: true,
       },
       {
         id: "objects",
@@ -85,6 +90,7 @@ export const STUDIO_NAV_GROUPS: StudioNavGroup[] = [
         heroTitle: "Objects",
         hint: "ขายวัตถุ อาร์ตทอย ภาพพิมพ์ และไฟล์ของตัวเอง",
         end: true,
+        commerce: true,
       },
     ],
   },
@@ -122,6 +128,7 @@ export const STUDIO_NAV_GROUPS: StudioNavGroup[] = [
     id: "finance",
     label: "การเงิน",
     icon: WalletCards,
+    commerce: true,
     items: [
       {
         id: "transactions",
@@ -159,6 +166,12 @@ export const STUDIO_NAV_GROUPS: StudioNavGroup[] = [
   },
 ];
 
+/** Sidebar groups for this build — selling / money entries drop out while commerce is off. */
+export function studioNavGroups(): StudioNavGroup[] {
+  if (isCommerceEnabled()) return STUDIO_NAV_GROUPS;
+  return STUDIO_NAV_GROUPS.filter((g) => !g.commerce).map((g) => ({ ...g, items: g.items.filter((i) => !i.commerce) }));
+}
+
 function groupAsItem(group: StudioNavGroup): StudioNavItem | null {
   if (!group.to) return null;
   return {
@@ -172,7 +185,7 @@ function groupAsItem(group: StudioNavGroup): StudioNavItem | null {
 }
 
 export function studioNavItems(): StudioNavItem[] {
-  return STUDIO_NAV_GROUPS.flatMap((group) => {
+  return studioNavGroups().flatMap((group) => {
     const self = groupAsItem(group);
     return self ? [self, ...group.items] : group.items;
   });
