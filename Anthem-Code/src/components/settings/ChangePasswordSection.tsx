@@ -9,6 +9,7 @@ import { userHasEmailPassword, verifyUserPassword } from "@/lib/sensitiveActionA
 import { buildEmailConfirmUrl, buildResetPasswordUrl } from "@/lib/oauthRedirect";
 import type { User } from "@supabase/supabase-js";
 import { toast } from "sonner";
+import { isCommerceEnabled } from "@/lib/aplus1Launch";
 
 function PasswordField({
   id,
@@ -149,7 +150,7 @@ export function ChangePasswordSection({ user }: { user: User }) {
         <h2 className="font-semibold text-foreground">รหัสผ่านเข้าสู่ระบบ</h2>
       </div>
       <p className="text-xs text-muted-foreground">
-        ใช้เข้าแอป — ไม่ใช่ PIN ถอนเงิน
+        ใช้เข้าแอป{isCommerceEnabled() ? " — ไม่ใช่ PIN ถอนเงิน" : ""}
       </p>
 
       <div className="rounded-xl border border-border/60 bg-muted/20 px-4 py-3 space-y-2">
