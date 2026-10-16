@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { ChevronRight, Flag, MessageSquare, Shield } from "lucide-react";
 import { requestOpenCookiePreferences } from "@/lib/cookieConsent";
 import { AccountPrivacySection } from "@/components/settings/AccountPrivacySection";
+import { CollabTagSettingsSection } from "@/components/settings/CollabTagSettingsSection";
 import type { User } from "@supabase/supabase-js";
 
 type Props = {
@@ -14,6 +15,8 @@ export function PrivacySecuritySection({ user: _user }: Props) {
 
   return (
     <div className="space-y-6">
+      <CollabTagSettingsSection />
+
       <section className="rounded-2xl glass-panel p-6 space-y-4">
         <div className="flex items-center gap-2">
           <Shield className="w-5 h-5 text-primary" />

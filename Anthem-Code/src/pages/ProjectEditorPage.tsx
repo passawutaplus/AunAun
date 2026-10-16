@@ -180,6 +180,7 @@ import {
   type LinkedPostSummary,
 } from "@/lib/portfolioLinkedPosts";
 import {
+  cancelProjectCollabInvite,
   fetchProjectCollabInvites,
   MAX_PORTFOLIO_COLLAB_USERS,
   syncProjectCollabInvites,
@@ -427,6 +428,9 @@ const ProjectEditorPage = () => {
   const [collabSelected, setCollabSelected] = useState<TaggedUserSummary[]>([]);
   const [collabAccepted, setCollabAccepted] = useState<TaggedUserSummary[]>([]);
   const [collabPending, setCollabPending] = useState<TaggedUserSummary[]>([]);
+  const [collabDeclined, setCollabDeclined] = useState<TaggedUserSummary[]>([]);
+  /** invited user id → invite id, for cancelling a tag that is still pending. */
+  const [collabInviteIds, setCollabInviteIds] = useState<Record<string, string>>({});
   const collabRequestHydratedRef = useRef<string | null>(null);
   const collabConversationHydratedRef = useRef<string | null>(null);
   const [projectContext, setProjectContext] = useState<ProjectContextForm>({
@@ -852,11 +856,18 @@ const ProjectEditorPage = () => {
           }
           if (editing && id && isUuid(id)) {
             const invites = await fetchProjectCollabInvites(id);
+            setCollabInviteIds(Object.fromEntries(invites.map((i) => [i.invited_user_id, i.id])));
             const pendingIds = invites
               .filter((i: ProjectCollabInvite) => i.status === "pending")
               .map((i) => i.invited_user_id);
             if (pendingIds.length) {
               setCollabPending(await fetchTaggedUserSummaries(pendingIds));
+            }
+            const declinedIds = invites
+              .filter((i: ProjectCollabInvite) => i.status === "declined" || i.status === "withdrawn")
+              .map((i) => i.invited_user_id);
+            if (declinedIds.length) {
+              setCollabDeclined(await fetchTaggedUserSummaries(declinedIds));
             }
           }
         } catch {
@@ -980,13 +991,6 @@ const ProjectEditorPage = () => {
         const ownIds = await resolveLinkedPostIds(user.id, linkedOwnPosts.map((p) => p.id));
         await syncProjectMentionsOnPosts(projectId, ownIds, user.id);
 
-        const { data: prof } = await supabase
-          .from("profiles")
-          .select("display_name, username")
-          .eq("user_id", user.id)
-          .maybeSingle();
-        const ownerName = prof?.display_name ?? prof?.username ?? "ผู้ใช้";
-
         const desiredIds = [
           ...collabSelected,
           ...collabPending,
@@ -996,14 +1000,13 @@ const ProjectEditorPage = () => {
         await syncProjectCollabInvites({
           projectId,
           ownerId: user.id,
-          ownerName,
-          projectTitle: title.trim() || "ผลงาน",
           desiredUserIds: desiredIds,
           acceptedUserIds: collabAccepted.map((u) => u.user_id),
         });
 
         if (collabSelected.length) {
           const invites = await fetchProjectCollabInvites(projectId);
+          setCollabInviteIds(Object.fromEntries(invites.map((i) => [i.invited_user_id, i.id])));
           const pendingIds = invites
             .filter((i) => i.status === "pending")
             .map((i) => i.invited_user_id);
@@ -1025,7 +1028,7 @@ const ProjectEditorPage = () => {
         }
       }
     },
-    [user, linkedOwnPosts, collabSelected, collabPending, collabAccepted, title, seriesId, queryClient],
+    [user, linkedOwnPosts, collabSelected, collabPending, collabAccepted, seriesId, queryClient],
   );
 
   const draftStatusForSave = useCallback((): Status => {
@@ -3033,6 +3036,18 @@ const ProjectEditorPage = () => {
                 onChange={setCollabSelected}
                 acceptedUsers={collabAccepted}
                 pendingUsers={collabPending}
+                declinedUsers={collabDeclined}
+                onCancelPending={(u) => {
+                  const inviteId = collabInviteIds[u.user_id];
+                  if (!inviteId) return;
+                  void cancelProjectCollabInvite(inviteId)
+                    .then(() => {
+                      setCollabPending((list) => list.filter((x) => x.user_id !== u.user_id));
+                      setCollabInviteIds(({ [u.user_id]: _gone, ...rest }) => rest);
+                      toast.success(`ยกเลิกการแท็ก ${u.display_name} แล้ว`);
+                    })
+                    .catch(() => toast.error("ยกเลิกการแท็กไม่สำเร็จ"));
+                }}
               />
             )}
     </>

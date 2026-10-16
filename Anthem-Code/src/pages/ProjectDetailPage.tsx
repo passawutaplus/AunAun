@@ -56,6 +56,7 @@ import {
 } from "@/lib/portfolioLinkedPosts";
 import { profilesPublicFrom, PUBLIC_PROFILE_READ_SELECT } from "@/lib/profileAccess";
 import PackageReturnBanner from "@/components/services/PackageReturnBanner";
+import ProjectCollabInviteBanner from "@/components/project/ProjectCollabInviteBanner";
 import { cn } from "@/lib/utils";
 import UserAvatar from "@/components/UserAvatar";
 import { RelatedObjectsRow, RelatedPackagesRow, SimilarWorksRow } from "@/components/project/ProjectMoreSections";
@@ -381,6 +382,19 @@ const ProjectDetailPage = () => {
       </div>
 
       <div className="max-w-[1920px] mx-auto px-3 sm:px-[calc(1rem+25px)] lg:px-[calc(1.5rem+25px)] 2xl:px-[calc(2.5rem+25px)] py-6 lg:py-10">
+        {dbProject?.id && user?.id && user.id !== dbProject.owner_id ? (
+          <ProjectCollabInviteBanner
+            projectId={dbProject.id}
+            ownerName={
+              ownerProfile?.display_name ||
+              (ownerProfile as { username?: string | null } | null | undefined)?.username ||
+              "เจ้าของผลงาน"
+            }
+            isCollaborator={(
+              (dbProject as { collab_user_ids?: string[] | null }).collab_user_ids ?? []
+            ).includes(user.id)}
+          />
+        ) : null}
         {sponsorAd && sponsorAdId ? (
           <div className="mb-4 rounded-xl border border-primary/25 bg-primary/5 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-start gap-3">

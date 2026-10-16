@@ -98,6 +98,13 @@ const STEPS: Step[] = [
     tab: "collections",
   },
   {
+    id: "designers",
+    title: "Designers",
+    body: "ดีไซเนอร์ที่คุณติดตาม พร้อมสถานะว่าใครติดตามคุณกลับ คนที่ติดตามกันทั้งคู่แท็กเป็นผู้ร่วมงานในผลงานได้",
+    target: "profile-tab-designers",
+    tab: "designers",
+  },
+  {
     id: "booking",
     title: "Packages Saved",
     body: "แพ็กเกจของครีเอเตอร์คนอื่นที่คุณบันทึกไว้ ใส่สถานะ โน้ต และเปรียบเทียบก่อนตัดสินใจจ้างได้ (ไม่ใช่แพ็กเกจที่คุณขาย)",
