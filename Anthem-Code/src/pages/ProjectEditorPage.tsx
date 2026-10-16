@@ -84,6 +84,7 @@ import { parseAiUseLevel, serializeAiUseLevel, type AiUseLevel } from "@/lib/aiD
 import { type LicenseType, isLicenseType, getLicenseMeta } from "@/lib/licenses";
 import { ProjectEditorToolsSidebar } from "@/components/project/ProjectEditorToolsSidebar";
 import { ProjectCanvasEditor } from "@/components/project/ProjectCanvasEditor";
+import StoryPromptBar from "@/components/project/StoryPromptBar";
 import { FlexGridToolsSidebar, type FlexGridLayerRef } from "@/components/project/FlexGridToolsSidebar";
 import {
   ProjectFlexGridEditor,
@@ -3555,7 +3556,14 @@ const ProjectEditorPage = () => {
                 onCancelInlineCrop={handleCancelFlexCrop}
                 inlineCropSaving={inlineCropSaving}
               />
-            ) : (
+            ) : (<>
+            <StoryPromptBar
+              blocks={contentBlocks}
+              disabled={editorLocked}
+              onAdd={(question) =>
+                setContentBlocks((prev) => [...prev, { ...createContentBlock("heading_body"), heading: question }])
+              }
+            />
             <ProjectCanvasEditor
               blocks={contentBlocks}
               onChange={(next) => {
@@ -3586,7 +3594,7 @@ const ProjectEditorPage = () => {
               selectedBlockId={selectedBlockId}
               onSelectedBlockIdChange={setSelectedBlockId}
             />
-            )}
+            </>)}
             <input
               ref={emptyStartImageInputRef}
               type="file"

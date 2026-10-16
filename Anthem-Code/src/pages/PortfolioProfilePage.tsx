@@ -28,6 +28,7 @@ import PageLoader from "@/components/ui/PageLoader";
 import ProfileCoverHeader from "@/components/profile/ProfileCoverHeader";
 import ProfileOwnerActions from "@/components/profile/ProfileOwnerActions";
 import OnboardingChecklist from "@/components/onboarding/OnboardingChecklist";
+import GettingStartedCard from "@/components/onboarding/GettingStartedCard";
 import OpportunityStatusDialog from "@/components/opportunity/OpportunityStatusDialog";
 import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
 import { cn } from "@/lib/utils";
@@ -352,7 +353,23 @@ const PortfolioProfilePage = () => {
             <ProfileOverallWorksPanel
               projects={myProjects}
               isLoading={projectsLoading}
-              afterHeading={<OnboardingChecklist variant="compact" />}
+              afterHeading={
+                <>
+                  <GettingStartedCard
+                    input={{
+                      hasAvatar: !!profile.avatar_url,
+                      hasRole: !!profile.role?.trim() || disciplines.length > 0,
+                      bioLength: (profile.bio ?? "").trim().length,
+                      skillsCount: skills.length,
+                      hasAvailability: !!(profile as { opportunity_status?: string | null }).opportunity_status,
+                      publishedCount: published.length,
+                    }}
+                    onEditProfile={() => setOpportunityOpen(true)}
+                    onAvatar={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                  />
+                  {isCommerceEnabled() ? <OnboardingChecklist variant="compact" /> : null}
+                </>
+              }
             />
           ) : null}
 
