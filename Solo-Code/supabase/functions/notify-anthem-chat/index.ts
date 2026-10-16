@@ -158,7 +158,7 @@ Deno.serve(async (req) => {
           templateData: {
             recipientName: notify.displayName ?? "คุณ",
             senderName,
-            conversationTitle: conv.project_title ?? "แชท Pixel100",
+            conversationTitle: conv.project_title ?? "แชท SAMECOR",
             preview,
             actionUrl,
           },
