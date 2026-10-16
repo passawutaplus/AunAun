@@ -23,7 +23,14 @@ export type ProductEventName =
   | "collection_save"
   | "inspire_click"
   | "ad_click"
-  | "ad_impression";
+  | "ad_impression"
+  // Free-launch funnel (Discover → Connect → Hire / Collaborate)
+  | "connect_message"
+  | "proposal_send"
+  | "proposal_accept"
+  | "workspace_open"
+  | "task_create"
+  | "onboarding_step";
 
 const SESSION_KEY = "aplus1_analytics_sid";
 const lastSent = new Map<string, number>();

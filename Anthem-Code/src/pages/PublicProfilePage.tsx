@@ -1,7 +1,7 @@
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState, useEffect, useCallback } from "react";
-import { Globe, Instagram, Facebook, MessageSquare, UserX, Handshake, Eye, X, Share2 } from "lucide-react";
+import { Globe, Instagram, Facebook, MessageSquare, UserX, Handshake, Eye, X, Share2, MessageCircle } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import { BrandLogo } from "@/components/brand/BrandLogo";
 import { DESKTOP_TOP_NAV_GLASS } from "@/components/DesktopTopNav";
@@ -78,6 +78,7 @@ import { toast } from "sonner";
 import { formatThaiDate } from "@/lib/format";
 import { isCommerceEnabled, isLaunchCreatorSupportEnabled } from "@/lib/aplus1Launch";
 import { isLocalDevSelfHirePreview } from "@/lib/localDevSelfHire";
+import ConnectMessageDialog from "@/components/chat/ConnectMessageDialog";
 import {
   loadProfileVisibility,
   parseProfileVisibility,
@@ -114,6 +115,7 @@ const PublicProfilePage = () => {
   const [hirePanel, setHirePanel] = useState<"message" | "services">("message");
   const [autoSubmitServiceId, setAutoSubmitServiceId] = useState<string | null>(null);
   const [collabOpen, setCollabOpen] = useState(false);
+  const [messageOpen, setMessageOpen] = useState(false);
   const [worksSort, setWorksSort] = useState<PortfolioSortMode>("views");
   const [worksDensity, setWorksDensity] = useState<SeriesWorksDensity>(() =>
     typeof window === "undefined"
@@ -451,6 +453,18 @@ const PublicProfilePage = () => {
     }
     setCollabOpen(true);
   };
+  // Chat first: just say hi — hire / collab are optional shortcuts inside the dialog.
+  const openMessage = () => {
+    if (visitorPreview) {
+      previewToast();
+      return;
+    }
+    if (!user) {
+      navigateToAuth(navigate);
+      return;
+    }
+    setMessageOpen(true);
+  };
   const seoDesc = truncateDescription(
     profile.bio || `ดูพอร์ตโฟลิโอและผลงานของ ${displayName} บน ${BRAND_NAME}`,
   );
@@ -728,11 +742,20 @@ const PublicProfilePage = () => {
 
               {showAsVisitor && (
                 <div className="flex flex-col gap-2 mt-3 sm:mt-4">
+                  <Button
+                    type="button"
+                    onClick={openMessage}
+                    className="w-full rounded-full bg-gradient-brand text-white hover:opacity-90 h-10 text-sm font-medium gap-1.5"
+                  >
+                    <MessageCircle className="w-4 h-4 shrink-0" />
+                    ส่งข้อความ
+                  </Button>
                   <div className="grid grid-cols-2 gap-2">
                     <Button
                       type="button"
+                      variant="outline"
                       onClick={openHire}
-                      className="w-full rounded-full bg-gradient-brand text-white hover:opacity-90 h-10 text-sm font-medium gap-1.5"
+                      className="w-full rounded-full glass-panel h-10 text-sm font-medium gap-1.5"
                     >
                       <BriefcaseIcon className="w-4 h-4 shrink-0" />
                       สนใจจ้างงาน
@@ -1011,6 +1034,16 @@ const PublicProfilePage = () => {
         recipientName={displayName}
         source="profile"
       />
+      {resolvedUserId ? (
+        <ConnectMessageDialog
+          open={messageOpen}
+          onOpenChange={setMessageOpen}
+          recipientId={resolvedUserId}
+          recipientName={displayName}
+          onHire={openHire}
+          onCollab={openCollab}
+        />
+      ) : null}
     </div>
   );
 };

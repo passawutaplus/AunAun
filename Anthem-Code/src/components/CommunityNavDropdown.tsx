@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { FORUM_PATH } from "@/lib/brandConfig";
+import { isCommerceEnabled } from "@/lib/aplus1Launch";
 import { cn } from "@/lib/utils";
 
 type CommunityItem = {
@@ -107,7 +108,7 @@ export function CommunityNavDropdown({ className }: { className?: string }) {
         onCloseAutoFocus={(e) => e.preventDefault()}
       >
         <div className="flex flex-col gap-0.5 p-1">
-          {COMMUNITY_ITEMS.map((item) => {
+          {COMMUNITY_ITEMS.filter((item) => item.id !== "forum" || isCommerceEnabled()).map((item) => {
             const Icon = item.icon;
             const body = (
               <>

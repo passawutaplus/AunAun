@@ -41,6 +41,7 @@ import { trackProductEvent } from "@/lib/productEvents";
 import { isBlockedFromOpportunity } from "@/hooks/useCommunityPostInteractions";
 import { navigateToAuth } from "@/lib/authRedirect";
 import { cn } from "@/lib/utils";
+import { isCommerceEnabled } from "@/lib/aplus1Launch";
 import { isLocalDevSelfHirePreview } from "@/lib/localDevSelfHire";
 
 type HireFieldErrorKey = "deadline" | "budgetMin" | "budgetMax" | "jobTypes" | "details";
@@ -110,7 +111,8 @@ const HireDialog = ({
   const createReq = useCreateHireRequest();
   const openChat = useOpenHireCollabChat();
   const { data: myJobs = [] } = useMyOpenJobPosts();
-  const showServiceTabs = !!freelancerId && isUuid(freelancerId);
+  // Packages tab comes back with the commerce phase — until then the Brief is the only way in.
+  const showServiceTabs = isCommerceEnabled() && !!freelancerId && isUuid(freelancerId);
   const localSelfHirePreview =
     !!user &&
     !!freelancerId &&
@@ -123,7 +125,7 @@ const HireDialog = ({
     showServiceTabs && open ? freelancerId : undefined,
     { includeDrafts: localSelfHirePreview },
   );
-  const [panel, setPanel] = useState<HirePanel>(initialPanel);
+  const [panel, setPanel] = useState<HirePanel>(isCommerceEnabled() ? initialPanel : "message");
   const [jobPostId, setJobPostId] = useState("");
   const [form, setForm] = useState(emptyHireInviteForm());
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<HireFieldErrorKey, string>>>({});
@@ -182,7 +184,7 @@ const HireDialog = ({
 
   useEffect(() => {
     if (!open) return;
-    setPanel(initialPanel);
+    setPanel(isCommerceEnabled() ? initialPanel : "message");
     void trackProductEvent(
       "hire_open",
       { project_id: projectId ?? null, freelancer_id: freelancerId ?? null, source },
@@ -208,7 +210,7 @@ const HireDialog = ({
     setFieldErrors({});
     setServiceBusyId(null);
     setDetailService(null);
-    setPanel(initialPanel);
+    setPanel(isCommerceEnabled() ? initialPanel : "message");
   };
 
   const handleOpenChange = (next: boolean) => {
@@ -277,11 +279,8 @@ const HireDialog = ({
       return;
     }
 
+    // No email (e.g. phone sign-in) is fine — the conversation happens in chat.
     const { clientName, email } = resolveClientContact();
-    if (!email) {
-      toast.error("บัญชีนี้ยังไม่มีอีเมล — ตั้งค่าอีเมลในบัญชีก่อนส่งคำขอจ้าง");
-      return;
-    }
 
     const budgetMin = parseMoneyInput(form.budgetMin) ?? undefined;
     const budgetMax = parseMoneyInput(form.budgetMax) ?? undefined;
@@ -305,9 +304,6 @@ const HireDialog = ({
         ) {
           nextErrors[path] = issue.message;
         }
-      }
-      if (!form.deadline.trim() && !nextErrors.deadline) {
-        nextErrors.deadline = "กรุณาเลือกกำหนดส่งงาน";
       }
       if (!form.jobTypes.length && !nextErrors.jobTypes) {
         nextErrors.jobTypes = "กรุณาเลือกประเภทงานอย่างน้อย 1 อย่าง";
@@ -365,7 +361,7 @@ const HireDialog = ({
         budget_amount: budgetNum ?? null,
         budget_min: budgetMin ?? null,
         budget_max: budgetMax ?? null,
-        deadline: form.deadline.trim(),
+        deadline: form.deadline.trim() || null,
         message: inviteMessage,
         job_type: form.jobTypes.join(",") || null,
         job_type_other: null,

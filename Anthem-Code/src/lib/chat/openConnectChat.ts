@@ -1,0 +1,55 @@
+import { supabase } from "@/integrations/supabase/client";
+import { isBlockedFromOpportunity } from "@/hooks/useCommunityPostInteractions";
+
+/**
+ * "Just connect": open (or reuse) a plain chat with another creator — no hire / collab request needed.
+ * Reuses an existing connect chat between the two people in either direction.
+ */
+export async function openConnectChat(senderId: string, otherId: string, note: string): Promise<string> {
+  if (senderId === otherId) throw new Error("ทักแชทตัวเองไม่ได้");
+  if (await isBlockedFromOpportunity(senderId, otherId).catch(() => false)) {
+    throw new Error("ส่งข้อความหาผู้ใช้นี้ไม่ได้");
+  }
+
+  const { data: existing, error: findError } = await supabase
+    .from("conversations")
+    .select("id")
+    .eq("kind", "connect")
+    .or(
+      `and(client_id.eq.${senderId},freelancer_id.eq.${otherId}),and(client_id.eq.${otherId},freelancer_id.eq.${senderId})`,
+    )
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (findError) throw findError;
+
+  let conversationId = existing?.id as string | undefined;
+  if (!conversationId) {
+    const { data, error } = await supabase
+      .from("conversations")
+      .insert({
+        kind: "connect",
+        conversation_type: "direct",
+        client_id: senderId,
+        freelancer_id: otherId,
+        project_title: "ทักทาย",
+        created_by: senderId,
+      } as never)
+      .select("id")
+      .single();
+    if (error) throw error;
+    conversationId = data.id as string;
+  }
+
+  const text = note.trim();
+  if (text) {
+    const { error } = await supabase.from("messages").insert({
+      conversation_id: conversationId,
+      sender_id: senderId,
+      content: text,
+      message_type: "text",
+    } as never);
+    if (error) throw error;
+  }
+  return conversationId;
+}

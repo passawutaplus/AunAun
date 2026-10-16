@@ -366,8 +366,7 @@ const HireInviteForm = ({
           <Label className="flex items-center gap-1.5">
             <Wallet className="h-3.5 w-3.5 text-primary" />
             งบประมาณ (บาท){" "}
-            <span className="text-muted-foreground font-normal">ช่วงราคา</span>{" "}
-            <span className="text-destructive">*</span>
+            <span className="text-muted-foreground font-normal">คร่าว ๆ (ไม่บังคับ)</span>
           </Label>
           <div className="grid grid-cols-2 gap-2">
             <Input
@@ -413,7 +412,7 @@ const HireInviteForm = ({
         <div className="space-y-1.5">
           <Label htmlFor="hire-deadline" className="flex items-center gap-1.5">
             <CalendarDays className="h-3.5 w-3.5 text-primary" />
-            กำหนดส่งงาน <span className="text-primary">*</span>
+            กำหนดส่งงาน <span className="text-muted-foreground font-normal">(ไม่บังคับ)</span>
           </Label>
           <Input
             id="hire-deadline"
