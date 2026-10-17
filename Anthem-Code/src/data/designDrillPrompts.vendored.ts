@@ -1,4 +1,4 @@
-/** AUTO-GENERATED — do not edit. Source: Solo-Code/F:\So1o\wt-paper\Solo-Code\src\data\designDrillPrompts.ts */
+/** AUTO-GENERATED — do not edit. Source: Solo-Code/F:\So1o\AunAun-fresh\Solo-Code\src\data\designDrillPrompts.ts */
 export type DrillCategory =
   | "logo"
   | "uiux"
