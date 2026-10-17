@@ -448,7 +448,7 @@ const ProjectDetailPage = () => {
                 </Button>
               ) : project.allowHire ?? true ? (
                 <Button size="sm" className="h-8 rounded-full" onClick={openHire}>
-                  สนใจจ้างงาน
+                  ติดต่อจ้าง
                 </Button>
               ) : null}
             </div>

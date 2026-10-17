@@ -479,7 +479,7 @@ const CommunityPostEditorPage = () => {
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Button onClick={() => navigate("/auth")}>เข้าสู่ระบบเพื่อโพสต์</Button>
+        <Button onClick={() => navigate("/auth")}>เข้าสู่ระบบ</Button>
       </div>
     );
   }

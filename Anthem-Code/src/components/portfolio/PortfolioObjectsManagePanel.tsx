@@ -409,7 +409,7 @@ function OrderCards({
                   ) : null}
                   {role === "buyer" && row.status === "shipped" ? (
                     <Button type="button" size="sm" onClick={() => onUpdate(row.id, "completed", undefined, "รับของแล้ว")}>
-                      ได้รับของแล้ว
+                      ยืนยันรับของ
                     </Button>
                   ) : null}
                 </div>

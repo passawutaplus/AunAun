@@ -25,7 +25,7 @@ export function useDesignerHeroSlides() {
       if (!cover) continue;
       out.push({
         id: pid,
-        name: profile.display_name ?? profile.username ?? "ดีไซเนอร์",
+        name: profile.display_name ?? profile.username ?? "ครีเอเตอร์",
         backgroundCover: cover,
         avatarUrl: profile.avatar_url ?? null,
         profileHref: `/u/${pid}`,

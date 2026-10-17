@@ -30,10 +30,10 @@ const HERO_COPY: Record<FeedMode, { badge: string; title: ReactNode }> = {
     ),
   },
   designers: {
-    badge: isAplus1LaunchMinimal() ? "ค้นหาจากสไตล์" : "ทีมครีเอทีฟอิสระ",
+    badge: isAplus1LaunchMinimal() ? "ค้นหาจากสไตล์" : "ครีเอเตอร์อิสระ",
     title: (
       <>
-        ค้นพบดีไซเนอร์
+        ค้นพบครีเอเตอร์
         <br />
         <span className="bg-gradient-brand bg-clip-text text-transparent">
           {isAplus1LaunchMinimal() ? "ไม่ใช่จากแพ็กเกจ" : "ที่ใช่สำหรับคุณ"}

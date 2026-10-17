@@ -137,7 +137,7 @@ export function PortfolioCollabUserPicker({
                 <div className="py-6 px-4 text-center">
                   <p className="text-sm text-foreground">ยังไม่มีคนที่แท็กได้</p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    ติดตามดีไซเนอร์ที่ร่วมงานด้วย เมื่อเขาติดตามกลับ จะแท็กกันในผลงานได้
+                    ติดตามครีเอเตอร์ที่ร่วมงานด้วย เมื่อเขาติดตามกลับ จะแท็กกันในผลงานได้
                     (คนที่ปิดรับการแท็กจะไม่ขึ้นในรายชื่อ)
                   </p>
                   <Link

@@ -99,7 +99,7 @@ const LicenseDetailBlock = ({
             <div className="flex flex-wrap items-center gap-2">
               {(meta.allowsCommercial || meta.id === "commercial_license") && (allowHire ?? true) && onHire && (
                 <Button size="sm" className="rounded-full" onClick={onHire}>
-                  อยากใช้งานนี้? ติดต่อจ้าง
+                  ติดต่อจ้าง
                 </Button>
               )}
               <Link to="/legal/ip" className="text-xs text-primary hover:underline">

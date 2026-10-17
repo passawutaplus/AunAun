@@ -331,7 +331,7 @@ const FeedToolbar = ({
   const searchPlaceholder = isCommunity
     ? "ค้นหาโพสต์ชุมชน"
     : isDesigners
-      ? "ค้นหาดีไซเนอร์"
+      ? "ค้นหาครีเอเตอร์"
       : isPackages
         ? "ค้นหาแพ็กเกจ"
         : isObjects

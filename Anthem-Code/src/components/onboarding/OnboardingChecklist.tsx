@@ -117,7 +117,7 @@ export default function OnboardingChecklist({ variant = "full" }: Props) {
               </h2>
               <p className="text-sm text-muted-foreground mt-0.5">
                 {tourMode
-                  ? "คุณคุ้นกับฟีด ดีไซเนอร์ และการลงผลงานแล้ว — ลงผลงานต่อหรือส่งลิงก์โปรไฟล์ให้ลูกค้าได้เลย"
+                  ? "คุณคุ้นกับฟีด ครีเอเตอร์ และการลงผลงานแล้ว — ลงผลงานต่อหรือส่งลิงก์โปรไฟล์ให้ลูกค้าได้เลย"
                   : `รับโบนัสรวม ${pxEarned.toLocaleString()} px — ใช้ส่งของขวัญให้ครีเอเตอร์ได้ที่ผลงานในฟีด`}
               </p>
             </div>
@@ -343,7 +343,7 @@ export default function OnboardingChecklist({ variant = "full" }: Props) {
           )}
           {tourMode && (
             <p className="mt-3 text-[10px] text-muted-foreground leading-snug line-clamp-2">
-              ทำทีละขั้น — ฟีด ดีไซเนอร์ ลงผลงาน แชร์โปรไฟล์ · ทำครบแล้วค่อยปิดได้
+              ทำทีละขั้น — ฟีด ครีเอเตอร์ ลงผลงาน แชร์โปรไฟล์ · ทำครบแล้วค่อยปิดได้
             </p>
           )}
         </>

@@ -241,16 +241,16 @@ export const HELP_CATEGORIES: HelpCategory[] = [
     articles: [
       {
         slug: "explore-basics",
-        title: "Explore ผลงานกับค้นหาดีไซเนอร์",
+        title: "Explore ผลงานกับค้นหาครีเอเตอร์",
         summary: "เริ่มจากสไตล์งานจริง แล้วค่อยเปิดโปรไฟล์คน",
         body: [
-          "โหมดผลงานให้คุณเลื่อนดูงานจริงก่อน ส่วนโหมดดีไซเนอร์เน้นคนและโปรไฟล์",
+          "โหมดผลงานให้คุณเลื่อนดูงานจริงก่อน ส่วนโหมดครีเอเตอร์เน้นคนและโปรไฟล์",
           "เลือกตามเป้าหมาย — หาสไตล์ใกล้โจทย์ หรือหาคนที่เปิดรับโอกาส",
         ],
         links: [{ label: "ไป Explore", to: "/" }],
         related: ["filter-style", "collections"],
         popular: true,
-        keywords: ["explore", "ค้นหา", "ดีไซเนอร์", "ฟีด"],
+        keywords: ["explore", "ค้นหา", "ครีเอเตอร์", "ดีไซเนอร์", "ฟีด"],
       },
       {
         slug: "filter-style",

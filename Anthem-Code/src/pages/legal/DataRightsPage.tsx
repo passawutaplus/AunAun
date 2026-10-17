@@ -138,7 +138,7 @@ const DataRightsPage = () => {
       </ul>
       <div className="not-prose my-3">
         <Button type="button" size="sm" variant="outline" onClick={() => requestOpenCookiePreferences()}>
-          จัดการความยินยอมคุกกี้
+          ตั้งค่าคุกกี้
         </Button>
       </div>
 

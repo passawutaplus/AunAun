@@ -254,7 +254,7 @@ const DonationModal = ({ open, onOpenChange, recipientId, recipientName, recipie
               </p>
               {!isVerified && (
                 <Button onClick={() => navigate("/verify")} variant="outline" className="w-full rounded-full">
-                  ยืนยันตัวตนเพื่อเพิ่มเพดาน
+                  ยืนยันตัวตน
                 </Button>
               )}
             </div>
