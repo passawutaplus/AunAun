@@ -95,7 +95,7 @@ const ChatComposer = ({
     kind === "hire"
       ? "bg-[hsl(var(--chat-hire))] hover:bg-[hsl(var(--chat-hire)/0.9)] text-[hsl(var(--chat-hire-foreground))]"
       : kind === "collab"
-        ? "bg-gradient-to-br from-[hsl(var(--chat-collab))] to-[hsl(var(--chat-collab)/0.85)] hover:opacity-90 text-[hsl(var(--chat-collab-foreground))]"
+        ? "bg-chat-collab hover:opacity-90 text-[hsl(var(--chat-collab-foreground))]"
         : "bg-primary hover:bg-primary/90 text-primary-foreground";
 
   const submit = async () => {

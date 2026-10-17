@@ -90,8 +90,8 @@ export function EarningsHireBalanceCard({
               className={cn(
                 "h-9 shrink-0 rounded-full border px-4 shadow-none ring-offset-0",
                 canWithdraw
-                  ? "border-transparent bg-[linear-gradient(180deg,hsl(22_100%_58%)_0%,hsl(18_100%_46%)_100%)] text-white hover:brightness-110 hover:bg-[linear-gradient(180deg,hsl(22_100%_58%)_0%,hsl(18_100%_46%)_100%)]"
-                  : "border-zinc-200 bg-zinc-100 text-zinc-400 hover:bg-zinc-100",
+                  ? "border-transparent bg-primary text-primary-foreground hover:bg-primary/90"
+                  : "border-border bg-secondary text-muted-foreground hover:bg-secondary",
               )}
             >
               <Banknote className="h-4 w-4" />

@@ -98,7 +98,7 @@ function BoardDropChip({
         )}
       >
         {covers.length === 0 ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/25 via-muted to-background">
+          <div className="absolute inset-0 flex items-center justify-center bg-muted">
             <Sparkles className="h-5 w-5 text-primary" />
           </div>
         ) : covers.length === 1 ? (

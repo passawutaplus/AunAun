@@ -107,7 +107,7 @@ export default function OnboardingChecklist({ variant = "full" }: Props) {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -8, scale: 0.98 }}
           transition={{ duration: 0.28, ease: "easeOut" }}
-          className="rounded-3xl border border-primary/25 bg-gradient-to-br from-primary/10 via-card to-card p-5 sm:p-6"
+          className="rounded-3xl border border-border bg-card p-5 sm:p-6"
         >
           <div className="flex items-center gap-3">
             <PartyPopper className="h-6 w-6 text-primary shrink-0" />
@@ -144,7 +144,7 @@ export default function OnboardingChecklist({ variant = "full" }: Props) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: "easeOut" }}
       className={cn(
-        "rounded-3xl border border-primary/25 bg-gradient-to-br from-primary/10 via-card to-card",
+        "rounded-3xl border border-border bg-card",
         variant === "full" ? "p-5 sm:p-6" : "p-4",
       )}
     >

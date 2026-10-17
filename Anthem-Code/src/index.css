@@ -682,15 +682,11 @@
   }
 
   /* Wallet hero — peach → brand orange → coral (visible wash, never black) */
+  /* Brand Book: Charcoal panel + Studio White text in both themes, no gradient. */
   .bg-gradient-wallet {
     background-image: none;
-    background-color: #2f2e2c;
-    color: #f5f5f5;
-  }
-  .dark .bg-gradient-wallet {
-    background-image:
-      radial-gradient(ellipse 90% 75% at 100% 0%, hsl(36 100% 74% / 0.4), transparent 58%),
-      linear-gradient(145deg, hsl(26 100% 56%) 0%, hsl(16 98% 48%) 50%, hsl(8 88% 42%) 100%);
+    background-color: hsl(var(--surface-strong));
+    color: hsl(48 27% 96%);
   }
 
   /* Hire THB wallet: flat ink panel (was an orange mesh photo) */
@@ -698,13 +694,9 @@
     position: relative;
     isolation: isolate;
     overflow: hidden;
-    background-color: #2f2e2c;
+    background-color: hsl(var(--surface-strong));
     background-image: none;
-    color: #f5f5f5;
-  }
-  .dark .hire-wallet-mesh {
-    background-color: #3a3936;
-    background-image: none;
+    color: hsl(48 27% 96%);
   }
 
   /* Footer CTA: flat ink (was an orange mesh photo) */
@@ -712,12 +704,9 @@
     position: relative;
     isolation: isolate;
     overflow: hidden;
-    background-color: #2f2e2c;
+    background-color: hsl(var(--surface-strong));
     background-image: none;
-    color: #f5f5f5;
-  }
-  .dark .footer-cta-wave {
-    background-color: #3a3936;
+    color: hsl(48 27% 96%);
   }
 
   /* My Studio page header: paper, no photo. Title is large Agrandir light like the feed's "Projects". */
@@ -749,13 +738,7 @@
     z-index: 1;
     pointer-events: none;
     background-color: transparent;
-    background-image: linear-gradient(
-      to bottom,
-      hsl(var(--background)) 0%,
-      hsl(var(--background) / 0.82) 28%,
-      hsl(var(--background) / 0.4) 58%,
-      transparent 100%
-    );
+    background-image: none;
     background-repeat: no-repeat;
     background-size: 100% 100%;
     background-position: 0 0;
@@ -853,7 +836,8 @@
   }
 
   .bg-gradient-brand-radial {
-    background-image: radial-gradient(circle at 30% 30%, hsl(var(--foreground) / 0.10), transparent 60%);
+    background-image: none;
+    background-color: hsl(var(--secondary));
   }
 
 
@@ -873,7 +857,8 @@
 
 
   .bg-gradient-subtle {
-    background-image: linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--secondary) / 0.4) 100%);
+    background-image: none;
+    background-color: hsl(var(--background));
   }
 
   /* === Clean Surface System (was glass) === */
@@ -2261,7 +2246,7 @@ html [data-feed-sheet] [data-feed-catalog-head] .gap-y-1 {
 }
 
 .home-hero-wash {
-  background: radial-gradient(ellipse at 50% 28%, rgba(229, 228, 226, 0.95) 0%, rgba(188, 186, 180, 0.28) 42%, transparent 70%);
+  background: none;
 }
 
 .dark .home-hero-wash {

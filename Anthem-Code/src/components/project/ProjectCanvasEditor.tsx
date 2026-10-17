@@ -1326,8 +1326,7 @@ export function ProjectCanvasEditor({
         data-tour="drop"
         className={cn(
           "group flex min-h-[420px] cursor-pointer items-center justify-center rounded-[28px] px-4 py-10 transition-colors",
-          "bg-[radial-gradient(60%_75%_at_50%_100%,hsl(36_80%_55%/0.26),hsl(40_90%_70%/0.12)_55%,transparent_80%)]",
-          "dark:bg-[radial-gradient(60%_75%_at_50%_100%,hsl(34_70%_50%/0.20),hsl(36_60%_45%/0.08)_55%,transparent_80%)]",
+          "border border-dashed border-border bg-secondary/40",
           disabled && "pointer-events-none opacity-60",
         )}
         onDragOver={handleCanvasDragOver}

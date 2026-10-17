@@ -370,7 +370,7 @@ const MessageBubble = ({
     kind === "hire"
       ? "bg-[hsl(var(--chat-hire))] text-[hsl(var(--chat-hire-foreground))]"
       : kind === "collab"
-        ? "bg-gradient-to-br from-[hsl(var(--chat-collab))] to-[hsl(var(--chat-collab)/0.8)] text-[hsl(var(--chat-collab-foreground))]"
+        ? "bg-chat-collab text-[hsl(var(--chat-collab-foreground))]"
         : "bg-primary text-primary-foreground";
   const theirBg =
     kind === "hire"

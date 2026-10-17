@@ -143,7 +143,7 @@ const AuthPage = () => {
             className="pointer-events-none absolute inset-x-0 top-0 z-[2] h-16 bg-gradient-to-b from-background/50 to-transparent"
             aria-hidden
           />
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] bg-gradient-to-t from-[#f5f5f5] from-[18%] via-[#f5f5f5]/80 via-[55%] to-transparent px-8 pb-8 pt-24">
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] bg-gradient-to-t from-background from-[18%] via-background/80 via-[55%] to-transparent px-8 pb-8 pt-24">
             <p
               className="text-left text-[clamp(2.6rem,4vw,3.75rem)] font-normal leading-[0.92] tracking-tight text-[#2f2e2c]"
               style={{ fontFamily: PAPER_SERIF }}

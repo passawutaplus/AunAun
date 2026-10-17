@@ -18,7 +18,7 @@ const outerWrap = {
 } as const
 
 const headerFade = {
-  background: `linear-gradient(180deg, ${brand.orangeFade} 0%, ${brand.white} 100%)`,
+  backgroundColor: brand.orangeFade,
   padding: '28px 32px 24px',
   borderBottom: `2px solid ${brand.orange}`,
 } as const

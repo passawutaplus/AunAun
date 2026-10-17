@@ -49,9 +49,8 @@ class StudioBodyErrorBoundary extends Component<{ children: ReactNode }, { hasEr
   }
 }
 
-/** Warm paper → soft brand-orange wash, ink-dark in dark mode. */
-const STUDIO_SIDEBAR_BG =
-  "bg-[radial-gradient(120%_60%_at_0%_100%,rgba(243,154,74,0.35),transparent_70%),linear-gradient(to_bottom,#fbf8f4,#f9ede1_55%,#f4cfae)] dark:bg-[radial-gradient(120%_60%_at_0%_100%,rgba(243,154,74,0.22),transparent_70%),linear-gradient(to_bottom,#1f1e1c,#26211c_55%,#3d2717)]";
+/** Flat Studio White canvas (Brand Book: no decorative gradient); Gallery Black in dark mode. */
+const STUDIO_SIDEBAR_BG = "bg-background";
 
 const COLLAPSE_KEY = "samecor:studio-sidebar-collapsed";
 

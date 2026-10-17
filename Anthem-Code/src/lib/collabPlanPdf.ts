@@ -388,11 +388,11 @@ body.is-preview {
   max-width: 210mm;
   margin: 0 auto 14px;
   padding: 10px 14px;
-  background: #fff7ed;
-  border: 1px solid #fdba74;
+  background: #f8f7f2;
+  border: 1px solid #e6e6e3;
   border-radius: 8px;
   font-size: 9.5pt;
-  color: #9a3412;
+  color: #111111;
   text-align: center;
 }
 
@@ -444,7 +444,7 @@ body.is-preview .sheet {
 .doc-kicker {
   margin: 6px 0 0;
   font-size: 9.5pt;
-  color: #ea580c;
+  color: #111111;
   font-weight: 600;
 }
 
@@ -481,7 +481,7 @@ body.is-preview .sheet {
 .header-rule {
   height: 2px;
   margin: 16px 0 14px;
-  background: linear-gradient(90deg, #ea580c 0%, #fb923c 55%, #fed7aa 100%);
+  background: #ee3d29;
 }
 
 .parties-grid {
@@ -519,12 +519,12 @@ body.is-preview .sheet {
   align-items: center;
   gap: 5px;
   padding: 3px 8px 3px 4px;
-  border: 1px solid #fed7aa;
+  border: 1px solid #e6e6e3;
   border-radius: 999px;
-  background: #fff7ed;
+  background: #f8f7f2;
   font-size: 8pt;
   font-weight: 600;
-  color: #9a3412;
+  color: #111111;
   white-space: nowrap;
 }
 
@@ -535,8 +535,8 @@ body.is-preview .sheet {
   width: 16px;
   height: 16px;
   border-radius: 999px;
-  background: #ea580c;
-  color: #fff;
+  background: #ee3d29;
+  color: #111111;
   font-size: 7.5pt;
   font-weight: 700;
 }
@@ -591,7 +591,7 @@ body.is-preview .section-break {
   font-size: 9pt;
   font-weight: 700;
   letter-spacing: 0.06em;
-  color: #ea580c;
+  color: #111111;
   font-variant-numeric: tabular-nums;
 }
 
@@ -617,7 +617,7 @@ body.is-preview .section-break {
   margin: 0 0 6px;
   font-size: 8.5pt;
   font-weight: 700;
-  color: #ea580c;
+  color: #111111;
 }
 
 .progress-body {
@@ -680,10 +680,10 @@ body.is-preview .section-break {
 
 .field-value.emphasis {
   padding: 10px 12px;
-  border: 1px solid #fed7aa;
-  border-left: 3px solid #ea580c;
+  border: 1px solid #e6e6e3;
+  border-left: 3px solid #ee3d29;
   border-radius: 0 6px 6px 0;
-  background: #fffbf7;
+  background: #f8f7f2;
 }
 
 .field-value.timeline-note {
@@ -791,7 +791,7 @@ body.is-preview .section-break {
 }
 
 .link {
-  color: #c2410c;
+  color: #111111;
   text-decoration: none;
 }
 
