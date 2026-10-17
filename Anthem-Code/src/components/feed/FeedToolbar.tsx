@@ -555,7 +555,7 @@ const FeedToolbar = ({
                       useFeedHomeNavStore.getState().setScrolled(false);
                     }}
                   >
-                    <BrandLogo size="sm" tone="theme" />
+                    <BrandLogo beta size="sm" tone="theme" />
                   </button>
                   <div className="pointer-events-none absolute inset-x-0 top-0 flex h-14 items-center justify-center">
                     <div className="pointer-events-auto flex items-center gap-3">
@@ -670,7 +670,7 @@ const FeedToolbar = ({
                   useFeedHomeNavStore.getState().setScrolled(false);
                 }}
               >
-                <BrandLogo size="sm" />
+                <BrandLogo beta size="sm" />
               </button>
               <div className="min-w-0 flex-1 max-w-[min(28rem,38vw)] xl:max-w-[32rem]">
                 <SearchBar

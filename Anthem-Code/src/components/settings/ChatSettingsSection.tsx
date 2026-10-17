@@ -10,6 +10,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -324,8 +325,10 @@ export function ChatSettingsSection() {
       </p>
 
       {isLoading || !draft ? (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
-          <Loader2 className="w-4 h-4 animate-spin" /> กำลังโหลด…
+        <div className="space-y-4" aria-busy="true" aria-label="กำลังโหลด">
+          <Skeleton className="h-[74px] w-full rounded-xl" />
+          <Skeleton className="h-40 w-full rounded-xl" />
+          <Skeleton className="h-40 w-full rounded-xl" />
         </div>
       ) : (
         <div className="space-y-4">
@@ -372,8 +375,9 @@ export function ChatSettingsSection() {
           คนที่คุณบล็อกจะส่งคำขอจ้าง/คอลแลปหาคุณไม่ได้ — กดปลดบล็อกได้ทุกเมื่อ
         </p>
         {blockedLoading ? (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
-            <Loader2 className="w-4 h-4 animate-spin" /> กำลังโหลด…
+          <div className="space-y-2" aria-busy="true" aria-label="กำลังโหลด">
+            <Skeleton className="h-11 w-full rounded-xl" />
+            <Skeleton className="h-11 w-full rounded-xl" />
           </div>
         ) : blocked.length === 0 ? (
           <p className="text-sm text-muted-foreground py-2">ยังไม่ได้บล็อกใคร</p>

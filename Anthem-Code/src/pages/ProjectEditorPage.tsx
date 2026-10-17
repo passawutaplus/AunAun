@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { noteRatingMoment } from "@/lib/ratingPrompt";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { BookOpenText, CircleHelp, Eye, FileText, Handshake, ShieldCheck, ImagePlus, Loader2, Paperclip, Save, Scale, Tags, X } from "lucide-react";
 import CatalogIcon from "@/components/icons/CatalogIcon";
@@ -247,6 +248,7 @@ const ProjectEditorPage = () => {
     });
   const syncConnections = async (projectId: string, targetStatus: Status) => {
     if (targetStatus !== "Published" || !user) return;
+    noteRatingMoment("first_publish");
     try {
       const failed = await syncProjectConnections({
         projectId,

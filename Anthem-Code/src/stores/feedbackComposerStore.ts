@@ -7,6 +7,8 @@ export type FeedbackCapture = {
   id: string;
   dataUrl: string;
   comments: FeedbackCommentPin[];
+  /** Short note typed where the capture's name used to be. */
+  note: string;
 };
 
 export type FeedbackDraft = {
@@ -46,6 +48,7 @@ type FeedbackComposerState = {
   closeAnnotator: () => void;
   updateCapture: (id: string, dataUrl: string, comments: FeedbackCommentPin[]) => void;
   removeCapture: (id: string) => void;
+  setCaptureNote: (id: string, note: string) => void;
   close: () => void;
 };
 
@@ -64,7 +67,7 @@ export const useFeedbackComposer = create<FeedbackComposerState>((set) => ({
       draft: { ...emptyDraft(), ...preset },
     }),
   addCapture: (dataUrl) =>
-    set((s) => ({ captures: [...s.captures, { id: newCaptureId(), dataUrl, comments: [] }] })),
+    set((s) => ({ captures: [...s.captures, { id: newCaptureId(), dataUrl, comments: [], note: "" }] })),
   startSnip: () => set({ phase: "snip", capturing: false, annotatingId: null }),
   cancelSnip: () => set({ phase: "compose", capturing: false }),
   beginCompose: (imageDataUrl) =>
@@ -73,7 +76,7 @@ export const useFeedbackComposer = create<FeedbackComposerState>((set) => ({
       capturing: false,
       annotatingId: null,
       captures: imageDataUrl
-        ? [...s.captures, { id: newCaptureId(), dataUrl: imageDataUrl, comments: [] }]
+        ? [...s.captures, { id: newCaptureId(), dataUrl: imageDataUrl, comments: [], note: "" }]
         : s.captures,
     })),
   setCapturing: (capturing) => set({ capturing }),
@@ -84,6 +87,8 @@ export const useFeedbackComposer = create<FeedbackComposerState>((set) => ({
     set((s) => ({
       captures: s.captures.map((c) => (c.id === id ? { ...c, dataUrl, comments } : c)),
     })),
+  setCaptureNote: (id, note) =>
+    set((s) => ({ captures: s.captures.map((c) => (c.id === id ? { ...c, note } : c)) })),
   removeCapture: (id) =>
     set((s) => ({
       captures: s.captures.filter((c) => c.id !== id),

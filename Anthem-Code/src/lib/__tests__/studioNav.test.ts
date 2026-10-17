@@ -21,11 +21,11 @@ describe("studio nav", () => {
     expect(matchStudioItem("/dashboard/objects")?.id).toBe("objects");
     expect(matchStudioItem("/dashboard/catalogs")?.id).toBe("catalogs");
     expect(matchStudioItem("/dashboard")?.id).toBe("home");
-    expect(matchStudioItem("/dashboard")?.label).toBe("Dashboard");
-    expect(matchStudioItem("/dashboard")?.heroTitle).toBe("Dashboard");
+    expect(matchStudioItem("/dashboard")?.label).toBe("ภาพรวม");
+    expect(matchStudioItem("/dashboard")?.heroTitle).toBe("ภาพรวม");
     expect(matchStudioItem("/dashboard/hire")?.id).toBe("work");
-    expect(matchStudioItem("/dashboard/hire")?.label).toBe("จ้างงาน");
-    expect(matchStudioItem("/dashboard/hire")?.heroTitle).toBe("Hire");
+    expect(matchStudioItem("/dashboard/hire")?.label).toBe("งานจ้าง");
+    expect(matchStudioItem("/dashboard/hire")?.heroTitle).toBe("งานจ้าง");
     expect(matchStudioItem("/dashboard/collab")?.id).toBe("collab");
     expect(matchStudioItem("/dashboard/reviews")?.id).toBe("reviews");
     expect(matchStudioItem("/earnings")?.id).toBe("transactions");
@@ -35,6 +35,7 @@ describe("studio nav", () => {
     expect(matchStudioItem("/dashboard/documents")?.id).toBe("documents");
     expect(matchStudioItem("/dashboard/documents")?.label).toBe("เอกสาร / ภาษี");
     expect(matchStudioItem("/dashboard/payout")?.id).toBe("payout");
+    expect(matchStudioItem("/dashboard/insights")?.id).toBe("insights");
   });
 
   it("does not treat earnings withdraw as the transactions item", () => {

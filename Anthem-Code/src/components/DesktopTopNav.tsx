@@ -32,8 +32,7 @@ function shouldShowDesktopTopNav(pathname: string): boolean {
     pathname.startsWith("/learn") ||
     pathname.startsWith("/help") ||
     pathname.startsWith("/forum") ||
-    pathname.startsWith("/dashboard") ||
-    pathname.startsWith("/earnings") ||
+    // My Studio (/dashboard, /earnings) has its own back-office top bar
     pathname.startsWith("/portfolio") ||
     pathname.startsWith("/settings") ||
     isPublicProfilePath(pathname) ||
@@ -256,7 +255,7 @@ const DesktopTopNav = () => {
           className="shrink-0 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring"
           aria-label={`${BRAND_NAME} หน้าแรก`}
         >
-          <BrandLogo size="sm" tone={isLearn ? "ink" : isHome ? "theme" : "brand"} />
+          <BrandLogo beta size="sm" tone={isLearn ? "ink" : isHome ? "theme" : "brand"} />
         </button>
 
         {!isHome && !isGuestHome ? mainNav : null}

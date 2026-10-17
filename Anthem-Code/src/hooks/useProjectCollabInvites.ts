@@ -90,8 +90,7 @@ export function useCollabTagPermission() {
       if (ctx?.previous) qc.setQueryData(key, ctx.previous);
       toast.error("บันทึกไม่สำเร็จ");
     },
-    onSuccess: (_d, allow) =>
-      toast.success(allow === "nobody" ? "ปิดรับการแท็กแล้ว" : "เปิดให้คนที่ติดตามกันทั้งคู่แท็กได้"),
+    // Success shows inline in settings ("บันทึกแล้ว")
   });
   return { permission: query.data ?? "mutual", isLoading: query.isLoading, save };
 }

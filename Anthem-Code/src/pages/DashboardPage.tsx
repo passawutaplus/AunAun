@@ -12,7 +12,6 @@ import { ProfileHiringRequestsSection } from "@/components/profile/ProfileHiring
 import LinkWorkDialog, { type LinkWorkKind } from "@/components/dashboard/LinkWorkDialog";
 import { DashboardLinkedWorkStrip } from "@/components/dashboard/DashboardRequestStrips";
 import StudioLayout from "@/components/dashboard/StudioLayout";
-import InboxOverviewChart from "@/components/dashboard/InboxOverviewChart";
 import { supabase } from "@/integrations/supabase/client";
 import {
   HIRE_TAB_ACCEPTED,
@@ -187,12 +186,6 @@ export default function DashboardPage({ mode: modeProp }: Props) {
         </div>
       ) : (
         <>
-          {mode === "hire" ? (
-            <InboxOverviewChart variant="hire" rows={hireRequests} loading={hireLoading} />
-          ) : (
-            <InboxOverviewChart variant="collab" rows={collabRequests} loading={collabLoading} />
-          )}
-
           {mode === "hire" ? (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               <StatsCard

@@ -85,7 +85,7 @@ export function EmailOfficialPartnership() {
             อีเมลอย่างเป็นทางการจาก {SITE_NAME}
           </Text>
           <Text style={{ margin: '4px 0 0', fontSize: '11px', color: brand.mute, lineHeight: '1.5' }}>
-            แจ้งเตือนผ่าน LINE ได้ที่{' '}
+            ติดต่อเราทาง LINE{' '}
             <Link href={LINE_URL} style={{ ...link, fontSize: '11px' }}>{LINE_ID}</Link>
           </Text>
         </div>

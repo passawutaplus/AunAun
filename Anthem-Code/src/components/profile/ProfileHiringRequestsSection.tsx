@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { isCommerceEnabled } from "@/lib/aplus1Launch";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -174,6 +175,9 @@ const HIRE_INBOX_COLUMNS = [
   { key: "docs", label: "เอกสาร", width: "minmax(3.25rem,0.6fr)", mdOnly: true, align: "center" as const },
   { key: "priority", label: "ความสำคัญ", width: "minmax(7.75rem,1fr)", mdOnly: true, align: "center" as const },
 ] as const;
+
+/** Budget / order no. / tax docs columns belong to the paid phase. */
+const MONEY_COLUMNS = new Set<string>(["budget", "order", "docs"]);
 
 export function ProfileHiringRequestsSection({
   embed = false,
@@ -587,6 +591,8 @@ export function ProfileHiringRequestsSection({
         </div>
       ) : null}
 
+      {/* Packages are a money-phase feature — without them the origin split is noise */}
+      {isCommerceEnabled() ? (
       <div className="flex flex-wrap gap-1 rounded-2xl border border-border/60 p-0.5 text-xs w-fit max-w-full">
         {(
           [
@@ -610,6 +616,7 @@ export function ProfileHiringRequestsSection({
           </button>
         ))}
       </div>
+      ) : null}
 
       <div className="relative">
         <label htmlFor="hire-inbox-search" className="sr-only">
@@ -620,7 +627,7 @@ export function ProfileHiringRequestsSection({
           id="hire-inbox-search"
           value={inboxSearch}
           onChange={(e) => setInboxSearch(e.target.value)}
-          placeholder="ค้นหาชื่อ หรือเลขคำสั่งซื้อ"
+          placeholder={isCommerceEnabled() ? "ค้นหาชื่อ หรือเลขคำสั่งซื้อ" : "ค้นหาชื่อลูกค้า หรือชื่องาน"}
           aria-label="ค้นหาชื่อ หรือเลขคำสั่งซื้อ"
           className="h-9 rounded-full bg-muted/60 pl-8 text-sm"
         />
@@ -648,7 +655,7 @@ export function ProfileHiringRequestsSection({
       </div>
 
       <InboxExpandTable
-        columns={[...HIRE_INBOX_COLUMNS]}
+        columns={HIRE_INBOX_COLUMNS.filter((c) => isCommerceEnabled() || !MONEY_COLUMNS.has(c.key))}
         expandedId={expandedHireId}
         onExpandedIdChange={setExpandedHireId}
         empty={

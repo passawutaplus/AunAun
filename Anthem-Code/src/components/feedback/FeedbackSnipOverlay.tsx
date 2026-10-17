@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import {
   captureViewportOrRect,
   clampRectToViewport,
+  precaptureViewport,
+  type ViewportPrecapture,
   normalizeDragRect,
   type CaptureRect,
 } from "@/lib/feedbackCapture";
@@ -17,8 +19,20 @@ export default function FeedbackSnipOverlay() {
   const [start, setStart] = useState<{ x: number; y: number } | null>(null);
   const [current, setCurrent] = useState<{ x: number; y: number } | null>(null);
 
+  const preRef = useRef<ViewportPrecapture | null>(null);
+
+  // Composer has just unmounted; wait for that paint, then rasterize while the user drags
   useEffect(() => {
-    void import("html-to-image");
+    let raf2 = 0;
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => {
+        preRef.current = precaptureViewport();
+      });
+    });
+    return () => {
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+    };
   }, []);
 
   const rect: CaptureRect | null =
@@ -41,7 +55,7 @@ export default function FeedbackSnipOverlay() {
       setCapturing(true);
       await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
       try {
-        const dataUrl = await captureViewportOrRect(crop);
+        const dataUrl = await captureViewportOrRect(crop, preRef.current);
         beginCompose(dataUrl);
       } catch {
         toast.error("แคปหน้าจอไม่สำเร็จ — พิมพ์หรืออัปโหลดรูปแทนได้");

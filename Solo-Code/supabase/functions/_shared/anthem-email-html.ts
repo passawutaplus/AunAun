@@ -16,8 +16,9 @@ const brand = {
   success: "#059669",
 } as const;
 
-const LINE_URL = "https://lin.ee/q3W9Qds";
-const LINE_ID = "@solofreelancer";
+// SAMECOR LINE OA (contact) — keep in sync with Anthem-Code/src/lib/brandConfig.ts
+const LINE_URL = "https://lin.ee/te9XZuh";
+const LINE_ID = "@567rveid";
 const FOOTER_NOTE = "ปิดการแจ้งเตือนได้ที่ SAMECOR → Settings → การแจ้งเตือน";
 
 export function anthemSiteUrl(): string {
@@ -102,7 +103,7 @@ ${opts.bodyHtml}
 <p style="font-size:12px;color:${brand.mute};margin:0 0 20px;line-height:1.5;text-align:center">${FOOTER_NOTE}</p>
 <div style="background:${brand.surface};border:1px solid ${brand.border};border-radius:10px;padding:14px 18px;text-align:center;max-width:320px;margin:0 auto 24px">
 <p style="margin:0;font-size:11px;color:${brand.body}">อีเมลอย่างเป็นทางการจาก SAMECOR</p>
-<p style="margin:4px 0 0;font-size:11px;color:${brand.mute}">แจ้งเตือนผ่าน LINE ได้ที่ <a href="${LINE_URL}" style="color:${brand.orange};text-decoration:none;font-weight:600">${LINE_ID}</a></p>
+<p style="margin:4px 0 0;font-size:11px;color:${brand.mute}">ติดต่อเราทาง LINE <a href="${LINE_URL}" style="color:${brand.orange};text-decoration:none;font-weight:600">${LINE_ID}</a></p>
 </div>
 <p style="font-size:11px;font-weight:600;color:${brand.body};text-transform:uppercase;letter-spacing:0.08em;margin:0 0 12px;text-align:center">ติดต่อเรา</p>
 <p style="font-size:12px;color:${brand.mute};margin:0 0 8px;text-align:center"><a href="${siteUrl}" style="color:${brand.body};text-decoration:none">${siteDomain}</a></p>

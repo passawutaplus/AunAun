@@ -3,7 +3,13 @@ import { Link } from "react-router-dom";
 import { useTopProjects, type DBProject } from "@/hooks/useProjects";
 import { optimizedFeedImageUrl } from "@/lib/feedProjectCover";
 import { isLaunchHiddenPath } from "@/lib/aplus1Launch";
-import { BRAND_NAME, BRAND_SUPPORT_EMAIL } from "@/lib/brandConfig";
+import {
+  BRAND_FACEBOOK_URL,
+  BRAND_LINE_CONTACT_URL,
+  BRAND_LINE_ID,
+  BRAND_NAME,
+  BRAND_SUPPORT_EMAIL,
+} from "@/lib/brandConfig";
 import { LEGAL_COMPANY_ADDRESS, LEGAL_COMPANY_NAME } from "@/lib/legalConfig";
 import { cn } from "@/lib/utils";
 
@@ -60,6 +66,12 @@ const Footer = ({ className }: Props) => {
         ))}
         <a href={`mailto:${BRAND_SUPPORT_EMAIL}`} className={linkClass}>
           {BRAND_SUPPORT_EMAIL}
+        </a>
+        <a href={BRAND_LINE_CONTACT_URL} target="_blank" rel="noopener noreferrer" className={linkClass}>
+          LINE {BRAND_LINE_ID}
+        </a>
+        <a href={BRAND_FACEBOOK_URL} target="_blank" rel="noopener noreferrer" className={linkClass}>
+          Facebook
         </a>
       </nav>
 

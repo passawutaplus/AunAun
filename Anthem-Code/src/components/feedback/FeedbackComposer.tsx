@@ -13,14 +13,23 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSubmitFeedback } from "@/hooks/useFeedback";
 import FeedbackAnnotateDialog from "@/components/feedback/FeedbackAnnotateDialog";
 import BetaProgress from "@/components/beta/BetaProgress";
+import MascotMood, { type MascotMoodValue } from "@/components/beta/MascotMood";
 import { useFeedbackComposer } from "@/stores/feedbackComposerStore";
 
+/** Capture notes travel in the message so admin sees them next to the text. */
+function withCaptureNotes(message: string, captures: { note: string }[]) {
+  const notes = captures
+    .map((c, i) => (c.note.trim() ? `ภาพ ${i + 1}: ${c.note.trim()}` : null))
+    .filter(Boolean);
+  return [message.trim(), notes.length ? `โน้ตภาพ\n${notes.join("\n")}` : ""].filter(Boolean).join("\n\n");
+}
+
 const RATINGS = [
-  { value: 1, emoji: "😠", label: "แย่มาก" },
-  { value: 2, emoji: "🙁", label: "แย่" },
-  { value: 3, emoji: "😐", label: "ปานกลาง" },
-  { value: 4, emoji: "🙂", label: "ดี" },
-  { value: 5, emoji: "😍", label: "ดีมาก" },
+  { value: 5, label: "ดีมาก" },
+  { value: 4, label: "ดี" },
+  { value: 3, label: "เฉยๆ" },
+  { value: 2, label: "แย่" },
+  { value: 1, label: "แย่มาก" },
 ] as const;
 
 const PLACEHOLDER: Record<string, string> = {
@@ -53,6 +62,7 @@ export default function FeedbackComposer() {
   const openAnnotator = useFeedbackComposer((s) => s.openAnnotator);
   const closeAnnotator = useFeedbackComposer((s) => s.closeAnnotator);
   const removeCapture = useFeedbackComposer((s) => s.removeCapture);
+  const setCaptureNote = useFeedbackComposer((s) => s.setCaptureNote);
   const close = useFeedbackComposer((s) => s.close);
   const submit = useSubmitFeedback();
   const [doneNumber, setDoneNumber] = useState<string | null>(null);
@@ -115,7 +125,7 @@ export default function FeedbackComposer() {
         route: pathname,
         kind: draft.kind,
         rating: draft.rating,
-        message: draft.message.trim().slice(0, 2000),
+        message: withCaptureNotes(draft.message, captures).slice(0, 2000),
         screenshot_path: screenshotPath,
         annotation_json: serializeFeedbackAnnotations(first?.comments ?? []),
       });
@@ -243,7 +253,7 @@ export default function FeedbackComposer() {
                 <p className="text-[13px] font-medium text-muted-foreground">
                   ให้คะแนนประสบการณ์ <span className="font-normal">(ไม่บังคับ)</span>
                 </p>
-                <div className="flex items-center justify-between gap-1 px-1">
+                <div className="flex items-start justify-between gap-1 px-1">
                   {RATINGS.map((r) => {
                     const selected = draft.rating === r.value;
                     return (
@@ -252,14 +262,28 @@ export default function FeedbackComposer() {
                         type="button"
                         aria-label={r.label}
                         aria-pressed={selected}
-                        title={r.label}
                         onClick={() => patchDraft({ rating: selected ? null : r.value })}
-                        className={cn(
-                          "flex h-11 w-11 items-center justify-center rounded-full text-2xl transition-transform",
-                          selected ? "scale-110 bg-yellow-300/70 ring-4 ring-yellow-200" : "opacity-70 hover:opacity-100",
-                        )}
+                        className="group flex w-14 flex-col items-center gap-1 rounded-xl py-1 outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
-                        {r.emoji}
+                        <MascotMood
+                          mood={r.value as MascotMoodValue}
+                          className={cn(
+                            "h-10 w-10 transition-all duration-200",
+                            selected
+                              ? "-translate-y-0.5 scale-110 drop-shadow-md"
+                              : draft.rating
+                                ? "opacity-35 grayscale group-hover:opacity-100 group-hover:grayscale-0"
+                                : "opacity-80 group-hover:-translate-y-0.5 group-hover:opacity-100",
+                          )}
+                        />
+                        <span
+                          className={cn(
+                            "text-[11px] leading-none transition-colors",
+                            selected ? "font-semibold text-foreground" : "text-muted-foreground",
+                          )}
+                        >
+                          {r.label}
+                        </span>
                       </button>
                     );
                   })}
@@ -297,7 +321,17 @@ export default function FeedbackComposer() {
                           alt=""
                           className="h-14 w-[4.5rem] shrink-0 rounded object-cover"
                         />
-                        <p className="min-w-0 flex-1 text-sm font-medium">Capture {index + 1}</p>
+                        <input
+                          type="text"
+                          value={shot.note}
+                          onChange={(e) => setCaptureNote(shot.id, e.target.value)}
+                          // New capture/upload mounts last — put the cursor straight on its note
+                          autoFocus={index === captures.length - 1}
+                          maxLength={200}
+                          aria-label={`โน้ตภาพที่ ${index + 1}`}
+                          placeholder={`ภาพ ${index + 1} — พิมพ์โน้ตสั้นๆ`}
+                          className="h-9 min-w-0 flex-1 rounded-md border border-transparent bg-transparent px-2 text-sm outline-none transition-colors placeholder:text-muted-foreground hover:border-border focus:border-ring focus:bg-background"
+                        />
                         <button
                           type="button"
                           aria-label="ขีดเขียนภาพแคป"

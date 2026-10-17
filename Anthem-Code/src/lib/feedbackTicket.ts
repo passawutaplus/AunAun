@@ -12,10 +12,10 @@ export const FEEDBACK_KIND_LABELS: Record<FeedbackKind, string> = {
 
 /** Chips shown in the composer (error/rating are legacy or prompt-only). */
 export const FEEDBACK_KIND_OPTIONS: { value: FeedbackKind; label: string; chip: string; hint: string }[] = [
+  { value: "praise", label: "ชอบ", chip: "ชอบ", hint: "ส่วนไหนที่ชอบ อยากให้เก็บไว้" },
   { value: "idea", label: "ไอเดีย", chip: "ไอเดีย", hint: "อยากได้ฟีเจอร์ใหม่ หรืออยากให้ปรับ" },
   { value: "bug", label: "เจอบั๊ก", chip: "เจอบั๊ก", hint: "ปุ่มพัง แสดงผิด โหลดไม่ขึ้น" },
   { value: "ux", label: "ใช้ยาก", chip: "ใช้ยาก", hint: "หาไม่เจอ งง ไม่รู้ต้องกดตรงไหน" },
-  { value: "praise", label: "ชอบ", chip: "ชอบ", hint: "ส่วนไหนที่ชอบ อยากให้เก็บไว้" },
 ];
 
 export const FEEDBACK_SCREENSHOT_BUCKET = "feedback-screenshots";

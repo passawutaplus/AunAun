@@ -36,7 +36,7 @@ export const PROJECT_MANAGE_SELECT = PROJECT_DETAIL_SELECT;
 
 /** Public profile card — unified DB uses user_id (= auth uid). */
 export const PUBLIC_PROFILE_SELECT =
-  "user_id, display_name, username, avatar_url, bio, role, skills, preferred_categories, experience, website, instagram, facebook, line_id, social_links, cover_url, is_verified, location, profile_address, opportunity_status, opportunity_types, opportunity_note, open_for_work, open_for_work_badge, cv_photo_url, cv" as unknown as "*";
+  "user_id, display_name, username, avatar_url, bio, role, skills, preferred_categories, experience, website, instagram, facebook, line_id, social_links, cover_url, is_verified, location, profile_address, opportunity_status, opportunity_types, opportunity_note, open_for_work, open_for_work_badge, cv_photo_url, cv, public_visibility" as unknown as "*";
 
 /**
  * Own settings / hire-readiness profile — avoid select("*") (column grants drift).
@@ -44,7 +44,7 @@ export const PUBLIC_PROFILE_SELECT =
  * type every row as GenericStringError. At runtime this is still the explicit column list.
  */
 export const OWN_PROFILE_SELECT =
-  "user_id, display_name, username, avatar_url, bio, role, skills, preferred_categories, experience, website, instagram, facebook, line_id, social_links, cover_url, is_verified, location, profile_address, opportunity_status, opportunity_types, opportunity_note, open_for_work, open_for_work_badge, cv_photo_url, cv, cover_original_url, email, phone, tax_id, address, billing_address, billing_type, legal_name, company_name, branch, contact_person, contact_role, vat_registered, bank_name, bank_account_number, bank_account_name, verified_at, payment_qr_url, notify_email, notify_hire, notify_collab, notify_job_match, preferred_employment_types, date_of_birth, username_changed_at, display_name_changed_at, account_status, is_active, created_at, updated_at" as unknown as "*";
+  "user_id, display_name, username, avatar_url, bio, role, skills, preferred_categories, experience, website, instagram, facebook, line_id, social_links, cover_url, is_verified, location, profile_address, opportunity_status, opportunity_types, opportunity_note, open_for_work, open_for_work_badge, cv_photo_url, cv, cover_original_url, email, phone, tax_id, address, billing_address, billing_type, legal_name, company_name, branch, contact_person, contact_role, vat_registered, bank_name, bank_account_number, bank_account_name, verified_at, payment_qr_url, notify_email, notify_hire, notify_collab, notify_job_match, preferred_employment_types, date_of_birth, username_changed_at, display_name_changed_at, account_status, is_active, created_at, updated_at, public_visibility" as unknown as "*";
 
 /** Designer directory list. */
 export const PROFILE_DESIGNER_SELECT =

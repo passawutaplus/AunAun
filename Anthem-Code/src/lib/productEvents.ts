@@ -5,6 +5,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { isCategoryAllowed } from "@/lib/cookieConsent";
+import { noteRatingMoment } from "@/lib/ratingPrompt";
 
 export type ProductEventName =
   | "page_view"
@@ -57,6 +58,8 @@ export async function trackProductEvent(
 ): Promise<void> {
   try {
     if (typeof window === "undefined") return;
+    // Local-only Beta rating moment; independent of analytics consent
+    if (eventName === "hire_submit") noteRatingMoment("first_hire");
     if (!isCategoryAllowed("analytics")) return;
 
     const debounceMs = opts?.debounceMs ?? DEFAULT_DEBOUNCE_MS;

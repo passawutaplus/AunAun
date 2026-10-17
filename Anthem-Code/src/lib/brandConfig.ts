@@ -55,11 +55,16 @@ export const BRAND_COMPANY = "SAMECOR";
 export const BRAND_SUPPORT_EMAIL = "support@samecor.com";
 export const BRAND_PRIVACY_EMAIL = "privacy@samecor.com";
 
-/**
- * Official LINE contact (OA / lin.ee).
- * Empty until the account is ready — menu still shows, click explains it's coming.
- */
-export const BRAND_LINE_CONTACT_URL = "";
+/** Official SAMECOR LINE Official Account (support / contact). */
+export const BRAND_LINE_CONTACT_URL = "https://lin.ee/te9XZuh";
+export const BRAND_LINE_ID = "@567rveid";
+export const BRAND_LINE_QR_URL = "https://qr-official.line.me/gs/M_567rveid_GW.png?oat_content=qr";
+
+/** Official Facebook page. */
+export const BRAND_FACEBOOK_URL = "https://www.facebook.com/samecor2026";
+
+/** Community Facebook group (name may change; URL stays). */
+export const BRAND_FACEBOOK_GROUP_URL = "https://www.facebook.com/groups/1554275318664897";
 
 /** Opens LINE OA in a new tab. Returns false when the URL is not set yet. */
 export function openBrandLineContact(): boolean {

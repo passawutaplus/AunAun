@@ -1,7 +1,7 @@
 /** Settings page panels — click switches content (not scroll-spy). */
 
 import type { LucideIcon } from "lucide-react";
-import { LayoutDashboard, Settings2, Shield, UserRound } from "lucide-react";
+import { LayoutDashboard, LifeBuoy, SlidersHorizontal, UserRound } from "lucide-react";
 import { isCommerceEnabled } from "@/lib/aplus1Launch";
 
 export type SettingsPanelId =
@@ -10,7 +10,9 @@ export type SettingsPanelId =
   | "notifications"
   | "chat"
   | "preferences"
-  | "privacy"
+  | "visibility"
+  | "data"
+  | "feedback"
   | "account"
   | "admin";
 
@@ -28,31 +30,33 @@ export type SettingsNavGroup = {
 
 export const SETTINGS_NAV_GROUPS: SettingsNavGroup[] = [
   {
-    id: "group-profile",
-    label: "โปรไฟล์",
+    id: "group-account",
+    label: "บัญชีของฉัน",
     icon: UserRound,
     items: [
-      { id: "profile", label: "แก้ไขโปรไฟล์" },
+      { id: "profile", label: "โปรไฟล์" },
+      { id: "account", label: "เข้าสู่ระบบ" },
       { id: "billing", label: "เอกสาร & Billing" },
     ],
   },
   {
-    id: "group-settings",
-    label: "การตั้งค่า",
-    icon: Settings2,
+    id: "group-usage",
+    label: "การใช้งาน",
+    icon: SlidersHorizontal,
     items: [
       { id: "notifications", label: "การแจ้งเตือน" },
       { id: "chat", label: "แชท" },
+      { id: "visibility", label: "การมองเห็น & แท็ก" },
       { id: "preferences", label: "การแสดงผล" },
     ],
   },
   {
-    id: "group-privacy",
-    label: "ความเป็นส่วนตัว",
-    icon: Shield,
+    id: "group-help",
+    label: "ข้อมูลและความช่วยเหลือ",
+    icon: LifeBuoy,
     items: [
-      { id: "privacy", label: "ความเป็นส่วนตัว & ความปลอดภัย" },
-      { id: "account", label: "บัญชี" },
+      { id: "data", label: "ข้อมูลของฉัน" },
+      { id: "feedback", label: "ฟีดแบ็ก & รายงาน" },
     ],
   },
 ];
@@ -84,8 +88,15 @@ const HASH_TO_PANEL: Record<string, SettingsPanelId> = {
   "settings-chat": "chat",
   preferences: "preferences",
   "settings-preferences": "preferences",
-  privacy: "privacy",
-  "settings-privacy": "privacy",
+  visibility: "visibility",
+  "settings-visibility": "visibility",
+  "settings-tag": "visibility",
+  // "privacy" used to hold tagging + PDPA + reports; PDPA is the part people link to
+  privacy: "data",
+  "settings-privacy": "data",
+  data: "data",
+  feedback: "feedback",
+  "settings-feedback": "feedback",
   account: "account",
   "settings-account": "account",
   "settings-password": "account",
@@ -141,7 +152,9 @@ export function isSettingsPanelId(value: string): value is SettingsPanelId {
     value === "notifications" ||
     value === "chat" ||
     value === "preferences" ||
-    value === "privacy" ||
+    value === "visibility" ||
+    value === "data" ||
+    value === "feedback" ||
     value === "account" ||
     value === "admin"
   );
