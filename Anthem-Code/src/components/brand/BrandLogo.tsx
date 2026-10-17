@@ -27,8 +27,8 @@ export function BrandLogo({ showWordmark = true, size = "md", tone = "brand", cl
   const src = showWordmark ? LOCKUP : SYMBOL;
   const box = showWordmark
     ? size === "sm"
-      ? "h-8 w-auto"
-      : "h-10 w-auto"
+      ? "h-7 w-auto sm:h-8"
+      : "h-9 w-auto sm:h-10"
     : size === "sm"
       ? "h-8 w-8"
       : "h-9 w-9";

@@ -594,7 +594,9 @@ export default function LearnHubPage() {
 
       <header className="fixed inset-x-0 top-0 z-40 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3 px-4 py-4 sm:px-8">
         <Link to="/" className="relative z-10 shrink-0 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={`${BRAND_NAME} home`}>
-          <BrandLogo size="sm" tone="ink" />
+          {/* Below 640px the lockup squeezes the mode pill — symbol alone (Brand Book p11) */}
+          <BrandLogo size="sm" tone="ink" showWordmark={false} className="sm:hidden" />
+          <BrandLogo size="sm" tone="ink" className="hidden sm:flex" />
         </Link>
         <div className="flex min-w-0 items-center justify-end gap-2">
           <Link
