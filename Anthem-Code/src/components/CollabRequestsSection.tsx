@@ -93,7 +93,7 @@ import {
 } from "@/lib/collabInbox";
 
 const CollabPlanSheet = lazy(() =>
-  import("@/components/chat/CollabPlanSheet").then((m) => ({ default: m.CollabPlanSheet })),
+  import("@/components/chat/CollabAgreementSheet").then((m) => ({ default: m.CollabAgreementSheet })),
 );
 
 const COLLAB_TYPE_LABELS: Record<string, string> = {

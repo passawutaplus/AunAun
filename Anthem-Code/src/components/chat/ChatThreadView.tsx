@@ -138,7 +138,7 @@ import {
 } from "@/lib/hireRejectChat";
 import MessageBubble, { DateSeparator } from "@/components/chat/MessageBubble";
 import ChatComposer from "@/components/chat/ChatComposer";
-import { CollabPlanSheet } from "@/components/chat/CollabPlanSheet";
+import { CollabAgreementSheet } from "@/components/chat/CollabAgreementSheet";
 import CollabTasksSheet from "@/components/chat/CollabTasksSheet";
 import { trackProductEvent } from "@/lib/productEvents";
 import { parseChatOffer, type ChatOfferPayload, type OfferPartyInfo } from "@/lib/chatOffer";
@@ -1940,7 +1940,7 @@ const ChatThreadView = ({
       )}
 
       {(isCollab || (!!isGroup && !isStudio && groupTag === "collab")) && (
-        <CollabPlanSheet
+        <CollabAgreementSheet
           open={collabPlanOpen}
           onOpenChange={(open) => {
             if (open) collabPlanUi.openFor(conv.id);

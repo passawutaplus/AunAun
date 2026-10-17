@@ -91,6 +91,7 @@ import {
 } from "@/lib/collabToolkit";
 import { CollabToolkitCard } from "@/components/chat/CollabToolkitCard";
 import { CollabPlanDocCard } from "@/components/chat/CollabPlanDocCard";
+import { CollabAgreementCard, isCollabAgreementMessage } from "@/components/chat/CollabAgreementCard";
 import {
   CollabChangeDoneCard,
   CollabChangeRequestCard,
@@ -401,6 +402,7 @@ const MessageBubble = ({
     isHireProtocolMessage(rawForDisplay) ||
     !!detectCollabToolKind(rawForDisplay) ||
     isCollabPlanDocumentMessage(rawForDisplay) ||
+    isCollabAgreementMessage(rawForDisplay) ||
     isAlignDiscussionTemplateMessage(rawForDisplay) ||
     isCollabDeclineChatMessage(rawForDisplay) ||
     !!collabEnd ||
@@ -1006,6 +1008,12 @@ const MessageBubble = ({
               <div>
                 {replyQuote}
                 <CollabDeclineCard content={collabDecline} mine={mine} />
+              </div>
+            )}
+            {!deleted && isCollabAgreementMessage(rawForDisplay) && (
+              <div>
+                {replyQuote}
+                <CollabAgreementCard conversationId={message.conversation_id} onOpenPlan={onOpenCollabPlan} />
               </div>
             )}
             {collabPlanDoc && (
