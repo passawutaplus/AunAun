@@ -195,8 +195,8 @@ const FloatingNav = () => {
           aria-label="ลงผลงาน"
           className={cn(
             "pointer-events-auto flex h-14 w-14 shrink-0 items-center justify-center rounded-full shadow-sm transition-all duration-200 ease-out hover:opacity-90 active:scale-95",
-            // Ink pill in light mode; in dark mode stays black with a white "+" and a hairline ring so it reads on dark pages
-            "bg-[#111111] text-white dark:ring-1 dark:ring-white/25",
+            // Light mode: white with a black "+"; dark mode: black with a white "+". A hairline ring keeps it visible on any photo.
+            "bg-white text-[#111111] ring-1 ring-black/10 dark:bg-[#111111] dark:text-white dark:ring-white/25",
           )}
         >
           <Plus className="h-6 w-6" strokeWidth={2.5} />
