@@ -21,6 +21,8 @@ export type CollabTask = {
   due_date: string | null;
   /** 0 ปกติ · 1 ด่วน · 2 ด่วนมาก */
   priority: CollabTaskPriority;
+  note: string;
+  links: string[];
   position: number;
   created_by: string;
   created_at: string;
@@ -49,7 +51,7 @@ export function useCollabTasks(conversationId: string | undefined) {
     refetchInterval: 30_000,
     queryFn: async (): Promise<CollabTask[]> => {
       const { data, error } = await tasksTable()
-        .select("id, conversation_id, title, status, assignee_id, due_date, priority, position, created_by, created_at")
+        .select("id, conversation_id, title, status, assignee_id, due_date, priority, note, links, position, created_by, created_at")
         .eq("conversation_id", conversationId!)
         .order("position", { ascending: true });
       if (error) throw error;
@@ -79,7 +81,7 @@ export function useCollabTaskActions(conversationId: string | undefined) {
   });
 
   const update = useMutation({
-    mutationFn: async ({ id, patch }: { id: string; patch: Partial<Pick<CollabTask, "title" | "status" | "assignee_id" | "due_date" | "priority" | "position">> }) => {
+    mutationFn: async ({ id, patch }: { id: string; patch: Partial<Pick<CollabTask, "title" | "status" | "assignee_id" | "due_date" | "priority" | "position" | "note" | "links">> }) => {
       const { error } = await tasksTable().update(patch as never).eq("id", id);
       if (error) throw error;
     },

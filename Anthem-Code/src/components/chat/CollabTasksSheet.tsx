@@ -16,11 +16,12 @@ import {
 } from "@dnd-kit/core";
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { CalendarDays, Flag, ListChecks, Loader2, Plus, Sparkles, Trash2, UserRound, X } from "lucide-react";
+import { CalendarDays, Flag, Link2, ListChecks, Loader2, Plus, Sparkles, StickyNote, Trash2, UserRound, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -178,7 +179,7 @@ export default function CollabTasksSheet({ open, onOpenChange, conversationId, p
   // Assigning someone posts a system line in the chat so they actually notice.
   const saveTask = (
     task: CollabTask,
-    patch: Partial<Pick<CollabTask, "title" | "status" | "assignee_id" | "due_date" | "priority">>,
+    patch: Partial<Pick<CollabTask, "title" | "status" | "assignee_id" | "due_date" | "priority" | "note" | "links">>,
   ) => {
     update.mutate({ id: task.id, patch });
     const to = patch.assignee_id;
@@ -409,6 +410,17 @@ function TaskCardFace({ task, member, lifted }: { task: CollabTask; member?: Mem
         {task.title}
       </p>
       <div className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+        {(task.links?.length ?? 0) > 0 || task.note?.trim() ? (
+          <span className="order-last ml-auto flex shrink-0 items-center gap-1.5">
+            {task.links?.length ? (
+              <span className="flex items-center gap-0.5" title={`ลิงก์ ${task.links.length}`} aria-label={`มีลิงก์ ${task.links.length}`}>
+                <Link2 className="h-3.5 w-3.5" aria-hidden />
+                {task.links.length > 1 ? <span className="tabular-nums">{task.links.length}</span> : null}
+              </span>
+            ) : null}
+            {task.note?.trim() ? <StickyNote className="h-3.5 w-3.5" aria-label="มีโน้ต" /> : null}
+          </span>
+        ) : null}
         {member ? (
           <>
             <UserAvatar src={member.avatarUrl} name={member.name} username={member.username} className="h-5 w-5" fallbackClassName="text-[9px]" />
@@ -454,7 +466,7 @@ function TaskEditDialog({
   task: CollabTask | null;
   members: Member[];
   onClose: () => void;
-  onSave: (patch: Partial<Pick<CollabTask, "title" | "status" | "assignee_id" | "due_date" | "priority">>) => void;
+  onSave: (patch: Partial<Pick<CollabTask, "title" | "status" | "assignee_id" | "due_date" | "priority" | "note" | "links">>) => void;
   onDelete: () => void;
 }) {
   const [title, setTitle] = useState(task?.title ?? "");
@@ -462,6 +474,27 @@ function TaskEditDialog({
   const [assignee, setAssignee] = useState<string>(task?.assignee_id ?? NO_ASSIGNEE);
   const [due, setDue] = useState<string | null>(task?.due_date ?? null);
   const [priority, setPriority] = useState<CollabTaskPriority>(task?.priority ?? 0);
+  const [note, setNote] = useState(task?.note ?? "");
+  const [links, setLinks] = useState<string[]>(task?.links ?? []);
+  const [linkDraft, setLinkDraft] = useState("");
+  const [linkError, setLinkError] = useState<string | null>(null);
+  const addLink = () => {
+    const raw = linkDraft.trim();
+    if (!raw) return;
+    const url = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+    try {
+      new URL(url);
+    } catch {
+      setLinkError("ลิงก์ไม่ถูกต้อง");
+      return;
+    }
+    if (links.length >= 10) {
+      setLinkError("ใส่ได้สูงสุด 10 ลิงก์");
+      return;
+    }
+    setLinks((l) => (l.includes(url) ? l : [...l, url.slice(0, 500)]));
+    setLinkDraft("");
+  };
   const [dateOpen, setDateOpen] = useState(false);
 
   const save = (e: FormEvent) => {
@@ -473,12 +506,14 @@ function TaskEditDialog({
       assignee_id: assignee === NO_ASSIGNEE ? null : assignee,
       due_date: due,
       priority,
+      note: note.trim().slice(0, 2000),
+      links,
     });
   };
 
   return (
     <Dialog open={!!task} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-md rounded-2xl">
+      <DialogContent className="max-h-[90vh] max-w-md overflow-y-auto rounded-2xl">
         <DialogHeader>
           <DialogTitle>Edit Task</DialogTitle>
         </DialogHeader>
@@ -586,6 +621,59 @@ function TaskEditDialog({
               </div>
               {due ? <p className="text-[11px] text-muted-foreground">จะแจ้งเตือนในแชทก่อนครบกำหนด 1 วัน</p> : null}
             </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Link2 className="h-3.5 w-3.5" aria-hidden /> ลิงก์
+            </span>
+            {links.map((l) => (
+              <div key={l} className="flex items-center gap-2 rounded-lg bg-muted/40 px-2.5 py-1.5 text-sm">
+                <a href={l} target="_blank" rel="noopener noreferrer" className="min-w-0 flex-1 truncate text-primary hover:underline">
+                  {l.replace(/^https?:\/\//, "")}
+                </a>
+                <button type="button" onClick={() => setLinks((x) => x.filter((y) => y !== l))} aria-label={`ลบลิงก์ ${l}`} className="text-muted-foreground hover:text-destructive">
+                  <X className="h-3.5 w-3.5" aria-hidden />
+                </button>
+              </div>
+            ))}
+            <div className="flex gap-2">
+              <Input
+                value={linkDraft}
+                onChange={(e) => {
+                  setLinkDraft(e.target.value);
+                  setLinkError(null);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addLink();
+                  }
+                }}
+                placeholder="วางลิงก์ แล้วกด Enter"
+                aria-label="เพิ่มลิงก์"
+                aria-invalid={!!linkError}
+                className="h-9 rounded-xl"
+              />
+              <Button type="button" variant="outline" size="icon" className="h-9 w-9 shrink-0 rounded-xl" onClick={addLink} aria-label="เพิ่มลิงก์">
+                <Plus className="h-4 w-4" aria-hidden />
+              </Button>
+            </div>
+            {linkError ? <p className="text-xs text-destructive">{linkError}</p> : null}
+          </div>
+
+          <div className="space-y-1.5">
+            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <StickyNote className="h-3.5 w-3.5" aria-hidden /> โน้ต
+            </span>
+            <Textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value.slice(0, 2000))}
+              rows={3}
+              placeholder="รายละเอียดเพิ่มเติม ขนาดไฟล์ ข้อควรระวัง …"
+              aria-label="โน้ต"
+              className="resize-y rounded-xl"
+            />
           </div>
 
           <DialogFooter className="flex-row items-center justify-between gap-2 sm:justify-between">
