@@ -16,7 +16,7 @@ import {
 } from "@dnd-kit/core";
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { CalendarDays, ListChecks, Loader2, Plus, Sparkles, Trash2, UserRound, X } from "lucide-react";
+import { CalendarDays, Flag, ListChecks, Loader2, Plus, Sparkles, Trash2, UserRound, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -480,7 +480,7 @@ function TaskEditDialog({
     <Dialog open={!!task} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-md rounded-2xl">
         <DialogHeader>
-          <DialogTitle>แก้ไขงาน</DialogTitle>
+          <DialogTitle>Edit Task</DialogTitle>
         </DialogHeader>
         <form onSubmit={save} className="space-y-4">
           <Input
@@ -510,7 +510,9 @@ function TaskEditDialog({
           </div>
 
           <div className="space-y-1.5">
-            <span className="text-xs text-muted-foreground">ความสำคัญ</span>
+            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Flag className="h-3.5 w-3.5" aria-hidden /> ความสำคัญ
+            </span>
             <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="ความสำคัญ">
               {COLLAB_TASK_PRIORITIES.map((p) => (
                 <button
@@ -582,6 +584,7 @@ function TaskEditDialog({
                   </Button>
                 ) : null}
               </div>
+              {due ? <p className="text-[11px] text-muted-foreground">จะแจ้งเตือนในแชทก่อนครบกำหนด 1 วัน</p> : null}
             </div>
           </div>
 
