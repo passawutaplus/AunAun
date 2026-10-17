@@ -25,7 +25,7 @@ import { useMyProjects } from "@/hooks/useProjects";
 import { useHiringRequests } from "@/hooks/useHiringRequests";
 import { useReceivedCollabRequests } from "@/hooks/useCollabRequests";
 import { useProfilesByIds } from "@/core/profiles";
-import { studioNavItems, STUDIO_COLLAB_PATH, STUDIO_HIRE_PATH } from "@/lib/studioNav";
+import { studioNavItems, studioRequestHref } from "@/lib/studioNav";
 import { ABOUT_ME_EDIT_HREF } from "@/lib/settingsNav";
 import { cn } from "@/lib/utils";
 
@@ -172,7 +172,7 @@ function SearchBody({
       label: `${r.client_name || "ลูกค้า"} — ${r.project_title || "คำขอจ้าง"}`,
       hint: `งานจ้าง · ${r.status}`,
       keywords: "จ้าง hire ลูกค้า client",
-      to: STUDIO_HIRE_PATH,
+      to: studioRequestHref("hire", r.id),
       icon: Briefcase,
     })),
     ...collab.map((r) => {
@@ -183,7 +183,7 @@ function SearchBody({
         label: `คอลแลปกับ ${who}`,
         hint: `คอลแลป · ${(r.collab_types ?? []).slice(0, 2).join(", ") || r.status}`,
         keywords: `collab คอลแลป ${p?.username ?? ""}`,
-        to: STUDIO_COLLAB_PATH,
+        to: studioRequestHref("collab", r.id),
         icon: Handshake,
       };
     }),

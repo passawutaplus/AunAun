@@ -141,7 +141,7 @@ function SidebarLink({
           "relative flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           collapsed && "justify-center px-0",
           isActive && !plain
-            ? "bg-card font-medium text-foreground shadow-sm ring-1 ring-border/60"
+            ? "bg-card font-medium text-foreground shadow-sm ring-1 ring-border/60 dark:bg-white/10 dark:ring-white/10"
             : "text-muted-foreground hover:bg-foreground/5 hover:text-foreground",
         )
       }

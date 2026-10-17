@@ -53,6 +53,16 @@ export type StudioNavGroup = {
 export const STUDIO_HOME_PATH = "/dashboard";
 export const STUDIO_HIRE_PATH = "/dashboard/hire";
 export const STUDIO_COLLAB_PATH = "/dashboard/collab";
+/** `?request=<id>` opens and scrolls to that row in the hire / collab inbox. */
+export const STUDIO_REQUEST_PARAM = "request";
+
+export function studioRequestHref(kind: "hire" | "collab", requestId: string) {
+  const base = kind === "hire" ? STUDIO_HIRE_PATH : STUDIO_COLLAB_PATH;
+  return `${base}?${STUDIO_REQUEST_PARAM}=${encodeURIComponent(requestId)}`;
+}
+
+export const inboxRowDomId = (requestId: string) => `inbox-row-${requestId}`;
+
 export const STUDIO_PROJECTS_PATH = "/dashboard/projects";
 export const STUDIO_PACKAGES_PATH = "/dashboard/packages";
 export const STUDIO_OBJECTS_PATH = "/dashboard/objects";

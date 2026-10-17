@@ -43,6 +43,7 @@ import {
 import { timeAgoTH } from "@/lib/format";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { useInboxRequestFocus } from "@/hooks/useInboxRequestFocus";
 import { useSetInboxPriority } from "@/hooks/useInboxPriority";
 import type { InboxPriority } from "@/lib/inboxPriority";
 import { DEFAULT_COLLAB_INBOX_SORT, COLLAB_INBOX_SORT_OPTIONS, sortInboxRows, type InboxSortKey } from "@/lib/inboxSort";
@@ -75,9 +76,11 @@ import {
   COLLAB_TAB_ACCEPTED,
   COLLAB_TAB_ALL,
   COLLAB_TAB_CANCELLED,
+  COLLAB_TAB_CLOSED,
   COLLAB_TAB_COMPLETED,
   COLLAB_TAB_CONTACTED_NEW,
   COLLAB_TAB_DECLINED,
+  COLLAB_FILTER_TABS,
   COLLAB_TAB_ORDER,
   canHideCollabFromInbox,
   getHiddenCollabIds,
@@ -242,6 +245,7 @@ const CollabRequestsSection = ({
       else if (isCollabCompletedStatus(r.status)) completed += 1;
     }
     return {
+      [COLLAB_TAB_CLOSED]: declined + cancelled + completed,
       [COLLAB_TAB_CONTACTED_NEW]: contactedNew,
       [COLLAB_TAB_ACCEPTED]: accepted,
       [COLLAB_TAB_DECLINED]: declined,
@@ -260,6 +264,13 @@ const CollabRequestsSection = ({
             if (tab === COLLAB_TAB_DECLINED) return isCollabDeclinedStatus(r.status);
             if (tab === COLLAB_TAB_CANCELLED) return isCollabCancelledStatus(r.status);
             if (tab === COLLAB_TAB_COMPLETED) return isCollabCompletedStatus(r.status);
+            if (tab === COLLAB_TAB_CLOSED) {
+              return (
+                isCollabDeclinedStatus(r.status) ||
+                isCollabCancelledStatus(r.status) ||
+                isCollabCompletedStatus(r.status)
+              );
+            }
             return false;
           });
     return sortInboxRows(rows, inboxSort, (r) => {
@@ -277,6 +288,12 @@ const CollabRequestsSection = ({
   useEffect(() => {
     setExpandedId(null);
   }, [tab]);
+
+  useInboxRequestFocus(
+    useMemo(() => visibleRequests.map((r) => r.id), [visibleRequests]),
+    () => setTab(COLLAB_TAB_ALL),
+    setExpandedId,
+  );
 
   const pendingCount = counts[COLLAB_TAB_CONTACTED_NEW] ?? 0;
   const busy = openChatMut.isPending;
@@ -349,7 +366,7 @@ const CollabRequestsSection = ({
 
       <div className="flex items-center gap-2">
         <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto pb-1 scrollbar-hide">
-        {COLLAB_TAB_ORDER.map((s) => (
+        {COLLAB_FILTER_TABS.map((s) => (
           <button
             key={s}
             type="button"

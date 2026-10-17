@@ -4,7 +4,7 @@ import { useProfilesByIds } from "@/core/profiles";
 import type { HiringRow } from "@/hooks/useHiringRequests";
 import { isContactedNewStatus, HIRE_TAB_ACCEPTED } from "@/lib/hiringStatus";
 import { isCollabContactedNewStatus } from "@/lib/collabInbox";
-import { STUDIO_COLLAB_PATH, STUDIO_HIRE_PATH } from "@/lib/studioNav";
+import { studioRequestHref } from "@/lib/studioNav";
 import { cn } from "@/lib/utils";
 import UserAvatar from "@/components/UserAvatar";
 
@@ -52,7 +52,7 @@ export function buildStudioActions(hire: HiringRow[], collab: CollabRow[], names
         title: `${r.client_name || "ลูกค้า"} ส่งคำขอจ้าง`,
         meta: `${r.project_title || "งานใหม่"} · ${ago(r.created_at, now)}`,
         cta: "ตอบ",
-        to: STUDIO_HIRE_PATH,
+        to: studioRequestHref("hire", r.id),
         at: new Date(r.created_at).getTime(),
         personId: r.client_id,
       });
@@ -65,7 +65,7 @@ export function buildStudioActions(hire: HiringRow[], collab: CollabRow[], names
           title: `${r.project_title || "งานจ้าง"} ${left < 0 ? `เลยกำหนด ${-left} วัน` : left === 0 ? "ถึงกำหนดวันนี้" : `ถึงกำหนดอีก ${left} วัน`}`,
           meta: r.client_name || "",
           cta: "เปิดงาน",
-          to: STUDIO_HIRE_PATH,
+          to: studioRequestHref("hire", r.id),
           // Most urgent first within the due group
           at: -left,
         });
@@ -80,7 +80,7 @@ export function buildStudioActions(hire: HiringRow[], collab: CollabRow[], names
       title: `${names[r.sender_id] ?? "ครีเอเตอร์"} ชวนคอลแลป`,
       meta: `${(r.collab_types ?? []).slice(0, 2).join(", ") || "คอลแลป"} · ${ago(r.created_at, now)}`,
       cta: "ดู",
-      to: STUDIO_COLLAB_PATH,
+      to: studioRequestHref("collab", r.id),
       at: new Date(r.created_at).getTime(),
       personId: r.sender_id,
     });
