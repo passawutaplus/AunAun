@@ -831,7 +831,6 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
               : undefined
           }
         >
-        <div data-tour="home-toolbar">
         <FeedToolbar
           mode={mode}
           onModeChange={changeMode}
@@ -899,7 +898,6 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
           drillActive={isDrillView}
           onDrillSelect={openDrill}
         />
-        </div>
 
         <FeedModeTransition
           modeKey={feedPanelKey}
@@ -1087,7 +1085,8 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
         projectTitle={collabTarget.projectTitle}
         projectCoverUrl={collabTarget.projectCoverUrl}
       />
-      <TourHelpButton onClick={homeTour.start} className="fixed bottom-6 left-4 z-30 shadow-sm max-sm:bottom-24" />
+      {/* Desktop only — on phones it sat on top of the feed; Settings → ทัวร์แนะนำ replays it there */}
+      <TourHelpButton onClick={homeTour.start} className="fixed bottom-6 left-4 z-30 hidden shadow-sm lg:inline-flex" />
       <GuideTour tourId="home" label="ทัวร์แนะนำหน้าแรก" steps={HOME_TOUR} open={homeTour.open} onClose={homeTour.close} />
     </main>
   );

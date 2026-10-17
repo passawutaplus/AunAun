@@ -408,13 +408,14 @@ const FeedToolbar = ({
   return (
     <div
       data-feed-toolbar
+      data-tour="home-toolbar"
       className={cn(
         "z-30 -mx-3 sm:-mx-4 lg:-mx-6 2xl:-mx-10 px-3 sm:px-4 lg:px-6 2xl:px-10 py-3 overflow-visible",
         homeScrolled
           ? cn(
               "sticky top-0",
               isCatalog
-                ? "z-40 bg-transparent shadow-none lg:static"
+                ? "z-40 border-b border-border bg-background shadow-none lg:static lg:border-0 lg:bg-transparent"
                 : "border-b border-border bg-background",
             )
           : "relative bg-transparent shadow-none",
