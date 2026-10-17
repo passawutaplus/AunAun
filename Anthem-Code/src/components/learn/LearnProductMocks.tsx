@@ -6,12 +6,12 @@ import { smoothEase } from "@/lib/motion";
 /** Stylized product UI previews — no screenshots required. */
 export function LearnExploreMock({ className }: { className?: string }) {
   const tiles = [
-    "bg-foreground/15",
-    "bg-foreground/10",
-    "bg-foreground/20",
-    "bg-foreground/[0.07]",
-    "bg-foreground/[0.12]",
-    "bg-foreground/[0.18]",
+    "from-orange-500/40 to-amber-700/30",
+    "from-sky-500/35 to-slate-700/40",
+    "from-rose-500/35 to-stone-700/35",
+    "from-emerald-500/30 to-teal-800/35",
+    "from-violet-500/25 to-zinc-700/40",
+    "from-yellow-500/30 to-orange-800/30",
   ];
 
   return (
@@ -23,7 +23,7 @@ export function LearnExploreMock({ className }: { className?: string }) {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-20px" }}
           transition={{ delay: i * 0.05, duration: 0.4, ease: smoothEase }}
-          className={cn("aspect-[4/3] rounded-xl", g)}
+          className={cn("aspect-[4/3] rounded-xl bg-gradient-to-br", g)}
         />
       ))}
     </div>
@@ -34,7 +34,7 @@ export function LearnProfileMock({ className }: { className?: string }) {
   return (
     <div className={cn("space-y-3 p-4 sm:p-5", className)}>
       <div className="flex items-center gap-3">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-brand text-white shadow-sm">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-brand text-white shadow-lg">
           <UserRound className="h-5 w-5" aria-hidden />
         </div>
         <div className="min-w-0 flex-1">
@@ -46,8 +46,8 @@ export function LearnProfileMock({ className }: { className?: string }) {
         </span>
       </div>
       <div className="grid grid-cols-2 gap-2">
-        <div className="aspect-[4/3] rounded-xl bg-foreground/15" />
-        <div className="aspect-[4/3] rounded-xl bg-foreground/10" />
+        <div className="aspect-[4/3] rounded-xl bg-gradient-to-br from-primary/40 to-orange-900/40" />
+        <div className="aspect-[4/3] rounded-xl bg-gradient-to-br from-sky-400/30 to-slate-800/50" />
       </div>
       <div className="flex gap-2">
         <span className="rounded-full bg-muted px-2.5 py-1 text-[10px] text-muted-foreground">Branding</span>

@@ -12,7 +12,7 @@ export function LearnShell() {
   }, []);
 
   return (
-    <main className={cn("min-h-screen bg-background text-foreground", MOBILE_PAGE_BOTTOM_CLASS)}>
+    <main className={cn("min-h-screen bg-[#f5f5f5] text-[#2f2e2c]", MOBILE_PAGE_BOTTOM_CLASS)}>
       <LearnScrollBlur />
       <Outlet />
     </main>

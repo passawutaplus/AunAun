@@ -131,7 +131,7 @@ export function LearnWhoFan({ progress, reduced }: { progress: MotionValue<numbe
               : { rotate: rot[i], x: x[i], y: y[i], zIndex: i === 1 ? 4 : 2 }
           }
           className={cn(
-            "absolute inset-x-[10%] top-[8%] overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm",
+            "absolute inset-x-[10%] top-[8%] overflow-hidden rounded-2xl border border-border/60 bg-card shadow-[0_24px_60px_-28px_rgba(0,0,0,0.55)]",
             reduced && i === 0 && "-translate-x-[28%] -rotate-[12deg]",
             reduced && i === 2 && "translate-x-[28%] rotate-[12deg]",
             "origin-bottom",
@@ -214,7 +214,7 @@ export function LearnFirstVisitPlay({
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: 80, opacity: 0 }}
                 transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                className="absolute inset-y-2 right-2 z-10 w-[42%] overflow-hidden rounded-xl border border-white/10 bg-zinc-900/95 p-3 shadow-sm"
+                className="absolute inset-y-2 right-2 z-10 w-[42%] overflow-hidden rounded-xl border border-white/10 bg-zinc-900/95 p-3 shadow-2xl"
               >
                 <div className="flex items-center gap-2">
                   <img loading="lazy" decoding="async" src={LEARN_FILM.avatar} alt="" className="h-9 w-9 rounded-full object-cover" />
@@ -238,7 +238,7 @@ export function LearnFirstVisitPlay({
                 initial={{ y: 48, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: 48, opacity: 0 }}
-                className="absolute inset-x-6 bottom-6 z-20 rounded-2xl border border-white/10 bg-background/95 p-4 shadow-sm"
+                className="absolute inset-x-6 bottom-6 z-20 rounded-2xl border border-white/10 bg-background/95 p-4 shadow-2xl"
               >
                 <p className="text-sm font-semibold text-foreground">เข้าสู่ระบบเพื่อคุยต่อ</p>
                 <p className="mt-1 text-xs text-muted-foreground">บันทึก ทัก หรือลงผลงาน — แล้วย้อนหน้าที่ค้างไว้ได้</p>
@@ -373,7 +373,7 @@ export function LearnMagnetSave({ stage }: { stage: number }) {
             animate={{ y: showCta ? 0 : 36, opacity: showCta ? 1 : 0 }}
             className="absolute inset-x-0 bottom-3 z-10 flex justify-center"
           >
-            <span className="rounded-full bg-gradient-brand px-5 py-2 text-sm font-medium text-white shadow-sm">
+            <span className="rounded-full bg-gradient-brand px-5 py-2 text-sm font-medium text-white shadow-lg">
               คุยต่อจากผลงานนี้
             </span>
           </motion.div>
@@ -395,7 +395,7 @@ export function LearnChatBridge({ stage }: { stage: number }) {
             alt=""
             initial={false}
             animate={{ rotate: stage >= 0 ? 0 : -12, opacity: 1 }}
-            className="mb-4 h-20 w-28 rounded-xl object-cover shadow-sm"
+            className="mb-4 h-20 w-28 rounded-xl object-cover shadow-lg"
           />
           <svg className="pointer-events-none absolute left-16 top-16 h-16 w-36 text-primary" viewBox="0 0 160 80" aria-hidden>
             <motion.path
@@ -460,7 +460,7 @@ export function LearnCtaStill({ children }: { children: ReactNode }) {
               }}
               transition={{ duration: 5 + i, repeat: Infinity, ease: "easeInOut" }}
               className={cn(
-                "pointer-events-none absolute h-16 w-24 rounded-lg object-cover opacity-80 shadow-sm sm:h-20 sm:w-28",
+                "pointer-events-none absolute h-16 w-24 rounded-lg object-cover opacity-80 shadow-lg sm:h-20 sm:w-28",
                 i === 0 && "left-[8%] top-[18%]",
                 i === 1 && "right-[10%] top-[22%]",
                 i === 2 && "left-[14%] bottom-[20%]",

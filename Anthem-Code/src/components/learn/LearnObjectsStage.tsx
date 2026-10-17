@@ -42,7 +42,7 @@ type Product = {
 function PrintMock() {
   return (
     <div className="flex h-full w-full items-center justify-center bg-[#ebe7df]">
-      <div className="h-[82%] bg-white p-[5%] shadow-sm" style={{ aspectRatio: "3 / 4" }}>
+      <div className="h-[82%] bg-white p-[5%] shadow-[0_10px_24px_-10px_rgba(47,46,44,0.45)]" style={{ aspectRatio: "3 / 4" }}>
         <img src={ART} alt="" draggable={false} className="h-full w-full object-cover" />
       </div>
     </div>
@@ -58,7 +58,7 @@ function ZineMock() {
     <div className="relative flex h-full w-full items-center justify-center bg-[#e9e4da]">
       <div className="absolute h-[70%] translate-x-[14%] rotate-[8deg] rounded-sm bg-[#f7f3ea] shadow-md" style={{ aspectRatio: "3 / 4" }} />
       <div
-        className="relative h-[74%] -rotate-[5deg] overflow-hidden rounded-sm shadow-sm"
+        className="relative h-[74%] -rotate-[5deg] overflow-hidden rounded-sm shadow-[0_12px_24px_-10px_rgba(47,46,44,0.55)]"
         style={{ aspectRatio: "3 / 4" }}
       >
         <img src={ART} alt="" draggable={false} className="h-full w-full object-cover object-[30%_50%]" />
@@ -80,7 +80,7 @@ function StickerMock() {
           <img src={ART} alt="" draggable={false} className="h-full w-full scale-[2.2] object-cover" style={{ objectPosition: pos }} />
         </span>
       ))}
-      <span className="absolute bottom-[6%] right-[6%] rounded bg-white/90 px-1.5 py-0.5 text-[9px] font-medium text-foreground">
+      <span className="absolute bottom-[6%] right-[6%] rounded bg-white/90 px-1.5 py-0.5 text-[9px] font-medium text-[#2f2e2c]">
         PNG · print-ready
       </span>
     </div>
@@ -164,7 +164,7 @@ function ProductCard({ p, item, index, compact }: { p: MotionValue<number>; item
   return (
     <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
       <motion.article
-        className="w-[44vw] overflow-hidden rounded-2xl border border-border bg-white text-foreground shadow-sm md:w-[min(14rem,18vw,34dvh)]"
+        className="w-[44vw] overflow-hidden rounded-2xl border border-[#e4e1db] bg-white text-[#2f2e2c] shadow-[0_24px_60px_-30px_rgba(47,46,44,0.45)] md:w-[min(14rem,18vw,34dvh)]"
         style={{ x, y, rotate, scale, opacity }}
       >
         <div className="aspect-square overflow-hidden bg-[#f3f1ec] md:aspect-[5/4]">{item.mock}</div>
@@ -173,7 +173,7 @@ function ProductCard({ p, item, index, compact }: { p: MotionValue<number>; item
             <span className="truncate">
               {item.kind} <span className="hidden md:inline">· {item.axis}</span>
             </span>
-            <span className="shrink-0 rounded-full border border-border px-1.5 py-px">{item.chip}</span>
+            <span className="shrink-0 rounded-full border border-[#e4e1db] px-1.5 py-px">{item.chip}</span>
           </p>
           <p className="mt-1 truncate text-xs font-medium md:text-[13px]">{item.title}</p>
           <p className="mt-1 flex items-baseline justify-between text-xs">
@@ -209,10 +209,10 @@ function Line({ p, item, index }: { p: MotionValue<number>; item: Product; index
 function Heading({ className }: { className?: string }) {
   return (
     <div className={cn("text-center", className)}>
-      <p className="text-[clamp(1.5rem,3vw,2.4rem)] leading-none tracking-[-0.03em] text-foreground" style={LEARN_SERIF}>
+      <p className="text-[clamp(1.5rem,3vw,2.4rem)] leading-none tracking-[-0.03em] text-[#2f2e2c]" style={LEARN_SERIF}>
         Or make it into
       </p>
-      <h2 className="mt-2 text-[clamp(3rem,8.5vw,7rem)] font-medium leading-[0.84] tracking-[-0.06em] text-foreground">
+      <h2 className="mt-2 text-[clamp(3rem,8.5vw,7rem)] font-medium leading-[0.84] tracking-[-0.06em] text-[#2f2e2c]">
         Objects
       </h2>
     </div>
@@ -220,7 +220,7 @@ function Heading({ className }: { className?: string }) {
 }
 
 const CTA_CLASS =
-  "inline-flex min-h-11 items-center gap-2 rounded-full bg-foreground px-6 text-sm font-medium text-background outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
+  "inline-flex min-h-11 items-center gap-2 rounded-full bg-[#2f2e2c] px-6 text-sm font-medium text-[#f5f5f5] outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[#2f2e2c] focus-visible:ring-offset-2";
 
 function Cta() {
   return (
@@ -233,7 +233,7 @@ function Cta() {
 
 function StaticCard({ item }: { item: Product }) {
   return (
-    <article className="overflow-hidden rounded-2xl border border-border bg-white text-foreground">
+    <article className="overflow-hidden rounded-2xl border border-[#e4e1db] bg-white text-[#2f2e2c]">
       <div className="aspect-[5/4] overflow-hidden bg-[#f3f1ec]">{item.mock}</div>
       <div className="p-3">
         <p className="text-[11px] text-[#8a867f]">
@@ -305,11 +305,11 @@ export function LearnObjectsStage() {
                 src={ART}
                 alt={`${LEARN_SOURCE_ART.title} illustration`}
                 draggable={false}
-                className="aspect-[4/3] w-full rounded-2xl bg-border object-cover shadow-sm"
+                className="aspect-[4/3] w-full rounded-2xl bg-[#e4e1db] object-cover shadow-[0_30px_80px_-30px_rgba(47,46,44,0.45)]"
               />
               <motion.figcaption className="mt-3 hidden text-center md:block" style={{ opacity: labelOpacity }}>
                 <span className="block text-[11px] uppercase tracking-[0.16em] text-[#8a867f]">ผลงานต้นทาง</span>
-                <span className="block text-sm font-medium text-foreground">{LEARN_SOURCE_ART.title}</span>
+                <span className="block text-sm font-medium text-[#2f2e2c]">{LEARN_SOURCE_ART.title}</span>
               </motion.figcaption>
             </motion.figure>
           </div>

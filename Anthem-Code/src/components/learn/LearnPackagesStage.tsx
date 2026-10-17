@@ -56,7 +56,7 @@ const SELECTED_COL = 3;
 const INCLUDES = ["ปก 1 ภาพ + ภาพใน 6 ภาพ", "ไฟล์พร้อมพิมพ์ + ไฟล์ต้นฉบับ", "แก้ไขได้ 2 รอบ"] as const;
 
 const REQUESTS = [
-  { name: "Mali Studio", tone: "#282929", text: "ขอจ้างจากแพ็กเกจนี้", amount: "฿32,000" },
+  { name: "Mali Studio", tone: "#2f2e2c", text: "ขอจ้างจากแพ็กเกจนี้", amount: "฿32,000" },
   { name: "Bloom Books", tone: "#b08d6a", text: "ขอใบเสนอราคา · ปก + ภาพใน 10 ภาพ", amount: "" },
   { name: "Kiddo Press", tone: "#6c7f99", text: "ขอจ้างจากแพ็กเกจนี้", amount: "฿25,000" },
 ] as const;
@@ -88,10 +88,10 @@ function GridCard({
   return (
     <motion.div
       ref={cardRef}
-      className="w-[min(8.5rem,30vw)] shrink-0 rounded-xl border border-border bg-white p-1.5 text-foreground md:w-[min(12rem,22dvh)]"
+      className="w-[min(8.5rem,30vw)] shrink-0 rounded-xl border border-[#e4e1db] bg-white p-1.5 text-[#2f2e2c] md:w-[min(12rem,22dvh)]"
       style={dim ? { opacity: dim } : undefined}
     >
-      <img src={cover} alt="" draggable={false} className="aspect-[4/3] w-full rounded-lg bg-border object-cover" />
+      <img src={cover} alt="" draggable={false} className="aspect-[4/3] w-full rounded-lg bg-[#e4e1db] object-cover" />
       <CardText pkg={pkg} />
     </motion.div>
   );
@@ -103,7 +103,7 @@ function CardText({ pkg }: { pkg: Pkg }) {
       <p className="mt-1.5 truncate px-0.5 text-[11px] font-medium md:text-xs">{pkg.title}</p>
       <p className="flex items-center justify-between gap-2 px-0.5 pb-0.5 text-[10px] text-[#8a867f] md:text-[11px]">
         <span className="truncate">{pkg.by}</span>
-        <span className="shrink-0 tabular-nums text-foreground">{pkg.price}</span>
+        <span className="shrink-0 tabular-nums text-[#2f2e2c]">{pkg.price}</span>
       </p>
     </>
   );
@@ -149,7 +149,7 @@ function IncludeRow({ p, label, at }: { p: MotionValue<number>; label: string; a
       <span
         className={cn(
           "flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-colors duration-300",
-          on ? "border-foreground bg-foreground text-white" : "border-[#d6d2ca] text-transparent",
+          on ? "border-[#2f2e2c] bg-[#2f2e2c] text-white" : "border-[#d6d2ca] text-transparent",
         )}
       >
         <Check className="h-2.5 w-2.5" strokeWidth={3} aria-hidden />
@@ -164,7 +164,7 @@ function RequestToast({ p, item, at }: { p: MotionValue<number>; item: (typeof R
   const y = useTransform(p, [at, at + 0.035], [16, 0]);
   return (
     <motion.div
-      className="flex items-center gap-2.5 rounded-2xl border border-border bg-white/95 px-3 py-2.5 max-md:absolute max-md:inset-x-0 max-md:top-0 text-foreground shadow-sm backdrop-blur"
+      className="flex items-center gap-2.5 rounded-2xl border border-[#e4e1db] bg-white/95 px-3 py-2.5 max-md:absolute max-md:inset-x-0 max-md:top-0 text-[#2f2e2c] shadow-[0_18px_40px_-20px_rgba(47,46,44,0.45)] backdrop-blur"
       style={{ opacity, y }}
     >
       <span
@@ -201,7 +201,7 @@ function RefThumb({ p, src, at }: { p: MotionValue<number>; src: string; at: num
       src={src}
       alt=""
       draggable={false}
-      className="h-12 w-12 rounded-lg border-2 border-white bg-border object-cover shadow-md md:h-14 md:w-14"
+      className="h-12 w-12 rounded-lg border-2 border-white bg-[#e4e1db] object-cover shadow-md md:h-14 md:w-14"
       style={{ opacity, scale }}
     />
   );
@@ -213,7 +213,7 @@ function DetailInfo({ p }: { p: MotionValue<number> }) {
   const timeOpacity = useTransform(p, [T.price[0] + 0.03, T.price[1]], [0, 1]);
   const requestCount = useProgressDerived(p, (v) => T.requests.filter((at) => v >= at).length);
   return (
-    <div className="flex h-full flex-col text-foreground">
+    <div className="flex h-full flex-col text-[#2f2e2c]">
       <div className="flex items-center justify-between">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-[#eaf1fc] px-2.5 py-1 text-[11px] font-medium text-[#2d5fae]">
           <PackagesIcon className="h-3.5 w-3.5" aria-hidden />
@@ -250,7 +250,7 @@ function DetailInfo({ p }: { p: MotionValue<number> }) {
       </div>
 
       <div className="mt-auto flex items-center gap-2 pt-4">
-        <span className="flex h-10 flex-1 items-center justify-center rounded-full bg-foreground text-xs font-medium text-white">
+        <span className="flex h-10 flex-1 items-center justify-center rounded-full bg-[#2f2e2c] text-xs font-medium text-white">
           ขอจ้างจากแพ็กเกจนี้
         </span>
         <span
@@ -270,10 +270,10 @@ function DetailInfo({ p }: { p: MotionValue<number> }) {
 function Heading() {
   return (
     <div className="text-center">
-      <p className="text-[clamp(1.3rem,2.6vw,2.1rem)] leading-none tracking-[-0.03em] text-foreground" style={LEARN_SERIF}>
+      <p className="text-[clamp(1.3rem,2.6vw,2.1rem)] leading-none tracking-[-0.03em] text-[#2f2e2c]" style={LEARN_SERIF}>
         Offer your style as a
       </p>
-      <h2 className="mt-1 text-[clamp(2.6rem,6.5vw,5.2rem)] font-medium leading-[0.88] tracking-[-0.06em] text-foreground">
+      <h2 className="mt-1 text-[clamp(2.6rem,6.5vw,5.2rem)] font-medium leading-[0.88] tracking-[-0.06em] text-[#2f2e2c]">
         Package
       </h2>
     </div>
@@ -281,7 +281,7 @@ function Heading() {
 }
 
 const CTA_CLASS =
-  "inline-flex min-h-11 items-center gap-2 rounded-full bg-foreground px-6 text-sm font-medium text-background outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
+  "inline-flex min-h-11 items-center gap-2 rounded-full bg-[#2f2e2c] px-6 text-sm font-medium text-[#f5f5f5] outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[#2f2e2c] focus-visible:ring-offset-2";
 
 function Cta() {
   return (
@@ -295,7 +295,7 @@ function Cta() {
 function StaticDetail({ works }: { works: string[] }) {
   const done = useMotionValue(1);
   return (
-    <div className="mx-auto grid max-w-5xl overflow-hidden rounded-[1.25rem] border border-border bg-white md:grid-cols-[54%_1fr]">
+    <div className="mx-auto grid max-w-5xl overflow-hidden rounded-[1.25rem] border border-[#e4e1db] bg-white md:grid-cols-[54%_1fr]">
       <div className="relative">
         <img src={LEARN_SOURCE_ART.image} alt="" className="aspect-[4/3] h-full w-full object-cover" />
         <div className="absolute bottom-3 left-3">
@@ -430,9 +430,9 @@ export function LearnPackagesStage({ works }: { works: string[] }) {
 
           <div
             ref={overlayRef}
-            className="invisible absolute z-20 overflow-hidden border border-border bg-white shadow-sm"
+            className="invisible absolute z-20 overflow-hidden border border-[#e4e1db] bg-white shadow-[0_40px_100px_-40px_rgba(47,46,44,0.45)]"
           >
-            <div ref={imageRef} className="absolute overflow-hidden bg-border">
+            <div ref={imageRef} className="absolute overflow-hidden bg-[#e4e1db]">
               <img src={LEARN_SOURCE_ART.image} alt="" draggable={false} className="h-full w-full object-cover" />
               <motion.div className="absolute bottom-3 left-3" style={{ opacity: detailOpacity }}>
                 <RefThumbs p={p} works={works} />

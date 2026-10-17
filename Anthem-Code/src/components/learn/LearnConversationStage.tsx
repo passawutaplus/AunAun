@@ -52,14 +52,14 @@ function MockCard({
 }) {
   const t = CARD_TONE[tone];
   return (
-    <div className={cn("w-full min-w-[16rem] max-w-[22rem] overflow-hidden rounded-2xl border bg-white text-foreground shadow-sm", t.border)}>
+    <div className={cn("w-full min-w-[16rem] max-w-[22rem] overflow-hidden rounded-2xl border bg-white text-[#2f2e2c] shadow-sm", t.border)}>
       <div className={cn("flex items-center gap-1.5 px-3 py-2 text-[11px] font-semibold", t.header)}>
         <Icon className="h-3.5 w-3.5 shrink-0" />
         {title}
       </div>
       <div className="space-y-2.5 px-3 py-3">{children}</div>
       <div className="flex gap-2 px-3 pb-3">
-        <span className="flex h-8 flex-1 items-center justify-center rounded-full border border-border text-[11px] text-[#6b6862]">
+        <span className="flex h-8 flex-1 items-center justify-center rounded-full border border-[#e4e1db] text-[11px] text-[#6b6862]">
           ไม่สนใจ
         </span>
         <span className={cn("flex h-8 flex-1 items-center justify-center rounded-full text-[11px] font-medium text-white", t.solid)}>
@@ -164,25 +164,25 @@ function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-start justify-between gap-3 text-xs">
       <span className="shrink-0 text-[#8a867f]">{label}</span>
-      <span className="text-right font-medium text-foreground">{value}</span>
+      <span className="text-right font-medium text-[#2f2e2c]">{value}</span>
     </div>
   );
 }
 
 function WorkRef() {
   return (
-    <div className="flex items-center gap-2.5 rounded-xl bg-background p-1.5 pr-3">
+    <div className="flex items-center gap-2.5 rounded-xl bg-[#f5f5f5] p-1.5 pr-3">
       <img src={ART_IMAGE} alt="" className="h-10 w-12 shrink-0 rounded-lg object-cover" draggable={false} />
       <span className="min-w-0">
         <span className="block text-[10px] text-[#8a867f]">อ้างอิงจากผลงาน</span>
-        <span className="block truncate text-[11px] font-medium text-foreground">{ART_TITLE}</span>
+        <span className="block truncate text-[11px] font-medium text-[#2f2e2c]">{ART_TITLE}</span>
       </span>
     </div>
   );
 }
 
 function Note({ children }: { children: string }) {
-  return <p className="border-l-2 border-border pl-2.5 text-[11px] leading-relaxed text-[#6b6862]">{children}</p>;
+  return <p className="border-l-2 border-[#e4e1db] pl-2.5 text-[11px] leading-relaxed text-[#6b6862]">{children}</p>;
 }
 
 function HireCardMock() {
@@ -251,7 +251,7 @@ function CardPair({
         }}
       >
         <div className="text-center">
-          <p className="text-[clamp(1.7rem,3vw,2.4rem)] leading-none tracking-[-0.03em] text-foreground" style={SERIF}>
+          <p className="text-[clamp(1.7rem,3vw,2.4rem)] leading-none tracking-[-0.03em] text-[#2f2e2c]" style={SERIF}>
             {label}
           </p>
           <p className="mt-1.5 text-[11px] uppercase tracking-[0.16em] text-[#6b6862]">{line}</p>
@@ -310,7 +310,7 @@ function DocShell({
 }) {
   const t = CARD_TONE[tone];
   return (
-    <div className={cn("w-full overflow-hidden rounded-2xl border bg-white text-foreground shadow-sm", t.border)}>
+    <div className={cn("w-full overflow-hidden rounded-2xl border bg-white text-[#2f2e2c] shadow-[0_30px_80px_-34px_rgba(47,46,44,0.45)]", t.border)}>
       <div className={cn("flex items-center gap-2 px-4 py-2.5", t.header)}>
         <Icon className="h-4 w-4 shrink-0" aria-hidden />
         <span className="text-[11px] font-semibold">{kicker}</span>
@@ -382,7 +382,7 @@ function QuoteDoc({ p, range }: { p: MotionValue<number>; range: readonly [numbe
         <p className="text-[10px] text-[#8a867f]">ไทม์ไลน์และงวดงาน</p>
         <div className="mt-1 flex flex-wrap gap-1">
           {QUOTE_MILESTONES.map((m, i) => (
-            <span key={m} className="rounded-full border border-border px-2 py-0.5 text-[10px]">
+            <span key={m} className="rounded-full border border-[#e4e1db] px-2 py-0.5 text-[10px]">
               {i + 1}. {m}
             </span>
           ))}
@@ -397,7 +397,7 @@ function QuoteDoc({ p, range }: { p: MotionValue<number>; range: readonly [numbe
           </p>
         ) : (
           <div className="flex gap-2">
-            <span className="flex h-8 flex-1 items-center justify-center rounded-full border border-border text-[11px] text-[#6b6862]">
+            <span className="flex h-8 flex-1 items-center justify-center rounded-full border border-[#e4e1db] text-[11px] text-[#6b6862]">
               ปฏิเสธ
             </span>
             <span className="flex h-8 flex-[1.6] items-center justify-center rounded-full bg-[#2d5fae] text-[11px] font-medium text-white">
@@ -465,7 +465,7 @@ function PlanDoc({ p, range }: { p: MotionValue<number>; range: readonly [number
                 key={r}
                 className={cn(
                   "rounded-full border px-2 py-0.5 text-[10px]",
-                  i === 0 || i === 3 ? "border-[#bf4a1f] bg-[#fcefe9] text-[#bf4a1f]" : "border-border text-[#8a867f]",
+                  i === 0 || i === 3 ? "border-[#bf4a1f] bg-[#fcefe9] text-[#bf4a1f]" : "border-[#e4e1db] text-[#8a867f]",
                 )}
               >
                 {r}
@@ -498,7 +498,7 @@ function PlanDoc({ p, range }: { p: MotionValue<number>; range: readonly [number
 
       <div className="mt-3 flex items-center gap-2 border-t border-[#ece9e3] pt-2.5 text-[10px]">
         {[
-          { name: "Ploy", tone: "bg-foreground" },
+          { name: "Ploy", tone: "bg-[#2f2e2c]" },
           { name: "Pixel Lab", tone: "bg-[#7a8b99]" },
         ].map((who, i) => (
           <span key={who.name} className="flex items-center gap-1.5">
@@ -564,11 +564,11 @@ function DocPair({ p, compact }: { p: MotionValue<number>; compact: boolean }) {
 /* Chat window                                                         */
 /* ------------------------------------------------------------------ */
 
-const AVATAR_TONES = ["bg-foreground", "bg-[#b59a7a]", "bg-[#7a8b99]"];
+const AVATAR_TONES = ["bg-[#2f2e2c]", "bg-[#b59a7a]", "bg-[#7a8b99]"];
 const MEMBER_TONE: Record<string, string> = {
   "Pixel Lab": "bg-[#7a8b99]",
   Tonkla: "bg-[#b59a7a]",
-  Ploy: "bg-foreground",
+  Ploy: "bg-[#2f2e2c]",
 };
 const GROUP_NAME = "ทีม Koi Motion";
 const GROUP_MEMBERS = ["Ploy", "Pixel Lab", "Tonkla"] as const;
@@ -600,28 +600,28 @@ function ThreadBubble({
   published: boolean;
 }) {
   if (item.kind === "system") {
-    return <p className="mx-auto rounded-full bg-background px-3 py-1 text-[10px] text-[#8a867f]">{item.text}</p>;
+    return <p className="mx-auto rounded-full bg-[#f5f5f5] px-3 py-1 text-[10px] text-[#8a867f]">{item.text}</p>;
   }
   if (item.kind === "them") {
     return (
       <div className="max-w-[85%]">
         {item.from ? <p className="mb-0.5 pl-1 text-[10px] text-[#8a867f]">{item.from}</p> : null}
-        <p className="rounded-2xl rounded-tl-md bg-[#f1efea] px-3 py-2 text-xs leading-relaxed text-foreground">{item.text}</p>
+        <p className="rounded-2xl rounded-tl-md bg-[#f1efea] px-3 py-2 text-xs leading-relaxed text-[#2f2e2c]">{item.text}</p>
       </div>
     );
   }
   if (item.kind === "me") {
     return (
-      <p className="ml-auto max-w-[80%] rounded-2xl rounded-tr-md bg-foreground px-3 py-2 text-xs leading-relaxed text-white">
+      <p className="ml-auto max-w-[80%] rounded-2xl rounded-tr-md bg-[#2f2e2c] px-3 py-2 text-xs leading-relaxed text-white">
         {item.text}
       </p>
     );
   }
   if (item.kind === "attach") {
     return (
-      <div className="ml-auto w-[9.5rem] overflow-hidden rounded-2xl rounded-tr-md border border-border bg-white">
+      <div className="ml-auto w-[9.5rem] overflow-hidden rounded-2xl rounded-tr-md border border-[#e4e1db] bg-white">
         <img src={attachImage} alt="" className="aspect-[4/3] w-full object-cover" draggable={false} />
-        <p className="truncate px-2.5 py-1.5 text-[11px] text-foreground">งานแนวใกล้กัน</p>
+        <p className="truncate px-2.5 py-1.5 text-[11px] text-[#2f2e2c]">งานแนวใกล้กัน</p>
       </div>
     );
   }
@@ -635,10 +635,10 @@ function ThreadBubble({
         <div className="flex gap-2.5 p-2.5">
           <img src={ART_IMAGE} alt="" className="h-14 w-16 shrink-0 rounded-lg object-cover" draggable={false} />
           <div className="min-w-0">
-            <p className="truncate text-xs font-medium text-foreground">Night Market Koi — Motion</p>
+            <p className="truncate text-xs font-medium text-[#2f2e2c]">Night Market Koi — Motion</p>
             <div className="mt-1 flex flex-wrap gap-1">
               {GROUP_MEMBERS.map((name) => (
-                <span key={name} className="inline-flex items-center gap-1 rounded-full bg-background py-0.5 pl-0.5 pr-1.5 text-[9.5px] text-foreground">
+                <span key={name} className="inline-flex items-center gap-1 rounded-full bg-[#f5f5f5] py-0.5 pl-0.5 pr-1.5 text-[9.5px] text-[#2f2e2c]">
                   <span className={cn("flex h-3.5 w-3.5 items-center justify-center rounded-full text-[8px] text-white", MEMBER_TONE[name])}>
                     {name[0]}
                   </span>
@@ -660,7 +660,7 @@ function ThreadBubble({
         <BriefIcon className="h-3.5 w-3.5" />
         คำขอจ้างงาน
       </div>
-      <p className="px-3 pt-2 text-xs text-foreground">ปกนิทาน + ภาพใน 6 ภาพ · 25,000–40,000 บาท · 5 สัปดาห์</p>
+      <p className="px-3 pt-2 text-xs text-[#2f2e2c]">ปกนิทาน + ภาพใน 6 ภาพ · 25,000–40,000 บาท · 5 สัปดาห์</p>
       <p className={cn("px-3 pb-2 pt-1 text-[11px]", accepted ? "font-medium text-[#23804a]" : "text-[#8a867f]")}>
         {accepted ? "รับเรื่องแล้ว" : "รอคุณตอบรับ"}
       </p>
@@ -736,7 +736,7 @@ function ChatWindowContent({
     <div className="grid h-full grid-cols-1 bg-white md:grid-cols-[12.5rem_minmax(0,1fr)_13rem]">
       {/* Chats */}
       <aside className="hidden flex-col border-r border-[#ece9e3] md:flex">
-        <p className="px-4 py-3 text-xs font-medium text-foreground">แชท</p>
+        <p className="px-4 py-3 text-xs font-medium text-[#2f2e2c]">แชท</p>
         <AnimatePresence initial={false}>
           {inGroup ? (
             <motion.div
@@ -747,10 +747,10 @@ function ChatWindowContent({
               transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
               className="overflow-hidden"
             >
-              <div className="flex items-center gap-2.5 bg-background px-4 py-2.5">
+              <div className="flex items-center gap-2.5 bg-[#f5f5f5] px-4 py-2.5">
                 <GroupAvatars size="h-6 w-6" />
                 <span className="min-w-0">
-                  <span className="flex items-center gap-1 text-xs font-medium text-foreground">
+                  <span className="flex items-center gap-1 text-xs font-medium text-[#2f2e2c]">
                     <span className="truncate">{GROUP_NAME}</span>
                   </span>
                   <span className="block truncate text-[10px] text-[#bf4a1f]">คอลแลป · 3 คน</span>
@@ -760,12 +760,12 @@ function ChatWindowContent({
           ) : null}
         </AnimatePresence>
         {chats.map(([name, preview], i) => (
-          <div key={name} className={cn("flex items-center gap-2.5 px-4 py-2.5", i === 0 && !inGroup && "bg-background")}>
+          <div key={name} className={cn("flex items-center gap-2.5 px-4 py-2.5", i === 0 && !inGroup && "bg-[#f5f5f5]")}>
             <span className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-medium text-white", AVATAR_TONES[i])}>
               {name.slice(0, 1)}
             </span>
             <span className="min-w-0">
-              <span className="block truncate text-xs font-medium text-foreground">{name}</span>
+              <span className="block truncate text-xs font-medium text-[#2f2e2c]">{name}</span>
               <span className="block truncate text-[11px] text-[#8a867f]">{preview}</span>
             </span>
           </div>
@@ -779,16 +779,16 @@ function ChatWindowContent({
             <>
               <GroupAvatars size="h-7 w-7" />
               <span className="min-w-0">
-                <span className="block truncate text-xs font-medium text-foreground">{GROUP_NAME}</span>
+                <span className="block truncate text-xs font-medium text-[#2f2e2c]">{GROUP_NAME}</span>
                 <span className="block text-[10px] text-[#8a867f]">3 สมาชิก</span>
               </span>
               <span className="ml-auto rounded-full bg-[#fcefe9] px-2.5 py-1 text-[10px] font-medium text-[#bf4a1f]">คอลแลป</span>
             </>
           ) : (
             <>
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-foreground text-[11px] font-medium text-white">M</span>
-              <span className="text-xs font-medium text-foreground">Mali Studio</span>
-              <span className="ml-auto max-w-[9rem] truncate rounded-full bg-background px-2.5 py-1 text-[10px] text-[#6b6862]">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2f2e2c] text-[11px] font-medium text-white">M</span>
+              <span className="text-xs font-medium text-[#2f2e2c]">Mali Studio</span>
+              <span className="ml-auto max-w-[9rem] truncate rounded-full bg-[#f5f5f5] px-2.5 py-1 text-[10px] text-[#6b6862]">
                 จาก {workTitle}
               </span>
             </>
@@ -829,11 +829,11 @@ function ChatWindowContent({
 
         <div className="flex items-center gap-2 border-t border-[#ece9e3] px-3 py-3">
           <Paperclip className="h-4 w-4 shrink-0 text-[#8a867f]" aria-hidden />
-          <div className="flex h-9 min-w-0 flex-1 items-center rounded-full bg-background px-3.5 text-xs">
+          <div className="flex h-9 min-w-0 flex-1 items-center rounded-full bg-[#f5f5f5] px-3.5 text-xs">
             {composer ? (
-              <span className="truncate text-foreground">
+              <span className="truncate text-[#2f2e2c]">
                 {composer}
-                <span className="ml-px inline-block h-3.5 w-px translate-y-0.5 animate-pulse bg-foreground" />
+                <span className="ml-px inline-block h-3.5 w-px translate-y-0.5 animate-pulse bg-[#2f2e2c]" />
               </span>
             ) : (
               <span className="text-[#a8a49c]">พิมพ์ข้อความ…</span>
@@ -842,7 +842,7 @@ function ChatWindowContent({
           <span
             className={cn(
               "flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors",
-              composer ? "bg-foreground text-white" : "bg-[#ece9e3] text-[#a8a49c]",
+              composer ? "bg-[#2f2e2c] text-white" : "bg-[#ece9e3] text-[#a8a49c]",
             )}
           >
             <Send className="h-3.5 w-3.5" aria-hidden />
@@ -852,7 +852,7 @@ function ChatWindowContent({
 
       {/* Your work (sidebar) */}
       <aside className="relative z-20 hidden border-l border-[#ece9e3] md:block">
-        <p className="px-4 py-3 text-xs font-medium text-foreground">ผลงานของคุณ</p>
+        <p className="px-4 py-3 text-xs font-medium text-[#2f2e2c]">ผลงานของคุณ</p>
         <div className="grid grid-cols-2 gap-2 px-3">
           {panelWorks.map((src, i) => (
             <div key={src + i} ref={i === 1 ? cellRef : undefined} className="relative aspect-square">
@@ -868,7 +868,7 @@ function ChatWindowContent({
                   src={src}
                   alt=""
                   draggable={false}
-                  className="pointer-events-none absolute inset-0 h-full w-full rounded-lg object-cover shadow-sm"
+                  className="pointer-events-none absolute inset-0 h-full w-full rounded-lg object-cover shadow-xl"
                   style={{ x: flyX, y: flyY, scale: flyScale, opacity: flyOpacity }}
                 />
               ) : null}
@@ -884,7 +884,7 @@ function ChatWindowContent({
 }
 
 const WINDOW_CLASS =
-  "h-[min(36rem,74dvh)] w-[min(66rem,calc(100vw-2rem))] overflow-hidden rounded-[1.25rem] border border-border bg-white shadow-sm";
+  "h-[min(36rem,74dvh)] w-[min(66rem,calc(100vw-2rem))] overflow-hidden rounded-[1.25rem] border border-[#e4e1db] bg-white shadow-[0_30px_80px_-30px_rgba(47,46,44,0.35)]";
 
 /**
  * Pinned scroll story: a project → Hire / Collab cards come out of the middle →
@@ -912,10 +912,10 @@ export function LearnConversationStage({ works }: { works: string[] }) {
 
   const heading = (
     <>
-      <p className="text-[clamp(1.7rem,3.2vw,2.6rem)] leading-none tracking-[-0.03em] text-foreground" style={SERIF}>
+      <p className="text-[clamp(1.7rem,3.2vw,2.6rem)] leading-none tracking-[-0.03em] text-[#2f2e2c]" style={SERIF}>
         Then open a
       </p>
-      <h2 className="mt-2 text-[clamp(3rem,9.5vw,7.5rem)] font-medium leading-[0.84] tracking-[-0.06em] text-foreground">
+      <h2 className="mt-2 text-[clamp(3rem,9.5vw,7.5rem)] font-medium leading-[0.84] tracking-[-0.06em] text-[#2f2e2c]">
         Conversation
       </h2>
       <p className="mx-auto mt-4 max-w-sm text-[11px] uppercase leading-[1.7] tracking-[0.16em] text-[#6b6862]">
@@ -930,11 +930,11 @@ export function LearnConversationStage({ works }: { works: string[] }) {
         {heading}
         <div className="mx-auto mt-12 flex max-w-[52rem] flex-wrap items-start justify-center gap-8 text-left">
           <div className="flex w-[min(25rem,100%)] flex-col items-center gap-3">
-            <p className="text-[2rem] leading-none text-foreground" style={SERIF}>Hire</p>
+            <p className="text-[2rem] leading-none text-[#2f2e2c]" style={SERIF}>Hire</p>
             <QuoteDoc p={staticProgress} range={[0, 1]} />
           </div>
           <div className="flex w-[min(25rem,100%)] flex-col items-center gap-3">
-            <p className="text-[2rem] leading-none text-foreground" style={SERIF}>Collab</p>
+            <p className="text-[2rem] leading-none text-[#2f2e2c]" style={SERIF}>Collab</p>
             <PlanDoc p={staticProgress} range={[0, 1]} />
           </div>
         </div>
@@ -943,7 +943,7 @@ export function LearnConversationStage({ works }: { works: string[] }) {
             <ChatWindowContent p={staticProgress} works={works} workTitle={workTitle} />
           </div>
         </div>
-        <p className="mt-8 text-[clamp(1.5rem,2.6vw,2.2rem)] text-foreground" style={SERIF}>
+        <p className="mt-8 text-[clamp(1.5rem,2.6vw,2.2rem)] text-[#2f2e2c]" style={SERIF}>
           From the work, to a conversation, to a team.
         </p>
       </div>
@@ -971,10 +971,10 @@ export function LearnConversationStage({ works }: { works: string[] }) {
               <img
                 src={ART_IMAGE}
                 alt=""
-                className="aspect-[4/3] w-full rounded-[1.1rem] bg-border object-cover shadow-sm"
+                className="aspect-[4/3] w-full rounded-[1.1rem] bg-[#e4e1db] object-cover shadow-[0_24px_60px_-28px_rgba(47,46,44,0.5)]"
                 draggable={false}
               />
-              <p className="mt-3 text-center text-sm font-medium tracking-[-0.01em] text-foreground">{ART_TITLE}</p>
+              <p className="mt-3 text-center text-sm font-medium tracking-[-0.01em] text-[#2f2e2c]">{ART_TITLE}</p>
               <p className="mt-0.5 text-center text-[11px] uppercase tracking-[0.16em] text-[#8a867f]">{ART_BY}</p>
             </motion.div>
           </div>
@@ -1008,7 +1008,7 @@ export function LearnConversationStage({ works }: { works: string[] }) {
           </div>
 
           <motion.p
-            className="absolute inset-x-0 bottom-[11vh] z-30 px-4 text-center text-[clamp(1.4rem,2.6vw,2.2rem)] leading-none tracking-[-0.02em] text-foreground"
+            className="absolute inset-x-0 bottom-[11vh] z-30 px-4 text-center text-[clamp(1.4rem,2.6vw,2.2rem)] leading-none tracking-[-0.02em] text-[#2f2e2c]"
             style={{ ...SERIF, opacity: captionOpacity }}
           >
             From the work, to a conversation, to a team.
