@@ -9,8 +9,6 @@ import { ChatQuoteActions } from "@/components/chat/ChatQuoteActions";
 import { ChatCollabActions } from "@/components/chat/ChatCollabActions";
 import { HireOrderFlowPanel } from "@/components/hire/HireOrderFlowPanel";
 import { HireOrderDetailContent } from "@/components/hire/HireOrderDetailDialog";
-import { CollabPlanSidebarSummary } from "@/components/chat/CollabPlanSidebarSummary";
-import { useCollabPlanUi } from "@/stores/collabPlanUiStore";
 import { formatHireBudgetLabel, hireInviteDisplay } from "@/lib/hireBrief";
 import InboxRequestBrief from "@/components/inbox/InboxRequestBrief";
 
@@ -34,7 +32,6 @@ const ChatMetaPanel = ({
   const navigate = useNavigate();
   const isHire = conversation.kind === "hire";
   const isCollab = conversation.kind === "collab";
-  const openPlan = useCollabPlanUi((s) => s.openFor);
 
   const { data: meta } = useQuery({
     queryKey: ["chat-meta", conversation.kind, conversation.request_id],
@@ -131,8 +128,6 @@ const ChatMetaPanel = ({
 
         {showCollabPlan ? (
           <div className="space-y-3">
-            <CollabPlanSidebarSummary conversationId={conversation.id} onOpen={() => openPlan(conversation.id)} />
-
             {meta?.collab ? (
               <div className="space-y-2 pt-1 border-t border-border">
                 <p className="text-xs text-muted-foreground">จากคำชวนคอลแลป</p>

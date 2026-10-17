@@ -111,3 +111,13 @@ export function LegacyCollabPlanCard({ onOpenPlan }: { onOpenPlan?: () => void }
     </div>
   );
 }
+
+/** Side panel: one-line progress of the collab. */
+export function CollabPanelProgress({ conversationId }: { conversationId: string }) {
+  const s = useCollabStage(conversationId);
+  return (
+    <div className="rounded-xl border border-border/70 px-2 py-2.5">
+      <CollabProgressSteps stage={s.stage} tasksTotal={s.tasksTotal} tasksDone={s.tasksDone} />
+    </div>
+  );
+}

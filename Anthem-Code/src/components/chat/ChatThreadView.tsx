@@ -8,6 +8,7 @@ import {
   Info,
   ListChecks,
   Megaphone,
+  Flag,
   MoreVertical,
   PanelRightOpen,
   Settings2,
@@ -153,7 +154,7 @@ import {
 import HireRejectDialog from "@/components/hiring/HireRejectDialog";
 import { useHireQuoteCreateLock } from "@/hooks/useHireQuoteCreateLock";
 import CollabRejectDialog from "@/components/collab/CollabRejectDialog";
-import ReportTrigger from "@/components/report/ReportTrigger";
+import ReportDialog from "@/components/report/ReportDialog";
 import { tierLabel } from "@/lib/tierMembership";
 import type { PlanId } from "@/data/plans";
 import { isSameDay } from "date-fns";
@@ -225,6 +226,7 @@ const ChatThreadView = ({
   const isCollab = conv.kind === "collab";
   /** Plain chat from "ทักแชท" — no tag until someone sends a hire / collab brief (opens its own thread). */
   const isConnect = conv.kind === "connect";
+  const [reportOpen, setReportOpen] = useState(false);
   const [connectHireOpen, setConnectHireOpen] = useState(false);
   const [connectCollabOpen, setConnectCollabOpen] = useState(false);
   const groupTag = normalizeGroupTag(conv.group_tag);
@@ -1499,14 +1501,6 @@ const ChatThreadView = ({
               ส่งต่อแล้ว
             </Badge>
           )}
-          {!isGroup && otherId && (
-            <ReportTrigger
-              targetType="user"
-              targetId={otherId}
-              targetOwnerId={otherId}
-              className="p-0 min-h-8 min-w-8 h-8 w-8 rounded-full"
-            />
-          )}
           {canForwardHire && (
             <Button
               type="button"
@@ -1615,7 +1609,8 @@ const ChatThreadView = ({
           {(canCreateCollabProject ||
             canCreateGroupCollabProject ||
             canCancelRequest ||
-            (isGroup && !isStudio)) && (
+            (isGroup && !isStudio) ||
+            (!isGroup && !!otherId)) && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -1629,6 +1624,12 @@ const ChatThreadView = ({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
+                {!isGroup && otherId ? (
+                  <DropdownMenuItem onClick={() => setReportOpen(true)} className="text-destructive focus:text-destructive">
+                    <Flag className="mr-2 h-4 w-4" />
+                    รายงานผู้ใช้
+                  </DropdownMenuItem>
+                ) : null}
                 {(canCreateCollabProject || canCreateGroupCollabProject) && (
                   <DropdownMenuItem
                     onClick={() =>
@@ -2408,6 +2409,16 @@ const ChatThreadView = ({
           }
         }}
       />
+      {!isGroup && otherId ? (
+        <ReportDialog
+          targetType="user"
+          targetId={otherId}
+          targetOwnerId={otherId}
+          open={reportOpen}
+          onOpenChange={setReportOpen}
+          hideTrigger
+        />
+      ) : null}
       {isConnect && otherId ? (
         <>
           <HireDialog
