@@ -7,7 +7,7 @@ export const PROJECT_LICENSE_SELECT = `license_type, ${PROJECT_LICENSE_EXTRA_SEL
 
 /** Project context template (บริบทผลงาน) — must match save payload in ProjectEditorPage. */
 export const PROJECT_CONTEXT_SELECT =
-  "brief, creator_role, process_note, deliverables, duration_label, outcome_note, opportunity_types, opportunity_note";
+  "brief, creator_role, process_note, deliverables, duration_label, outcome_note, context_images, opportunity_types, opportunity_note";
 
 export const PROJECT_EXTERNAL_LINKS_SELECT = "external_links";
 

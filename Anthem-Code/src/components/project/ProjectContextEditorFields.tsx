@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
+import ContextImagesField from "@/components/project/ContextImagesField";
 
 /** Stored in `creator_role` when the author did the whole project alone. */
 export const CREATOR_ROLE_SOLO = "ฉันทำเองทั้งหมด";
@@ -17,7 +18,26 @@ export type ProjectContextForm = {
   deliverables: string;
   durationLabel: string;
   outcomeNote: string;
+  /** Pictures attached to an answer, stored in `context_images`. */
+  images: ProjectContextImages;
 };
+
+export type ProjectContextImageKey = "brief" | "process" | "outcome";
+export type ProjectContextImages = Partial<Record<ProjectContextImageKey, string[]>>;
+
+/** Read `context_images` from the DB defensively — old rows have `{}`, bad rows anything. */
+export function parseProjectContextImages(raw: unknown): ProjectContextImages {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+  const out: ProjectContextImages = {};
+  for (const key of ["brief", "process", "outcome"] as const) {
+    const list = (raw as Record<string, unknown>)[key];
+    if (Array.isArray(list)) {
+      const urls = list.filter((u): u is string => typeof u === "string" && /^https:\/\//.test(u));
+      if (urls.length) out[key] = urls;
+    }
+  }
+  return out;
+}
 
 type CreatorRoleMode = "solo" | "part";
 
@@ -40,6 +60,10 @@ type Props = {
   shortDescriptionInvalid?: boolean;
   /** Quick drop: short description only, no background-story toggle/fields. */
   hideBackstory?: boolean;
+  /** Details popup: only the optional backstory, always open, no short description / toggle. */
+  backstoryOnly?: boolean;
+  /** Uploads one picture for an answer and returns its public URL. */
+  uploadImage?: (file: File) => Promise<string>;
 };
 
 const fieldLabel = "text-xs font-semibold text-muted-foreground";
@@ -57,6 +81,8 @@ const ProjectContextEditorFields = ({
   disabled,
   shortDescriptionInvalid,
   hideBackstory,
+  backstoryOnly,
+  uploadImage,
 }: Props) => {
   const [roleMode, setRoleMode] = useState<CreatorRoleMode | "">(() =>
     creatorRoleModeFromValue(value.creatorRole),
@@ -68,7 +94,17 @@ const ProjectContextEditorFields = ({
     if (next) setRoleMode(next);
   }, [value.creatorRole]);
 
-  const fieldsLocked = disabled || !enabled;
+  const fieldsLocked = disabled || (!enabled && !backstoryOnly);
+  const fieldsOpen = enabled || !!backstoryOnly;
+  const imagesFor = (key: ProjectContextImageKey) =>
+    uploadImage ? (
+      <ContextImagesField
+        urls={value.images[key] ?? []}
+        onChange={(urls) => onChange({ images: { ...value.images, [key]: urls } })}
+        upload={uploadImage}
+        disabled={fieldsLocked}
+      />
+    ) : null;
   const canEditRole = roleMode === "part" && !fieldsLocked;
   const partRoleText = roleMode === "part" ? value.creatorRole : "";
 
@@ -95,6 +131,11 @@ const ProjectContextEditorFields = ({
 
   return (
     <section className="space-y-3">
+      {backstoryOnly ? (
+        <p className="text-xs text-muted-foreground">
+          ไม่บังคับ — ข้ามไปเผยแพร่ก่อนได้ แล้วค่อยกลับมาเล่าทีหลัง ใส่รูปประกอบแต่ละข้อได้
+        </p>
+      ) : (
       <div className="space-y-1.5" id="project-short-description" data-tour="shortdesc">
         <Label className={fieldLabel}>
           รายละเอียดแบบย่อ <span className="text-primary">*</span>
@@ -119,9 +160,11 @@ const ProjectContextEditorFields = ({
           {shortDescription.length}/{PROJECT_SHORT_DESCRIPTION_MAX}
         </p>
       </div>
+      )}
 
       {hideBackstory ? null : (
       <>
+      {backstoryOnly ? null : (
       <div
         id="project-context-toggle"
         className={cn(
@@ -153,16 +196,17 @@ const ProjectContextEditorFields = ({
           />
         </label>
       </div>
+      )}
 
       <div
         id="project-context-fields"
         className={cn(
           "grid transition-[grid-template-rows] duration-200 ease-out",
-          enabled ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+          fieldsOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
         )}
-        aria-hidden={!enabled}
+        aria-hidden={!fieldsOpen}
       >
-        <div className={cn(enabled ? "overflow-visible px-1" : "overflow-hidden")}>
+        <div className={cn(fieldsOpen ? "overflow-visible px-1" : "overflow-hidden")}>
           <div className={cn("space-y-3", fieldsLocked && "pointer-events-none opacity-60")}>
             <div className="space-y-2">
               <Label className={fieldLabel}>บทบาทของฉัน</Label>
@@ -269,6 +313,7 @@ const ProjectContextEditorFields = ({
                 disabled={fieldsLocked}
                 className="bg-card resize-y min-h-[88px]"
               />
+              {imagesFor("brief")}
             </div>
 
             <div className="space-y-1.5">
@@ -282,6 +327,7 @@ const ProjectContextEditorFields = ({
                 disabled={fieldsLocked}
                 className="bg-card resize-y min-h-[88px]"
               />
+              {imagesFor("process")}
             </div>
 
             <div className="grid sm:grid-cols-2 gap-3">
@@ -320,6 +366,7 @@ const ProjectContextEditorFields = ({
                 disabled={fieldsLocked}
                 className="bg-card resize-y min-h-[88px]"
               />
+              {imagesFor("outcome")}
             </div>
           </div>
         </div>

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { BookOpen, ChevronDown } from "lucide-react";
 import { Collapsible, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
+import { parseProjectContextImages } from "@/components/project/ProjectContextEditorFields";
 
 export type ProjectContextData = {
   brief?: string | null;
@@ -10,6 +11,7 @@ export type ProjectContextData = {
   deliverables?: string | null;
   duration_label?: string | null;
   outcome_note?: string | null;
+  context_images?: unknown;
 };
 
 type Props = {
@@ -17,13 +19,26 @@ type Props = {
   className?: string;
 };
 
-type FieldItem = { label: string; value: string };
+type FieldItem = { label: string; value: string; images?: string[] };
 
-function FieldRow({ label, value, showDivider }: { label: string; value: string; showDivider: boolean }) {
+function FieldRow({ label, value, images, showDivider }: FieldItem & { showDivider: boolean }) {
   return (
     <div className={cn("space-y-1 py-3.5", showDivider && "border-b border-border/55")}>
       <p className="text-sm font-semibold text-foreground">{label}</p>
-      <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">{value}</p>
+      {value ? <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">{value}</p> : null}
+      {images?.length ? (
+        <div className={cn("grid gap-2 pt-2", images.length > 1 && "grid-cols-2")}>
+          {images.map((url) => (
+            <img
+              key={url}
+              src={url}
+              alt={label}
+              loading="lazy"
+              className="w-full rounded-lg border border-border/50 object-cover"
+            />
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -38,15 +53,20 @@ const ProjectContextCard = ({ context, className }: Props) => {
   const deliverables = context.deliverables?.trim() ?? "";
   const durationLabel = context.duration_label?.trim() ?? "";
   const outcomeNote = context.outcome_note?.trim() ?? "";
+  const images = parseProjectContextImages(context.context_images);
 
-  const fields: FieldItem[] = [
+  const fields = [
     creatorRole ? { label: "บทบาทของฉัน", value: creatorRole } : null,
-    brief ? { label: "โจทย์ของงาน", value: brief } : null,
-    processNote ? { label: "วิธีคิด / ขั้นตอนทำงาน", value: processNote } : null,
+    brief || images.brief ? { label: "โจทย์ของงาน", value: brief, images: images.brief } : null,
+    processNote || images.process
+      ? { label: "วิธีคิด / ขั้นตอนทำงาน", value: processNote, images: images.process }
+      : null,
     deliverables ? { label: "สิ่งที่ส่งมอบ", value: deliverables } : null,
     durationLabel ? { label: "ระยะเวลา", value: durationLabel } : null,
-    outcomeNote ? { label: "ผลลัพธ์ / สิ่งที่ได้เรียนรู้", value: outcomeNote } : null,
-  ].filter((item): item is FieldItem => item != null);
+    outcomeNote || images.outcome
+      ? { label: "ผลลัพธ์ / สิ่งที่ได้เรียนรู้", value: outcomeNote, images: images.outcome }
+      : null,
+  ].filter((item) => item != null) as FieldItem[];
 
   if (!fields.length) return null;
 
@@ -96,6 +116,7 @@ const ProjectContextCard = ({ context, className }: Props) => {
                 key={field.label}
                 label={field.label}
                 value={field.value}
+                images={field.images}
                 showDivider={index < fields.length - 1}
               />
             ))}

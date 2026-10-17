@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { CircleHelp, Eye, FileText, Handshake, ShieldCheck, ImagePlus, Loader2, Paperclip, Save, Scale, Tags, X } from "lucide-react";
+import { BookOpenText, CircleHelp, Eye, FileText, Handshake, ShieldCheck, ImagePlus, Loader2, Paperclip, Save, Scale, Tags, X } from "lucide-react";
 import CatalogIcon from "@/components/icons/CatalogIcon";
 import { LayoutGroup, motion, useReducedMotion } from "framer-motion";
 import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
@@ -47,6 +47,7 @@ import TagPicker from "@/components/tags/TagPicker";
 import ToolPicker from "@/components/tools/ToolPicker";
 import ProjectPreviewDialog, { type ProjectPreviewData } from "@/components/project/ProjectPreviewDialog";
 import StartingPriceField from "@/components/project/StartingPriceField";
+import { isCommerceEnabled } from "@/lib/aplus1Launch";
 import { HireSellerReadinessDialog, HireSellerReadyBadge } from "@/components/project/HireSellerReadinessDialog";
 import { useHireSellerReadiness } from "@/hooks/useHireSellerReadiness";
 import { PortfolioCoverCropDialog } from "@/components/project/PortfolioCoverCropDialog";
@@ -59,6 +60,7 @@ import { cropImageFileToAspectFile, cropImageUrlToAspectFile } from "@/lib/cropI
 import { communityMediaAspectMeta, normalizeCommunityMediaAspect } from "@/lib/communityMediaAspect";
 import ProjectContextEditorFields, {
   PROJECT_SHORT_DESCRIPTION_MAX,
+  parseProjectContextImages,
   type ProjectContextForm,
 } from "@/components/project/ProjectContextEditorFields";
 import ProjectAssetsEditor, {
@@ -84,7 +86,6 @@ import { parseAiUseLevel, serializeAiUseLevel, type AiUseLevel } from "@/lib/aiD
 import { type LicenseType, isLicenseType, getLicenseMeta } from "@/lib/licenses";
 import { ProjectEditorToolsSidebar } from "@/components/project/ProjectEditorToolsSidebar";
 import { ProjectCanvasEditor } from "@/components/project/ProjectCanvasEditor";
-import StoryPromptBar from "@/components/project/StoryPromptBar";
 import { FlexGridToolsSidebar, type FlexGridLayerRef } from "@/components/project/FlexGridToolsSidebar";
 import {
   ProjectFlexGridEditor,
@@ -441,6 +442,7 @@ const ProjectEditorPage = () => {
     deliverables: "",
     durationLabel: "",
     outcomeNote: "",
+    images: {},
   });
   const [projectAssets, setProjectAssets] = useState<ProjectAsset[]>([]);
   const [contextEnabled, setContextEnabled] = useState(false);
@@ -481,6 +483,21 @@ const ProjectEditorPage = () => {
   const patchProjectContext = useCallback((patch: Partial<ProjectContextForm>) => {
     setProjectContext((c) => ({ ...c, ...patch }));
   }, []);
+  const uploadContextImage = useCallback(
+    (file: File) => {
+      if (!user) throw new Error("UNAUTHORIZED");
+      return uploadProjectImage(file, user.id, folderRef.current, tier);
+    },
+    [user, tier],
+  );
+  const projectContextForSave = {
+    brief: projectContext.brief,
+    creator_role: projectContext.creatorRole,
+    process_note: projectContext.processNote,
+    deliverables: projectContext.deliverables,
+    duration_label: projectContext.durationLabel,
+    outcome_note: projectContext.outcomeNote,
+  };
   const scheduleBackgroundAssetScan = useCallback((projectId: string) => {
     if (!needsServerScan(projectAssets)) return;
     toast.message("กำลังตรวจสอบไฟล์แนบ/ลิงก์ในพื้นหลัง — จะแจ้งเมื่อเสร็จ");
@@ -821,6 +838,7 @@ const ProjectEditorPage = () => {
         deliverables?: string | null;
         duration_label?: string | null;
         outcome_note?: string | null;
+        context_images?: unknown;
       };
       setProjectContext({
         brief: extCtx.brief ?? "",
@@ -829,6 +847,7 @@ const ProjectEditorPage = () => {
         deliverables: extCtx.deliverables ?? "",
         durationLabel: extCtx.duration_label ?? "",
         outcomeNote: extCtx.outcome_note ?? "",
+        images: parseProjectContextImages(extCtx.context_images),
       });
       setProjectAssets(
         parseProjectAssets(
@@ -836,7 +855,10 @@ const ProjectEditorPage = () => {
           (existing as { external_links?: unknown }).external_links,
         ),
       );
-      setContextEnabled(hasProjectContextContent(extCtx));
+      setContextEnabled(
+        hasProjectContextContent(extCtx) ||
+          Object.keys(parseProjectContextImages(extCtx.context_images)).length > 0,
+      );
       void (async () => {
         const ext = existing as {
           linked_community_post_ids?: string[];
@@ -940,6 +962,7 @@ const ProjectEditorPage = () => {
         deliverables: contextEnabled ? projectContext.deliverables.trim() : "",
         duration_label: contextEnabled ? projectContext.durationLabel.trim() : "",
         outcome_note: contextEnabled ? projectContext.outcomeNote.trim() : "",
+        context_images: contextEnabled ? projectContext.images : {},
         opportunity_types: [],
         opportunity_note: "",
         external_links: projectAssetsToExternalLinks(assets),
@@ -1095,6 +1118,8 @@ const ProjectEditorPage = () => {
       }
 
       const created = await create.mutateAsync({ ...payload, owner_id: user.id });
+      // The form already holds what we just saved — don't let the reload of the new id overwrite later edits.
+      formHydratedForIdRef.current = created.id;
       const collabQuery = collabConversationId
         ? `?collab_conversation_id=${encodeURIComponent(collabConversationId)}`
         : collabRequestId
@@ -1605,6 +1630,10 @@ const ProjectEditorPage = () => {
   ]);
 
   const handleSaveDraft = async (silent = false) => {
+    if (autoSavingRef.current) {
+      toast.message("กำลังบันทึกอัตโนมัติ รอสักครู่แล้วลองใหม่");
+      return;
+    }
     if (warnIfMediaStillUploading("draft")) return;
     const basicsErr = validateProjectBasics({ title, cover_url: cover });
     if (basicsErr) {
@@ -1627,6 +1656,56 @@ const ProjectEditorPage = () => {
       setSavingDraft(false);
     }
   };
+
+  /**
+   * Auto-save drafts quietly a few seconds after the last change. Published/Private works are not
+   * auto-saved — saving them writes straight to the live page, so those stay on the manual button.
+   */
+  const [autoSaveState, setAutoSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const autoSaveBaselineRef = useRef<string | null>(null);
+  const autoSavingRef = useRef(false);
+  const autoSaveEligible =
+    !!user && draftStatusForSave() === "Draft" && (!editing || formHydratedForIdRef.current === id);
+  const autoSaveFingerprint = useMemo(() => {
+    if (!autoSaveEligible) return null;
+    const { rights_attested_at: _r, ...rest } = buildProjectPayload("Draft");
+    return JSON.stringify(rest);
+  }, [autoSaveEligible, buildProjectPayload]);
+
+  useEffect(() => {
+    if (!autoSaveFingerprint) return;
+    // First snapshot of an existing draft is what's already on the server.
+    if (autoSaveBaselineRef.current === null && editing) {
+      autoSaveBaselineRef.current = autoSaveFingerprint;
+      return;
+    }
+    if (autoSaveFingerprint === autoSaveBaselineRef.current) return;
+    if (!title.trim() || publishing || savingDraft || mediaStillUploading) return;
+    const timer = window.setTimeout(async () => {
+      if (autoSavingRef.current) return;
+      autoSavingRef.current = true;
+      setAutoSaveState("saving");
+      try {
+        const result = await persistDraft();
+        if (result) autoSaveBaselineRef.current = autoSaveFingerprint;
+        setAutoSaveState(result ? "saved" : "idle");
+      } catch {
+        setAutoSaveState("error");
+      } finally {
+        autoSavingRef.current = false;
+      }
+    }, 4000);
+    return () => window.clearTimeout(timer);
+  }, [autoSaveFingerprint, editing, title, publishing, savingDraft, mediaStillUploading, persistDraft]);
+
+  const autoSaveLabel =
+    autoSaveState === "saving"
+      ? "กำลังบันทึก…"
+      : autoSaveState === "saved"
+        ? "บันทึกอัตโนมัติแล้ว"
+        : autoSaveState === "error"
+          ? "บันทึกอัตโนมัติไม่สำเร็จ"
+          : null;
 
   const hasLeaveGuardContent = useMemo(() => {
     const media =
@@ -1743,6 +1822,14 @@ const ProjectEditorPage = () => {
     setPublishFieldErrors(errors);
     setPublishFieldHighlightOpaque(true);
     setPublishChecklist([]);
+    // No picture yet → stay on the canvas; the details popup would hide the thing to fix.
+    if (errors.canvasImage) {
+      toast.error("ลงภาพผลงานอย่างน้อย 1 ภาพก่อนเผยแพร่", {
+        description: "ลากไฟล์มาวางในแคนวาส หรือกด「ภาพ」ที่แถบด้านล่าง",
+      });
+      focusFirstPublishError({ canvasImage: errors.canvasImage });
+      return;
+    }
     setDetailsOpen(true);
     focusFirstPublishError(errors);
   };
@@ -1798,6 +1885,10 @@ const ProjectEditorPage = () => {
     ) : null;
 
   const handleConfirmPublish = async () => {
+    if (autoSavingRef.current) {
+      toast.message("กำลังบันทึกอัตโนมัติ รอสักครู่แล้วลองใหม่");
+      return;
+    }
     if (!publishAttestChecked) {
       toast.error("กรุณายืนยันสิทธิ์ในผลงานก่อนเผยแพร่");
       return;
@@ -2864,6 +2955,7 @@ const ProjectEditorPage = () => {
           deliverables: projectContext.deliverables,
           duration_label: projectContext.durationLabel,
           outcome_note: projectContext.outcomeNote,
+          context_images: projectContext.images,
         }
       : undefined,
   };
@@ -3232,6 +3324,17 @@ const ProjectEditorPage = () => {
               <DetailsListIcon className="h-4 w-4" />
               {detailsLabel}
             </Button>
+            {autoSaveLabel ? (
+              <span
+                className={cn(
+                  "hidden text-xs lg:inline",
+                  autoSaveState === "error" ? "text-destructive" : "text-muted-foreground",
+                )}
+                aria-live="polite"
+              >
+                {autoSaveLabel}
+              </span>
+            ) : null}
             <HoverLabelButton
               icon={savingDraft ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               label="บันทึกฉบับร่าง"
@@ -3557,13 +3660,6 @@ const ProjectEditorPage = () => {
                 inlineCropSaving={inlineCropSaving}
               />
             ) : (<>
-            <StoryPromptBar
-              blocks={contentBlocks}
-              disabled={editorLocked}
-              onAdd={(question) =>
-                setContentBlocks((prev) => [...prev, { ...createContentBlock("heading_body"), heading: question }])
-              }
-            />
             <ProjectCanvasEditor
               blocks={contentBlocks}
               onChange={(next) => {
@@ -3638,6 +3734,7 @@ const ProjectEditorPage = () => {
             />
           }
           preview={
+            <>
             <ProjectDetailsPreview
               title={title}
               shortDescription={shortDescription}
@@ -3649,6 +3746,13 @@ const ProjectEditorPage = () => {
               coverControl={coverField}
               headingExtra={<EditorInfoButton topic="cover" />}
             />
+            {/* Rights confirm sits under the cover so it's seen before publishing, not buried at the end. */}
+            <div id="project-details-confirm" className="mt-4">
+              <CollapsibleEditorCard title="Confirm" icon={ShieldCheck} framed>
+                <OriginalWorkAttestation checked={publishAttestChecked} onCheckedChange={setPublishAttestChecked} />
+              </CollapsibleEditorCard>
+            </div>
+            </>
           }
         >
           <div className="space-y-4">
@@ -3719,6 +3823,29 @@ const ProjectEditorPage = () => {
             </div>
 
             <CollapsibleEditorCard
+              title="เล่าเบื้องหลังผลงาน"
+              framed
+              icon={BookOpenText}
+              defaultOpen={false}
+              hint={contextEnabled && hasProjectContextContent(projectContextForSave) ? "ใส่แล้ว" : "ไม่บังคับ"}
+            >
+              <ProjectContextEditorFields
+                value={projectContext}
+                onChange={(patch) => {
+                  patchProjectContext(patch);
+                  setContextEnabled(true);
+                }}
+                shortDescription={shortDescription}
+                onShortDescriptionChange={setShortDescription}
+                enabled
+                onEnabledChange={setContextEnabled}
+                disabled={editorLocked}
+                backstoryOnly
+                uploadImage={uploadContextImage}
+              />
+            </CollapsibleEditorCard>
+
+            <CollapsibleEditorCard
               title="Hiring"
               framed
               icon={Handshake}
@@ -3730,12 +3857,14 @@ const ProjectEditorPage = () => {
               }
             >
             <div className="space-y-3">
-              <StartingPriceField
-                showPrice={showPrice}
-                onShowPriceChange={setShowPrice}
-                price={price}
-                onPriceChange={setPrice}
-              />
+              {isCommerceEnabled() ? (
+                <StartingPriceField
+                  showPrice={showPrice}
+                  onShowPriceChange={setShowPrice}
+                  price={price}
+                  onPriceChange={setPrice}
+                />
+              ) : null}
               {hireSeller.ready && !hireSeller.isLoading ? <HireSellerReadyBadge /> : null}
               <div className="flex items-center justify-between gap-3">
                 <label htmlFor="allow-hire" className="min-w-0 flex flex-1 items-center gap-2 cursor-pointer">
@@ -3833,16 +3962,6 @@ const ProjectEditorPage = () => {
               </QuickConnectGroup>
             )}
             {renderDetailsExtras(true, "rights")}
-
-            <div className="flex items-center gap-3 pt-1">
-              <span className="font-display text-xs text-muted-foreground">Before you publish</span>
-              <div className="h-px flex-1 bg-border" />
-            </div>
-            <div id="project-details-confirm">
-            <CollapsibleEditorCard title="Confirm" icon={ShieldCheck} framed>
-              <OriginalWorkAttestation checked={publishAttestChecked} onCheckedChange={setPublishAttestChecked} />
-            </CollapsibleEditorCard>
-            </div>
           </div>
 
         </ProjectDetailsDialog>
@@ -3877,6 +3996,7 @@ const ProjectEditorPage = () => {
             {publishRemaining > 0 ? `รายละเอียด · ${publishRemaining}` : "รายละเอียด"}
           </Button>
           <Button
+            title={autoSaveLabel ?? undefined}
             type="button"
             variant="outline"
             className="shrink-0 rounded-xl px-3 text-sm"
