@@ -648,7 +648,7 @@ const PublicProfilePage = () => {
                   src={profile.avatar_url}
                   name={profile.display_name}
                   username={profile.username}
-                  className="w-[4.5rem] h-[4.5rem] sm:w-24 sm:h-24 md:w-28 md:h-28 border-[3px] sm:border-4 border-white/70 ring-4 ring-background shadow-lg"
+                  className="w-[4.5rem] h-[4.5rem] sm:w-24 sm:h-24 md:w-28 md:h-28 border-[3px] sm:border-4 border-white/70 ring-4 ring-background shadow-sm"
                   fallbackClassName="text-2xl sm:text-3xl"
                 />
               </div>

@@ -147,7 +147,7 @@ export default function FeedbackComposer() {
     >
       <div
         className={cn(
-          "relative flex max-h-[92dvh] w-full max-w-[440px] flex-col overflow-hidden rounded-t-2xl shadow-2xl sm:rounded-2xl",
+          "relative flex max-h-[92dvh] w-full max-w-[440px] flex-col overflow-hidden rounded-t-2xl shadow-sm sm:rounded-2xl",
           doneNumber ? "bg-gradient-brand text-white" : "bg-background",
         )}
       >

@@ -30,7 +30,7 @@ function FeedbackScreenshotViewer({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="relative max-h-[92dvh] w-full max-w-5xl overflow-auto rounded-xl bg-background p-3 shadow-2xl">
+      <div className="relative max-h-[92dvh] w-full max-w-5xl overflow-auto rounded-xl bg-background p-3 shadow-sm">
         <button
           type="button"
           aria-label="ปิด"
@@ -63,12 +63,12 @@ function FeedbackScreenshotViewer({
                   {c.number}
                 </button>
                 {open && c.text ? (
-                  <div className="absolute left-4 top-[-8px] w-52 rounded-md border border-border bg-background p-2 text-xs shadow-lg">
+                  <div className="absolute left-4 top-[-8px] w-52 rounded-md border border-border bg-background p-2 text-xs shadow-sm">
                     <p className="mb-1 font-medium">คอมเมนต์ {c.number}</p>
                     <p className="whitespace-pre-wrap leading-relaxed">{c.text}</p>
                   </div>
                 ) : open ? (
-                  <div className="absolute left-4 top-[-8px] w-40 rounded-md border border-border bg-background p-2 text-xs text-muted-foreground shadow-lg">
+                  <div className="absolute left-4 top-[-8px] w-40 rounded-md border border-border bg-background p-2 text-xs text-muted-foreground shadow-sm">
                     ไม่มีข้อความ
                   </div>
                 ) : null}

@@ -544,7 +544,7 @@ const StudioCreateInner = () => {
           <Button
             onClick={submit}
             disabled={!canSubmit || create.isPending}
-            className="flex-1 h-12 rounded-xl bg-gradient-brand text-white border-0 shadow-md shadow-primary/20"
+            className="flex-1 h-12 rounded-xl bg-gradient-brand text-white border-0 shadow-md"
           >
             {create.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
             {invitees.length === 0 ? "สร้าง Studio เลย" : `ส่งคำเชิญ (${invitees.length} คน)`}

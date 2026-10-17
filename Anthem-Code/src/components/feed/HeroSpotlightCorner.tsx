@@ -31,7 +31,7 @@ const HeroSpotlightCorner = ({
         type="button"
         onClick={() => navigate(profileHref)}
         aria-label={variant === "studio" ? `ดูสตูดิโอ ${name}` : `ดูโปรไฟล์ ${name}`}
-        className="pointer-events-auto rounded-2xl ring-2 ring-white/90 shadow-lg overflow-hidden focus-visible:outline-none focus-visible:ring-primary transition-transform hover:scale-[1.03]"
+        className="pointer-events-auto rounded-2xl ring-2 ring-white/90 shadow-sm overflow-hidden focus-visible:outline-none focus-visible:ring-primary transition-transform hover:scale-[1.03]"
       >
         {variant === "studio" ? (
           <span className="flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center bg-gradient-brand text-white">

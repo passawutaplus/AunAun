@@ -268,7 +268,7 @@ const ProjectSearchFilterSheet = ({
 
   const title = "Search and filter projects";
   const paper =
-    "border-[#e4e1db] dark:border-border bg-background text-foreground shadow-[0_28px_80px_-36px_rgba(47,46,44,0.55)] [&>button]:text-foreground";
+    "border-[#e4e1db] dark:border-border bg-background text-foreground shadow-sm [&>button]:text-foreground";
   const toggleHideAi = () => {
     setDraft((p) => {
       const hideAi = !p.hideAi;

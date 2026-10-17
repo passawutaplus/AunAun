@@ -259,7 +259,7 @@ export default function CollectionItemsSection({ collectionId, coverUrl, project
       )}
 
       {selecting ? (
-        <div className="sticky bottom-24 z-20 mx-auto flex w-fit max-w-full flex-wrap items-center justify-center gap-2 rounded-2xl border border-border/60 bg-background/95 p-2 shadow-lg backdrop-blur lg:bottom-6">
+        <div className="sticky bottom-24 z-20 mx-auto flex w-fit max-w-full flex-wrap items-center justify-center gap-2 rounded-2xl border border-border/60 bg-background/95 p-2 shadow-sm backdrop-blur lg:bottom-6">
           <span className="px-2 text-sm tabular-nums text-foreground">
             {selectedIds.length > 0 ? `เลือก ${selectedIds.length}` : "แตะผลงานเพื่อเลือก"}
           </span>

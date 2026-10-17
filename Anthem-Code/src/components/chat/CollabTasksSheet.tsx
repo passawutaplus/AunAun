@@ -403,7 +403,7 @@ function TaskCardFace({ task, member, lifted }: { task: CollabTask; member?: Mem
       className={cn(
         "cursor-grab space-y-2 rounded-xl border border-border/60 bg-background p-3 text-sm shadow-sm transition-colors hover:border-border active:cursor-grabbing",
         isDone && "bg-muted/30",
-        lifted && "rotate-1 cursor-grabbing shadow-lg ring-1 ring-primary/40",
+        lifted && "rotate-1 cursor-grabbing shadow-sm ring-1 ring-primary/40",
       )}
     >
       <p className={cn("break-words font-medium leading-snug", isDone && "text-muted-foreground line-through decoration-muted-foreground/50")}>

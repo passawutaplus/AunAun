@@ -144,7 +144,7 @@ export default function RatingPrompt() {
       aria-label="ให้คะแนน SAMECOR"
       className="fixed inset-x-3 bottom-24 z-[80] mx-auto max-w-[360px] animate-in fade-in slide-in-from-bottom-4 duration-300 sm:inset-x-auto sm:bottom-6 sm:right-6 sm:mx-0 sm:w-[340px]"
     >
-      <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-4 shadow-2xl">
+      <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-4 shadow-sm">
         <button
           type="button"
           onClick={close}

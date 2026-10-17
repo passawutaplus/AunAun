@@ -42,7 +42,7 @@ type Product = {
 function PrintMock() {
   return (
     <div className="flex h-full w-full items-center justify-center bg-[#ebe7df]">
-      <div className="h-[82%] bg-white p-[5%] shadow-[0_10px_24px_-10px_rgba(47,46,44,0.45)]" style={{ aspectRatio: "3 / 4" }}>
+      <div className="h-[82%] bg-white p-[5%] shadow-sm" style={{ aspectRatio: "3 / 4" }}>
         <img src={ART} alt="" draggable={false} className="h-full w-full object-cover" />
       </div>
     </div>
@@ -58,7 +58,7 @@ function ZineMock() {
     <div className="relative flex h-full w-full items-center justify-center bg-[#e9e4da]">
       <div className="absolute h-[70%] translate-x-[14%] rotate-[8deg] rounded-sm bg-[#f7f3ea] shadow-md" style={{ aspectRatio: "3 / 4" }} />
       <div
-        className="relative h-[74%] -rotate-[5deg] overflow-hidden rounded-sm shadow-[0_12px_24px_-10px_rgba(47,46,44,0.55)]"
+        className="relative h-[74%] -rotate-[5deg] overflow-hidden rounded-sm shadow-sm"
         style={{ aspectRatio: "3 / 4" }}
       >
         <img src={ART} alt="" draggable={false} className="h-full w-full object-cover object-[30%_50%]" />
@@ -164,7 +164,7 @@ function ProductCard({ p, item, index, compact }: { p: MotionValue<number>; item
   return (
     <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
       <motion.article
-        className="w-[44vw] overflow-hidden rounded-2xl border border-[#e4e1db] bg-white text-[#2f2e2c] shadow-[0_24px_60px_-30px_rgba(47,46,44,0.45)] md:w-[min(14rem,18vw,34dvh)]"
+        className="w-[44vw] overflow-hidden rounded-2xl border border-[#e4e1db] bg-white text-[#2f2e2c] shadow-sm md:w-[min(14rem,18vw,34dvh)]"
         style={{ x, y, rotate, scale, opacity }}
       >
         <div className="aspect-square overflow-hidden bg-[#f3f1ec] md:aspect-[5/4]">{item.mock}</div>
@@ -305,7 +305,7 @@ export function LearnObjectsStage() {
                 src={ART}
                 alt={`${LEARN_SOURCE_ART.title} illustration`}
                 draggable={false}
-                className="aspect-[4/3] w-full rounded-2xl bg-[#e4e1db] object-cover shadow-[0_30px_80px_-30px_rgba(47,46,44,0.45)]"
+                className="aspect-[4/3] w-full rounded-2xl bg-[#e4e1db] object-cover shadow-sm"
               />
               <motion.figcaption className="mt-3 hidden text-center md:block" style={{ opacity: labelOpacity }}>
                 <span className="block text-[11px] uppercase tracking-[0.16em] text-[#8a867f]">ผลงานต้นทาง</span>

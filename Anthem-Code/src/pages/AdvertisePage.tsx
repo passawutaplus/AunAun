@@ -384,7 +384,7 @@ const AdvertisePage = () => {
                   onClick={() => setPkg(p.id)}
                   className={`rounded-2xl border-2 p-5 text-left transition-all ${
                     active
-                      ? "border-primary bg-primary/5 shadow-lg"
+                      ? "border-primary bg-primary/5 shadow-sm"
                       : "border-border bg-card hover:border-primary/40"
                   }`}
                 >
@@ -426,7 +426,7 @@ const AdvertisePage = () => {
               }}
               className={`cursor-pointer rounded-2xl border-2 p-5 text-left transition-all ${
                 pkg === "custom"
-                  ? "border-primary bg-primary/5 shadow-lg"
+                  ? "border-primary bg-primary/5 shadow-sm"
                   : "border-border bg-card hover:border-primary/40"
               }`}
             >

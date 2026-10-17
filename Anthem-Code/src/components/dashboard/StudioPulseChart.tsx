@@ -107,7 +107,7 @@ function StudioScopeToggle({
       ref={trackRef}
       role="tablist"
       aria-label="สลับยอดเข้าชม"
-      className="relative flex w-[min(14.5rem,100%)] shrink-0 items-center rounded-full glass-panel p-0.5 transition-shadow duration-200 hover:shadow-md hover:shadow-primary/20"
+      className="relative flex w-[min(14.5rem,100%)] shrink-0 items-center rounded-full glass-panel p-0.5 transition-shadow duration-200 hover:shadow-md"
     >
       {indicator ? (
         reduced ? (

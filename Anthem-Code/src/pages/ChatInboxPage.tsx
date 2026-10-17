@@ -259,7 +259,7 @@ const ChatInboxPage = () => {
             />
             <motion.div
               key="chat-partner-panel"
-              className="md:hidden fixed right-0 top-14 bottom-0 z-50 w-[92%] max-w-sm bg-background shadow-xl"
+              className="md:hidden fixed right-0 top-14 bottom-0 z-50 w-[92%] max-w-sm bg-background shadow-sm"
               initial={reducedMotion ? false : { x: "100%" }}
               animate={{ x: 0 }}
               exit={reducedMotion ? { opacity: 0 } : { x: "100%" }}

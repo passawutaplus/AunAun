@@ -310,7 +310,7 @@ function DocShell({
 }) {
   const t = CARD_TONE[tone];
   return (
-    <div className={cn("w-full overflow-hidden rounded-2xl border bg-white text-[#2f2e2c] shadow-[0_30px_80px_-34px_rgba(47,46,44,0.45)]", t.border)}>
+    <div className={cn("w-full overflow-hidden rounded-2xl border bg-white text-[#2f2e2c] shadow-sm", t.border)}>
       <div className={cn("flex items-center gap-2 px-4 py-2.5", t.header)}>
         <Icon className="h-4 w-4 shrink-0" aria-hidden />
         <span className="text-[11px] font-semibold">{kicker}</span>
@@ -868,7 +868,7 @@ function ChatWindowContent({
                   src={src}
                   alt=""
                   draggable={false}
-                  className="pointer-events-none absolute inset-0 h-full w-full rounded-lg object-cover shadow-xl"
+                  className="pointer-events-none absolute inset-0 h-full w-full rounded-lg object-cover shadow-sm"
                   style={{ x: flyX, y: flyY, scale: flyScale, opacity: flyOpacity }}
                 />
               ) : null}
@@ -884,7 +884,7 @@ function ChatWindowContent({
 }
 
 const WINDOW_CLASS =
-  "h-[min(36rem,74dvh)] w-[min(66rem,calc(100vw-2rem))] overflow-hidden rounded-[1.25rem] border border-[#e4e1db] bg-white shadow-[0_30px_80px_-30px_rgba(47,46,44,0.35)]";
+  "h-[min(36rem,74dvh)] w-[min(66rem,calc(100vw-2rem))] overflow-hidden rounded-[1.25rem] border border-[#e4e1db] bg-white shadow-sm";
 
 /**
  * Pinned scroll story: a project → Hire / Collab cards come out of the middle →
@@ -971,7 +971,7 @@ export function LearnConversationStage({ works }: { works: string[] }) {
               <img
                 src={ART_IMAGE}
                 alt=""
-                className="aspect-[4/3] w-full rounded-[1.1rem] bg-[#e4e1db] object-cover shadow-[0_24px_60px_-28px_rgba(47,46,44,0.5)]"
+                className="aspect-[4/3] w-full rounded-[1.1rem] bg-[#e4e1db] object-cover shadow-sm"
                 draggable={false}
               />
               <p className="mt-3 text-center text-sm font-medium tracking-[-0.01em] text-[#2f2e2c]">{ART_TITLE}</p>

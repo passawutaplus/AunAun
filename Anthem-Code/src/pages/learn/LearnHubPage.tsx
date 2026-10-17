@@ -301,7 +301,7 @@ function HeroFloaters({
           ref={(node) => {
             nodes.current[index] = node;
           }}
-          className="absolute left-0 top-0 overflow-hidden rounded-md bg-border opacity-0 shadow-[0_10px_30px_rgba(47,46,44,0.08)] [transform:translate(-50%,-50%)]"
+          className="absolute left-0 top-0 overflow-hidden rounded-md bg-border opacity-0 shadow-sm [transform:translate(-50%,-50%)]"
           style={{ width: FLOAT_SIZES[index], height: FLOAT_SIZES[index] * 1.12 }}
         >
           <img alt="" className="h-full w-full object-cover" draggable={false} />

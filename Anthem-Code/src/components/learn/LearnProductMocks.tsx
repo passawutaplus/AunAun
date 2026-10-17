@@ -34,7 +34,7 @@ export function LearnProfileMock({ className }: { className?: string }) {
   return (
     <div className={cn("space-y-3 p-4 sm:p-5", className)}>
       <div className="flex items-center gap-3">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-brand text-white shadow-lg">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-brand text-white shadow-sm">
           <UserRound className="h-5 w-5" aria-hidden />
         </div>
         <div className="min-w-0 flex-1">

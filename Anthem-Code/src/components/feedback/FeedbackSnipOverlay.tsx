@@ -81,7 +81,7 @@ export default function FeedbackSnipOverlay() {
         data-feedback-ui
         className="fixed inset-0 z-[80] flex items-center justify-center bg-background/40"
       >
-        <div className="inline-flex items-center gap-2 rounded-full bg-background px-4 py-2 text-sm shadow-lg">
+        <div className="inline-flex items-center gap-2 rounded-full bg-background px-4 py-2 text-sm shadow-sm">
           <Loader2 className="h-4 w-4 animate-spin" />
           กำลังแคปหน้าจอ
         </div>
@@ -92,7 +92,7 @@ export default function FeedbackSnipOverlay() {
   return (
     <div data-feedback-ui className="fixed inset-0 z-[80]">
       <div className="pointer-events-none absolute inset-x-0 top-3 z-10 flex justify-center px-3">
-        <div className="pointer-events-auto flex flex-wrap items-center gap-2 rounded-full border border-border bg-background/95 px-3 py-1.5 text-xs shadow-lg">
+        <div className="pointer-events-auto flex flex-wrap items-center gap-2 rounded-full border border-border bg-background/95 px-3 py-1.5 text-xs shadow-sm">
           <span className="text-muted-foreground">ลากเพื่อเลือกพื้นที่</span>
           <button
             type="button"

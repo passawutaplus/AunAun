@@ -28,7 +28,7 @@ function NodeCard({ node, compact = false }: { node: (typeof NODES)[number]; com
   return (
     <span
       className={cn(
-        "flex items-center gap-2.5 rounded-2xl border border-[#e4e1db] bg-white text-left text-[#2f2e2c] shadow-[0_18px_40px_-28px_rgba(47,46,44,0.45)]",
+        "flex items-center gap-2.5 rounded-2xl border border-[#e4e1db] bg-white text-left text-[#2f2e2c] shadow-sm",
         compact ? "w-full px-3 py-2.5" : "w-[12.5rem] px-3 py-2.5",
       )}
     >
@@ -108,7 +108,7 @@ export function LearnEarnMap() {
             <img
               src={LEARN_SOURCE_ART.image}
               alt={`${LEARN_SOURCE_ART.title} illustration`}
-              className="h-40 w-40 rounded-full border-[6px] border-white bg-[#e4e1db] object-cover shadow-[0_30px_70px_-30px_rgba(47,46,44,0.55)]"
+              className="h-40 w-40 rounded-full border-[6px] border-white bg-[#e4e1db] object-cover shadow-sm"
             />
             <figcaption className="mt-3 rounded-full bg-[#2f2e2c] px-3 py-1 text-xs text-white">ผลงานของคุณ</figcaption>
           </motion.figure>
@@ -133,7 +133,7 @@ export function LearnEarnMap() {
           <img
             src={LEARN_SOURCE_ART.image}
             alt={`${LEARN_SOURCE_ART.title} illustration`}
-            className="h-28 w-28 rounded-full border-[5px] border-white bg-[#e4e1db] object-cover shadow-[0_24px_50px_-24px_rgba(47,46,44,0.55)]"
+            className="h-28 w-28 rounded-full border-[5px] border-white bg-[#e4e1db] object-cover shadow-sm"
           />
           <span className="mt-3 rounded-full bg-[#2f2e2c] px-3 py-1 text-xs text-white">ผลงานของคุณ</span>
         </div>

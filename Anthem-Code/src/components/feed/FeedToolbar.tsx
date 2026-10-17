@@ -415,7 +415,7 @@ const FeedToolbar = ({
               "sticky top-0",
               isCatalog
                 ? "z-40 bg-transparent shadow-none lg:static"
-                : "bg-background/80 backdrop-blur-md shadow-[0_-24px_48px_-8px_hsl(var(--background))] supports-[backdrop-filter]:bg-background/65",
+                : "bg-background/80 backdrop-blur-md shadow-sm supports-[backdrop-filter]:bg-background/65",
             )
           : "relative bg-transparent shadow-none",
       )}

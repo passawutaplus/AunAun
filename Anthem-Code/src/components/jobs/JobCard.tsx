@@ -57,7 +57,7 @@ const JobCard = ({ job, compact, onClick, showActions = true, overlayBadge, over
       initial="rest"
       whileHover={reduced ? undefined : "hover"}
       className={cn(
-        "group/card overflow-hidden rounded-[1.6rem] bg-card shadow-md hover:shadow-lg transition-shadow h-full flex flex-col border border-border/40",
+        "group/card overflow-hidden rounded-[1.6rem] bg-card shadow-md hover:shadow-sm transition-shadow h-full flex flex-col border border-border/40",
         compact && "shadow-sm",
       )}
     >

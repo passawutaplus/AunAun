@@ -113,7 +113,7 @@ const ProfileButton = ({ className, fillRail = false, accountOnly = false }: Pro
         <FeedbackHeaderPill />
         <div
           className={cn(
-            "flex items-center rounded-full glass-chip py-1 hover:shadow-md hover:shadow-primary/20 transition-all",
+            "flex items-center rounded-full glass-chip py-1 hover:shadow-md transition-all",
             fillRail ? "w-full min-w-0 justify-evenly gap-0 px-1" : "gap-0.5 pl-1 pr-1.5",
           )}
         >

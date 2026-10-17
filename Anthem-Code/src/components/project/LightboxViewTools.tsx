@@ -299,7 +299,7 @@ export function LightboxLoupe({
       {lens ? (
         <div
           aria-hidden
-          className="pointer-events-none absolute overflow-hidden rounded-full border-2 border-white/90 shadow-[0_8px_30px_rgba(0,0,0,.55)]"
+          className="pointer-events-none absolute overflow-hidden rounded-full border-2 border-white/90 shadow-sm"
           style={{
             width: LOUPE_PX,
             height: LOUPE_PX,

@@ -42,7 +42,7 @@ export function EarningsHireBalanceCard({
   return (
     <section
       data-testid="hire-wallet-card"
-      className="overflow-hidden rounded-[1.75rem] border border-primary/15 bg-white shadow-[0_12px_32px_-20px_rgb(16_16_16_/_0.35)]"
+      className="overflow-hidden rounded-[1.75rem] border border-primary/15 bg-white shadow-sm"
     >
       <div className={cn("px-5", compact ? "pb-3 pt-4" : "pb-4 pt-5")}>
         <p

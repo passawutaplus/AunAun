@@ -164,7 +164,7 @@ function RequestToast({ p, item, at }: { p: MotionValue<number>; item: (typeof R
   const y = useTransform(p, [at, at + 0.035], [16, 0]);
   return (
     <motion.div
-      className="flex items-center gap-2.5 rounded-2xl border border-[#e4e1db] bg-white/95 px-3 py-2.5 max-md:absolute max-md:inset-x-0 max-md:top-0 text-[#2f2e2c] shadow-[0_18px_40px_-20px_rgba(47,46,44,0.45)] backdrop-blur"
+      className="flex items-center gap-2.5 rounded-2xl border border-[#e4e1db] bg-white/95 px-3 py-2.5 max-md:absolute max-md:inset-x-0 max-md:top-0 text-[#2f2e2c] shadow-sm backdrop-blur"
       style={{ opacity, y }}
     >
       <span
@@ -430,7 +430,7 @@ export function LearnPackagesStage({ works }: { works: string[] }) {
 
           <div
             ref={overlayRef}
-            className="invisible absolute z-20 overflow-hidden border border-[#e4e1db] bg-white shadow-[0_40px_100px_-40px_rgba(47,46,44,0.45)]"
+            className="invisible absolute z-20 overflow-hidden border border-[#e4e1db] bg-white shadow-sm"
           >
             <div ref={imageRef} className="absolute overflow-hidden bg-[#e4e1db]">
               <img src={LEARN_SOURCE_ART.image} alt="" draggable={false} className="h-full w-full object-cover" />

@@ -27,7 +27,7 @@ export function EarningsHeroCard({
 }: Props) {
   return (
     <div className="space-y-3">
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-wallet p-6 text-white shadow-lg shadow-primary/25">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-wallet p-6 text-white shadow-sm">
         <p className="text-xs font-medium text-white/85">มูลค่าถอนได้โดยประมาณ</p>
         <p className="mt-1 text-4xl font-semibold tabular-nums tracking-tight">
           ฿ {netThb.toLocaleString()}

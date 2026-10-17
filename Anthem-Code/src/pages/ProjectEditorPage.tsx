@@ -1870,7 +1870,7 @@ const ProjectEditorPage = () => {
       <div
         role="alert"
         className={cn(
-          "w-max max-w-[min(16rem,calc(100vw-2rem))] rounded-xl border border-destructive/40 bg-card px-3 py-2.5 shadow-lg shadow-black/30 transition-opacity duration-300 ease-out",
+          "w-max max-w-[min(16rem,calc(100vw-2rem))] rounded-xl border border-destructive/40 bg-card px-3 py-2.5 shadow-sm transition-opacity duration-300 ease-out",
           publishPopupOpaque ? "opacity-100" : "opacity-0 pointer-events-none",
         )}
       >
@@ -4392,7 +4392,7 @@ const CoverDrop = ({
         "flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed transition-[border-color,background-color,box-shadow] duration-500 ease-out glass-panel",
         compact ? "aspect-[4/3] px-3 py-4" : "min-h-[200px] gap-3 rounded-2xl",
         drag
-          ? "border-primary bg-primary/10 shadow-lg shadow-primary/10"
+          ? "border-primary bg-primary/10 shadow-sm"
           : invalid
             ? "border-destructive bg-destructive/5"
             : "border-border/80 hover:border-primary/40 hover:bg-muted/20",

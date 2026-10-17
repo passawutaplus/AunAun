@@ -54,7 +54,7 @@ const CollectionCard = ({
   const shellClass = cn(
     list
       ? "group flex items-center gap-3 rounded-[8px] glass-panel px-3 py-2.5 hover:shadow-md transition-all text-left w-full"
-      : "group block rounded-[8px] overflow-hidden glass-panel hover:shadow-lg transition-all text-left w-full",
+      : "group block rounded-[8px] overflow-hidden glass-panel hover:shadow-sm transition-all text-left w-full",
     className,
   );
 

@@ -112,7 +112,7 @@ export function CommunityNavDropdown({ className }: { className?: string }) {
       <DropdownMenuContent
         align="start"
         sideOffset={10}
-        className="w-[22rem] rounded-2xl border border-border/70 bg-background p-2 shadow-lg"
+        className="w-[22rem] rounded-2xl border border-border/70 bg-background p-2 shadow-sm"
         onCloseAutoFocus={(e) => e.preventDefault()}
       >
         <div className="flex flex-col gap-0.5 p-1">

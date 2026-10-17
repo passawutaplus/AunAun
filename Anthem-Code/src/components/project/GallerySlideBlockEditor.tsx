@@ -85,7 +85,7 @@ function SortableThumb({
         "h-14 w-20 shrink-0 overflow-hidden rounded-none border-2 transition-all touch-none",
         "cursor-grab active:cursor-grabbing",
         active ? "border-primary" : "border-transparent opacity-60 hover:opacity-100",
-        isDragging && "z-20 opacity-100 shadow-lg ring-2 ring-primary/50",
+        isDragging && "z-20 opacity-100 shadow-sm ring-2 ring-primary/50",
         disabled && "cursor-default",
       )}
       {...attributes}

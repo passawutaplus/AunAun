@@ -111,7 +111,7 @@ export default function StudioSearch({ className, compact = false }: { className
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="top-[12%] translate-y-0 overflow-hidden p-0 shadow-xl sm:max-w-xl">
+        <DialogContent className="top-[12%] translate-y-0 overflow-hidden p-0 shadow-sm sm:max-w-xl">
           <DialogTitle className="sr-only">ค้นหาใน My Studio</DialogTitle>
           <DialogDescription className="sr-only">พิมพ์ชื่อหน้า ผลงาน ลูกค้า หรือการตั้งค่า</DialogDescription>
           {open ? <SearchBody query={query} onQueryChange={setQuery} onPick={go} /> : null}

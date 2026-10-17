@@ -502,7 +502,7 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapse
 
         <div
           className={cn(
-            "absolute inset-0 z-20 flex flex-col bg-background shadow-[0_-10px_30px_rgba(0,0,0,0.08)]",
+            "absolute inset-0 z-20 flex flex-col bg-background shadow-sm",
             !reducedMotion && "transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
             metaOpen ? "translate-y-0" : "translate-y-full pointer-events-none",
           )}

@@ -483,7 +483,7 @@ const ImageLightbox = ({
                 transition={lightboxTransition}
                 style={{ ...(zoomed ? { x, y, scale } : { scale }), filter: imageFilter }}
                 className={cn(
-                  "pointer-events-none origin-center rounded-lg object-contain shadow-2xl select-none transition-[filter] duration-300",
+                  "pointer-events-none origin-center rounded-lg object-contain shadow-sm select-none transition-[filter] duration-300",
                   // Turned sideways the image's width becomes its on-screen height — swap the limits.
                   !zoomed && orientation.rotate % 180 ? "max-h-[95vw] max-w-[78vh]" : "max-h-[78vh] max-w-[95vw]",
                 )}

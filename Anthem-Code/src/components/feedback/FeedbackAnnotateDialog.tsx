@@ -32,7 +32,7 @@ export default function FeedbackAnnotateDialog() {
         if (e.target === e.currentTarget) save();
       }}
     >
-      <div className="flex max-h-[94dvh] w-full max-w-4xl flex-col overflow-hidden rounded-t-2xl bg-background shadow-2xl sm:rounded-2xl">
+      <div className="flex max-h-[94dvh] w-full max-w-4xl flex-col overflow-hidden rounded-t-2xl bg-background shadow-sm sm:rounded-2xl">
         <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
           <h2 className="text-sm font-semibold">ขีดเขียนภาพแคป</h2>
           <button type="button" aria-label="ปิด" className="rounded-md p-1 text-muted-foreground" onClick={save}>

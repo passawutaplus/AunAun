@@ -125,7 +125,7 @@ const FeedHero = ({ mode = "projects", onModeChange, className, search, onSearch
       className={cn(
         "relative overflow-hidden min-h-[22rem] sm:min-h-[24rem] md:min-h-[19rem] lg:min-h-[21rem]",
         "-mx-3 -mt-4 rounded-none ring-0 shadow-none sm:-mx-4",
-        "md:mx-0 md:mt-0 md:rounded-[1.75rem] md:ring-1 md:ring-border/35 md:shadow-[0_8px_32px_-12px_rgba(0,0,0,0.12)]",
+        "md:mx-0 md:mt-0 md:rounded-[1.75rem] md:ring-1 md:ring-border/35 md:shadow-sm",
         className,
       )}
     >

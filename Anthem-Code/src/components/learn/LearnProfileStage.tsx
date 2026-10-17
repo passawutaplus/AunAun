@@ -101,7 +101,7 @@ function ProfileMock({ p, works }: { p: MotionValue<number>; works: string[] }) 
   const tiles = (works.length >= 6 ? works : [...works, ...LEARN_FALLBACK_WORKS]).slice(0, 6);
 
   return (
-    <div className="w-full overflow-hidden rounded-[1.25rem] border border-[#e4e1db] bg-white text-[#2f2e2c] shadow-[0_30px_80px_-30px_rgba(47,46,44,0.35)]">
+    <div className="w-full overflow-hidden rounded-[1.25rem] border border-[#e4e1db] bg-white text-[#2f2e2c] shadow-sm">
       <motion.div className="h-16 bg-[#e4e1db] sm:h-20" style={{ opacity: coverOpacity }}>
         <img src={tiles[0]} alt="" className="h-full w-full object-cover opacity-70" draggable={false} />
       </motion.div>

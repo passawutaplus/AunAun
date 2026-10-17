@@ -239,7 +239,7 @@ export function ProfileTour({ open, onClose, currentTab, onShowTab }: Props) {
         <div
           role="dialog"
           aria-label="ทัวร์แนะนำหน้าโปรไฟล์"
-          className={cn("pointer-events-auto fixed z-[70] w-[320px] max-w-[calc(100vw-24px)] rounded-2xl border border-border bg-card p-4 text-left shadow-xl max-sm:w-auto")}
+          className={cn("pointer-events-auto fixed z-[70] w-[320px] max-w-[calc(100vw-24px)] rounded-2xl border border-border bg-card p-4 text-left shadow-sm max-sm:w-auto")}
           style={placeCard(rect)}
         >
           {step.id === "welcome" ? <TourMascot /> : null}
