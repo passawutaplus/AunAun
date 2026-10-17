@@ -8,7 +8,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useMotionValue } from "framer-motion";
-import { ChevronLeft, ChevronRight, MessageSquareText, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, MessageCircle, X } from "lucide-react";
 import ImageActionBar from "@/components/project/ImageActionBar";
 import LightboxColorTools from "@/components/project/LightboxColorTools";
 import {
@@ -519,10 +519,15 @@ const ImageLightbox = ({
                         onClose();
                         onContact();
                       }}
-                      className="inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-full bg-black/45 px-3 text-xs font-medium text-white backdrop-blur-md transition-colors hover:bg-black/65"
+                      aria-label="ทักแชทจากภาพนี้"
+                      title="ทักแชทจากภาพนี้"
+                      className="group/chat inline-flex shrink-0 items-center whitespace-nowrap rounded-full border border-white/10 bg-black/25 px-3 py-2 text-xs font-medium text-white shadow-sm backdrop-blur-md transition-all hover:bg-black/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
                     >
-                      <MessageSquareText className="h-3.5 w-3.5" aria-hidden />
-                      ติดต่อเรื่องงานนี้
+                      <MessageCircle className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                      {/* Icon only; the label slides out on hover / keyboard focus (desktop) */}
+                      <span className="max-w-0 overflow-hidden opacity-0 transition-all duration-200 group-hover/chat:ml-1.5 group-hover/chat:max-w-[9rem] group-hover/chat:opacity-100 group-focus-visible/chat:ml-1.5 group-focus-visible/chat:max-w-[9rem] group-focus-visible/chat:opacity-100 motion-reduce:transition-none">
+                        ทักแชทจากภาพนี้
+                      </span>
                     </button>
                   ) : null}
                 </div>
