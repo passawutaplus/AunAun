@@ -544,8 +544,8 @@ const HireDialog = ({
       tone="paper"
     >
         <DialogHeader className="space-y-2 text-left">
-          <Briefcase className="h-8 w-8 text-[#2f2e2c]" aria-hidden />
-          <DialogTitle className="paper-title text-[1.85rem] font-medium leading-tight tracking-tight text-[#2f2e2c]">
+          <Briefcase className="h-8 w-8 text-foreground" aria-hidden />
+          <DialogTitle className="paper-title text-[1.85rem] font-medium leading-tight tracking-tight text-foreground">
             Hire Request
           </DialogTitle>
           <DialogDescription className="sr-only">
@@ -575,12 +575,12 @@ const HireDialog = ({
             ref={hireTabTrackRef}
             role="tablist"
             aria-label="โหมดคำขอจ้าง"
-            className="relative flex w-full rounded-full bg-[#2f2e2c]/8 p-1"
+            className="relative flex w-full rounded-full bg-foreground/8 p-1"
           >
             {hireTabIndicator ? (
               reducedMotion ? (
                 <span
-                  className="pointer-events-none absolute top-1 bottom-1 left-0 rounded-full bg-[#2f2e2c]"
+                  className="pointer-events-none absolute top-1 bottom-1 left-0 rounded-full bg-foreground"
                   style={{
                     transform: `translateX(${hireTabIndicator.x}px)`,
                     width: hireTabIndicator.width,
@@ -589,7 +589,7 @@ const HireDialog = ({
                 />
               ) : (
                 <motion.span
-                  className="pointer-events-none absolute top-1 bottom-1 left-0 rounded-full bg-[#2f2e2c] will-change-transform"
+                  className="pointer-events-none absolute top-1 bottom-1 left-0 rounded-full bg-foreground will-change-transform"
                   initial={false}
                   animate={{ x: hireTabIndicator.x, width: hireTabIndicator.width }}
                   transition={hireTabSlideTransition}
@@ -614,9 +614,9 @@ const HireDialog = ({
                     "relative z-10 flex-1 inline-flex items-center justify-center gap-1.5 rounded-full py-2 text-sm font-medium transition-colors",
                     active
                       ? hireTabIndicator
-                        ? "text-[#f5f5f5]"
-                        : "bg-[#2f2e2c] text-[#f5f5f5]"
-                      : "text-[#6b6862] hover:text-[#2f2e2c]",
+                        ? "text-background"
+                        : "bg-foreground text-background"
+                      : "text-[#6b6862] hover:text-foreground",
                   )}
                   onClick={() => setPanel(tab.id)}
                 >

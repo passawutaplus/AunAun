@@ -216,11 +216,11 @@ const DesktopTopNav = () => {
       className={cn("flex min-w-0 items-center", isGuestHome ? "gap-6 xl:gap-8" : "gap-6")}
       aria-label="เมนูหลัก"
     >
-      <CommunityNavDropdown className={isHome ? "text-[#f5f5f5]/80 hover:text-[#f5f5f5]" : undefined} />
+      <CommunityNavDropdown className={isHome ? "text-background/80 hover:text-background" : undefined} />
       <NavLink
         to="/learn"
         end={false}
-        className={isHome ? "text-[13px] font-medium text-[#f5f5f5] transition-opacity hover:opacity-70" : linkClass}
+        className={isHome ? "text-[13px] font-medium text-background transition-opacity hover:opacity-70" : linkClass}
       >
         About
       </NavLink>
@@ -237,7 +237,7 @@ const DesktopTopNav = () => {
         "z-40 hidden lg:block sticky top-0 transition-opacity duration-300 motion-reduce:transition-none",
         coveredByFeedBar && "pointer-events-none opacity-0",
         isLearn
-          ? "border-b border-[#e4e1db] bg-[#f5f5f5] text-[#2f2e2c] shadow-none"
+          ? "border-b border-border bg-background text-foreground shadow-none"
           : isHome
             ? "border-0 bg-transparent text-foreground shadow-none"
             : glass
@@ -337,7 +337,7 @@ const DesktopTopNav = () => {
               onClick={() => navigate("/auth")}
               className={
                 isLearn
-                  ? "h-8 rounded-sm bg-[#2f2e2c] px-3 text-[13px] font-normal text-[#f5f5f5] hover:bg-[#2f2e2c]/90"
+                  ? "h-8 rounded-sm bg-foreground px-3 text-[13px] font-normal text-background hover:bg-foreground/90"
                   : isHome
                     ? "h-8 rounded-sm bg-foreground px-3 text-[13px] font-normal text-background hover:bg-foreground/90"
                     : "h-8 rounded-full bg-foreground px-4 text-[13px] font-normal text-background hover:bg-foreground/90"

@@ -65,9 +65,9 @@ export function ResponsiveOverlay({
   const stackOverlayClass = stacked ? "z-[70]" : undefined;
   const stackContentClass = stacked ? "z-[71]" : undefined;
   const paper = tone === "paper";
-  const overlayClassName = cn(paper && "bg-[#2f2e2c]/40", stackOverlayClass);
+  const overlayClassName = cn(paper && "bg-foreground/40", stackOverlayClass);
   const paperSurface = paper
-    ? "paper-popup border-[#e4e1db] bg-[#f5f5f5] text-[#2f2e2c] shadow-sm [&>button]:text-[#2f2e2c]"
+    ? "paper-popup border-border bg-background text-foreground shadow-sm [&>button]:text-foreground"
     : undefined;
   const blockDismiss = preventDismiss
     ? {

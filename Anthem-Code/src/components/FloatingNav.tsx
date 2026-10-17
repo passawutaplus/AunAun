@@ -196,7 +196,7 @@ const FloatingNav = () => {
           aria-label="ลงผลงาน"
           className={cn(
             "pointer-events-auto flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-white shadow-sm transition-all duration-200 ease-out hover:opacity-90 active:scale-95",
-            pathname === "/" || pathname.startsWith("/learn") ? "bg-[#2f2e2c]" : "bg-gradient-brand",
+            pathname === "/" || pathname.startsWith("/learn") ? "bg-foreground" : "bg-gradient-brand",
           )}
         >
           <Plus className="h-6 w-6" strokeWidth={2.5} />

@@ -28,7 +28,7 @@ function NodeCard({ node, compact = false }: { node: (typeof NODES)[number]; com
   return (
     <span
       className={cn(
-        "flex items-center gap-2.5 rounded-2xl border border-[#e4e1db] bg-white text-left text-[#2f2e2c] shadow-sm",
+        "flex items-center gap-2.5 rounded-2xl border border-border bg-white text-left text-foreground shadow-sm",
         compact ? "w-full px-3 py-2.5" : "w-[12.5rem] px-3 py-2.5",
       )}
     >
@@ -49,9 +49,9 @@ function NodeCard({ node, compact = false }: { node: (typeof NODES)[number]; com
 }
 
 const CTA_PRIMARY =
-  "inline-flex min-h-11 items-center gap-2 rounded-full bg-[#2f2e2c] px-6 text-sm font-medium text-[#f5f5f5] outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[#2f2e2c] focus-visible:ring-offset-2";
+  "inline-flex min-h-11 items-center gap-2 rounded-full bg-foreground px-6 text-sm font-medium text-background outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
 const CTA_LINK =
-  "inline-flex min-h-11 items-center gap-2 border-0 bg-transparent p-0 font-inherit text-sm text-[#2f2e2c] underline decoration-[#2f2e2c]/25 underline-offset-4 hover:decoration-[#2f2e2c]";
+  "inline-flex min-h-11 items-center gap-2 border-0 bg-transparent p-0 font-inherit text-sm text-foreground underline decoration-foreground/25 underline-offset-4 hover:decoration-foreground";
 
 /** Every way to show and earn hangs off the one piece of work in the middle. */
 export function LearnEarnMap() {
@@ -69,10 +69,10 @@ export function LearnEarnMap() {
   return (
     <div className="mx-auto max-w-[80rem] px-4 py-16 sm:px-6 lg:px-10 lg:py-24">
       <div className="text-center">
-        <p className="text-[clamp(1.5rem,3vw,2.4rem)] leading-none tracking-[-0.03em] text-[#2f2e2c]" style={LEARN_SERIF}>
+        <p className="text-[clamp(1.5rem,3vw,2.4rem)] leading-none tracking-[-0.03em] text-foreground" style={LEARN_SERIF}>
           One piece of work.
         </p>
-        <h2 className="mt-2 text-[clamp(2.6rem,7vw,5.5rem)] font-medium leading-[0.88] tracking-[-0.06em] text-[#2f2e2c]">
+        <h2 className="mt-2 text-[clamp(2.6rem,7vw,5.5rem)] font-medium leading-[0.88] tracking-[-0.06em] text-foreground">
           Many ways to earn
         </h2>
         <p className="mx-auto mt-5 max-w-md text-sm leading-relaxed text-[#6b6862]">
@@ -108,9 +108,9 @@ export function LearnEarnMap() {
             <img
               src={LEARN_SOURCE_ART.image}
               alt={`${LEARN_SOURCE_ART.title} illustration`}
-              className="h-40 w-40 rounded-full border-[6px] border-white bg-[#e4e1db] object-cover shadow-sm"
+              className="h-40 w-40 rounded-full border-[6px] border-white bg-border object-cover shadow-sm"
             />
-            <figcaption className="mt-3 rounded-full bg-[#2f2e2c] px-3 py-1 text-xs text-white">ผลงานของคุณ</figcaption>
+            <figcaption className="mt-3 rounded-full bg-foreground px-3 py-1 text-xs text-white">ผลงานของคุณ</figcaption>
           </motion.figure>
         </div>
 
@@ -133,9 +133,9 @@ export function LearnEarnMap() {
           <img
             src={LEARN_SOURCE_ART.image}
             alt={`${LEARN_SOURCE_ART.title} illustration`}
-            className="h-28 w-28 rounded-full border-[5px] border-white bg-[#e4e1db] object-cover shadow-sm"
+            className="h-28 w-28 rounded-full border-[5px] border-white bg-border object-cover shadow-sm"
           />
-          <span className="mt-3 rounded-full bg-[#2f2e2c] px-3 py-1 text-xs text-white">ผลงานของคุณ</span>
+          <span className="mt-3 rounded-full bg-foreground px-3 py-1 text-xs text-white">ผลงานของคุณ</span>
         </div>
         <ul className="relative mt-6 space-y-2 border-l border-[#d6d2ca] pl-4">
           {NODES.map((node, index) => (

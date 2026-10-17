@@ -844,7 +844,7 @@
   html.learn-paper .bg-gradient-brand,
   html.learn-paper .text-gradient {
     background-image: none;
-    background-color: #2f2e2c;
+    background-color: hsl(var(--foreground));
     -webkit-text-fill-color: unset;
   }
 
@@ -852,7 +852,7 @@
      (otherwise .dark's dark --primary-foreground lands on #2f2e2c and the text vanishes).
      The studio home follows the theme now, so it uses the plain .bg-gradient-brand (ink in light, paper in dark). */
   html.learn-paper .bg-gradient-brand {
-    color: #f5f5f5 !important;
+    color: hsl(var(--background)) !important;
   }
 
 
@@ -929,8 +929,8 @@
     --primary-foreground: 0 0% 96%;
     --primary-bright: 40 3% 18%;
     --ring: 40 3% 18%;
-    color: #2f2e2c;
-    background-color: #f5f5f5;
+    color: hsl(var(--foreground));
+    background-color: hsl(var(--background));
   }
   .dark .chat-paper {
     --background: 40 4% 10%;
@@ -976,14 +976,14 @@
     --primary-foreground: 0 0% 96%;
     --primary-bright: 40 3% 18%;
     --ring: 40 3% 18%;
-    color: #2f2e2c;
+    color: hsl(var(--foreground));
     color-scheme: light;
-    background-color: #f5f5f5;
-    border-color: #e4e1db;
+    background-color: hsl(var(--background));
+    border-color: hsl(var(--border));
   }
   .paper-popup .paper-title {
     font-family: "Agrandir Wide", "IBM Plex Sans Thai", "IBM Plex Sans", sans-serif;
-    color: #2f2e2c;
+    color: hsl(var(--foreground));
   }
   .paper-popup .bg-muted\/30,
   .paper-popup .bg-muted\/20 {
@@ -992,7 +992,7 @@
   .paper-popup input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="date"]),
   .paper-popup textarea {
     background-color: #fff;
-    border-color: #e4e1db;
+    border-color: hsl(var(--border));
     box-shadow: none;
   }
   .paper-popup input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="date"]) {
@@ -2354,8 +2354,8 @@ html [data-feed-sheet] [data-feed-catalog-head] .gap-y-1 {
   justify-content: center;
   overflow: hidden;
   padding: 14vh 6vw 8vh;
-  background: #f5f5f5;
-  color: #2f2e2c;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
   font-family: Inter, "IBM Plex Sans Thai", ui-sans-serif, system-ui, sans-serif;
   font-weight: 400;
   line-height: 1.5;
@@ -2376,7 +2376,7 @@ html [data-feed-sheet] [data-feed-catalog-head] .gap-y-1 {
   gap: 32px;
   padding: 22px 6vw;
   background: transparent;
-  color: #2f2e2c;
+  color: hsl(var(--foreground));
 }
 .status-screen-logo {
   display: block;
@@ -2435,7 +2435,7 @@ html [data-feed-sheet] [data-feed-catalog-head] .gap-y-1 {
   z-index: 2;
   text-align: center;
   max-width: 28em;
-  color: #2f2e2c;
+  color: hsl(var(--foreground));
 }
 .status-screen h1 {
   margin: 0;
@@ -2493,7 +2493,7 @@ html [data-feed-sheet] [data-feed-catalog-head] .gap-y-1 {
 }
 .status-screen-lang { display: flex; gap: 8px; font-size: 13px; letter-spacing: 0.08em; }
 .status-screen-lang button {
-  color: #2f2e2c;
+  color: hsl(var(--foreground));
   background: none;
   border: 0;
   padding: 0;
@@ -2513,10 +2513,10 @@ html [data-feed-sheet] [data-feed-catalog-head] .gap-y-1 {
     flex-direction: column;
     gap: 16px;
     padding: 8px 6vw 24px;
-    background: #f5f5f5;
-    color: #2f2e2c;
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
   }
-  .status-screen-bar.is-open { background: #f5f5f5; color: #2f2e2c; }
+  .status-screen-bar.is-open { background: hsl(var(--background)); color: hsl(var(--foreground)); }
   .status-screen-bar.is-open .status-screen-nav { display: flex; }
 }
 @media (prefers-reduced-motion: reduce) {

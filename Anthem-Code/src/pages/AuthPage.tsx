@@ -40,17 +40,17 @@ import {
 
 const PAPER_SERIF = '"Iowan Old Style", Palatino, Georgia, serif';
 
-/** Same paper field as the studio home, so login doesn't sit on the old glass theme. */
+/** Brand Book light field (Studio White canvas, Gallery Black ink), pinned on the login page in every theme. */
 const paperVars = {
-  "--background": "0 0% 96%",
-  "--foreground": "40 3% 18%",
-  "--muted-foreground": "30 4% 41%",
+  "--background": "50 30% 96%",
+  "--foreground": "0 0% 7%",
+  "--muted-foreground": "0 0% 40%",
   "--card": "0 0% 100%",
-  "--card-foreground": "40 3% 18%",
+  "--card-foreground": "0 0% 7%",
   "--popover": "0 0% 100%",
-  "--popover-foreground": "40 3% 18%",
-  "--border": "40 5% 86%",
-  "--input": "40 5% 86%",
+  "--popover-foreground": "0 0% 7%",
+  "--border": "60 6% 90%",
+  "--input": "60 6% 90%",
   "--muted": "40 6% 92%",
   "--secondary": "40 6% 92%",
   "--secondary-foreground": "40 3% 18%",
@@ -59,18 +59,18 @@ const paperVars = {
   "--primary": "40 3% 18%",
   "--primary-foreground": "0 0% 96%",
   "--ring": "40 3% 18%",
-  color: "#2f2e2c",
-  backgroundColor: "#f5f5f5",
+  color: "hsl(var(--foreground))",
+  backgroundColor: "hsl(var(--background))",
 } as CSSProperties;
 
 const paperInput =
-  "h-11 rounded-full border-[#e4e1db] bg-white text-[#2f2e2c] shadow-none backdrop-blur-none placeholder:text-[#6b6862] focus-visible:ring-[#2f2e2c]/25";
+  "h-11 rounded-full border-border bg-white text-foreground shadow-none backdrop-blur-none placeholder:text-[#6b6862] focus-visible:ring-ring/25";
 
 const paperSubmit =
-  "h-11 w-full rounded-full border-0 bg-[#2f2e2c] text-base font-medium text-[#f5f5f5] shadow-none hover:bg-[#2f2e2c]/90";
+  "h-11 w-full rounded-full border-0 bg-foreground text-base font-medium text-background shadow-none hover:bg-foreground/90";
 
 const paperGoogle =
-  "rounded-full border-[#e4e1db] bg-white text-[#2f2e2c] shadow-none backdrop-blur-none hover:bg-[#f5f5f5]";
+  "rounded-full border-border bg-white text-foreground shadow-none backdrop-blur-none hover:bg-secondary";
 
 const AuthPage = () => {
   const navigate = useNavigate();
@@ -119,7 +119,7 @@ const AuthPage = () => {
       ref={authHeroRef}
       style={paperVars}
       className={cn(
-      "relative min-h-screen overflow-x-hidden bg-[#f5f5f5] text-[#2f2e2c] transition-opacity duration-300",
+      "relative min-h-screen overflow-x-hidden bg-background text-foreground transition-opacity duration-300",
       "lg:overflow-hidden",
       fadeOut && "opacity-0"
     )}>
@@ -128,7 +128,7 @@ const AuthPage = () => {
       <BackButton
         to="/"
         label="กลับหน้าแรก"
-        className="absolute top-4 left-4 z-30 border-[#e4e1db] bg-white/90 text-[#2f2e2c] hover:bg-white"
+        className="absolute top-4 left-4 z-30 border-border bg-white/90 text-foreground hover:bg-white"
       />
 
       <div className="relative z-10 min-h-screen grid lg:grid-cols-2">
@@ -145,7 +145,7 @@ const AuthPage = () => {
           />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] bg-gradient-to-t from-background from-[18%] via-background/80 via-[55%] to-transparent px-8 pb-8 pt-24">
             <p
-              className="text-left text-[clamp(2.6rem,4vw,3.75rem)] font-normal leading-[0.92] tracking-tight text-[#2f2e2c]"
+              className="text-left text-[clamp(2.6rem,4vw,3.75rem)] font-normal leading-[0.92] tracking-tight text-foreground"
               style={{ fontFamily: PAPER_SERIF }}
             >
               <span className="block">1 Profile to</span>
@@ -156,7 +156,7 @@ const AuthPage = () => {
             <p className="mt-3 max-w-md text-sm font-normal leading-relaxed text-[#6b6862]">
               <span className="inline-flex flex-wrap items-baseline gap-x-1.5">
                 <span>ให้ผลงานพาคุณไปสู่</span>
-                <HeroRotatingWord cycle={heroCycle} lang="th" className="font-medium text-[#2f2e2c]" />
+                <HeroRotatingWord cycle={heroCycle} lang="th" className="font-medium text-foreground" />
                 <span>ใหม่ๆ</span>
               </span>
             </p>
@@ -173,7 +173,7 @@ const AuthPage = () => {
               <BrandLogo size="sm" tone="ink" />
             </div>
 
-            <h1 className="mb-6 font-display text-[2.15rem] font-medium leading-tight tracking-tight text-[#2f2e2c]">
+            <h1 className="mb-6 font-display text-[2.15rem] font-medium leading-tight tracking-tight text-foreground">
               {tab === "login" ? "ยินดีต้อนรับกลับมา" : "สร้างบัญชีใหม่"}
             </h1>
             {tab === "signup" ? (
@@ -183,16 +183,16 @@ const AuthPage = () => {
             ) : null}
 
             <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)} className="w-full">
-              <TabsList className="mb-6 grid h-11 w-full grid-cols-2 rounded-full bg-[#2f2e2c]/8 p-1">
+              <TabsList className="mb-6 grid h-11 w-full grid-cols-2 rounded-full bg-foreground/8 p-1">
                 <TabsTrigger
                   value="login"
-                  className="rounded-full text-[#6b6862] data-[state=active]:!bg-[#2f2e2c] data-[state=active]:!text-[#f5f5f5] data-[state=active]:shadow-none"
+                  className="rounded-full text-[#6b6862] data-[state=active]:!bg-foreground data-[state=active]:!text-background data-[state=active]:shadow-none"
                 >
                   เข้าสู่ระบบ
                 </TabsTrigger>
                 <TabsTrigger
                   value="signup"
-                  className="rounded-full text-[#6b6862] data-[state=active]:!bg-[#2f2e2c] data-[state=active]:!text-[#f5f5f5] data-[state=active]:shadow-none"
+                  className="rounded-full text-[#6b6862] data-[state=active]:!bg-foreground data-[state=active]:!text-background data-[state=active]:shadow-none"
                 >
                   สมัครสมาชิก
                 </TabsTrigger>
@@ -339,7 +339,7 @@ const LoginForm = ({ redirect, onSwitch }: { redirect: string; onSwitch: () => v
           <Checkbox checked={remember} onCheckedChange={(v) => setRemember(v === true)} />
           จดจำฉันไว้
         </label>
-        <Link to="/auth/forgot" className="text-xs text-[#2f2e2c] underline underline-offset-2">
+        <Link to="/auth/forgot" className="text-xs text-foreground underline underline-offset-2">
           ลืมรหัสผ่าน?
         </Link>
       </div>
@@ -355,7 +355,7 @@ const LoginForm = ({ redirect, onSwitch }: { redirect: string; onSwitch: () => v
 
       <p className="text-center text-xs text-[#6b6862]">
         ยังไม่มีบัญชี?{" "}
-        <button type="button" onClick={onSwitch} className="font-medium text-[#2f2e2c] underline underline-offset-2">
+        <button type="button" onClick={onSwitch} className="font-medium text-foreground underline underline-offset-2">
           สมัครสมาชิกที่นี่
         </button>
       </p>
@@ -509,7 +509,7 @@ const SignupFormFields = ({ onSwitch }: { onSwitch: () => void }) => {
 
       <p className="text-center text-xs text-[#6b6862]">
         มีบัญชีอยู่แล้ว?{" "}
-        <button type="button" onClick={onSwitch} className="font-medium text-[#2f2e2c] underline underline-offset-2">
+        <button type="button" onClick={onSwitch} className="font-medium text-foreground underline underline-offset-2">
           เข้าสู่ระบบ
         </button>
       </p>

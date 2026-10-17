@@ -273,7 +273,7 @@ const HireInviteForm = ({
             type="button"
             size="icon"
             variant="outline"
-            className="h-10 w-10 shrink-0 rounded-full border-[#e4e1db] bg-white text-[#2f2e2c] shadow-none hover:bg-[#f5f5f5]"
+            className="h-10 w-10 shrink-0 rounded-full border-border bg-white text-foreground shadow-none hover:bg-secondary"
             onClick={addReferenceLink}
             aria-label="เพิ่มลิงก์"
           >
