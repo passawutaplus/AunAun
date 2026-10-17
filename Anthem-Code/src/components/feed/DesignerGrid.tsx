@@ -128,8 +128,8 @@ const DesignerGrid = ({
         isError={isError}
         isSlow={slow}
         onRetry={() => void refetch()}
-        loadingLabel="กำลังโหลดดีไซเนอร์..."
-        errorTitle="โหลดดีไซเนอร์ไม่สำเร็จ"
+        loadingLabel="กำลังโหลดครีเอเตอร์..."
+        errorTitle="โหลดครีเอเตอร์ไม่สำเร็จ"
         errorDescription="กดลองใหม่ หรือเปลี่ยนตัวกรอง"
       />
     );
@@ -150,7 +150,7 @@ const DesignerGrid = ({
       <div className="text-center py-16 glass-panel rounded-2xl">
         <p className="text-foreground font-medium mb-2 thai-display">เข้าสู่ระบบเพื่อดูคนที่ติดตาม</p>
         <p className="text-sm text-muted-foreground mb-4 thai-body">
-          ระบบจะแสดงเฉพาะดีไซเนอร์ที่คุณกดติดตามไว้
+          ระบบจะแสดงเฉพาะครีเอเตอร์ที่คุณกดติดตามไว้
         </p>
         <Button
           onClick={() => useAuthDialog.getState().openSignup()}
@@ -167,7 +167,7 @@ const DesignerGrid = ({
     if (search.trim()) {
       return (
         <FilterEmptyState
-          title="ไม่พบดีไซเนอร์"
+          title="ไม่พบครีเอเตอร์"
           description={`ลองคำอื่น เช่น logo, ux, branding — ไม่มีผลลัพธ์สำหรับ "${search}"`}
           onClear={onClearSearch}
           clearLabel="ล้างคำค้น"
@@ -180,7 +180,7 @@ const DesignerGrid = ({
         title={
           followingEmpty
             ? "ยังไม่ได้ติดตามใคร"
-            : "ยังไม่มีดีไซเนอร์ในฟีด"
+            : "ยังไม่มีครีเอเตอร์ในฟีด"
         }
         description={
           followingEmpty

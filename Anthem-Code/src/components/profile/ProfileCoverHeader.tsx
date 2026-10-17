@@ -14,6 +14,7 @@ import OpportunityTypeChips from "@/components/opportunity/OpportunityTypeChips"
 import ProfileIntroLine from "@/components/profile/ProfileIntroLine";
 import UserAvatar from "@/components/UserAvatar";
 import VerifiedBadge from "@/components/profile/VerifiedBadge";
+import BetaBadgeChip from "@/components/beta/BetaBadgeChip";
 
 type ProfileLike = {
   display_name: string | null;
@@ -315,6 +316,7 @@ export default function ProfileCoverHeader({
               <h1 className="text-xl sm:text-2xl font-medium text-foreground leading-tight flex items-center gap-1.5 min-w-0">
                 <span className="truncate">{profile.display_name || "ยังไม่ได้ตั้งชื่อ"}</span>
                 <VerifiedBadge verified={!!profile.is_verified} />
+                <BetaBadgeChip userId={userId} className="ml-1" />
               </h1>
               {profile.username &&
                 profile.username.trim().toLowerCase() !== (profile.display_name ?? "").trim().toLowerCase() && (

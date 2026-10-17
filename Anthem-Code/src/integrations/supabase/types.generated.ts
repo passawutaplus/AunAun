@@ -2073,6 +2073,7 @@ export type Database = {
           external_links: Json
           project_assets: Json
           content_blocks: Json
+          context_images: Json
           gallery_display_mode: string
           grid_layout: string
           ai_assisted: boolean
@@ -2126,6 +2127,7 @@ export type Database = {
           external_links?: Json
           project_assets?: Json
           content_blocks?: Json
+          context_images?: Json
           gallery_display_mode?: string
           grid_layout?: string
           ai_assisted?: boolean
@@ -2179,6 +2181,7 @@ export type Database = {
           external_links?: Json
           project_assets?: Json
           content_blocks?: Json
+          context_images?: Json
           gallery_display_mode?: string
           grid_layout?: string
           ai_assisted?: boolean
@@ -9669,6 +9672,7 @@ export type Database = {
           brief: string | null
           client_permission_confirmed: boolean
           content_blocks: Json
+          context_images: Json
           created_at: string
           creator_role: string | null
           default_persona_group_id: string | null
@@ -9702,6 +9706,7 @@ export type Database = {
           brief?: string | null
           client_permission_confirmed?: boolean
           content_blocks?: Json
+          context_images?: Json
           created_at?: string
           creator_role?: string | null
           default_persona_group_id?: string | null
@@ -9735,6 +9740,7 @@ export type Database = {
           brief?: string | null
           client_permission_confirmed?: boolean
           content_blocks?: Json
+          context_images?: Json
           created_at?: string
           creator_role?: string | null
           default_persona_group_id?: string | null

@@ -7,6 +7,7 @@ import { fromCreatorObjects } from "@/lib/objects/db";
 import { formatServicePrice } from "@/hooks/useCreatorServices";
 import { thumbFeedCoverUrl } from "@/lib/feedProjectCover";
 import { stripCategorySubTags } from "@/data/categoryTaxonomy";
+import { isCommerceEnabled } from "@/lib/aplus1Launch";
 
 /** Either a view count (works, shown with an eye like "ผลงานอื่นของ…") or a short price label. */
 type Tile = { id: string; href: string; title: string; image: string; meta?: string; views?: number };
@@ -72,7 +73,7 @@ const startPrice = (min: number | null, max: number | null) => {
 export function RelatedPackagesRow({ projectId }: { projectId?: string }) {
   const { data = [] } = useQuery({
     queryKey: ["project-related-packages", projectId],
-    enabled: !!projectId,
+    enabled: !!projectId && isCommerceEnabled(),
     staleTime: 60_000,
     queryFn: async (): Promise<Tile[]> => {
       const { data: rows, error } = await fromCreatorServices()
@@ -105,7 +106,7 @@ export function RelatedPackagesRow({ projectId }: { projectId?: string }) {
 export function RelatedObjectsRow({ projectId }: { projectId?: string }) {
   const { data = [] } = useQuery({
     queryKey: ["project-related-objects", projectId],
-    enabled: !!projectId,
+    enabled: !!projectId && isCommerceEnabled(),
     staleTime: 60_000,
     queryFn: async (): Promise<Tile[]> => {
       const { data: rows, error } = await fromCreatorObjects()

@@ -41,7 +41,7 @@ export default function HirePaySuccessView({
         <CheckCircle2 className="h-12 w-12 text-emerald-500" strokeWidth={1.75} />
       </div>
       <div>
-        <p className="text-lg font-semibold text-foreground">ชำระเงินสำเร็จ!</p>
+        <p className="text-lg font-semibold text-foreground">ชำระเงินสำเร็จ</p>
         <p className="mt-1 text-sm text-muted-foreground">
           เงินถูกพักไว้กับ SAMECOR ในฐานะตัวกลาง และจะโอนให้ผู้รับงานหลังคุณอนุมัติงาน
         </p>

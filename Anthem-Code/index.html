@@ -3,20 +3,22 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#0a0a0a" />
+    <meta name="theme-color" content="#F8F7F2" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="SAMECOR" />
     <meta name="mobile-web-app-capable" content="yes" />
     <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" href="/brand/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <!-- Production: security headers enforced via vercel.json / nginx.conf -->
     <!-- Local dev: Report-Only CSP for violation monitoring (see docs/csp-report.md) -->
     <meta http-equiv="Content-Security-Policy-Report-Only" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://accounts.google.com https://solofreelancer.com https://www.solofreelancer.com https://*.stripe.com https://checkout.stripe.com https://api.stripe.com https://api.frankfurter.app; frame-src 'self' https://accounts.google.com https://checkout.stripe.com https://js.stripe.com; media-src 'self' data: blob: https:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';" />
     <title>SAMECOR — You Create. We Connect.</title>
-    <meta name="description" content="SAMECOR เชื่อมผลงานของคุณกับคน โปรเจกต์ และโอกาสถัดไป — 1 Profile. 100+ Opportunities." />
+    <meta name="description" content="SAMECOR เชื่อมผลงานของคุณกับคน โปรเจกต์ และโอกาสถัดไป — You Create. We Connect." />
     <meta name="author" content="SAMECOR" />
-    <meta name="robots" content="index, follow" />
+    <meta name="robots" content="index, follow, noai, noimageai" />
     <link rel="canonical" href="https://samecor.com/" />
     <!-- Brand + editor fonts load async (see loadBrandFonts / loadProjectTextFonts) — avoid render-blocking. -->
     <link rel="preload" href="/fonts/Agrandir-Wide-Light.woff2" as="font" type="font/woff2" crossorigin />
@@ -30,12 +32,14 @@
     <meta property="og:site_name" content="SAMECOR" />
     <meta property="og:title" content="SAMECOR — You Create. We Connect." />
     <meta property="og:description" content="Create your profile. Connect through your work. Discover new opportunities." />
-    <meta property="og:image" content="https://samecor.com/icons/icon-512.png" />
+    <meta property="og:image" content="https://samecor.com/brand/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="SAMECOR — You Create. We Connect." />
     <meta name="twitter:description" content="Create your profile. Connect through your work. Discover new opportunities." />
-    <meta name="twitter:image" content="https://samecor.com/icons/icon-512.png" />
+    <meta name="twitter:image" content="https://samecor.com/brand/og-image.png" />
   </head>
 
   <body>

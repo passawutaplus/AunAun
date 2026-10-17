@@ -134,15 +134,15 @@ function paymentStatusLabel(order: HireOrderRow | null | undefined): {
       };
     case "awaiting_payment":
     case "draft":
-      return { text: "รอชำระเงิน", className: "text-amber-600 dark:text-amber-400" };
+      return { text: "รอชำระเงิน", className: "text-warning dark:text-warning" };
     case "refunded":
       return { text: "คืนเงินแล้ว", className: "text-muted-foreground" };
     case "partially_refunded":
-      return { text: "คืนเงินบางส่วน", className: "text-amber-600 dark:text-amber-400" };
+      return { text: "คืนเงินบางส่วน", className: "text-warning dark:text-warning" };
     case "cancelled":
       return { text: "ยกเลิกแล้ว", className: "text-destructive" };
     case "disputed":
-      return { text: "ข้อพิพาท", className: "text-amber-600 dark:text-amber-400" };
+      return { text: "ข้อพิพาท", className: "text-warning dark:text-warning" };
     case "failed":
       return { text: "ชำระไม่สำเร็จ", className: "text-destructive" };
     default:
@@ -451,7 +451,7 @@ export function HireOrderDetailContent({
             icon={Receipt}
             extra={
               accountingMock ? (
-                <Badge variant="outline" className="text-[10px] font-normal text-amber-700 dark:text-amber-400 border-amber-500/40">
+                <Badge variant="outline" className="text-[10px] font-normal text-warning dark:text-warning border-warning/40">
                   เอกสารตัวอย่าง
                 </Badge>
               ) : null
@@ -590,7 +590,7 @@ export function HireOrderDetailContent({
             icon={FileText}
             extra={
               accountingMock && activeDocs.length === 0 ? (
-                <span className="text-[10px] text-amber-700 dark:text-amber-400">
+                <span className="text-[10px] text-warning dark:text-warning">
                   ชุดบัญชีตัวอย่าง
                 </span>
               ) : null

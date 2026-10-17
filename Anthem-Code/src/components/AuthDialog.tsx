@@ -33,6 +33,7 @@ import {
   loginEmailFormatError,
   loginPasswordEmptyError,
 } from "@/lib/loginEmailPrefill";
+import { userFacingError } from "@/lib/userFacingError";
 
 const AuthDialog = () => {
   const { open, mode, setMode, close, redirectPath } = useAuthDialog();
@@ -313,11 +314,11 @@ const SignupFormFields = () => {
           data: { display_name: displayName || email.split("@")[0] },
         },
       });
-      if (error) toast.error(error.message);
+      if (error) toast.error(userFacingError(error));
       else {
         markPendingSignupConsent();
         await recordSignupConsents();
-        toast.success("สมัครสำเร็จ! กรุณาตรวจอีเมลเพื่อยืนยันบัญชีก่อนเข้าใช้งาน");
+        toast.success("สมัครสำเร็จ กรุณาตรวจอีเมลเพื่อยืนยันบัญชีก่อนเข้าใช้งาน");
       }
     } finally { setBusy(false); }
   };

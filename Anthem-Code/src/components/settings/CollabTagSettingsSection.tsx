@@ -2,6 +2,7 @@ import { AtSign, Check } from "lucide-react";
 import { useCollabTagPermission } from "@/hooks/useProjectCollabInvites";
 import type { CollabTagPermission } from "@/lib/portfolioCollabInvites";
 import { cn } from "@/lib/utils";
+import { SettingsCard, useSaveStatus } from "@/components/settings/SettingsCard";
 
 const OPTIONS: { value: CollabTagPermission; label: string; hint: string }[] = [
   {
@@ -19,16 +20,15 @@ const OPTIONS: { value: CollabTagPermission; label: string; hint: string }[] = [
 /** Settings → Privacy: who can tag me as a collaborator on their work. */
 export function CollabTagSettingsSection() {
   const { permission, isLoading, save } = useCollabTagPermission();
+  const { status, track } = useSaveStatus();
 
   return (
-    <section className="rounded-2xl glass-panel p-6 space-y-3">
-      <div className="flex items-center gap-2">
-        <AtSign className="w-5 h-5 text-primary" />
-        <h2 className="font-semibold text-foreground">ใครแท็กคุณในผลงานได้</h2>
-      </div>
-      <p className="text-xs text-muted-foreground">
-        คนที่คุณบล็อก หรือคนที่บล็อกคุณ แท็กคุณไม่ได้เสมอ ถ้าโดนแท็กไปแล้ว ถอนชื่อได้จากหน้าผลงานนั้น
-      </p>
+    <SettingsCard
+      icon={AtSign}
+      title="ใครแท็กคุณในผลงานได้"
+      description="โดนแท็กไปแล้ว ถอนชื่อได้จากหน้าผลงานนั้น"
+      status={status}
+    >
       <div role="radiogroup" aria-label="ใครแท็กคุณในผลงานได้" className="grid gap-2 sm:grid-cols-2">
         {OPTIONS.map((opt) => {
           const on = permission === opt.value;
@@ -39,7 +39,7 @@ export function CollabTagSettingsSection() {
               role="radio"
               aria-checked={on}
               disabled={isLoading || save.isPending}
-              onClick={() => !on && save.mutate(opt.value)}
+              onClick={() => !on && void track(save.mutateAsync(opt.value))}
               className={cn(
                 "flex items-start gap-3 rounded-xl border px-4 py-3 text-left transition-colors",
                 on ? "border-foreground bg-foreground/5" : "border-border hover:bg-accent/40",
@@ -62,6 +62,6 @@ export function CollabTagSettingsSection() {
           );
         })}
       </div>
-    </section>
+    </SettingsCard>
   );
 }

@@ -100,7 +100,7 @@ const STEPS: Step[] = [
   {
     id: "designers",
     title: "Designers",
-    body: "ดีไซเนอร์ที่คุณติดตาม พร้อมสถานะว่าใครติดตามคุณกลับ คนที่ติดตามกันทั้งคู่แท็กเป็นผู้ร่วมงานในผลงานได้",
+    body: "ครีเอเตอร์ที่คุณติดตาม พร้อมสถานะว่าใครติดตามคุณกลับ คนที่ติดตามกันทั้งคู่แท็กเป็นผู้ร่วมงานในผลงานได้",
     target: "profile-tab-designers",
     tab: "designers",
   },
@@ -110,6 +110,8 @@ const STEPS: Step[] = [
     body: "แพ็กเกจของครีเอเตอร์คนอื่นที่คุณบันทึกไว้ ใส่สถานะ โน้ต และเปรียบเทียบก่อนตัดสินใจจ้างได้ (ไม่ใช่แพ็กเกจที่คุณขาย)",
     target: "profile-tab-booking",
     tab: "booking",
+    // Hidden while Packages are off — the tour skips steps whose tab is not on screen.
+    optional: true,
   },
   {
     id: "about",
@@ -237,7 +239,7 @@ export function ProfileTour({ open, onClose, currentTab, onShowTab }: Props) {
         <div
           role="dialog"
           aria-label="ทัวร์แนะนำหน้าโปรไฟล์"
-          className={cn("pointer-events-auto fixed z-[70] w-[320px] max-w-[calc(100vw-24px)] rounded-2xl border border-border bg-card p-4 text-left shadow-xl max-sm:w-auto")}
+          className={cn("pointer-events-auto fixed z-[70] w-[320px] max-w-[calc(100vw-24px)] rounded-2xl border border-border bg-card p-4 text-left shadow-sm max-sm:w-auto")}
           style={placeCard(rect)}
         >
           {step.id === "welcome" ? <TourMascot /> : null}

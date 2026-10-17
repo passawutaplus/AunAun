@@ -820,7 +820,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
           data-feed-sheet={studioHome ? "" : undefined}
           className={
             studioHome
-              ? "relative z-10 min-h-[100dvh] !-mt-[calc(100dvh-8px)] -mx-3 rounded-t-[2.75rem] bg-background px-3 pt-6 shadow-[0_-32px_70px_-40px_rgba(47,46,44,0.55)] dark:border-t dark:border-white/[0.06] dark:shadow-[0_-32px_70px_-40px_rgba(0,0,0,0.9)] sm:-mx-[calc(1rem+25px)] sm:px-[calc(1rem+25px)] lg:-mx-[calc(1.5rem+25px)] lg:px-[calc(1.5rem+25px)] 2xl:-mx-[calc(2.5rem+25px)] 2xl:px-[calc(2.5rem+25px)]"
+              ? "relative z-10 min-h-[100dvh] !-mt-[calc(100dvh-8px)] -mx-3 rounded-t-[2.75rem] bg-background px-3 pt-6 shadow-sm dark:border-t dark:border-white/[0.06] dark:shadow-sm sm:-mx-[calc(1rem+25px)] sm:px-[calc(1rem+25px)] lg:-mx-[calc(1.5rem+25px)] lg:px-[calc(1.5rem+25px)] 2xl:-mx-[calc(2.5rem+25px)] 2xl:px-[calc(2.5rem+25px)]"
               : undefined
           }
         >

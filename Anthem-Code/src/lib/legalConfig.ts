@@ -55,7 +55,7 @@ export const LEGAL_COMPANY_TAX_ID =
 
 export const LEGAL_COMPANY_ADDRESS =
   (import.meta.env.VITE_LEGAL_COMPANY_ADDRESS as string | undefined) ??
-  "กรุงเทพมหานคร ประเทศไทย";
+  "90 เพชรเกษม 63/2 แขวงหลักสอง เขตบางแค กรุงเทพมหานคร 10160";
 
 /** เมื่อ true ออกใบเสร็จค่าธรรมเนียมเป็นใบกำกับภาษี (VAT 7%) */
 export const LEGAL_VAT_REGISTERED =

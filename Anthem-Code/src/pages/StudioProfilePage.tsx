@@ -111,7 +111,7 @@ const StudioProfilePage = () => {
           breadcrumbJsonLd(crumbs),
         ]}
       />
-      <div className="relative h-48 lg:h-64 bg-gradient-to-br from-primary/20 to-primary/5">
+      <div className="relative h-48 lg:h-64 bg-secondary">
         {studio.cover_url && (
           <img loading="lazy" decoding="async"
             src={studio.cover_url}

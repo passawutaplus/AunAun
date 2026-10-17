@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Bell, Gift, UserPlus, Briefcase, Handshake, MessageCircle, Banknote, Megaphone, Users } from "lucide-react";
+import { Bell, Gift, UserPlus, Briefcase, Handshake, MessageCircle, Banknote, Megaphone, MessageSquareHeart, Users } from "lucide-react";
 import type { Notification } from "@/core/notifications";
 import { resolveNotificationLink } from "@/lib/notificationLinks";
 import { notificationBodyPreview } from "@/lib/chatReply";
@@ -21,6 +21,7 @@ const kindIcon = (kind: string) => {
   if (kind.includes("hire") || kind.includes("job")) return Briefcase;
   if (kind.includes("collab") || kind.includes("project_collab")) return Handshake;
   if (kind.includes("message") || kind.includes("chat")) return MessageCircle;
+  if (kind.includes("feedback")) return MessageSquareHeart;
   if (kind.includes("cashout")) return Banknote;
   if (kind.includes("ad")) return Megaphone;
   if (kind.includes("project_collab")) return Users;

@@ -1,43 +1,53 @@
 import { cn } from "@/lib/utils";
-import { BRAND_MARK, BRAND_NAME } from "@/lib/brandConfig";
+import { BRAND_NAME } from "@/lib/brandConfig";
 
 type Props = {
   showWordmark?: boolean;
   size?: "sm" | "md";
-  /** Ink on paper, or paper on a dark field. "theme" is ink in light mode and paper in dark. Brand keeps the orange tile. */
+  /**
+   * Which Master file to show (Brand Book p10–11):
+   * - "brand" / "theme": primary colour lockup on light, white lockup in dark mode
+   * - "ink": primary colour lockup always (pages pinned to the light paper field)
+   * - "paper": white lockup always (dark or photo backgrounds)
+   */
   tone?: "brand" | "ink" | "paper" | "theme";
   className?: string;
+  /** Small BETA tag after the wordmark (app headers during the Beta). */
+  beta?: boolean;
 };
 
-/** Header / auth mark — small tile plus the SAMECOR wordmark. */
-export function BrandLogo({ showWordmark = true, size = "md", tone = "brand", className }: Props) {
-  const box =
-    size === "sm"
-      ? "w-8 h-8 rounded-lg text-[9px]"
-      : "w-9 h-9 rounded-xl text-[10px]";
+const LOCKUP = { light: "/brand/logo-horizontal.svg", dark: "/brand/logo-horizontal-white.svg" };
+const SYMBOL = { light: "/brand/symbol-red.svg", dark: "/brand/symbol-white.svg" };
+
+/**
+ * Master logo files only — never redraw or retype the wordmark (Brand Book p12).
+ * The horizontal lockup must stay ≥96px wide; below that the symbol is used alone.
+ */
+export function BrandLogo({ showWordmark = true, size = "md", tone = "brand", className, beta = false }: Props) {
+  const src = showWordmark ? LOCKUP : SYMBOL;
+  const box = showWordmark
+    ? size === "sm"
+      ? "h-7 w-auto sm:h-8"
+      : "h-9 w-auto sm:h-10"
+    : size === "sm"
+      ? "h-8 w-8"
+      : "h-9 w-9";
+  const followsTheme = tone === "brand" || tone === "theme";
+  const single = tone === "paper" ? src.dark : src.light;
 
   return (
-    <div className={cn("flex items-center gap-2.5", className)}>
-      <div
-        className={cn(
-          box,
-          tone === "paper"
-            ? "bg-[#f5f5f5] text-[#2f2e2c]"
-            : tone === "ink"
-              ? "bg-[#2f2e2c] text-white"
-              : tone === "theme"
-                ? "bg-foreground text-white dark:text-background"
-                : "bg-gradient-brand text-white",
-          "flex items-center justify-center font-medium leading-none",
-          tone === "brand" && "shadow-sm",
-        )}
-        aria-hidden
-      >
-        {BRAND_MARK}
-      </div>
-      {showWordmark && (
-        <span className={cn("font-medium text-lg leading-tight tracking-tight", tone === "paper" ? "text-[#f5f5f5]" : tone === "ink" ? "text-[#2f2e2c]" : "text-foreground")}>
-          {BRAND_NAME}
+    <div className={cn("flex items-center gap-2", className)}>
+      {followsTheme ? (
+        <>
+          <img src={src.light} alt={BRAND_NAME} className={cn(box, "block dark:hidden")} draggable={false} />
+          <img src={src.dark} alt={BRAND_NAME} className={cn(box, "hidden dark:block")} draggable={false} />
+        </>
+      ) : (
+        <img src={single} alt={BRAND_NAME} className={cn(box, "block")} draggable={false} />
+      )}
+      {beta && (
+        <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold leading-tight tracking-wide text-primary-foreground">
+          BETA
         </span>
       )}
     </div>

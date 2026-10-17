@@ -9,7 +9,7 @@ type Props = {
 const BoostBadge = ({ className, size = "sm" }: Props) => (
   <span
     className={cn(
-      "inline-flex items-center gap-0.5 rounded-full font-medium bg-amber-500/90 text-white shadow-sm",
+      "inline-flex items-center gap-0.5 rounded-full font-medium bg-brand text-brand-foreground",
       size === "sm" ? "px-1.5 py-0.5 text-[10px]" : "px-2 py-0.5 text-xs",
       className,
     )}

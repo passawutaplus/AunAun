@@ -338,7 +338,7 @@ export function KycReviewSubmitPanel({
           </p>
 
           {showPepEdd && (
-            <div className="space-y-3 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
+            <div className="space-y-3 rounded-lg border border-warning/30 bg-warning/5 p-3">
               <p className="text-sm text-muted-foreground leading-relaxed">{KYC_EDD_NOTICE}</p>
               <p className="text-xs font-medium text-foreground">ข้อมูลเพิ่มเติมสำหรับ Enhanced Due Diligence (EDD)</p>
               <div className="grid gap-3 sm:grid-cols-2">

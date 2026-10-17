@@ -7,12 +7,12 @@ import {
   SHARED_MEDIA_BUCKET,
 } from "@/integrations/supabase/sharedStorageClient";
 import { useSendMessage, type Message } from "@/hooks/useChat";
-import { getSupabaseErrorMessage } from "@/lib/supabaseErrors";
 import { replyPreviewText } from "@/lib/chatReply";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import ModerationBanBanner from "@/components/moderation/ModerationBanBanner";
 import { maskProfanity, detectProfanity, PROFANITY_WARNING, COMMUNITY_GUIDELINES_PATH } from "@/lib/profanity";
+import { userFacingError } from "@/lib/userFacingError";
 
 const CHAT_IMAGE_MAX_BYTES = 8 * 1024 * 1024;
 const CHAT_IMAGE_ACCEPT = "image/jpeg,image/png,image/webp";
@@ -95,7 +95,7 @@ const ChatComposer = ({
     kind === "hire"
       ? "bg-[hsl(var(--chat-hire))] hover:bg-[hsl(var(--chat-hire)/0.9)] text-[hsl(var(--chat-hire-foreground))]"
       : kind === "collab"
-        ? "bg-gradient-to-br from-[hsl(var(--chat-collab))] to-[hsl(var(--chat-collab)/0.85)] hover:opacity-90 text-[hsl(var(--chat-collab-foreground))]"
+        ? "bg-chat-collab hover:opacity-90 text-[hsl(var(--chat-collab-foreground))]"
         : "bg-primary hover:bg-primary/90 text-primary-foreground";
 
   const submit = async () => {
@@ -123,7 +123,7 @@ const ChatComposer = ({
       setText("");
       onClearReply?.();
     } catch (e: unknown) {
-      toast.error(getSupabaseErrorMessage(e, "ส่งไม่สำเร็จ"));
+      toast.error(userFacingError(e, "ส่งไม่สำเร็จ"));
     }
   };
 
@@ -164,7 +164,7 @@ const ChatComposer = ({
     } catch (e: unknown) {
       if (ac.signal.aborted) return;
       setFailedFile(file);
-      toast.error(getSupabaseErrorMessage(e, "อัปโหลดไม่สำเร็จ"));
+      toast.error(userFacingError(e, "อัปโหลดไม่สำเร็จ"));
     } finally {
       if (!ac.signal.aborted) {
         setUploading(null);
@@ -219,7 +219,7 @@ const ChatComposer = ({
     } catch (e: unknown) {
       if (ac.signal.aborted) return;
       setFailedFile(file);
-      toast.error(getSupabaseErrorMessage(e, "อัปโหลดไฟล์ไม่สำเร็จ"));
+      toast.error(userFacingError(e, "อัปโหลดไฟล์ไม่สำเร็จ"));
     } finally {
       if (!ac.signal.aborted) {
         setUploading(null);

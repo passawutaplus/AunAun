@@ -256,7 +256,8 @@ export function CollabEndCard({
   return (
     <>
       <ChatCardShell
-        tone="collab"
+        tone="danger"
+        family="collab"
         icon={Ban}
         title={cardTitle}
         meta={

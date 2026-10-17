@@ -289,7 +289,7 @@ const CommunityFeedSidebar = ({ filter, onFilterChange, className }: Props) => {
             >
               <p className="text-sm font-semibold text-foreground thai-display">เข้าสู่ระบบ</p>
               <p className="text-xs text-muted-foreground mt-0.5 thai-body">
-                ดูงานและดีไซเนอร์ที่เหมาะกับคุณ
+                ดูงานและครีเอเตอร์ที่เหมาะกับคุณ
               </p>
             </button>
           )}
@@ -404,9 +404,9 @@ const CommunityFeedSidebar = ({ filter, onFilterChange, className }: Props) => {
               })}
             </ul>
           ) : (
-            <p className="text-xs text-muted-foreground thai-body">กำลังหาดีไซเนอร์ให้…</p>
+            <p className="text-xs text-muted-foreground thai-body">กำลังหาครีเอเตอร์ให้…</p>
           )}
-          <ViewAllLink to="/?mode=designers" label="ดูดีไซเนอร์เพิ่ม" />
+          <ViewAllLink to="/?mode=designers" label="ดูครีเอเตอร์เพิ่ม" />
         </SidebarSection>
       </div>
     </aside>

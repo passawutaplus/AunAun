@@ -20,6 +20,8 @@ export const HIRE_TAB_CANCELLED = "ยกเลิก" as const;
 /** Completed jobs (DB: ปิดแล้ว) */
 export const HIRE_TAB_COMPLETED = "จบงาน" as const;
 export const HIRE_TAB_ALL = "ทั้งหมด" as const;
+/** Filter chip folding declined / forwarded / cancelled / completed */
+export const HIRE_TAB_CLOSED = "ปิดแล้ว" as const;
 
 export type HireInboxTab =
   | typeof HIRE_TAB_CONTACTED_NEW
@@ -28,6 +30,7 @@ export type HireInboxTab =
   | typeof HIRE_TAB_FORWARDED
   | typeof HIRE_TAB_CANCELLED
   | typeof HIRE_TAB_COMPLETED
+  | typeof HIRE_TAB_CLOSED
   | typeof HIRE_TAB_ALL;
 
 export const HIRE_TAB_ORDER: HireInboxTab[] = [
@@ -38,6 +41,14 @@ export const HIRE_TAB_ORDER: HireInboxTab[] = [
   HIRE_TAB_FORWARDED,
   HIRE_TAB_CANCELLED,
   HIRE_TAB_COMPLETED,
+];
+
+/** Inbox filter chips — status detail stays on each row's pill. */
+export const HIRE_FILTER_TABS: HireInboxTab[] = [
+  HIRE_TAB_ALL,
+  HIRE_TAB_CONTACTED_NEW,
+  HIRE_TAB_ACCEPTED,
+  HIRE_TAB_CLOSED,
 ];
 
 /** Statuses shown under the 「ติดต่อใหม่」 inbox tab. */

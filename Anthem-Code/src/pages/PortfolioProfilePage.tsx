@@ -1,7 +1,7 @@
 import { useMemo, useEffect, useRef, useState } from "react";
 import { CircleHelp } from "lucide-react";
 import { ProfileTour, hasSeenProfileTour } from "@/components/profile/ProfileTour";
-import { isInspireEnabled } from "@/lib/aplus1Launch";
+import { isCommerceEnabled, isInspireEnabled } from "@/lib/aplus1Launch";
 import { profileTabIcon } from "@/lib/profileTabIcons";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
@@ -28,6 +28,7 @@ import PageLoader from "@/components/ui/PageLoader";
 import ProfileCoverHeader from "@/components/profile/ProfileCoverHeader";
 import ProfileOwnerActions from "@/components/profile/ProfileOwnerActions";
 import OnboardingChecklist from "@/components/onboarding/OnboardingChecklist";
+import GettingStartedCard from "@/components/onboarding/GettingStartedCard";
 import OpportunityStatusDialog from "@/components/opportunity/OpportunityStatusDialog";
 import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
 import { cn } from "@/lib/utils";
@@ -62,6 +63,7 @@ const TAB_IDS: ProfileTab[] = ["overall", "collections", "designers", "booking",
 function resolveTab(raw: string | null, hiringEnabled: boolean): ProfileTab {
   if (raw === "hiring" && !hiringEnabled) return "overall";
   if (raw === "inspire" && !isInspireEnabled()) return "overall";
+  if (raw === "booking" && !isCommerceEnabled()) return "overall";
   if (raw && (TAB_IDS as string[]).includes(raw)) return raw as ProfileTab;
   return "overall";
 }
@@ -203,7 +205,9 @@ const PortfolioProfilePage = () => {
     { id: "overall", label: "My Projects", count: published.length },
     { id: "collections", label: "Collections", count: collections.length },
     { id: "designers", label: "Designers", count: following },
-    { id: "booking", label: "Packages Saved", count: savedPackageIds?.size ?? 0 },
+    ...(isCommerceEnabled()
+      ? [{ id: "booking" as const, label: "Packages Saved", count: savedPackageIds?.size ?? 0 }]
+      : []),
     ...(hiringBoardEnabled
       ? [{ id: "hiring" as const, label: "Hiring", count: myApplications.length + mySavedJobs.length }]
       : []),
@@ -218,6 +222,7 @@ const PortfolioProfilePage = () => {
   }
 
   const isVerified = !!(profile as { is_verified?: boolean }).is_verified;
+  const commerce = isCommerceEnabled();
   const shareUrl = profilePublicUrl({ user_id: user!.id, username: profile.username });
   const shareTitle = profileShareTitle({
     user_id: user!.id,
@@ -245,13 +250,13 @@ const PortfolioProfilePage = () => {
           <ProfileOwnerActions
             compact
             onPost={() => navigate("/portfolio/new")}
-            onBecomeCreator={!isVerified ? () => navigate("/verify") : undefined}
+            onBecomeCreator={commerce && !isVerified ? () => navigate("/verify") : undefined}
             onStudio={() => navigate("/dashboard")}
             onPreview={() =>
               navigate(profileVisitorPreviewPath({ user_id: user!.id, username: profile.username }))
             }
             onSettings={() => navigate("/settings")}
-            onWallet={isVerified ? () => navigate("/earnings") : undefined}
+            onWallet={commerce && isVerified ? () => navigate("/earnings") : undefined}
             shareUrl={shareUrl}
             shareTitle={shareTitle}
             shareMessage={shareMessage}
@@ -273,7 +278,7 @@ const PortfolioProfilePage = () => {
           disciplines={disciplines}
           onOpportunityEdit={() => setOpportunityOpen(true)}
           onPost={() => navigate("/portfolio/new")}
-          onBecomeCreator={!isVerified ? () => navigate("/verify") : undefined}
+          onBecomeCreator={commerce && !isVerified ? () => navigate("/verify") : undefined}
           onStudio={() => navigate("/dashboard")}
           onPreview={() =>
             navigate(profileVisitorPreviewPath({ user_id: user!.id, username: profile.username }))
@@ -284,7 +289,7 @@ const PortfolioProfilePage = () => {
           sharePathLabel={sharePathLabel}
           onShareInteract={() => markOnboardingVisit(user!.id, "share_profile")}
           onSettings={() => navigate("/settings")}
-          onWallet={isVerified ? () => navigate("/earnings") : undefined}
+          onWallet={commerce && isVerified ? () => navigate("/earnings") : undefined}
           onFollowersClick={() => navigate("/portfolio/followers")}
           onFollowingClick={() => navigate("/portfolio/followers?tab=following")}
           showFollowStats
@@ -349,7 +354,23 @@ const PortfolioProfilePage = () => {
             <ProfileOverallWorksPanel
               projects={myProjects}
               isLoading={projectsLoading}
-              afterHeading={<OnboardingChecklist variant="compact" />}
+              afterHeading={
+                <>
+                  <GettingStartedCard
+                    input={{
+                      hasAvatar: !!profile.avatar_url,
+                      hasRole: !!profile.role?.trim() || disciplines.length > 0,
+                      bioLength: (profile.bio ?? "").trim().length,
+                      skillsCount: skills.length,
+                      hasAvailability: !!(profile as { opportunity_status?: string | null }).opportunity_status,
+                      publishedCount: published.length,
+                    }}
+                    onEditProfile={() => setOpportunityOpen(true)}
+                    onAvatar={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                  />
+                  {isCommerceEnabled() ? <OnboardingChecklist variant="compact" /> : null}
+                </>
+              }
             />
           ) : null}
 

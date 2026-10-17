@@ -15,6 +15,14 @@ export function HelpAuthLink({ to, auth, className, children }: Props) {
   const { user } = useAuth();
   const openSignup = useAuthDialog((s) => s.openSignup);
 
+  if (/^https?:\/\//.test(to)) {
+    return (
+      <a href={to} target="_blank" rel="noopener noreferrer" className={className}>
+        {children}
+      </a>
+    );
+  }
+
   if (!auth || user) {
     return (
       <Link to={to} className={className}>

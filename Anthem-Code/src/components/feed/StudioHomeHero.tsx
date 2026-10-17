@@ -20,7 +20,7 @@ function projectCover(project: DBProject) {
   return project.cover_url?.trim() || project.gallery_urls?.find((url) => url?.trim()) || "";
 }
 
-/** Page field (paper, or warm coal in dark mode) plus the warm bottom glow, so the Monolith ripple has something to move. */
+/** Page field (Studio White, or Gallery Black in dark mode) plus a faint neutral bottom wash, so the Monolith ripple has something to move. Brand Book: no coloured glow. */
 function paintPaperStill(dark: boolean) {
   const canvas = document.createElement("canvas");
   canvas.width = 1280;
@@ -28,7 +28,7 @@ function paintPaperStill(dark: boolean) {
   const ctx = canvas.getContext("2d");
   if (!ctx) return "";
   // Same colour as --background, so the canvas meets the page with no seam.
-  const field = dark ? [32, 31, 30] : [245, 245, 245];
+  const field = dark ? [17, 17, 17] : [248, 247, 242];
   ctx.fillStyle = `rgb(${field.join(", ")})`;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   const glow = ctx.createRadialGradient(
@@ -39,8 +39,9 @@ function paintPaperStill(dark: boolean) {
     canvas.height,
     canvas.width * 0.78,
   );
-  glow.addColorStop(0, `rgba(255, 88, 46, ${dark ? 0.5 : 0.62})`);
-  glow.addColorStop(0.34, `rgba(255, 132, 86, ${dark ? 0.2 : 0.28})`);
+  const ink = dark ? "248, 247, 242" : "17, 17, 17";
+  glow.addColorStop(0, `rgba(${ink}, ${dark ? 0.1 : 0.08})`);
+  glow.addColorStop(0.34, `rgba(${ink}, ${dark ? 0.04 : 0.03})`);
   glow.addColorStop(0.72, `rgba(${field.join(", ")}, 0)`);
   ctx.fillStyle = glow;
   ctx.fillRect(0, 0, canvas.width, canvas.height);

@@ -19,6 +19,9 @@ const viteCacheDir = path.resolve(projectRoot, "..", ".vite-cache", "anthem-code
 export default defineConfig({
   root: projectRoot,
   cacheDir: viteCacheDir,
+  define: {
+    __APP_BUILD__: JSON.stringify((process.env.VERCEL_GIT_COMMIT_SHA ?? "dev").slice(0, 7)),
+  },
   server: {
     host: "::",
     port: Number(process.env.PORT ?? 8080),

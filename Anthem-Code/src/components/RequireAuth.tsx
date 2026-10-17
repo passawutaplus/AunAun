@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { isEmailVerifiedForAccess } from "@/lib/authEmail";
 import { buildEmailConfirmUrl } from "@/lib/oauthRedirect";
 import { signOutApp } from "@/lib/signOutApp";
+import { userFacingError } from "@/lib/userFacingError";
 
 interface Props {
   children: ReactNode;
@@ -48,7 +49,7 @@ const VerifyEmailGate = ({ email }: { email: string }) => {
       email,
       options: { emailRedirectTo: buildEmailConfirmUrl() },
     });
-    if (error) toast.error(error.message);
+    if (error) toast.error(userFacingError(error));
     else toast.success("ส่งอีเมลยืนยันใหม่แล้ว ตรวจกล่องจดหมายของคุณ");
   };
 

@@ -11,6 +11,7 @@ import InspirePopover from "@/components/inspire/InspirePopover";
 import SharePopover from "@/components/share/SharePopover";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { userFacingError } from "@/lib/userFacingError";
 
 interface Props {
   projectId: string;
@@ -58,13 +59,13 @@ const ImageActionBar = ({
       { projectId, imageUrl, liked },
       {
         onSuccess: () => toast.success(liked ? "ยกเลิกแล้ว" : "ถูกใจแล้ว"),
-        onError: (e: Error) => toast.error(e.message),
+        onError: (e: Error) => toast.error(userFacingError(e)),
       },
     );
   };
 
   const btn =
-    "flex shrink-0 items-center gap-1.5 px-3 py-2 rounded-full bg-black/25 hover:bg-black/45 text-white text-xs font-medium backdrop-blur-md [-webkit-backdrop-filter:blur(12px)] transition-all border border-white/10 shadow-lg";
+    "flex shrink-0 items-center gap-1.5 px-3 py-2 rounded-full bg-black/25 hover:bg-black/45 text-white text-xs font-medium backdrop-blur-md [-webkit-backdrop-filter:blur(12px)] transition-all border border-white/10 shadow-sm";
 
   const labelClass = vertical ? "inline" : "hidden sm:inline";
 

@@ -137,7 +137,7 @@ export function PortfolioCollabUserPicker({
                 <div className="py-6 px-4 text-center">
                   <p className="text-sm text-foreground">ยังไม่มีคนที่แท็กได้</p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    ติดตามดีไซเนอร์ที่ร่วมงานด้วย เมื่อเขาติดตามกลับ จะแท็กกันในผลงานได้
+                    ติดตามครีเอเตอร์ที่ร่วมงานด้วย เมื่อเขาติดตามกลับ จะแท็กกันในผลงานได้
                     (คนที่ปิดรับการแท็กจะไม่ขึ้นในรายชื่อ)
                   </p>
                   <Link
@@ -208,11 +208,11 @@ export function PortfolioCollabUserPicker({
           {pendingUsers.map((u) => (
             <span
               key={u.user_id}
-              className="inline-flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/5 pl-1.5 pr-2 py-1"
+              className="inline-flex items-center gap-2 rounded-xl border border-warning/30 bg-warning/5 pl-1.5 pr-2 py-1"
             >
               <UserAvatar src={u.avatar_url} name={u.display_name} className="w-8 h-8" />
               <span className="text-xs font-medium max-w-[100px] truncate">{userLabel(u)}</span>
-              <Badge variant="outline" className="text-[9px] h-4 px-1 gap-0.5 border-amber-500/40 text-amber-600">
+              <Badge variant="outline" className="text-[9px] h-4 px-1 gap-0.5 border-warning/40 text-warning">
                 <Clock className="w-2.5 h-2.5" /> รอตอบรับ
               </Badge>
               {onCancelPending ? (

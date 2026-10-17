@@ -10,6 +10,7 @@ import {
   type ProjectCollabInvite,
 } from "@/lib/portfolioCollabInvites";
 import { toast } from "sonner";
+import { userFacingError } from "@/lib/userFacingError";
 
 export function useRespondProjectCollabInvite() {
   const { user } = useAuth();
@@ -31,7 +32,7 @@ export function useRespondProjectCollabInvite() {
         toast.success("ปฏิเสธแล้ว", { description: "ผลงานยังเผยแพร่ได้ตามปกติ แต่จะไม่มีชื่อคุณ" });
       }
     },
-    onError: (e: Error) => toast.error(e.message || "ดำเนินการไม่สำเร็จ"),
+    onError: (e: Error) => toast.error(userFacingError(e, "ดำเนินการไม่สำเร็จ")),
   });
 }
 
@@ -90,8 +91,7 @@ export function useCollabTagPermission() {
       if (ctx?.previous) qc.setQueryData(key, ctx.previous);
       toast.error("บันทึกไม่สำเร็จ");
     },
-    onSuccess: (_d, allow) =>
-      toast.success(allow === "nobody" ? "ปิดรับการแท็กแล้ว" : "เปิดให้คนที่ติดตามกันทั้งคู่แท็กได้"),
+    // Success shows inline in settings ("บันทึกแล้ว")
   });
   return { permission: query.data ?? "mutual", isLoading: query.isLoading, save };
 }

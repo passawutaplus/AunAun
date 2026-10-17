@@ -32,12 +32,12 @@ const SAMPLE_DESIGNERS: LearnDesigner[] = [
 }));
 
 const DIRECTORY_PATH = "/?mode=designers";
-const AVATAR_TONES = ["bg-[#2f2e2c]", "bg-[#b59a7a]", "bg-[#7a8b99]", "bg-[#8f7a99]"];
+const AVATAR_TONES = ["bg-foreground", "bg-[#b59a7a]", "bg-[#7a8b99]", "bg-[#8f7a99]"];
 
 function DesignerCard({ designer, index }: { designer: LearnDesigner; index: number }) {
   const body = (
     <>
-      <span className="block overflow-hidden rounded-[1.1rem] bg-[#e4e1db]">
+      <span className="block overflow-hidden rounded-[1.1rem] bg-border">
         <img
           src={designer.cover}
           alt=""
@@ -60,10 +60,10 @@ function DesignerCard({ designer, index }: { designer: LearnDesigner; index: num
           </span>
         )}
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-medium text-[#2f2e2c]">{designer.name}</span>
-          <span className="block truncate text-xs text-[#6b6862]">{designer.role}</span>
+          <span className="block truncate text-sm font-medium text-foreground">{designer.name}</span>
+          <span className="block truncate text-xs text-muted-foreground">{designer.role}</span>
         </span>
-        <span className="shrink-0 text-[11px] tabular-nums text-[#8a867f]">
+        <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
           {designer.projectCount} {designer.projectCount === 1 ? "project" : "projects"}
         </span>
       </span>
@@ -71,7 +71,7 @@ function DesignerCard({ designer, index }: { designer: LearnDesigner; index: num
   );
 
   const className = cn(
-    "group block w-[min(17rem,68vw)] shrink-0 rounded-[1.1rem] outline-none focus-visible:ring-2 focus-visible:ring-[#2f2e2c] focus-visible:ring-offset-4",
+    "group block w-[min(17rem,68vw)] shrink-0 rounded-[1.1rem] outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-4",
     index % 2 === 1 && "md:mt-[4vh]",
   );
 
@@ -88,14 +88,14 @@ function DirectoryCard() {
   return (
     <Link
       to={DIRECTORY_PATH}
-      className="flex aspect-[4/5] w-[min(17rem,68vw)] shrink-0 flex-col justify-between rounded-[1.1rem] bg-[#2f2e2c] p-6 text-[#f5f5f5] outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[#2f2e2c] focus-visible:ring-offset-4"
+      className="flex aspect-[4/5] w-[min(17rem,68vw)] shrink-0 flex-col justify-between rounded-[1.1rem] bg-foreground p-6 text-background outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-4"
     >
-      <span className="text-[11px] uppercase tracking-[0.16em] text-[#f5f5f5]/60">Directory</span>
+      <span className="text-[11px] uppercase tracking-[0.16em] text-background/60">Directory</span>
       <span>
         <span className="block text-[clamp(1.8rem,3vw,2.4rem)] leading-[1.05]" style={LEARN_SERIF}>
           Meet everyone
         </span>
-        <span className="mt-3 inline-flex items-center gap-2 text-sm underline decoration-[#f5f5f5]/30 underline-offset-4">
+        <span className="mt-3 inline-flex items-center gap-2 text-sm underline decoration-background/30 underline-offset-4">
           ดูทำเนียบดีไซเนอร์ทั้งหมด <span aria-hidden>+</span>
         </span>
       </span>
@@ -106,10 +106,10 @@ function DirectoryCard() {
 function Heading() {
   return (
     <>
-      <p className="text-[clamp(1.5rem,3vw,2.4rem)] leading-none tracking-[-0.03em] text-[#2f2e2c]" style={LEARN_SERIF}>
+      <p className="text-[clamp(1.5rem,3vw,2.4rem)] leading-none tracking-[-0.03em] text-foreground" style={LEARN_SERIF}>
         A community of
       </p>
-      <h2 className="mt-2 text-[clamp(3rem,8.5vw,7rem)] font-medium leading-[0.84] tracking-[-0.06em] text-[#2f2e2c]">
+      <h2 className="mt-2 text-[clamp(3rem,8.5vw,7rem)] font-medium leading-[0.84] tracking-[-0.06em] text-foreground">
         Designers
       </h2>
     </>
@@ -160,7 +160,7 @@ export function LearnDesignersStage({ designers }: { designers: LearnDesigner[] 
       <div className="py-16 lg:py-24">
         <div className="mx-auto max-w-[80rem] px-4 sm:px-6 lg:px-10">
           <Heading />
-          <p className="mt-5 max-w-md text-sm leading-relaxed text-[#6b6862]">{LEAD}</p>
+          <p className="mt-5 max-w-md text-sm leading-relaxed text-muted-foreground">{LEAD}</p>
         </div>
         <div className="mt-10 flex snap-x gap-5 overflow-x-auto px-4 pb-4 sm:px-6 lg:px-10">
           {people.map((designer, index) => (
@@ -181,7 +181,7 @@ export function LearnDesignersStage({ designers }: { designers: LearnDesigner[] 
           <div>
             <Heading />
           </div>
-          <p className="max-w-xs text-sm leading-relaxed text-[#6b6862]">{LEAD}</p>
+          <p className="max-w-xs text-sm leading-relaxed text-muted-foreground">{LEAD}</p>
         </div>
 
         <motion.div
@@ -196,8 +196,8 @@ export function LearnDesignersStage({ designers }: { designers: LearnDesigner[] 
         </motion.div>
 
         <div className="mx-auto mt-8 w-full max-w-[80rem] px-4 sm:px-6 lg:px-10">
-          <div className="h-px w-full bg-[#e4e1db]">
-            <motion.div className="h-px origin-left bg-[#2f2e2c]" style={{ scaleX: bar }} />
+          <div className="h-px w-full bg-border">
+            <motion.div className="h-px origin-left bg-foreground" style={{ scaleX: bar }} />
           </div>
         </div>
       </div>

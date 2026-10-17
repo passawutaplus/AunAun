@@ -3,10 +3,14 @@ import App from "./App.tsx";
 import "./index.css";
 import { installCspReporter } from "./lib/cspReporter";
 import { initErrorMonitoring } from "./lib/errorMonitoring";
+import { installFeedbackDiagnostics } from "./lib/feedbackDiagnostics";
+import { installReportableErrorToasts } from "./lib/reportableToasts";
 import { loadBrandFonts } from "./lib/loadBrandFonts";
 import { registerPwa } from "./lib/pwa";
 
 installCspReporter();
+installFeedbackDiagnostics();
+installReportableErrorToasts();
 void initErrorMonitoring();
 loadBrandFonts();
 registerPwa();

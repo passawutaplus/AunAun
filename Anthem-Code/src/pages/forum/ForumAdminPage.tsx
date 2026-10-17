@@ -92,7 +92,7 @@ function StatCard({
     <div
       className={cn(
         "rounded-xl border border-border bg-card p-4",
-        tone === "warn" && "border-amber-300/60 bg-amber-50/40 dark:bg-amber-950/20",
+        tone === "warn" && "border-warning/60 bg-warning/10 dark:bg-warning/10",
         tone === "ok" && "border-emerald-300/60 bg-emerald-50/30 dark:bg-emerald-950/20",
       )}
     >
@@ -206,7 +206,7 @@ function OverviewTab({ onGo }: { onGo: (tab: TabId) => void }) {
           {topics.slice(0, 8).map((t) => (
             <li key={t.id} className="px-3 py-2.5 flex flex-wrap items-center gap-2 bg-card">
               <Link to={`/forum/t/${t.id}`} className="text-sm font-medium text-primary hover:underline flex-1 min-w-0 truncate">
-                {t.is_pinned ? "📌 " : ""}
+                {t.is_pinned ? "ปักหมุด · " : ""}
                 {t.title}
               </Link>
               <span className="text-[11px] text-muted-foreground">{t.reply_count} ตอบ</span>
@@ -284,7 +284,7 @@ function AnnouncementsTab() {
       <form onSubmit={(e) => void onSubmit(e)} className="rounded-xl border border-border bg-card p-4 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <Megaphone className="h-4 w-4 text-orange-600" />
+            <Megaphone className="h-4 w-4 text-brand" />
             <h3 className="text-sm font-semibold">
               {editingId ? "แก้ไขประกาศจากทีม" : "เขียนประกาศจากทีม"}
             </h3>
@@ -881,7 +881,7 @@ function FilesTab() {
                   className={cn(
                     "text-[11px] rounded-md px-1.5 py-0.5",
                     a.scan_status === "blocked" && "bg-rose-100 text-rose-800",
-                    a.scan_status === "pending" && "bg-amber-100 text-amber-800",
+                    a.scan_status === "pending" && "bg-warning/10 text-warning",
                     a.scan_status === "clean" && "bg-emerald-100 text-emerald-800",
                   )}
                 >

@@ -3,6 +3,7 @@ import { anthemDb } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { toast } from "sonner";
 import type { FeedbackKind } from "@/lib/feedbackTicket";
+import { collectFeedbackDiagnostics } from "@/lib/feedbackDiagnostics";
 
 export interface SubmitFeedbackInput {
   feature: string;
@@ -28,6 +29,7 @@ export type FeedbackRow = {
   ticket_number: string | null;
   screenshot_path: string;
   annotation_json?: unknown;
+  diagnostics?: unknown;
   created_at: string;
 };
 
@@ -75,12 +77,14 @@ export function useSubmitFeedback() {
         _kind: input.kind ?? null,
         _screenshot_path: input.screenshot_path ?? null,
         _annotation_json: input.annotation_json ?? { comments: [] },
+        _diagnostics: collectFeedbackDiagnostics(),
       } as never);
       if (error) throw error;
       return (data ?? null) as FeedbackRow | null;
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["feedback", "mine"] });
+      void qc.invalidateQueries({ queryKey: ["beta-badge", user?.id] });
     },
     onError: (err: unknown) => {
       const raw = errorText(err);

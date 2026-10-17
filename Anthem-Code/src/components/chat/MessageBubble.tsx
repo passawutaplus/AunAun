@@ -5,15 +5,22 @@ import { cn } from "@/lib/utils";
 import { format, isToday, isYesterday } from "date-fns";
 import { th } from "date-fns/locale";
 import {
+  AlarmClock,
+  CircleCheck,
   Copy,
   ExternalLink,
   FileText,
   Flag,
+  Hourglass,
+  ListPlus,
   Languages,
   Megaphone,
   MoreVertical,
   Reply,
+  Pencil,
   Undo2,
+  UserCheck,
+  type LucideIcon,
 } from "lucide-react";
 import ReportDialog from "@/components/report/ReportDialog";
 import { Button } from "@/components/ui/button";
@@ -87,16 +94,10 @@ import {
   isChangeRequestMessage,
   isCollabPlanDocumentMessage,
   isStepLockedMessage,
-  parseChangeRequestMessage,
 } from "@/lib/collabToolkit";
 import { CollabToolkitCard } from "@/components/chat/CollabToolkitCard";
-import { CollabPlanDocCard } from "@/components/chat/CollabPlanDocCard";
-import {
-  CollabChangeDoneCard,
-  CollabChangeRequestCard,
-  CollabDiscussionTemplateCard,
-  CollabStepLockedCard,
-} from "@/components/chat/CollabPlanEventCards";
+import { CollabAgreementCard, isCollabAgreementMessage } from "@/components/chat/CollabAgreementCard";
+import { CollabWelcomeCard, LegacyCollabPlanCard, isCollabWelcomeMessage } from "@/components/chat/CollabProgress";
 import { UNSEND_WINDOW_MS, type Message } from "@/hooks/useChat";
 import { useSignedStorageUrl } from "@/hooks/useSignedStorageUrl";
 import { toast } from "sonner";
@@ -149,6 +150,20 @@ export function looksForeignLanguage(text: string | null | undefined): boolean {
   return thai / letters.length < 0.45;
 }
 
+/** Icon + tone for one-line system messages (task reminders, assignments, plan edits). */
+function systemLineStyle(text: string): { icon: LucideIcon | null; text: string; ok: boolean } {
+  const t = text.replace(/^⏰\s*/, "");
+  if (text.startsWith("⏰")) return { icon: AlarmClock, text: t, ok: false };
+  if (/^ปิดคอลแลปแล้ว/.test(text)) return { icon: CircleCheck, text: t, ok: true };
+  if (/ขอปิดคอลแลป/.test(text)) return { icon: CircleCheck, text: t, ok: false };
+  if (/ไม่ได้คุยกัน 7 วัน/.test(text)) return { icon: Hourglass, text: t, ok: false };
+  if (/ทุกคนตกลงแผน/.test(text)) return { icon: CircleCheck, text: t.replace(/\s*✓$/, ""), ok: true };
+  if (/มอบงาน|รับงาน/.test(text)) return { icon: UserCheck, text: t, ok: false };
+  if (/แก้แผน|แก้.*ยืนยันแผนใหม่/.test(text)) return { icon: Pencil, text: t, ok: false };
+  if (/ยกเลิกการตกลงแผน/.test(text)) return { icon: Undo2, text: t, ok: false };
+  return { icon: null, text, ok: false };
+}
+
 interface Props {
   message: Message;
   mine: boolean;
@@ -189,6 +204,8 @@ interface Props {
   collabChangeAlreadyApproved?: boolean;
   collabChangeApproveBusy?: boolean;
   onReply?: (message: Message) => void;
+  /** Collab chats: turn this message into a task on the board. */
+  onAddTask?: (message: Message) => void;
   onUnsend?: (message: Message) => void;
   /** Pin/announce message to conversation header (LINE-style). */
   onAnnounce?: (message: Message, previewText: string) => void;
@@ -227,6 +244,7 @@ const MessageBubble = ({
   collabChangeAlreadyApproved = false,
   collabChangeApproveBusy = false,
   onReply,
+  onAddTask,
   onUnsend,
   onAnnounce,
   getSenderLabel,
@@ -352,7 +370,7 @@ const MessageBubble = ({
     kind === "hire"
       ? "bg-[hsl(var(--chat-hire))] text-[hsl(var(--chat-hire-foreground))]"
       : kind === "collab"
-        ? "bg-gradient-to-br from-[hsl(var(--chat-collab))] to-[hsl(var(--chat-collab)/0.8)] text-[hsl(var(--chat-collab-foreground))]"
+        ? "bg-chat-collab text-[hsl(var(--chat-collab-foreground))]"
         : "bg-primary text-primary-foreground";
   const theirBg =
     kind === "hire"
@@ -401,6 +419,8 @@ const MessageBubble = ({
     isHireProtocolMessage(rawForDisplay) ||
     !!detectCollabToolKind(rawForDisplay) ||
     isCollabPlanDocumentMessage(rawForDisplay) ||
+    isCollabAgreementMessage(rawForDisplay) ||
+    isCollabWelcomeMessage(rawForDisplay) ||
     isAlignDiscussionTemplateMessage(rawForDisplay) ||
     isCollabDeclineChatMessage(rawForDisplay) ||
     !!collabEnd ||
@@ -611,10 +631,19 @@ const MessageBubble = ({
 
   // Structured cards (hire reject / continue / forward / offer) win over system-pill rendering.
   if (isSystem && !deleted && !isStructuredChatCard) {
+    const text = String(displayContent ?? "");
+    const sys = systemLineStyle(text);
+    const SysIcon = sys.icon;
     return (
       <div className="flex justify-center my-2 px-4">
-        <p className="text-xs text-center text-muted-foreground bg-muted/80 px-3 py-1.5 rounded-full max-w-[90%] leading-relaxed">
-          {displayContent}
+        <p
+          className={cn(
+            "inline-flex max-w-[90%] items-start gap-1.5 rounded-full border px-3 py-1.5 text-center text-xs leading-relaxed",
+            sys.ok ? "border-transparent bg-emerald-500/15 text-emerald-700 dark:text-emerald-400" : "border-border bg-card text-muted-foreground",
+          )}
+        >
+          {SysIcon ? <SysIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden /> : null}
+          <span>{sys.text}</span>
         </p>
       </div>
     );
@@ -640,6 +669,12 @@ const MessageBubble = ({
             <DropdownMenuItem onClick={() => onReply(message)}>
               <Reply className="w-4 h-4 mr-2" />
               ตอบกลับ
+            </DropdownMenuItem>
+          ) : null}
+          {onAddTask && message.message_type === "text" && message.content?.trim() ? (
+            <DropdownMenuItem onClick={() => onAddTask(message)}>
+              <ListPlus className="w-4 h-4 mr-2" />
+              เพิ่มเป็น Task
             </DropdownMenuItem>
           ) : null}
           <DropdownMenuItem onClick={() => void copyMessage()}>
@@ -1008,53 +1043,21 @@ const MessageBubble = ({
                 <CollabDeclineCard content={collabDecline} mine={mine} />
               </div>
             )}
-            {collabPlanDoc && (
+            {!deleted && isCollabWelcomeMessage(rawForDisplay) && (
               <div>
-                {replyQuote}
-                <CollabPlanDocCard
-                  content={collabPlanDoc}
-                  onOpenPlan={() => onOpenCollabPlan?.()}
-                />
+                <CollabWelcomeCard conversationId={message.conversation_id} onOpenPlan={onOpenCollabPlan} />
               </div>
             )}
-            {collabDiscussionTpl && (
+            {!deleted && isCollabAgreementMessage(rawForDisplay) && (
               <div>
                 {replyQuote}
-                <CollabDiscussionTemplateCard onOpenPlan={() => onOpenCollabPlan?.()} />
+                <CollabAgreementCard conversationId={message.conversation_id} messageId={message.id} onOpenPlan={onOpenCollabPlan} />
               </div>
             )}
-            {collabChangeReq && (
+            {(collabPlanDoc || collabDiscussionTpl || collabChangeReq || collabChangeDone || collabStepLocked) && (
               <div>
                 {replyQuote}
-                <CollabChangeRequestCard
-                  content={collabChangeReq}
-                  mine={mine}
-                  alreadyApproved={collabChangeAlreadyApproved}
-                  busy={collabChangeApproveBusy}
-                  onApprove={() => {
-                    const parsed = parseChangeRequestMessage(collabChangeReq);
-                    if (parsed?.requestId) onApproveCollabChange?.(parsed.requestId);
-                  }}
-                  onOpenPlan={() => onOpenCollabPlan?.()}
-                />
-              </div>
-            )}
-            {collabChangeDone && (
-              <div>
-                {replyQuote}
-                <CollabChangeDoneCard
-                  content={collabChangeDone}
-                  onOpenPlan={() => onOpenCollabPlan?.()}
-                />
-              </div>
-            )}
-            {collabStepLocked && (
-              <div>
-                {replyQuote}
-                <CollabStepLockedCard
-                  content={collabStepLocked}
-                  onOpenPlan={() => onOpenCollabPlan?.()}
-                />
+                <LegacyCollabPlanCard onOpenPlan={onOpenCollabPlan} />
               </div>
             )}
             {collabToolKind && (

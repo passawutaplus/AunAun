@@ -1,7 +1,7 @@
 /**
  * SAMECOR — SAME + CORE.
  * Tagline: You Create. We Connect.
- * Promise: 1 Profile. 100+ Opportunities.
+ * Promise: Your Work Deserves to Be Seen. (Brand Book Ver.0.1 messaging hierarchy)
  * Public host is samecor.com. aplus1.app stays as a redirect.
  */
 
@@ -30,11 +30,13 @@ export const ANTHEM_PRODUCTION_URL = APLUS1_PRODUCTION_URL;
 /** @deprecated use APLUS1_DEMO_URL */
 export const ANTHEM_DEMO_URL = APLUS1_DEMO_URL;
 
-export const BRAND_TAGLINE = "1 โปรไฟล์ สู่ 100+ โอกาส";
+/** Level 1 tagline (Brand Book p6) — Thai line is a draft from the message library (p22) */
+export const BRAND_TAGLINE = "คุณสร้างสรรค์ เราเชื่อมต่อ";
 
-export const BRAND_TAGLINE_EN = "1 Profile. 100+ Opportunities.";
+export const BRAND_TAGLINE_EN = "You Create. We Connect.";
 
-export const BRAND_SUBLINE_EN = "You Create. We Connect.";
+/** Level 2 brand promise */
+export const BRAND_SUBLINE_EN = "Your Work Deserves to Be Seen.";
 
 export const BRAND_DESCRIPTION =
   "SAMECOR เชื่อมผลงานของคุณกับคน โปรเจกต์ และโอกาสถัดไป — You Create. We Connect.";
@@ -52,14 +54,19 @@ export const BRAND_LOGO_PATH = "/brand/aplus1-wordmark.png";
 
 export const BRAND_COMPANY = "SAMECOR";
 
-export const BRAND_SUPPORT_EMAIL = "support@aplus1.app";
-export const BRAND_PRIVACY_EMAIL = "privacy@aplus1.app";
+export const BRAND_SUPPORT_EMAIL = "support@samecor.com";
+export const BRAND_PRIVACY_EMAIL = "privacy@samecor.com";
 
-/**
- * Official LINE contact (OA / lin.ee).
- * Empty until the account is ready — menu still shows, click explains it's coming.
- */
-export const BRAND_LINE_CONTACT_URL = "";
+/** Official SAMECOR LINE Official Account (support / contact). */
+export const BRAND_LINE_CONTACT_URL = "https://lin.ee/te9XZuh";
+export const BRAND_LINE_ID = "@567rveid";
+export const BRAND_LINE_QR_URL = "https://qr-official.line.me/gs/M_567rveid_GW.png?oat_content=qr";
+
+/** Official Facebook page. */
+export const BRAND_FACEBOOK_URL = "https://www.facebook.com/samecor2026";
+
+/** Community Facebook group (name may change; URL stays). */
+export const BRAND_FACEBOOK_GROUP_URL = "https://www.facebook.com/groups/1554275318664897";
 
 /** Opens LINE OA in a new tab. Returns false when the URL is not set yet. */
 export function openBrandLineContact(): boolean {

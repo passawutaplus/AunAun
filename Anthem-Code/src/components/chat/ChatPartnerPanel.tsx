@@ -29,6 +29,9 @@ import { PUBLIC_PROFILE_SELECT } from "@/lib/dbSelects";
 import { profilePublicPath } from "@/lib/profileRoutes";
 import { safeHttpUrl } from "@/lib/safeUrl";
 import ChatMetaPanel from "@/components/chat/ChatMetaPanel";
+import { CollabPlanSidebarSummary } from "@/components/chat/CollabPlanSidebarSummary";
+import { CollabPanelProgress } from "@/components/chat/CollabProgress";
+import { useCollabPlanUi } from "@/stores/collabPlanUiStore";
 import ChatPortfolioSection from "@/components/chat/ChatPortfolioSection";
 import { cn } from "@/lib/utils";
 import { WORK_DISCIPLINE_LABELS, type WorkDisciplineId } from "@/data/workDisciplineOptions";
@@ -165,6 +168,8 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapse
       : profile?.display_name || profile?.username || "ผู้ใช้";
   const showPartnerWorks = !!viewUserId && viewUserId !== user?.id;
   const showHireMeta = !isGroup && (conversation.kind === "hire" || conversation.kind === "collab");
+  const isCollabConv = conversation.kind === "collab" || (isGroup && conversation.group_tag === "collab");
+  const openCollabPlan = useCollabPlanUi((st) => st.openFor);
 
   const measureProfileLimits = useCallback(() => {
     const inner = profileInnerRef.current;
@@ -443,8 +448,16 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapse
 
       <div className="relative flex-1 min-h-0 flex flex-col">
         <div className={cn("flex-1 min-h-0 overflow-y-auto bg-background", metaOpen && "overflow-hidden")}>
-          <Tabs key={viewUserId ?? "none"} defaultValue="mine" className="bg-background">
+          <Tabs key={viewUserId ?? "none"} defaultValue={isCollabConv ? "plan" : "mine"} className="bg-background">
             <TabsList className="sticky top-0 z-10 w-full rounded-none border-b border-border bg-background h-auto p-0 shadow-[0_1px_0_0_hsl(var(--border))]">
+              {isCollabConv ? (
+                <TabsTrigger
+                  value="plan"
+                  className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-[hsl(var(--chat-collab))] data-[state=active]:bg-background data-[state=active]:shadow-none py-2 text-[11px]"
+                >
+                  แผน & Tasks
+                </TabsTrigger>
+              ) : null}
               <TabsTrigger
                 value="mine"
                 className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-background data-[state=active]:shadow-none py-2 text-[11px]"
@@ -460,6 +473,12 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapse
                 </TabsTrigger>
               )}
             </TabsList>
+            {isCollabConv ? (
+              <TabsContent value="plan" className="mt-0 space-y-3 p-3">
+                <CollabPanelProgress conversationId={conversation.id} />
+                <CollabPlanSidebarSummary conversationId={conversation.id} onOpen={() => openCollabPlan(conversation.id)} />
+              </TabsContent>
+            ) : null}
             <TabsContent value="mine" className="mt-0 p-2.5">
               {user?.id && (
                 <ChatPortfolioSection
@@ -483,7 +502,7 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapse
 
         <div
           className={cn(
-            "absolute inset-0 z-20 flex flex-col bg-background shadow-[0_-10px_30px_rgba(0,0,0,0.08)]",
+            "absolute inset-0 z-20 flex flex-col bg-background shadow-sm",
             !reducedMotion && "transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
             metaOpen ? "translate-y-0" : "translate-y-full pointer-events-none",
           )}

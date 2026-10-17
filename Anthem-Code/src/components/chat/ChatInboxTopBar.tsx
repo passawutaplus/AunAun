@@ -5,6 +5,7 @@ import ManageWorkIcon from "@/components/icons/ManageWorkIcon";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import { ProfileMenuDropdown } from "@/components/ProfileMenuDropdown";
 import UserAvatar from "@/components/UserAvatar";
+import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,6 +35,7 @@ export function ChatInboxTopBar() {
 
   return (
     <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border bg-card px-3 sm:px-4">
+      <BackButton label="กลับหน้าก่อนหน้า" />
       <h1 className="text-2xl font-semibold tracking-tight text-foreground">Chating</h1>
       <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-4">
         <Button

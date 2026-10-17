@@ -306,7 +306,7 @@ export function FlexGridToolsSidebar({
           "relative shrink-0 transition-[width] duration-200",
           expanded
             ? cn(
-                "fixed bottom-0 left-0 top-14 z-50 w-[min(280px,88vw)] border-r border-border/80 bg-card shadow-xl",
+                "fixed bottom-0 left-0 top-14 z-50 w-[min(280px,88vw)] border-r border-border/80 bg-card shadow-sm",
                 "lg:sticky lg:inset-auto lg:top-16 lg:z-auto lg:w-[248px] lg:self-start lg:bg-card/95 lg:shadow-none lg:backdrop-blur-md",
               )
             : "w-0 border-0 bg-transparent",

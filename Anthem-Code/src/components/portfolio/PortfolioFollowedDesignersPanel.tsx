@@ -124,7 +124,7 @@ export default function PortfolioFollowedDesignersPanel() {
   const findMore = (
     <Button asChild size="sm" variant="outline" className="rounded-full shrink-0">
       <Link to={DESIGNERS_FEED_PATH}>
-        หาดีไซเนอร์เพิ่ม <ArrowRight className="ml-1 h-3.5 w-3.5" aria-hidden />
+        หาครีเอเตอร์เพิ่ม <ArrowRight className="ml-1 h-3.5 w-3.5" aria-hidden />
       </Link>
     </Button>
   );
@@ -134,7 +134,7 @@ export default function PortfolioFollowedDesignersPanel() {
   if (isError) {
     return (
       <div className="text-center py-16 glass-panel rounded-2xl space-y-3">
-        <p className="text-foreground font-medium">โหลดดีไซเนอร์ที่ติดตามไม่สำเร็จ</p>
+        <p className="text-foreground font-medium">โหลดครีเอเตอร์ที่ติดตามไม่สำเร็จ</p>
         <p className="text-sm text-muted-foreground">ลองใหม่อีกครั้ง หรือตรวจการเชื่อมต่อ</p>
         <Button variant="outline" className="rounded-full" onClick={() => void refetch()}>
           ลองใหม่
@@ -148,15 +148,15 @@ export default function PortfolioFollowedDesignersPanel() {
       <ProfileTabHeading
         title="Designers"
         count={designers.length}
-        description="ดีไซเนอร์ที่คุณติดตาม — คนที่ติดตามกันทั้งคู่แท็กเป็นผู้ร่วมงานในผลงานได้"
+        description="ครีเอเตอร์ที่คุณติดตาม — คนที่ติดตามกันทั้งคู่แท็กเป็นผู้ร่วมงานในผลงานได้"
         actions={designers.length > 0 ? findMore : undefined}
       />
 
       {designers.length === 0 ? (
         <EmptyState
           icon={UserPlus}
-          title="ยังไม่ได้ติดตามดีไซเนอร์"
-          description="กดติดตามบนการ์ดดีไซเนอร์ในหน้า Designers แล้วคนนั้นจะมาอยู่ที่นี่ กลับมาจ้างงานหรือชวนคอลแลปได้ทุกเมื่อ"
+          title="ยังไม่ได้ติดตามครีเอเตอร์"
+          description="กดติดตามบนการ์ดครีเอเตอร์ในหน้า Designers แล้วคนนั้นจะมาอยู่ที่นี่ กลับมาจ้างงานหรือชวนคอลแลปได้ทุกเมื่อ"
           action={
             <Button asChild variant="gradient" className="rounded-full">
               <Link to={DESIGNERS_FEED_PATH}>
@@ -207,10 +207,10 @@ export default function PortfolioFollowedDesignersPanel() {
           </div>
           {filtered.length === 0 ? (
             <FilterEmptyState
-              title={query.trim() ? "ไม่พบดีไซเนอร์ที่ตรงกับคำค้น" : "ไม่มีดีไซเนอร์ในกลุ่มนี้"}
+              title={query.trim() ? "ไม่พบครีเอเตอร์ที่ตรงกับคำค้น" : "ไม่มีครีเอเตอร์ในกลุ่มนี้"}
               description={
                 query.trim()
-                  ? `ไม่มีผลลัพธ์สำหรับ "${query}" ในดีไซเนอร์ที่คุณติดตาม`
+                  ? `ไม่มีผลลัพธ์สำหรับ "${query}" ในครีเอเตอร์ที่คุณติดตาม`
                   : followBack === "mutual"
                     ? "ยังไม่มีใครติดตามคุณกลับ เมื่อติดตามกันทั้งคู่ จะแท็กกันในผลงานได้"
                     : "ทุกคนที่คุณติดตามติดตามคุณกลับแล้ว"

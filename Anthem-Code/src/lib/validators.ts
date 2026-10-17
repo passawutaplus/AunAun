@@ -86,31 +86,16 @@ export const hireInviteBriefSchema = z
     details: z
       .string()
       .trim()
-      .min(20, "กรุณาอธิบายรายละเอียดงานอย่างน้อย 20 ตัวอักษร")
+      .min(10, "เล่างานสั้น ๆ อย่างน้อย 10 ตัวอักษร")
       .max(1000),
     budgetAmount: z.number().int().positive().max(10_000_000).optional(),
-    budgetMin: z
-      .number({
-        error: "กรุณาระบุงบประมาณต่ำสุด", // zod 4: replaces required_error / invalid_type_error
-      })
-      .int()
-      .nonnegative()
-      .max(10_000_000),
-    budgetMax: z
-      .number({
-        error: "กรุณาระบุงบประมาณสูงสุด", // zod 4: replaces required_error / invalid_type_error
-      })
-      .int()
-      .nonnegative()
-      .max(10_000_000),
-    deadline: z
-      .string()
-      .trim()
-      .min(1, "กรุณาเลือกกำหนดส่งงาน")
-      .max(50),
+    // Budget and deadline help the first message but never block it — details can be agreed in chat.
+    budgetMin: z.number().int().nonnegative().max(10_000_000).optional(),
+    budgetMax: z.number().int().nonnegative().max(10_000_000).optional(),
+    deadline: z.string().trim().max(50).optional(),
   })
   .superRefine((val, ctx) => {
-    if (val.budgetMin > val.budgetMax) {
+    if (val.budgetMin != null && val.budgetMax != null && val.budgetMin > val.budgetMax) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "งบต่ำสุดต้องไม่เกินงบสูงสุด",
@@ -491,6 +476,15 @@ export const projectSchema = z.object({
   deliverables: z.string().trim().max(200).optional().default(""),
   duration_label: z.string().trim().max(60).optional().default(""),
   outcome_note: z.string().trim().max(1500).optional().default(""),
+  context_images: z
+    .object({
+      brief: z.array(z.string().url()).max(4),
+      process: z.array(z.string().url()).max(4),
+      outcome: z.array(z.string().url()).max(4),
+    })
+    .partial()
+    .optional()
+    .default({}),
   opportunity_types: z.array(z.string().trim().min(1).max(40)).max(10).default([]),
   opportunity_note: z.string().trim().max(500).optional().default(""),
   external_links: z

@@ -102,7 +102,7 @@ const BoostDialog = ({ open, onOpenChange, targetType, targetId, targetTitle }: 
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Zap className="h-5 w-5 text-amber-500" />
+            <Zap className="h-5 w-5 text-brand" />
             Boost โพสต์
           </DialogTitle>
           <DialogDescription>

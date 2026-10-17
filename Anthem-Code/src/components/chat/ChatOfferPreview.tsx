@@ -18,6 +18,7 @@ import {
   type PortfolioFxCurrency,
 } from "@/lib/payments/fxDaily";
 import { cn } from "@/lib/utils";
+import { isCommerceEnabled } from "@/lib/aplus1Launch";
 
 type Props = {
   offer: ChatOfferPayload;
@@ -267,7 +268,7 @@ export function ChatOfferPreview({ offer, issuerName, issuerEmail, className }: 
                 {money(grand)}
               </span>
             </div>
-            {depositPct < 100 ? (
+            {depositPct < 100 && isCommerceEnabled() ? (
               <div className="flex items-center justify-between px-3 py-2 rounded bg-primary/10 border border-primary/25">
                 <span className="text-[12px] font-semibold text-primary">มัดจำที่ต้องชำระ</span>
                 <span className="tabular-nums font-bold text-[13px] text-primary">
@@ -289,10 +290,10 @@ export function ChatOfferPreview({ offer, issuerName, issuerEmail, className }: 
           <p className="text-[10px] text-neutral-600">เงื่อนไขการชำระ</p>
           <p className="text-[12px] font-semibold text-neutral-900 mt-0.5">
             {terms}
-            {depositPct < 100 ? (
+            {depositPct < 100 && isCommerceEnabled() ? (
               <span className="text-neutral-600 font-normal"> (มัดจำ {depositPct}%)</span>
             ) : null}
-            {offer.depositDueDate ? (
+            {offer.depositDueDate && isCommerceEnabled() ? (
               <span className="text-neutral-600 font-normal block mt-0.5">
                 ครบกำหนดชำระมัดจำ: {formatOfferDateShort(offer.depositDueDate)}
               </span>

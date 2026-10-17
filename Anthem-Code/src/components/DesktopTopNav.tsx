@@ -3,6 +3,7 @@ import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { ChevronDown, Plus, User } from "lucide-react";
 import { BrandLogo } from "@/components/brand/BrandLogo";
 import ChatNavButton from "@/components/chat/ChatNavButton";
+import FeedbackHeaderPill from "@/components/feedback/FeedbackHeaderPill";
 import JobsNavButton from "@/components/jobs/JobsNavButton";
 import { CommunityNavDropdown } from "@/components/CommunityNavDropdown";
 import NotificationBell from "@/components/notifications/NotificationBell";
@@ -31,8 +32,7 @@ function shouldShowDesktopTopNav(pathname: string): boolean {
     pathname.startsWith("/learn") ||
     pathname.startsWith("/help") ||
     pathname.startsWith("/forum") ||
-    pathname.startsWith("/dashboard") ||
-    pathname.startsWith("/earnings") ||
+    // My Studio (/dashboard, /earnings) has its own back-office top bar
     pathname.startsWith("/portfolio") ||
     pathname.startsWith("/settings") ||
     isPublicProfilePath(pathname) ||
@@ -216,11 +216,11 @@ const DesktopTopNav = () => {
       className={cn("flex min-w-0 items-center", isGuestHome ? "gap-6 xl:gap-8" : "gap-6")}
       aria-label="เมนูหลัก"
     >
-      <CommunityNavDropdown className={isHome ? "text-[#f5f5f5]/80 hover:text-[#f5f5f5]" : undefined} />
+      <CommunityNavDropdown className={isHome ? "text-background/80 hover:text-background" : undefined} />
       <NavLink
         to="/learn"
         end={false}
-        className={isHome ? "text-[13px] font-medium text-[#f5f5f5] transition-opacity hover:opacity-70" : linkClass}
+        className={isHome ? "text-[13px] font-medium text-background transition-opacity hover:opacity-70" : linkClass}
       >
         About
       </NavLink>
@@ -237,7 +237,7 @@ const DesktopTopNav = () => {
         "z-40 hidden lg:block sticky top-0 transition-opacity duration-300 motion-reduce:transition-none",
         coveredByFeedBar && "pointer-events-none opacity-0",
         isLearn
-          ? "border-b border-[#e4e1db] bg-[#f5f5f5] text-[#2f2e2c] shadow-none"
+          ? "border-b border-border bg-background text-foreground shadow-none"
           : isHome
             ? "border-0 bg-transparent text-foreground shadow-none"
             : glass
@@ -252,10 +252,14 @@ const DesktopTopNav = () => {
         <button
           type="button"
           onClick={goHome}
-          className="shrink-0 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className={cn(
+            "shrink-0 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            // Over the home feed's photos the logo needs a solid plate (Brand Book p11)
+            isHome && "rounded-xl bg-background px-2.5 py-1.5",
+          )}
           aria-label={`${BRAND_NAME} หน้าแรก`}
         >
-          <BrandLogo size="sm" tone={isLearn ? "ink" : isHome ? "theme" : "brand"} />
+          <BrandLogo beta size="sm" tone={isLearn ? "ink" : isHome ? "theme" : "brand"} />
         </button>
 
         {!isHome && !isGuestHome ? mainNav : null}
@@ -302,6 +306,7 @@ const DesktopTopNav = () => {
           <JobsNavButton />
           {user && (
             <>
+              <FeedbackHeaderPill />
               <ChatNavButton />
               <NotificationBell />
             </>
@@ -332,7 +337,7 @@ const DesktopTopNav = () => {
               onClick={() => navigate("/auth")}
               className={
                 isLearn
-                  ? "h-8 rounded-sm bg-[#2f2e2c] px-3 text-[13px] font-normal text-[#f5f5f5] hover:bg-[#2f2e2c]/90"
+                  ? "h-8 rounded-sm bg-foreground px-3 text-[13px] font-normal text-background hover:bg-foreground/90"
                   : isHome
                     ? "h-8 rounded-sm bg-foreground px-3 text-[13px] font-normal text-background hover:bg-foreground/90"
                     : "h-8 rounded-full bg-foreground px-4 text-[13px] font-normal text-background hover:bg-foreground/90"

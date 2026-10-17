@@ -1,18 +1,19 @@
-// SAMECOR brand styles for emails — clean white + subtle orange fade.
+// SAMECOR brand styles for emails — Brand Book Ver.0.1 (one red accent, Studio White, Gallery Black).
+// Key names are kept so templates do not change; the values follow the book.
 
 export const brand = {
-  orange: '#FF4F18',
-  orangeLight: '#FF7A45',
-  orangeFade: '#FFF4EF',
-  orangeMuted: '#FFE4D6',
-  ink: '#141517',
+  orange: '#EE3D29',
+  orangeLight: '#EE3D29',
+  orangeFade: '#F8F7F2',
+  orangeMuted: '#E6E6E3',
+  ink: '#111111',
   body: '#4A4A4A',
-  mute: '#9CA3AF',
-  border: '#E8E6E3',
-  surface: '#F2F4F7',
+  mute: '#666666',
+  border: '#E6E6E3',
+  surface: '#F8F7F2',
   white: '#FFFFFF',
-  success: '#059669',
-  warning: '#DC2626',
+  success: '#18794E',
+  warning: '#8A5A00',
 } as const
 
 export const main = {
@@ -87,7 +88,7 @@ export const text = {
 
 export const button = {
   backgroundColor: brand.orange,
-  color: brand.white,
+  color: brand.ink,
   fontSize: '15px',
   fontWeight: 600 as const,
   borderRadius: '8px',

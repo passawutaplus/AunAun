@@ -3,12 +3,19 @@ import { Link } from "react-router-dom";
 import { useTopProjects, type DBProject } from "@/hooks/useProjects";
 import { optimizedFeedImageUrl } from "@/lib/feedProjectCover";
 import { isLaunchHiddenPath } from "@/lib/aplus1Launch";
-import { BRAND_NAME, BRAND_SUPPORT_EMAIL } from "@/lib/brandConfig";
+import {
+  BRAND_FACEBOOK_URL,
+  BRAND_LINE_CONTACT_URL,
+  BRAND_LINE_ID,
+  BRAND_NAME,
+  BRAND_SUPPORT_EMAIL,
+} from "@/lib/brandConfig";
 import { LEGAL_COMPANY_ADDRESS, LEGAL_COMPANY_NAME } from "@/lib/legalConfig";
 import { cn } from "@/lib/utils";
 
 const EXPLORE_LINKS = [
   { to: "/help", label: "ศูนย์ช่วยเหลือ" },
+  { to: "/changelog", label: "อัปเดตล่าสุด" },
   { to: "/learn", label: "About" },
   { to: "/advertise", label: "ลงโฆษณากับเรา" },
 ] as const;
@@ -20,7 +27,7 @@ const LEGAL_LINKS = [
   { to: "/legal/copyright-report", label: "แจ้งละเมิด" },
 ] as const;
 
-const linkClass = "text-[15px] text-[#f5f5f5] transition-opacity hover:opacity-70";
+const linkClass = "text-[15px] text-background transition-opacity hover:opacity-70";
 
 function coverOf(project: DBProject) {
   return project.cover_url?.trim() || project.gallery_urls?.find((url) => url?.trim()) || "";
@@ -46,7 +53,7 @@ const Footer = ({ className }: Props) => {
   const reel = covers.length >= 4 ? [...covers, ...covers] : [];
 
   return (
-    <footer className={cn("mt-16 overflow-hidden bg-[#2f2e2c] pt-[9vh] text-[#f5f5f5]", className)}>
+    <footer className={cn("mt-16 overflow-hidden bg-foreground pt-[9vh] text-background", className)}>
       <nav aria-label="ท้ายหน้า" className="flex flex-wrap items-center justify-center gap-x-9 gap-y-3 px-[6vw]">
         {LEGAL_LINKS.map((item) => (
           <Link key={item.to} to={item.to} className={linkClass}>
@@ -60,6 +67,12 @@ const Footer = ({ className }: Props) => {
         ))}
         <a href={`mailto:${BRAND_SUPPORT_EMAIL}`} className={linkClass}>
           {BRAND_SUPPORT_EMAIL}
+        </a>
+        <a href={BRAND_LINE_CONTACT_URL} target="_blank" rel="noopener noreferrer" className={linkClass}>
+          LINE {BRAND_LINE_ID}
+        </a>
+        <a href={BRAND_FACEBOOK_URL} target="_blank" rel="noopener noreferrer" className={linkClass}>
+          Facebook
         </a>
       </nav>
 

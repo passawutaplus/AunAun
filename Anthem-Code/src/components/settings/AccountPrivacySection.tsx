@@ -27,6 +27,7 @@ import { LEGAL_SOLO_URL } from "@/lib/legalConfig";
 import { SoloExternalLink } from "@/components/ecosystem/SoloExternalLink";
 import { isSoloEcosystemEnabled } from "@/lib/aplus1Launch";
 import { OWN_PROFILE_SELECT } from "@/lib/dbSelects";
+import { requestOpenCookiePreferences } from "@/lib/cookieConsent";
 import { useEnsureSensitiveAction } from "@/components/legal/SensitiveActionReauthProvider";
 import { useMyPrivacyRequests, useSubmitPrivacyRequest } from "@/hooks/useLegalCompliance";
 
@@ -133,7 +134,7 @@ export function AccountPrivacySection({ embedded = false }: { embedded?: boolean
           <div>
             <h2 className="font-semibold text-foreground">ข้อมูลส่วนตัวของคุณ</h2>
             <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-              ดาวน์โหลด ขอลบ หรือดูสิทธิตาม PDPA — เราจะตอบทางอีเมลภายใน 7 วันทำการ
+              ดาวน์โหลดหรือขอลบข้อมูล ทีมตอบทางอีเมลภายใน 7 วันทำการ
             </p>
           </div>
         </div>
@@ -197,28 +198,37 @@ export function AccountPrivacySection({ embedded = false }: { embedded?: boolean
 
       {!embedded && (
         <div className="flex flex-wrap gap-2 pt-1">
-          <Button asChild size="sm" variant="ghost" className="text-muted-foreground h-8">
-            <Link to="/legal/rights">ดูสิทธิทั้งหมด</Link>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="text-muted-foreground h-8"
+            onClick={() => requestOpenCookiePreferences()}
+          >
+            ตั้งค่าคุกกี้
           </Button>
           <Button asChild size="sm" variant="ghost" className="text-muted-foreground h-8">
-            <Link to="/legal/privacy">นโยบาย PDPA</Link>
+            <Link to="/legal/rights">สิทธิของคุณ</Link>
+          </Button>
+          <Button asChild size="sm" variant="ghost" className="text-muted-foreground h-8">
+            <Link to="/legal/privacy">นโยบายความเป็นส่วนตัว</Link>
           </Button>
         </div>
       )}
 
       <p className={`text-[11px] text-muted-foreground leading-relaxed ${embedded ? "pt-1" : "border-t border-border/40 pt-3"}`}>
-        บัญชี SAMECOR ใช้ร่วมกับ So1o Freelancer — ลบถาวรอาจทำที่{" "}
         {isSoloEcosystemEnabled() ? (
-          <SoloExternalLink
-            href={`${LEGAL_SOLO_URL.replace(/\/$/, "")}/settings`}
-            className="text-primary underline"
-          >
-            So1o
-          </SoloExternalLink>
+          <>
+            บัญชีนี้ใช้ร่วมกับ{" "}
+            <SoloExternalLink href={`${LEGAL_SOLO_URL.replace(/\/$/, "")}/settings`} className="text-primary underline">
+              So1o
+            </SoloExternalLink>{" "}
+            — ลบถาวรได้ที่นั่น
+          </>
         ) : (
-          <span className="text-muted-foreground">So1o (เร็ว ๆ นี้)</span>
+          "อยากลบถาวรทันที"
         )}
-        {" "}หรืออีเมล{" "}
+        {isSoloEcosystemEnabled() ? " หรืออีเมล " : " อีเมลมาที่ "}
         <button
           type="button"
           className="text-primary underline"

@@ -66,7 +66,7 @@ function SortableThumb({
       className={cn(
         "relative rounded-xl overflow-hidden bg-muted border border-border/70 touch-none",
         "aspect-square",
-        isDragging && "z-10 opacity-90 shadow-lg ring-2 ring-primary/40",
+        isDragging && "z-10 opacity-90 shadow-sm ring-2 ring-primary/40",
       )}
     >
       <img loading="lazy" decoding="async" src={item.previewUrl} alt="" className="w-full h-full object-cover pointer-events-none" draggable={false} />

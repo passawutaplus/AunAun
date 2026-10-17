@@ -58,9 +58,9 @@ export default function UxResearchFeedbackPage() {
               </p>
             </section>
 
-            <section className="rounded-2xl border border-amber-500/30 bg-amber-500/8 p-4 space-y-1 text-sm">
+            <section className="rounded-2xl border border-warning/30 bg-warning/8 p-4 space-y-1 text-sm">
               <p className="font-semibold flex items-center gap-2">
-                <ClipboardList className="w-4 h-4 text-amber-600" />
+                <ClipboardList className="w-4 h-4 text-warning" />
                 ก่อนส่ง
               </p>
               <ul className="text-muted-foreground list-disc pl-5 space-y-1">

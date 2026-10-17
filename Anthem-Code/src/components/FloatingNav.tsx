@@ -96,8 +96,8 @@ const FloatingNav = () => {
         <div
           className={cn(
             "pointer-events-auto flex items-center gap-0.5 rounded-full",
-            "border border-border/80 bg-background/90 px-1.5 py-1.5 shadow-lg shadow-black/25",
-            "dark:border-border dark:bg-card/90 dark:shadow-black/50",
+            "border border-border/80 bg-background/90 px-1.5 py-1.5 shadow-sm",
+            "dark:border-border dark:bg-card/90",
             "backdrop-blur-xl supports-[backdrop-filter]:bg-background/75 dark:supports-[backdrop-filter]:bg-card/80",
           )}
           style={{ WebkitBackdropFilter: "blur(20px)" }}
@@ -195,8 +195,8 @@ const FloatingNav = () => {
           onClick={openCreate}
           aria-label="ลงผลงาน"
           className={cn(
-            "pointer-events-auto flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-white shadow-lg shadow-black/20 transition-all duration-200 ease-out hover:opacity-90 active:scale-95",
-            pathname === "/" || pathname.startsWith("/learn") ? "bg-[#2f2e2c]" : "bg-gradient-brand",
+            "pointer-events-auto flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-white shadow-sm transition-all duration-200 ease-out hover:opacity-90 active:scale-95",
+            pathname === "/" || pathname.startsWith("/learn") ? "bg-foreground" : "bg-gradient-brand",
           )}
         >
           <Plus className="h-6 w-6" strokeWidth={2.5} />

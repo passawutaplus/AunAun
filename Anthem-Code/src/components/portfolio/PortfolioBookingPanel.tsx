@@ -435,7 +435,7 @@ export default function PortfolioBookingPanel({ userId }: Props) {
           )}
           {unavailableIds.length > 0 ? <UnavailableSaved ids={unavailableIds} /> : null}
           {compareIds.length > 0 ? (
-            <div className="sticky bottom-24 z-20 mx-auto flex w-fit max-w-full flex-wrap items-center justify-center gap-2 rounded-2xl border border-border/60 bg-background/95 p-2 shadow-lg backdrop-blur lg:bottom-6">
+            <div className="sticky bottom-24 z-20 mx-auto flex w-fit max-w-full flex-wrap items-center justify-center gap-2 rounded-2xl border border-border/60 bg-background/95 p-2 shadow-sm backdrop-blur lg:bottom-6">
               <span className="px-2 text-sm tabular-nums text-foreground">เลือก {compareIds.length}/{MAX_COMPARE}</span>
               <Button
                 type="button"

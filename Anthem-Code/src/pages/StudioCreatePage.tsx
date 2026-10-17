@@ -25,6 +25,7 @@ import { BackButton } from "@/components/ui/BackButton";
 import RequireAuth from "@/components/RequireAuth";
 import { cn } from "@/lib/utils";
 import { isReservedPublicHandle } from "@/lib/reservedHandles";
+import { userFacingError } from "@/lib/userFacingError";
 
 const slugify = (s: string) =>
   s.toLowerCase().trim().replace(/[^a-z0-9-\s]/g, "").replace(/\s+/g, "-").slice(0, 40);
@@ -161,7 +162,7 @@ const StudioCreateInner = () => {
     if (!file || !user) return;
     setLogoBusy(true);
     try { setLogoUrl(await uploadImage(file, user.id, "logo")); }
-    catch (e: any) { toast.error(e.message ?? "อัปโหลดโลโก้ไม่สำเร็จ"); }
+    catch (e: any) { toast.error(userFacingError(e, "อัปโหลดโลโก้ไม่สำเร็จ")); }
     finally { setLogoBusy(false); }
   };
 
@@ -169,7 +170,7 @@ const StudioCreateInner = () => {
     if (!file || !user) return;
     setCoverBusy(true);
     try { setCoverUrl(await uploadImage(file, user.id, "cover")); }
-    catch (e: any) { toast.error(e.message ?? "อัปโหลดภาพปกไม่สำเร็จ"); }
+    catch (e: any) { toast.error(userFacingError(e, "อัปโหลดภาพปกไม่สำเร็จ")); }
     finally { setCoverBusy(false); }
   };
 
@@ -448,7 +449,7 @@ const StudioCreateInner = () => {
 
         {/* Advanced section */}
         {showAdvanced && (
-          <div className="bg-orange-50/60 dark:bg-primary/5 rounded-2xl p-5 space-y-5 border border-primary/15">
+          <div className="bg-secondary/60 rounded-2xl p-5 space-y-5 border border-primary/15">
             {/* Cover */}
             <div className="space-y-2">
               <Label className="text-xs">Cover Image</Label>
@@ -544,7 +545,7 @@ const StudioCreateInner = () => {
           <Button
             onClick={submit}
             disabled={!canSubmit || create.isPending}
-            className="flex-1 h-12 rounded-xl bg-gradient-brand text-white border-0 shadow-md shadow-primary/20"
+            className="flex-1 h-12 rounded-xl bg-gradient-brand text-white border-0 shadow-md"
           >
             {create.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
             {invitees.length === 0 ? "สร้าง Studio เลย" : `ส่งคำเชิญ (${invitees.length} คน)`}

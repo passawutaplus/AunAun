@@ -142,7 +142,8 @@ async function fetchLiveCatalog(supabaseUrl, anonKey) {
   }
 
   let serviceIds = [];
-  if (servicesRes.ok) {
+  // Packages are hidden during the free launch — list them again with the commerce phase.
+  if (servicesRes.ok && process.env.VITE_SAMECOR_COMMERCE_ENABLED === "true") {
     const services = await servicesRes.json();
     serviceIds = services.map((s) => s.id).filter(Boolean);
   } else {

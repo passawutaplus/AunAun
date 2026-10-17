@@ -9,7 +9,6 @@ import ChatSidebar from "@/components/chat/ChatSidebar";
 import ChatThreadView from "@/components/chat/ChatThreadView";
 import ChatPartnerPanel from "@/components/chat/ChatPartnerPanel";
 import { ChatErrorBoundary } from "@/components/chat/ChatErrorBoundary";
-import { ChatFilterRail } from "@/components/chat/ChatFilterRail";
 import { ChatInboxTopBar } from "@/components/chat/ChatInboxTopBar";
 import { InlineLoader } from "@/components/ui/BanterLoader";
 import { cn } from "@/lib/utils";
@@ -171,9 +170,6 @@ const ChatInboxPage = () => {
     <main id="main-content" className="chat-paper flex h-[100dvh] flex-col overflow-hidden bg-background">
       <ChatInboxTopBar />
       <div className="flex min-h-0 flex-1">
-      <div className={cn("h-full shrink-0", showSidebarMobile ? "flex" : "hidden", "md:flex")}>
-        <ChatFilterRail tab={tab} onTabChange={setTab} />
-      </div>
       <div
         className={cn(
           "flex min-h-0 min-w-0 flex-1 flex-col md:grid",
@@ -193,6 +189,7 @@ const ChatInboxPage = () => {
           <ChatSidebar
             selectedId={id}
             tab={tab}
+            onTabChange={setTab}
             search={search}
             onSearchChange={setSearch}
             onSelectConversation={selectConversation}
@@ -262,7 +259,7 @@ const ChatInboxPage = () => {
             />
             <motion.div
               key="chat-partner-panel"
-              className="md:hidden fixed right-0 top-14 bottom-0 z-50 w-[92%] max-w-sm bg-background shadow-xl"
+              className="md:hidden fixed right-0 top-14 bottom-0 z-50 w-[92%] max-w-sm bg-background shadow-sm"
               initial={reducedMotion ? false : { x: "100%" }}
               animate={{ x: 0 }}
               exit={reducedMotion ? { opacity: 0 } : { x: "100%" }}

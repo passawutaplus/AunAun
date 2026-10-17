@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatThaiDate } from "@/lib/format";
 import { formatMemberCode, memberCodeMatchesUserId } from "@/lib/memberCode";
 import { OPS_HUB_URL } from "@/lib/productLinks";
+import { userFacingError } from "@/lib/userFacingError";
 
 interface Row {
   id: string;
@@ -184,7 +185,7 @@ export default function AdminUsersPage() {
                     { userId: r.id, role: "admin", grant: !isAdmin },
                     {
                       onSuccess: () => toast.success(isAdmin ? "ถอดสิทธิ์ admin แล้ว" : "ตั้งเป็น admin แล้ว"),
-                      onError: (e: Error) => toast.error(e.message),
+                      onError: (e: Error) => toast.error(userFacingError(e)),
                     },
                   ),
               },
@@ -194,7 +195,7 @@ export default function AdminUsersPage() {
                     onClick: () =>
                       unfreeze.mutate(r.id, {
                         onSuccess: () => toast.success("ปลดระงับแล้ว"),
-                        onError: (e: Error) => toast.error(e.message),
+                        onError: (e: Error) => toast.error(userFacingError(e)),
                       }),
                   }
                 : {
@@ -206,7 +207,7 @@ export default function AdminUsersPage() {
                         { userId: r.id, reason: reason.trim() },
                         {
                           onSuccess: () => toast.success("ระงับบัญชีแล้ว"),
-                          onError: (e: Error) => toast.error(e.message),
+                          onError: (e: Error) => toast.error(userFacingError(e)),
                         },
                       );
                     },

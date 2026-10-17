@@ -24,6 +24,8 @@ import RequireAuth from "./components/RequireAuth.tsx";
 import AdminGuard from "./components/admin/AdminGuard.tsx";
 import AuthDialog from "./components/AuthDialog.tsx";
 import FeedbackTicketHost from "./components/feedback/FeedbackTicketHost.tsx";
+import RatingPrompt from "./components/feedback/RatingPrompt.tsx";
+import CloudPrefsSync from "./components/settings/CloudPrefsSync.tsx";
 import { InterestSurveyGate } from "./components/onboarding/InterestSurveyDialog.tsx";
 import { SkipLink } from "./components/a11y/SkipLink.tsx";
 import { OfflineBanner } from "./components/OfflineBanner.tsx";
@@ -45,6 +47,7 @@ const PortfolioProfilePage = lazy(() => import("./pages/PortfolioProfilePage.tsx
 const PortfolioManagePage = lazy(() => import("./pages/PortfolioManagePage.tsx"));
 const DashboardPage = lazy(() => import("./pages/DashboardPage.tsx"));
 const DashboardHomePage = lazy(() => import("./pages/DashboardHomePage.tsx"));
+const DashboardInsightsPage = lazy(() => import("./pages/DashboardInsightsPage.tsx"));
 const DashboardPortfolioPage = lazy(() => import("./pages/DashboardPortfolioPage.tsx"));
 const DashboardReviewsPage = lazy(() => import("./pages/DashboardReviewsPage.tsx"));
 const DashboardDocumentsPage = lazy(() => import("./pages/DashboardDocumentsPage.tsx"));
@@ -79,6 +82,7 @@ const InspireBoardsPage = lazy(() => import("./pages/InspireBoardsPage.tsx"));
 const InspireBoardDetailPage = lazy(() => import("./pages/InspireBoardDetailPage.tsx"));
 const MyReportsPage = lazy(() => import("./pages/MyReportsPage.tsx"));
 const MyFeedbackPage = lazy(() => import("./pages/MyFeedbackPage.tsx"));
+const ChangelogPage = lazy(() => import("./pages/ChangelogPage.tsx"));
 const VerificationPage = lazy(() => import("./pages/VerificationPage.tsx"));
 const AdminLayout = lazy(() => import("./components/admin/AdminLayout"));
 const OverviewPage = lazy(() => import("./pages/admin/OverviewPage"));
@@ -236,6 +240,7 @@ const App = () => (
               <Route path="/learn/trust" element={<RedirectTo to="/learn#trust" />} />
               <Route path="/learn/px" element={<RedirectTo to="/learn" />} />
               <Route path="/learn/faq" element={<RedirectTo to="/help" />} />
+              <Route path="/changelog" element={<ChangelogPage />} />
               <Route path="/help" element={<HelpShell />}>
                 <Route index element={<HelpHubPage />} />
                 <Route path=":categoryId" element={<HelpCategoryPage />} />
@@ -259,6 +264,7 @@ const App = () => (
               <Route path="/dashboard/packages" element={<RequireAuth><DashboardPortfolioPage mode="packages" /></RequireAuth>} />
               <Route path="/dashboard/objects" element={<RequireAuth><DashboardPortfolioPage mode="objects" /></RequireAuth>} />
               <Route path="/dashboard/catalogs" element={<RequireAuth><DashboardPortfolioPage mode="catalogs" /></RequireAuth>} />
+              <Route path="/dashboard/insights" element={<RequireAuth><DashboardInsightsPage /></RequireAuth>} />
               <Route path="/dashboard/reviews" element={<RequireAuth><DashboardReviewsPage /></RequireAuth>} />
               <Route path="/dashboard/documents" element={<RequireAuth><DashboardDocumentsPage /></RequireAuth>} />
               <Route path="/dashboard/payout" element={<RequireAuth><DashboardPayoutPage /></RequireAuth>} />
@@ -433,6 +439,8 @@ const App = () => (
           <FloatingNav />
           <AuthDialog />
           <FeedbackTicketHost />
+          <RatingPrompt />
+          <CloudPrefsSync />
           <InterestSurveyGate />
           </ErrorBoundary>
         </BrowserRouter>

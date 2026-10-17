@@ -20,6 +20,7 @@ import {
 } from "@/lib/projectStatsDateRange";
 import { defaultViewGranularity } from "@/lib/projectViewSeries";
 import { cn } from "@/lib/utils";
+import { isCommerceEnabled } from "@/lib/aplus1Launch";
 import { smoothEase } from "@/lib/motion";
 
 export type StudioPulseScope = "projects" | "packages";
@@ -106,7 +107,7 @@ function StudioScopeToggle({
       ref={trackRef}
       role="tablist"
       aria-label="สลับยอดเข้าชม"
-      className="relative flex w-[min(14.5rem,100%)] shrink-0 items-center rounded-full glass-panel p-0.5 transition-shadow duration-200 hover:shadow-md hover:shadow-primary/20"
+      className="relative flex w-[min(14.5rem,100%)] shrink-0 items-center rounded-full glass-panel p-0.5 transition-shadow duration-200 hover:shadow-md"
     >
       {indicator ? (
         reduced ? (
@@ -225,7 +226,7 @@ export default function StudioPulseChart({
             onChange={onDateRangeChange}
             className="h-8 max-w-[8.5rem]"
           />
-          <StudioScopeToggle scope={scope} onScopeChange={onScopeChange} />
+          {isCommerceEnabled() ? <StudioScopeToggle scope={scope} onScopeChange={onScopeChange} /> : null}
         </div>
       </div>
 

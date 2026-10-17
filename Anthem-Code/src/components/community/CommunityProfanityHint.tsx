@@ -27,7 +27,7 @@ const CommunityProfanityHint = ({ text, className, compact }: Props) => {
   return (
     <div
       className={cn(
-        "rounded-xl border border-amber-500/40 bg-amber-500/15 px-3 py-2 text-xs text-amber-950 dark:border-amber-400/35 dark:bg-amber-500/12 dark:text-amber-50",
+        "rounded-xl border border-warning/40 bg-warning/15 px-3 py-2 text-xs text-warning dark:border-warning/35 dark:bg-warning/12 dark:text-warning",
         className,
       )}
       role="status"

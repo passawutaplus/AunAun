@@ -40,7 +40,7 @@ const DailyPxClaimCard = ({ enabled = true }: Props) => {
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm font-medium">รับฟรีทุกวัน</p>
         {streak > 0 && (
-          <span className="inline-flex items-center gap-1 text-[11px] text-orange-600 dark:text-orange-400 font-medium">
+          <span className="inline-flex items-center gap-1 text-[11px] text-warning font-medium">
             <Flame className="w-3.5 h-3.5" />
             {streak} วันติด
           </span>

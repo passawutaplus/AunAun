@@ -28,7 +28,6 @@ import ProjectManageGridSelect, {
   PROJECT_MANAGE_GRID_CLASS,
   useProjectManageGridMode,
 } from "@/components/portfolio/ProjectManageGridSelect";
-import PortfolioOverviewChart from "@/components/portfolio/PortfolioOverviewChart";
 import { DesignDrillSection } from "@/components/drill/DesignDrillSection";
 import { isLaunchDesignDrillEnabled } from "@/lib/aplus1Launch";
 import { PORTFOLIO_DRILL_HASH } from "@/lib/drillProject";
@@ -161,11 +160,9 @@ export default function PortfolioWorksManagePanel({
           className="rounded-full"
           onClick={() => navigate("/portfolio/new")}
         >
-          <Plus className="w-4 h-4 mr-1" /> Add Project
+          <Plus className="w-4 h-4 mr-1" /> ลงผลงานใหม่
         </Button>
       </div>
-
-      <PortfolioOverviewChart ownerId={userId} projectIds={projectIds} />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <StatsCard label="ทั้งหมด" value={myProjects.length} icon={LayoutGrid} />

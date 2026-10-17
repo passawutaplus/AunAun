@@ -11,6 +11,8 @@ const PALETTE = {
   glow: "#ffcf8e",
   core: "#f39a4a",
   eyeEdge: "#ffe2b5",
+  /** Eye outline — keeps the pale eyes readable on the light dome at small sizes */
+  eyeInk: "#b8611f",
   spark: "#f3b25b",
 };
 
@@ -77,8 +79,8 @@ export function MascotCharacter({ className }: { className?: string }) {
             </g>
           </g>
           <g className="tm-eyes">
-            <ellipse className="tm-eye" cx="83" cy="96" rx="9.5" ry="13" fill="url(#tm-eye-g)" transform="rotate(-6 83 96)" />
-            <ellipse className="tm-eye" cx="114" cy="90" rx="9.5" ry="14" fill="url(#tm-eye-g)" transform="rotate(8 114 90)" />
+            <ellipse className="tm-eye" cx="83" cy="96" rx="9.5" ry="13" fill="url(#tm-eye-g)" stroke={PALETTE.eyeInk} strokeWidth={2.75} transform="rotate(-6 83 96)" />
+            <ellipse className="tm-eye" cx="114" cy="90" rx="9.5" ry="14" fill="url(#tm-eye-g)" stroke={PALETTE.eyeInk} strokeWidth={2.75} transform="rotate(8 114 90)" />
           </g>
         </g>
 

@@ -10,6 +10,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,10 +30,10 @@ import {
   SHARED_MEDIA_BUCKET,
 } from "@/integrations/supabase/sharedStorageClient";
 import { useSignedStorageUrl } from "@/hooks/useSignedStorageUrl";
-import { getSupabaseErrorMessage } from "@/lib/supabaseErrors";
 import { profilePublicPath } from "@/lib/profileRoutes";
 import { cn } from "@/lib/utils";
 import { loadHideReadReceipts, saveHideReadReceipts } from "@/lib/chatReadReceipts";
+import { userFacingError } from "@/lib/userFacingError";
 
 const TEXT_MAX = 1000;
 const LINK_MAX = 500;
@@ -278,7 +279,7 @@ export function ChatSettingsSection() {
       );
       toast.success("อัปโหลดรูปแล้ว — กดบันทึกการตั้งค่าแชท");
     } catch (e: unknown) {
-      toast.error(getSupabaseErrorMessage(e, "อัปโหลดไม่สำเร็จ"));
+      toast.error(userFacingError(e, "อัปโหลดไม่สำเร็จ"));
     } finally {
       setUploadingKind(null);
     }
@@ -309,7 +310,7 @@ export function ChatSettingsSection() {
       });
       toast.success("บันทึกการตั้งค่าแชทแล้ว");
     } catch (e: unknown) {
-      toast.error(getSupabaseErrorMessage(e, "บันทึกไม่สำเร็จ"));
+      toast.error(userFacingError(e, "บันทึกไม่สำเร็จ"));
     }
   };
 
@@ -324,8 +325,10 @@ export function ChatSettingsSection() {
       </p>
 
       {isLoading || !draft ? (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
-          <Loader2 className="w-4 h-4 animate-spin" /> กำลังโหลด…
+        <div className="space-y-4" aria-busy="true" aria-label="กำลังโหลด">
+          <Skeleton className="h-[74px] w-full rounded-xl" />
+          <Skeleton className="h-40 w-full rounded-xl" />
+          <Skeleton className="h-40 w-full rounded-xl" />
         </div>
       ) : (
         <div className="space-y-4">
@@ -372,8 +375,9 @@ export function ChatSettingsSection() {
           คนที่คุณบล็อกจะส่งคำขอจ้าง/คอลแลปหาคุณไม่ได้ — กดปลดบล็อกได้ทุกเมื่อ
         </p>
         {blockedLoading ? (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
-            <Loader2 className="w-4 h-4 animate-spin" /> กำลังโหลด…
+          <div className="space-y-2" aria-busy="true" aria-label="กำลังโหลด">
+            <Skeleton className="h-11 w-full rounded-xl" />
+            <Skeleton className="h-11 w-full rounded-xl" />
           </div>
         ) : blocked.length === 0 ? (
           <p className="text-sm text-muted-foreground py-2">ยังไม่ได้บล็อกใคร</p>

@@ -150,7 +150,7 @@ function ProfileIdentityPanel({
           type="button"
           onClick={onPickAvatar}
           disabled={avatarBusy}
-          className="pointer-events-auto relative h-24 w-24 cursor-pointer overflow-hidden rounded-full border-4 border-background bg-muted shadow-lg disabled:cursor-wait sm:h-28 sm:w-28"
+          className="pointer-events-auto relative h-24 w-24 cursor-pointer overflow-hidden rounded-full border-4 border-background bg-muted shadow-sm disabled:cursor-wait sm:h-28 sm:w-28"
           aria-label="อัปโหลดรูปโปรไฟล์"
         >
           {avatarUrl ? (

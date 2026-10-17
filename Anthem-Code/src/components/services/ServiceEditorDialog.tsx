@@ -712,7 +712,7 @@ export default function ServiceEditorDialog({
             )}
             <span className="space-y-1">
               <span className="block text-sm font-semibold text-foreground">
-                {uploading ? "กำลังอัปโหลด… แป๊บนึงนะ" : "โชว์งานให้ลูกค้าเห็นภาพกันหน่อย!"}
+                {uploading ? "กำลังอัปโหลด… แป๊บนึงนะ" : "เพิ่มภาพผลงานให้ลูกค้าเห็นภาพ"}
               </span>
               <span className="block text-xs text-muted-foreground">
                 แตะเพื่อเลือกภาพหรือวิดีโอ — ภาพแรกจะเป็นภาพหลักของแพ็กเกจ
@@ -1085,7 +1085,7 @@ export default function ServiceEditorDialog({
       <div
         role="alert"
         className={cn(
-          "fixed bottom-4 right-4 z-[60] w-max max-w-[min(16rem,calc(100vw-2rem))] rounded-xl border border-destructive/40 bg-card px-3 py-2.5 shadow-lg shadow-black/30 transition-opacity duration-300 ease-out",
+          "fixed bottom-4 right-4 z-[60] w-max max-w-[min(16rem,calc(100vw-2rem))] rounded-xl border border-destructive/40 bg-card px-3 py-2.5 shadow-sm transition-opacity duration-300 ease-out",
           publishPopupOpaque ? "opacity-100" : "opacity-0 pointer-events-none",
         )}
       >

@@ -73,6 +73,8 @@ import {
   type PortfolioFxCurrency,
 } from "@/lib/payments/fxDaily";
 import { cn } from "@/lib/utils";
+import { isCommerceEnabled } from "@/lib/aplus1Launch";
+import { trackProductEvent } from "@/lib/productEvents";
 
 /** YYYY-MM-DD in Asia/Bangkok (quotation “created today”). */
 function todayOfferDateYmd() {
@@ -284,8 +286,9 @@ export function ChatOfferDialog({
   const [contactRole, setContactRole] = useState("");
   const [corpPhone, setCorpPhone] = useState(defaultClientPhone?.trim() || "");
   const [corpEmail, setCorpEmail] = useState(defaultClientEmail?.trim() || "");
-  const [paymentMode, setPaymentMode] = useState<OfferPaymentMode>("deposit");
-  const [depositPercent, setDepositPercent] = useState(50);
+  const paid = isCommerceEnabled();
+  const [paymentMode, setPaymentMode] = useState<OfferPaymentMode>(paid ? "deposit" : "full");
+  const [depositPercent, setDepositPercent] = useState(isCommerceEnabled() ? 50 : 100);
   const [customDeposit, setCustomDeposit] = useState("50");
   const [whtEnabled, setWhtEnabled] = useState(true);
   const [discountMode, setDiscountMode] = useState<"thb" | "percent">("thb");
@@ -613,7 +616,7 @@ export function ChatOfferDialog({
     setContactRole("");
     setCorpPhone(defaultClientPhone?.trim() || "");
     setCorpEmail(defaultClientEmail?.trim() || "");
-    setPaymentMode("deposit");
+    setPaymentMode(paid ? "deposit" : "full");
     setDepositPercent(50);
     setCustomDeposit("50");
     setWhtEnabled(true);
@@ -769,7 +772,8 @@ export function ChatOfferDialog({
         content: encodeChatOffer({ ...payload, quoteId }),
         messageType: "text",
       });
-      toast.success("ส่งใบเสนอราคาแล้ว");
+      toast.success(paid ? "ส่งใบเสนอราคาแล้ว" : "ส่งข้อเสนอแล้ว");
+      void trackProductEvent("proposal_send", { conversation_id: conversationId }, { debounceMs: 0 });
       setPreviewOpen(false);
       handleOpen(false);
     } catch (e) {
@@ -813,14 +817,16 @@ export function ChatOfferDialog({
                       </p>
                     </div>
                   </div>
-                  <Link
-                    to="/settings#billing"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="shrink-0 text-sm text-primary hover:underline"
-                  >
-                    แก้ไข
-                  </Link>
+                  {paid ? (
+                    <Link
+                      to="/settings#billing"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="shrink-0 text-sm text-primary hover:underline"
+                    >
+                      แก้ไข
+                    </Link>
+                  ) : null}
                 </div>
                 <div className="space-y-2.5 rounded-xl bg-muted/30 p-3">
                   <div className="flex flex-wrap items-center gap-2">
@@ -946,7 +952,7 @@ export function ChatOfferDialog({
                   <div className="grid gap-2 sm:grid-cols-2">
                     <div className="space-y-1.5 sm:col-span-2" ref={setFieldRef("companyName")}>
                       <Label htmlFor="offer-company">
-                        ชื่อบริษัท / นิติบุคคล <span className="text-orange-500">*</span>
+                        ชื่อบริษัท / นิติบุคคล <span className="text-brand">*</span>
                       </Label>
                       <Input
                         id="offer-company"
@@ -1052,14 +1058,16 @@ export function ChatOfferDialog({
                 <FileText className="h-4 w-4 text-primary mt-0.5 shrink-0" />
                 <div>
                   <p className="text-sm font-semibold">รายละเอียดเอกสาร</p>
-                  <p className="text-[11px] text-muted-foreground">ข้อมูลโครงการและเงื่อนไขชำระ</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {paid ? "ข้อมูลโครงการและเงื่อนไขชำระ" : "ข้อมูลโครงการ ขอบเขต และราคา"}
+                  </p>
                 </div>
               </div>
 
               <div className="grid gap-2 sm:grid-cols-2">
                 <div className="space-y-1.5 sm:col-span-2" ref={setFieldRef("title")}>
                   <Label htmlFor="offer-title">
-                    ชื่อโครงการ <span className="text-orange-500">*</span>
+                    ชื่อโครงการ <span className="text-brand">*</span>
                   </Label>
                   <Input
                     id="offer-title"
@@ -1093,7 +1101,7 @@ export function ChatOfferDialog({
               <div className="space-y-2">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <Label>
-                    รายการ <span className="text-orange-500">*</span>
+                    รายการ <span className="text-brand">*</span>
                   </Label>
                   <div className="inline-flex items-center gap-1.5">
                     <span className="text-[11px] text-muted-foreground">เปลี่ยนสกุลเงิน</span>
@@ -1310,7 +1318,7 @@ export function ChatOfferDialog({
                           {whtAmount > 0 ? `−${moneyLabel(whtAmount)}` : moneyLabel(0)}
                         </span>
                       </div>
-                      <div className="flex items-center justify-between gap-3 text-sm">
+                      <div className={cn("flex items-center justify-between gap-3 text-sm", !paid && "hidden")}>
                         <span className="text-muted-foreground">
                           มัดจำที่ต้องชำระ
                           {depositAmount > 0 ? ` (${effectiveDepositPercent}%)` : ""}
@@ -1340,7 +1348,7 @@ export function ChatOfferDialog({
                 ) : null}
               </div>
 
-              <div className="space-y-2">
+              <div className={cn("space-y-2", !paid && "hidden")}>
                 <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
                   <Label className="shrink-0">รูปแบบการชำระ</Label>
                   <div className="flex flex-wrap items-center gap-2 min-w-0">
@@ -1486,7 +1494,7 @@ export function ChatOfferDialog({
                       }}
                     >
                       <Label htmlFor="offer-end">
-                        วันที่จบงาน <span className="text-orange-500">*</span>
+                        วันที่จบงาน <span className="text-brand">*</span>
                       </Label>
                       <Input
                         id="offer-end"
@@ -1656,6 +1664,11 @@ export function ChatOfferDialog({
           </div>
 
           <DialogFooter className="flex-col gap-3 sm:flex-col sm:items-stretch">
+            {!paid ? (
+              <p className="text-[10px] text-muted-foreground text-center w-full order-first sm:order-none">
+                ข้อเสนอนี้ใช้ตกลงขอบเขตและราคา — SAMECOR ไม่ได้รับหรือถือเงิน การชำระตกลงกันเองในแชท
+              </p>
+            ) : (
             <p className="text-[10px] text-muted-foreground text-center w-full order-first sm:order-none">
               การส่งถือว่ายอมรับ{" "}
               <Link
@@ -1676,6 +1689,7 @@ export function ChatOfferDialog({
                 ข้อตกลงบริการ
               </Link>
             </p>
+            )}
             <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-between w-full">
               <Button type="button" variant="outline" onClick={() => openPreview("view")}>
                 <Eye className="w-4 h-4 mr-1.5" />

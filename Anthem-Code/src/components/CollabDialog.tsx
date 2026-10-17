@@ -626,8 +626,8 @@ const CollabDialog = ({
       tone="paper"
     >
         <DialogHeader className="space-y-2 text-left">
-          <Handshake className="h-8 w-8 text-[#2f2e2c]" aria-hidden />
-          <DialogTitle className="paper-title text-[1.85rem] font-medium leading-tight tracking-tight text-[#2f2e2c]">
+          <Handshake className="h-8 w-8 text-foreground" aria-hidden />
+          <DialogTitle className="paper-title text-[1.85rem] font-medium leading-tight tracking-tight text-foreground">
             Collaboration Request
           </DialogTitle>
           {source === "profile" ? (
@@ -844,7 +844,7 @@ const CollabDialog = ({
                 type="button"
                 size="icon"
                 variant="outline"
-                className="h-10 w-10 shrink-0 rounded-full border-[#e4e1db] bg-white text-[#2f2e2c] shadow-none hover:bg-[#f5f5f5]"
+                className="h-10 w-10 shrink-0 rounded-full border-border bg-white text-foreground shadow-none hover:bg-secondary"
                 onClick={addReferenceLink}
                 aria-label="เพิ่มลิงก์"
               >
@@ -977,7 +977,7 @@ const CollabDialog = ({
             <Button
               type="submit"
               disabled={busy}
-              className="rounded-full bg-primary text-primary-foreground shadow-none hover:bg-[#1c1b19] gap-2"
+              className="rounded-full bg-primary text-primary-foreground shadow-none hover:bg-primary/90 gap-2"
             >
               {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageCircle className="w-4 h-4" />}
               {!user
@@ -1085,7 +1085,7 @@ const CollabDialog = ({
       <div className="sticky bottom-0 bg-background pt-2">
         <Button
           type="button"
-          className="w-full rounded-full shadow-none hover:bg-[#1c1b19]"
+          className="w-full rounded-full shadow-none hover:bg-primary/90"
           onClick={() => {
             setWorkCatalogOpen(false);
             setWorkQuery("");

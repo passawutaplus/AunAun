@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import { toast } from "sonner";
+import { userFacingError } from "@/lib/userFacingError";
 
 interface ContractRow {
   id: string;
@@ -47,7 +48,7 @@ const ContractsListInner = () => {
       toast.success("ลบแล้ว");
       qc.invalidateQueries({ queryKey: ["contracts"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(userFacingError(e)),
   });
 
   return (

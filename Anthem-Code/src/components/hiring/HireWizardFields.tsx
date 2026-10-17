@@ -190,7 +190,7 @@ export const HireWizardStepOne = ({ form, setForm, studio }: StepProps) => (
       </div>
       <div className="col-span-2 sm:col-span-1">
         <Label htmlFor="hire-deadline">
-          กำหนดส่งงาน <span className="text-orange-500">*</span>
+          กำหนดส่งงาน <span className="text-brand">*</span>
         </Label>
         <Input
           id="hire-deadline"

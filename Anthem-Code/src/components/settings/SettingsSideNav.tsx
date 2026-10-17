@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { SignOutNavItem } from "@/components/SignOutNavItem";
 import { cn } from "@/lib/utils";
 import {
   buildSettingsNavGroups,
@@ -58,9 +57,6 @@ export default function SettingsSideNav({
             showDivider={index > 0}
           />
         ))}
-        <div className="border-t border-border/70">
-          <SignOutNavItem onSignedOut={onNavigate} />
-        </div>
       </div>
     </nav>
   );
@@ -154,7 +150,13 @@ export function useSettingsPanelState(isAdmin?: boolean): {
     } catch {
       /* ignore */
     }
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    // Only scroll back up to where the panels start: scrolling to 0 slid the sticky nav down under the
+    // cursor, so the hover highlight jumped onto a neighbouring item.
+    const body = document.getElementById("settings-body");
+    if (body) {
+      const top = body.getBoundingClientRect().top + window.scrollY - 96;
+      if (window.scrollY > top) window.scrollTo({ top, behavior: "smooth" });
+    }
   };
 
   return { panel, setPanel };

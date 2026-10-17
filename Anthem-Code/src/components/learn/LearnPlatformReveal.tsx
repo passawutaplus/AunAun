@@ -81,7 +81,7 @@ export function LearnPlatformReveal({ images }: { images: string[] }) {
       <motion.div
         ref={frameRef}
         style={{ scale }}
-        className="mx-4 origin-bottom overflow-hidden rounded-[1.75rem] bg-[#e4e1db] sm:mx-6 lg:mx-8"
+        className="mx-4 origin-bottom overflow-hidden rounded-[1.75rem] bg-border sm:mx-6 lg:mx-8"
       >
         <video
           ref={videoRef}

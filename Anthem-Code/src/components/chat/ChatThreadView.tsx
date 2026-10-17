@@ -6,7 +6,9 @@ import {
   FileText,
   Handshake,
   Info,
+  ListChecks,
   Megaphone,
+  Flag,
   MoreVertical,
   PanelRightOpen,
   Settings2,
@@ -30,6 +32,8 @@ import { groupTagLabel, normalizeGroupTag } from "@/lib/groupChatTag";
 import { supabase } from "@/integrations/supabase/client";
 import { profilesPublicFrom } from "@/lib/profileAccess";
 import { Button } from "@/components/ui/button";
+import HireDialog from "@/components/HireDialog";
+import CollabDialog from "@/components/CollabDialog";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -86,11 +90,8 @@ import {
   collectCollabReferenceLinks,
   formatCollabTypesLabel,
 } from "@/lib/collabBrief";
-import {
-  buildCollabPlanDocumentMessage,
-  emptyCollabPlanState,
-  emptyPlanPayload,
-} from "@/lib/collabToolkit";
+import { emptyCollabPlanState, emptyPlanPayload } from "@/lib/collabToolkit";
+import { COLLAB_WELCOME_PREFIX } from "@/lib/collabAgreement";
 import { useCollabPlanUi } from "@/stores/collabPlanUiStore";
 import { useCollabPlan } from "@/hooks/useCollabPlan";
 import { sharedDb } from "@/integrations/supabase/client";
@@ -135,7 +136,10 @@ import {
 } from "@/lib/hireRejectChat";
 import MessageBubble, { DateSeparator } from "@/components/chat/MessageBubble";
 import ChatComposer from "@/components/chat/ChatComposer";
-import { CollabPlanSheet } from "@/components/chat/CollabPlanSheet";
+import { CollabAgreementSheet } from "@/components/chat/CollabAgreementSheet";
+import CollabTasksSheet from "@/components/chat/CollabTasksSheet";
+import { useCollabTaskActions } from "@/hooks/useCollabTasks";
+import { trackProductEvent } from "@/lib/productEvents";
 import { parseChatOffer, type ChatOfferPayload, type OfferPartyInfo } from "@/lib/chatOffer";
 import { billingToParty, type BillingProfileFields } from "@/lib/billingProfile";
 import {
@@ -151,7 +155,7 @@ import {
 import HireRejectDialog from "@/components/hiring/HireRejectDialog";
 import { useHireQuoteCreateLock } from "@/hooks/useHireQuoteCreateLock";
 import CollabRejectDialog from "@/components/collab/CollabRejectDialog";
-import ReportTrigger from "@/components/report/ReportTrigger";
+import ReportDialog from "@/components/report/ReportDialog";
 import { tierLabel } from "@/lib/tierMembership";
 import type { PlanId } from "@/data/plans";
 import { isSameDay } from "date-fns";
@@ -221,6 +225,20 @@ const ChatThreadView = ({
   const isStudio = isStudioConversation(conv);
   const isHire = conv.kind === "hire";
   const isCollab = conv.kind === "collab";
+  /** Plain chat from "ทักแชท" — no tag until someone sends a hire / collab brief (opens its own thread). */
+  const isConnect = conv.kind === "connect";
+  const [reportOpen, setReportOpen] = useState(false);
+  const { add: addCollabTask } = useCollabTaskActions(conv.id);
+  const addTaskFromMessage = (m: Message) => {
+    const title = (m.content ?? "").replace(/\s+/g, " ").trim().slice(0, 200);
+    if (!title) return;
+    addCollabTask.mutate([title], {
+      onSuccess: () =>
+        toast.success("เพิ่มใน Tasks แล้ว", { action: { label: "เปิด Tasks", onClick: () => setTasksOpen(true) } }),
+    });
+  };
+  const [connectHireOpen, setConnectHireOpen] = useState(false);
+  const [connectCollabOpen, setConnectCollabOpen] = useState(false);
   const groupTag = normalizeGroupTag(conv.group_tag);
   const isStudioHire = isHire && !!conv.studio_id;
   const hasStudioQuoteContext = isStudio || isStudioHire;
@@ -237,6 +255,7 @@ const ChatThreadView = ({
   const [collabEndEditRow, setCollabEndEditRow] = useState<CollabEndRequestRow | null>(null);
   const [collabRejectOpen, setCollabRejectOpen] = useState(false);
   const collabPlanUi = useCollabPlanUi();
+  const [tasksOpen, setTasksOpen] = useState(false);
   const collabPlanOpen =
     collabPlanUi.open && collabPlanUi.conversationId === conv.id;
   const showCollabPlanUi = isCollab || (!!isGroup && !isStudio && groupTag === "collab");
@@ -542,7 +561,7 @@ const ChatThreadView = ({
     enabled: !!otherId && !isGroup,
     queryFn: async () => {
       const { data } = await profilesPublicFrom()
-        .select("user_id, display_name, avatar_url, role, username, subscription_tier")
+        .select("user_id, display_name, avatar_url, role, username")
         .eq("user_id", otherId!)
         .maybeSingle();
       return data;
@@ -773,9 +792,7 @@ const ChatThreadView = ({
               try {
                 await sendMessage.mutateAsync({
                   conversationId: conv.id,
-                  content: buildCollabPlanDocumentMessage({
-                    projectTitle: conv.project_title,
-                  }),
+                  content: COLLAB_WELCOME_PREFIX,
                 });
               } catch {
                 /* accept already succeeded */
@@ -783,7 +800,7 @@ const ChatThreadView = ({
               void qc.invalidateQueries({ queryKey: ["chat-collab-meta", conv.request_id] });
               void qc.invalidateQueries({ queryKey: ["collab-plan", conv.id] });
               collabPlanUi.openFor(conv.id);
-              toast.success("ตอบรับแล้ว — เปิดเอกสารแผนคอลแลปให้แล้ว");
+              toast.success("ตอบรับแล้ว — เริ่มตกลงแผนกันได้เลย");
             } catch (e: unknown) {
               toast.error(e instanceof Error ? e.message : "ตอบรับไม่สำเร็จ");
             }
@@ -806,7 +823,7 @@ const ChatThreadView = ({
     if (isCollabAcceptedStatus(collabStatus)) {
       return {
         canRespond: false,
-        statusHint: "ตอบรับแล้ว — เปิดเอกสารแผนคอลแลปเพื่อเริ่มวางแผนร่วมกัน",
+        statusHint: "ตอบรับแล้ว — กด「วางแผนงาน」เพื่อตกลงแผนร่วมกัน",
         onAccept: () => {},
         onDecline: () => {},
       };
@@ -1301,7 +1318,8 @@ const ChatThreadView = ({
   const badgeBg = isHire ? "bg-[hsl(var(--chat-hire-soft))]" : kind === "collab" ? "bg-[hsl(var(--chat-collab-soft))]" : "bg-primary/10";
 
   const displayName = isGroup ? conv.title || conv.project_title || "กลุ่มแชท" : other?.display_name ?? "ผู้ใช้";
-  const partnerTier = (other?.subscription_tier as PlanId | undefined) ?? "free";
+  // profiles_public has no subscription_tier — tier badges return with paid plans.
+  const partnerTier = "free" as PlanId;
   const showTierBadge =
     isAplus1SubscriptionsEnabled() && !isGroup && TIER_BADGE_TIERS.has(partnerTier);
 
@@ -1379,7 +1397,7 @@ const ChatThreadView = ({
           <div className="min-w-0">
             <div className="flex items-center gap-1.5 min-w-0">
               <span className="font-semibold text-foreground truncate text-sm">{displayName}</span>
-              {!isGroup && (
+              {!isGroup && !isConnect && (
                 <span
                   className={cn(
                     "inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full shrink-0",
@@ -1430,12 +1448,40 @@ const ChatThreadView = ({
                     ? "กลุ่มพูดคุยงานจ้าง"
                     : "กลุ่มพูดคุยคอลแลป"
                   : "แชทกลุ่ม"
+                : isConnect
+                ? "ทักทาย — คุยลงตัวแล้วส่งบรีฟจ้างงานหรือคอลแลปได้"
                 : conv.project_title || (isHire ? "พูดคุยรายละเอียดงาน" : "พูดคุยแนวทางคอลแลป")}
             </p>
           </div>
         </button>
 
         <div className="flex items-center gap-0.5 shrink-0">
+          {isConnect && !isGroup && otherId ? (
+            <div className="flex items-center gap-1 mr-1">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => setConnectHireOpen(true)}
+                className="h-8 rounded-full px-2.5 text-xs gap-1 border-[hsl(var(--chat-hire))]/40 text-[hsl(var(--chat-hire))] hover:bg-[hsl(var(--chat-hire-soft))]"
+                title="ส่งบรีฟจ้างงาน"
+              >
+                <BriefcaseIcon className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">จ้างงาน</span>
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => setConnectCollabOpen(true)}
+                className="h-8 rounded-full px-2.5 text-xs gap-1 border-[hsl(var(--chat-collab))]/40 text-[hsl(var(--chat-collab))] hover:bg-[hsl(var(--chat-collab-soft))]"
+                title="ชวนคอลแลป"
+              >
+                <Handshake className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">คอลแลป</span>
+              </Button>
+            </div>
+          ) : null}
           {requestStatusLabel &&
             (isHireCompletedStatus(hireStatus) ||
               isHireCancelledStatus(hireStatus) ||
@@ -1464,14 +1510,6 @@ const ChatThreadView = ({
             <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5 shrink-0">
               ส่งต่อแล้ว
             </Badge>
-          )}
-          {!isGroup && otherId && (
-            <ReportTrigger
-              targetType="user"
-              targetId={otherId}
-              targetOwnerId={otherId}
-              className="p-0 min-h-8 min-w-8 h-8 w-8 rounded-full"
-            />
           )}
           {canForwardHire && (
             <Button
@@ -1549,27 +1587,40 @@ const ChatThreadView = ({
             )
           )}
           {(isCollab || (!!isGroup && !isStudio && groupTag === "collab")) && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => collabPlanUi.openFor(conv.id)}
-              className={cn(
-                "collab-plan-btn inline-flex items-center gap-1 text-xs font-medium px-2.5 h-8 rounded-full ml-0.5",
-                "border-[hsl(var(--chat-collab)/0.7)] bg-transparent text-[hsl(var(--chat-collab))]",
-                "hover:bg-[hsl(var(--chat-collab))] hover:text-[hsl(var(--chat-collab-foreground))] hover:border-[hsl(var(--chat-collab))]",
-                "transition-colors duration-200",
-              )}
-              aria-label="วางแผนงาน"
+            <div
+              role="group"
+              aria-label="พื้นที่ทำงานคอลแลป"
+              className="ml-0.5 inline-flex items-center gap-0.5 rounded-full bg-[hsl(var(--chat-collab-soft))] p-0.5 ring-1 ring-[hsl(var(--chat-collab)/0.35)]"
             >
-              <Handshake className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">วางแผนงาน</span>
-            </Button>
+              <button
+                type="button"
+                onClick={() => collabPlanUi.openFor(conv.id)}
+                className={cn("collab-plan-btn", "inline-flex h-7 items-center gap-1 rounded-full px-2.5 text-xs font-medium text-[hsl(var(--chat-collab))] transition-colors hover:bg-[hsl(var(--chat-collab))] hover:text-[hsl(var(--chat-collab-foreground))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring")}
+                aria-label="วางแผนงาน"
+              >
+                <Handshake className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">วางแผนงาน</span>
+              </button>
+              <span className="h-4 w-px bg-[hsl(var(--chat-collab)/0.3)]" aria-hidden />
+              <button
+                type="button"
+                onClick={() => {
+                  setTasksOpen(true);
+                  void trackProductEvent("workspace_open", { conversation_id: conv.id }, { debounceMs: 60_000 });
+                }}
+                className={"inline-flex h-7 items-center gap-1 rounded-full px-2.5 text-xs font-medium text-[hsl(var(--chat-collab))] transition-colors hover:bg-[hsl(var(--chat-collab))] hover:text-[hsl(var(--chat-collab-foreground))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"}
+                aria-label="Tasks"
+              >
+                <ListChecks className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Tasks</span>
+              </button>
+            </div>
           )}
           {(canCreateCollabProject ||
             canCreateGroupCollabProject ||
             canCancelRequest ||
-            (isGroup && !isStudio)) && (
+            (isGroup && !isStudio) ||
+            (!isGroup && !!otherId)) && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -1583,6 +1634,12 @@ const ChatThreadView = ({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
+                {!isGroup && otherId ? (
+                  <DropdownMenuItem onClick={() => setReportOpen(true)} className="text-destructive focus:text-destructive">
+                    <Flag className="mr-2 h-4 w-4" />
+                    รายงานผู้ใช้
+                  </DropdownMenuItem>
+                ) : null}
                 {(canCreateCollabProject || canCreateGroupCollabProject) && (
                   <DropdownMenuItem
                     onClick={() =>
@@ -1708,7 +1765,7 @@ const ChatThreadView = ({
         )}
         {!messagesLoading && !messagesError && grouped.length === 0 && (
           <div className="text-center text-sm text-muted-foreground py-12">
-            {isGroup ? "เริ่มแชทกลุ่มได้เลย 👥" : isHire ? "เริ่มบทสนทนากับลูกค้าได้เลย ✨" : "ทักทายเพื่อนคอลแลปได้เลย 👋"}
+            {isGroup ? "เริ่มแชทกลุ่มได้เลย" : isHire ? "เริ่มคุยกับลูกค้าได้เลย" : "ทักทายเพื่อนคอลแลปได้เลย"}
           </div>
         )}
         {grouped.map((it, idx) =>
@@ -1841,6 +1898,7 @@ const ChatThreadView = ({
                 collabChangeAlreadyApproved={collabChangeAlreadyApproved}
                 collabChangeApproveBusy={collabChangeApproveBusy}
                 onReply={composerLockedHint ? undefined : setReplyTo}
+                onAddTask={showCollabPlanUi ? addTaskFromMessage : undefined}
                 onUnsend={handleUnsend}
                 onAnnounce={announceMessage}
                 getSenderLabel={getSenderLabel}
@@ -1864,7 +1922,23 @@ const ChatThreadView = ({
       />
 
       {(isCollab || (!!isGroup && !isStudio && groupTag === "collab")) && (
-        <CollabPlanSheet
+        <CollabTasksSheet
+          open={tasksOpen}
+          onOpenChange={setTasksOpen}
+          conversationId={conv.id}
+          participantIds={[conv.client_id, conv.freelancer_id]}
+          publishPath={
+            canCreateGroupCollabProject
+              ? `/portfolio/new?collab_conversation_id=${encodeURIComponent(conv.id)}`
+              : canCreateCollabProject && conv.request_id
+                ? `/portfolio/new?collab_request_id=${encodeURIComponent(conv.request_id)}`
+                : null
+          }
+        />
+      )}
+
+      {(isCollab || (!!isGroup && !isStudio && groupTag === "collab")) && (
+        <CollabAgreementSheet
           open={collabPlanOpen}
           onOpenChange={(open) => {
             if (open) collabPlanUi.openFor(conv.id);
@@ -2346,6 +2420,36 @@ const ChatThreadView = ({
           }
         }}
       />
+      {!isGroup && otherId ? (
+        <ReportDialog
+          targetType="user"
+          targetId={otherId}
+          targetOwnerId={otherId}
+          open={reportOpen}
+          onOpenChange={setReportOpen}
+          hideTrigger
+        />
+      ) : null}
+      {isConnect && otherId ? (
+        <>
+          <HireDialog
+            open={connectHireOpen}
+            onOpenChange={setConnectHireOpen}
+            projectTitle={displayName}
+            freelancerId={otherId}
+            source="profile"
+            profileName={displayName}
+            freelancerUsername={other?.username ?? null}
+          />
+          <CollabDialog
+            open={connectCollabOpen}
+            onOpenChange={setConnectCollabOpen}
+            recipientId={otherId}
+            recipientName={displayName}
+            source="profile"
+          />
+        </>
+      ) : null}
     </div>
   );
 };

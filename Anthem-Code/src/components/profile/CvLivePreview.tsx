@@ -24,7 +24,7 @@ export default function CvLivePreview(props: Props) {
   return (
     <div ref={hostRef} className="w-full" style={{ height: A4_PX_H * scale }}>
       <div
-        className="origin-top-left overflow-hidden rounded-md shadow-lg ring-1 ring-black/10"
+        className="origin-top-left overflow-hidden rounded-md shadow-sm ring-1 ring-black/10"
         style={{ width: A4_PX_W, height: A4_PX_H, transform: `scale(${scale})` }}
       >
         <AboutDocumentSheet {...props} />

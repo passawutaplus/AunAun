@@ -1,4 +1,5 @@
 import { ChevronRight, Eye } from "lucide-react";
+import { inboxRowDomId } from "@/lib/studioNav";
 import type { CSSProperties, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
@@ -114,7 +115,7 @@ export function InboxExpandTable({
         {rows.map((row) => {
           const open = expandedId === row.id;
           return (
-            <li key={row.id} className={cn(open && "bg-muted/20")}>
+            <li key={row.id} id={inboxRowDomId(row.id)} className={cn("scroll-mt-24", open && "bg-muted/20")}>
               <div
                 className="flex w-full cursor-pointer items-center gap-2 px-3 py-2.5 hover:bg-muted/25 md:grid md:gap-x-2 md:[grid-template-columns:var(--inbox-cols)]"
                 style={colsStyle}

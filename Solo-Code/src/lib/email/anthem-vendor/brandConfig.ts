@@ -52,8 +52,8 @@ export const BRAND_LOGO_PATH = "/brand/aplus1-wordmark.png";
 
 export const BRAND_COMPANY = "SAMECOR";
 
-export const BRAND_SUPPORT_EMAIL = "support@aplus1.app";
-export const BRAND_PRIVACY_EMAIL = "privacy@aplus1.app";
+export const BRAND_SUPPORT_EMAIL = "support@samecor.com";
+export const BRAND_PRIVACY_EMAIL = "privacy@samecor.com";
 
 /**
  * Official LINE contact (OA / lin.ee).

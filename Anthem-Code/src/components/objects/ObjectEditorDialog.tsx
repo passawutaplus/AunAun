@@ -559,7 +559,7 @@ export default function ObjectEditorDialog({ ownerId, open, object, onOpenChange
                             <Input value={bulkSku} className="h-9 w-32" onChange={(event) => setBulkSku(event.target.value)} />
                           </label>
                           <Button type="button" className="h-9" onClick={applyBulk}>
-                            อัปเดตกับสินค้าทั้งหมด
+                            ใช้กับทุกสินค้า
                           </Button>
                         </div>
                         <table className="w-full min-w-[36rem] text-sm">

@@ -37,39 +37,48 @@
     --font-body: "IBM Plex Sans", "IBM Plex Sans Thai", "Sarabun", "IBM Plex Sans Thai Looped", ui-sans-serif, system-ui, sans-serif;
     --font-heading: "Agrandir Wide", "IBM Plex Sans Thai", "IBM Plex Sans", "Sarabun", ui-sans-serif, system-ui, sans-serif;
 
-    /* Paper and ink: the studio home look, used on every page (paper field, warm ink, hairlines, white cards). */
-    --background: 0 0% 96%;
-    --foreground: 40 3% 18%;
+    /* Brand Book Ver.0.1: Studio White canvas #F8F7F2, Gallery Black ink #111111, hairline #E6E6E3, white cards. */
+    --background: 50 30% 96%;
+    --foreground: 0 0% 7%;
 
     --card: 0 0% 100%;
-    --card-foreground: 40 3% 18%;
+    --card-foreground: 0 0% 7%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 40 3% 18%;
+    --popover-foreground: 0 0% 7%;
 
-    /* Primary is ink (black pills). Orange is gone from the chrome; it survives only as --accent-warm for rare highlights. */
+    /* Primary stays ink (black pills, owner decision 2026-10-17). Brand red lives in --brand. */
     --primary: 40 3% 18%;
     --primary-foreground: 0 0% 96%;
     --primary-bright: 40 3% 18%;
-    --accent-warm: 18 100% 46%;
+    /* SAMECOR Red #EE3D29 — the one accent (CTA highlight, ✱, selected); never a status colour */
+    --brand: 6 85% 55%;
+    --brand-foreground: 0 0% 7%;
+    --accent-warm: var(--brand);
+    /* Charcoal #282929 — dark cards, strong surfaces */
+    --surface-strong: 180 1% 16%;
 
     --secondary: 40 6% 92%;
     --secondary-foreground: 40 3% 18%;
 
     --muted: 40 6% 92%;
-    --muted-foreground: 30 4% 41%;
+    --muted-foreground: 0 0% 40%;
 
     --accent: 40 6% 92%;
     --accent-foreground: 40 3% 18%;
 
-    --destructive: 0 72% 51%;
+    /* Status colours are separate from brand red (Brand Book p15) */
+    --destructive: 4 77% 40%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 71% 38%;
+    --success: 153 67% 28%;
     --success-foreground: 0 0% 100%;
 
-    --border: 40 5% 86%;
-    --input: 40 5% 86%;
+    --warning: 39 100% 27%;
+    --warning-foreground: 0 0% 100%;
+
+    --border: 60 6% 90%;
+    --input: 60 6% 90%;
     --ring: 40 3% 18%;
 
     --radius: 1rem;
@@ -80,83 +89,88 @@
     --sidebar-primary-foreground: 0 0% 96%;
     --sidebar-accent: 40 6% 92%;
     --sidebar-accent-foreground: 40 3% 18%;
-    --sidebar-border: 40 5% 86%;
+    --sidebar-border: 60 6% 90%;
     --sidebar-ring: 40 3% 18%;
 
-    /* Chat persona tokens */
-    --chat-hire: 215 88% 52%;
+    /* Chat persona tokens — Brand Book: two calm non-red tones. Hire = slate ink, Collab = warm stone. */
+    --chat-hire: 214 30% 34%;
     --chat-hire-foreground: 0 0% 100%;
-    --chat-hire-soft: 215 90% 96%;
-    --chat-collab: 40 3% 18%;
-    --chat-collab-foreground: 0 0% 96%;
-    --chat-collab-soft: 40 6% 92%;
+    --chat-hire-soft: 214 24% 94%;
+    --chat-collab: 32 12% 34%;
+    --chat-collab-foreground: 0 0% 100%;
+    --chat-collab-soft: 38 16% 91%;
   }
 
   /* Learn / Get in Touch — paper field from the studio home, including when the app is dark. */
   html.learn-paper {
-    --background: 0 0% 96%;
-    --foreground: 40 3% 18%;
+    --background: 50 30% 96%;
+    --foreground: 0 0% 7%;
     --card: 0 0% 100%;
-    --card-foreground: 40 3% 18%;
+    --card-foreground: 0 0% 7%;
     --popover: 0 0% 100%;
-    --popover-foreground: 40 3% 18%;
+    --popover-foreground: 0 0% 7%;
     --primary: 40 3% 18%;
     --primary-foreground: 0 0% 96%;
     --primary-bright: 40 3% 18%;
     --secondary: 40 6% 92%;
     --secondary-foreground: 40 3% 18%;
     --muted: 40 6% 92%;
-    --muted-foreground: 30 4% 41%;
+    --muted-foreground: 0 0% 40%;
     --accent: 40 6% 92%;
     --accent-foreground: 40 3% 18%;
-    --border: 40 5% 86%;
-    --input: 40 5% 86%;
+    --border: 60 6% 90%;
+    --input: 60 6% 90%;
     --ring: 40 3% 18%;
     color-scheme: light;
   }
 
   .dark {
     color-scheme: dark;
-    /* Warm coal (the footer's #2f2e2c family); primary flips to paper so pills stay legible */
-    --background: 40 3% 12%;
+    /* Gallery Black #111111 field, Charcoal #282929 surfaces; primary flips to paper so pills stay legible */
+    --background: 0 0% 7%;
     --foreground: 0 0% 96%;
-    --card: 40 3% 16%;
+    --card: 0 0% 11%;
     --card-foreground: 0 0% 96%;
-    --popover: 40 3% 15%;
+    --popover: 0 0% 11%;
     --popover-foreground: 0 0% 96%;
     --primary: 0 0% 96%;
-    --primary-foreground: 40 3% 12%;
+    --primary-foreground: 0 0% 7%;
     --primary-bright: 0 0% 96%;
-    --accent-warm: 18 100% 56%;
-    --secondary: 40 3% 21%;
+    --brand: 6 85% 55%;
+    --brand-foreground: 0 0% 7%;
+    --accent-warm: var(--brand);
+    --surface-strong: 180 1% 16%;
+    --secondary: 180 1% 16%;
     --secondary-foreground: 0 0% 94%;
-    --muted: 40 3% 21%;
+    --muted: 180 1% 16%;
     --muted-foreground: 40 4% 68%;
-    --accent: 40 3% 24%;
+    --accent: 180 1% 19%;
     --accent-foreground: 0 0% 96%;
-    --destructive: 0 72% 52%;
-    --destructive-foreground: 0 0% 100%;
-    --success: 142 62% 48%;
-    --success-foreground: 40 3% 12%;
-    --border: 40 3% 26%;
-    --input: 40 3% 24%;
+    --destructive: 4 92% 69%;
+    --destructive-foreground: 0 0% 7%;
+    --success: 147 47% 56%;
+    --success-foreground: 0 0% 7%;
+    --warning: 40 77% 60%;
+    --warning-foreground: 0 0% 7%;
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
     --ring: 0 0% 96%;
-    --sidebar-background: 40 3% 10%;
+    --sidebar-background: 0 0% 6%;
     --sidebar-foreground: 0 0% 92%;
     --sidebar-primary: 0 0% 96%;
-    --sidebar-primary-foreground: 40 3% 12%;
-    --sidebar-accent: 40 3% 18%;
+    --sidebar-primary-foreground: 0 0% 7%;
+    --sidebar-accent: 180 1% 16%;
     --sidebar-accent-foreground: 0 0% 94%;
-    --sidebar-border: 40 3% 26%;
+    --sidebar-border: 0 0% 20%;
     --sidebar-ring: 0 0% 96%;
 
     /* Chat persona tokens */
-    --chat-hire: 215 88% 62%;
-    --chat-hire-foreground: 40 3% 10%;
-    --chat-hire-soft: 215 45% 18%;
-    --chat-collab: 0 0% 96%;
-    --chat-collab-foreground: 40 3% 12%;
-    --chat-collab-soft: 40 3% 20%;
+    --chat-hire: 214 34% 70%;
+    --chat-hire-foreground: 0 0% 7%;
+    --chat-hire-soft: 214 16% 17%;
+    --chat-collab: 34 14% 68%;
+    --chat-collab-foreground: 0 0% 7%;
+    --chat-collab-soft: 32 7% 17%;
   }
 
 }
@@ -668,15 +682,11 @@
   }
 
   /* Wallet hero — peach → brand orange → coral (visible wash, never black) */
+  /* Brand Book: Charcoal panel + Studio White text in both themes, no gradient. */
   .bg-gradient-wallet {
     background-image: none;
-    background-color: #2f2e2c;
-    color: #f5f5f5;
-  }
-  .dark .bg-gradient-wallet {
-    background-image:
-      radial-gradient(ellipse 90% 75% at 100% 0%, hsl(36 100% 74% / 0.4), transparent 58%),
-      linear-gradient(145deg, hsl(26 100% 56%) 0%, hsl(16 98% 48%) 50%, hsl(8 88% 42%) 100%);
+    background-color: hsl(var(--surface-strong));
+    color: hsl(48 27% 96%);
   }
 
   /* Hire THB wallet: flat ink panel (was an orange mesh photo) */
@@ -684,13 +694,9 @@
     position: relative;
     isolation: isolate;
     overflow: hidden;
-    background-color: #2f2e2c;
+    background-color: hsl(var(--surface-strong));
     background-image: none;
-    color: #f5f5f5;
-  }
-  .dark .hire-wallet-mesh {
-    background-color: #3a3936;
-    background-image: none;
+    color: hsl(48 27% 96%);
   }
 
   /* Footer CTA: flat ink (was an orange mesh photo) */
@@ -698,12 +704,9 @@
     position: relative;
     isolation: isolate;
     overflow: hidden;
-    background-color: #2f2e2c;
+    background-color: hsl(var(--surface-strong));
     background-image: none;
-    color: #f5f5f5;
-  }
-  .dark .footer-cta-wave {
-    background-color: #3a3936;
+    color: hsl(48 27% 96%);
   }
 
   /* My Studio page header: paper, no photo. Title is large Agrandir light like the feed's "Projects". */
@@ -735,13 +738,7 @@
     z-index: 1;
     pointer-events: none;
     background-color: transparent;
-    background-image: linear-gradient(
-      to bottom,
-      hsl(var(--background)) 0%,
-      hsl(var(--background) / 0.82) 28%,
-      hsl(var(--background) / 0.4) 58%,
-      transparent 100%
-    );
+    background-image: none;
     background-repeat: no-repeat;
     background-size: 100% 100%;
     background-position: 0 0;
@@ -839,14 +836,15 @@
   }
 
   .bg-gradient-brand-radial {
-    background-image: radial-gradient(circle at 30% 30%, hsl(var(--foreground) / 0.10), transparent 60%);
+    background-image: none;
+    background-color: hsl(var(--secondary));
   }
 
 
   html.learn-paper .bg-gradient-brand,
   html.learn-paper .text-gradient {
     background-image: none;
-    background-color: #2f2e2c;
+    background-color: hsl(var(--foreground));
     -webkit-text-fill-color: unset;
   }
 
@@ -854,12 +852,13 @@
      (otherwise .dark's dark --primary-foreground lands on #2f2e2c and the text vanishes).
      The studio home follows the theme now, so it uses the plain .bg-gradient-brand (ink in light, paper in dark). */
   html.learn-paper .bg-gradient-brand {
-    color: #f5f5f5 !important;
+    color: hsl(var(--background)) !important;
   }
 
 
   .bg-gradient-subtle {
-    background-image: linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--secondary) / 0.4) 100%);
+    background-image: none;
+    background-color: hsl(var(--background));
   }
 
   /* === Clean Surface System (was glass) === */
@@ -906,21 +905,21 @@
   .glass-hover:hover {
     transform: translateY(-1px);
     border-color: hsl(var(--primary) / 0.4);
-    box-shadow: 0 4px 16px -6px hsl(14 100% 50% / 0.18);
+    box-shadow: none;
 
   }
 
   /* Chat — paper field (light) and warm charcoal (dark), not cool blue bubbles */
   .chat-paper {
-    --background: 0 0% 96%;
-    --foreground: 40 3% 18%;
-    --muted-foreground: 30 4% 41%;
+    --background: 50 30% 96%;
+    --foreground: 0 0% 7%;
+    --muted-foreground: 0 0% 40%;
     --card: 0 0% 100%;
-    --card-foreground: 40 3% 18%;
+    --card-foreground: 0 0% 7%;
     --popover: 0 0% 100%;
-    --popover-foreground: 40 3% 18%;
-    --border: 40 5% 86%;
-    --input: 40 5% 86%;
+    --popover-foreground: 0 0% 7%;
+    --border: 60 6% 90%;
+    --input: 60 6% 90%;
     --muted: 40 6% 92%;
     --secondary: 40 6% 92%;
     --secondary-foreground: 40 3% 18%;
@@ -930,16 +929,16 @@
     --primary-foreground: 0 0% 96%;
     --primary-bright: 40 3% 18%;
     --ring: 40 3% 18%;
-    color: #2f2e2c;
-    background-color: #f5f5f5;
+    color: hsl(var(--foreground));
+    background-color: hsl(var(--background));
   }
   .dark .chat-paper {
-    --background: 40 4% 10%;
+    --background: 0 0% 7%;
     --foreground: 40 12% 94%;
     --muted-foreground: 35 6% 68%;
-    --card: 40 4% 14%;
+    --card: 180 1% 16%;
     --card-foreground: 40 12% 94%;
-    --popover: 40 4% 13%;
+    --popover: 180 1% 16%;
     --popover-foreground: 40 12% 94%;
     --border: 40 5% 22%;
     --input: 40 5% 22%;
@@ -952,22 +951,22 @@
     --primary-foreground: 40 3% 12%;
     --primary-bright: 0 0% 96%;
     --ring: 0 0% 96%;
-    color: #f3f1ee;
-    background-color: #1a1917;
+    color: hsl(var(--foreground));
+    background-color: hsl(var(--background));
   }
 
   /* Hire / collab request popups — paper + ink, same as auth and search filter.
      Stays light in dark mode. Accent is ink, not radiant orange. */
   .paper-popup {
-    --background: 0 0% 96%;
-    --foreground: 40 3% 18%;
-    --muted-foreground: 35 4% 40%;
+    --background: 50 30% 96%;
+    --foreground: 0 0% 7%;
+    --muted-foreground: 0 0% 40%;
     --card: 0 0% 100%;
-    --card-foreground: 40 3% 18%;
+    --card-foreground: 0 0% 7%;
     --popover: 0 0% 100%;
-    --popover-foreground: 40 3% 18%;
-    --border: 40 14% 88%;
-    --input: 40 14% 88%;
+    --popover-foreground: 0 0% 7%;
+    --border: 60 6% 90%;
+    --input: 60 6% 90%;
     --muted: 40 8% 94%;
     --secondary: 40 8% 93%;
     --secondary-foreground: 40 3% 18%;
@@ -977,14 +976,14 @@
     --primary-foreground: 0 0% 96%;
     --primary-bright: 40 3% 18%;
     --ring: 40 3% 18%;
-    color: #2f2e2c;
+    color: hsl(var(--foreground));
     color-scheme: light;
-    background-color: #f5f5f5;
-    border-color: #e4e1db;
+    background-color: hsl(var(--background));
+    border-color: hsl(var(--border));
   }
   .paper-popup .paper-title {
-    font-family: "Iowan Old Style", Palatino, Georgia, serif;
-    color: #2f2e2c;
+    font-family: "Agrandir Wide", "IBM Plex Sans Thai", "IBM Plex Sans", sans-serif;
+    color: hsl(var(--foreground));
   }
   .paper-popup .bg-muted\/30,
   .paper-popup .bg-muted\/20 {
@@ -993,7 +992,7 @@
   .paper-popup input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="date"]),
   .paper-popup textarea {
     background-color: #fff;
-    border-color: #e4e1db;
+    border-color: hsl(var(--border));
     box-shadow: none;
   }
   .paper-popup input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="date"]) {
@@ -2247,7 +2246,7 @@ html [data-feed-sheet] [data-feed-catalog-head] .gap-y-1 {
 }
 
 .home-hero-wash {
-  background: radial-gradient(ellipse at 50% 28%, rgba(229, 228, 226, 0.95) 0%, rgba(188, 186, 180, 0.28) 42%, transparent 70%);
+  background: none;
 }
 
 .dark .home-hero-wash {
@@ -2355,8 +2354,8 @@ html [data-feed-sheet] [data-feed-catalog-head] .gap-y-1 {
   justify-content: center;
   overflow: hidden;
   padding: 14vh 6vw 8vh;
-  background: #f5f5f5;
-  color: #2f2e2c;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
   font-family: Inter, "IBM Plex Sans Thai", ui-sans-serif, system-ui, sans-serif;
   font-weight: 400;
   line-height: 1.5;
@@ -2377,7 +2376,7 @@ html [data-feed-sheet] [data-feed-catalog-head] .gap-y-1 {
   gap: 32px;
   padding: 22px 6vw;
   background: transparent;
-  color: #2f2e2c;
+  color: hsl(var(--foreground));
 }
 .status-screen-logo {
   display: block;
@@ -2436,7 +2435,7 @@ html [data-feed-sheet] [data-feed-catalog-head] .gap-y-1 {
   z-index: 2;
   text-align: center;
   max-width: 28em;
-  color: #2f2e2c;
+  color: hsl(var(--foreground));
 }
 .status-screen h1 {
   margin: 0;
@@ -2494,7 +2493,7 @@ html [data-feed-sheet] [data-feed-catalog-head] .gap-y-1 {
 }
 .status-screen-lang { display: flex; gap: 8px; font-size: 13px; letter-spacing: 0.08em; }
 .status-screen-lang button {
-  color: #2f2e2c;
+  color: hsl(var(--foreground));
   background: none;
   border: 0;
   padding: 0;
@@ -2514,10 +2513,10 @@ html [data-feed-sheet] [data-feed-catalog-head] .gap-y-1 {
     flex-direction: column;
     gap: 16px;
     padding: 8px 6vw 24px;
-    background: #f5f5f5;
-    color: #2f2e2c;
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
   }
-  .status-screen-bar.is-open { background: #f5f5f5; color: #2f2e2c; }
+  .status-screen-bar.is-open { background: hsl(var(--background)); color: hsl(var(--foreground)); }
   .status-screen-bar.is-open .status-screen-nav { display: flex; }
 }
 @media (prefers-reduced-motion: reduce) {

@@ -65,7 +65,7 @@ export function MentionFriendPopup({ query, text, onPick, className }: Props) {
   return (
     <div
       className={cn(
-        "absolute left-0 bottom-full z-30 mb-1 w-56 max-w-[calc(100%-0.5rem)] max-h-72 overflow-y-auto rounded-xl border border-border bg-popover shadow-lg",
+        "absolute left-0 bottom-full z-30 mb-1 w-56 max-w-[calc(100%-0.5rem)] max-h-72 overflow-y-auto rounded-xl border border-border bg-popover shadow-sm",
         className,
       )}
       role="listbox"

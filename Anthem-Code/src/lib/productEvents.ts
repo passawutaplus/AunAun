@@ -5,6 +5,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { isCategoryAllowed } from "@/lib/cookieConsent";
+import { noteRatingMoment } from "@/lib/ratingPrompt";
 
 export type ProductEventName =
   | "page_view"
@@ -23,7 +24,14 @@ export type ProductEventName =
   | "collection_save"
   | "inspire_click"
   | "ad_click"
-  | "ad_impression";
+  | "ad_impression"
+  // Free-launch funnel (Discover → Connect → Hire / Collaborate)
+  | "connect_message"
+  | "proposal_send"
+  | "proposal_accept"
+  | "workspace_open"
+  | "task_create"
+  | "onboarding_step";
 
 const SESSION_KEY = "aplus1_analytics_sid";
 const lastSent = new Map<string, number>();
@@ -50,6 +58,8 @@ export async function trackProductEvent(
 ): Promise<void> {
   try {
     if (typeof window === "undefined") return;
+    // Local-only Beta rating moment; independent of analytics consent
+    if (eventName === "hire_submit") noteRatingMoment("first_hire");
     if (!isCategoryAllowed("analytics")) return;
 
     const debounceMs = opts?.debounceMs ?? DEFAULT_DEBOUNCE_MS;

@@ -41,6 +41,7 @@ import { trackProductEvent } from "@/lib/productEvents";
 import { isBlockedFromOpportunity } from "@/hooks/useCommunityPostInteractions";
 import { navigateToAuth } from "@/lib/authRedirect";
 import { cn } from "@/lib/utils";
+import { isCommerceEnabled } from "@/lib/aplus1Launch";
 import { isLocalDevSelfHirePreview } from "@/lib/localDevSelfHire";
 
 type HireFieldErrorKey = "deadline" | "budgetMin" | "budgetMax" | "jobTypes" | "details";
@@ -110,7 +111,8 @@ const HireDialog = ({
   const createReq = useCreateHireRequest();
   const openChat = useOpenHireCollabChat();
   const { data: myJobs = [] } = useMyOpenJobPosts();
-  const showServiceTabs = !!freelancerId && isUuid(freelancerId);
+  // Packages tab comes back with the commerce phase — until then the Brief is the only way in.
+  const showServiceTabs = isCommerceEnabled() && !!freelancerId && isUuid(freelancerId);
   const localSelfHirePreview =
     !!user &&
     !!freelancerId &&
@@ -123,7 +125,7 @@ const HireDialog = ({
     showServiceTabs && open ? freelancerId : undefined,
     { includeDrafts: localSelfHirePreview },
   );
-  const [panel, setPanel] = useState<HirePanel>(initialPanel);
+  const [panel, setPanel] = useState<HirePanel>(isCommerceEnabled() ? initialPanel : "message");
   const [jobPostId, setJobPostId] = useState("");
   const [form, setForm] = useState(emptyHireInviteForm());
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<HireFieldErrorKey, string>>>({});
@@ -182,7 +184,7 @@ const HireDialog = ({
 
   useEffect(() => {
     if (!open) return;
-    setPanel(initialPanel);
+    setPanel(isCommerceEnabled() ? initialPanel : "message");
     void trackProductEvent(
       "hire_open",
       { project_id: projectId ?? null, freelancer_id: freelancerId ?? null, source },
@@ -208,7 +210,7 @@ const HireDialog = ({
     setFieldErrors({});
     setServiceBusyId(null);
     setDetailService(null);
-    setPanel(initialPanel);
+    setPanel(isCommerceEnabled() ? initialPanel : "message");
   };
 
   const handleOpenChange = (next: boolean) => {
@@ -277,11 +279,8 @@ const HireDialog = ({
       return;
     }
 
+    // No email (e.g. phone sign-in) is fine — the conversation happens in chat.
     const { clientName, email } = resolveClientContact();
-    if (!email) {
-      toast.error("บัญชีนี้ยังไม่มีอีเมล — ตั้งค่าอีเมลในบัญชีก่อนส่งคำขอจ้าง");
-      return;
-    }
 
     const budgetMin = parseMoneyInput(form.budgetMin) ?? undefined;
     const budgetMax = parseMoneyInput(form.budgetMax) ?? undefined;
@@ -305,9 +304,6 @@ const HireDialog = ({
         ) {
           nextErrors[path] = issue.message;
         }
-      }
-      if (!form.deadline.trim() && !nextErrors.deadline) {
-        nextErrors.deadline = "กรุณาเลือกกำหนดส่งงาน";
       }
       if (!form.jobTypes.length && !nextErrors.jobTypes) {
         nextErrors.jobTypes = "กรุณาเลือกประเภทงานอย่างน้อย 1 อย่าง";
@@ -365,7 +361,7 @@ const HireDialog = ({
         budget_amount: budgetNum ?? null,
         budget_min: budgetMin ?? null,
         budget_max: budgetMax ?? null,
-        deadline: form.deadline.trim(),
+        deadline: form.deadline.trim() || null,
         message: inviteMessage,
         job_type: form.jobTypes.join(",") || null,
         job_type_other: null,
@@ -548,8 +544,8 @@ const HireDialog = ({
       tone="paper"
     >
         <DialogHeader className="space-y-2 text-left">
-          <Briefcase className="h-8 w-8 text-[#2f2e2c]" aria-hidden />
-          <DialogTitle className="paper-title text-[1.85rem] font-medium leading-tight tracking-tight text-[#2f2e2c]">
+          <Briefcase className="h-8 w-8 text-foreground" aria-hidden />
+          <DialogTitle className="paper-title text-[1.85rem] font-medium leading-tight tracking-tight text-foreground">
             Hire Request
           </DialogTitle>
           <DialogDescription className="sr-only">
@@ -558,7 +554,7 @@ const HireDialog = ({
               : "ส่งคำขอจ้างงาน"}
           </DialogDescription>
           {localSelfHirePreview ? (
-            <p className="text-[11px] text-amber-700 dark:text-amber-400 leading-relaxed">
+            <p className="text-[11px] text-warning dark:text-warning leading-relaxed">
               Local only — ทดลองฟอร์มจ้างตัวเองได้ แต่จะไม่สร้างคำขอหรือเปิดแชท
             </p>
           ) : null}
@@ -579,12 +575,12 @@ const HireDialog = ({
             ref={hireTabTrackRef}
             role="tablist"
             aria-label="โหมดคำขอจ้าง"
-            className="relative flex w-full rounded-full bg-[#2f2e2c]/8 p-1"
+            className="relative flex w-full rounded-full bg-foreground/8 p-1"
           >
             {hireTabIndicator ? (
               reducedMotion ? (
                 <span
-                  className="pointer-events-none absolute top-1 bottom-1 left-0 rounded-full bg-[#2f2e2c]"
+                  className="pointer-events-none absolute top-1 bottom-1 left-0 rounded-full bg-foreground"
                   style={{
                     transform: `translateX(${hireTabIndicator.x}px)`,
                     width: hireTabIndicator.width,
@@ -593,7 +589,7 @@ const HireDialog = ({
                 />
               ) : (
                 <motion.span
-                  className="pointer-events-none absolute top-1 bottom-1 left-0 rounded-full bg-[#2f2e2c] will-change-transform"
+                  className="pointer-events-none absolute top-1 bottom-1 left-0 rounded-full bg-foreground will-change-transform"
                   initial={false}
                   animate={{ x: hireTabIndicator.x, width: hireTabIndicator.width }}
                   transition={hireTabSlideTransition}
@@ -618,9 +614,9 @@ const HireDialog = ({
                     "relative z-10 flex-1 inline-flex items-center justify-center gap-1.5 rounded-full py-2 text-sm font-medium transition-colors",
                     active
                       ? hireTabIndicator
-                        ? "text-[#f5f5f5]"
-                        : "bg-[#2f2e2c] text-[#f5f5f5]"
-                      : "text-[#6b6862] hover:text-[#2f2e2c]",
+                        ? "text-background"
+                        : "bg-foreground text-background"
+                      : "text-[#6b6862] hover:text-foreground",
                   )}
                   onClick={() => setPanel(tab.id)}
                 >
@@ -673,7 +669,7 @@ const HireDialog = ({
                 <Button
                   type="button"
                   disabled={busy}
-                  className="rounded-full gap-1.5 shadow-none hover:bg-[#1c1b19]"
+                  className="rounded-full gap-1.5 shadow-none hover:bg-primary/90"
                   onClick={() => void submitHire()}
                 >
                   {busy && !serviceBusyId ? (
@@ -789,7 +785,7 @@ const HireDialog = ({
               <Button
                 type="button"
                 disabled={busy}
-                className="rounded-full gap-1.5 shadow-none hover:bg-[#1c1b19]"
+                className="rounded-full gap-1.5 shadow-none hover:bg-primary/90"
                 onClick={() => void submitHire()}
               >
                 {busy && !serviceBusyId ? (

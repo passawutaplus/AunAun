@@ -5,7 +5,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { useAuth } from "@/hooks/useAuth";
 import { LineNotificationPrefsPanel } from "@/components/settings/LineNotificationPrefsPanel";
 import { pickLocale, type UserLocale } from "@/lib/lineNotificationKinds";
-import { UPGRADE_PATH } from "@/lib/aplus1Launch";
+import { UPGRADE_PATH, isCommerceEnabled } from "@/lib/aplus1Launch";
 
 const TIER_LABEL: Record<string, Record<UserLocale, string>> = {
   pro: { th: "โปร", en: "Pro" },
@@ -25,6 +25,9 @@ export function LineNotificationSection() {
 
   // In-House group visibility is managed on So1o desk; SAMECOR shows anthem + portal + system only.
   const showInhouseGroup = tier === "inhouse";
+
+  // Free launch: no paid plans to upsell, so non-Pro users see nothing here
+  if (!isPro && !isCommerceEnabled()) return null;
 
   if (!isPro) {
     return (
