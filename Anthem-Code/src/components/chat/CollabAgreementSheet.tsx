@@ -54,13 +54,13 @@ export function useMemberNames(memberIds: string[], meId: string | undefined) {
     queryFn: async () => {
       const { data } = await supabase
         .from("profiles_public")
-        .select("user_id, display_name, username")
+        .select("user_id, display_name, username, avatar_url")
         .in("user_id", memberIds);
       const byId = new Map((data ?? []).map((p) => [p.user_id as string, p]));
       return memberIds.map((id) => {
         const p = byId.get(id);
         const name = p?.username || p?.display_name || "ผู้ใช้";
-        return { id, name, label: id === meId ? `${name} (คุณ)` : name };
+        return { id, name, avatarUrl: (p?.avatar_url as string | null) ?? null, label: id === meId ? `${name} (คุณ)` : name };
       });
     },
   });

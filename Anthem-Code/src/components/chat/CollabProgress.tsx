@@ -1,4 +1,4 @@
-import { Check, HeartHandshake } from "lucide-react";
+import { Check, HeartHandshake, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCollabAgreement } from "@/hooks/useCollabAgreement";
 import { useCollabTasks } from "@/hooks/useCollabTasks";
@@ -90,6 +90,23 @@ export function CollabWelcomeCard({ conversationId, onOpenPlan }: { conversation
             ทำแผน
           </Button>
         </div>
+      ) : null}
+    </div>
+  );
+}
+
+/** Messages from the retired 4-step plan (document, step locked, change request…) collapse into this. */
+export function LegacyCollabPlanCard({ onOpenPlan }: { onOpenPlan?: () => void }) {
+  return (
+    <div className="flex w-full max-w-sm items-center gap-2.5 rounded-[20px] border border-border bg-card px-3.5 py-2.5 text-xs shadow-sm">
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+        <History className="h-3.5 w-3.5" aria-hidden />
+      </span>
+      <span className="min-w-0 flex-1 text-muted-foreground">ข้อความจากระบบแผนรุ่นเก่า</span>
+      {onOpenPlan ? (
+        <button type="button" onClick={onOpenPlan} className="shrink-0 rounded-full border border-border px-3 py-1 font-medium hover:bg-muted">
+          เปิดแผน
+        </button>
       ) : null}
     </div>
   );

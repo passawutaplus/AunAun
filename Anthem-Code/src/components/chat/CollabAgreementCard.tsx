@@ -3,9 +3,12 @@ import { CalendarDays, Check, HeartHandshake, History, Loader2, MapPin, ShieldCh
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import UserAvatar from "@/components/UserAvatar";
+import { ChatCardShell, ChatCardStatusPill } from "@/components/chat/ChatCardShell";
+import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useCollabAgreement } from "@/hooks/useCollabAgreement";
-import { AgreementStatusPill, useMemberNames } from "@/components/chat/CollabAgreementSheet";
+import { useMemberNames } from "@/components/chat/CollabAgreementSheet";
 import { COLLAB_AGREEMENT_PREFIX, rightsLabel } from "@/lib/collabAgreement";
 
 export function isCollabAgreementMessage(content: string | null | undefined) {
@@ -71,66 +74,105 @@ export function CollabAgreementCard({
     );
   }
 
+  const waiting = members.filter((m) => !a.acks[m.id]);
+  const statusPill =
+    a.status === "agreed" ? (
+      <ChatCardStatusPill tone="ok">ตกลงแล้ว</ChatCardStatusPill>
+    ) : a.status === "pending" ? (
+      <ChatCardStatusPill tone="wait">
+        ยืนยัน {a.ackCount}/{a.memberIds.length}
+      </ChatCardStatusPill>
+    ) : (
+      <ChatCardStatusPill tone="closed">ร่าง</ChatCardStatusPill>
+    );
+
   return (
-    <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-3.5 text-sm shadow-sm">
-      <div className="flex items-center justify-between gap-2">
-        <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <HeartHandshake className="h-3.5 w-3.5" aria-hidden /> แผนคอลแลป
-        </span>
-        <AgreementStatusPill status={a.status} ackCount={a.ackCount} total={a.memberIds.length} />
+    <ChatCardShell
+      tone="collab"
+      icon={HeartHandshake}
+      title={a.status === "agreed" ? "แผนคอลแลป · ตกลงกันแล้ว ลุยเลย!" : "แผนคอลแลป"}
+      meta={statusPill}
+      footer={
+        <div className="flex gap-2">
+          {a.status === "pending" ? (
+            <Button
+              type="button"
+              size="sm"
+              variant={a.myAcked ? "outline" : "default"}
+              className={cn("h-8 flex-1 gap-1", !a.myAcked && "bg-[hsl(var(--chat-collab))] text-[hsl(var(--chat-collab-foreground))] hover:opacity-90")}
+              disabled={a.busy}
+              onClick={() => void ack()}
+            >
+              {a.busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : <Check className="h-3.5 w-3.5" aria-hidden />}
+              {a.myAcked ? "ตกลงแล้ว · ยกเลิก" : "ตกลง"}
+            </Button>
+          ) : null}
+          {onOpenPlan ? (
+            <Button type="button" size="sm" variant="outline" className="h-8 flex-1" onClick={onOpenPlan}>
+              ดูแผน
+            </Button>
+          ) : null}
+        </div>
+      }
+    >
+      <div>
+        <p className="font-medium leading-snug break-words">{ag.what || "—"}</p>
+        {ag.brief ? <p className="mt-1 line-clamp-3 text-xs text-muted-foreground break-words">{ag.brief}</p> : null}
       </div>
-      <p className="mt-2 font-medium break-words">{ag.what || "—"}</p>
-      {ag.brief ? <p className="mt-1 line-clamp-3 text-xs text-muted-foreground break-words">{ag.brief}</p> : null}
       {members.some((m) => ag.roles[m.id]?.trim()) ? (
-        <ul className="mt-2 space-y-0.5 text-xs text-muted-foreground">
+        <ul className="space-y-0.5 text-xs">
           {members
             .filter((m) => ag.roles[m.id]?.trim())
             .map((m) => (
               <li key={m.id} className="flex gap-1.5">
-                <span className="shrink-0 text-foreground/80">{m.name}</span>·<span className="min-w-0 break-words">{ag.roles[m.id]}</span>
-                {a.acks[m.id] ? <Check className="ml-auto h-3.5 w-3.5 shrink-0 text-emerald-500" aria-label="ตกลงแล้ว" /> : null}
+                <span className="shrink-0 font-medium">{m.name}</span>
+                <span className="min-w-0 break-words text-muted-foreground">{ag.roles[m.id]}</span>
               </li>
             ))}
         </ul>
       ) : null}
-      <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
+      <div className="flex flex-wrap gap-1.5">
         {ag.destinations.length ? (
-          <p className="flex gap-1.5">
-            <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
-            <span className="break-words">{ag.destinations.join(" · ")}</span>
-          </p>
-        ) : null}
-        <p className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
-          {ag.dueAt ? (
-            <span className="flex items-center gap-1">
-              <CalendarDays className="h-3.5 w-3.5" aria-hidden /> {shortDay(ag.dueAt)}
-            </span>
-          ) : null}
-          <span className="flex items-center gap-1">
-            <ShieldCheck className="h-3.5 w-3.5" aria-hidden /> {rightsLabel(ag)}
+          <span className="inline-flex max-w-full items-center gap-1 rounded-full bg-[hsl(var(--chat-collab-soft))] px-2 py-0.5 text-[11px] text-[hsl(var(--chat-collab))]">
+            <MapPin className="h-3 w-3 shrink-0" aria-hidden />
+            <span className="truncate">{ag.destinations.join(" · ")}</span>
           </span>
-        </p>
-      </div>
-      <div className="mt-3 flex gap-2">
-        {a.status !== "draft" ? (
-          <Button
-            type="button"
-            size="sm"
-            variant={a.myAcked ? "outline" : "default"}
-            className="h-8 flex-1 rounded-full gap-1"
-            disabled={a.busy}
-            onClick={() => void ack()}
-          >
-            {a.busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : <Check className="h-3.5 w-3.5" aria-hidden />}
-            {a.myAcked ? "ตกลงแล้ว" : "ตกลง"}
-          </Button>
         ) : null}
-        {onOpenPlan ? (
-          <Button type="button" size="sm" variant="outline" className="h-8 flex-1 rounded-full" onClick={onOpenPlan}>
-            ดูแผน
-          </Button>
+        {ag.dueAt ? (
+          <span className="inline-flex items-center gap-1 rounded-full bg-[hsl(var(--chat-collab-soft))] px-2 py-0.5 text-[11px] text-[hsl(var(--chat-collab))]">
+            <CalendarDays className="h-3 w-3" aria-hidden /> {shortDay(ag.dueAt)}
+          </span>
         ) : null}
+        <span className="inline-flex max-w-full items-center gap-1 rounded-full bg-[hsl(var(--chat-collab-soft))] px-2 py-0.5 text-[11px] text-[hsl(var(--chat-collab))]">
+          <ShieldCheck className="h-3 w-3 shrink-0" aria-hidden />
+          <span className="truncate">{rightsLabel(ag)}</span>
+        </span>
       </div>
-    </div>
+      {a.status !== "draft" && members.length ? (
+        <div className="flex items-center gap-2 rounded-2xl bg-muted/50 px-2.5 py-1.5 text-xs text-muted-foreground">
+          <span className="flex">
+            {members.map((m, i) => (
+              <span key={m.id} className={cn("relative", i > 0 && "-ml-2")}>
+                <UserAvatar src={m.avatarUrl} name={m.name} username={m.name} className="h-6 w-6 ring-2 ring-card" fallbackClassName="text-[10px]" />
+                {a.acks[m.id] ? (
+                  <span className="absolute -bottom-0.5 -right-0.5 flex h-3 w-3 items-center justify-center rounded-full bg-emerald-500 text-white ring-1 ring-card">
+                    <Check className="h-2 w-2" strokeWidth={4} aria-hidden />
+                  </span>
+                ) : null}
+              </span>
+            ))}
+          </span>
+          <span className="min-w-0 truncate">
+            {waiting.length ? (
+              <>
+                รอ <span className="font-medium text-foreground">{waiting.map((m) => m.name).join(", ")}</span> ตกลง
+              </>
+            ) : (
+              "ทุกคนตกลงแล้ว"
+            )}
+          </span>
+        </div>
+      ) : null}
+    </ChatCardShell>
   );
 }
