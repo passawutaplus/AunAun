@@ -1,4 +1,6 @@
-import { CalendarDays, Check, HeartHandshake, Loader2, MapPin, ShieldCheck } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { CalendarDays, Check, HeartHandshake, History, Loader2, MapPin, ShieldCheck } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
@@ -16,8 +18,32 @@ const shortDay = (s: string) => {
 };
 
 /** Live summary of the collab plan in the chat — everyone confirms here. */
-export function CollabAgreementCard({ conversationId, onOpenPlan }: { conversationId: string; onOpenPlan?: () => void }) {
+export function CollabAgreementCard({
+  conversationId,
+  messageId,
+  onOpenPlan,
+}: {
+  conversationId: string;
+  messageId?: string;
+  onOpenPlan?: () => void;
+}) {
   const { user } = useAuth();
+  // Every send / re-confirm posts a new card; only the newest one stays actionable.
+  const { data: latestId } = useQuery({
+    queryKey: ["collab-agreement-latest-card", conversationId],
+    staleTime: 15_000,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("messages")
+        .select("id")
+        .eq("conversation_id", conversationId)
+        .eq("content", COLLAB_AGREEMENT_PREFIX)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return (data?.id as string | undefined) ?? null;
+    },
+  });
   const a = useCollabAgreement(conversationId);
   const { data: members = [] } = useMemberNames(a.memberIds, user?.id);
   const ag = a.agreement;
@@ -30,6 +56,20 @@ export function CollabAgreementCard({ conversationId, onOpenPlan }: { conversati
       toast.error(e instanceof Error ? e.message : "บันทึกไม่สำเร็จ");
     }
   };
+
+  if (messageId && latestId && latestId !== messageId) {
+    return (
+      <div className="flex w-full max-w-sm items-center gap-2 rounded-2xl border border-dashed border-border bg-card px-3.5 py-2.5 text-xs text-muted-foreground">
+        <History className="h-3.5 w-3.5 shrink-0" aria-hidden />
+        <span className="min-w-0 flex-1">แผนเวอร์ชันเก่า — มีเวอร์ชันใหม่กว่าด้านล่าง</span>
+        {onOpenPlan ? (
+          <button type="button" onClick={onOpenPlan} className="shrink-0 font-medium text-foreground hover:underline">
+            ดูแผน
+          </button>
+        ) : null}
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-3.5 text-sm shadow-sm">

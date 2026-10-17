@@ -92,6 +92,7 @@ import {
 import { CollabToolkitCard } from "@/components/chat/CollabToolkitCard";
 import { CollabPlanDocCard } from "@/components/chat/CollabPlanDocCard";
 import { CollabAgreementCard, isCollabAgreementMessage } from "@/components/chat/CollabAgreementCard";
+import { CollabWelcomeCard, isCollabWelcomeMessage } from "@/components/chat/CollabProgress";
 import {
   CollabChangeDoneCard,
   CollabChangeRequestCard,
@@ -403,6 +404,7 @@ const MessageBubble = ({
     !!detectCollabToolKind(rawForDisplay) ||
     isCollabPlanDocumentMessage(rawForDisplay) ||
     isCollabAgreementMessage(rawForDisplay) ||
+    isCollabWelcomeMessage(rawForDisplay) ||
     isAlignDiscussionTemplateMessage(rawForDisplay) ||
     isCollabDeclineChatMessage(rawForDisplay) ||
     !!collabEnd ||
@@ -1010,10 +1012,15 @@ const MessageBubble = ({
                 <CollabDeclineCard content={collabDecline} mine={mine} />
               </div>
             )}
+            {!deleted && isCollabWelcomeMessage(rawForDisplay) && (
+              <div>
+                <CollabWelcomeCard conversationId={message.conversation_id} onOpenPlan={onOpenCollabPlan} />
+              </div>
+            )}
             {!deleted && isCollabAgreementMessage(rawForDisplay) && (
               <div>
                 {replyQuote}
-                <CollabAgreementCard conversationId={message.conversation_id} onOpenPlan={onOpenCollabPlan} />
+                <CollabAgreementCard conversationId={message.conversation_id} messageId={message.id} onOpenPlan={onOpenCollabPlan} />
               </div>
             )}
             {collabPlanDoc && (

@@ -158,3 +158,22 @@ export function diffAgreement(before: CollabAgreement, after: CollabAgreement) {
     labels: Array.from(new Set(changed.map((k) => AGREEMENT_FIELD_LABELS[k]).filter(Boolean))) as string[],
   };
 }
+
+/** Posted once when a collab invite is accepted — rendered as the welcome / progress card. */
+export const COLLAB_WELCOME_PREFIX = "🎉 เริ่มคอลแลปแล้ว";
+
+export type CollabStage = "talk" | "plan" | "work" | "publish";
+
+export const COLLAB_STAGES: { id: CollabStage; label: string }[] = [
+  { id: "talk", label: "คุยกัน" },
+  { id: "plan", label: "ตกลงแผน" },
+  { id: "work", label: "ทำงาน" },
+  { id: "publish", label: "ลงผลงาน" },
+];
+
+/** Where the collab is now: no plan sent → talk, waiting for confirms → plan, agreed → work, all tasks done → publish. */
+export function collabStage(status: CollabAgreementStatus, tasksTotal: number, tasksDone: number): CollabStage {
+  if (status === "draft") return "talk";
+  if (status === "pending") return "plan";
+  return tasksTotal > 0 && tasksDone === tasksTotal ? "publish" : "work";
+}

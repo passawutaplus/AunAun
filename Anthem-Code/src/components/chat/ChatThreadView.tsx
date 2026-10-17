@@ -89,11 +89,8 @@ import {
   collectCollabReferenceLinks,
   formatCollabTypesLabel,
 } from "@/lib/collabBrief";
-import {
-  buildCollabPlanDocumentMessage,
-  emptyCollabPlanState,
-  emptyPlanPayload,
-} from "@/lib/collabToolkit";
+import { emptyCollabPlanState, emptyPlanPayload } from "@/lib/collabToolkit";
+import { COLLAB_WELCOME_PREFIX } from "@/lib/collabAgreement";
 import { useCollabPlanUi } from "@/stores/collabPlanUiStore";
 import { useCollabPlan } from "@/hooks/useCollabPlan";
 import { sharedDb } from "@/integrations/supabase/client";
@@ -783,9 +780,7 @@ const ChatThreadView = ({
               try {
                 await sendMessage.mutateAsync({
                   conversationId: conv.id,
-                  content: buildCollabPlanDocumentMessage({
-                    projectTitle: conv.project_title,
-                  }),
+                  content: COLLAB_WELCOME_PREFIX,
                 });
               } catch {
                 /* accept already succeeded */
@@ -793,7 +788,7 @@ const ChatThreadView = ({
               void qc.invalidateQueries({ queryKey: ["chat-collab-meta", conv.request_id] });
               void qc.invalidateQueries({ queryKey: ["collab-plan", conv.id] });
               collabPlanUi.openFor(conv.id);
-              toast.success("ตอบรับแล้ว — เปิดเอกสารแผนคอลแลปให้แล้ว");
+              toast.success("ตอบรับแล้ว — เริ่มตกลงแผนกันได้เลย");
             } catch (e: unknown) {
               toast.error(e instanceof Error ? e.message : "ตอบรับไม่สำเร็จ");
             }
@@ -816,7 +811,7 @@ const ChatThreadView = ({
     if (isCollabAcceptedStatus(collabStatus)) {
       return {
         canRespond: false,
-        statusHint: "ตอบรับแล้ว — เปิดเอกสารแผนคอลแลปเพื่อเริ่มวางแผนร่วมกัน",
+        statusHint: "ตอบรับแล้ว — กด「วางแผนงาน」เพื่อตกลงแผนร่วมกัน",
         onAccept: () => {},
         onDecline: () => {},
       };

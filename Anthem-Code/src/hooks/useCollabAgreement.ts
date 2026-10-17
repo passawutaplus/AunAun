@@ -38,6 +38,7 @@ export function useCollabAgreement(conversationId: string | undefined, enabled =
   const invalidate = useCallback(async () => {
     await qc.invalidateQueries({ queryKey: ["collab-plan-doc", conversationId] });
     await qc.invalidateQueries({ queryKey: ["collab-plan-versions", conversationId] });
+    await qc.invalidateQueries({ queryKey: ["collab-agreement-latest-card", conversationId] });
   }, [qc, conversationId]);
 
   const write = useCallback(
