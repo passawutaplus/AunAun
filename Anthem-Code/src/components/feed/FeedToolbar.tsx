@@ -415,7 +415,7 @@ const FeedToolbar = ({
               "sticky top-0",
               isCatalog
                 ? "z-40 bg-transparent shadow-none lg:static"
-                : "bg-background/80 backdrop-blur-md shadow-sm supports-[backdrop-filter]:bg-background/65",
+                : "border-b border-border bg-background",
             )
           : "relative bg-transparent shadow-none",
       )}
@@ -542,7 +542,7 @@ const FeedToolbar = ({
             inert={!homeScrolled ? "" : undefined}
             style={{ pointerEvents: homeScrolled ? "auto" : "none" }}
           >
-            <div className="border-b border-border bg-background/95 backdrop-blur-md">
+            <div className="border-b border-border bg-background">
               <div className="mx-auto flex max-w-[1920px] flex-col px-[calc(1.5rem+25px)] 2xl:px-[calc(2.5rem+25px)]">
                 <div className="relative flex h-14 items-center gap-3 border-b border-border/80">
                   <button

@@ -63,7 +63,7 @@ export function HorizontalScrollRail({ children, className, wrapperClassName }: 
         disabled={!canLeft}
         onClick={() => scrollByDir(-1)}
         className={cn(
-          "absolute left-0 top-1/2 z-10 hidden h-8 w-6 -translate-y-1/2 items-center justify-center text-muted-foreground/55 transition-opacity hover:text-muted-foreground lg:flex",
+          "absolute left-0 top-1/2 z-10 hidden h-8 w-6 -translate-y-1/2 items-center justify-center text-muted-foreground transition-opacity hover:text-muted-foreground lg:flex",
           "disabled:pointer-events-none disabled:opacity-0",
           canLeft ? "opacity-100" : "opacity-0",
         )}
@@ -88,7 +88,7 @@ export function HorizontalScrollRail({ children, className, wrapperClassName }: 
         disabled={!canRight}
         onClick={() => scrollByDir(1)}
         className={cn(
-          "absolute right-0 top-1/2 z-10 hidden h-8 w-6 -translate-y-1/2 items-center justify-center text-muted-foreground/55 transition-opacity hover:text-muted-foreground lg:flex",
+          "absolute right-0 top-1/2 z-10 hidden h-8 w-6 -translate-y-1/2 items-center justify-center text-muted-foreground transition-opacity hover:text-muted-foreground lg:flex",
           "disabled:pointer-events-none disabled:opacity-0",
           canRight ? "opacity-100" : "opacity-0",
         )}

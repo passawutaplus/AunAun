@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 const Photo = ({ className }: { className?: string }) => (
   <div
     className={cn(
-      "flex h-full w-full items-center justify-center rounded-[3px] bg-muted-foreground/25 text-muted-foreground/45",
+      "flex h-full w-full items-center justify-center rounded-[3px] bg-muted-foreground/25 text-muted-foreground",
       className,
     )}
   >

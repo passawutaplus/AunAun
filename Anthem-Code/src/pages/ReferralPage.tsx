@@ -47,7 +47,7 @@ export default function ReferralPage() {
   return (
     <div className="min-h-screen bg-app-ambient">
       <SeoHead title="ชวนเพื่อนรับ Pixel" path="/referrals" noindex />
-      <header className="sticky top-0 z-20 border-b border-border bg-background/85 backdrop-blur">
+      <header className="sticky top-0 z-20 border-b border-border bg-background">
         <div className="mx-auto flex h-14 max-w-4xl items-center justify-between px-4">
           <BackButton />
           <h1 className="text-sm font-semibold">ชวนเพื่อนรับ Pixel</h1>

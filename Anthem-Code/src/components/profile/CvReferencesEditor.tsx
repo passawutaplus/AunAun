@@ -4,7 +4,7 @@ import { CV_REFERENCES_MAX, type ReferenceItem } from "@/lib/profileCv";
 import { useAboutEditLocale } from "@/components/profile/AboutEditLocale";
 
 const INPUT_CLASS =
-  "w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground/40";
+  "w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground";
 
 type Props = {
   value: ReferenceItem[];

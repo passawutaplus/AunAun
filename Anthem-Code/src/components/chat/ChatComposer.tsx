@@ -250,6 +250,7 @@ const ChatComposer = ({
 
   return (
     <div
+      data-tour="chat-composer"
       className={cn(
         "border-t border-border bg-card px-3 py-2.5 pb-[max(env(safe-area-inset-bottom),0.5rem)] shrink-0",
         dragOver && "ring-2 ring-inset ring-primary/50 bg-primary/5",

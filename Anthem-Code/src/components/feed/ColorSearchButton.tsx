@@ -144,7 +144,7 @@ const ColorSearchButton = ({ value, onChange, className }: Props) => {
                     key={i}
                     role="listitem"
                     aria-label="ช่องว่าง"
-                    className="flex h-7 w-7 items-center justify-center rounded-full border border-dashed border-border text-muted-foreground/60"
+                    className="flex h-7 w-7 items-center justify-center rounded-full border border-dashed border-border text-muted-foreground"
                   >
                     <Plus className="h-3 w-3" aria-hidden />
                   </span>

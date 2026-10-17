@@ -207,7 +207,7 @@ export default function LightboxColorTools({
 
   return (
     <div
-      className="flex max-w-[95vw] flex-wrap items-center justify-center gap-1.5 rounded-full border border-white/15 bg-black/45 px-3 py-2 backdrop-blur-md sm:gap-2"
+      className="flex max-w-[95vw] flex-wrap items-center justify-center gap-x-1.5 gap-y-2 rounded-3xl border border-white/15 bg-black/60 px-3 py-2.5 backdrop-blur-md sm:gap-2 sm:rounded-full sm:py-2"
       onClick={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
     >
@@ -218,7 +218,7 @@ export default function LightboxColorTools({
           ))}
         </div>
       ) : (
-        <span className="px-1 text-xs text-white/60">อ่านสีจากภาพนี้ไม่ได้</span>
+        <span className="px-1 text-xs text-white/80">อ่านสีจากภาพนี้ไม่ได้</span>
       )}
 
       {/* Picked colour and the eyedropper share one pill — they belong together. */}
@@ -246,9 +246,14 @@ export default function LightboxColorTools({
         <Contrast className="h-4 w-4" aria-hidden />
       </button>
 
-      <span aria-hidden className="mx-0.5 h-5 w-px bg-white/25" />
+      <span aria-hidden className="mx-0.5 hidden h-5 w-px bg-white/25 sm:block" />
 
-      {children}
+      {/* Phones: view tools (mirror onward) get their own row; one row from sm up. */}
+      {children ? (
+        <div className="flex basis-full items-center justify-center gap-1.5 border-t border-white/10 pt-2 sm:basis-auto sm:gap-2 sm:border-0 sm:pt-0">
+          {children}
+        </div>
+      ) : null}
     </div>
   );
 }

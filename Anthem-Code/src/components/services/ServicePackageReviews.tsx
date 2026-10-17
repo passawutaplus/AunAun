@@ -50,7 +50,7 @@ function Stars({ value }: { value: number }) {
       {[1, 2, 3, 4, 5].map((i) => (
         <Star
           key={i}
-          className={i <= Math.round(value) ? "h-3.5 w-3.5 fill-foreground text-foreground" : "h-3.5 w-3.5 text-muted-foreground/40"}
+          className={i <= Math.round(value) ? "h-3.5 w-3.5 fill-foreground text-foreground" : "h-3.5 w-3.5 text-muted-foreground"}
           aria-hidden
         />
       ))}

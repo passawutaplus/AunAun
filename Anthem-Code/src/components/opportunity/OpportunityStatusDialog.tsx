@@ -112,7 +112,7 @@ const OpportunityStatusDialog = ({ open, onOpenChange }: Props) => {
                 maxLength={PROFILE_INTRO_MAX}
                 aria-label="แนะนำตัวโปรไฟล์"
                 placeholder="เช่น นักออกแบบแพ็กเกจ รับงานแบรนด์และงานพิมพ์"
-                className="w-full px-3 py-2 rounded-xl bg-secondary border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground/40"
+                className="w-full px-3 py-2 rounded-xl bg-secondary border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground"
               />
               <p className="text-[11px] text-muted-foreground text-right">
                 {intro.length}/{PROFILE_INTRO_MAX}

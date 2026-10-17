@@ -121,7 +121,7 @@ const AdvertiseHero = ({ formMode, onSelectMode }: Props) => {
           transition={fadeUpTransition(0.24)}
         >
           <div className="text-center text-white">
-            <p className="text-xs font-medium tracking-[0.12em] text-white/60">Designer & Artist ทั้งหมด</p>
+            <p className="text-xs font-medium tracking-[0.12em] text-white/80">Designer & Artist ทั้งหมด</p>
             {showNumbers ? (
               <p className="mt-1 text-4xl font-semibold tabular-nums tracking-tight md:text-5xl">
                 {formatStat(users)}

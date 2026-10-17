@@ -39,7 +39,7 @@ const NotificationsPage = () => {
   return (
     <main id="main-content" className={cn("min-h-screen bg-app-ambient lg:pb-8", MOBILE_PAGE_BOTTOM_CLASS)}>
       <SeoHead title="การแจ้งเตือน" path="/notifications" noindex />
-      <header className="sticky top-0 z-20 bg-background/60 backdrop-blur-xl border-b border-border/40">
+      <header className="sticky top-0 z-20 bg-background border-b border-border/40">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
           <BackButton />
           <h1 className="font-medium text-lg"><span className="text-gradient">การแจ้งเตือน</span></h1>

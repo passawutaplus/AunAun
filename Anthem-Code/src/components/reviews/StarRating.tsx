@@ -43,7 +43,7 @@ export function StarRating({
               key={n}
               className={cn(
                 SIZE[size],
-                filled ? "fill-primary text-primary" : "text-muted-foreground/30",
+                filled ? "fill-primary text-primary" : "text-muted-foreground",
               )}
               aria-hidden
             />
@@ -62,7 +62,7 @@ export function StarRating({
             <Star
               className={cn(
                 SIZE[size],
-                filled ? "fill-primary text-primary" : "text-muted-foreground/35",
+                filled ? "fill-primary text-primary" : "text-muted-foreground",
               )}
               aria-hidden
             />

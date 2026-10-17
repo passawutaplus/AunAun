@@ -178,7 +178,7 @@ export function ChangeUsernameDialog({
                     spellCheck={false}
                     autoFocus
                     placeholder="username"
-                    className="flex-1 bg-transparent px-3 py-2.5 text-sm text-foreground placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground/40 focus:outline-none"
+                    className="flex-1 bg-transparent px-3 py-2.5 text-sm text-foreground placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground focus:outline-none"
                   />
                 </div>
                 <Button

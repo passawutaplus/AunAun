@@ -394,12 +394,12 @@ function EmptyVideoTile({
         <Loader2 className="h-7 w-7 animate-spin" />
       ) : (
         <>
-          <Film className="h-8 w-8 text-muted-foreground/50" />
+          <Film className="h-8 w-8 text-muted-foreground" />
           <span className="text-xs font-medium text-muted-foreground/80">+Upload</span>
           <span className="px-2 text-center text-[10px] leading-snug text-muted-foreground/65">
             MP4, MOV, WebM · สูงสุด 50MB
           </span>
-          <span className="text-[10px] text-muted-foreground/60">ลากวิดีโอมาวางได้</span>
+          <span className="text-[10px] text-muted-foreground">ลากวิดีโอมาวางได้</span>
         </>
       )}
       <input
@@ -515,7 +515,7 @@ function EmptyImageTile({
         <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
       ) : (
         <>
-          <ImageIcon className="h-8 w-8 text-muted-foreground/50" strokeWidth={1.25} />
+          <ImageIcon className="h-8 w-8 text-muted-foreground" strokeWidth={1.25} />
           <span className="text-xs font-medium text-muted-foreground/80">+Upload</span>
           <UploadFileHint formats="JPG, PNG, GIF" maxMb={30} className="px-2 text-center" />
         </>

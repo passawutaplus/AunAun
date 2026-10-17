@@ -152,7 +152,7 @@ export default function DashboardHireDocumentsPanel({ userId }: Props) {
         </p>
       ) : filtered.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border/80 bg-muted/20 px-4 py-8 text-center">
-          <FileText className="mx-auto h-8 w-8 text-muted-foreground/50" />
+          <FileText className="mx-auto h-8 w-8 text-muted-foreground" />
           <p className="mt-2 text-sm text-muted-foreground">
             {data && data.length > 0
               ? "ไม่พบเอกสารตามตัวกรอง"

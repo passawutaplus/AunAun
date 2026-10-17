@@ -209,8 +209,8 @@ function TemplateSlotPreview({ slot }: { slot: CanvasTemplatePreviewSlot }) {
     return (
       <div className="flex w-full flex-col gap-1">
         <div className="relative h-8 w-full rounded-[1px] bg-foreground/15">
-          <span className="absolute inset-y-0 left-1 flex items-center text-[8px] text-foreground/35">‹</span>
-          <span className="absolute inset-y-0 right-1 flex items-center text-[8px] text-foreground/35">›</span>
+          <span className="absolute inset-y-0 left-1 flex items-center text-[8px] text-muted-foreground">‹</span>
+          <span className="absolute inset-y-0 right-1 flex items-center text-[8px] text-muted-foreground">›</span>
         </div>
         <div className="flex gap-0.5">
           {[0, 1, 2, 3].map((i) => (

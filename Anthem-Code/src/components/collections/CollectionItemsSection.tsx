@@ -161,7 +161,7 @@ export default function CollectionItemsSection({ collectionId, coverUrl, project
   if (projects.length === 0) {
     return (
       <div className="text-center py-16 glass-panel rounded-2xl">
-        <Layers3 className="w-12 h-12 text-muted-foreground/40 mx-auto mb-3" />
+        <Layers3 className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
         <p className="text-foreground font-medium mb-1">ยังไม่มีผลงานในคอลเลกชันนี้</p>
         <p className="text-sm text-muted-foreground">
           {isOwner ? "เลื่อนดูฟีดแล้วกดไอคอน Layers เพื่อเก็บเข้านี่" : "เจ้าของยังไม่ได้เพิ่มผลงาน"}

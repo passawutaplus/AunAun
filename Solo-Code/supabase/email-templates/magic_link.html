@@ -19,14 +19,14 @@
 <h1 style="margin:0 0 16px;font-size:24px;line-height:1.4;font-weight:600;color:#111111">เข้าสู่ระบบ SAMECOR</h1>
 <p style="font-size:15px;color:#3D3D3D;line-height:1.7;margin:0 0 24px">กดปุ่มด้านล่างเพื่อเข้าสู่ระบบบัญชี <strong style="color:#111111">{{ .Email }}</strong> โดยไม่ต้องใช้รหัสผ่าน</p>
 <table role="presentation" cellspacing="0" cellpadding="0" style="margin:8px 0 24px"><tr><td style="background:#111111;border-radius:999px">
-<a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=magiclink" style="display:inline-block;padding:14px 32px;font-size:15px;font-weight:600;color:#FFFFFF;text-decoration:none">เข้าสู่ระบบ</a>
+<a href="{{ if and (ge (len .RedirectTo) 19) (eq (slice .RedirectTo 0 19) "https://samecor.com") }}{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=magiclink{{ else }}{{ .ConfirmationURL }}{{ end }}" style="display:inline-block;padding:14px 32px;font-size:15px;font-weight:600;color:#FFFFFF;text-decoration:none">เข้าสู่ระบบ</a>
 </td></tr></table>
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#F3F2EC;border-radius:12px;margin:0 0 24px"><tr>
 <td style="padding:16px 0 16px 20px;width:20px;vertical-align:top"><img src="https://samecor.com/email/flat/info-16.png" alt="" width="16" height="16" style="display:block;border:0;margin-top:3px"/></td>
 <td style="padding:16px 20px 16px 10px"><p style="margin:0 0 6px;font-size:14px;font-weight:600;color:#111111">ไม่ได้ขอลิงก์นี้ใช่ไหม?</p>
 <p style="margin:0;font-size:13px;line-height:1.65;color:#3D3D3D">ไม่ต้องทำอะไร และอย่าส่งต่อลิงก์นี้ให้ใคร ลิงก์ใช้ได้ครั้งเดียวและหมดอายุภายใน 1 ชั่วโมง</p></td></tr></table>
 <p style="margin:0 0 4px;font-size:12px;color:#666666">ปุ่มกดไม่ได้? คัดลอกลิงก์นี้ไปเปิดในเบราว์เซอร์</p>
-<p style="margin:0;font-size:12px;line-height:1.6;word-break:break-all"><a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=magiclink" style="color:#3D3D3D">{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=magiclink</a></p>
+<p style="margin:0;font-size:12px;line-height:1.6;word-break:break-all"><a href="{{ if and (ge (len .RedirectTo) 19) (eq (slice .RedirectTo 0 19) "https://samecor.com") }}{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=magiclink{{ else }}{{ .ConfirmationURL }}{{ end }}" style="color:#3D3D3D">{{ if and (ge (len .RedirectTo) 19) (eq (slice .RedirectTo 0 19) "https://samecor.com") }}{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=magiclink{{ else }}{{ .ConfirmationURL }}{{ end }}</a></p>
 </td></tr>
 <tr><td style="padding:16px 40px;border-top:1px solid #E6E6E3;background:#FBFAF7">
 <p style="margin:0;font-size:12px;line-height:1.6;color:#666666"><img src="https://samecor.com/email/flat/shield-16.png" alt="" width="16" height="16" style="vertical-align:-3px;border:0"/>&nbsp; SAMECOR จะไม่ขอรหัสผ่าน รหัส OTP หรือข้อมูลบัตรของคุณทางอีเมล โทรศัพท์ หรือ LINE</p>

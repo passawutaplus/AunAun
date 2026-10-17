@@ -188,7 +188,7 @@ const SimilarImagesPage = () => {
 
   return (
     <div className="min-h-screen bg-app-ambient">
-      <div className="sticky top-0 z-20 border-b border-border bg-background/80 backdrop-blur-md">
+      <div className="sticky top-0 z-20 border-b border-border bg-background">
         <div className="mx-auto flex max-w-[1920px] flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 lg:px-8">
           <BackButton className="shrink-0" />
           <h1 className="text-sm font-semibold">ภาพคล้ายกัน</h1>

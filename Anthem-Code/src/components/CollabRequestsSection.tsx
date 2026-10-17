@@ -1,4 +1,6 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { InfoHint } from "@/components/tour/InfoHint";
+import { RequestStatusScene } from "@/components/tour/TourScenes";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -381,6 +383,9 @@ const CollabRequestsSection = ({
           </button>
         ))}
         </div>
+        <InfoHint title="สถานะของคำขอ" scene={<RequestStatusScene />} align="end">
+          คำขอใหม่อยู่ใน “ติดต่อใหม่” พอคุณตอบรับจะย้ายไป “ตอบรับ” และเมื่อจบงาน ปฏิเสธ หรือยกเลิก จะรวมอยู่ใน “ปิดแล้ว” ป้ายสีในแต่ละแถวบอกสถานะจริง
+        </InfoHint>
         <InboxSortMenu
           value={inboxSort}
           onChange={setInboxSort}

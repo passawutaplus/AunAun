@@ -337,7 +337,7 @@ function HeroProfileLine({
   };
 
   return (
-    <span ref={lineRef} className="poster-line" onPointerEnter={show} onPointerLeave={hide}>
+    <span ref={lineRef} data-tour="home-mode" className="poster-line" onPointerEnter={show} onPointerLeave={hide}>
       <span className="sr-only">1 Profile to</span>
       <span className="poster-word" style={{ "--w": 0 } as CSSProperties} aria-hidden>
         1
@@ -524,6 +524,7 @@ const StudioHomeHero = ({
             </span>
           </h1>
           <form
+            data-tour="home-search"
             className={cn("hero-looking pointer-events-auto", entered && "is-in")}
             onSubmit={(event: FormEvent) => {
               event.preventDefault();

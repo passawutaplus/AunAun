@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { TourHelpButton } from "@/components/tour/TourHelpButton";
 import { ChevronDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ManageWorkIcon from "@/components/icons/ManageWorkIcon";
@@ -11,7 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 
 /** Full-width chat shell header — matches works-page top nav height (`h-14`). */
-export function ChatInboxTopBar() {
+export function ChatInboxTopBar({ onTour }: { onTour?: () => void } = {}) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [profile, setProfile] = useState<{
@@ -36,7 +37,8 @@ export function ChatInboxTopBar() {
   return (
     <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border bg-card px-3 sm:px-4">
       <BackButton label="กลับหน้าก่อนหน้า" />
-      <h1 className="text-2xl font-semibold tracking-tight text-foreground">Chating</h1>
+      <h1 className="text-2xl font-semibold tracking-tight text-foreground">Chat</h1>
+      {onTour ? <TourHelpButton onClick={onTour} className="h-8 w-8" /> : null}
       <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-4">
         <Button
           type="button"

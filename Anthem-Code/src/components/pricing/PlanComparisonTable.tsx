@@ -21,7 +21,7 @@ function ComparisonCellValue({ value }: { value: ComparisonCell }) {
     return <Check className="h-4 w-4 text-primary mx-auto" aria-label="มี" />;
   }
   if (value === false) {
-    return <Minus className="h-4 w-4 text-muted-foreground/50 mx-auto" aria-label="ไม่มี" />;
+    return <Minus className="h-4 w-4 text-muted-foreground mx-auto" aria-label="ไม่มี" />;
   }
   if (value === "coming_soon") {
     return (

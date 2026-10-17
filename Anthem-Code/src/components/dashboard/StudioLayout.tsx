@@ -23,6 +23,8 @@ type Props = {
   className?: string;
   padForBottomNav?: boolean;
   showFooter?: boolean;
+  /** Shown beside the page title, e.g. the tour "?" button. */
+  titleAccessory?: ReactNode;
 };
 
 /** Keeps the My Studio shell if a child page throws. */
@@ -71,6 +73,7 @@ export default function StudioLayout({
   className,
   padForBottomNav = true,
   showFooter = false,
+  titleAccessory,
 }: Props) {
   const { pathname } = useLocation();
   const item = matchStudioItem(pathname);
@@ -92,6 +95,7 @@ export default function StudioLayout({
   return (
     <div className={cn("min-h-screen bg-background", padForBottomNav && MOBILE_PAGE_BOTTOM_CLASS, className)}>
       <aside
+        data-tour="studio-nav"
         className={cn(
           "fixed inset-y-0 left-0 z-30 hidden border-r border-border/60 transition-[width] duration-200 lg:block",
           STUDIO_SIDEBAR_BG,
@@ -102,7 +106,7 @@ export default function StudioLayout({
       </aside>
 
       <div className={cn("transition-[padding] duration-200", collapsed ? "lg:pl-16" : "lg:pl-60")}>
-        <header className="sticky top-0 z-20 bg-background/85 backdrop-blur-xl lg:static lg:bg-transparent lg:backdrop-blur-0">
+        <header className="sticky top-0 z-20 bg-background lg:static lg:bg-transparent">
           <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4 pt-[env(safe-area-inset-top)] lg:px-8">
             <Button
               type="button"
@@ -123,9 +127,12 @@ export default function StudioLayout({
 
         <main className="mx-auto max-w-6xl space-y-6 px-4 py-6 lg:px-8 lg:py-8">
           <div>
-            <h1 className="text-4xl font-light tracking-tight text-foreground sm:text-5xl lg:text-6xl">
-              {item?.displayTitle ?? "My Studio"}
-            </h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-4xl font-light tracking-tight text-foreground sm:text-5xl lg:text-6xl">
+                {item?.displayTitle ?? "My Studio"}
+              </h1>
+              {titleAccessory}
+            </div>
             {item?.hint ? <p className="mt-2 text-sm text-muted-foreground">{item.hint}</p> : null}
           </div>
           <StudioBodyErrorBoundary key={pathname}>{children}</StudioBodyErrorBoundary>

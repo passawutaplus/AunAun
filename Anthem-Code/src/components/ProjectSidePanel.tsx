@@ -143,7 +143,7 @@ const ProjectSidePanel = (p: Props) => {
                 <button
                   type="button"
                   aria-label="แชร์ผลงาน"
-                  className="inline-flex items-center justify-center rounded-md p-2 min-h-11 min-w-11 text-muted-foreground/50 hover:bg-muted/30 hover:text-foreground transition-colors"
+                  className="inline-flex items-center justify-center rounded-md p-2 min-h-11 min-w-11 text-muted-foreground hover:bg-muted/30 hover:text-foreground transition-colors"
                 >
                   <Share2 className="w-4 h-4" />
                 </button>

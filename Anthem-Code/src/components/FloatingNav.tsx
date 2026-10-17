@@ -96,11 +96,9 @@ const FloatingNav = () => {
         <div
           className={cn(
             "pointer-events-auto flex items-center gap-0.5 rounded-full",
-            "border border-border/80 bg-background/90 px-1.5 py-1.5 shadow-sm",
-            "dark:border-border dark:bg-card/90",
-            "backdrop-blur-xl supports-[backdrop-filter]:bg-background/75 dark:supports-[backdrop-filter]:bg-card/80",
+            "border border-border bg-background px-1.5 py-1.5 shadow-sm",
+            "dark:bg-card",
           )}
-          style={{ WebkitBackdropFilter: "blur(20px)" }}
         >
           {navItems.map(({ to, label, icon: Icon, match, requiresAuth }) => {
             const active = match(pathname, feedMode);
@@ -193,10 +191,12 @@ const FloatingNav = () => {
         <button
           type="button"
           onClick={openCreate}
+          data-tour="create"
           aria-label="ลงผลงาน"
           className={cn(
-            "pointer-events-auto flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-white shadow-sm transition-all duration-200 ease-out hover:opacity-90 active:scale-95",
-            pathname === "/" || pathname.startsWith("/learn") ? "bg-foreground" : "bg-gradient-brand",
+            "pointer-events-auto flex h-14 w-14 shrink-0 items-center justify-center rounded-full shadow-sm transition-all duration-200 ease-out hover:opacity-90 active:scale-95",
+            // Ink pill in light mode; in dark mode stays black with a white "+" and a hairline ring so it reads on dark pages
+            "bg-[#111111] text-white dark:ring-1 dark:ring-white/25",
           )}
         >
           <Plus className="h-6 w-6" strokeWidth={2.5} />

@@ -42,7 +42,7 @@ const UpgradePageLive = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border/60 bg-background/80 backdrop-blur sticky top-0 z-40">
+      <header className="border-b border-border/60 bg-background sticky top-0 z-40">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 h-14 flex items-center justify-between">
           <BackButton
             onClick={() => navigate(user ? "/settings" : "/")}

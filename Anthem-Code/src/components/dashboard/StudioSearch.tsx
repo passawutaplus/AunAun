@@ -86,6 +86,7 @@ export default function StudioSearch({ className, compact = false }: { className
         <button
           type="button"
           onClick={() => setOpen(true)}
+          data-tour="studio-search"
           aria-label="ค้นหาใน My Studio"
           title="ค้นหา (Ctrl K)"
           className={cn(
@@ -99,6 +100,7 @@ export default function StudioSearch({ className, compact = false }: { className
       <button
         type="button"
         onClick={() => setOpen(true)}
+        data-tour="studio-search"
         className={cn(
           "flex h-9 w-full items-center gap-2 rounded-lg border border-border/70 bg-background/70 px-2.5 text-left text-sm text-muted-foreground shadow-sm transition-colors hover:border-foreground/20 hover:bg-background",
           className,

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { CV_MONTHS_SHORT, composePeriodPoint, parsePeriodPoint, type CvDateLang } from "@/lib/cvDates";
 
 const CONTROL_CLASS =
-  "mt-1 rounded-lg bg-secondary border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground/40 disabled:opacity-60 disabled:cursor-not-allowed";
+  "mt-1 rounded-lg bg-secondary border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground disabled:opacity-60 disabled:cursor-not-allowed";
 
 type Props = {
   label: string;

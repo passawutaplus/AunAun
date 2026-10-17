@@ -316,7 +316,7 @@ const ExploreProjectsPage = () => {
           breadcrumbJsonLd(crumbs),
         ]}
       />
-      <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border">
+      <div className="sticky top-0 z-20 bg-background border-b border-border">
         <div className="mx-auto flex max-w-[1920px] flex-wrap items-center gap-3 px-4 py-3 lg:px-8">
           <BackButton className="shrink-0" />
           <div className="flex min-w-0 flex-1 flex-col gap-1.5">

@@ -88,7 +88,7 @@ const JobDetailPage = () => {
         image={displayJob.cover_image_url || undefined}
         noindex={displayJob.status !== "open"}
       />
-      <header className="sticky top-0 z-20 border-b border-border/50 bg-background/90 backdrop-blur">
+      <header className="sticky top-0 z-20 border-b border-border/50 bg-background">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-3 px-4 md:px-5 lg:px-6">
           <div className="flex min-w-0 items-center gap-2">
             <BackButton to="/hiring" />

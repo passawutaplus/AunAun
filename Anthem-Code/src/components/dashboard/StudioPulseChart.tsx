@@ -233,7 +233,7 @@ export default function StudioPulseChart({
       <div className="h-56 w-full sm:h-64">
         {!bounds ? (
           <div className="flex h-full flex-col items-center justify-center gap-2 px-4 text-center">
-            <Eye className="h-8 w-8 text-muted-foreground/50" aria-hidden />
+            <Eye className="h-8 w-8 text-muted-foreground" aria-hidden />
             <p className="text-sm text-foreground">เลือกช่วงวันก่อน</p>
             <p className="text-xs text-muted-foreground">กดปฏิทินด้านบน แล้วใส่ตั้งแต่วันที่ถึงวันที่</p>
           </div>
@@ -243,7 +243,7 @@ export default function StudioPulseChart({
           </div>
         ) : !hasSignal ? (
           <div className="flex h-full flex-col items-center justify-center gap-2 px-4 text-center">
-            <Eye className="h-8 w-8 text-muted-foreground/50" aria-hidden />
+            <Eye className="h-8 w-8 text-muted-foreground" aria-hidden />
             <p className="text-sm text-foreground">
               {isPackages ? "ยังไม่มีคนดูแพ็กเกจในช่วงนี้" : "ยังไม่มีคนดูผลงานในช่วงนี้"}
             </p>

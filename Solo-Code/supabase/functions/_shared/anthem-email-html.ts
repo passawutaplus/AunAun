@@ -80,6 +80,8 @@ function layout(opts: {
   optOut?: boolean;
   /** Extra block between the button and the fallback link (e.g. "didn't ask for this?") */
   afterCtaHtml?: string;
+  /** Pre-built href (e.g. a Supabase Go-template expression) used verbatim instead of escaping ctaUrl */
+  ctaHrefRaw?: string;
 }): { html: string; text: string } {
   const siteUrl = anthemSiteUrl();
   const siteDomain = new URL(siteUrl).host;
@@ -88,6 +90,7 @@ function layout(opts: {
   const logoUrl = `${siteUrl}/email/logo-horizontal.png`;
   const year = new Date().getFullYear();
   const reason = opts.reason ?? "คุณได้รับอีเมลนี้เพราะมีความเคลื่อนไหวในบัญชี SAMECOR ของคุณ";
+  const ctaHref = opts.ctaHrefRaw ?? escapeHtml(opts.ctaUrl);
   const link = (href: string, label: string) =>
     `<a href="${href}" style="color:${brand.body};text-decoration:none">${label}</a>`;
 
@@ -112,11 +115,11 @@ function layout(opts: {
 <h1 style="margin:0 0 16px;font-size:24px;line-height:1.4;font-weight:600;color:${brand.ink}">${escapeHtml(opts.title)}</h1>
 ${opts.bodyHtml}
 <table role="presentation" cellspacing="0" cellpadding="0" style="margin:8px 0 24px"><tr><td style="background:${brand.ink};border-radius:999px">
-<a href="${escapeHtml(opts.ctaUrl)}" style="display:inline-block;padding:14px 32px;font-size:15px;font-weight:600;color:${brand.white};text-decoration:none">${escapeHtml(opts.ctaLabel)}</a>
+<a href="${ctaHref}" style="display:inline-block;padding:14px 32px;font-size:15px;font-weight:600;color:${brand.white};text-decoration:none">${escapeHtml(opts.ctaLabel)}</a>
 </td></tr></table>
 ${opts.afterCtaHtml ?? ""}
 <p style="margin:0 0 4px;font-size:12px;color:${brand.mute}">ปุ่มกดไม่ได้? คัดลอกลิงก์นี้ไปเปิดในเบราว์เซอร์</p>
-<p style="margin:0;font-size:12px;line-height:1.6;word-break:break-all"><a href="${escapeHtml(opts.ctaUrl)}" style="color:${brand.body}">${escapeHtml(opts.ctaUrl)}</a></p>
+<p style="margin:0;font-size:12px;line-height:1.6;word-break:break-all"><a href="${ctaHref}" style="color:${brand.body}">${ctaHref}</a></p>
 </td></tr>
 <tr><td style="padding:16px 40px;border-top:1px solid ${brand.border};background:#FBFAF7">
 <p style="margin:0;font-size:12px;line-height:1.6;color:${brand.mute}"><img src="${siteUrl}/email/flat/shield-16.png" alt="" width="16" height="16" style="vertical-align:-3px;border:0"/>&nbsp; SAMECOR จะไม่ขอรหัสผ่าน รหัส OTP หรือข้อมูลบัตรของคุณทางอีเมล โทรศัพท์ หรือ LINE</p>
@@ -557,7 +560,11 @@ export function renderAuthEmailTemplate(kind: "recovery" | "confirmation" | "mag
     title: copy.title,
     bodyHtml,
     ctaLabel: copy.cta,
-    ctaUrl: `{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=${copy.type}`,
+    ctaUrl: `${siteUrl}/`,
+    // The project is shared with So1o / Vault, whose apps only understand Supabase's own verify link.
+    // SAMECOR requests get a samecor.com link (token_hash, verified by the app); everything else keeps
+    // {{ .ConfirmationURL }}. RedirectTo is always a full allow-listed URL (≥19 chars), so the slice is safe.
+    ctaHrefRaw: `{{ if and (ge (len .RedirectTo) 19) (eq (slice .RedirectTo 0 19) "https://samecor.com") }}{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=${copy.type}{{ else }}{{ .ConfirmationURL }}{{ end }}`,
     reason: copy.reason,
     optOut: false,
     afterCtaHtml,

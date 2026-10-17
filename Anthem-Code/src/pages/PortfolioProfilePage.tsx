@@ -1,6 +1,7 @@
 import { useMemo, useEffect, useRef, useState } from "react";
 import { CircleHelp } from "lucide-react";
-import { ProfileTour, hasSeenProfileTour } from "@/components/profile/ProfileTour";
+import { ProfileTour } from "@/components/profile/ProfileTour";
+import { usePageTour } from "@/hooks/usePageTour";
 import { isCommerceEnabled, isInspireEnabled } from "@/lib/aplus1Launch";
 import { profileTabIcon } from "@/lib/profileTabIcons";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -90,15 +91,8 @@ const PortfolioProfilePage = () => {
   );
 
   const [opportunityOpen, setOpportunityOpen] = useState(false);
-  const [tourOpen, setTourOpen] = useState(false);
-  const tourCheckedRef = useRef(false);
-  useEffect(() => {
-    // First visit to your own profile: offer the walkthrough once (remembered in this browser).
-    if (tourCheckedRef.current || isLoading || !profile) return;
-    tourCheckedRef.current = true;
-    if (hasSeenProfileTour()) return;
-    window.setTimeout(() => setTourOpen(true), 900);
-  }, [isLoading, profile]);
+  // Opens by itself until finished or switched off (lib/guideTours.ts); "?" replays it.
+  const tour = usePageTour("profile", !isLoading && !!profile);
   const activeTab = resolveTab(searchParams.get("tab"), hiringBoardEnabled);
 
   const setTab = (tab: ProfileTab) => {
@@ -243,7 +237,7 @@ const PortfolioProfilePage = () => {
 
   return (
     <div className={cn("min-h-screen bg-app-ambient", MOBILE_PAGE_BOTTOM_CLASS)}>
-      <div className="sticky top-0 z-30 lg:hidden border-b border-border/40 bg-background/40 backdrop-blur-xl supports-[backdrop-filter]:bg-background/30">
+      <div className="sticky top-0 z-30 lg:hidden border-b border-border/40 bg-background">
         <div className={cn(PAGE_SHELL, "px-4 py-2 flex items-center justify-between gap-2")}>
           <BackButton to="/" label="กลับฟีด" />
           <div data-tour="profile-actions">
@@ -341,7 +335,7 @@ const PortfolioProfilePage = () => {
             </nav>
             <button
               type="button"
-              onClick={() => setTourOpen(true)}
+              onClick={tour.start}
               aria-label="แนะนำหน้านี้"
               title="แนะนำหน้านี้"
               className="ml-auto flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/60 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
@@ -409,8 +403,8 @@ const PortfolioProfilePage = () => {
       <Footer />
       <OpportunityStatusDialog open={opportunityOpen} onOpenChange={setOpportunityOpen} />
       <ProfileTour
-        open={tourOpen}
-        onClose={() => setTourOpen(false)}
+        open={tour.open}
+        onClose={tour.close}
         currentTab={activeTab}
         onShowTab={(t) => setTab(t as ProfileTab)}
       />

@@ -45,8 +45,8 @@ const ProjectGallery = ({
             </CarouselItem>
           ))}
         </CarouselContent>
-        <CarouselPrevious className="left-3 border-0 bg-background/20 text-foreground/55 shadow-none backdrop-blur-[2px] hover:bg-background/40 hover:text-foreground/80 disabled:opacity-20" />
-        <CarouselNext className="right-3 border-0 bg-background/20 text-foreground/55 shadow-none backdrop-blur-[2px] hover:bg-background/40 hover:text-foreground/80 disabled:opacity-20" />
+        <CarouselPrevious className="left-3 border-0 bg-background/20 text-muted-foreground shadow-none backdrop-blur-[2px] hover:bg-background/40 hover:text-foreground/80 disabled:opacity-20" />
+        <CarouselNext className="right-3 border-0 bg-background/20 text-muted-foreground shadow-none backdrop-blur-[2px] hover:bg-background/40 hover:text-foreground/80 disabled:opacity-20" />
         {showActions && images[current] ? (
           <ImageActionBar
             projectId={projectId}

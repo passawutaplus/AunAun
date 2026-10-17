@@ -56,7 +56,7 @@ const CollectionDetailPage = () => {
     return (
       <div className="min-h-screen bg-app-ambient flex items-center justify-center">
         <div className="text-center space-y-3">
-          <Lock className="w-10 h-10 text-muted-foreground/50 mx-auto" />
+          <Lock className="w-10 h-10 text-muted-foreground mx-auto" />
           <p className="text-foreground font-medium">ไม่พบคอลเลกชันนี้</p>
           <p className="text-sm text-muted-foreground">อาจเป็นคอลเลกชันส่วนตัว หรือลิงก์ไม่ถูกต้อง</p>
           <Button onClick={() => navigate("/")}>กลับหน้าหลัก</Button>

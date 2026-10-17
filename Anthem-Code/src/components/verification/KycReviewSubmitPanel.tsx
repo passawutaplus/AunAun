@@ -21,7 +21,7 @@ import { LEGAL_DPO_EMAIL } from "@/lib/legalConfig";
 import { cn } from "@/lib/utils";
 
 const KYC_INPUT_CLASS =
-  "bg-muted border-border placeholder:text-muted-foreground/55";
+  "bg-muted border-border placeholder:text-muted-foreground";
 const KYC_ERROR_CLASS = "border-destructive focus-visible:ring-destructive";
 
 function ReqStar() {
