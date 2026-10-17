@@ -905,21 +905,21 @@
   .glass-hover:hover {
     transform: translateY(-1px);
     border-color: hsl(var(--primary) / 0.4);
-    box-shadow: 0 4px 16px -6px hsl(14 100% 50% / 0.18);
+    box-shadow: none;
 
   }
 
   /* Chat — paper field (light) and warm charcoal (dark), not cool blue bubbles */
   .chat-paper {
-    --background: 0 0% 96%;
-    --foreground: 40 3% 18%;
-    --muted-foreground: 30 4% 41%;
+    --background: 50 30% 96%;
+    --foreground: 0 0% 7%;
+    --muted-foreground: 0 0% 40%;
     --card: 0 0% 100%;
-    --card-foreground: 40 3% 18%;
+    --card-foreground: 0 0% 7%;
     --popover: 0 0% 100%;
-    --popover-foreground: 40 3% 18%;
-    --border: 40 5% 86%;
-    --input: 40 5% 86%;
+    --popover-foreground: 0 0% 7%;
+    --border: 60 6% 90%;
+    --input: 60 6% 90%;
     --muted: 40 6% 92%;
     --secondary: 40 6% 92%;
     --secondary-foreground: 40 3% 18%;
@@ -933,12 +933,12 @@
     background-color: hsl(var(--background));
   }
   .dark .chat-paper {
-    --background: 40 4% 10%;
+    --background: 0 0% 7%;
     --foreground: 40 12% 94%;
     --muted-foreground: 35 6% 68%;
-    --card: 40 4% 14%;
+    --card: 180 1% 16%;
     --card-foreground: 40 12% 94%;
-    --popover: 40 4% 13%;
+    --popover: 180 1% 16%;
     --popover-foreground: 40 12% 94%;
     --border: 40 5% 22%;
     --input: 40 5% 22%;
@@ -951,22 +951,22 @@
     --primary-foreground: 40 3% 12%;
     --primary-bright: 0 0% 96%;
     --ring: 0 0% 96%;
-    color: #f3f1ee;
-    background-color: #1a1917;
+    color: hsl(var(--foreground));
+    background-color: hsl(var(--background));
   }
 
   /* Hire / collab request popups — paper + ink, same as auth and search filter.
      Stays light in dark mode. Accent is ink, not radiant orange. */
   .paper-popup {
-    --background: 0 0% 96%;
-    --foreground: 40 3% 18%;
-    --muted-foreground: 35 4% 40%;
+    --background: 50 30% 96%;
+    --foreground: 0 0% 7%;
+    --muted-foreground: 0 0% 40%;
     --card: 0 0% 100%;
-    --card-foreground: 40 3% 18%;
+    --card-foreground: 0 0% 7%;
     --popover: 0 0% 100%;
-    --popover-foreground: 40 3% 18%;
-    --border: 40 14% 88%;
-    --input: 40 14% 88%;
+    --popover-foreground: 0 0% 7%;
+    --border: 60 6% 90%;
+    --input: 60 6% 90%;
     --muted: 40 8% 94%;
     --secondary: 40 8% 93%;
     --secondary-foreground: 40 3% 18%;
