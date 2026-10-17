@@ -24,8 +24,8 @@ type Action = {
 
 const DOT: Record<Action["kind"], string> = {
   hire: "bg-blue-500",
-  collab: "bg-orange-500",
-  due: "bg-amber-500",
+  collab: "bg-chat-collab",
+  due: "bg-warning",
 };
 
 const DAY = 86_400_000;
@@ -122,7 +122,7 @@ export default function StudioActionQueue({ hire, collab, loading }: { hire: Hir
         </div>
       ) : shown.length === 0 ? (
         <div className="flex flex-wrap items-center gap-3 rounded-xl bg-secondary/40 px-4 py-4">
-          <Sparkles className="h-5 w-5 text-orange-500" aria-hidden />
+          <Sparkles className="h-5 w-5 text-brand" aria-hidden />
           <p className="min-w-0 flex-1 text-sm text-muted-foreground">
             ตอบครบหมดแล้ว ลงผลงานเพิ่มหรือแชร์โปรไฟล์ให้คนเห็นมากขึ้นได้เลย
           </p>
@@ -136,8 +136,8 @@ export default function StudioActionQueue({ hire, collab, loading }: { hire: Hir
             <li key={a.id}>
               <Link to={a.to} className="group -mx-2 flex items-center gap-3 rounded-xl px-2 py-2.5 transition-colors hover:bg-secondary/50">
                 {a.kind === "due" ? (
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-50 dark:bg-amber-500/15">
-                    <CalendarClock className="h-4 w-4 text-amber-600" aria-hidden />
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-warning/10 dark:bg-warning/15">
+                    <CalendarClock className="h-4 w-4 text-warning" aria-hidden />
                   </span>
                 ) : (
                   <span className="relative shrink-0">

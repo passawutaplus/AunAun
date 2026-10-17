@@ -69,7 +69,7 @@ export function useMemberNames(memberIds: string[], meId: string | undefined) {
 export function AgreementStatusPill({ status, ackCount, total }: { status: CollabAgreementStatus; ackCount: number; total: number }) {
   const map = {
     draft: { text: "ร่าง", cls: "bg-muted text-muted-foreground" },
-    pending: { text: `รอยืนยัน ${ackCount}/${total}`, cls: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
+    pending: { text: `รอยืนยัน ${ackCount}/${total}`, cls: "bg-warning/15 text-warning dark:text-warning" },
     agreed: { text: "ตกลงแล้ว", cls: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" },
   } as const;
   const s = map[status];
@@ -394,7 +394,7 @@ export function CollabAgreementSheet({ open, onOpenChange, conversationId, colla
         {!readOnly ? (
           <div className="space-y-2 border-t border-border px-5 py-3">
             {sent && dirty ? (
-              <p className={cn("text-xs", diff.needsReconfirm ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground")}>
+              <p className={cn("text-xs", diff.needsReconfirm ? "text-warning dark:text-warning" : "text-muted-foreground")}>
                 {diff.needsReconfirm
                   ? `แก้${diff.labels.filter((l) => l === "ใครทำอะไร" || l === "เครดิตและสิทธิ์").join(", ")} — ทุกคนต้องยืนยันใหม่`
                   : "จะแจ้งในแชทว่าแก้อะไร — ไม่ต้องยืนยันใหม่"}

@@ -12,36 +12,16 @@ type Props = {
   className?: string;
 };
 
-/** Active face fill + soft aura per mood. */
+/** Active face fill per mood — status tones only, no glow (Brand Book). */
 const MOOD_COLOR: Record<
   OverallMoodValue,
   { fill: string; glow: string; label: string }
 > = {
-  1: {
-    fill: "hsl(0 84% 58%)",
-    glow: "hsla(0, 84%, 58%, 0.35)",
-    label: "text-red-400",
-  },
-  2: {
-    fill: "hsl(24 95% 53%)",
-    glow: "hsla(24, 95%, 53%, 0.32)",
-    label: "text-orange-400",
-  },
-  3: {
-    fill: "hsl(45 95% 52%)",
-    glow: "hsla(45, 95%, 52%, 0.32)",
-    label: "text-yellow-400",
-  },
-  4: {
-    fill: "hsl(142 70% 42%)",
-    glow: "hsla(142, 70%, 42%, 0.32)",
-    label: "text-emerald-400",
-  },
-  5: {
-    fill: "hsl(142 85% 48%)",
-    glow: "hsla(142, 85%, 55%, 0.45)",
-    label: "text-emerald-300",
-  },
+  1: { fill: "hsl(var(--destructive))", glow: "hsl(var(--destructive) / 0.12)", label: "text-foreground" },
+  2: { fill: "hsl(var(--warning))", glow: "hsl(var(--warning) / 0.12)", label: "text-foreground" },
+  3: { fill: "hsl(var(--muted-foreground) / 0.6)", glow: "hsl(var(--foreground) / 0.08)", label: "text-foreground" },
+  4: { fill: "hsl(var(--success) / 0.75)", glow: "hsl(var(--success) / 0.12)", label: "text-foreground" },
+  5: { fill: "hsl(var(--success))", glow: "hsl(var(--success) / 0.14)", label: "text-foreground" },
 };
 
 function MoodFace({
@@ -139,15 +119,11 @@ export function OverallMoodRating({
                       className="absolute inset-[-8px] rounded-full"
                       style={{
                         background: colors.glow,
-                        boxShadow:
-                          opt.value === 5
-                            ? `0 0 18px 6px ${colors.glow}`
-                            : `0 0 10px 2px ${colors.glow}`,
                       }}
                       transition={{ type: "spring", stiffness: 380, damping: 28 }}
                     />
                   ) : null}
-                  <span className="relative h-full w-full drop-shadow-sm">
+                  <span className="relative h-full w-full">
                     <MoodFace value={opt.value} active={active} />
                   </span>
                 </motion.span>

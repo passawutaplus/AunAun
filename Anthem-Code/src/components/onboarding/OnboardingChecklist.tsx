@@ -226,7 +226,7 @@ export default function OnboardingChecklist({ variant = "full" }: Props) {
           </div>
 
           {!tourMode && welcomeCapReached && !allMissionsClaimed && (
-            <p className="mt-3 text-xs text-amber-600 dark:text-amber-400 leading-relaxed rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2">
+            <p className="mt-3 text-xs text-warning dark:text-warning leading-relaxed rounded-lg border border-warning/30 bg-warning/10 px-3 py-2">
               รับครบโควต้า {welcomeCap.toLocaleString()} px แล้ว — ภารกิจที่ยังไม่รับจะไม่ได้ px เพิ่ม
               แต่ทำต่อเพื่อเรียนรู้แพลตฟอร์มได้
             </p>
@@ -296,7 +296,7 @@ export default function OnboardingChecklist({ variant = "full" }: Props) {
                       </p>
                     )}
                     {task.id === "like" && signals && !task.done && !claimed && (
-                      <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1">
+                      <p className="text-[10px] text-warning dark:text-warning mt-1">
                         {likeMissionHint(signals) ?? ""}
                       </p>
                     )}

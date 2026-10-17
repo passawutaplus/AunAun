@@ -28,7 +28,7 @@ export function DrillCountdown({ startedAt, totalMinutes }: Props) {
         "rounded-xl border p-4 space-y-3",
         tone === "expired" && "border-destructive/30 bg-destructive/5",
         tone === "critical" && "border-destructive/40 bg-destructive/5",
-        tone === "warning" && "border-amber-500/40 bg-amber-500/5",
+        tone === "warning" && "border-warning/40 bg-warning/5",
         tone === "normal" && "border-primary/30 bg-primary/5",
       )}
     >
@@ -42,7 +42,7 @@ export function DrillCountdown({ startedAt, totalMinutes }: Props) {
             "font-mono text-2xl font-bold tabular-nums tracking-tight",
             tone === "expired" && "text-destructive",
             tone === "critical" && "text-destructive",
-            tone === "warning" && "text-amber-600 dark:text-amber-400",
+            tone === "warning" && "text-warning dark:text-warning",
             tone === "normal" && "text-primary",
           )}
         >
@@ -55,7 +55,7 @@ export function DrillCountdown({ startedAt, totalMinutes }: Props) {
             "h-full rounded-full transition-all duration-1000 ease-linear",
             tone === "expired" && "bg-destructive",
             tone === "critical" && "bg-destructive",
-            tone === "warning" && "bg-amber-500",
+            tone === "warning" && "bg-warning",
             tone === "normal" && "bg-primary",
           )}
           style={{ width: `${Math.round(progress * 100)}%` }}

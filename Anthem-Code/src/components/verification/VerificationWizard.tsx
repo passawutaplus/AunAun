@@ -826,7 +826,7 @@ const VerificationWizard = () => {
         />
         <div className="relative space-y-5 px-4 py-8 sm:px-5">
           <div className="rounded-2xl glass-panel p-6 text-center space-y-3">
-            <Clock className="w-12 h-12 text-amber-500 mx-auto" />
+            <Clock className="w-12 h-12 text-warning mx-auto" />
             <h1 className="text-xl font-semibold">ได้รับข้อมูลของคุณเรียบร้อยแล้ว</h1>
             <p className="text-sm text-muted-foreground leading-relaxed">
               ขณะนี้ทีมงานกำลังตรวจสอบข้อมูล โดยใช้เวลาประมาณ 1–3 วันทำการ
@@ -849,8 +849,8 @@ const VerificationWizard = () => {
   return (
     <div className="space-y-5 text-base [&_label]:text-base [&_h2]:text-xl [&_input]:!text-base">
       {expired && (
-        <div className="rounded-2xl border border-amber-500/40 bg-amber-500/5 p-4 text-base">
-          <p className="font-medium text-amber-700 dark:text-amber-400">การยืนยันตัวตนหมดอายุแล้ว</p>
+        <div className="rounded-2xl border border-warning/40 bg-warning/5 p-4 text-base">
+          <p className="font-medium text-warning dark:text-warning">การยืนยันตัวตนหมดอายุแล้ว</p>
           <p className="text-muted-foreground mt-1">กรุณายื่น KYC ใหม่เพื่อถอนเงินและเปิดรับจ้างต่อ</p>
         </div>
       )}

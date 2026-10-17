@@ -176,7 +176,7 @@ export function BillingProfileSection({ userId, profile, onSaved }: Props) {
           </div>
         </div>
       ) : (
-        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-sm space-y-2">
+        <div className="rounded-xl border border-warning/30 bg-warning/10 px-3 py-2.5 text-sm space-y-2">
           <p className="text-foreground">
             ยังไม่มี KYC ที่อนุมัติ — ข้อมูลเอกสารบุคคลธรรมดาต้องมาจาก KYC
           </p>

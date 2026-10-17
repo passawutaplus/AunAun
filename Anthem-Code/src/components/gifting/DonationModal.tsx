@@ -150,9 +150,9 @@ const DonationModal = ({ open, onOpenChange, recipientId, recipientName, recipie
           </DialogHeader>
 
           {previewOnly && (
-            <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 dark:bg-amber-950/30 dark:border-amber-900/40">
-              <Eye className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
-              <p className="text-[11px] text-amber-800 dark:text-amber-200 leading-relaxed">
+            <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-warning/10 border border-warning/30 dark:bg-warning/10 dark:border-warning/40">
+              <Eye className="w-4 h-4 text-warning dark:text-warning mt-0.5 shrink-0" />
+              <p className="text-[11px] text-warning dark:text-warning leading-relaxed">
                 <span className="font-medium">โหมดพรีวิว:</span> นี่คือผลงานของคุณเอง — ระบบจะจำลองการส่งของขวัญโดยไม่ตัด Pixel จริง
               </p>
             </div>

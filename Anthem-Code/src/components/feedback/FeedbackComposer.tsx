@@ -155,7 +155,7 @@ export default function FeedbackComposer() {
           <div className="relative px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-10 text-center">
             <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
               <div className="absolute -left-10 -top-16 h-44 w-44 rounded-full bg-white/25 blur-2xl" />
-              <div className="absolute -bottom-16 -right-8 h-52 w-52 rounded-full bg-amber-100/35 blur-3xl" />
+              <div className="absolute -bottom-16 -right-8 h-52 w-52 rounded-full bg-warning/10 blur-3xl" />
               <div className="absolute left-1/2 top-8 h-28 w-40 -translate-x-1/2 rounded-full bg-white/15 blur-2xl" />
             </div>
             <button

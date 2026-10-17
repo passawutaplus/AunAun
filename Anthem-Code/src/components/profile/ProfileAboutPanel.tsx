@@ -175,7 +175,7 @@ export default function ProfileAboutPanel({
             />
           )}
           {mode === "owner" && fit.overflow ? (
-            <p role="status" className="rounded-xl bg-amber-100 px-3 py-2 text-xs text-amber-950">
+            <p role="status" className="rounded-xl bg-warning/10 px-3 py-2 text-xs text-warning">
               เนื้อหายาวเกิน 1 หน้า A4 — ลดข้อความ ปิดบางหัวข้อ หรือเลือกคอลัมน์เดียวในหน้าแก้ไข
             </p>
           ) : null}

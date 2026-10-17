@@ -149,7 +149,7 @@ export default function StudioHomePanel({ userId }: Props) {
           </span>
         </div>
         <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-secondary">
-          <div className="h-full rounded-full bg-orange-500" style={{ width: `${(doneCount / checklist.length) * 100}%` }} />
+          <div className="h-full rounded-full bg-brand" style={{ width: `${(doneCount / checklist.length) * 100}%` }} />
         </div>
         <ul className="space-y-0.5">
           {checklist.map((c) => (
@@ -174,7 +174,7 @@ export default function StudioHomePanel({ userId }: Props) {
 
   return (
     <div className="space-y-6">
-      <section className="relative flex flex-wrap items-center gap-x-5 gap-y-4 overflow-hidden rounded-3xl border border-orange-200/70 bg-orange-50/70 px-4 py-4 dark:border-orange-500/20 dark:bg-orange-500/10 sm:px-6">
+      <section className="relative flex flex-wrap items-center gap-x-5 gap-y-4 overflow-hidden rounded-3xl border border-border bg-card px-4 py-4 sm:px-6">
         <MascotCharacter className="h-24 w-28 shrink-0 sm:h-28 sm:w-32" />
         <div className="min-w-0 flex-1">
           <p className="text-sm text-muted-foreground">{today}</p>
@@ -209,7 +209,7 @@ export default function StudioHomePanel({ userId }: Props) {
               <span
                 className={cn(
                   "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl",
-                  st.hot ? "bg-orange-500 text-white" : "bg-secondary text-foreground",
+                  st.hot ? "bg-foreground text-background" : "bg-secondary text-foreground",
                 )}
               >
                 <Icon className="h-5 w-5" aria-hidden />
@@ -251,7 +251,7 @@ export default function StudioHomePanel({ userId }: Props) {
                           "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl",
                           row.tag === "งานจ้าง"
                             ? "bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-300"
-                            : "bg-orange-50 text-orange-600 dark:bg-orange-500/15 dark:text-orange-300",
+                            : "bg-brand/10 text-foreground",
                         )}
                       >
                         {row.tag === "งานจ้าง" ? <Briefcase className="h-4 w-4" /> : <Handshake className="h-4 w-4" />}

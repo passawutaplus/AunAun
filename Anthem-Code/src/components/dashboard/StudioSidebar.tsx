@@ -151,7 +151,7 @@ function SidebarLink({
       {count > 0 ? (
         <span
           className={cn(
-            "rounded-full bg-orange-500 px-1.5 text-[11px] font-semibold leading-[18px] text-white",
+            "rounded-full bg-brand px-1.5 text-[11px] font-semibold leading-[18px] text-brand-foreground",
             collapsed && "absolute right-1 top-0.5 min-w-[18px] px-1 text-center text-[10px] leading-4",
           )}
           aria-label={`${count} รายการ`}

@@ -153,7 +153,7 @@ const OpportunityStatusDialog = ({ open, onOpenChange }: Props) => {
                 otherPlaceholder="พิมพ์สิ่งที่มองหาแล้วกด Enter"
               />
               {types.length === 0 && (
-                <p className="text-xs text-amber-500/90 leading-relaxed">
+                <p className="text-xs text-warning/90 leading-relaxed">
                   เลือกอย่างน้อย 1 อย่าง เพื่อให้คนทักคุณได้ตรงขึ้น
                 </p>
               )}

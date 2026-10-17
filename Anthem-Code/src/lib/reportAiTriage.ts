@@ -88,7 +88,7 @@ export function kycRiskTone(score: number | null | undefined): "low" | "medium" 
 export function kycScoreClass(score: number): string {
   const tone = kycRiskTone(score);
   if (tone === "low") return "text-emerald-600";
-  if (tone === "medium") return "text-amber-600";
+  if (tone === "medium") return "text-warning";
   return "text-destructive";
 }
 

@@ -15,7 +15,7 @@ import {
 
 const STATUS_DOT: Record<BookmarkStatus, string> = {
   interested: "bg-sky-400",
-  contacted: "bg-amber-400",
+  contacted: "bg-warning",
   waiting_quote: "bg-violet-400",
   hired: "bg-emerald-500",
 };

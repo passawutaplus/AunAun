@@ -44,7 +44,7 @@ export const FORUM_STATUS_LABELS: Record<ForumTopicStatus, string> = {
 /** Badge tone classes (Tailwind) */
 export const FORUM_STATUS_TONES: Record<ForumTopicStatus, string> = {
   open: "bg-sky-50 text-sky-800 border-sky-200",
-  under_review: "bg-amber-50 text-amber-800 border-amber-200",
+  under_review: "bg-warning/10 text-warning border-warning/30",
   planned: "bg-violet-50 text-violet-800 border-violet-200",
   in_progress: "bg-blue-50 text-blue-800 border-blue-200",
   done: "bg-emerald-50 text-emerald-800 border-emerald-200",

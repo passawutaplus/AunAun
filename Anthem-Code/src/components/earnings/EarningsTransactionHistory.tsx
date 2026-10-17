@@ -65,7 +65,7 @@ function money(satang: number) {
 function bucketPillClass(bucket: HireIncomeItem["walletBucket"]): string {
   switch (bucket) {
     case "pending":
-      return "bg-amber-500/10 text-amber-800 dark:text-amber-300";
+      return "bg-warning/10 text-warning dark:text-warning";
     case "available":
       return "bg-primary/10 text-primary";
     case "transferring":

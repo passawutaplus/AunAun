@@ -189,7 +189,7 @@ export default function AboutDocumentPreviewDialog({
           </div>
         </div>
         {fit?.overflow ? (
-          <p role="status" className="rounded-lg bg-amber-100 px-2.5 py-1.5 text-[11px] text-amber-950">
+          <p role="status" className="rounded-lg bg-warning/10 px-2.5 py-1.5 text-[11px] text-warning">
             ย่อตัวอักษรอัตโนมัติสุดแล้วแต่ยังเกิน 1 หน้า A4 — PDF จะต่อเป็นหน้า 2 ลดข้อความหรือปิดบางหัวข้อได้
           </p>
         ) : fit && fit.scale < 1 ? (

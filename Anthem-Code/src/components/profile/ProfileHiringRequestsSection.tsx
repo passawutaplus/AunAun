@@ -158,7 +158,7 @@ function friendStatusLabel(status: string | null | undefined): { label: string; 
     default:
       return {
         label: "รอเพื่อนตอบ",
-        tone: "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/25",
+        tone: "bg-warning/15 text-warning dark:text-warning border-warning/25",
       };
   }
 }

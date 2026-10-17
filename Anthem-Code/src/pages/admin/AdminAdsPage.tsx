@@ -37,7 +37,7 @@ const KpiCard = ({ label, value, icon: Icon, accent }: {
 
 const statusColor: Record<string, string> = {
   active: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30",
-  pending: "bg-amber-500/15 text-amber-600 border-amber-500/30",
+  pending: "bg-warning/15 text-warning border-warning/30",
   paused: "bg-zinc-500/15 text-zinc-600 border-zinc-500/30",
   rejected: "bg-red-500/15 text-red-600 border-red-500/30",
   expired: "bg-zinc-500/15 text-zinc-500 border-zinc-500/30",

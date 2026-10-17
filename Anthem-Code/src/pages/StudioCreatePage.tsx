@@ -448,7 +448,7 @@ const StudioCreateInner = () => {
 
         {/* Advanced section */}
         {showAdvanced && (
-          <div className="bg-orange-50/60 dark:bg-primary/5 rounded-2xl p-5 space-y-5 border border-primary/15">
+          <div className="bg-secondary/60 rounded-2xl p-5 space-y-5 border border-primary/15">
             {/* Cover */}
             <div className="space-y-2">
               <Label className="text-xs">Cover Image</Label>

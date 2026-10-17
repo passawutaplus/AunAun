@@ -49,7 +49,7 @@ const Avatar = ({ url, name }: { url?: string | null; name?: string | null }) =>
   );
 
 const STATUS_CLASS: Record<Status, string> = {
-  pending: "bg-amber-500/15 text-amber-600",
+  pending: "bg-warning/15 text-warning",
   approved: "bg-emerald-500/15 text-emerald-600",
   rejected: "bg-destructive/15 text-destructive",
 };
@@ -395,7 +395,7 @@ export default function AdminKycPage() {
                             </p>
                           )}
                           {!!meta.edd_required && (
-                            <p className="text-amber-600 dark:text-amber-400 font-medium">ต้อง Enhanced Due Diligence</p>
+                            <p className="text-warning dark:text-warning font-medium">ต้อง Enhanced Due Diligence</p>
                           )}
                         </>
                       );

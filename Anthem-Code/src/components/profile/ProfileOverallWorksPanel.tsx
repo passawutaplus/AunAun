@@ -54,7 +54,7 @@ function CardBadge({ pinNumber, status }: { pinNumber?: number; status: StatusFi
   }
   if (status === "Published") return null;
   return (
-    <span className="absolute left-1.5 top-1.5 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-950">
+    <span className="absolute left-1.5 top-1.5 rounded-full bg-warning/10 px-2 py-0.5 text-[11px] font-medium text-warning">
       {STATUS_LABEL[status]}
     </span>
   );

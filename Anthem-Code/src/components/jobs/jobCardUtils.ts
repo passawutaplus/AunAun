@@ -98,7 +98,7 @@ export const applicationStatusLabel: Record<string, string> = {
 export const applicationBadgeClass = (status: string) => {
   switch (status) {
     case "shortlisted":
-      return "bg-amber-500 text-white";
+      return "bg-warning text-warning-foreground";
     case "contacted":
       return "bg-sky-600 text-white";
     case "accepted":

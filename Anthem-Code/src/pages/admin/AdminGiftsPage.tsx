@@ -364,7 +364,7 @@ export default function AdminGiftsPage() {
         if (isCashoutPaid(r.status)) return <Badge className="bg-emerald-600 hover:bg-emerald-600">จ่ายแล้ว</Badge>;
         if (r.status === "rejected") return <Badge variant="destructive">ปฏิเสธ</Badge>;
         if (r.status === "failed") return <Badge variant="destructive">โอนล้มเหลว</Badge>;
-        if (isCashoutProcessing(r.status)) return <Badge className="bg-amber-600 hover:bg-amber-600">กำลังโอน</Badge>;
+        if (isCashoutProcessing(r.status)) return <Badge className="bg-warning hover:bg-warning">กำลังโอน</Badge>;
         if (isCashoutPending(r.status)) return <Badge variant="secondary">รอจ่าย</Badge>;
         return <Badge variant="outline">{r.status}</Badge>;
       },

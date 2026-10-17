@@ -42,7 +42,7 @@ export function ForumTopicRow({ topic, className }: Props) {
       className={cn(
         "grid grid-cols-[minmax(0,1fr)] sm:grid-cols-[minmax(0,1fr)_auto] gap-3 border-b border-border py-3.5 last:border-0 hover:bg-muted/30 px-2 -mx-2 rounded-lg transition-colors",
         topic.is_pinned && "bg-primary/[0.04]",
-        isAnnounce && "bg-orange-50/40 dark:bg-orange-950/20",
+        isAnnounce && "bg-secondary/60",
         className,
       )}
     >
@@ -50,7 +50,7 @@ export function ForumTopicRow({ topic, className }: Props) {
         <Link to={`/forum/t/${topic.id}`} className="block group min-w-0">
           <h3 className="text-[15px] font-semibold text-foreground group-hover:text-primary leading-snug inline-flex flex-wrap items-center gap-1.5">
             {isAnnounce ? (
-              <Megaphone className="h-3.5 w-3.5 shrink-0 text-orange-600" aria-label="ประกาศจากทีม" />
+              <Megaphone className="h-3.5 w-3.5 shrink-0 text-brand" aria-label="ประกาศจากทีม" />
             ) : topic.is_pinned ? (
               <Pin className="h-3.5 w-3.5 shrink-0 text-primary" aria-label="ปักหมุด" />
             ) : null}

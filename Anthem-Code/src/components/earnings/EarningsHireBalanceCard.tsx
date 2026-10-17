@@ -99,14 +99,14 @@ export function EarningsHireBalanceCard({
             </Button>
           </div>
           {isPreview ? (
-            <p className="mt-2 text-[11px] text-amber-800">
+            <p className="mt-2 text-[11px] text-warning">
               ข้อมูลตัวอย่าง — กดถอนได้เพื่อทดลอง ไม่โอนเข้าบัญชีจริง
               {onResetPreview ? (
                 <>
                   {" "}
                   <button
                     type="button"
-                    className="underline decoration-amber-800/50 underline-offset-2 hover:text-zinc-950 hover:no-underline"
+                    className="underline decoration-warning/50 underline-offset-2 hover:text-zinc-950 hover:no-underline"
                     onClick={onResetPreview}
                   >
                     รีเซ็ตตัวอย่าง

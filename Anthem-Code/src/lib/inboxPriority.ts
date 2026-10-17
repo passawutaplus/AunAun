@@ -11,7 +11,7 @@ export function inboxPriorityDotClass(priority: InboxPriority): string {
     case "ด่วน":
       return "bg-red-500";
     case "รอได้":
-      return "bg-amber-500";
+      return "bg-warning";
     default:
       return "bg-emerald-500";
   }

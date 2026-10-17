@@ -554,7 +554,7 @@ const HireDialog = ({
               : "ส่งคำขอจ้างงาน"}
           </DialogDescription>
           {localSelfHirePreview ? (
-            <p className="text-[11px] text-amber-700 dark:text-amber-400 leading-relaxed">
+            <p className="text-[11px] text-warning dark:text-warning leading-relaxed">
               Local only — ทดลองฟอร์มจ้างตัวเองได้ แต่จะไม่สร้างคำขอหรือเปิดแชท
             </p>
           ) : null}

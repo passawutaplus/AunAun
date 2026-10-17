@@ -71,7 +71,7 @@ function dueTone(due: string | null, status: CollabTaskStatus) {
   today.setHours(0, 0, 0, 0);
   const days = Math.round((parseDay(due).getTime() - today.getTime()) / 86_400_000);
   if (days < 0) return "text-destructive";
-  if (days <= 1) return "text-amber-500";
+  if (days <= 1) return "text-warning";
   return "text-muted-foreground";
 }
 

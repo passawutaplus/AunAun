@@ -8,7 +8,7 @@ export type CollabTaskPriority = 0 | 1 | 2;
 
 export const COLLAB_TASK_PRIORITIES: { value: CollabTaskPriority; label: string; dot: string; chip: string }[] = [
   { value: 0, label: "ปกติ", dot: "bg-emerald-500", chip: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400" },
-  { value: 1, label: "ด่วน", dot: "bg-amber-400", chip: "bg-amber-400/20 text-amber-700 dark:text-amber-300" },
+  { value: 1, label: "ด่วน", dot: "bg-warning", chip: "bg-warning/20 text-warning dark:text-warning" },
   { value: 2, label: "ด่วนมาก", dot: "bg-red-500", chip: "bg-red-500/15 text-red-700 dark:text-red-400" },
 ];
 

@@ -67,14 +67,14 @@ export default function AdminAiMonitorPage() {
 
       <div
         className={`border rounded-sm p-4 space-y-3 ${
-          geminiOk ? "border-emerald-500/30 bg-emerald-500/5" : "border-amber-500/40 bg-amber-500/5"
+          geminiOk ? "border-emerald-500/30 bg-emerald-500/5" : "border-warning/40 bg-warning/5"
         }`}
       >
         <div className="flex items-center gap-2 text-sm font-medium text-admin-fg">
           {geminiOk ? (
             <CheckCircle2 className="h-4 w-4 text-emerald-600" />
           ) : (
-            <AlertTriangle className="h-4 w-4 text-amber-600" />
+            <AlertTriangle className="h-4 w-4 text-warning" />
           )}
           Google Gemini API
         </div>
@@ -87,7 +87,7 @@ export default function AdminAiMonitorPage() {
           </span>
           <span className="px-2 py-0.5 rounded bg-admin-hover">{gemini.modelFast}</span>
         </div>
-        {gemini.error && <p className="text-xs font-mono text-amber-700">{gemini.error}</p>}
+        {gemini.error && <p className="text-xs font-mono text-warning">{gemini.error}</p>}
         <p className="text-xs text-admin-muted">{gemini.balanceNote}</p>
         <div className="flex flex-wrap gap-2">
           <a

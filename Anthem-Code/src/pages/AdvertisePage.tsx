@@ -102,9 +102,9 @@ const statusMeta: Record<
   AdApplication["status"],
   { label: string; variant: "default" | "secondary" | "destructive" | "outline"; tone: string }
 > = {
-  pending_payment: { label: "รอชำระเงิน", variant: "outline", tone: "text-amber-600" },
+  pending_payment: { label: "รอชำระเงิน", variant: "outline", tone: "text-warning" },
   paid: { label: "ชำระแล้ว · รออนุมัติ", variant: "secondary", tone: "text-blue-600" },
-  pending: { label: "รอทีมติดต่อ", variant: "secondary", tone: "text-amber-600" },
+  pending: { label: "รอทีมติดต่อ", variant: "secondary", tone: "text-warning" },
   approved: { label: "อนุมัติ · กำลังแสดง", variant: "default", tone: "text-emerald-600" },
   rejected: { label: "ปฏิเสธ", variant: "destructive", tone: "text-red-600" },
 };

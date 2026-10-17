@@ -102,7 +102,7 @@ export function HireMoneyOutcomePanel({ outcome, variant = "admin", className }:
       {outcome.checks.warnings.length > 0 ? (
         <ul className="space-y-0.5">
           {outcome.checks.warnings.map((w) => (
-            <li key={w} className="text-[10px] text-amber-700 dark:text-amber-400">
+            <li key={w} className="text-[10px] text-warning dark:text-warning">
               ⚠ {w}
             </li>
           ))}

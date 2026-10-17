@@ -7,7 +7,7 @@ import { RELEASE_TAG_LABEL, useReleaseNotes, type ReleaseNote } from "@/hooks/us
 import { cn } from "@/lib/utils";
 
 const TAG_TONE: Record<ReleaseNote["tag"], string> = {
-  new: "bg-orange-500/15 text-orange-600 dark:text-orange-400",
+  new: "bg-brand/10 text-foreground",
   improved: "bg-sky-500/15 text-sky-600 dark:text-sky-400",
   fixed: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
 };

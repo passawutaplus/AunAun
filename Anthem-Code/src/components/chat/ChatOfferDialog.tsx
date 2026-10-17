@@ -952,7 +952,7 @@ export function ChatOfferDialog({
                   <div className="grid gap-2 sm:grid-cols-2">
                     <div className="space-y-1.5 sm:col-span-2" ref={setFieldRef("companyName")}>
                       <Label htmlFor="offer-company">
-                        ชื่อบริษัท / นิติบุคคล <span className="text-orange-500">*</span>
+                        ชื่อบริษัท / นิติบุคคล <span className="text-brand">*</span>
                       </Label>
                       <Input
                         id="offer-company"
@@ -1067,7 +1067,7 @@ export function ChatOfferDialog({
               <div className="grid gap-2 sm:grid-cols-2">
                 <div className="space-y-1.5 sm:col-span-2" ref={setFieldRef("title")}>
                   <Label htmlFor="offer-title">
-                    ชื่อโครงการ <span className="text-orange-500">*</span>
+                    ชื่อโครงการ <span className="text-brand">*</span>
                   </Label>
                   <Input
                     id="offer-title"
@@ -1101,7 +1101,7 @@ export function ChatOfferDialog({
               <div className="space-y-2">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <Label>
-                    รายการ <span className="text-orange-500">*</span>
+                    รายการ <span className="text-brand">*</span>
                   </Label>
                   <div className="inline-flex items-center gap-1.5">
                     <span className="text-[11px] text-muted-foreground">เปลี่ยนสกุลเงิน</span>
@@ -1494,7 +1494,7 @@ export function ChatOfferDialog({
                       }}
                     >
                       <Label htmlFor="offer-end">
-                        วันที่จบงาน <span className="text-orange-500">*</span>
+                        วันที่จบงาน <span className="text-brand">*</span>
                       </Label>
                       <Input
                         id="offer-end"

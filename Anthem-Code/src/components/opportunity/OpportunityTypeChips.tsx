@@ -38,7 +38,7 @@ const OpportunityTypeChips = ({ status, types, className, size = "sm", variant =
           aria-hidden
           className={cn(
             "relative inline-flex h-2 w-2 shrink-0 rounded-full",
-            closed ? "bg-muted-foreground/60" : normalized.status === "soft_open" ? "bg-amber-400" : "bg-emerald-500",
+            closed ? "bg-muted-foreground/60" : normalized.status === "soft_open" ? "bg-warning" : "bg-emerald-500",
           )}
         />
         <span className="min-w-0">{text}</span>

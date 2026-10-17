@@ -115,7 +115,7 @@ export function ForumSidebar({ categories, className, onNavigate }: Props) {
 
       <div className="rounded-xl border border-border bg-card p-4 space-y-3">
         <h3 className="text-sm font-semibold flex items-center gap-1.5">
-          <Flame className="h-4 w-4 text-orange-500" />
+          <Flame className="h-4 w-4 text-brand" />
           น่าสนใจในสัปดาห์นี้
         </h3>
         {trending.length === 0 ? (

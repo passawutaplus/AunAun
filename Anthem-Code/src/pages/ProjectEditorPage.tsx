@@ -3902,7 +3902,7 @@ const ProjectEditorPage = () => {
                 <Switch id="allow-collab" checked={allowCollab} onCheckedChange={setAllowCollab} className="shrink-0" />
               </div>
               {licenseType === "commercial_license" && !allowHire && (
-                <p className="text-xs text-amber-600 bg-amber-500/10 rounded-lg px-3 py-2">
+                <p className="text-xs text-warning bg-warning/10 rounded-lg px-3 py-2">
                   {hireSeller.ready
                     ? "แนะนำเปิดปุ่ม \"สนใจจ้างงาน\" เพื่อให้ผู้ชมติดต่อซื้อสิทธิ์ได้ง่ายขึ้น"
                     : "สิทธิ์เชิงพาณิชย์แนะนำเปิดรับจ้าง — กดสวิตช์เพื่อดูขั้นตอนตั้งบัญชี"}

@@ -467,7 +467,7 @@ function ProfileAboutEditorInner({ userId, profile, onSaved, onCancel, sectionCl
   const saveBar = (
     <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
       {dirty ? (
-        <span role="status" className="text-xs text-amber-600 dark:text-amber-400">
+        <span role="status" className="text-xs text-warning dark:text-warning">
           • {t.unsaved}
         </span>
       ) : null}
@@ -1038,7 +1038,7 @@ function FitNote({ fit }: { fit: CvFit }) {
   const { t } = useAboutEditLocale();
   if (!fit.overflow && fit.scale >= 1) return null;
   return fit.overflow ? (
-    <p role="status" className="rounded-lg bg-amber-100 px-2.5 py-1.5 text-[11px] text-amber-950">
+    <p role="status" className="rounded-lg bg-warning/10 px-2.5 py-1.5 text-[11px] text-warning">
       {t.fitOverflow}
     </p>
   ) : (
@@ -1085,7 +1085,7 @@ function ShowOnCvTick({
 }) {
   return (
     <div className="flex shrink-0 items-center gap-2">
-      {note ? <span className="text-[11px] text-amber-600 dark:text-amber-400">{note}</span> : null}
+      {note ? <span className="text-[11px] text-warning dark:text-warning">{note}</span> : null}
       <label className="flex items-center gap-1.5 text-xs font-normal text-foreground cursor-pointer select-none">
         <Checkbox checked={checked} onCheckedChange={(v) => onChange(v === true)} />
         {label}
