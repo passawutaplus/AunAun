@@ -45,6 +45,7 @@ import { HeaderAccountActions } from "@/components/HeaderAccountActions";
 import { useAdCampaign, logAdEvent } from "@/hooks/useAds";
 import { Megaphone, ExternalLink } from "lucide-react";
 import { absoluteUrl, truncateDescription } from "@/lib/seo";
+import ConnectMessageDialog from "@/components/chat/ConnectMessageDialog";
 import { breadcrumbJsonLd, creativeWorkJsonLd } from "@/lib/seoSchemas";
 import { openSafeExternalUrl } from "@/lib/externalUrl";
 import { FadeUp } from "@/components/motion/FadeUp";
@@ -229,6 +230,7 @@ const ProjectDetailPage = () => {
           deliverables: (dbProject as { deliverables?: string }).deliverables,
           duration_label: (dbProject as { duration_label?: string }).duration_label,
           outcome_note: (dbProject as { outcome_note?: string }).outcome_note,
+          context_images: (dbProject as { context_images?: unknown }).context_images,
           opportunity_types: (dbProject as { opportunity_types?: string[] }).opportunity_types,
           opportunity_note: (dbProject as { opportunity_note?: string }).opportunity_note,
         },
@@ -237,6 +239,7 @@ const ProjectDetailPage = () => {
 
   const [hireOpen, setHireOpen] = useState(false);
   const [collabOpen, setCollabOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
 
   const projectIdForLike = dbProject?.id;
   const { likes: likeCount, isLiked: liked, toggle: toggleLike, canInteract } = useProjectLike(projectIdForLike);
@@ -270,6 +273,14 @@ const ProjectDetailPage = () => {
       return;
     }
     setHireOpen(true);
+  };
+
+  const openChat = () => {
+    if (!user) {
+      navigateToAuth(navigate);
+      return;
+    }
+    setChatOpen(true);
   };
 
   const handleLike = () => {
@@ -454,6 +465,7 @@ const ProjectDetailPage = () => {
                 className="w-full min-w-0 max-w-full"
                 projectId={dbProject?.id ?? project.id}
                 projectTitle={project.title}
+                onContact={!isOwner && (project.allowHire ?? true) ? openHire : undefined}
               />
             ) : canvasBlocks.length > 0 ? (
               <ProjectContentBlocksView
@@ -461,6 +473,7 @@ const ProjectDetailPage = () => {
                 className="w-full min-w-0 max-w-4xl"
                 projectId={dbProject?.id ?? project.id}
                 projectTitle={project.title}
+                onContact={!isOwner && (project.allowHire ?? true) ? openHire : undefined}
               />
             ) : (
               <div className="aspect-video rounded-2xl bg-muted flex items-center justify-center text-muted-foreground">
@@ -496,6 +509,7 @@ const ProjectDetailPage = () => {
               onLike={handleLike}
               onHire={openHire}
               onCollab={() => setCollabOpen(true)}
+              onChat={project.ownerId ? openChat : undefined}
               allowHire={project.allowHire}
               allowCollab={project.allowCollab}
               isOwner={isOwner}
@@ -562,6 +576,19 @@ const ProjectDetailPage = () => {
         projectTitle={project.title}
         projectCoverUrl={dbProject?.cover_url || dbProject?.gallery_urls?.find((u) => !/\.(mp4|webm|mov|m4v)(\?|$)/i.test(u))}
       />
+      {project.ownerId ? (
+        <ConnectMessageDialog
+          open={chatOpen}
+          onOpenChange={setChatOpen}
+          recipientId={project.ownerId}
+          recipientName={project.owner}
+          about={{
+            title: project.title,
+            url: absoluteUrl(`/project/${project.id}`),
+            coverUrl: dbProject?.cover_url,
+          }}
+        />
+      ) : null}
     </main>
   );
 };

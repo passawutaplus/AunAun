@@ -32,6 +32,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useSavedProjectIds } from "@/hooks/useCollections";
 import { cn } from "@/lib/utils";
+import { isCommerceEnabled } from "@/lib/aplus1Launch";
 
 interface Props {
   projectId?: string;
@@ -56,6 +57,8 @@ interface Props {
   onLike: () => void;
   onHire: () => void;
   onCollab: () => void;
+  /** Plain chat about this work (no brief). */
+  onChat?: () => void;
   allowHire?: boolean;
   allowCollab?: boolean;
   isOwner?: boolean;
@@ -270,7 +273,8 @@ const ProjectSidePanel = (p: Props) => {
 
 
 
-        {(typeof p.priceThb === "number" && p.priceThb > 0) || p.price ? (
+        {/* Prices return with the commerce phase. */}
+        {isCommerceEnabled() && ((typeof p.priceThb === "number" && p.priceThb > 0) || p.price) ? (
           <p className="text-center text-sm flex flex-wrap items-center justify-center gap-1">
             <span className="text-muted-foreground">ราคาเริ่มต้นงานนี้ : </span>
             {typeof p.priceThb === "number" && p.priceThb > 0 ? (
@@ -281,7 +285,7 @@ const ProjectSidePanel = (p: Props) => {
           </p>
         ) : null}
 
-        <div className="grid grid-cols-2 gap-2">
+        <div className={cn("grid gap-2", p.onChat && !ownerView ? "grid-cols-[1fr_1fr_auto]" : "grid-cols-2")}>
           <PlusOneControl
             active={p.liked}
             count={p.likes}
@@ -305,6 +309,18 @@ const ProjectSidePanel = (p: Props) => {
               />
             </Button>
           </SaveToCollectionPopover>
+          {p.onChat && !ownerView ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={p.onChat}
+              className="h-9 w-9 shrink-0 rounded-full border border-input bg-background hover:bg-accent hover:text-accent-foreground"
+              aria-label="ทักแชทเรื่องผลงานนี้"
+              title="ทักแชทเรื่องผลงานนี้"
+            >
+              <MessageCircle className="w-4 h-4" strokeWidth={1.8} />
+            </Button>
+          ) : null}
         </div>
 
         <div className="flex items-center justify-around text-xs text-muted-foreground pt-3 border-t border-border/50">

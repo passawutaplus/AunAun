@@ -31,6 +31,8 @@ import { groupTagLabel, normalizeGroupTag } from "@/lib/groupChatTag";
 import { supabase } from "@/integrations/supabase/client";
 import { profilesPublicFrom } from "@/lib/profileAccess";
 import { Button } from "@/components/ui/button";
+import HireDialog from "@/components/HireDialog";
+import CollabDialog from "@/components/CollabDialog";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -224,6 +226,10 @@ const ChatThreadView = ({
   const isStudio = isStudioConversation(conv);
   const isHire = conv.kind === "hire";
   const isCollab = conv.kind === "collab";
+  /** Plain chat from "ทักแชท" — no tag until someone sends a hire / collab brief (opens its own thread). */
+  const isConnect = conv.kind === "connect";
+  const [connectHireOpen, setConnectHireOpen] = useState(false);
+  const [connectCollabOpen, setConnectCollabOpen] = useState(false);
   const groupTag = normalizeGroupTag(conv.group_tag);
   const isStudioHire = isHire && !!conv.studio_id;
   const hasStudioQuoteContext = isStudio || isStudioHire;
@@ -546,7 +552,7 @@ const ChatThreadView = ({
     enabled: !!otherId && !isGroup,
     queryFn: async () => {
       const { data } = await profilesPublicFrom()
-        .select("user_id, display_name, avatar_url, role, username, subscription_tier")
+        .select("user_id, display_name, avatar_url, role, username")
         .eq("user_id", otherId!)
         .maybeSingle();
       return data;
@@ -1305,7 +1311,8 @@ const ChatThreadView = ({
   const badgeBg = isHire ? "bg-[hsl(var(--chat-hire-soft))]" : kind === "collab" ? "bg-[hsl(var(--chat-collab-soft))]" : "bg-primary/10";
 
   const displayName = isGroup ? conv.title || conv.project_title || "กลุ่มแชท" : other?.display_name ?? "ผู้ใช้";
-  const partnerTier = (other?.subscription_tier as PlanId | undefined) ?? "free";
+  // profiles_public has no subscription_tier — tier badges return with paid plans.
+  const partnerTier = "free" as PlanId;
   const showTierBadge =
     isAplus1SubscriptionsEnabled() && !isGroup && TIER_BADGE_TIERS.has(partnerTier);
 
@@ -1383,7 +1390,7 @@ const ChatThreadView = ({
           <div className="min-w-0">
             <div className="flex items-center gap-1.5 min-w-0">
               <span className="font-semibold text-foreground truncate text-sm">{displayName}</span>
-              {!isGroup && (
+              {!isGroup && !isConnect && (
                 <span
                   className={cn(
                     "inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full shrink-0",
@@ -1434,12 +1441,40 @@ const ChatThreadView = ({
                     ? "กลุ่มพูดคุยงานจ้าง"
                     : "กลุ่มพูดคุยคอลแลป"
                   : "แชทกลุ่ม"
+                : isConnect
+                ? "ทักทาย — คุยลงตัวแล้วส่งบรีฟจ้างงานหรือคอลแลปได้"
                 : conv.project_title || (isHire ? "พูดคุยรายละเอียดงาน" : "พูดคุยแนวทางคอลแลป")}
             </p>
           </div>
         </button>
 
         <div className="flex items-center gap-0.5 shrink-0">
+          {isConnect && !isGroup && otherId ? (
+            <div className="flex items-center gap-1 mr-1">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => setConnectHireOpen(true)}
+                className="h-8 rounded-full px-2.5 text-xs gap-1 border-[hsl(var(--chat-hire))]/40 text-[hsl(var(--chat-hire))] hover:bg-[hsl(var(--chat-hire-soft))]"
+                title="ส่งบรีฟจ้างงาน"
+              >
+                <BriefcaseIcon className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">จ้างงาน</span>
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => setConnectCollabOpen(true)}
+                className="h-8 rounded-full px-2.5 text-xs gap-1 border-[hsl(var(--chat-collab))]/40 text-[hsl(var(--chat-collab))] hover:bg-[hsl(var(--chat-collab-soft))]"
+                title="ชวนคอลแลป"
+              >
+                <Handshake className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">คอลแลป</span>
+              </Button>
+            </div>
+          ) : null}
           {requestStatusLabel &&
             (isHireCompletedStatus(hireStatus) ||
               isHireCancelledStatus(hireStatus) ||
@@ -1893,6 +1928,7 @@ const ChatThreadView = ({
           open={tasksOpen}
           onOpenChange={setTasksOpen}
           conversationId={conv.id}
+          participantIds={[conv.client_id, conv.freelancer_id]}
           publishPath={
             canCreateGroupCollabProject
               ? `/portfolio/new?collab_conversation_id=${encodeURIComponent(conv.id)}`
@@ -2386,6 +2422,26 @@ const ChatThreadView = ({
           }
         }}
       />
+      {isConnect && otherId ? (
+        <>
+          <HireDialog
+            open={connectHireOpen}
+            onOpenChange={setConnectHireOpen}
+            projectTitle={displayName}
+            freelancerId={otherId}
+            source="profile"
+            profileName={displayName}
+            freelancerUsername={other?.username ?? null}
+          />
+          <CollabDialog
+            open={connectCollabOpen}
+            onOpenChange={setConnectCollabOpen}
+            recipientId={otherId}
+            recipientName={displayName}
+            source="profile"
+          />
+        </>
+      ) : null}
     </div>
   );
 };

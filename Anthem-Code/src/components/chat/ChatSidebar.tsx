@@ -58,10 +58,12 @@ import { cn } from "@/lib/utils";
 import { DEMO_RESEARCH_ACCOUNTS, isDemoMode } from "@/lib/demoMode";
 import { toast } from "sonner";
 import { useSubscription } from "@/core/subscription/useSubscription";
+import { ChatFilterRail } from "@/components/chat/ChatFilterRail";
 
 interface Props {
   selectedId?: string;
   tab: "all" | ChatKind;
+  onTabChange: (tab: "all" | ChatKind) => void;
   search: string;
   onSearchChange: (value: string) => void;
   onSelectConversation?: (conversationId: string) => void;
@@ -81,6 +83,7 @@ type LastMessageRow = {
 const ChatSidebar = ({
   selectedId,
   tab,
+  onTabChange,
   search,
   onSearchChange,
   onSelectConversation,
@@ -306,6 +309,7 @@ const ChatSidebar = ({
             </Button>
           ) : null}
         </div>
+        <ChatFilterRail tab={tab} onTabChange={onTabChange} className="mt-2" />
       </div>
 
       <div className="flex-1 overflow-y-auto px-1.5 py-1">
@@ -347,6 +351,7 @@ const ChatSidebar = ({
             const p = otherId ? profilesMap[otherId] : undefined;
             const last = lastMessages[c.id];
             const isHire = c.kind === "hire";
+            const isConnect = c.kind === "connect";
             const isLocked = Boolean(
               isHire &&
                 ((c.request_id && lockedHireRequestIds.has(c.request_id)) ||
@@ -373,7 +378,9 @@ const ChatSidebar = ({
                   : "border-primary"
               : isHire
                 ? "border-[hsl(var(--chat-hire))]"
-                : "border-[hsl(var(--chat-collab))]";
+                : isConnect
+                  ? "border-primary"
+                  : "border-[hsl(var(--chat-collab))]";
             const badgeBg = isGroup
               ? groupTag === "hire"
                 ? "bg-[hsl(var(--chat-hire-soft))] text-[hsl(var(--chat-hire))]"
@@ -392,7 +399,9 @@ const ChatSidebar = ({
                   : "กลุ่ม"
               : isHire
                 ? "จ้าง"
-                : "คอลแลป";
+                : isConnect
+                  ? null
+                  : "คอลแลป";
 
             return (
               <li key={c.id} className="relative">
@@ -422,14 +431,16 @@ const ChatSidebar = ({
                     <div className="flex items-center gap-2">
                       <div className="flex items-center gap-1.5 min-w-0 flex-1">
                         <span className="font-semibold text-foreground truncate text-sm">{listName}</span>
-                        <span
-                          className={cn(
-                            "shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded-full",
-                            badgeBg,
-                          )}
-                        >
-                          {listBadge}
-                        </span>
+                        {listBadge ? (
+                          <span
+                            className={cn(
+                              "shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded-full",
+                              badgeBg,
+                            )}
+                          >
+                            {listBadge}
+                          </span>
+                        ) : null}
                         {isLocked && (
                           <span className="shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
                             {HIRE_CHAT_LOCKED_LIST_LABEL}

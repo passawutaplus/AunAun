@@ -4,6 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { trackProductEvent } from "@/lib/productEvents";
 
 export type CollabTaskStatus = "todo" | "doing" | "done";
+export type CollabTaskPriority = 0 | 1 | 2;
+
+export const COLLAB_TASK_PRIORITIES: { value: CollabTaskPriority; label: string; dot: string; stripe: string }[] = [
+  { value: 0, label: "ปกติ", dot: "bg-emerald-500", stripe: "border-l-emerald-500" },
+  { value: 1, label: "ด่วน", dot: "bg-amber-400", stripe: "border-l-amber-400" },
+  { value: 2, label: "ด่วนมาก", dot: "bg-red-500", stripe: "border-l-red-500" },
+];
 
 export type CollabTask = {
   id: string;
@@ -12,6 +19,8 @@ export type CollabTask = {
   status: CollabTaskStatus;
   assignee_id: string | null;
   due_date: string | null;
+  /** 0 ปกติ · 1 ด่วน · 2 ด่วนมาก */
+  priority: CollabTaskPriority;
   position: number;
   created_by: string;
   created_at: string;
@@ -40,7 +49,7 @@ export function useCollabTasks(conversationId: string | undefined) {
     refetchInterval: 30_000,
     queryFn: async (): Promise<CollabTask[]> => {
       const { data, error } = await tasksTable()
-        .select("id, conversation_id, title, status, assignee_id, due_date, position, created_by, created_at")
+        .select("id, conversation_id, title, status, assignee_id, due_date, priority, position, created_by, created_at")
         .eq("conversation_id", conversationId!)
         .order("position", { ascending: true });
       if (error) throw error;
@@ -70,7 +79,7 @@ export function useCollabTaskActions(conversationId: string | undefined) {
   });
 
   const update = useMutation({
-    mutationFn: async ({ id, patch }: { id: string; patch: Partial<Pick<CollabTask, "title" | "status" | "assignee_id" | "due_date">> }) => {
+    mutationFn: async ({ id, patch }: { id: string; patch: Partial<Pick<CollabTask, "title" | "status" | "assignee_id" | "due_date" | "priority" | "position">> }) => {
       const { error } = await tasksTable().update(patch as never).eq("id", id);
       if (error) throw error;
     },

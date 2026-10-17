@@ -1,34 +1,27 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Handshake, Loader2, MessageCircle, Send, Smile } from "lucide-react";
+import { Loader2, MessageCircle, Send } from "lucide-react";
 import { toast } from "sonner";
-import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
 import { openConnectChat } from "@/lib/chat/openConnectChat";
 import { trackProductEvent } from "@/lib/productEvents";
-import { cn } from "@/lib/utils";
 
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   recipientId: string;
   recipientName: string;
-  /** Quick intents hand over to the existing hire / collab briefs. */
-  onHire: () => void;
-  onCollab: () => void;
+  /** Chat about one work: shown as a card and its link is appended to the first message. */
+  about?: { title: string; url: string; coverUrl?: string | null };
 };
 
-const chip =
-  "inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-muted";
-
 /**
- * Chat-first contact: type a message and send. Picking Hire / Collaborate is optional and opens
- * the short brief for that path instead.
+ * Chat-first contact: type a message and send. Hire / Collaborate have their own buttons and briefs.
  */
-export default function ConnectMessageDialog({ open, onOpenChange, recipientId, recipientName, onHire, onCollab }: Props) {
+export default function ConnectMessageDialog({ open, onOpenChange, recipientId, recipientName, about }: Props) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [text, setText] = useState("");
@@ -43,8 +36,16 @@ export default function ConnectMessageDialog({ open, onOpenChange, recipientId, 
     if (!user || !text.trim()) return;
     setBusy(true);
     try {
-      const conversationId = await openConnectChat(user.id, recipientId, text);
-      void trackProductEvent("connect_message", { recipient_id: recipientId }, { debounceMs: 0 });
+      const body = about ? `${text.trim()}
+
+เรื่องผลงาน: ${about.title}
+${about.url}` : text;
+      const conversationId = await openConnectChat(user.id, recipientId, body);
+      void trackProductEvent(
+        "connect_message",
+        { recipient_id: recipientId, source: about ? "project" : "profile" },
+        { debounceMs: 0 },
+      );
       onOpenChange(false);
       navigate(`/chat/${conversationId}`);
     } catch (e) {
@@ -54,33 +55,32 @@ export default function ConnectMessageDialog({ open, onOpenChange, recipientId, 
     }
   };
 
-  const handOver = (go: () => void) => {
-    onOpenChange(false);
-    go();
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md rounded-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <MessageCircle className="h-4 w-4 text-primary" aria-hidden />
-            ทักแชทหา {recipientName}
+            {about ? "ทักแชทเรื่องผลงานนี้" : `ทักแชทหา ${recipientName}`}
           </DialogTitle>
-          <DialogDescription>พิมพ์ทักได้เลย หรือเลือกว่าอยากคุยเรื่องอะไร (ไม่บังคับ)</DialogDescription>
+          <DialogDescription>
+            {about
+              ? `ถาม ${recipientName} เรื่องผลงานชิ้นนี้ได้เลย — ลิงก์ผลงานจะแนบไปกับข้อความให้อัตโนมัติ`
+              : "ทักทาย ถามเรื่องผลงาน หรือชวนคุยได้เลย — ถ้าจะจ้างหรือคอลแลป ใช้ปุ่มบนโปรไฟล์จะได้ส่งบรีฟไปพร้อมกัน"}
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-wrap gap-2">
-          <button type="button" className={chip} onClick={() => handOver(onHire)}>
-            <BriefcaseIcon className="h-3.5 w-3.5" aria-hidden /> จ้างงาน
-          </button>
-          <button type="button" className={chip} onClick={() => handOver(onCollab)}>
-            <Handshake className="h-3.5 w-3.5" aria-hidden /> คอลแลป
-          </button>
-          <button type="button" className={cn(chip, "border-primary/50 text-primary")} onClick={() => inputRef.current?.focus()}>
-            <Smile className="h-3.5 w-3.5" aria-hidden /> แค่ทักทาย
-          </button>
-        </div>
+        {about ? (
+          <div className="flex items-center gap-3 rounded-xl border border-border/70 bg-muted/40 p-2">
+            {about.coverUrl ? (
+              <img src={about.coverUrl} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" />
+            ) : null}
+            <div className="min-w-0">
+              <p className="text-[11px] text-muted-foreground">แนบผลงาน</p>
+              <p className="truncate text-sm font-medium">{about.title}</p>
+            </div>
+          </div>
+        ) : null}
 
         <Textarea
           ref={inputRef}
@@ -92,7 +92,11 @@ export default function ConnectMessageDialog({ open, onOpenChange, recipientId, 
           onKeyDown={(e) => {
             if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) void send();
           }}
-          placeholder={`สวัสดีครับ/ค่ะ ชอบผลงานของ ${recipientName} มาก…`}
+          placeholder={
+            about
+              ? "เช่น ชอบงานนี้มาก อยากรู้ว่าใช้เวลาทำนานไหม / รับงานสไตล์นี้ไหม…"
+              : `สวัสดีครับ/ค่ะ ชอบผลงานของ ${recipientName} มาก…`
+          }
           className="resize-none rounded-xl"
           disabled={busy}
         />
