@@ -427,6 +427,44 @@ ${reason ? `<div style="background:${brand.surface};border:1px solid ${brand.bor
   return { html, text, subject: copy.subject };
 }
 
+export function renderWinbackEmail(data: {
+  recipientName: string;
+  daysInactive: number;
+  unreadCount: number;
+  releases: { title: string; tag: string }[];
+  actionUrl: string;
+  changelogUrl: string;
+}): { html: string; text: string; subject: string } {
+  const tagLabel: Record<string, string> = { new: "ใหม่", improved: "ปรับปรุง", fixed: "แก้แล้ว" };
+  const releaseRows = data.releases
+    .slice(0, 3)
+    .map(
+      (r) =>
+        `<p style="font-size:14px;color:${brand.body};margin:0 0 8px;line-height:1.5"><span style="color:${brand.orange};font-weight:600">${escapeHtml(tagLabel[r.tag] ?? "ใหม่")}</span> · ${escapeHtml(r.title)}</p>`,
+    )
+    .join("");
+  const unread =
+    data.unreadCount > 0
+      ? `<p style="font-size:15px;color:${brand.body};line-height:1.6;margin:0 0 20px">มี <strong style="color:${brand.ink}">${data.unreadCount} การแจ้งเตือน</strong> รอคุณอยู่</p>`
+      : "";
+  const releasesBlock = releaseRows
+    ? `<div style="background:${brand.surface};border:1px solid ${brand.border};border-radius:8px;padding:20px 22px;margin:0 0 24px"><p style="color:${brand.mute};font-size:11px;text-transform:uppercase;letter-spacing:0.08em;margin:0 0 10px;font-weight:600">มีอะไรใหม่ช่วงที่คุณไม่อยู่</p>${releaseRows}<p style="font-size:13px;margin:8px 0 0"><a href="${escapeHtml(data.changelogUrl)}" style="color:${brand.orange}">ดูอัปเดตทั้งหมด</a></p></div>`
+    : "";
+  const bodyHtml = `<p style="font-size:15px;color:${brand.body};line-height:1.6;margin:0 0 20px">สวัสดี ${escapeHtml(data.recipientName)} — ไม่ได้เจอกัน ${data.daysInactive} วันแล้ว ผลงานของคุณยังรอให้คนเจออยู่บน SAMECOR</p>
+${unread}${releasesBlock}`;
+  const { html, text } = layout({
+    preview: "มีอะไรใหม่บน SAMECOR ช่วงที่คุณไม่อยู่",
+    badge: "คิดถึงนะ",
+    badgeTone: "brand",
+    icon: "bell",
+    title: "กลับมาดูกันหน่อยไหม",
+    bodyHtml,
+    ctaLabel: "เปิด SAMECOR",
+    ctaUrl: data.actionUrl,
+  });
+  return { html, text, subject: `[SAMECOR] ${data.recipientName} มีอะไรใหม่รอคุณอยู่` };
+}
+
 export type AnthemEmailTemplate =
   | "hire-request"
   | "chat-message"
@@ -437,7 +475,8 @@ export type AnthemEmailTemplate =
   | "job-application"
   | "topup-success"
   | "cashout-status"
-  | "kyc-status";
+  | "kyc-status"
+  | "winback";
 
 export function renderAnthemEmail(
   template: AnthemEmailTemplate,
@@ -464,5 +503,7 @@ export function renderAnthemEmail(
       return renderCashoutStatusEmail(data as Parameters<typeof renderCashoutStatusEmail>[0]);
     case "kyc-status":
       return renderKycStatusEmail(data as Parameters<typeof renderKycStatusEmail>[0]);
+    case "winback":
+      return renderWinbackEmail(data as Parameters<typeof renderWinbackEmail>[0]);
   }
 }

@@ -82,6 +82,7 @@ const InspireBoardsPage = lazy(() => import("./pages/InspireBoardsPage.tsx"));
 const InspireBoardDetailPage = lazy(() => import("./pages/InspireBoardDetailPage.tsx"));
 const MyReportsPage = lazy(() => import("./pages/MyReportsPage.tsx"));
 const MyFeedbackPage = lazy(() => import("./pages/MyFeedbackPage.tsx"));
+const ChangelogPage = lazy(() => import("./pages/ChangelogPage.tsx"));
 const VerificationPage = lazy(() => import("./pages/VerificationPage.tsx"));
 const AdminLayout = lazy(() => import("./components/admin/AdminLayout"));
 const OverviewPage = lazy(() => import("./pages/admin/OverviewPage"));
@@ -239,6 +240,7 @@ const App = () => (
               <Route path="/learn/trust" element={<RedirectTo to="/learn#trust" />} />
               <Route path="/learn/px" element={<RedirectTo to="/learn" />} />
               <Route path="/learn/faq" element={<RedirectTo to="/help" />} />
+              <Route path="/changelog" element={<ChangelogPage />} />
               <Route path="/help" element={<HelpShell />}>
                 <Route index element={<HelpHubPage />} />
                 <Route path=":categoryId" element={<HelpCategoryPage />} />

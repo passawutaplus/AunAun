@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 
 const EXPLORE_LINKS = [
   { to: "/help", label: "ศูนย์ช่วยเหลือ" },
+  { to: "/changelog", label: "อัปเดตล่าสุด" },
   { to: "/learn", label: "About" },
   { to: "/advertise", label: "ลงโฆษณากับเรา" },
 ] as const;
