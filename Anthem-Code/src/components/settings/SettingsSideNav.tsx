@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { GetInTouchLink } from "@/components/settings/GetInTouchLink";
 import { cn } from "@/lib/utils";
 import {
   buildSettingsNavGroups,
@@ -58,6 +59,7 @@ export default function SettingsSideNav({
           />
         ))}
       </div>
+      {variant === "panel" ? <GetInTouchLink className="mt-3" /> : null}
     </nav>
   );
 }

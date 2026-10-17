@@ -459,6 +459,11 @@ export function ViewModeMenu({
   );
 }
 
+/**
+ * Composition guides: one tap cycles ไม่แสดง → กฎสามส่วน → Golden ratio. A plain button (no popover) so it
+ * works on touch inside the full-screen viewer; the label flashes above it so you know which one is on.
+ * On Golden ratio, a long press turns the spiral.
+ */
 export function GuidesMenu({
   guide,
   onGuideChange,
@@ -470,34 +475,59 @@ export function GuidesMenu({
   spiralTurn: number;
   onSpiralTurn: () => void;
 }) {
+  const [flash, setFlash] = useState<string | null>(null);
+  const flashTimer = useRef<number>();
+  const pressTimer = useRef<number>();
+  const longPressed = useRef(false);
+  useEffect(() => () => {
+    window.clearTimeout(flashTimer.current);
+    window.clearTimeout(pressTimer.current);
+  }, []);
+
+  const show = (label: string) => {
+    setFlash(label);
+    window.clearTimeout(flashTimer.current);
+    flashTimer.current = window.setTimeout(() => setFlash(null), 1300);
+  };
+
+  const cycle = () => {
+    if (longPressed.current) {
+      longPressed.current = false;
+      return;
+    }
+    const i = GUIDES.findIndex((g) => g.id === guide);
+    const next = GUIDES[(i + 1) % GUIDES.length];
+    onGuideChange(next.id);
+    show(next.label);
+  };
+
+  const current = GUIDES.find((g) => g.id === guide)?.label ?? "ไม่แสดง";
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <button type="button" aria-label="เส้นช่วย" title="เส้นช่วย" className={toolBtnClass(guide !== "none")}>
-          <Grid3x3 className="h-4 w-4" aria-hidden />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent side="top" className="z-[120] w-52 space-y-1 p-2" onClick={(e) => e.stopPropagation()}>
-        {GUIDES.map((g) => (
-          <button
-            key={g.id}
-            type="button"
-            className={menuItem}
-            onClick={() => onGuideChange(g.id)}
-            aria-pressed={guide === g.id}
-          >
-            <span className="flex-1">{g.label}</span>
-            {guide === g.id ? <Check className="h-3.5 w-3.5 text-primary" aria-hidden /> : null}
-          </button>
-        ))}
-        {guide === "golden" ? (
-          <button type="button" className={menuItem} onClick={onSpiralTurn}>
-            <RotateCw className="h-3.5 w-3.5" aria-hidden />
-            <span className="flex-1">หมุนเกลียว</span>
-            <span className="text-[11px] text-muted-foreground">{(spiralTurn % 4) + 1}/4</span>
-          </button>
-        ) : null}
-      </PopoverContent>
-    </Popover>
+    <span className="relative inline-flex">
+      {flash ? (
+        <span className="pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-full bg-black/80 px-2.5 py-1 text-[11px] text-white">
+          {flash}
+        </span>
+      ) : null}
+      <button
+        type="button"
+        onClick={cycle}
+        onPointerDown={() => {
+          if (guide !== "golden") return;
+          pressTimer.current = window.setTimeout(() => {
+            longPressed.current = true;
+            onSpiralTurn();
+            show(`หมุนเกลียว ${((spiralTurn + 1) % 4) + 1}/4`);
+          }, 500);
+        }}
+        onPointerUp={() => window.clearTimeout(pressTimer.current)}
+        onPointerLeave={() => window.clearTimeout(pressTimer.current)}
+        aria-label={`เส้นช่วย: ${current} (แตะเพื่อเปลี่ยน)`}
+        title={`เส้นช่วย: ${current}`}
+        className={toolBtnClass(guide !== "none")}
+      >
+        <Grid3x3 className="h-4 w-4" aria-hidden />
+      </button>
+    </span>
   );
 }

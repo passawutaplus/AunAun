@@ -186,7 +186,7 @@ export function InAppNotificationSection() {
                       />
                     </div>
                   ) : (
-                    <span className="text-xs text-muted-foreground/60" aria-label="ไม่มีอีเมล">
+                    <span className="text-xs text-muted-foreground" aria-label="ไม่มีอีเมล">
                       —
                     </span>
                   )}
@@ -200,7 +200,7 @@ export function InAppNotificationSection() {
               <p className="text-[11px] text-muted-foreground">ประกาศงานที่ตรงกับสายงานของคุณ</p>
             </td>
             <td className="text-center">
-              <span className="text-xs text-muted-foreground/60" aria-label="ไม่มีในเว็บ">
+              <span className="text-xs text-muted-foreground" aria-label="ไม่มีในเว็บ">
                 —
               </span>
             </td>

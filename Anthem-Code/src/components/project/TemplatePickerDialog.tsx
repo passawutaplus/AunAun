@@ -10,7 +10,7 @@ type Props = {
 };
 
 const Img = ({ className }: { className?: string }) => (
-  <div className={cn("flex items-center justify-center rounded-md bg-muted text-muted-foreground/60", className)}>
+  <div className={cn("flex items-center justify-center rounded-md bg-muted text-muted-foreground", className)}>
     <ImageIcon className="h-3.5 w-3.5" aria-hidden />
   </div>
 );

@@ -3233,7 +3233,7 @@ const ProjectEditorPage = () => {
   return (
     <div className="min-h-screen bg-app-ambient pb-24 lg:pb-0">
       {/* Sticky header — full-bleed to align with Module / Work Details sidebars */}
-      <div className="sticky top-0 z-30 bg-background/85 backdrop-blur-md border-b border-border">
+      <div className="sticky top-0 z-30 bg-background border-b border-border">
         <div className="flex w-full items-center gap-3 px-3 py-3 sm:px-4">
           <BackButton onClick={handleBackClick} />
           <div className="min-w-0 flex items-center gap-2 sm:gap-3 flex-1">

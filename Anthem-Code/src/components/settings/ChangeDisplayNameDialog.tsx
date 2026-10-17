@@ -114,7 +114,7 @@ export function ChangeDisplayNameDialog({
                 autoFocus
                 maxLength={60}
                 placeholder="ชื่อที่คนอื่นเห็น"
-                className="flex-1 bg-transparent px-3 py-2.5 text-sm text-foreground placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground/40 focus:outline-none"
+                className="flex-1 bg-transparent px-3 py-2.5 text-sm text-foreground placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground focus:outline-none"
               />
             </div>
             {tooLong ? (

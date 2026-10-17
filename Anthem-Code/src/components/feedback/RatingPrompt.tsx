@@ -204,7 +204,7 @@ export default function RatingPrompt() {
                     <Star
                       className={cn(
                         "h-7 w-7 transition-colors",
-                        lit ? "fill-[#f5a352] text-[#f5a352]" : "fill-transparent text-muted-foreground/40",
+                        lit ? "fill-[#f5a352] text-[#f5a352]" : "fill-transparent text-muted-foreground",
                       )}
                     />
                   </button>

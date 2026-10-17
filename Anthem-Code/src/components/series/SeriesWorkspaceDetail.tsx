@@ -266,7 +266,7 @@ export function SeriesWorkspaceDetail({
 
       {items.length === 0 ? (
         <div className="rounded-2xl border border-border/60 bg-card/40 px-4 py-14 text-center">
-          <CatalogIcon className="mx-auto mb-3 h-12 w-12 text-muted-foreground/40" />
+          <CatalogIcon className="mx-auto mb-3 h-12 w-12 text-muted-foreground" />
           <p className="font-medium text-foreground mb-1">ยังไม่มีผลงานใน Catalog นี้</p>
           <p className="text-sm text-muted-foreground mb-4">เพิ่มผลงานที่เผยแพร่แล้วเข้า Catalog ได้เลย</p>
           <Button

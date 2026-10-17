@@ -315,7 +315,7 @@ export function LearnAssembleProject({
                 className="flex items-start gap-2.5 text-xs text-white/90 sm:text-sm"
               >
                 <Check
-                  className={cn("mt-0.5 h-4 w-4 shrink-0", i <= stage ? "text-emerald-400" : "text-white/25")}
+                  className={cn("mt-0.5 h-4 w-4 shrink-0", i <= stage ? "text-emerald-400" : "text-white/60")}
                   aria-hidden
                 />
                 {item}
@@ -361,7 +361,7 @@ export function LearnMagnetSave({ stage }: { stage: number }) {
             animate={{ width: pulled ? "34%" : "0%", opacity: pulled ? 1 : 0 }}
             className="overflow-hidden border-l border-white/10 bg-zinc-900/90"
           >
-            <p className="px-2 pt-3 text-[10px] font-medium tracking-wide text-white/60">คอลเลกชัน</p>
+            <p className="px-2 pt-3 text-[10px] font-medium tracking-wide text-white/80">คอลเลกชัน</p>
             <div className="space-y-1.5 p-2">
               {LEARN_FILM.tiles.slice(0, 3).map((src) => (
                 <img loading="lazy" decoding="async" key={src} src={src} alt="" className="aspect-[16/10] w-full rounded-md object-cover" />
@@ -423,7 +423,7 @@ export function LearnChatBridge({ stage }: { stage: number }) {
           >
             ได้เลย ส่ง moodboard ที่ชอบมาได้เลยนะ
           </motion.div>
-          <p className="mt-4 text-xs text-white/55">
+          <p className="mt-4 text-xs text-white/80">
             เลือกคำให้ตรงเจตนา:{" "}
             <AnimatePresence mode="wait">
               <motion.span

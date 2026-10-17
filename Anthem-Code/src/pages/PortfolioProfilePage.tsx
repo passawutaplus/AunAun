@@ -237,7 +237,7 @@ const PortfolioProfilePage = () => {
 
   return (
     <div className={cn("min-h-screen bg-app-ambient", MOBILE_PAGE_BOTTOM_CLASS)}>
-      <div className="sticky top-0 z-30 lg:hidden border-b border-border/40 bg-background/40 backdrop-blur-xl supports-[backdrop-filter]:bg-background/30">
+      <div className="sticky top-0 z-30 lg:hidden border-b border-border/40 bg-background">
         <div className={cn(PAGE_SHELL, "px-4 py-2 flex items-center justify-between gap-2")}>
           <BackButton to="/" label="กลับฟีด" />
           <div data-tour="profile-actions">

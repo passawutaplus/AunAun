@@ -48,7 +48,7 @@ export function ProjectDetailsPreview({
           {shortDescription.trim() ? (
             <p className="line-clamp-3 text-sm leading-relaxed text-foreground/80">{shortDescription.trim()}</p>
           ) : (
-            <p className="text-sm text-muted-foreground/60">รายละเอียดสั้น ๆ จะขึ้นตรงนี้</p>
+            <p className="text-sm text-muted-foreground">รายละเอียดสั้น ๆ จะขึ้นตรงนี้</p>
           )}
           {shownTags.length > 0 ? (
             <div className="flex flex-wrap gap-1.5 pt-1">

@@ -145,7 +145,7 @@ export default function CvToolsEditor({ value, onChange, max = 12 }: Props) {
           onKeyDown={onKey}
           placeholder={t.softwareSearch}
           disabled={value.length >= max}
-          className="flex-1 bg-transparent py-2.5 text-sm text-foreground placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground/40 focus:outline-none disabled:cursor-not-allowed"
+          className="flex-1 bg-transparent py-2.5 text-sm text-foreground placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground focus:outline-none disabled:cursor-not-allowed"
           aria-label={t.softwareSearchAria}
         />
         <button

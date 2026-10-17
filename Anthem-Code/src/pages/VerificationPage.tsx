@@ -8,7 +8,7 @@ const VerificationPage = () => {
   return (
     <div className="relative min-h-screen overflow-hidden bg-app-ambient">
 
-      <div className="relative z-20 sticky top-0 lg:hidden border-b border-border/40 bg-background/40 backdrop-blur-xl supports-[backdrop-filter]:bg-background/30">
+      <div className="relative z-20 sticky top-0 lg:hidden border-b border-border/40 bg-background">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-2">
           <BackButton />
           <span className="ml-auto text-base font-medium">ยืนยันตัวตน</span>

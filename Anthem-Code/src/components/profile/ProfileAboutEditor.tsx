@@ -756,7 +756,7 @@ function ProfileAboutEditorInner({ userId, profile, onSaved, onCancel, sectionCl
                   rows={4}
                   maxLength={500}
                   placeholder={t.aboutMePh}
-                  className="w-full px-3 py-2 rounded-xl bg-secondary border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground/40"
+                  className="w-full px-3 py-2 rounded-xl bg-secondary border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground"
                 />
                 <p className="text-[11px] text-muted-foreground">{t.aboutMeHint}</p>
               </EditorBlock>
@@ -1140,7 +1140,7 @@ function EditorBlock({
 }
 
 const ABOUT_INPUT_CLASS =
-  "w-full px-3 py-2 rounded-xl bg-secondary border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground/40";
+  "w-full px-3 py-2 rounded-xl bg-secondary border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground";
 
 function AboutInput({
   label,

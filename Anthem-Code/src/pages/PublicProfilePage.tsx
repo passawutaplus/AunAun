@@ -958,7 +958,7 @@ const PublicProfilePage = () => {
           {activeTab === "series" &&
             (seriesList.length === 0 ? (
               <div className="text-center py-16 text-muted-foreground glass-panel rounded-2xl space-y-3">
-                <CatalogIcon className="w-12 h-12 text-muted-foreground/40 mx-auto" />
+                <CatalogIcon className="w-12 h-12 text-muted-foreground mx-auto" />
                 <p>ยังไม่มี Catalog สาธารณะ</p>
                 {isSelf && !visitorPreview && (
                   <Button

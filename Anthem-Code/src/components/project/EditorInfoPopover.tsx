@@ -309,7 +309,7 @@ export function EditorInfoButton({ topic, inline = false }: { topic: EditorInfoT
           setOpen(true);
         }
       }}
-      className="inline-flex h-[18px] w-[18px] shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      className="inline-flex h-[18px] w-[18px] shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
     >
       <Info className="h-3.5 w-3.5" aria-hidden />
     </span>

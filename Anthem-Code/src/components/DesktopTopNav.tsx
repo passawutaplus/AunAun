@@ -40,9 +40,8 @@ function shouldShowDesktopTopNav(pathname: string): boolean {
   );
 }
 
-/** Shared translucent glass for sticky top bars. */
-export const DESKTOP_TOP_NAV_GLASS =
-  "border-b border-border/40 bg-background/40 backdrop-blur-xl supports-[backdrop-filter]:bg-background/30";
+/** Shared solid bar for sticky top bars (owner 2026-10-18: no see-through blur, easier to read on phones). */
+export const DESKTOP_TOP_NAV_GLASS = "border-b border-border bg-background";
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
   cn(

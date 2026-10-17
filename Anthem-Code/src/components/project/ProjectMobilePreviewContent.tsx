@@ -40,7 +40,7 @@ export function ProjectMobilePreviewContent({
 
   return (
     <div className={cn("h-full flex flex-col min-h-0 bg-app-ambient", className)}>
-      <header className="shrink-0 z-10 border-b border-border bg-background/90 backdrop-blur-md">
+      <header className="shrink-0 z-10 border-b border-border bg-background">
         <div className="flex items-center justify-between gap-2 px-2 py-2.5">
           <span
             className="inline-flex items-center justify-center w-9 h-9 rounded-full text-muted-foreground"

@@ -365,7 +365,7 @@ const ProjectDetailPage = () => {
           breadcrumbJsonLd(crumbs),
         ]}
       />
-      <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border">
+      <div className="sticky top-0 z-20 bg-background border-b border-border">
         <div
           className={cn(
             "max-w-[1920px] mx-auto px-3 sm:px-[calc(1rem+25px)] lg:px-[calc(1.5rem+25px)] 2xl:px-[calc(2.5rem+25px)] py-3 flex items-center justify-between gap-3",

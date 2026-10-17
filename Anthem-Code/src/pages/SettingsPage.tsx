@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { GetInTouchLink } from "@/components/settings/GetInTouchLink";
 import { Link, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, LogOut, MapPin, Shield, User } from "lucide-react";
@@ -212,7 +213,7 @@ const SettingsPage = () => {
 
   return (
     <main id="main-content" className="min-h-screen bg-app-ambient">
-      <div className="sticky top-0 z-20 lg:hidden border-b border-border/40 bg-background/70 backdrop-blur-xl">
+      <div className="sticky top-0 z-20 lg:hidden border-b border-border/40 bg-background">
         <div className="relative mx-auto flex max-w-5xl items-center gap-2 px-2 py-2.5">
           {showList ? (
             <BackButton fallbackTo="/portfolio" label="ย้อนกลับ" />
@@ -422,6 +423,7 @@ function MobileSettingsList({
 }) {
   return (
     <div className="space-y-5 lg:hidden">
+      <GetInTouchLink />
       {groups.map((group) => (
         <div key={group.id}>
           <p className="px-1 pb-1.5 text-xs font-medium text-muted-foreground">{group.label}</p>

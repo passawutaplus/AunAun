@@ -1256,7 +1256,7 @@ export default function ServiceEditorDialog({
     return (
       <>
         <div className="min-h-screen bg-background pb-10">
-          <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-md">
+          <header className="sticky top-0 z-30 border-b border-border bg-background">
             <div className="mx-auto flex max-w-6xl items-center gap-3 px-3 py-3 sm:px-6">
               <BackButton onClick={requestClose} fallbackTo="/dashboard/packages" />
               <div className="min-w-0 flex-1">

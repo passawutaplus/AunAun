@@ -67,7 +67,7 @@ const STEPS = ["ติดต่อ", "ตัวตน", "บัญชี", "ส�
 
 /** Recessed fill so fields read against the white wizard card. */
 const KYC_INPUT_CLASS =
-  "bg-muted border-border placeholder:text-muted-foreground/55";
+  "bg-muted border-border placeholder:text-muted-foreground";
 
 const DOC_LABELS: Record<KycDocType, string> = {
   id_front: "บัตรประชาชน (ด้านหน้า)",

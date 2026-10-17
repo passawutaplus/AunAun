@@ -449,7 +449,7 @@ function TaskCardFace({ task, member, lifted }: { task: CollabTask; member?: Mem
             {shortDay(task.due_date)}
           </span>
         ) : (
-          <span className="text-muted-foreground/60">ไม่มีกำหนด</span>
+          <span className="text-muted-foreground">ไม่มีกำหนด</span>
         )}
       </div>
     </div>

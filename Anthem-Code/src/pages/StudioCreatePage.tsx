@@ -227,7 +227,7 @@ const StudioCreateInner = () => {
   return (
     <div className="min-h-screen bg-app-ambient pb-24 lg:pb-12">
       {/* Top bar with back */}
-      <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border/40">
+      <div className="sticky top-0 z-20 bg-background border-b border-border/40">
         <div className="max-w-2xl mx-auto px-4 h-12 flex items-center">
           <BackButton />
         </div>

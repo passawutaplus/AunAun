@@ -442,7 +442,7 @@ export function FlexGridToolsSidebar({
                             "rounded p-1.5 transition-colors",
                             enabled
                               ? "text-muted-foreground hover:bg-muted hover:text-foreground"
-                              : "cursor-not-allowed text-muted-foreground/35",
+                              : "cursor-not-allowed text-muted-foreground",
                           )}
                         >
                           <Icon className="h-3.5 w-3.5" />
@@ -470,7 +470,7 @@ export function FlexGridToolsSidebar({
                           "rounded p-1.5 transition-colors",
                           enabled
                             ? "text-muted-foreground hover:bg-muted hover:text-foreground"
-                            : "cursor-not-allowed text-muted-foreground/35",
+                            : "cursor-not-allowed text-muted-foreground",
                         )}
                       >
                         <Icon className="h-3.5 w-3.5" />

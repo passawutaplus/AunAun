@@ -36,8 +36,12 @@ function placeCard(rect: DOMRect | null, wide: boolean): React.CSSProperties {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
   if (vw < 640) {
-    // Phones: full-width card above the bottom nav so it never covers the spotlight from below.
-    return { left: 12, right: 12, bottom: 96 };
+    // Phones: centred when nothing is highlighted; otherwise right next to the highlight on the roomier side.
+    const side = { left: 16, right: 16 };
+    if (!rect) return { ...side, top: "50%", transform: "translateY(-50%)" };
+    const mid = rect.top + rect.height / 2;
+    if (mid < vh / 2) return { ...side, top: Math.min(rect.bottom + 16, vh * 0.42) };
+    return { ...side, bottom: Math.min(vh - rect.top + 16, vh * 0.58) };
   }
   const W = wide ? 360 : 320;
   const H = wide ? 330 : 210;

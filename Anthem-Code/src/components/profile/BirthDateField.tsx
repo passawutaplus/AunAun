@@ -3,7 +3,7 @@ import { CV_MONTHS_SHORT, type CvDateLang } from "@/lib/cvDates";
 import { normalizeBirthDate } from "@/lib/profileCv";
 
 const CONTROL_CLASS =
-  "rounded-xl bg-secondary border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground/40";
+  "rounded-xl bg-secondary border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground";
 
 type Props = {
   /** "YYYY-MM-DD" or "". */

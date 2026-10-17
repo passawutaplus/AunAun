@@ -106,7 +106,7 @@ export default function StudioLayout({
       </aside>
 
       <div className={cn("transition-[padding] duration-200", collapsed ? "lg:pl-16" : "lg:pl-60")}>
-        <header className="sticky top-0 z-20 bg-background/85 backdrop-blur-xl lg:static lg:bg-transparent lg:backdrop-blur-0">
+        <header className="sticky top-0 z-20 bg-background lg:static lg:bg-transparent">
           <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4 pt-[env(safe-area-inset-top)] lg:px-8">
             <Button
               type="button"

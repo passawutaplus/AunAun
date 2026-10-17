@@ -175,7 +175,7 @@ const SearchBar = ({
           tabIndex={isOpen ? 0 : -1}
           aria-hidden={!isOpen}
           className={cn(
-            "h-full w-full bg-transparent text-sm text-foreground outline-none placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground/40",
+            "h-full w-full bg-transparent text-sm text-foreground outline-none placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground",
             isOpen ? "pl-4 opacity-100" : "pointer-events-none pl-3 opacity-0",
             isOpen && hideAiButton && filterButton ? "pr-[8.75rem]" : isOpen ? "pr-16" : "pr-9",
           )}
@@ -307,7 +307,7 @@ const SearchBar = ({
           collapse();
         }}
         className={cn(
-          "w-full rounded-2xl bg-secondary border border-border text-foreground placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground/40 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-shadow",
+          "w-full rounded-2xl bg-secondary border border-border text-foreground placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-shadow",
           compact ? "pl-9 py-2" : "pl-11 py-3",
           hideAiButton && filterButton
             ? expandable

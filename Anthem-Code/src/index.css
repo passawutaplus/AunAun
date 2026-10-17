@@ -152,8 +152,8 @@
     --success-foreground: 0 0% 7%;
     --warning: 40 77% 60%;
     --warning-foreground: 0 0% 7%;
-    --border: 0 0% 20%;
-    --input: 0 0% 20%;
+    --border: 0 0% 24%;
+    --input: 0 0% 26%;
     --ring: 0 0% 96%;
     --sidebar-background: 0 0% 6%;
     --sidebar-foreground: 0 0% 92%;
@@ -161,7 +161,7 @@
     --sidebar-primary-foreground: 0 0% 7%;
     --sidebar-accent: 180 1% 16%;
     --sidebar-accent-foreground: 0 0% 94%;
-    --sidebar-border: 0 0% 20%;
+    --sidebar-border: 0 0% 24%;
     --sidebar-ring: 0 0% 96%;
 
     /* Chat persona tokens */
@@ -194,9 +194,9 @@
   /* Placeholder = hint only — smaller + softer so it doesn't look like filled text */
   input::placeholder,
   textarea::placeholder {
-    color: hsl(var(--muted-foreground) / 0.42);
+    color: hsl(var(--muted-foreground) / 0.7);
     font-size: 0.75rem;
-    font-weight: 300;
+    font-weight: 400;
     line-height: 1.4;
     letter-spacing: 0.01em;
   }
