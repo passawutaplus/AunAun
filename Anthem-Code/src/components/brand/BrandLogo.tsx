@@ -27,8 +27,8 @@ export function BrandLogo({ showWordmark = true, size = "md", tone = "brand", cl
   const src = showWordmark ? LOCKUP : SYMBOL;
   const box = showWordmark
     ? size === "sm"
-      ? "h-6 w-auto"
-      : "h-7 w-auto"
+      ? "h-8 w-auto"
+      : "h-10 w-auto"
     : size === "sm"
       ? "h-8 w-8"
       : "h-9 w-9";
@@ -46,7 +46,7 @@ export function BrandLogo({ showWordmark = true, size = "md", tone = "brand", cl
         <img src={single} alt={BRAND_NAME} className={cn(box, "block")} draggable={false} />
       )}
       {beta && (
-        <span className="rounded-full bg-primary px-1.5 py-px text-[9px] font-bold leading-tight tracking-wide text-primary-foreground">
+        <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold leading-tight tracking-wide text-primary-foreground">
           BETA
         </span>
       )}
