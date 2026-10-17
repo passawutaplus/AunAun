@@ -20,10 +20,10 @@ import {
   type CreatorService,
 } from "@/hooks/useCreatorServices";
 import { cn } from "@/lib/utils";
-import { getSupabaseErrorMessage } from "@/lib/supabaseErrors";
 import { toast } from "sonner";
 import { isCommerceEnabled } from "@/lib/aplus1Launch";
 import { useChatPortfolio, type ChatPortfolioProject } from "@/components/chat/useChatPortfolio";
+import { userFacingError } from "@/lib/userFacingError";
 
 const PREVIEW_COUNT = 4;
 
@@ -516,7 +516,7 @@ const ChatPortfolioSection = ({
       });
       toast.success("ส่งผลงานในแชทแล้ว");
     } catch (e: unknown) {
-      toast.error(getSupabaseErrorMessage(e, "ส่งไม่สำเร็จ"));
+      toast.error(userFacingError(e, "ส่งไม่สำเร็จ"));
     }
   };
 
@@ -531,7 +531,7 @@ const ChatPortfolioSection = ({
       });
       toast.success("ส่งแพ็กเกจในแชทแล้ว");
     } catch (e: unknown) {
-      toast.error(getSupabaseErrorMessage(e, "ส่งไม่สำเร็จ"));
+      toast.error(userFacingError(e, "ส่งไม่สำเร็จ"));
     }
   };
 

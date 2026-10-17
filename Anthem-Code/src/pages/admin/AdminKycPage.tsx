@@ -36,6 +36,7 @@ import {
   type KycReviewCheckId,
 } from "@/lib/adminKycReviewGuide";
 import { kycRiskTone, kycScoreClass } from "@/lib/reportAiTriage";
+import { userFacingError } from "@/lib/userFacingError";
 
 type Status = "pending" | "approved" | "rejected";
 
@@ -549,7 +550,7 @@ export default function AdminKycPage() {
                       setRejectReasons([]);
                       setReviewChecks(emptyKycReviewChecks());
                     },
-                    onError: (e: Error) => toast.error(e.message),
+                    onError: (e: Error) => toast.error(userFacingError(e)),
                   },
                 );
               }}
@@ -585,7 +586,7 @@ export default function AdminKycPage() {
                       setRejectReasons([]);
                       setReviewChecks(emptyKycReviewChecks());
                     },
-                    onError: (e: Error) => toast.error(e.message),
+                    onError: (e: Error) => toast.error(userFacingError(e)),
                   },
                 );
               }}

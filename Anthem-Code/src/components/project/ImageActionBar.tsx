@@ -11,6 +11,7 @@ import InspirePopover from "@/components/inspire/InspirePopover";
 import SharePopover from "@/components/share/SharePopover";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { userFacingError } from "@/lib/userFacingError";
 
 interface Props {
   projectId: string;
@@ -58,7 +59,7 @@ const ImageActionBar = ({
       { projectId, imageUrl, liked },
       {
         onSuccess: () => toast.success(liked ? "ยกเลิกแล้ว" : "ถูกใจแล้ว"),
-        onError: (e: Error) => toast.error(e.message),
+        onError: (e: Error) => toast.error(userFacingError(e)),
       },
     );
   };

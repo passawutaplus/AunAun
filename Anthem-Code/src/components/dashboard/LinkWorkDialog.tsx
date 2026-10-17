@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { userFacingError } from "@/lib/userFacingError";
 
 export type LinkWorkKind = "hire" | "collab";
 
@@ -84,7 +85,7 @@ export default function LinkWorkDialog({
       onOpenChange(false);
       if (projectId) navigate(`/project/${projectId}`);
     },
-    onError: (e: Error) => toast.error(e.message || "เชื่อมผลงานไม่สำเร็จ"),
+    onError: (e: Error) => toast.error(userFacingError(e, "เชื่อมผลงานไม่สำเร็จ")),
     onSettled: () => setPickingId(null),
   });
 

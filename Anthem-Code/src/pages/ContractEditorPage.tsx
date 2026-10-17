@@ -29,6 +29,7 @@ import {
   getLicenseMeta,
   type LicenseType,
 } from "@/lib/licenses";
+import { userFacingError } from "@/lib/userFacingError";
 
 type ContractType = "project" | "fulltime";
 
@@ -170,7 +171,7 @@ const ContractEditorInner = () => {
       setDraft(md);
       toast.success("ร่างสัญญาเรียบร้อย");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(userFacingError(e)),
   });
 
   const save = useMutation({
@@ -203,7 +204,7 @@ const ContractEditorInner = () => {
       toast.success("บันทึกร่างแล้ว");
       qc.invalidateQueries({ queryKey: ["contracts"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(userFacingError(e)),
   });
 
   const copyDraft = async () => {

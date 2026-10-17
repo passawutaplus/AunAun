@@ -6,6 +6,7 @@ import AdminRowActions from "@/components/admin/AdminRowActions";
 import { useAdminList } from "@/hooks/admin/useAdminList";
 import { useAdminDeleteCollection } from "@/hooks/admin/useAdminMutations";
 import { formatThaiDate } from "@/lib/format";
+import { userFacingError } from "@/lib/userFacingError";
 
 interface Row {
   id: string;
@@ -48,7 +49,7 @@ export default function AdminCollectionsPage() {
                 if (!window.confirm(`ลบ "${r.name}"?`)) return;
                 remove.mutate(r.id, {
                   onSuccess: () => toast.success("ลบแล้ว"),
-                  onError: (e: Error) => toast.error(e.message),
+                  onError: (e: Error) => toast.error(userFacingError(e)),
                 });
               },
             },

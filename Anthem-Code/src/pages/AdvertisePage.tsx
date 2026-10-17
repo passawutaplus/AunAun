@@ -32,6 +32,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import AdCardPreview, { type AdDestinationKind } from "@/components/ads/AdCardPreview";
+import { userFacingError } from "@/lib/userFacingError";
 
 function RequiredMark() {
   return <span className="text-primary" aria-hidden> *</span>;
@@ -353,7 +354,7 @@ const AdvertisePage = () => {
     }
     payMock.mutate(app.id, {
       onSuccess: () => toast.success("ชำระเงินจำลองสำเร็จ · รอแอดมินอนุมัติเพื่อเริ่มแสดงโฆษณา"),
-      onError: (err: Error) => toast.error(err.message),
+      onError: (err: Error) => toast.error(userFacingError(err)),
     });
   };
 
@@ -361,7 +362,7 @@ const AdvertisePage = () => {
     if (app.package === "inquiry") return;
     payStripe.mutate(
       { id: app.id, package: app.package },
-      { onError: (err: Error) => toast.error(err.message) },
+      { onError: (err: Error) => toast.error(userFacingError(err)) },
     );
   };
 

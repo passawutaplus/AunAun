@@ -37,6 +37,7 @@ import {
   loginEmailFormatError,
   loginPasswordEmptyError,
 } from "@/lib/loginEmailPrefill";
+import { userFacingError } from "@/lib/userFacingError";
 
 const PAPER_SERIF = '"Iowan Old Style", Palatino, Georgia, serif';
 
@@ -413,7 +414,7 @@ const SignupFormFields = ({ onSwitch }: { onSwitch: () => void }) => {
           data: { display_name: displayName || email.split("@")[0] },
         },
       });
-      if (error) toast.error(error.message);
+      if (error) toast.error(userFacingError(error));
       else {
         markPendingSignupConsent();
         await recordSignupConsents();

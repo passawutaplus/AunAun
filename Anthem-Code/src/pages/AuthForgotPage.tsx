@@ -11,6 +11,7 @@ import { buildResetPasswordUrl } from "@/lib/oauthRedirect";
 import { toast } from "sonner";
 import { readLoginEmailPrefill } from "@/lib/loginEmailPrefill";
 import { SETTINGS_PIN_RECOVER_HREF } from "@/lib/settingsNav";
+import { userFacingError } from "@/lib/userFacingError";
 
 const AuthForgotPage = () => {
   const [email, setEmail] = useState("");
@@ -33,7 +34,7 @@ const AuthForgotPage = () => {
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
         redirectTo: buildResetPasswordUrl(),
       });
-      if (error) toast.error(error.message);
+      if (error) toast.error(userFacingError(error));
       else {
         setSent(true);
         toast.success("ส่งลิงก์รีเซ็ตรหัสผ่านไปทางอีเมลแล้ว");

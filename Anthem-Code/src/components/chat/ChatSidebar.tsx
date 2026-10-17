@@ -59,6 +59,7 @@ import { DEMO_RESEARCH_ACCOUNTS, isDemoMode } from "@/lib/demoMode";
 import { toast } from "sonner";
 import { useSubscription } from "@/core/subscription/useSubscription";
 import { ChatFilterRail } from "@/components/chat/ChatFilterRail";
+import { userFacingError } from "@/lib/userFacingError";
 
 interface Props {
   selectedId?: string;
@@ -261,7 +262,7 @@ const ChatSidebar = ({
       { conversationId: convId, pinned: wasPinned },
       {
         onSuccess: () => toast.success(wasPinned ? "เลิกปักหมุดแล้ว" : "ปักหมุดแล้ว"),
-        onError: (err: Error) => toast.error(err.message || "ปักหมุดไม่สำเร็จ"),
+        onError: (err: Error) => toast.error(userFacingError(err, "ปักหมุดไม่สำเร็จ")),
       },
     );
   };
@@ -279,7 +280,7 @@ const ChatSidebar = ({
         setDeleteTargetId(null);
         if (selectedId === id) navigate("/chat");
       },
-      onError: (err: Error) => toast.error(err.message || "ลบแชทไม่สำเร็จ"),
+      onError: (err: Error) => toast.error(userFacingError(err, "ลบแชทไม่สำเร็จ")),
     });
   };
 

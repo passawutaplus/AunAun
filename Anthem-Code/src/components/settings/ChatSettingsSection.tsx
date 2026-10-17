@@ -30,10 +30,10 @@ import {
   SHARED_MEDIA_BUCKET,
 } from "@/integrations/supabase/sharedStorageClient";
 import { useSignedStorageUrl } from "@/hooks/useSignedStorageUrl";
-import { getSupabaseErrorMessage } from "@/lib/supabaseErrors";
 import { profilePublicPath } from "@/lib/profileRoutes";
 import { cn } from "@/lib/utils";
 import { loadHideReadReceipts, saveHideReadReceipts } from "@/lib/chatReadReceipts";
+import { userFacingError } from "@/lib/userFacingError";
 
 const TEXT_MAX = 1000;
 const LINK_MAX = 500;
@@ -279,7 +279,7 @@ export function ChatSettingsSection() {
       );
       toast.success("อัปโหลดรูปแล้ว — กดบันทึกการตั้งค่าแชท");
     } catch (e: unknown) {
-      toast.error(getSupabaseErrorMessage(e, "อัปโหลดไม่สำเร็จ"));
+      toast.error(userFacingError(e, "อัปโหลดไม่สำเร็จ"));
     } finally {
       setUploadingKind(null);
     }
@@ -310,7 +310,7 @@ export function ChatSettingsSection() {
       });
       toast.success("บันทึกการตั้งค่าแชทแล้ว");
     } catch (e: unknown) {
-      toast.error(getSupabaseErrorMessage(e, "บันทึกไม่สำเร็จ"));
+      toast.error(userFacingError(e, "บันทึกไม่สำเร็จ"));
     }
   };
 

@@ -13,6 +13,7 @@ import {
   useResolveAmlFlag, useUnfreezeAccount, useFreezeAccount, type AmlFlag,
 } from "@/hooks/useAmlFlags";
 import { formatThaiDate } from "@/lib/format";
+import { userFacingError } from "@/lib/userFacingError";
 
 const KpiCard = ({ label, value, icon: Icon, accent }: {
   label: string; value: string | number; icon: React.ComponentType<{ className?: string }>; accent?: boolean;
@@ -69,7 +70,7 @@ export default function AdminAmlPage() {
         setReviewFlag(null);
         setNote("");
       },
-      onError: (e: Error) => toast.error(e.message),
+      onError: (e: Error) => toast.error(userFacingError(e)),
     });
   };
 
@@ -84,7 +85,7 @@ export default function AdminAmlPage() {
         setFreezeUser(null);
         setFreezeReason("");
       },
-      onError: (e: Error) => toast.error(e.message),
+      onError: (e: Error) => toast.error(userFacingError(e)),
     });
   };
 

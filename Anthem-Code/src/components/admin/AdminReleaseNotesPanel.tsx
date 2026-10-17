@@ -9,6 +9,7 @@ import FeedbackKindBadge from "@/components/feedback/FeedbackKindBadge";
 import { RELEASE_TAG_LABEL, type ReleaseNote, type ReleaseTag } from "@/hooks/useReleaseNotes";
 import type { FeedbackRow } from "@/pages/admin/AdminFeedbackPage";
 import { cn } from "@/lib/utils";
+import { userFacingError } from "@/lib/userFacingError";
 
 /** Feedback worth crediting in a release: ideas / UX / bugs not yet adopted or dismissed. */
 const LINKABLE_STATUSES = new Set(["new", "reviewing", "resolved"]);
@@ -66,7 +67,7 @@ export default function AdminReleaseNotesPanel({ feedback }: { feedback: Feedbac
       invalidate();
       toast.success(publish ? "เผยแพร่แล้ว — แจ้งผู้ส่งฟีดแบ็กที่ลิงก์ไว้แล้ว" : "บันทึกร่างแล้ว");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(userFacingError(e)),
   });
 
   const setPublished = useMutation({
@@ -78,7 +79,7 @@ export default function AdminReleaseNotesPanel({ feedback }: { feedback: Feedbac
       if (error) throw error;
     },
     onSuccess: invalidate,
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(userFacingError(e)),
   });
 
   const remove = useMutation({
@@ -87,7 +88,7 @@ export default function AdminReleaseNotesPanel({ feedback }: { feedback: Feedbac
       if (error) throw error;
     },
     onSuccess: invalidate,
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(userFacingError(e)),
   });
 
   const toggle = (id: string) =>

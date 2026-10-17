@@ -16,6 +16,7 @@ import AdminRowActions from "@/components/admin/AdminRowActions";
 import { useAdminRejectCashout, useAdminUpdateGift, useAdminUpdateGiftLimits } from "@/hooks/admin/useAdminMutations";
 import { notifyAnthem } from "@/lib/notifyAnthem";
 import { Label } from "@/components/ui/label";
+import { userFacingError } from "@/lib/userFacingError";
 
 const isCashoutPaid = (s: string) => s === "mock_paid" || s === "paid";
 const isCashoutPending = (s: string) => s === "pending";
@@ -139,7 +140,7 @@ export default function AdminGiftsPage() {
       qc.invalidateQueries({ queryKey: ["admin-cashouts"] });
       qc.invalidateQueries({ queryKey: ["admin-gift-overview"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(userFacingError(e)),
   });
 
   const rejectCashout = useAdminRejectCashout();
@@ -396,7 +397,7 @@ export default function AdminGiftsPage() {
                   { id: r.id, note },
                   {
                     onSuccess: () => toast.success("ปฏิเสธคำขอแล้ว — คืน earned_px"),
-                    onError: (e: Error) => toast.error(e.message),
+                    onError: (e: Error) => toast.error(userFacingError(e)),
                   },
                 );
               }}
@@ -435,7 +436,7 @@ export default function AdminGiftsPage() {
                   { id: r.id, active: !r.active },
                   {
                     onSuccess: () => toast.success("อัปเดตของขวัญแล้ว"),
-                    onError: (e: Error) => toast.error(e.message),
+                    onError: (e: Error) => toast.error(userFacingError(e)),
                   },
                 ),
             },
@@ -453,7 +454,7 @@ export default function AdminGiftsPage() {
                   { id: r.id, active: r.active, price_px: n },
                   {
                     onSuccess: () => toast.success("อัปเดตราคาแล้ว"),
-                    onError: (e: Error) => toast.error(e.message),
+                    onError: (e: Error) => toast.error(userFacingError(e)),
                   },
                 );
               },
@@ -630,7 +631,7 @@ export default function AdminGiftsPage() {
                       setLimitForm(null);
                       qc.invalidateQueries({ queryKey: ["admin-gift-limits"] });
                     },
-                    onError: (e: Error) => toast.error(e.message),
+                    onError: (e: Error) => toast.error(userFacingError(e)),
                   },
                 );
               }}

@@ -61,6 +61,7 @@ import { buildKycResubmitPrefill, type KycClearKey } from "@/lib/kycPrefill";
 import kycCreatorVerifyBg from "@/assets/kyc-creator-verify-bg.jpg";
 import kycSubmittedBg from "@/assets/kyc-submitted-bg.jpg";
 import kycVerifiedBg from "@/assets/kyc-verified-bg.jpg";
+import { userFacingError } from "@/lib/userFacingError";
 
 const STEPS = ["ติดต่อ", "ตัวตน", "บัญชี", "ส่งตรวจ"] as const;
 
@@ -776,7 +777,7 @@ const VerificationWizard = () => {
       },
       {
         onSuccess: () => setSubmitted(true),
-        onError: (e: Error) => toast.error(e.message),
+        onError: (e: Error) => toast.error(userFacingError(e)),
       },
     );
   };

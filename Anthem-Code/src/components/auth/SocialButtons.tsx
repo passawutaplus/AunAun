@@ -4,11 +4,12 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { openOAuthPopup, signInWithOAuth } from "@/integrations/oauth";
 import { cn } from "@/lib/utils";
+import { userFacingError } from "@/lib/userFacingError";
 
 async function handleGoogleOAuth(redirectTo?: string, popup?: Window | null) {
   const result = await signInWithOAuth({ redirectTo, popup });
   if (result.error) {
-    toast.error(result.error.message || "เข้าสู่ระบบด้วย Google ไม่สำเร็จ");
+    toast.error(userFacingError(result.error, "เข้าสู่ระบบด้วย Google ไม่สำเร็จ"));
   }
 }
 

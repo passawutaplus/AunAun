@@ -21,6 +21,7 @@ import {
 import { formatThaiDate } from "@/lib/format";
 import { Megaphone, Eye, MousePointerClick, CheckCircle2, XCircle, Pause, Play, Trash2, ExternalLink, Search } from "lucide-react";
 import { toast } from "sonner";
+import { userFacingError } from "@/lib/userFacingError";
 
 const KpiCard = ({ label, value, icon: Icon, accent }: {
   label: string; value: string | number;
@@ -100,7 +101,7 @@ export default function AdminAdsPage() {
       { id: c.id, patch: { status: next } },
       {
         onSuccess: () => toast.success(next === "active" ? "เปิดใช้งานโฆษณาแล้ว" : "หยุดโฆษณาชั่วคราว"),
-        onError: (e: Error) => toast.error(e.message),
+        onError: (e: Error) => toast.error(userFacingError(e)),
       }
     );
   };
@@ -109,7 +110,7 @@ export default function AdminAdsPage() {
     if (!confirm(`ลบแคมเปญ "${c.title}"?`)) return;
     deleteCampaign.mutate(c.id, {
       onSuccess: () => toast.success("ลบแล้ว"),
-      onError: (e: Error) => toast.error(e.message),
+      onError: (e: Error) => toast.error(userFacingError(e)),
     });
   };
 
@@ -119,7 +120,7 @@ export default function AdminAdsPage() {
       { id: a.id, durationDays: a.duration_days },
       {
         onSuccess: () => toast.success("อนุมัติและสร้างแคมเปญแล้ว"),
-        onError: (e: Error) => toast.error(e.message),
+        onError: (e: Error) => toast.error(userFacingError(e)),
       }
     );
   };
@@ -131,7 +132,7 @@ export default function AdminAdsPage() {
       { id: a.id, note },
       {
         onSuccess: () => toast.success("ปฏิเสธคำขอแล้ว"),
-        onError: (e: Error) => toast.error(e.message),
+        onError: (e: Error) => toast.error(userFacingError(e)),
       }
     );
   };

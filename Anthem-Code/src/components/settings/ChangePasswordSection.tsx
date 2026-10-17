@@ -9,6 +9,7 @@ import { userHasEmailPassword, verifyUserPassword } from "@/lib/sensitiveActionA
 import { buildEmailConfirmUrl, buildResetPasswordUrl } from "@/lib/oauthRedirect";
 import type { User } from "@supabase/supabase-js";
 import { toast } from "sonner";
+import { userFacingError } from "@/lib/userFacingError";
 
 function PasswordField({
   id,
@@ -75,7 +76,7 @@ export function ChangePasswordSection({ user }: { user: User }) {
         email,
         options: { emailRedirectTo: buildEmailConfirmUrl() },
       });
-      if (error) toast.error(error.message);
+      if (error) toast.error(userFacingError(error));
       else toast.success("ส่งอีเมลยืนยันตัวตนแล้ว — ตรวจกล่องจดหมายของคุณ");
     } finally {
       setVerifyBusy(false);
@@ -92,7 +93,7 @@ export function ChangePasswordSection({ user }: { user: User }) {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: buildResetPasswordUrl(),
       });
-      if (error) toast.error(error.message);
+      if (error) toast.error(userFacingError(error));
       else {
         toast.success(
           hasPassword ? "ส่งลิงก์เปลี่ยนรหัสผ่านแล้ว" : "ส่งลิงก์ตั้งรหัสผ่านแล้ว",
@@ -121,7 +122,7 @@ export function ChangePasswordSection({ user }: { user: User }) {
     try {
       await verifyUserPassword(email, current);
       const { error } = await supabase.auth.updateUser({ password: next });
-      if (error) toast.error(error.message);
+      if (error) toast.error(userFacingError(error));
       else {
         toast.success("เปลี่ยนรหัสผ่านสำเร็จ");
         setCurrent("");

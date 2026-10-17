@@ -25,6 +25,7 @@ import { BackButton } from "@/components/ui/BackButton";
 import RequireAuth from "@/components/RequireAuth";
 import { cn } from "@/lib/utils";
 import { isReservedPublicHandle } from "@/lib/reservedHandles";
+import { userFacingError } from "@/lib/userFacingError";
 
 const slugify = (s: string) =>
   s.toLowerCase().trim().replace(/[^a-z0-9-\s]/g, "").replace(/\s+/g, "-").slice(0, 40);
@@ -161,7 +162,7 @@ const StudioCreateInner = () => {
     if (!file || !user) return;
     setLogoBusy(true);
     try { setLogoUrl(await uploadImage(file, user.id, "logo")); }
-    catch (e: any) { toast.error(e.message ?? "อัปโหลดโลโก้ไม่สำเร็จ"); }
+    catch (e: any) { toast.error(userFacingError(e, "อัปโหลดโลโก้ไม่สำเร็จ")); }
     finally { setLogoBusy(false); }
   };
 
@@ -169,7 +170,7 @@ const StudioCreateInner = () => {
     if (!file || !user) return;
     setCoverBusy(true);
     try { setCoverUrl(await uploadImage(file, user.id, "cover")); }
-    catch (e: any) { toast.error(e.message ?? "อัปโหลดภาพปกไม่สำเร็จ"); }
+    catch (e: any) { toast.error(userFacingError(e, "อัปโหลดภาพปกไม่สำเร็จ")); }
     finally { setCoverBusy(false); }
   };
 

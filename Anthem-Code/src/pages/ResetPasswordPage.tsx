@@ -12,6 +12,7 @@ import { establishSession } from "@/lib/authSession";
 import { passwordChangeFormError } from "@/lib/passwordChange";
 import { userHasEmailPassword, verifyUserPassword } from "@/lib/sensitiveActionAuth";
 import { toast } from "sonner";
+import { userFacingError } from "@/lib/userFacingError";
 
 const ResetPasswordPage = () => {
   const navigate = useNavigate();
@@ -107,7 +108,7 @@ const ResetPasswordPage = () => {
         await verifyUserPassword(email, current);
       }
       const { error } = await supabase.auth.updateUser({ password });
-      if (error) toast.error(error.message);
+      if (error) toast.error(userFacingError(error));
       else {
         toast.success("ตั้งรหัสผ่านใหม่สำเร็จ — กรุณาเข้าสู่ระบบอีกครั้ง");
         await supabase.auth.signOut({ scope: "global" });
