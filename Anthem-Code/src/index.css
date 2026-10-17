@@ -37,39 +37,48 @@
     --font-body: "IBM Plex Sans", "IBM Plex Sans Thai", "Sarabun", "IBM Plex Sans Thai Looped", ui-sans-serif, system-ui, sans-serif;
     --font-heading: "Agrandir Wide", "IBM Plex Sans Thai", "IBM Plex Sans", "Sarabun", ui-sans-serif, system-ui, sans-serif;
 
-    /* Paper and ink: the studio home look, used on every page (paper field, warm ink, hairlines, white cards). */
-    --background: 0 0% 96%;
-    --foreground: 40 3% 18%;
+    /* Brand Book Ver.0.1: Studio White canvas #F8F7F2, Gallery Black ink #111111, hairline #E6E6E3, white cards. */
+    --background: 50 30% 96%;
+    --foreground: 0 0% 7%;
 
     --card: 0 0% 100%;
-    --card-foreground: 40 3% 18%;
+    --card-foreground: 0 0% 7%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 40 3% 18%;
+    --popover-foreground: 0 0% 7%;
 
-    /* Primary is ink (black pills). Orange is gone from the chrome; it survives only as --accent-warm for rare highlights. */
+    /* Primary stays ink (black pills, owner decision 2026-10-17). Brand red lives in --brand. */
     --primary: 40 3% 18%;
     --primary-foreground: 0 0% 96%;
     --primary-bright: 40 3% 18%;
-    --accent-warm: 18 100% 46%;
+    /* SAMECOR Red #EE3D29 — the one accent (CTA highlight, ✱, selected); never a status colour */
+    --brand: 6 85% 55%;
+    --brand-foreground: 0 0% 7%;
+    --accent-warm: var(--brand);
+    /* Charcoal #282929 — dark cards, strong surfaces */
+    --surface-strong: 180 1% 16%;
 
     --secondary: 40 6% 92%;
     --secondary-foreground: 40 3% 18%;
 
     --muted: 40 6% 92%;
-    --muted-foreground: 30 4% 41%;
+    --muted-foreground: 0 0% 40%;
 
     --accent: 40 6% 92%;
     --accent-foreground: 40 3% 18%;
 
-    --destructive: 0 72% 51%;
+    /* Status colours are separate from brand red (Brand Book p15) */
+    --destructive: 4 77% 40%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 71% 38%;
+    --success: 153 67% 28%;
     --success-foreground: 0 0% 100%;
 
-    --border: 40 5% 86%;
-    --input: 40 5% 86%;
+    --warning: 39 100% 27%;
+    --warning-foreground: 0 0% 100%;
+
+    --border: 60 6% 90%;
+    --input: 60 6% 90%;
     --ring: 40 3% 18%;
 
     --radius: 1rem;
@@ -80,7 +89,7 @@
     --sidebar-primary-foreground: 0 0% 96%;
     --sidebar-accent: 40 6% 92%;
     --sidebar-accent-foreground: 40 3% 18%;
-    --sidebar-border: 40 5% 86%;
+    --sidebar-border: 60 6% 90%;
     --sidebar-ring: 40 3% 18%;
 
     /* Chat persona tokens */
@@ -94,60 +103,65 @@
 
   /* Learn / Get in Touch — paper field from the studio home, including when the app is dark. */
   html.learn-paper {
-    --background: 0 0% 96%;
-    --foreground: 40 3% 18%;
+    --background: 50 30% 96%;
+    --foreground: 0 0% 7%;
     --card: 0 0% 100%;
-    --card-foreground: 40 3% 18%;
+    --card-foreground: 0 0% 7%;
     --popover: 0 0% 100%;
-    --popover-foreground: 40 3% 18%;
+    --popover-foreground: 0 0% 7%;
     --primary: 40 3% 18%;
     --primary-foreground: 0 0% 96%;
     --primary-bright: 40 3% 18%;
     --secondary: 40 6% 92%;
     --secondary-foreground: 40 3% 18%;
     --muted: 40 6% 92%;
-    --muted-foreground: 30 4% 41%;
+    --muted-foreground: 0 0% 40%;
     --accent: 40 6% 92%;
     --accent-foreground: 40 3% 18%;
-    --border: 40 5% 86%;
-    --input: 40 5% 86%;
+    --border: 60 6% 90%;
+    --input: 60 6% 90%;
     --ring: 40 3% 18%;
     color-scheme: light;
   }
 
   .dark {
     color-scheme: dark;
-    /* Warm coal (the footer's #2f2e2c family); primary flips to paper so pills stay legible */
-    --background: 40 3% 12%;
+    /* Gallery Black #111111 field, Charcoal #282929 surfaces; primary flips to paper so pills stay legible */
+    --background: 0 0% 7%;
     --foreground: 0 0% 96%;
-    --card: 40 3% 16%;
+    --card: 0 0% 11%;
     --card-foreground: 0 0% 96%;
-    --popover: 40 3% 15%;
+    --popover: 0 0% 11%;
     --popover-foreground: 0 0% 96%;
     --primary: 0 0% 96%;
-    --primary-foreground: 40 3% 12%;
+    --primary-foreground: 0 0% 7%;
     --primary-bright: 0 0% 96%;
-    --accent-warm: 18 100% 56%;
-    --secondary: 40 3% 21%;
+    --brand: 6 85% 55%;
+    --brand-foreground: 0 0% 7%;
+    --accent-warm: var(--brand);
+    --surface-strong: 180 1% 16%;
+    --secondary: 180 1% 16%;
     --secondary-foreground: 0 0% 94%;
-    --muted: 40 3% 21%;
+    --muted: 180 1% 16%;
     --muted-foreground: 40 4% 68%;
-    --accent: 40 3% 24%;
+    --accent: 180 1% 19%;
     --accent-foreground: 0 0% 96%;
-    --destructive: 0 72% 52%;
-    --destructive-foreground: 0 0% 100%;
-    --success: 142 62% 48%;
-    --success-foreground: 40 3% 12%;
-    --border: 40 3% 26%;
-    --input: 40 3% 24%;
+    --destructive: 4 92% 69%;
+    --destructive-foreground: 0 0% 7%;
+    --success: 147 47% 56%;
+    --success-foreground: 0 0% 7%;
+    --warning: 40 77% 60%;
+    --warning-foreground: 0 0% 7%;
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
     --ring: 0 0% 96%;
-    --sidebar-background: 40 3% 10%;
+    --sidebar-background: 0 0% 6%;
     --sidebar-foreground: 0 0% 92%;
     --sidebar-primary: 0 0% 96%;
-    --sidebar-primary-foreground: 40 3% 12%;
-    --sidebar-accent: 40 3% 18%;
+    --sidebar-primary-foreground: 0 0% 7%;
+    --sidebar-accent: 180 1% 16%;
     --sidebar-accent-foreground: 0 0% 94%;
-    --sidebar-border: 40 3% 26%;
+    --sidebar-border: 0 0% 20%;
     --sidebar-ring: 0 0% 96%;
 
     /* Chat persona tokens */

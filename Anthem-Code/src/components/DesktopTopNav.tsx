@@ -252,7 +252,11 @@ const DesktopTopNav = () => {
         <button
           type="button"
           onClick={goHome}
-          className="shrink-0 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className={cn(
+            "shrink-0 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            // Over the home feed's photos the logo needs a solid plate (Brand Book p11)
+            isHome && "rounded-xl bg-background px-2.5 py-1.5",
+          )}
           aria-label={`${BRAND_NAME} หน้าแรก`}
         >
           <BrandLogo beta size="sm" tone={isLearn ? "ink" : isHome ? "theme" : "brand"} />

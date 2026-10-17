@@ -1,7 +1,7 @@
 /**
  * SAMECOR — SAME + CORE.
  * Tagline: You Create. We Connect.
- * Promise: 1 Profile. 100+ Opportunities.
+ * Promise: Your Work Deserves to Be Seen. (Brand Book Ver.0.1 messaging hierarchy)
  * Public host is samecor.com. aplus1.app stays as a redirect.
  */
 
@@ -30,11 +30,13 @@ export const ANTHEM_PRODUCTION_URL = APLUS1_PRODUCTION_URL;
 /** @deprecated use APLUS1_DEMO_URL */
 export const ANTHEM_DEMO_URL = APLUS1_DEMO_URL;
 
-export const BRAND_TAGLINE = "1 โปรไฟล์ สู่ 100+ โอกาส";
+/** Level 1 tagline (Brand Book p6) — Thai line is a draft from the message library (p22) */
+export const BRAND_TAGLINE = "คุณสร้างสรรค์ เราเชื่อมต่อ";
 
-export const BRAND_TAGLINE_EN = "1 Profile. 100+ Opportunities.";
+export const BRAND_TAGLINE_EN = "You Create. We Connect.";
 
-export const BRAND_SUBLINE_EN = "You Create. We Connect.";
+/** Level 2 brand promise */
+export const BRAND_SUBLINE_EN = "Your Work Deserves to Be Seen.";
 
 export const BRAND_DESCRIPTION =
   "SAMECOR เชื่อมผลงานของคุณกับคน โปรเจกต์ และโอกาสถัดไป — You Create. We Connect.";

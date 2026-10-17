@@ -1,13 +1,13 @@
 {
   "name": "SAMECOR — You Create. We Connect.",
   "short_name": "SAMECOR",
-  "description": "1 Profile. 100+ Opportunities. — You create. We connect.",
+  "description": "You Create. We Connect. — พื้นที่ให้ผลงานของคุณถูกค้นพบ และเชื่อมต่อกับโอกาสใหม่ ๆ",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#ffffff",
-  "theme_color": "#0a0a0a",
+  "background_color": "#F8F7F2",
+  "theme_color": "#EE3D29",
   "lang": "th",
   "categories": ["social", "art", "business"],
   "icons": [
