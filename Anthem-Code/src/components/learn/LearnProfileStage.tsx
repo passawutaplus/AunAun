@@ -50,12 +50,12 @@ function Tile({ p, src, index }: { p: MotionValue<number>; src: string; index: n
   const y = useTransform(p, range, [36, 0]);
   const scale = useTransform(p, range, [0.86, 1]);
   return (
-    <div className="aspect-square rounded-lg border border-dashed border-[#e4e1db] bg-[#f7f6f3]">
+    <div className="aspect-square rounded-lg border border-dashed border-border bg-muted">
       <motion.img
         src={src}
         alt=""
         draggable={false}
-        className="h-full w-full rounded-lg bg-[#e4e1db] object-cover"
+        className="h-full w-full rounded-lg bg-border object-cover"
         style={{ opacity, y, scale }}
       />
     </div>
@@ -72,7 +72,7 @@ function OpenChip({ p, label, at }: { p: MotionValue<number>; label: string; at:
     <span
       className={cn(
         "rounded-full border px-3 py-1.5 text-[11px] transition-colors duration-300",
-        on ? "border-[#2f2e2c] bg-[#2f2e2c] text-white" : "border-[#e4e1db] bg-white text-[#a8a49c]",
+        on ? "border-foreground bg-foreground text-white" : "border-border bg-white text-muted-foreground",
       )}
     >
       {label}
@@ -101,8 +101,8 @@ function ProfileMock({ p, works }: { p: MotionValue<number>; works: string[] }) 
   const tiles = (works.length >= 6 ? works : [...works, ...LEARN_FALLBACK_WORKS]).slice(0, 6);
 
   return (
-    <div className="w-full overflow-hidden rounded-[1.25rem] border border-[#e4e1db] bg-white text-[#2f2e2c] shadow-[0_30px_80px_-30px_rgba(47,46,44,0.35)]">
-      <motion.div className="h-16 bg-[#e4e1db] sm:h-20" style={{ opacity: coverOpacity }}>
+    <div className="w-full overflow-hidden rounded-[1.25rem] border border-border bg-white text-foreground shadow-sm">
+      <motion.div className="h-16 bg-border sm:h-20" style={{ opacity: coverOpacity }}>
         <img src={tiles[0]} alt="" className="h-full w-full object-cover opacity-70" draggable={false} />
       </motion.div>
       <div className="px-4 pb-4 sm:px-5 sm:pb-5">
@@ -111,7 +111,7 @@ function ProfileMock({ p, works }: { p: MotionValue<number>; works: string[] }) 
             src={AVATAR}
             alt=""
             draggable={false}
-            className="h-16 w-16 shrink-0 rounded-full border-4 border-white bg-[#e4e1db] object-cover"
+            className="h-16 w-16 shrink-0 rounded-full border-4 border-white bg-border object-cover"
             style={{ scale: avatarScale, opacity: avatarOpacity }}
           />
           <motion.span
@@ -125,10 +125,10 @@ function ProfileMock({ p, works }: { p: MotionValue<number>; works: string[] }) 
         <p className="mt-2 min-h-[1.75rem] text-lg font-medium tracking-[-0.02em]">
           {NAME.slice(0, typed).join("")}
           {typed > 0 && typed < NAME.length ? (
-            <span className="ml-px inline-block h-4 w-px translate-y-0.5 animate-pulse bg-[#2f2e2c]" />
+            <span className="ml-px inline-block h-4 w-px translate-y-0.5 animate-pulse bg-foreground" />
           ) : null}
         </p>
-        <motion.p className="flex items-center gap-1.5 text-xs text-[#6b6862]" style={{ opacity: roleOpacity, y: roleY }}>
+        <motion.p className="flex items-center gap-1.5 text-xs text-muted-foreground" style={{ opacity: roleOpacity, y: roleY }}>
           Brand &amp; Packaging Designer
           <span aria-hidden>·</span>
           <MapPin className="h-3 w-3" aria-hidden />
@@ -140,7 +140,7 @@ function ProfileMock({ p, works }: { p: MotionValue<number>; works: string[] }) 
             <Tile key={src + index} p={p} src={src} index={index} />
           ))}
         </div>
-        <motion.p className="mt-2.5 hidden text-[11px] text-[#8a867f] sm:block" style={{ opacity: statsOpacity }}>
+        <motion.p className="mt-2.5 hidden text-[11px] text-muted-foreground sm:block" style={{ opacity: statsOpacity }}>
           12 projects · 3 packages · 1 object
         </motion.p>
 
@@ -151,11 +151,11 @@ function ProfileMock({ p, works }: { p: MotionValue<number>; works: string[] }) 
         </motion.div>
 
         <motion.div className="mt-4 flex gap-2" style={{ opacity: actionsOpacity, y: actionsY }}>
-          <span className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-full bg-[#2f2e2c] text-xs font-medium text-white">
+          <span className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-full bg-foreground text-xs font-medium text-white">
             <BriefIcon className="h-3.5 w-3.5" />
             จ้างงาน
           </span>
-          <span className="flex h-9 flex-1 items-center justify-center rounded-full border border-[#e4e1db] text-xs text-[#2f2e2c]">
+          <span className="flex h-9 flex-1 items-center justify-center rounded-full border border-border text-xs text-foreground">
             ชวนคอลแลป
           </span>
         </motion.div>
@@ -165,15 +165,15 @@ function ProfileMock({ p, works }: { p: MotionValue<number>; works: string[] }) 
 }
 
 const CTA_CLASS =
-  "inline-flex min-h-11 items-center gap-2 rounded-full bg-[#2f2e2c] px-6 text-sm font-medium text-[#f5f5f5] outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[#2f2e2c] focus-visible:ring-offset-2";
+  "inline-flex min-h-11 items-center gap-2 rounded-full bg-foreground px-6 text-sm font-medium text-background outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2";
 
 function Heading() {
   return (
     <>
-      <p className="text-[clamp(1.5rem,3vw,2.4rem)] leading-none tracking-[-0.03em] text-[#2f2e2c]" style={LEARN_SERIF}>
+      <p className="text-[clamp(1.5rem,3vw,2.4rem)] leading-none tracking-[-0.03em] text-foreground" style={LEARN_SERIF}>
         Then build your
       </p>
-      <h2 className="mt-2 text-[clamp(3rem,8.5vw,7rem)] font-medium leading-[0.84] tracking-[-0.06em] text-[#2f2e2c]">
+      <h2 className="mt-2 text-[clamp(3rem,8.5vw,7rem)] font-medium leading-[0.84] tracking-[-0.06em] text-foreground">
         Profile
       </h2>
     </>
@@ -210,9 +210,9 @@ export function LearnProfileStage({ works }: { works: string[] }) {
           <ol className="mt-10 space-y-6">
             {STEPS.map((item) => (
               <li key={item.n}>
-                <p className="text-xs text-[#6b6862]">( {item.n} )</p>
-                <p className="mt-1 text-xl tracking-[-0.02em] text-[#2f2e2c]">{item.title}</p>
-                <p className="mt-1 text-sm text-[#6b6862]">{item.body}</p>
+                <p className="text-xs text-muted-foreground">( {item.n} )</p>
+                <p className="mt-1 text-xl tracking-[-0.02em] text-foreground">{item.title}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{item.body}</p>
               </li>
             ))}
           </ol>
@@ -242,9 +242,9 @@ export function LearnProfileStage({ works }: { works: string[] }) {
                         active ? "opacity-100" : "hidden opacity-30 md:block",
                       )}
                     >
-                      <p className="text-xs text-[#6b6862]">( {item.n} )</p>
-                      <p className="mt-1 text-lg tracking-[-0.02em] text-[#2f2e2c] sm:text-xl">{item.title}</p>
-                      <p className="mt-1 hidden max-w-sm text-sm leading-relaxed text-[#6b6862] md:block">{item.body}</p>
+                      <p className="text-xs text-muted-foreground">( {item.n} )</p>
+                      <p className="mt-1 text-lg tracking-[-0.02em] text-foreground sm:text-xl">{item.title}</p>
+                      <p className="mt-1 hidden max-w-sm text-sm leading-relaxed text-muted-foreground md:block">{item.body}</p>
                     </li>
                   );
                 })}
