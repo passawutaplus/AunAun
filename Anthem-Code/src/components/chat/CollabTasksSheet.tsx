@@ -400,36 +400,46 @@ function TaskCardFace({ task, member, lifted }: { task: CollabTask; member?: Mem
   return (
     <div
       className={cn(
-        "cursor-grab rounded-xl border border-l-4 border-border/60 bg-background p-2.5 text-sm shadow-sm transition-colors hover:border-border active:cursor-grabbing",
-        isDone ? "border-l-border" : prio.stripe,
+        "cursor-grab space-y-2 rounded-xl border border-border/60 bg-background p-3 text-sm shadow-sm transition-colors hover:border-border active:cursor-grabbing",
+        isDone && "bg-muted/30",
         lifted && "rotate-1 cursor-grabbing shadow-lg ring-1 ring-primary/40",
       )}
     >
-      <p className={cn("break-words", isDone && "text-muted-foreground line-through decoration-muted-foreground/50")}>
+      <p className={cn("break-words font-medium leading-snug", isDone && "text-muted-foreground line-through decoration-muted-foreground/50")}>
         {task.title}
       </p>
-      {member || task.due_date || (task.priority > 0 && !isDone) ? (
-        <div className="mt-2 flex items-center gap-2 text-xs">
-          {task.priority > 0 && !isDone ? (
-            <span className="flex shrink-0 items-center gap-1 font-medium text-foreground/80">
-              <span className={cn("h-2 w-2 rounded-full", prio.dot)} aria-hidden />
-              {prio.label}
-            </span>
-          ) : null}
-          {member ? (
-            <span className="flex min-w-0 items-center gap-1.5 text-muted-foreground">
-              <UserAvatar src={member.avatarUrl} name={member.name} username={member.username} className="h-5 w-5" fallbackClassName="text-[9px]" />
-              <span className="truncate">{member.name}</span>
-            </span>
-          ) : null}
-          {task.due_date ? (
-            <span className={cn("ml-auto flex shrink-0 items-center gap-1 tabular-nums", dueTone(task.due_date, task.status))}>
-              <CalendarDays className="h-3.5 w-3.5" aria-hidden />
-              {shortDay(task.due_date)}
-            </span>
-          ) : null}
-        </div>
-      ) : null}
+      <div className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+        {member ? (
+          <>
+            <UserAvatar src={member.avatarUrl} name={member.name} username={member.username} className="h-5 w-5" fallbackClassName="text-[9px]" />
+            <span className="truncate">{member.name}</span>
+          </>
+        ) : (
+          <>
+            <UserRound className="h-4 w-4 shrink-0" aria-hidden />
+            <span className="truncate">ยังไม่มีคนรับ</span>
+          </>
+        )}
+      </div>
+      <div className="flex items-center justify-between gap-2 text-xs">
+        <span
+          className={cn(
+            "inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-medium",
+            isDone ? "bg-muted text-muted-foreground" : prio.chip,
+          )}
+        >
+          <span className={cn("h-1.5 w-1.5 rounded-full", isDone ? "bg-muted-foreground/50" : prio.dot)} aria-hidden />
+          {prio.label}
+        </span>
+        {task.due_date ? (
+          <span className={cn("flex shrink-0 items-center gap-1 tabular-nums", dueTone(task.due_date, task.status))}>
+            <CalendarDays className="h-3.5 w-3.5" aria-hidden />
+            {shortDay(task.due_date)}
+          </span>
+        ) : (
+          <span className="text-muted-foreground/60">ไม่มีกำหนด</span>
+        )}
+      </div>
     </div>
   );
 }
