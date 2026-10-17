@@ -32,6 +32,8 @@ type Props = {
   /** Enables hover actions (like / inspire / share) on images. */
   projectId?: string;
   projectTitle?: string;
+  /** Lightbox "contact about this work" button. */
+  onContact?: () => void;
 };
 
 function ImageFrame({
@@ -348,6 +350,7 @@ export function ProjectContentBlocksView({
   className,
   projectId,
   projectTitle,
+  onContact,
 }: Props) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const items =
@@ -404,6 +407,7 @@ export function ProjectContentBlocksView({
         alt={projectTitle ?? ""}
         projectId={projectId}
         projectTitle={projectTitle}
+        onContact={onContact}
       />
     </div>
   );
