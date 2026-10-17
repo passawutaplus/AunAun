@@ -17,7 +17,7 @@ type State = {
   never: boolean;
 };
 
-const KEY = "samecor_rating_prompt_v1";
+const STORAGE_SLOT = "samecor_rating_prompt_v1";
 const DAY = 86_400_000;
 const MIN_GAP = 5 * DAY;
 const SNOOZE = 3 * DAY;
@@ -37,7 +37,7 @@ const EMPTY: State = {
 
 function read(): State {
   try {
-    const raw = localStorage.getItem(KEY);
+    const raw = localStorage.getItem(STORAGE_SLOT);
     return raw ? { ...EMPTY, ...(JSON.parse(raw) as Partial<State>) } : { ...EMPTY };
   } catch {
     return { ...EMPTY };
@@ -46,7 +46,7 @@ function read(): State {
 
 function write(s: State) {
   try {
-    localStorage.setItem(KEY, JSON.stringify(s));
+    localStorage.setItem(STORAGE_SLOT, JSON.stringify(s));
   } catch {
     /* storage blocked — prompt simply never shows */
   }
