@@ -1,4 +1,6 @@
 import { Link } from "react-router-dom";
+import { InfoHint } from "@/components/tour/InfoHint";
+import { ActionQueueScene } from "@/components/tour/TourScenes";
 import { CalendarClock, ChevronRight, Sparkles } from "lucide-react";
 import { useProfilesByIds } from "@/core/profiles";
 import type { HiringRow } from "@/hooks/useHiringRequests";
@@ -104,10 +106,13 @@ export default function StudioActionQueue({ hire, collab, loading }: { hire: Hir
   const shown = actions.slice(0, MAX_ROWS);
 
   return (
-    <section className="rounded-2xl border border-border/70 bg-card p-4 shadow-sm sm:p-5">
+    <section data-tour="studio-queue" className="rounded-2xl border border-border/70 bg-card p-4 shadow-sm sm:p-5">
       <div className="mb-2 flex items-baseline justify-between gap-3">
-        <h2 className="text-base font-semibold text-foreground">
+        <h2 className="flex items-center gap-1 text-base font-semibold text-foreground">
           {loading ? "ต้องทำก่อน" : actions.length ? `วันนี้มี ${actions.length} เรื่องรอคุณ` : "ไม่มีเรื่องค้าง"}
+          <InfoHint title="รายการนี้มาจากไหน" scene={<ActionQueueScene />}>
+            รวมคำขอจ้างและคำชวนคอลแลปที่ยังไม่ได้ตอบ กับงานจ้างที่ใกล้ถึงกำหนดส่งใน 3 วัน กดปุ่มที่แถวเพื่อเปิดคำขอนั้นตรง ๆ ตอบแล้วรายการจะหายไปเอง
+          </InfoHint>
         </h2>
         {actions.length > MAX_ROWS ? (
           <span className="text-xs text-muted-foreground">แสดง {MAX_ROWS} จาก {actions.length}</span>

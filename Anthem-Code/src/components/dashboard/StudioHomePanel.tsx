@@ -197,7 +197,7 @@ export default function StudioHomePanel({ userId }: Props) {
         </div>
       </section>
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div data-tour="studio-stats" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {stats.map((st) => {
           const Icon = st.icon;
           return (

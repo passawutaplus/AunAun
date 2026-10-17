@@ -1,4 +1,7 @@
 import { useEffect, useState } from "react";
+import { GuideTour } from "@/components/tour/GuideTour";
+import { CHAT_TOUR } from "@/components/tour/tours";
+import { usePageTour } from "@/hooks/usePageTour";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { MessageCircle, RefreshCw } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -166,9 +169,12 @@ const ChatInboxPage = () => {
     </>
   );
 
+  // First visit to chat: short tour of list / cards / Plan & Tasks; "?" in the top bar replays it.
+  const chatTour = usePageTour("chat", true, 1200);
+
   return (
     <main id="main-content" className="chat-paper flex h-[100dvh] flex-col overflow-hidden bg-background">
-      <ChatInboxTopBar />
+      <ChatInboxTopBar onTour={chatTour.start} />
       <div className="flex min-h-0 flex-1">
       <div
         className={cn(
@@ -186,6 +192,7 @@ const ChatInboxPage = () => {
             "md:flex",
           )}
         >
+          <div data-tour="chat-list" className="flex h-full min-h-0 flex-col">
           <ChatSidebar
             selectedId={id}
             tab={tab}
@@ -194,6 +201,7 @@ const ChatInboxPage = () => {
             onSearchChange={setSearch}
             onSelectConversation={selectConversation}
           />
+          </div>
         </div>
 
         <div
@@ -203,7 +211,9 @@ const ChatInboxPage = () => {
             "md:flex",
           )}
         >
-          <ChatErrorBoundary onBack={clearConversation}>{threadContent}</ChatErrorBoundary>
+          <div data-tour={id ? "chat-thread" : undefined} className="flex h-full min-h-0 flex-col">
+            <ChatErrorBoundary onBack={clearConversation}>{threadContent}</ChatErrorBoundary>
+          </div>
         </div>
 
         <div
@@ -214,6 +224,7 @@ const ChatInboxPage = () => {
           aria-hidden={!partnerPanelOpen}
         >
           <motion.div
+            data-tour={partnerPanelOpen && conv ? "chat-side" : undefined}
             className="h-full w-full min-w-[280px] max-w-[340px] ml-auto"
             initial={false}
             animate={
@@ -276,6 +287,7 @@ const ChatInboxPage = () => {
           </>
         )}
       </AnimatePresence>
+      <GuideTour tourId="chat" label="ทัวร์แนะนำแชท" steps={CHAT_TOUR} open={chatTour.open} onClose={chatTour.close} />
     </main>
   );
 };

@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { InfoHint } from "@/components/tour/InfoHint";
+import { RequestStatusScene } from "@/components/tour/TourScenes";
 import { isCommerceEnabled } from "@/lib/aplus1Launch";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -673,6 +675,9 @@ export function ProfileHiringRequestsSection({
           </button>
         ))}
         </div>
+        <InfoHint title="สถานะของคำขอ" scene={<RequestStatusScene />} align="end">
+          คำขอใหม่อยู่ใน “ติดต่อใหม่” พอคุณตอบรับจะย้ายไป “ตอบรับ” และเมื่อจบงาน ปฏิเสธ ยกเลิก หรือส่งต่อ จะรวมอยู่ใน “ปิดแล้ว” ป้ายสีในแต่ละแถวบอกสถานะจริง
+        </InfoHint>
         <InboxSortMenu value={inboxSort} onChange={setInboxSort} />
       </div>
 

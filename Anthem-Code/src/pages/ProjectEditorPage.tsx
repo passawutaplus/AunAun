@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { InfoHint } from "@/components/tour/InfoHint";
 import { noteRatingMoment } from "@/lib/ratingPrompt";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { BookOpenText, CircleHelp, Eye, FileText, Handshake, ShieldCheck, ImagePlus, Loader2, Paperclip, Save, Scale, Tags, X } from "lucide-react";
@@ -96,7 +97,8 @@ import { CanvasTemplatePreviewDialog } from "@/components/project/CanvasTemplate
 import { ProjectSeriesPicker } from "@/components/project/ProjectEditorSearchSelects";
 import { ProjectTaxonomyPicker } from "@/components/project/ProjectTaxonomyPicker";
 import { AddModuleBar } from "@/components/project/AddModuleBar";
-import { EditorTour, hasSeenEditorTour } from "@/components/project/EditorTour";
+import { EditorTour } from "@/components/project/EditorTour";
+import { usePageTour } from "@/hooks/usePageTour";
 import { TemplatePickerDialog } from "@/components/project/TemplatePickerDialog";
 import { useProfile } from "@/hooks/useProfile";
 import { HoverLabelButton } from "@/components/project/HoverLabelButton";
@@ -406,7 +408,6 @@ const ProjectEditorPage = () => {
   const [toolsTab, setToolsTab] = useState<"template" | "module">("module");
   const emptyStartImageInputRef = useRef<HTMLInputElement>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const [tourOpen, setTourOpen] = useState(false);
   const { data: myProfile } = useProfile(user?.id);
   const previewOwnerName =
     (myProfile as { display_name?: string | null; username?: string | null } | null | undefined)?.display_name ??
@@ -414,15 +415,9 @@ const ProjectEditorPage = () => {
     user?.email?.split("@")[0] ??
     "คุณ";
   const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
-  const tourCheckedRef = useRef(false);
-  useEffect(() => {
-    // First-time uploaders get the guided tour once (remembered in this browser only).
-    if (tourCheckedRef.current || authLoading || !user || editing) return;
-    tourCheckedRef.current = true;
-    if (hasSeenEditorTour()) return;
-    const timer = window.setTimeout(() => setTourOpen(true), 800);
-    return () => window.clearTimeout(timer);
-  }, [authLoading, user, editing]);
+  // New uploads only; opens by itself until finished or switched off (lib/guideTours.ts).
+  const editorTour = usePageTour("editor", !authLoading && !!user && !editing, 800);
+
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -3176,6 +3171,19 @@ const ProjectEditorPage = () => {
                   icon={Scale}
                   hint={getLicenseMeta(licenseType).shortLabel}
                 >
+                  <div className="mb-2 flex items-center gap-1 text-xs text-muted-foreground">
+                    บอกคนที่เห็นผลงานว่านำไปใช้ต่อได้แค่ไหน
+                    <InfoHint title="สิทธิ์การใช้งานคืออะไร">
+                      <p>ป้ายนี้ขึ้นบนผลงานของคุณ ให้คนดูรู้ว่าทำอะไรกับงานนี้ได้</p>
+                      <ul className="mt-2 list-disc space-y-1 pl-4">
+                        <li><b className="font-medium text-foreground">สงวนสิทธิ์ทั้งหมด</b> ดูได้อย่างเดียว ห้ามนำไปใช้</li>
+                        <li><b className="font-medium text-foreground">โชว์พอร์ตเท่านั้น</b> งานลูกค้าที่คุณมีสิทธิ์แค่นำมาแสดง</li>
+                        <li><b className="font-medium text-foreground">ใช้ส่วนตัว / อ้างอิงได้</b> ใช้แบบไม่หากำไร หรือใช้เป็นแรงบันดาลใจโดยให้เครดิต</li>
+                        <li><b className="font-medium text-foreground">จ้างงาน / ซื้อสิทธิ์</b> อยากใช้เชิงพาณิชย์ให้ติดต่อคุณก่อน</li>
+                        <li><b className="font-medium text-foreground">เปิดให้ใช้อิสระ</b> ใครก็นำไปใช้ได้</li>
+                      </ul>
+                    </InfoHint>
+                  </div>
                   <LicensePicker
                     hideHeading
                     value={licenseType}
@@ -3239,7 +3247,7 @@ const ProjectEditorPage = () => {
               icon={<CircleHelp className="h-4 w-4" aria-hidden />}
               label="ดูทัวร์แนะนำ"
               className="hidden text-muted-foreground hover:text-foreground sm:inline-flex"
-              onClick={() => setTourOpen(true)}
+              onClick={editorTour.start}
             />
             {isLaunchFullGridEditorEnabled() ? (
               <LayoutGroup id="project-editor-mode">
@@ -3972,7 +3980,7 @@ const ProjectEditorPage = () => {
       <TemplatePickerDialog open={templatePickerOpen} onOpenChange={setTemplatePickerOpen} onPick={pickStarterTemplate} />
 
       <EditorTour
-        open={tourOpen}
+        open={editorTour.open}
         facts={{
           hasImage: countMediaByKind(mediaItemsFromBlocks(contentBlocks), "image") > 0,
           title,
@@ -3980,7 +3988,7 @@ const ProjectEditorPage = () => {
           shortDescription,
           detailsOpen,
         }}
-        onClose={() => setTourOpen(false)}
+        onClose={editorTour.close}
         onOpenDetails={() => setDetailsOpen(true)}
       />
 

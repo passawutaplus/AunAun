@@ -193,6 +193,7 @@ const FloatingNav = () => {
         <button
           type="button"
           onClick={openCreate}
+          data-tour="create"
           aria-label="ลงผลงาน"
           className={cn(
             "pointer-events-auto flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-white shadow-sm transition-all duration-200 ease-out hover:opacity-90 active:scale-95",

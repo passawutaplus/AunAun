@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { GuideToursCard } from "@/components/settings/GuideToursCard";
 import { Link } from "react-router-dom";
 import { ChevronRight, Flag, MessageSquareHeart, ScrollText } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -46,6 +47,8 @@ export function FeedbackReportsSection() {
           </label>
         </div>
       </SettingsCard>
+
+      <GuideToursCard />
 
       <SettingsCard title="ที่ส่งไปแล้ว">
         <div className="grid gap-2 sm:grid-cols-3">

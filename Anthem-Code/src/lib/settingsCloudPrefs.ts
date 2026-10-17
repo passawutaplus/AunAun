@@ -12,6 +12,8 @@ export type CloudPrefs = {
   locale?: AppLocale;
   timezone?: string;
   ratingPromptOff?: boolean;
+  /** Guide tour progress per page (see lib/guideTours.ts) */
+  tours?: Record<string, { v: number; done?: boolean; off?: boolean }>;
 };
 
 const cacheKey = (userId: string) => `samecor:cloud-prefs:${userId}`;

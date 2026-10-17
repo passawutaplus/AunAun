@@ -84,6 +84,10 @@ import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
 import { DESIGN_DRILL_CHIP } from "@/lib/drillProject";
 import { markOnboardingVisit, type OnboardingVisitId } from "@/lib/onboardingStorage";
 import { rankProjectsForSearch } from "@/lib/projectSearchRank";
+import { GuideTour } from "@/components/tour/GuideTour";
+import { TourHelpButton } from "@/components/tour/TourHelpButton";
+import { HOME_TOUR } from "@/components/tour/tours";
+import { usePageTour } from "@/hooks/usePageTour";
 
 type FeedMode2 = "Explore" | SpecialFilter;
 const requiresAuth = (m: FeedMode2) => m === "Following";
@@ -798,6 +802,9 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
     setCollabOpen(true);
   };
 
+  // First-visit home tour (everyone, guests too); "?" bottom-left replays it.
+  const homeTour = usePageTour("home", !projectsLoading);
+
   return (
     <main
       id="main-content"
@@ -824,6 +831,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
               : undefined
           }
         >
+        <div data-tour="home-toolbar">
         <FeedToolbar
           mode={mode}
           onModeChange={changeMode}
@@ -891,6 +899,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
           drillActive={isDrillView}
           onDrillSelect={openDrill}
         />
+        </div>
 
         <FeedModeTransition
           modeKey={feedPanelKey}
@@ -975,6 +984,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
                   กำลังเทียบสีจากปกผลงาน
                 </p>
               ) : null}
+              <div data-tour="home-feed">
               <FeedProjectGrid masonry>
                 {feedItems.map((item) =>
                   item.kind === "ad" ? (
@@ -1011,6 +1021,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
                   )
                 )}
               </FeedProjectGrid>
+              </div>
 
               {!colorMatch.pending && filtered.length === 0 && (
                 <FilterEmptyState
@@ -1076,6 +1087,8 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
         projectTitle={collabTarget.projectTitle}
         projectCoverUrl={collabTarget.projectCoverUrl}
       />
+      <TourHelpButton onClick={homeTour.start} className="fixed bottom-6 left-4 z-30 shadow-sm max-sm:bottom-24" />
+      <GuideTour tourId="home" label="ทัวร์แนะนำหน้าแรก" steps={HOME_TOUR} open={homeTour.open} onClose={homeTour.close} />
     </main>
   );
 };

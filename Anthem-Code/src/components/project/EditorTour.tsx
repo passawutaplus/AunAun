@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { markTourDone, turnTourOff } from "@/lib/guideTours";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -6,24 +8,7 @@ import { TourMascot } from "@/components/project/TourMascot";
 import { ModulesScene, SCENES_CSS, TemplatesScene } from "@/components/project/EditorInfoScenes";
 import { cn } from "@/lib/utils";
 
-const STORAGE_KEY = "samecor.uploadTour.v1";
 export const TOUR_DIALOG_SLOT_ID = "editor-tour-dialog-slot";
-
-export function hasSeenEditorTour(): boolean {
-  try {
-    return localStorage.getItem(STORAGE_KEY) === "done";
-  } catch {
-    return false;
-  }
-}
-
-function markEditorTourSeen(): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, "done");
-  } catch {
-    /* private mode — the tour may show again, which is harmless */
-  }
-}
 
 export type TourFacts = {
   hasImage: boolean;
@@ -162,6 +147,7 @@ type Props = {
  * (drop an image, name it, pick a category…), stopping just before "publish".
  */
 export function EditorTour({ open, facts, onClose, onOpenDetails }: Props) {
+  const { user } = useAuth();
   const steps = useMemo(() => (open ? stepsForViewport() : []), [open]);
   const [index, setIndex] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
@@ -172,20 +158,26 @@ export function EditorTour({ open, facts, onClose, onOpenDetails }: Props) {
     if (open) setIndex(0);
   }, [open]);
 
-  const close = useCallback(() => {
-    markEditorTourSeen();
+  // ✕ hides it for this visit; only finishing the last step (or "ไม่ต้องแสดงอีก") stops it for good.
+  const close = useCallback(() => onClose(), [onClose]);
+  const finish = useCallback(() => {
+    void markTourDone(user?.id, "editor");
     onClose();
-  }, [onClose]);
+  }, [onClose, user?.id]);
+  const neverAgain = useCallback(() => {
+    void turnTourOff(user?.id, "editor");
+    onClose();
+  }, [onClose, user?.id]);
 
   const advance = useCallback(() => {
     setIndex((i) => {
       if (i + 1 >= steps.length) {
-        window.setTimeout(close, 0);
+        window.setTimeout(finish, 0);
         return i;
       }
       return i + 1;
     });
-  }, [steps.length, close]);
+  }, [steps.length, finish]);
 
   // Steps whose job is already done (an image is already there, the dialog is already open…) are skipped.
   useEffect(() => {
@@ -291,6 +283,15 @@ export function EditorTour({ open, facts, onClose, onOpenDetails }: Props) {
           </Button>
         ) : null}
       </div>
+      {index < steps.length - 1 ? (
+        <button
+          type="button"
+          onClick={neverAgain}
+          className="mt-2 text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+        >
+          ไม่ต้องแสดงอีก
+        </button>
+      ) : null}
     </div>
   );
 
