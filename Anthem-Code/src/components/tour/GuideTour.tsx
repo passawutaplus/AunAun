@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { ChevronLeft, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -32,16 +32,23 @@ type Props = {
   onClose: () => void;
 };
 
-function placeCard(rect: DOMRect | null, wide: boolean): React.CSSProperties {
+/** Phones: room kept clear for the sticky top bar and the floating bottom nav. */
+const PHONE_TOP = 72;
+const PHONE_BOTTOM = 104;
+
+function placeCard(rect: DOMRect | null, wide: boolean, cardH: number): React.CSSProperties {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
   if (vw < 640) {
-    // Phones: centred when nothing is highlighted; otherwise right next to the highlight on the roomier side.
+    // Phones: centred when nothing is highlighted. Otherwise the highlight is scrolled near the top (see the
+    // scroll effect) and the card sits right under it; if that does not fit, above it; last resort, above the nav.
     const side = { left: 16, right: 16 };
     if (!rect) return { ...side, top: "50%", transform: "translateY(-50%)" };
-    const mid = rect.top + rect.height / 2;
-    if (mid < vh / 2) return { ...side, top: Math.min(rect.bottom + 16, vh * 0.42) };
-    return { ...side, bottom: Math.min(vh - rect.top + 16, vh * 0.58) };
+    const below = rect.bottom + 16;
+    if (below + cardH <= vh - PHONE_BOTTOM) return { ...side, top: below };
+    const above = rect.top - 16 - cardH;
+    if (above >= PHONE_TOP - 56) return { ...side, top: above };
+    return { ...side, bottom: PHONE_BOTTOM };
   }
   const W = wide ? 360 : 320;
   const H = wide ? 330 : 210;
@@ -69,6 +76,7 @@ export function GuideTour({ tourId, label, steps: allSteps, open, onClose }: Pro
   const { user } = useAuth();
   const [index, setIndex] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
+  const [cardH, setCardH] = useState(220);
   const cardRef = useRef<HTMLDivElement>(null);
 
   const steps = useMemo(
@@ -121,10 +129,22 @@ export function GuideTour({ tourId, label, steps: allSteps, open, onClose }: Pro
     }
     const measure = () => {
       const el = findTarget(step.target as string);
-      setRect(el ? el.getBoundingClientRect() : null);
+      if (!el) return setRect(null);
+      const r = el.getBoundingClientRect();
+      // Phones: a target taller than half the screen (e.g. the whole feed) is spotlit only at its top,
+      // so the card can sit below it instead of covering what it describes.
+      const cap = window.innerHeight * 0.3;
+      setRect(window.innerWidth < 640 && r.height > window.innerHeight * 0.5 ? new DOMRect(r.x, r.y, r.width, cap) : r);
     };
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    findTarget(step.target)?.scrollIntoView({ block: "center", behavior: reduced ? "auto" : "smooth" });
+    const el = findTarget(step.target);
+    if (el && window.innerWidth < 640) {
+      // Phones: bring the highlight up under the top bar so the card has room below it.
+      const top = el.getBoundingClientRect().top;
+      window.scrollBy({ top: top - PHONE_TOP, behavior: reduced ? "auto" : "smooth" });
+    } else {
+      el?.scrollIntoView({ block: "center", behavior: reduced ? "auto" : "smooth" });
+    }
     measure();
     const timer = window.setInterval(measure, 250);
     window.addEventListener("resize", measure);
@@ -145,6 +165,12 @@ export function GuideTour({ tourId, label, steps: allSteps, open, onClose }: Pro
     if (open) cardRef.current?.focus();
   }, [open, index]);
 
+  // Real card height, so the phone layout can keep it off the highlight.
+  useLayoutEffect(() => {
+    const h = cardRef.current?.offsetHeight;
+    if (h && Math.abs(h - cardH) > 4) setCardH(h);
+  });
+
   if (!open || !step) return null;
 
   const wide = !!step.scene;
@@ -161,7 +187,7 @@ export function GuideTour({ tourId, label, steps: allSteps, open, onClose }: Pro
             "pointer-events-auto fixed z-[70] max-w-[calc(100vw-24px)] rounded-2xl border border-border bg-card p-4 text-left shadow-sm outline-none max-sm:w-auto",
             wide ? "w-[360px]" : "w-[320px]",
           )}
-          style={placeCard(rect, wide)}
+          style={placeCard(rect, wide, cardH)}
         >
           {index === 0 ? <TourMascot /> : null}
           <div className="mb-1 flex items-start justify-between gap-2">
