@@ -6,7 +6,9 @@ import PackagesIcon from "@/components/icons/PackagesIcon";
 import Footer from "@/components/Footer";
 import SeoHead from "@/components/SeoHead";
 import { BrandLogo } from "@/components/brand/BrandLogo";
+import { LearnContactStage } from "@/components/learn/LearnContactStage";
 import { LearnConversationStage } from "@/components/learn/LearnConversationStage";
+import { LearnRoadmapStage } from "@/components/learn/LearnRoadmapStage";
 import { LearnDesignersStage, type LearnDesigner } from "@/components/learn/LearnDesignersStage";
 import { LearnEarnMap } from "@/components/learn/LearnEarnMap";
 import { LearnObjectsStage } from "@/components/learn/LearnObjectsStage";
@@ -50,7 +52,7 @@ function heroWordStyle(word: LearnHeroWord): CSSProperties {
 
 function HeroBlurb() {
   return (
-    <p className="relative z-30 mx-auto mt-8 flex max-w-[20rem] flex-col items-center gap-y-1 text-center text-[#2f2e2c] sm:mt-10 sm:max-w-2xl sm:gap-y-1.5">
+    <p className="relative z-30 mx-auto mt-8 flex max-w-[20rem] flex-col items-center gap-y-1 text-center text-foreground sm:mt-10 sm:max-w-2xl sm:gap-y-1.5">
       {LEARN_HERO_LOCKUP.map((line) => (
         <span
           key={line.map((word) => word.text).join(" ")}
@@ -92,7 +94,7 @@ function PlusLink({
     <Link
       to={to}
       className={cn(
-        "inline-flex min-h-11 items-center gap-2 text-sm text-[#2f2e2c] underline decoration-[#2f2e2c]/25 underline-offset-4 hover:decoration-[#2f2e2c]",
+        "inline-flex min-h-11 items-center gap-2 text-sm text-foreground underline decoration-brand underline-offset-4 hover:decoration-foreground",
         className,
       )}
     >
@@ -126,7 +128,7 @@ function LearnModePill({
     <div
       role="tablist"
       aria-label="Site modes"
-      className="flex max-w-full min-w-0 items-center overflow-x-auto rounded-full border border-[#e4e1db] bg-white p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      className="flex max-w-full min-w-0 items-center overflow-x-auto rounded-full border border-border bg-white p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
     >
       {VISIBLE_LEARN_MODES.map((mode) => {
         const selected = mode.id === active;
@@ -139,17 +141,17 @@ function LearnModePill({
             aria-selected={selected}
             onClick={() => onSelect(mode.id)}
             className={cn(
-              "relative flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-medium outline-none focus-visible:ring-2 focus-visible:ring-[#2f2e2c] sm:px-3",
-              selected ? "text-white" : "text-[#2f2e2c]/70 hover:text-[#2f2e2c]",
+              "relative flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-3",
+              selected ? "text-white" : "text-foreground/70 hover:text-foreground",
             )}
           >
             {selected ? (
               reduced ? (
-                <span className="absolute inset-0 rounded-full bg-[#2f2e2c]" aria-hidden />
+                <span className="absolute inset-0 rounded-full bg-foreground" aria-hidden />
               ) : (
                 <motion.span
                   layoutId="learn-mode-pill"
-                  className="absolute inset-0 rounded-full bg-[#2f2e2c]"
+                  className="absolute inset-0 rounded-full bg-foreground"
                   transition={{ type: "spring", stiffness: 380, damping: 34, mass: 0.7 }}
                   aria-hidden
                 />
@@ -275,7 +277,7 @@ function HeroFloaters({
         {images.slice(0, FLOAT_REST.length).map((src, index) => (
           <div
             key={`${src}-${index}`}
-            className="absolute overflow-hidden rounded-md bg-[#e4e1db]"
+            className="absolute overflow-hidden rounded-md bg-border"
             style={{
               width: FLOAT_SIZES[index],
               height: FLOAT_SIZES[index] * 1.12,
@@ -299,7 +301,7 @@ function HeroFloaters({
           ref={(node) => {
             nodes.current[index] = node;
           }}
-          className="absolute left-0 top-0 overflow-hidden rounded-md bg-[#e4e1db] opacity-0 shadow-[0_10px_30px_rgba(47,46,44,0.08)] [transform:translate(-50%,-50%)]"
+          className="absolute left-0 top-0 overflow-hidden rounded-md bg-border opacity-0 shadow-[0_10px_30px_rgba(47,46,44,0.08)] [transform:translate(-50%,-50%)]"
           style={{ width: FLOAT_SIZES[index], height: FLOAT_SIZES[index] * 1.12 }}
         >
           <img alt="" className="h-full w-full object-cover" draggable={false} />
@@ -310,7 +312,7 @@ function HeroFloaters({
 }
 
 const PROJECT_WORD =
-  "pointer-events-none block whitespace-nowrap bg-[#f5f5f5] text-center text-[clamp(3.4rem,11vw,8.5rem)] font-medium leading-[0.82] tracking-[-0.06em] text-[#2f2e2c]";
+  "pointer-events-none block whitespace-nowrap bg-background text-center text-[clamp(3.4rem,11vw,8.5rem)] font-medium leading-[0.82] tracking-[-0.06em] text-foreground";
 
 const OLD_ITALIC: CSSProperties = {
   fontFamily: '"Newsreader", "Iowan Old Style", Palatino, Georgia, serif',
@@ -324,8 +326,8 @@ function ProjectMeta({ project }: { project: DBProject }) {
   const meta = [yearOf(project.created_at), project.category].filter(Boolean).join(" \\ ");
   return (
     <span className="mt-4 flex items-baseline justify-between gap-6 text-sm">
-      <span className="text-[#6b6862]">{meta}</span>
-      <span className="min-w-0 truncate text-right text-base text-[#2f2e2c]">{project.title}</span>
+      <span className="text-muted-foreground">{meta}</span>
+      <span className="min-w-0 truncate text-right text-base text-foreground">{project.title}</span>
     </span>
   );
 }
@@ -374,11 +376,11 @@ function ProjectSplitStage({ projects, loading }: { projects: DBProject[]; loadi
   if (loading) {
     return (
       <div className="px-4 py-16 text-center lg:py-24">
-        <p className="text-[clamp(1.7rem,3.2vw,2.5rem)] text-[#2f2e2c]" style={OLD_ITALIC}>
+        <p className="text-[clamp(1.7rem,3.2vw,2.5rem)] text-foreground" style={OLD_ITALIC}>
           Start from
         </p>
         <h2 className="mt-2 text-[clamp(3.4rem,11vw,8.5rem)] font-medium leading-[0.82] tracking-[-0.06em]">Projects</h2>
-        <div className="mx-auto mt-10 aspect-[16/10] max-w-5xl animate-pulse rounded-[1.25rem] bg-[#e4e1db]" />
+        <div className="mx-auto mt-10 aspect-[16/10] max-w-5xl animate-pulse rounded-[1.25rem] bg-border" />
       </div>
     );
   }
@@ -386,13 +388,13 @@ function ProjectSplitStage({ projects, loading }: { projects: DBProject[]; loadi
   if (slides.length === 0) {
     return (
       <div className="px-4 py-16 text-center lg:py-24">
-        <p className="text-[clamp(1.7rem,3.2vw,2.5rem)] text-[#2f2e2c]" style={OLD_ITALIC}>
+        <p className="text-[clamp(1.7rem,3.2vw,2.5rem)] text-foreground" style={OLD_ITALIC}>
           Start from
         </p>
         <h2 className="mt-2 text-[clamp(3.4rem,11vw,8.5rem)] font-medium leading-[0.82] tracking-[-0.06em]">Projects</h2>
-        <p className="mx-auto mt-8 max-w-md text-[#6b6862]">
+        <p className="mx-auto mt-8 max-w-md text-muted-foreground">
           No public work to show here yet —{" "}
-          <Link to="/" className="text-[#2f2e2c] underline underline-offset-4">
+          <Link to="/" className="text-foreground underline underline-offset-4">
             open Explore
           </Link>
         </p>
@@ -403,11 +405,11 @@ function ProjectSplitStage({ projects, loading }: { projects: DBProject[]; loadi
   if (reduced) {
     return (
       <div className="px-4 py-16 text-center sm:px-6 lg:py-24">
-        <p className="text-[clamp(1.7rem,3.2vw,2.5rem)] text-[#2f2e2c]" style={OLD_ITALIC}>
+        <p className="text-[clamp(1.7rem,3.2vw,2.5rem)] text-foreground" style={OLD_ITALIC}>
           Start from
         </p>
         <h2 className="mt-2 text-[clamp(3.4rem,11vw,8.5rem)] font-medium leading-[0.82] tracking-[-0.06em]">Projects</h2>
-        <p className="mx-auto mt-5 max-w-sm text-[11px] uppercase leading-[1.7] tracking-[0.16em] text-[#6b6862]">
+        <p className="mx-auto mt-5 max-w-sm text-[11px] uppercase leading-[1.7] tracking-[0.16em] text-muted-foreground">
           A curated set of projects. Real style, real context, ready to start from.
         </p>
         <PlusLink to="/" className="mt-4">
@@ -417,7 +419,7 @@ function ProjectSplitStage({ projects, loading }: { projects: DBProject[]; loadi
           {slides.map((project) => (
             <li key={project.id}>
               <Link to={`/project/${project.id}`} className="group block">
-                <span className="block overflow-hidden rounded-[1.25rem] bg-[#e4e1db]">
+                <span className="block overflow-hidden rounded-[1.25rem] bg-border">
                   <img
                     src={optimizedFeedImageUrl(coverOf(project), { width: 1600, quality: 74, natural: false })}
                     alt={project.title || "Project"}
@@ -441,7 +443,7 @@ function ProjectSplitStage({ projects, loading }: { projects: DBProject[]; loadi
       <div className="sticky top-0 flex h-[100dvh] items-center justify-center overflow-hidden">
         <div className="relative flex w-full flex-col items-center px-4">
           <motion.p
-            className="mb-2 text-[clamp(1.7rem,3.2vw,2.6rem)] leading-none tracking-[-0.03em] text-[#2f2e2c]"
+            className="mb-2 text-[clamp(1.7rem,3.2vw,2.6rem)] leading-none tracking-[-0.03em] text-foreground"
             style={{ ...OLD_ITALIC, opacity: startOpacity }}
           >
             Start from
@@ -461,7 +463,7 @@ function ProjectSplitStage({ projects, loading }: { projects: DBProject[]; loadi
                     <img
                       src={optimizedFeedImageUrl(coverOf(project), { width: 1600, quality: 74, natural: false })}
                       alt={project.title || "Project"}
-                      className="h-full w-full rounded-[1.25rem] bg-[#e4e1db] object-cover"
+                      className="h-full w-full rounded-[1.25rem] bg-border object-cover"
                       draggable={false}
                     />
                   </Link>
@@ -489,7 +491,7 @@ function ProjectSplitStage({ projects, loading }: { projects: DBProject[]; loadi
             </motion.div>
           </div>
           <motion.div className="mt-5 text-center" style={{ opacity: subOpacity, pointerEvents: subPointer }}>
-            <p className="mx-auto max-w-sm text-[11px] uppercase leading-[1.7] tracking-[0.16em] text-[#6b6862]">
+            <p className="mx-auto max-w-sm text-[11px] uppercase leading-[1.7] tracking-[0.16em] text-muted-foreground">
               A curated set of projects. Real style, real context, ready to start from.
             </p>
             <PlusLink to="/" className="mt-4">
@@ -591,13 +593,13 @@ export default function LearnHubPage() {
       />
 
       <header className="fixed inset-x-0 top-0 z-40 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3 px-4 py-4 sm:px-8">
-        <Link to="/" className="relative z-10 shrink-0 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-[#2f2e2c]" aria-label={`${BRAND_NAME} home`}>
+        <Link to="/" className="relative z-10 shrink-0 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={`${BRAND_NAME} home`}>
           <BrandLogo size="sm" tone="ink" />
         </Link>
         <div className="flex min-w-0 items-center justify-end gap-2">
           <Link
             to="/"
-            className="shrink-0 px-1 text-sm text-[#2f2e2c] outline-none transition-opacity hover:opacity-60 focus-visible:ring-2 focus-visible:ring-[#2f2e2c]"
+            className="shrink-0 px-1 text-sm text-foreground outline-none transition-opacity hover:opacity-60 focus-visible:ring-2 focus-visible:ring-ring"
           >
             Home
           </Link>
@@ -605,10 +607,10 @@ export default function LearnHubPage() {
         </div>
       </header>
 
-      <section ref={heroRef} className="relative z-10 flex min-h-[100dvh] flex-col overflow-hidden bg-[#f5f5f5]">
+      <section ref={heroRef} className="relative z-10 flex min-h-[100dvh] flex-col overflow-hidden bg-background">
         <HeroFloaters images={floatImages} hostRef={heroRef} />
         <div className="pointer-events-none flex flex-1 flex-col items-center justify-center px-4 pb-16 pt-24 text-center">
-          <h1 className="relative z-10 text-[clamp(4.6rem,16vw,12.5rem)] font-medium leading-[0.82] tracking-[-0.07em] text-[#2f2e2c]">
+          <h1 className="relative z-10 text-[clamp(4.6rem,16vw,12.5rem)] font-medium leading-[0.82] tracking-[-0.07em] text-foreground">
             {BRAND_NAME}
           </h1>
           <HeroBlurb />
@@ -658,21 +660,21 @@ export default function LearnHubPage() {
       <section id="trust" className="scroll-mt-32 px-4 py-14 sm:px-6 lg:px-10 lg:py-20">
         <div className="mx-auto grid max-w-[80rem] gap-10 lg:grid-cols-[minmax(0,20rem)_1fr] lg:gap-16">
           <div>
-            <h2 className="text-[clamp(2.4rem,5.5vw,4.5rem)] font-normal leading-[0.9] tracking-[-0.04em]">
+            <h2 className="font-display text-[clamp(2.4rem,5.5vw,4.5rem)] font-light leading-[1.05] tracking-[-0.02em]">
               FAQ
             </h2>
-            <p className="mt-4 max-w-xs text-sm leading-relaxed text-[#6b6862]">
-              If the answer is not here, the Help Center has the steps, or write to the team.
+            <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted-foreground">
+              ไม่เจอคำตอบที่นี่ ดูขั้นตอนใน Help Center หรือทักทีมได้ทางช่องทางด้านล่าง
             </p>
             <PlusLink to="/help" className="mt-2">
               Help Center
             </PlusLink>
           </div>
           <div>
-            <div className="border-b border-[#e4e1db]">
+            <div className="border-b border-border">
               {faq.map((item) => (
-                <details key={item.id} className="group border-t border-[#e4e1db]">
-                  <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-6 py-4 text-left text-base text-[#2f2e2c] sm:text-lg [&::-webkit-details-marker]:hidden">
+                <details key={item.id} className="group border-t border-border">
+                  <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-6 py-4 text-left text-base text-foreground sm:text-lg [&::-webkit-details-marker]:hidden">
                     {item.q}
                     <span className="text-2xl leading-none group-open:hidden" aria-hidden>
                       +
@@ -681,20 +683,28 @@ export default function LearnHubPage() {
                       –
                     </span>
                   </summary>
-                  <p className="max-w-2xl pb-5 text-sm leading-relaxed text-[#6b6862]">{item.a}</p>
+                  <p className="max-w-2xl pb-5 text-sm leading-relaxed text-muted-foreground">{item.a}</p>
                 </details>
               ))}
             </div>
             <dl className="mt-10 grid gap-x-8 sm:grid-cols-2">
               {glossary.map((item) => (
-                <div key={item.term} className="border-t border-[#e4e1db] py-4">
-                  <dt className="text-sm text-[#2f2e2c]">{item.term}</dt>
-                  <dd className="mt-1 text-sm text-[#6b6862]">{item.meaning}</dd>
+                <div key={item.term} className="border-t border-border py-4">
+                  <dt className="text-sm text-foreground">{item.term}</dt>
+                  <dd className="mt-1 text-sm text-muted-foreground">{item.meaning}</dd>
                 </div>
               ))}
             </dl>
           </div>
         </div>
+      </section>
+
+      <section id="contact" className="scroll-mt-24 border-t border-border">
+        <LearnContactStage />
+      </section>
+
+      <section id="coming-next" className="scroll-mt-24">
+        <LearnRoadmapStage />
       </section>
 
       <Footer className="mt-0" />
