@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import FeedbackKindBadge from "@/components/feedback/FeedbackKindBadge";
 import FeedbackScreenshotThumb from "@/components/feedback/FeedbackScreenshotThumb";
 import { useOpenFeedbackTicket } from "@/hooks/useOpenFeedbackTicket";
+import { useAuth } from "@/hooks/useAuth";
+import BetaProgress from "@/components/beta/BetaProgress";
 
 const STATUS_TONE: Record<string, string> = {
   new: "bg-orange-500/15 text-orange-500 border-orange-500/30",
@@ -27,6 +29,7 @@ const STATUS_LABEL: Record<string, string> = {
 const MyFeedbackPage = () => {
   const { data: rows = [], isLoading } = useMyFeedback();
   const openFeedback = useOpenFeedbackTicket();
+  const { user } = useAuth();
 
   return (
     <div className="container max-w-3xl mx-auto px-4 py-6 pb-24">
@@ -36,18 +39,25 @@ const MyFeedbackPage = () => {
           <MessageSquare className="w-5 h-5 text-primary" />
           <h1 className="text-2xl font-semibold">ฟีดแบ็กของฉัน</h1>
         </div>
-        <Button size="sm" onClick={openFeedback}>
+        <Button size="sm" onClick={() => openFeedback()}>
           ส่งฟีดแบ็ก
         </Button>
       </div>
-      <p className="text-sm text-muted-foreground mb-6">ตั๋วที่คุณส่งและสถานะการพิจารณา</p>
+      <p className="text-sm text-muted-foreground mb-4">ตั๋วที่คุณส่งและสถานะการพิจารณา</p>
+      <Card className="mb-6 p-4">
+        <BetaProgress userId={user?.id} />
+        <p className="mt-2 text-[11px] text-muted-foreground">
+          นับฟีดแบ็กที่มีข้อความ สูงสุด 3 ครั้งต่อวัน · 1 = Beta Tester · 5 = Beta Builder · 15 = Core Builder ·
+          ไอเดียถูกนำไปใช้ = Co-creator
+        </p>
+      </Card>
 
       {isLoading ? (
         <InlineLoader />
       ) : rows.length === 0 ? (
         <Card className="p-8 text-center">
           <p className="text-sm text-muted-foreground">ยังไม่เคยส่งฟีดแบ็ก</p>
-          <Button className="mt-3" onClick={openFeedback}>
+          <Button className="mt-3" onClick={() => openFeedback()}>
             ส่งฟีดแบ็ก
           </Button>
           <Button asChild variant="link" className="mt-1">

@@ -1,22 +1,27 @@
-export const FEEDBACK_KINDS = ["bug", "idea", "error"] as const;
+export const FEEDBACK_KINDS = ["idea", "bug", "ux", "praise", "error", "rating"] as const;
 export type FeedbackKind = (typeof FEEDBACK_KINDS)[number];
 
 export const FEEDBACK_KIND_LABELS: Record<FeedbackKind, string> = {
-  bug: "บั๊ก",
   idea: "ไอเดีย",
+  bug: "เจอบั๊ก",
+  ux: "ใช้ยาก",
+  praise: "ชอบ",
   error: "พังทั้งหน้า",
+  rating: "ให้คะแนน",
 };
 
+/** Chips shown in the composer (error/rating are legacy or prompt-only). */
 export const FEEDBACK_KIND_OPTIONS: { value: FeedbackKind; label: string; chip: string; hint: string }[] = [
-  { value: "bug", label: "บั๊ก", chip: "Bug", hint: "ปุ่มพัง หรือแสดงผิด" },
-  { value: "idea", label: "ไอเดีย", chip: "Idea", hint: "อยากได้ฟีเจอร์ใหม่" },
-  { value: "error", label: "พังทั้งหน้า", chip: "Error", hint: "หน้าขาว ส่งไม่ได้ โหลดไม่ขึ้น" },
+  { value: "idea", label: "ไอเดีย", chip: "ไอเดีย", hint: "อยากได้ฟีเจอร์ใหม่ หรืออยากให้ปรับ" },
+  { value: "bug", label: "เจอบั๊ก", chip: "เจอบั๊ก", hint: "ปุ่มพัง แสดงผิด โหลดไม่ขึ้น" },
+  { value: "ux", label: "ใช้ยาก", chip: "ใช้ยาก", hint: "หาไม่เจอ งง ไม่รู้ต้องกดตรงไหน" },
+  { value: "praise", label: "ชอบ", chip: "ชอบ", hint: "ส่วนไหนที่ชอบ อยากให้เก็บไว้" },
 ];
 
 export const FEEDBACK_SCREENSHOT_BUCKET = "feedback-screenshots";
 
 export function isFeedbackKind(value: string | null | undefined): value is FeedbackKind {
-  return value === "bug" || value === "idea" || value === "error";
+  return !!value && (FEEDBACK_KINDS as readonly string[]).includes(value);
 }
 
 export function encodeFeedbackScreenshotRef(path: string): string {

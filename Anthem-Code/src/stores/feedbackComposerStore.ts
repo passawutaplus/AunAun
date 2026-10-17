@@ -10,17 +10,18 @@ export type FeedbackCapture = {
 };
 
 export type FeedbackDraft = {
-  title: string;
   rating: number | null;
-  kind: FeedbackKind | null;
+  kind: FeedbackKind;
   message: string;
+  /** null = use the feature of the current route. */
+  feature: string | null;
 };
 
 const emptyDraft = (): FeedbackDraft => ({
-  title: "",
   rating: null,
-  kind: null,
+  kind: "idea",
   message: "",
+  feature: null,
 });
 
 const newCaptureId = () =>
@@ -34,7 +35,8 @@ type FeedbackComposerState = {
   annotatingId: string | null;
   capturing: boolean;
   draft: FeedbackDraft;
-  openForm: () => void;
+  openForm: (preset?: Partial<FeedbackDraft>) => void;
+  addCapture: (dataUrl: string) => void;
   startSnip: () => void;
   cancelSnip: () => void;
   beginCompose: (imageDataUrl: string | null) => void;
@@ -53,14 +55,16 @@ export const useFeedbackComposer = create<FeedbackComposerState>((set) => ({
   annotatingId: null,
   capturing: false,
   draft: emptyDraft(),
-  openForm: () =>
+  openForm: (preset) =>
     set({
       phase: "compose",
       captures: [],
       annotatingId: null,
       capturing: false,
-      draft: emptyDraft(),
+      draft: { ...emptyDraft(), ...preset },
     }),
+  addCapture: (dataUrl) =>
+    set((s) => ({ captures: [...s.captures, { id: newCaptureId(), dataUrl, comments: [] }] })),
   startSnip: () => set({ phase: "snip", capturing: false, annotatingId: null }),
   cancelSnip: () => set({ phase: "compose", capturing: false }),
   beginCompose: (imageDataUrl) =>

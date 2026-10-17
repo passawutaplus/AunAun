@@ -32,6 +32,7 @@ type FeedbackRow = {
   ticket_number: string | null;
   screenshot_path: string;
   annotation_json?: unknown;
+  diagnostics?: { build?: string; viewport?: string; errors?: { at: string; text: string }[] } | null;
 };
 
 type UxResearchRow = {
@@ -58,6 +59,7 @@ const STATUS_LABEL: Record<string, string> = {
   all: "ทุกสถานะ",
   new: "ใหม่",
   reviewing: "กำลังดู",
+  adopted: "นำไปใช้",
   resolved: "แก้แล้ว",
   dismissed: "ปิด",
 };
@@ -287,6 +289,23 @@ export default function AdminFeedbackPage() {
       ),
     },
     {
+      key: "diag",
+      header: "เครื่อง",
+      render: (r) => {
+        const d = r.diagnostics;
+        const errors = d?.errors ?? [];
+        return (
+          <span
+            className="font-mono text-[10px] text-admin-muted"
+            title={[r.user_agent, ...errors.map((e) => `${e.at}  ${e.text}`)].filter(Boolean).join("\n")}
+          >
+            {d?.build ?? "—"} · {d?.viewport || r.viewport || "—"}
+            {errors.length ? <span className="ml-1 text-red-600">{errors.length} err</span> : null}
+          </span>
+        );
+      },
+    },
+    {
       key: "status",
       header: "สถานะ",
       render: (r) => (
@@ -295,7 +314,7 @@ export default function AdminFeedbackPage() {
           onChange={(e) => update.mutate({ id: r.id, patch: { status: e.target.value } })}
           className="text-xs bg-background border border-border rounded px-1.5 py-0.5"
         >
-          {["new", "reviewing", "resolved", "dismissed"].map((s) => (
+          {["new", "reviewing", "adopted", "resolved", "dismissed"].map((s) => (
             <option key={s} value={s}>{STATUS_LABEL[s] ?? s}</option>
           ))}
         </select>

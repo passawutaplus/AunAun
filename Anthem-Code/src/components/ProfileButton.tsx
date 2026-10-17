@@ -3,6 +3,7 @@ import { ChevronDown, User } from "lucide-react";
 import WalletBadge from "@/components/gifting/WalletBadge";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import ChatNavButton from "@/components/chat/ChatNavButton";
+import FeedbackHeaderPill from "@/components/feedback/FeedbackHeaderPill";
 import JobsNavButton from "@/components/jobs/JobsNavButton";
 import { ProfileMenuDropdown } from "@/components/ProfileMenuDropdown";
 import { useNavigate } from "react-router-dom";
@@ -80,6 +81,7 @@ const ProfileButton = ({ className, fillRail = false, accountOnly = false }: Pro
     }
     return (
       <div className={cn("flex shrink-0 items-center gap-0.5", className)}>
+        <FeedbackHeaderPill className="mr-1" />
         <ChatNavButton />
         <NotificationBell />
         {accountMenu}
@@ -108,6 +110,7 @@ const ProfileButton = ({ className, fillRail = false, accountOnly = false }: Pro
     <div className={cn("flex items-center gap-1.5", fillRail && "min-w-0 flex-1", className)}>
       <div className={cn("hidden lg:flex items-center gap-1.5", fillRail && "min-w-0 flex-1")}>
         <JobsNavButton />
+        <FeedbackHeaderPill />
         <div
           className={cn(
             "flex items-center rounded-full glass-chip py-1 hover:shadow-md hover:shadow-primary/20 transition-all",

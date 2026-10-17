@@ -5,6 +5,9 @@ const TONE: Record<string, string> = {
   bug: "bg-red-500/10 text-red-700 border-red-500/30",
   idea: "bg-primary/10 text-primary border-primary/30",
   error: "bg-red-700/15 text-red-800 border-red-700/40",
+  ux: "bg-amber-500/10 text-amber-700 border-amber-500/30",
+  praise: "bg-emerald-500/10 text-emerald-700 border-emerald-500/30",
+  rating: "bg-yellow-400/15 text-yellow-800 border-yellow-500/40",
 };
 
 export default function FeedbackKindBadge({ kind }: { kind: string | null | undefined }) {
