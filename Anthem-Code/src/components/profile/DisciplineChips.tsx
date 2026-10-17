@@ -6,12 +6,22 @@ type Props = {
   disciplines?: string[] | null;
   className?: string;
   size?: "sm" | "md";
+  /** "text" = plain "A · B" line, used under the name on the profile header. */
+  variant?: "chips" | "text";
 };
 
 /** สายงาน chips under opportunity status on profile cover. */
-export default function DisciplineChips({ disciplines, className, size = "sm" }: Props) {
+export default function DisciplineChips({ disciplines, className, size = "sm", variant = "chips" }: Props) {
   const items = (disciplines ?? []).map((id) => id.trim()).filter(Boolean);
   if (!items.length) return null;
+
+  if (variant === "text") {
+    return (
+      <p className={cn("text-sm text-muted-foreground", className)}>
+        {items.map((id) => WORK_DISCIPLINE_LABELS[id as WorkDisciplineId] ?? id).join(" · ")}
+      </p>
+    );
+  }
 
   const badgeClass =
     size === "sm"

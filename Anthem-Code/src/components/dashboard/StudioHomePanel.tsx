@@ -86,7 +86,7 @@ export default function StudioHomePanel({ userId }: Props) {
     { to: STUDIO_HIRE_PATH, label: "งานจ้างที่กำลังทำ", count: hireActive, kind: "hire" as const },
     { to: "/dashboard/collab", label: "คอลแลปรอตอบ", count: collabNew, kind: "collab" as const },
     { to: "/dashboard/collab", label: "คอลแลปที่กำลังทำ", count: collabActive, kind: "collab" as const },
-    ...(reviewPending > 0
+    ...(reviewPending > 0 && isCommerceEnabled()
       ? [{ to: "/dashboard/reviews", label: "รีวิวยังไม่ตอบ", count: reviewPending, kind: "review" as const }]
       : []),
   ];

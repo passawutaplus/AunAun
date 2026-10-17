@@ -1,6 +1,6 @@
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState, useEffect, useCallback } from "react";
+import { useMemo, useState, useEffect, useCallback, type ComponentType } from "react";
 import { Globe, Instagram, Facebook, MessageSquare, UserX, Handshake, Eye, X, Share2, MessageCircle } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import { BrandLogo } from "@/components/brand/BrandLogo";
@@ -18,6 +18,7 @@ import SupportButton from "@/components/gifting/SupportButton";
 import ReportTrigger from "@/components/report/ReportTrigger";
 import HireDialog from "@/components/HireDialog";
 import OpportunityTypeChips from "@/components/opportunity/OpportunityTypeChips";
+import { normalizeOpportunityProfile } from "@/lib/opportunity";
 import DisciplineChips from "@/components/profile/DisciplineChips";
 import ProfileSkillChips from "@/components/profile/ProfileSkillChips";
 import CollabDialog from "@/components/CollabDialog";
@@ -37,7 +38,7 @@ import {
   useUserBlocks,
 } from "@/hooks/useCommunityPostInteractions";
 import { useMyProjectSeries, usePublicProjectSeries } from "@/hooks/useProjectSeries";
-import { usePublicCollections } from "@/hooks/useCollections";
+import { useCollections } from "@/hooks/useCollections";
 import CollectionCard from "@/components/collections/CollectionCard";
 import PortfolioGrid from "@/components/profile/PortfolioGrid";
 import { ProfileBrowseToolbar } from "@/components/profile/ProfileBrowseToolbar";
@@ -132,7 +133,9 @@ const PublicProfilePage = () => {
   type ProfileTab = (typeof PROFILE_TABS)[number];
   // Packages / Objects tabs return with the commerce phase; old ?tab= links fall back to Projects.
   const isOpenTab = (t: string | null): t is ProfileTab =>
-    !!t && (PROFILE_TABS as readonly string[]).includes(t) && (isCommerceEnabled() || (t !== "services" && t !== "objects"));
+    !!t &&
+    (PROFILE_TABS as readonly string[]).includes(t) &&
+    (isCommerceEnabled() || (t !== "services" && t !== "objects" && t !== "reviews"));
   const tabFromUrl = params.get("tab");
   const [activeTab, setActiveTab] = useState<ProfileTab>(() =>
     isOpenTab(tabFromUrl)
@@ -200,7 +203,9 @@ const PublicProfilePage = () => {
   const unblockUser = useUnblockUser();
   const iBlockedThem = !!(resolvedUserId && blockedSet?.has(resolvedUserId));
   const { data: publicSeries = [] } = usePublicProjectSeries(resolvedUserId);
-  const { data: publicCollections = [] } = usePublicCollections(resolvedUserId);
+  // Collections are the owner's own saves — only they see the tab (not visitors, not "preview as visitor").
+  const { data: ownCollections = [] } = useCollections(isSelf && !visitorPreview ? resolvedUserId : undefined);
+  const profileCollections = isSelf && !visitorPreview ? ownCollections : [];
   const { data: ownerSeries = [] } = useMyProjectSeries(
     isSelf && !visitorPreview ? resolvedUserId : undefined,
   );
@@ -453,7 +458,7 @@ const PublicProfilePage = () => {
     }
     setCollabOpen(true);
   };
-  // Chat first: just say hi — hire / collab are optional shortcuts inside the dialog.
+  // Plain chat — no brief. Hire / collab have their own buttons.
   const openMessage = () => {
     if (visitorPreview) {
       previewToast();
@@ -483,6 +488,27 @@ const PublicProfilePage = () => {
     { key: "views", label: "ยอดดู", value: totalViews },
     { key: "followers", label: "ผู้ติดตาม", value: followers, href: `/u/${resolvedUserId}/followers` },
   ];
+
+  const showUsernameLine =
+    !!profile.username &&
+    profile.username.trim().toLowerCase() !== (profile.display_name ?? "").trim().replace(/^@/, "").toLowerCase();
+
+  const opportunityStatus = (profile as { opportunity_status?: string }).opportunity_status;
+  const opportunityTypes = (profile as { opportunity_types?: string[] }).opportunity_types;
+  // Lead with what the creator says they're looking for; message is the fallback.
+  const opportunity = normalizeOpportunityProfile(opportunityStatus, opportunityTypes);
+  const contactClosed = opportunity.status === "not_available";
+  const anyType = opportunity.types.length === 0;
+  const wantsHire =
+    !contactClosed && (anyType || opportunity.types.some((t) => ["paid_work", "join_team", "internship"].includes(t)));
+  const wantsCollab =
+    !contactClosed && (anyType || opportunity.types.some((t) => ["network_collab", "collaboration"].includes(t)));
+  const ctas = [
+    wantsHire && { key: "hire", label: "สนใจจ้างงาน", short: "จ้างงาน", icon: BriefcaseIcon, onClick: openHire },
+    wantsCollab && { key: "collab", label: "สนใจคอลแลป", short: "คอลแลป", icon: Handshake, onClick: openCollab },
+    { key: "message", label: "ทักแชท", short: "ทักแชท", icon: MessageCircle, onClick: openMessage },
+  ].filter(Boolean) as { key: string; label: string; short: string; icon: ComponentType<{ className?: string }>; onClick: () => void }[];
+  const [primaryCta, ...secondaryCtas] = ctas;
 
   return (
     <div className={cn("min-h-screen bg-app-ambient thai-body font-normal", MOBILE_PAGE_BOTTOM_CLASS)}>
@@ -576,7 +602,6 @@ const PublicProfilePage = () => {
               {showAsVisitor && (
                 <>
                   <div className="flex items-center gap-2">
-                    <FollowButton freelancerId={resolvedUserId} visitorPreview={visitorPreview} />
                     <ProfileSharePopover
                       url={publicShareUrl}
                       title={publicShareTitle}
@@ -612,9 +637,6 @@ const PublicProfilePage = () => {
           </div>
 
           <div className="relative px-4 sm:px-6 md:px-10 pb-4 sm:pb-6 md:pb-10 -mt-10 sm:-mt-12 md:-mt-14">
-            <div className="absolute -top-8 -right-16 w-56 h-56 rounded-full bg-gradient-brand opacity-25 blur-3xl pointer-events-none" />
-            <div className="absolute -bottom-20 -left-10 w-64 h-64 rounded-full bg-gradient-brand-soft blur-3xl pointer-events-none" />
-
             <div
               className={cn(
                 "relative flex flex-row items-start gap-3.5 sm:gap-6 pr-0",
@@ -661,20 +683,22 @@ const PublicProfilePage = () => {
                     </div>
                   ) : null}
                 </div>
-              {profile.username && (
+              {showUsernameLine && (
                 <p className="text-sm text-muted-foreground mt-0.5">@{profile.username}</p>
               )}
-              <div className="mt-2 space-y-2">
-                <DisciplineChips
-                  disciplines={parseSkills(
-                    (profile as { preferred_categories?: unknown }).preferred_categories,
-                  )}
-                />
-                <OpportunityTypeChips
-                  status={(profile as { opportunity_status?: string }).opportunity_status}
-                  types={(profile as { opportunity_types?: string[] }).opportunity_types}
-                />
-              </div>
+              <DisciplineChips
+                variant="text"
+                className="mt-1"
+                disciplines={parseSkills(
+                  (profile as { preferred_categories?: unknown }).preferred_categories,
+                )}
+              />
+              <OpportunityTypeChips
+                variant="line"
+                className="mt-2"
+                status={opportunityStatus}
+                types={opportunityTypes}
+              />
               {(profile as { open_for_work?: boolean; open_for_work_badge?: string }).open_for_work && (
                 <Badge className="mt-2 ml-1 rounded-full bg-primary/15 text-primary border-0 text-xs font-normal">
                   {(profile as { open_for_work_badge?: string }).open_for_work_badge || "Open for Work"}
@@ -742,33 +766,40 @@ const PublicProfilePage = () => {
 
               {showAsVisitor && (
                 <div className="flex flex-col gap-2 mt-3 sm:mt-4">
-                  <Button
-                    type="button"
-                    onClick={openMessage}
-                    className="w-full rounded-full bg-gradient-brand text-white hover:opacity-90 h-10 text-sm font-medium gap-1.5"
-                  >
-                    <MessageCircle className="w-4 h-4 shrink-0" />
-                    ส่งข้อความ
-                  </Button>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={openHire}
-                      className="w-full rounded-full glass-panel h-10 text-sm font-medium gap-1.5"
-                    >
-                      <BriefcaseIcon className="w-4 h-4 shrink-0" />
-                      สนใจจ้างงาน
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={openCollab}
-                      className="w-full rounded-full glass-panel h-10 text-sm font-medium gap-1.5"
-                    >
-                      <Handshake className="w-4 h-4 shrink-0" />
-                      สนใจคอลแลป
-                    </Button>
+                  {(() => {
+                    const PrimaryIcon = primaryCta.icon;
+                    return (
+                      <Button
+                        type="button"
+                        onClick={primaryCta.onClick}
+                        className="w-full rounded-full bg-gradient-brand text-white hover:opacity-90 h-10 text-sm font-medium gap-1.5"
+                      >
+                        <PrimaryIcon className="w-4 h-4 shrink-0" />
+                        {primaryCta.label}
+                      </Button>
+                    );
+                  })()}
+                  <div className={cn("grid gap-2", secondaryCtas.length >= 2 ? "grid-cols-3" : "grid-cols-2")}>
+                    <FollowButton
+                      freelancerId={resolvedUserId}
+                      visitorPreview={visitorPreview}
+                      showFollowerCount={false}
+                      showFollowingLabel
+                      className="w-full min-w-0 px-2 h-10 text-sm font-medium glass-panel border border-input bg-transparent text-foreground hover:bg-accent/40"
+                    />
+                    {secondaryCtas.map((cta) => (
+                      <Button
+                        key={cta.key}
+                        type="button"
+                        variant="outline"
+                        onClick={cta.onClick}
+                        className="w-full min-w-0 rounded-full glass-panel h-10 text-sm font-medium gap-1.5 px-2"
+                      >
+                        <cta.icon className="hidden sm:block w-4 h-4 shrink-0" />
+                        <span className="truncate sm:hidden">{cta.short}</span>
+                        <span className="truncate hidden sm:inline">{cta.label}</span>
+                      </Button>
+                    ))}
                   </div>
                   {isLaunchCreatorSupportEnabled() ? (
                     <div className="md:hidden">
@@ -841,11 +872,11 @@ const PublicProfilePage = () => {
                   { value: "objects", label: "Objects", count: profileObjects.length },
                 ]
               : []),
-            ...(publicCollections.length > 0
-              ? [{ value: "collections", label: "Collections", count: publicCollections.length }]
+            ...(isSelf && !visitorPreview
+              ? [{ value: "collections", label: "Collections", count: profileCollections.length }]
               : []),
             { value: "about", label: "About Me", ownHeading: true },
-            { value: "reviews", label: "Reviews" },
+            ...(isCommerceEnabled() ? [{ value: "reviews", label: "Reviews" }] : []),
           ]}
         >
           {activeTab === "works" &&
@@ -993,12 +1024,23 @@ const PublicProfilePage = () => {
               />
           )}
 
-          {activeTab === "collections" ? (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
-              {publicCollections.map((c) => (
-                <CollectionCard key={c.id} collection={c} compact />
-              ))}
-            </div>
+          {activeTab === "collections" && isSelf && !visitorPreview ? (
+            profileCollections.length > 0 ? (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
+                {profileCollections.map((c) => (
+                  <CollectionCard key={c.id} collection={c} compact />
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-border/80 p-8 text-center">
+                <p className="text-sm text-muted-foreground">
+                  ยังไม่มีคอลเลกชัน — กดเก็บผลงานที่ชอบเข้าคอลเลกชัน แล้วจะแสดงตรงนี้
+                </p>
+                <Button asChild variant="outline" size="sm" className="mt-3 rounded-full">
+                  <Link to="/collections">จัดการคอลเลกชัน</Link>
+                </Button>
+              </div>
+            )
           ) : null}
 
           {activeTab === "reviews" && resolvedUserId ? (
@@ -1040,8 +1082,6 @@ const PublicProfilePage = () => {
           onOpenChange={setMessageOpen}
           recipientId={resolvedUserId}
           recipientName={displayName}
-          onHire={openHire}
-          onCollab={openCollab}
         />
       ) : null}
     </div>

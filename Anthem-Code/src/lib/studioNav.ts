@@ -122,6 +122,8 @@ export const STUDIO_NAV_GROUPS: StudioNavGroup[] = [
     heroTitle: "Reviews",
     hint: "รวมรีวิวจ้างงานและคอลแลป แล้วตอบกลับได้",
     end: true,
+    // Reviews come back with paid hiring.
+    commerce: true,
     items: [],
   },
   {
