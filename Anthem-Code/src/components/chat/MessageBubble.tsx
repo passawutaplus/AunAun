@@ -11,6 +11,8 @@ import {
   ExternalLink,
   FileText,
   Flag,
+  Hourglass,
+  ListPlus,
   Languages,
   Megaphone,
   MoreVertical,
@@ -152,6 +154,9 @@ export function looksForeignLanguage(text: string | null | undefined): boolean {
 function systemLineStyle(text: string): { icon: LucideIcon | null; text: string; ok: boolean } {
   const t = text.replace(/^⏰\s*/, "");
   if (text.startsWith("⏰")) return { icon: AlarmClock, text: t, ok: false };
+  if (/^ปิดคอลแลปแล้ว/.test(text)) return { icon: CircleCheck, text: t, ok: true };
+  if (/ขอปิดคอลแลป/.test(text)) return { icon: CircleCheck, text: t, ok: false };
+  if (/ไม่ได้คุยกัน 7 วัน/.test(text)) return { icon: Hourglass, text: t, ok: false };
   if (/ทุกคนตกลงแผน/.test(text)) return { icon: CircleCheck, text: t.replace(/\s*✓$/, ""), ok: true };
   if (/มอบงาน|รับงาน/.test(text)) return { icon: UserCheck, text: t, ok: false };
   if (/แก้แผน|แก้.*ยืนยันแผนใหม่/.test(text)) return { icon: Pencil, text: t, ok: false };
@@ -199,6 +204,8 @@ interface Props {
   collabChangeAlreadyApproved?: boolean;
   collabChangeApproveBusy?: boolean;
   onReply?: (message: Message) => void;
+  /** Collab chats: turn this message into a task on the board. */
+  onAddTask?: (message: Message) => void;
   onUnsend?: (message: Message) => void;
   /** Pin/announce message to conversation header (LINE-style). */
   onAnnounce?: (message: Message, previewText: string) => void;
@@ -237,6 +244,7 @@ const MessageBubble = ({
   collabChangeAlreadyApproved = false,
   collabChangeApproveBusy = false,
   onReply,
+  onAddTask,
   onUnsend,
   onAnnounce,
   getSenderLabel,
@@ -661,6 +669,12 @@ const MessageBubble = ({
             <DropdownMenuItem onClick={() => onReply(message)}>
               <Reply className="w-4 h-4 mr-2" />
               ตอบกลับ
+            </DropdownMenuItem>
+          ) : null}
+          {onAddTask && message.message_type === "text" && message.content?.trim() ? (
+            <DropdownMenuItem onClick={() => onAddTask(message)}>
+              <ListPlus className="w-4 h-4 mr-2" />
+              เพิ่มเป็น Task
             </DropdownMenuItem>
           ) : null}
           <DropdownMenuItem onClick={() => void copyMessage()}>

@@ -33,6 +33,11 @@ export function useCollabAgreement(conversationId: string | undefined, enabled =
   );
   const status = agreementStatus(doc, memberIds, agreement);
   const myAcked = !!(user?.id && acks[user.id]);
+  // "ปิดคอลแลป (เสร็จแล้ว)" confirmations reuse the old pipeline's publish slot.
+  const closeAcks = useMemo(() => doc.acks.publish ?? {}, [doc.acks]);
+  const closeCount = memberIds.filter((id) => closeAcks[id]).length;
+  const closed = memberIds.length > 0 && closeCount === memberIds.length;
+  const myClosed = !!(user?.id && closeAcks[user.id]);
   const ackCount = memberIds.filter((id) => acks[id]).length;
 
   const invalidate = useCallback(async () => {
@@ -165,8 +170,55 @@ export function useCollabAgreement(conversationId: string | undefined, enabled =
     [conversationId, user?.id, agreement, acks, write, system, invalidate],
   );
 
+  /** Toggle my "งานเสร็จแล้ว ปิดคอลแลป" vote; when everyone agrees the collab request is marked completed. */
+  const toggleClose = useCallback(
+    async (actorName?: string) => {
+      if (!conversationId || !user?.id) return;
+      setBusy(true);
+      try {
+        const next = { ...closeAcks };
+        if (next[user.id]) delete next[user.id];
+        else next[user.id] = new Date().toISOString();
+        const { error } = await sharedDb.from("collab_plans" as never).upsert(
+          {
+            conversation_id: conversationId,
+            status: doc.status,
+            current_step: "align",
+            payload: payloadWithAgreement(doc.payload, agreement),
+            acks: { ...doc.acks, publish: next },
+            version: planPersisted ? doc.version || 1 : 1,
+            stages: {},
+            updated_by: user.id,
+            updated_at: new Date().toISOString(),
+          } as never,
+          { onConflict: "conversation_id" },
+        );
+        if (error) throw error;
+        const all = memberIds.length > 0 && memberIds.every((id) => next[id]);
+        if (all) {
+          const { data: conv } = await sharedDb.from("conversations").select("request_id").eq("id", conversationId).maybeSingle();
+          const requestId = (conv as { request_id?: string | null } | null)?.request_id;
+          if (requestId) {
+            await supabase.from("collab_requests").update({ status: "completed" } as never).eq("id", requestId);
+          }
+          system("ปิดคอลแลปแล้ว — งานเสร็จเรียบร้อย ขอบคุณที่ร่วมงานกัน 🎉");
+        } else if (next[user.id]) {
+          system(`${actorName ?? "มีคน"} ขอปิดคอลแลป (งานเสร็จแล้ว) — กดยืนยันในแผนคอลแลป`);
+        }
+      } finally {
+        setBusy(false);
+        await invalidate();
+      }
+    },
+    [conversationId, user?.id, closeAcks, doc, agreement, planPersisted, memberIds, system, invalidate],
+  );
+
   return {
     agreement,
+    closeCount,
+    closed,
+    myClosed,
+    toggleClose,
     status,
     memberIds,
     acks,

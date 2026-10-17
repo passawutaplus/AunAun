@@ -138,6 +138,7 @@ import MessageBubble, { DateSeparator } from "@/components/chat/MessageBubble";
 import ChatComposer from "@/components/chat/ChatComposer";
 import { CollabAgreementSheet } from "@/components/chat/CollabAgreementSheet";
 import CollabTasksSheet from "@/components/chat/CollabTasksSheet";
+import { useCollabTaskActions } from "@/hooks/useCollabTasks";
 import { trackProductEvent } from "@/lib/productEvents";
 import { parseChatOffer, type ChatOfferPayload, type OfferPartyInfo } from "@/lib/chatOffer";
 import { billingToParty, type BillingProfileFields } from "@/lib/billingProfile";
@@ -227,6 +228,15 @@ const ChatThreadView = ({
   /** Plain chat from "ทักแชท" — no tag until someone sends a hire / collab brief (opens its own thread). */
   const isConnect = conv.kind === "connect";
   const [reportOpen, setReportOpen] = useState(false);
+  const { add: addCollabTask } = useCollabTaskActions(conv.id);
+  const addTaskFromMessage = (m: Message) => {
+    const title = (m.content ?? "").replace(/\s+/g, " ").trim().slice(0, 200);
+    if (!title) return;
+    addCollabTask.mutate([title], {
+      onSuccess: () =>
+        toast.success("เพิ่มใน Tasks แล้ว", { action: { label: "เปิด Tasks", onClick: () => setTasksOpen(true) } }),
+    });
+  };
   const [connectHireOpen, setConnectHireOpen] = useState(false);
   const [connectCollabOpen, setConnectCollabOpen] = useState(false);
   const groupTag = normalizeGroupTag(conv.group_tag);
@@ -1888,6 +1898,7 @@ const ChatThreadView = ({
                 collabChangeAlreadyApproved={collabChangeAlreadyApproved}
                 collabChangeApproveBusy={collabChangeApproveBusy}
                 onReply={composerLockedHint ? undefined : setReplyTo}
+                onAddTask={showCollabPlanUi ? addTaskFromMessage : undefined}
                 onUnsend={handleUnsend}
                 onAnnounce={announceMessage}
                 getSenderLabel={getSenderLabel}

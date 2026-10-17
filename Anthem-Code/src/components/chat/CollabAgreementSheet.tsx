@@ -356,12 +356,37 @@ export function CollabAgreementSheet({ open, onOpenChange, conversationId, colla
             </fieldset>
           )}
 
-          {a.status === "agreed" && publishPath ? (
-            <div className="flex flex-col items-start gap-2 rounded-2xl border border-primary/40 bg-primary/5 p-4 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm">งานเสร็จแล้ว? ลงเป็นผลงานร่วมกัน — ทุกคนได้เครดิตบนโปรไฟล์</p>
-              <Button asChild size="sm" className="shrink-0 rounded-full">
-                <Link to={publishPath}>ลงผลงานร่วมกัน</Link>
-              </Button>
+          {a.status === "agreed" ? (
+            <div className="space-y-3 rounded-2xl border border-[hsl(var(--chat-collab)/0.35)] bg-[hsl(var(--chat-collab-soft))] p-4">
+              {a.closed ? (
+                <p className="flex items-center gap-1.5 text-sm font-medium text-emerald-700 dark:text-emerald-400">
+                  <Check className="h-4 w-4" aria-hidden /> ปิดคอลแลปแล้ว — ขอบคุณที่ร่วมงานกัน
+                </p>
+              ) : (
+                <>
+                  <p className="text-sm">งานเสร็จแล้ว? ลงเป็นผลงานร่วมกันให้ทุกคนได้เครดิต หรือปิดคอลแลปไว้เฉยๆ ก็ได้</p>
+                  <div className="flex flex-wrap gap-2">
+                    {publishPath ? (
+                      <Button asChild size="sm" className="rounded-full bg-[hsl(var(--chat-collab))] text-[hsl(var(--chat-collab-foreground))] hover:opacity-90">
+                        <Link to={publishPath}>ลงผลงานร่วมกัน</Link>
+                      </Button>
+                    ) : null}
+                    {!readOnly ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="rounded-full bg-card"
+                        disabled={a.busy}
+                        onClick={() => void run(() => a.toggleClose(myName))}
+                      >
+                        {a.myClosed ? "ยืนยันปิดแล้ว · ยกเลิก" : "ปิดคอลแลป (ไม่ลงผลงาน)"}
+                        {a.closeCount > 0 ? <span className="ml-1 tabular-nums text-muted-foreground">{a.closeCount}/{a.memberIds.length}</span> : null}
+                      </Button>
+                    ) : null}
+                  </div>
+                </>
+              )}
             </div>
           ) : null}
         </div>
