@@ -92,13 +92,13 @@
     --sidebar-border: 60 6% 90%;
     --sidebar-ring: 40 3% 18%;
 
-    /* Chat persona tokens */
-    --chat-hire: 215 88% 52%;
+    /* Chat persona tokens — Brand Book: two calm non-red tones. Hire = slate ink, Collab = warm stone. */
+    --chat-hire: 214 30% 34%;
     --chat-hire-foreground: 0 0% 100%;
-    --chat-hire-soft: 215 90% 96%;
-    --chat-collab: 15 64% 52%;
+    --chat-hire-soft: 214 24% 94%;
+    --chat-collab: 32 12% 34%;
     --chat-collab-foreground: 0 0% 100%;
-    --chat-collab-soft: 15 71% 95%;
+    --chat-collab-soft: 38 16% 91%;
   }
 
   /* Learn / Get in Touch — paper field from the studio home, including when the app is dark. */
@@ -165,12 +165,12 @@
     --sidebar-ring: 0 0% 96%;
 
     /* Chat persona tokens */
-    --chat-hire: 215 88% 62%;
-    --chat-hire-foreground: 40 3% 10%;
-    --chat-hire-soft: 215 45% 18%;
-    --chat-collab: 16 75% 62%;
-    --chat-collab-foreground: 40 3% 10%;
-    --chat-collab-soft: 15 45% 17%;
+    --chat-hire: 214 34% 70%;
+    --chat-hire-foreground: 0 0% 7%;
+    --chat-hire-soft: 214 16% 17%;
+    --chat-collab: 34 14% 68%;
+    --chat-collab-foreground: 0 0% 7%;
+    --chat-collab-soft: 32 7% 17%;
   }
 
 }
