@@ -1,3 +1,4 @@
+import { supabaseSecretKey, supabasePublishableKey } from "../_shared/supabase-keys.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { z } from "npm:zod@3";
 import { geminiEmbedText, getGeminiApiKey } from "../_shared/gemini.ts";
@@ -9,8 +10,8 @@ const corsHeaders = {
 };
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
-const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const SUPABASE_ANON_KEY = supabasePublishableKey();
+const SERVICE_KEY = supabaseSecretKey();
 
 const BodySchema = z.object({ project_id: z.string().uuid() });
 

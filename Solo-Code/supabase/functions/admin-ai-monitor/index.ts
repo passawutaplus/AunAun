@@ -1,3 +1,4 @@
+import { supabaseSecretKey, supabasePublishableKey } from "../_shared/supabase-keys.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeadersForRequest } from "../_shared/cors.ts";
 import {
@@ -22,7 +23,7 @@ const json = (req: Request, body: unknown, status = 200) =>
   });
 
 function adminClient() {
-  return createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  return createClient(Deno.env.get("SUPABASE_URL")!, supabaseSecretKey());
 }
 
 async function assertAdmin(userId: string): Promise<boolean> {
@@ -90,7 +91,7 @@ Deno.serve(async (req) => {
   if (!authHeader?.startsWith("Bearer ")) return json(req, { error: "unauthorized" }, 401);
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+  const anonKey = supabasePublishableKey();
   const userClient = createClient(supabaseUrl, anonKey, {
     global: { headers: { Authorization: authHeader } },
   });
