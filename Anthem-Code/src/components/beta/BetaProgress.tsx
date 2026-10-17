@@ -35,7 +35,7 @@ export default function BetaProgress({
         />
       </div>
       <p className={cn("mt-1.5 text-[11px]", onBrand ? "text-white/80" : "text-muted-foreground")}>
-        {next ? `อีก ${next.remaining} ฟีดแบ็ก จะได้ ${next.label}` : "ได้ badge สูงสุดแล้ว ขอบคุณมาก!"}
+        {next ? `อีก ${next.remaining} ฟีดแบ็ก จะได้ ${next.label}` : "ได้ badge สูงสุดแล้ว ขอบคุณที่ช่วยกัน"}
       </p>
     </div>
   );

@@ -51,11 +51,11 @@ const UpgradePageLive = () => {
           {user && (
             <span className="text-xs text-muted-foreground">
               {tier === "inhouse"
-                ? "🏢 In-House Member"
+                ? "In-House Member"
                 : tier === "pro_plus"
-                  ? "✨ Pro+ Member"
+                  ? "Pro+ Member"
                   : tier === "pro"
-                    ? "✨ Pro Member"
+                    ? "Pro Member"
                     : "แพ็กเกจปัจจุบัน: Free"}
             </span>
           )}

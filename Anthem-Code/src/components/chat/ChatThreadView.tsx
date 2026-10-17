@@ -1765,7 +1765,7 @@ const ChatThreadView = ({
         )}
         {!messagesLoading && !messagesError && grouped.length === 0 && (
           <div className="text-center text-sm text-muted-foreground py-12">
-            {isGroup ? "เริ่มแชทกลุ่มได้เลย 👥" : isHire ? "เริ่มบทสนทนากับลูกค้าได้เลย ✨" : "ทักทายเพื่อนคอลแลปได้เลย 👋"}
+            {isGroup ? "เริ่มแชทกลุ่มได้เลย" : isHire ? "เริ่มคุยกับลูกค้าได้เลย" : "ทักทายเพื่อนคอลแลปได้เลย"}
           </div>
         )}
         {grouped.map((it, idx) =>

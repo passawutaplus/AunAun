@@ -977,7 +977,7 @@ const CollabDialog = ({
             <Button
               type="submit"
               disabled={busy}
-              className="rounded-full bg-primary text-primary-foreground shadow-none hover:bg-[#1c1b19] gap-2"
+              className="rounded-full bg-primary text-primary-foreground shadow-none hover:bg-primary/90 gap-2"
             >
               {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageCircle className="w-4 h-4" />}
               {!user
@@ -1085,7 +1085,7 @@ const CollabDialog = ({
       <div className="sticky bottom-0 bg-background pt-2">
         <Button
           type="button"
-          className="w-full rounded-full shadow-none hover:bg-[#1c1b19]"
+          className="w-full rounded-full shadow-none hover:bg-primary/90"
           onClick={() => {
             setWorkCatalogOpen(false);
             setWorkQuery("");

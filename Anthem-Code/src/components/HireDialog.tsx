@@ -669,7 +669,7 @@ const HireDialog = ({
                 <Button
                   type="button"
                   disabled={busy}
-                  className="rounded-full gap-1.5 shadow-none hover:bg-[#1c1b19]"
+                  className="rounded-full gap-1.5 shadow-none hover:bg-primary/90"
                   onClick={() => void submitHire()}
                 >
                   {busy && !serviceBusyId ? (
@@ -785,7 +785,7 @@ const HireDialog = ({
               <Button
                 type="button"
                 disabled={busy}
-                className="rounded-full gap-1.5 shadow-none hover:bg-[#1c1b19]"
+                className="rounded-full gap-1.5 shadow-none hover:bg-primary/90"
                 onClick={() => void submitHire()}
               >
                 {busy && !serviceBusyId ? (

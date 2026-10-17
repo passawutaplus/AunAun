@@ -113,7 +113,7 @@ export default function OnboardingChecklist({ variant = "full" }: Props) {
             <PartyPopper className="h-6 w-6 text-primary shrink-0" />
             <div className="flex-1 min-w-0">
               <h2 className="text-base font-semibold text-foreground">
-                {tourMode ? "ทัวร์ครบแล้ว — พร้อมใช้งานต่อ!" : "ยินดีด้วย — ทำภารกิจ Welcome Bonus ครบแล้ว!"}
+                {tourMode ? "ทัวร์ครบแล้ว — ใช้งานต่อได้เลย" : "ยินดีด้วย — ทำภารกิจ Welcome Bonus ครบแล้ว"}
               </h2>
               <p className="text-sm text-muted-foreground mt-0.5">
                 {tourMode

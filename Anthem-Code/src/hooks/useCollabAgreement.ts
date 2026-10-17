@@ -201,7 +201,7 @@ export function useCollabAgreement(conversationId: string | undefined, enabled =
           if (requestId) {
             await supabase.from("collab_requests").update({ status: "completed" } as never).eq("id", requestId);
           }
-          system("ปิดคอลแลปแล้ว — งานเสร็จเรียบร้อย ขอบคุณที่ร่วมงานกัน 🎉");
+          system("ปิดคอลแลปแล้ว — งานเสร็จเรียบร้อย ขอบคุณที่ร่วมงานกัน");
         } else if (next[user.id]) {
           system(`${actorName ?? "มีคน"} ขอปิดคอลแลป (งานเสร็จแล้ว) — กดยืนยันในแผนคอลแลป`);
         }

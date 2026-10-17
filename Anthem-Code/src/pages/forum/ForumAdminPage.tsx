@@ -206,7 +206,7 @@ function OverviewTab({ onGo }: { onGo: (tab: TabId) => void }) {
           {topics.slice(0, 8).map((t) => (
             <li key={t.id} className="px-3 py-2.5 flex flex-wrap items-center gap-2 bg-card">
               <Link to={`/forum/t/${t.id}`} className="text-sm font-medium text-primary hover:underline flex-1 min-w-0 truncate">
-                {t.is_pinned ? "📌 " : ""}
+                {t.is_pinned ? "ปักหมุด · " : ""}
                 {t.title}
               </Link>
               <span className="text-[11px] text-muted-foreground">{t.reply_count} ตอบ</span>

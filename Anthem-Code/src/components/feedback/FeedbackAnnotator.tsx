@@ -286,7 +286,7 @@ export const FeedbackAnnotator = forwardRef<FeedbackAnnotatorHandle, Props>(func
         tool,
         start: p,
         end: p,
-        color: tool === "redact" ? "#111111" : "#f97316",
+        color: tool === "redact" ? "#111111" : "#EE3D29",
         width: 3,
       };
     }

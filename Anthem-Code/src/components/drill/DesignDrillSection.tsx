@@ -325,7 +325,7 @@ export function DesignDrillSection() {
           </div>
           {completedToday && (
             <p className="text-xs text-primary font-medium shrink-0 text-right">
-              ทำโจทย์วันนี้เสร็จแล้ว — เก่งมาก!
+              ทำโจทย์วันนี้เสร็จแล้ว
             </p>
           )}
         </div>

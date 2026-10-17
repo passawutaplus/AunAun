@@ -78,9 +78,9 @@ const DonationModal = ({ open, onOpenChange, recipientId, recipientName, recipie
     const projectTitle = projectInfo?.title;
     const lines = [
       projectTitle ? `ผลงาน: ${projectTitle}` : null,
-      previewOnly ? "🔍 โหมดพรีวิว — ไม่ตัดยอด Pixel จริง" : `−${selected.price_px} px จากกระเป๋าของคุณ`,
+      previewOnly ? "โหมดพรีวิว — ไม่ตัดยอด Pixel จริง" : `−${selected.price_px} px จากกระเป๋าของคุณ`,
     ].filter(Boolean).join("\n");
-    toast.success(`ส่ง ${selected.name_th} ให้ ${recipientName} แล้ว 🎁`, {
+    toast.success(`ส่ง ${selected.name_th} ให้ ${recipientName} แล้ว`, {
       description: lines,
       duration: 4000,
       action: previewOnly ? undefined : {
@@ -226,7 +226,7 @@ const DonationModal = ({ open, onOpenChange, recipientId, recipientName, recipie
           <div className="space-y-1.5">
             <label className="text-xs text-muted-foreground">ข้อความให้กำลังใจ (ไม่บังคับ)</label>
             <Textarea
-              placeholder="ผลงานเจ๋งมาก! ทำต่อนะ 🔥"
+              placeholder="เช่น ชอบงานนี้มาก ทำต่อนะ"
               value={message}
               maxLength={160}
               onChange={(e) => setMessage(e.target.value)}
@@ -265,7 +265,7 @@ const DonationModal = ({ open, onOpenChange, recipientId, recipientName, recipie
               className="w-full rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
             >
               {sentEffect ? (
-                <><Heart className="w-4 h-4 mr-1.5 fill-current animate-pulse" /> ส่งสำเร็จ!</>
+                <><Heart className="w-4 h-4 mr-1.5 fill-current animate-pulse" /> ส่งแล้ว</>
               ) : previewOnly ? (
                 <><Eye className="w-4 h-4 mr-1.5" /> พรีวิวการส่ง {selected ? `(${selected.price_px.toLocaleString("th-TH")} px)` : ""}</>
               ) : (

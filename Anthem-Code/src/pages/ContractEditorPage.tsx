@@ -418,7 +418,7 @@ const ContractEditorInner = () => {
             )}
           </div>
           <p className="text-[11px] text-muted-foreground mt-3 leading-relaxed">
-            ⚠️ เอกสารนี้เป็นเพียงร่างที่สร้างด้วย AI ควรให้ทนายความตรวจสอบก่อนนำไปใช้จริง
+            เอกสารนี้เป็นเพียงร่างที่สร้างด้วย AI ควรให้ทนายความตรวจสอบก่อนนำไปใช้จริง
           </p>
         </div>
       </div>

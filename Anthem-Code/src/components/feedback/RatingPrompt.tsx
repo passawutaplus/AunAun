@@ -25,9 +25,9 @@ import { useFeedbackComposer } from "@/stores/feedbackComposerStore";
 const SHOW_DELAY_MS = 4_000;
 
 const LEAD: Record<RatingMoment, string> = {
-  first_publish: "ผลงานแรกขึ้นแล้ว!",
-  plan_agreed: "ตกลงแผนงานกันได้แล้ว!",
-  first_hire: "ส่งคำขอจ้างครั้งแรกแล้ว!",
+  first_publish: "ผลงานแรกขึ้นแล้ว",
+  plan_agreed: "ตกลงแผนงานกันแล้ว",
+  first_hire: "ส่งคำขอจ้างครั้งแรกแล้ว",
   active_days: "ใช้กันมาสักพักแล้ว",
 };
 
@@ -157,7 +157,7 @@ export default function RatingPrompt() {
         {step === "done" ? (
           <div className="flex flex-col items-center pb-1 pt-2 text-center">
             <MascotMood mood={happy ? 5 : 4} className="h-16 w-16" />
-            <p className="mt-2 font-semibold text-foreground">ขอบคุณมาก!</p>
+            <p className="mt-2 font-semibold text-foreground">ขอบคุณ</p>
             <p className="mt-1 text-sm text-muted-foreground">
               {happy ? "ถ้าชอบ ชวนเพื่อนครีเอเตอร์มาลองด้วยกันนะ" : "ทีมจะอ่านทุกข้อ แล้วรีบแก้ให้ดีขึ้น"}
             </p>

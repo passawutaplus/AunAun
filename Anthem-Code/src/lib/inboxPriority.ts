@@ -9,10 +9,10 @@ export function parseInboxPriority(value: string | null | undefined): InboxPrior
 export function inboxPriorityDotClass(priority: InboxPriority): string {
   switch (priority) {
     case "ด่วน":
-      return "bg-red-500";
+      return "bg-destructive";
     case "รอได้":
       return "bg-warning";
     default:
-      return "bg-emerald-500";
+      return "bg-success";
   }
 }

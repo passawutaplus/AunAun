@@ -303,7 +303,7 @@ export default function CollabTasksSheet({ open, onOpenChange, conversationId, p
 
         {allDone && publishPath ? (
           <div className="flex flex-col items-start gap-2 rounded-2xl border border-primary/40 bg-primary/5 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm">งานเสร็จครบแล้ว 🎉 ลงเป็นผลงานร่วมกัน — ทุกคนจะได้เครดิตบนโปรไฟล์</p>
+            <p className="text-sm">งานเสร็จครบแล้ว ลงเป็นผลงานร่วมกัน — ทุกคนจะได้เครดิตบนโปรไฟล์</p>
             <Button asChild className="shrink-0 rounded-full">
               <Link to={publishPath}>ลงผลงานร่วมกัน</Link>
             </Button>

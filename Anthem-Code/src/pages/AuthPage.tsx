@@ -417,7 +417,7 @@ const SignupFormFields = ({ onSwitch }: { onSwitch: () => void }) => {
       else {
         markPendingSignupConsent();
         await recordSignupConsents();
-        toast.success("สมัครสำเร็จ! กรุณาตรวจอีเมลเพื่อยืนยันบัญชีก่อนเข้าใช้งาน");
+        toast.success("สมัครสำเร็จ กรุณาตรวจอีเมลเพื่อยืนยันบัญชีก่อนเข้าใช้งาน");
       }
     } finally {
       setBusy(false);

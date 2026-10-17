@@ -170,7 +170,7 @@ export default function FeedbackComposer() {
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-white/20 ring-1 ring-white/30">
                 <Check className="h-6 w-6 text-white" strokeWidth={2.5} />
               </div>
-              <h2 className="text-xl font-bold tracking-tight">ได้รับแล้ว ขอบคุณมาก!</h2>
+              <h2 className="text-xl font-bold tracking-tight">ได้รับแล้ว ขอบคุณ</h2>
               <p className="mx-auto mt-2 max-w-[18rem] text-[13px] leading-relaxed text-white/90">
                 ทีมจะอ่านทุกข้อความ และแจ้งกลับเมื่อนำไปใช้หรือแก้แล้ว
               </p>

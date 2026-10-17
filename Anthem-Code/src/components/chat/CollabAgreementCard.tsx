@@ -90,7 +90,7 @@ export function CollabAgreementCard({
     <ChatCardShell
       tone="collab"
       icon={HeartHandshake}
-      title={a.status === "agreed" ? "แผนคอลแลป · ตกลงกันแล้ว ลุยเลย!" : "แผนคอลแลป"}
+      title={a.status === "agreed" ? "แผนคอลแลป · ตกลงกันแล้ว" : "แผนคอลแลป"}
       meta={statusPill}
       footer={
         <div className="flex gap-2">

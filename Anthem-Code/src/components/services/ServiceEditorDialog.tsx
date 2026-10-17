@@ -712,7 +712,7 @@ export default function ServiceEditorDialog({
             )}
             <span className="space-y-1">
               <span className="block text-sm font-semibold text-foreground">
-                {uploading ? "กำลังอัปโหลด… แป๊บนึงนะ" : "โชว์งานให้ลูกค้าเห็นภาพกันหน่อย!"}
+                {uploading ? "กำลังอัปโหลด… แป๊บนึงนะ" : "เพิ่มภาพผลงานให้ลูกค้าเห็นภาพ"}
               </span>
               <span className="block text-xs text-muted-foreground">
                 แตะเพื่อเลือกภาพหรือวิดีโอ — ภาพแรกจะเป็นภาพหลักของแพ็กเกจ
