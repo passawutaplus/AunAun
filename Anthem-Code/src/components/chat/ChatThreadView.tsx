@@ -1588,43 +1588,34 @@ const ChatThreadView = ({
             )
           )}
           {(isCollab || (!!isGroup && !isStudio && groupTag === "collab")) && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => collabPlanUi.openFor(conv.id)}
-              className={cn(
-                "collab-plan-btn inline-flex items-center gap-1 text-xs font-medium px-2.5 h-8 rounded-full ml-0.5",
-                "border-[hsl(var(--chat-collab)/0.7)] bg-transparent text-[hsl(var(--chat-collab))]",
-                "hover:bg-[hsl(var(--chat-collab))] hover:text-[hsl(var(--chat-collab-foreground))] hover:border-[hsl(var(--chat-collab))]",
-                "transition-colors duration-200",
-              )}
-              aria-label="วางแผนงาน"
+            <div
+              role="group"
+              aria-label="พื้นที่ทำงานคอลแลป"
+              className="ml-0.5 inline-flex items-center gap-0.5 rounded-full bg-[hsl(var(--chat-collab-soft))] p-0.5 ring-1 ring-[hsl(var(--chat-collab)/0.35)]"
             >
-              <Handshake className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">วางแผนงาน</span>
-            </Button>
-          )}
-          {(isCollab || (!!isGroup && !isStudio && groupTag === "collab")) && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setTasksOpen(true);
-                void trackProductEvent("workspace_open", { conversation_id: conv.id }, { debounceMs: 60_000 });
-              }}
-              className={cn(
-                "inline-flex items-center gap-1 text-xs font-medium px-2.5 h-8 rounded-full ml-0.5",
-                "border-[hsl(var(--chat-collab)/0.7)] bg-transparent text-[hsl(var(--chat-collab))]",
-                "hover:bg-[hsl(var(--chat-collab))] hover:text-[hsl(var(--chat-collab-foreground))] hover:border-[hsl(var(--chat-collab))]",
-                "transition-colors duration-200",
-              )}
-              aria-label="Tasks"
-            >
-              <ListChecks className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Tasks</span>
-            </Button>
+              <button
+                type="button"
+                onClick={() => collabPlanUi.openFor(conv.id)}
+                className={cn("collab-plan-btn", "inline-flex h-7 items-center gap-1 rounded-full px-2.5 text-xs font-medium text-[hsl(var(--chat-collab))] transition-colors hover:bg-[hsl(var(--chat-collab))] hover:text-[hsl(var(--chat-collab-foreground))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring")}
+                aria-label="วางแผนงาน"
+              >
+                <Handshake className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">วางแผนงาน</span>
+              </button>
+              <span className="h-4 w-px bg-[hsl(var(--chat-collab)/0.3)]" aria-hidden />
+              <button
+                type="button"
+                onClick={() => {
+                  setTasksOpen(true);
+                  void trackProductEvent("workspace_open", { conversation_id: conv.id }, { debounceMs: 60_000 });
+                }}
+                className={"inline-flex h-7 items-center gap-1 rounded-full px-2.5 text-xs font-medium text-[hsl(var(--chat-collab))] transition-colors hover:bg-[hsl(var(--chat-collab))] hover:text-[hsl(var(--chat-collab-foreground))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"}
+                aria-label="Tasks"
+              >
+                <ListChecks className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Tasks</span>
+              </button>
+            </div>
           )}
           {(canCreateCollabProject ||
             canCreateGroupCollabProject ||
