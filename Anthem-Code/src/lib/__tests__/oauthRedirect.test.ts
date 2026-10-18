@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { safeRelativePath, shouldStripRedirectParam, formatOAuthCallbackError } from "../oauthRedirect";
+import {
+  safeRelativePath,
+  shouldStripRedirectParam,
+  formatOAuthCallbackError,
+  hasAuthErrorParams,
+  stripAuthErrorParams,
+} from "../oauthRedirect";
 
 describe("safeRelativePath", () => {
   it("allows same-origin paths", () => {
@@ -21,6 +27,19 @@ describe("formatOAuthCallbackError", () => {
   it("explains stale PKCE / back-button failures", () => {
     expect(formatOAuthCallbackError("PKCE code verifier not found")).toContain("กดย้อนกลับ");
     expect(formatOAuthCallbackError("network error")).toBe("network error");
+  });
+});
+
+describe("auth error params", () => {
+  it("detects Supabase failures in query or hash", () => {
+    expect(hasAuthErrorParams("?error=invalid_request&error_code=bad_oauth_state&error_description=x", "")).toBe(true);
+    expect(hasAuthErrorParams("", "#error=access_denied&error_description=denied")).toBe(true);
+    expect(hasAuthErrorParams("?q=error", "")).toBe(false);
+    expect(hasAuthErrorParams("", "")).toBe(false);
+  });
+  it("strips only the error params", () => {
+    expect(stripAuthErrorParams("/", "?error=a&error_code=b&error_description=c")).toBe("/");
+    expect(stripAuthErrorParams("/x", "?tab=2&error_code=b")).toBe("/x?tab=2");
   });
 });
 
