@@ -117,8 +117,8 @@ export function CommunityImageCropDialog({
         onOpenChange(next);
       }}
     >
-      <DialogContent className="max-w-md p-0 gap-0 overflow-hidden">
-        <DialogHeader className="px-4 pt-4 pb-2">
+      <DialogContent className="max-w-md p-0 gap-0 overflow-y-auto overflow-x-hidden flex max-h-[calc(100dvh-1.5rem)] flex-col">
+        <DialogHeader className="shrink-0 px-4 pt-4 pb-2">
           <DialogTitle className="text-base">
             {title
               ? title
@@ -144,7 +144,7 @@ export function CommunityImageCropDialog({
           </div>
         )}
 
-        <div className="relative w-full max-w-md mx-auto h-[min(70vh,520px)] bg-muted">
+        <div className="relative w-full max-w-md mx-auto h-[min(70dvh,520px)] min-h-[180px] shrink bg-muted">
           {imageSrc && (
             <Cropper
               image={imageSrc}
@@ -177,7 +177,7 @@ export function CommunityImageCropDialog({
           />
         </div>
 
-        <DialogFooter className="px-4 pb-4 gap-2 sm:gap-2">
+        <DialogFooter className="shrink-0 px-4 pb-4 gap-2 sm:gap-2">
           <Button type="button" variant="outline" onClick={onCancel} disabled={saving}>
             {cancelLabel}
           </Button>

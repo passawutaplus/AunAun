@@ -95,15 +95,15 @@ export function PortfolioCoverCropDialog({
         onOpenChange(next);
       }}
     >
-      <DialogContent className="max-w-md p-0 gap-0 overflow-hidden data-[state=open]:zoom-in-100 data-[state=closed]:zoom-out-100 data-[state=open]:slide-in-from-left-0 data-[state=open]:slide-in-from-top-0 data-[state=closed]:slide-out-to-left-0 data-[state=closed]:slide-out-to-top-0">
-        <DialogHeader className="px-4 pt-4 pb-2">
+      <DialogContent className="max-w-md p-0 gap-0 overflow-y-auto overflow-x-hidden flex max-h-[calc(100dvh-1.5rem)] flex-col data-[state=open]:zoom-in-100 data-[state=closed]:zoom-out-100 data-[state=open]:slide-in-from-left-0 data-[state=open]:slide-in-from-top-0 data-[state=closed]:slide-out-to-left-0 data-[state=closed]:slide-out-to-top-0">
+        <DialogHeader className="shrink-0 px-4 pt-4 pb-2">
           <DialogTitle className="text-base">ครอปภาพปก ({PROJECT_COVER_RATIO_LABEL} แนวนอน)</DialogTitle>
           <p className="text-xs text-muted-foreground font-normal">
             ลากและซูมเพื่อจัดกรอบ — ภาพปกต้องเป็นอัตราส่วน {PROJECT_COVER_RATIO_LABEL} แนวนอนเท่านั้น
           </p>
         </DialogHeader>
 
-        <div className="relative w-full aspect-[4/3] bg-muted">
+        <div className="relative mx-auto aspect-[4/3] max-h-full min-h-[160px] w-full shrink bg-muted">
           {imageSrc && cropReady ? (
             <Cropper
               key={imageSrc}
@@ -139,7 +139,7 @@ export function PortfolioCoverCropDialog({
           />
         </div>
 
-        <DialogFooter className="px-4 pb-4 gap-2 sm:gap-2">
+        <DialogFooter className="shrink-0 px-4 pb-4 gap-2 sm:gap-2">
           <Button type="button" variant="outline" onClick={onCancel} disabled={saving}>
             ยกเลิก
           </Button>
