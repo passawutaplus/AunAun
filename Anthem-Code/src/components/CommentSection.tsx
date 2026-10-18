@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { MessageCircle, Send, Reply } from "lucide-react";
+import { MessageSquareText, Send, Reply } from "lucide-react";
 import { InlineLoader } from "@/components/ui/BanterLoader";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -304,7 +304,7 @@ const CommentSection = ({ projectId }: Props) => {
   return (
     <section className="space-y-4">
       <h2 className="text-xl font-medium text-foreground flex items-center gap-2">
-        <MessageCircle className="w-5 h-5 text-primary" />
+        <MessageSquareText className="w-5 h-5 text-primary" />
         ความคิดเห็น {totalCount > 0 && <span className="text-muted-foreground text-sm font-normal">({totalCount})</span>}
       </h2>
 

@@ -85,12 +85,13 @@ const ChatInboxPage = () => {
   const showSidebarMobile = !hasThread;
   const showThreadMobile = hasThread;
 
+  // Moving around inside /chat replaces the entry, so Back leaves chat to the page you came from.
   const selectConversation = (conversationId: string) => {
-    navigate(`/chat/${conversationId}`, { replace: false });
+    navigate(`/chat/${conversationId}`, { replace: true });
   };
 
   const clearConversation = () => {
-    navigate("/chat", { replace: false });
+    navigate("/chat", { replace: true });
   };
 
   const retryThread = () => {

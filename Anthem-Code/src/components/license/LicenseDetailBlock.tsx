@@ -54,15 +54,12 @@ const LicenseDetailBlock = ({
           <button
             type="button"
             className={cn(
-              "w-full flex items-center justify-between gap-2 text-left hover:bg-muted/30 transition-colors",
+              "w-full flex items-center gap-2 text-left hover:bg-muted/30 transition-colors",
               embedded ? "py-3" : "px-4 py-3",
             )}
             aria-label={open ? "ย่อรายละเอียดสิทธิ์การใช้งาน" : "ดูรายละเอียดสิทธิ์การใช้งาน"}
           >
-            <span className="text-sm text-muted-foreground shrink-0 whitespace-nowrap">
-              สิทธิ์ของผลงานนี้
-            </span>
-            <span className="flex items-center gap-1.5 shrink-0 ml-auto">
+            <span className="flex items-center gap-1.5 shrink-0">
               <LicenseBadgeInline licenseType={licenseType} />
               {aiLevel ? <AiDisclosureBadge level={aiLevel} tone="inline" interactive={false} /> : null}
               <ChevronDown

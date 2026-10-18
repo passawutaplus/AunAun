@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { InfoHint } from "@/components/tour/InfoHint";
 import { noteRatingMoment } from "@/lib/ratingPrompt";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { BookOpenText, CircleHelp, Eye, FileText, Handshake, ShieldCheck, ImagePlus, Loader2, Paperclip, Save, Scale, Tags, X } from "lucide-react";
+import { BookOpenText, CircleHelp, Eye, FileText, Handshake, ImagePlus, Loader2, Paperclip, Save, Scale, Tags, X } from "lucide-react";
 import CatalogIcon from "@/components/icons/CatalogIcon";
 import { LayoutGroup, motion, useReducedMotion } from "framer-motion";
 import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
@@ -3025,23 +3025,20 @@ const ProjectEditorPage = () => {
       focusFirstPublishError(errors);
       return;
     }
-    if (!publishAttestChecked) {
-      toast.error("ติ๊กยืนยันสิทธิ์ในผลงานก่อนเผยแพร่");
-      document.getElementById("project-details-confirm")?.scrollIntoView({ behavior: "smooth", block: "center" });
-      return;
-    }
+    // Last step: the rights confirm opens as its own popup.
+    setPublishConfirmOpen(true);
+  };
+
+  const handleAttestAndPublish = async () => {
+    if (!publishAttestChecked) return;
     setDetailsOpen(false);
     await handleConfirmPublish();
   };
 
   const detailsFooter = (
     <div className="flex items-center gap-2">
-      {publishRemaining > 0 || !publishAttestChecked ? (
-        <span className="mr-auto text-xs text-muted-foreground">
-          {publishRemaining > 0
-            ? `ยังขาด ${publishRemaining} อย่าง${publishAttestChecked ? "" : " + ติ๊กยืนยันสิทธิ์"}`
-            : "ติ๊กยืนยันสิทธิ์ก่อนเผยแพร่"}
-        </span>
+      {publishRemaining > 0 ? (
+        <span className="mr-auto text-xs text-muted-foreground">ยังขาด {publishRemaining} อย่าง</span>
       ) : null}
       <Button type="button" variant="ghost" className="ml-auto rounded-full" onClick={() => setDetailsOpen(false)}>
         ปิด
@@ -3756,12 +3753,6 @@ const ProjectEditorPage = () => {
               coverControl={coverField}
               headingExtra={<EditorInfoButton topic="cover" />}
             />
-            {/* Rights confirm sits under the cover so it's seen before publishing, not buried at the end. */}
-            <div id="project-details-confirm" className="mt-4">
-              <CollapsibleEditorCard title="Confirm" icon={ShieldCheck} framed>
-                <OriginalWorkAttestation checked={publishAttestChecked} onCheckedChange={setPublishAttestChecked} />
-              </CollapsibleEditorCard>
-            </div>
             </>
           }
         >
@@ -3956,8 +3947,13 @@ const ProjectEditorPage = () => {
             {(
               <QuickConnectGroup>
                 {collabField}
-                <div className="h-px bg-border" />
-                {connectProducts}
+                {/* Packages / shop items come back with the commerce phase. */}
+                {isCommerceEnabled() ? (
+                  <>
+                    <div className="h-px bg-border" />
+                    {connectProducts}
+                  </>
+                ) : null}
                 {!isAplus1LaunchMinimal() ? (
                   <>
                     <div className="h-px bg-border" />
@@ -4122,6 +4118,30 @@ const ProjectEditorPage = () => {
             >
               {leavingBusy ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : null}
               บันทึกฉบับร่างแล้วออก
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={publishConfirmOpen} onOpenChange={(open) => !publishing && setPublishConfirmOpen(open)}>
+        <DialogContent className="max-w-md rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>ยืนยันก่อนเผยแพร่</DialogTitle>
+            <DialogDescription>ติ๊กยืนยันสิทธิ์ในผลงาน แล้วกดเผยแพร่</DialogDescription>
+          </DialogHeader>
+          <OriginalWorkAttestation checked={publishAttestChecked} onCheckedChange={setPublishAttestChecked} />
+          <DialogFooter className="gap-2 sm:justify-end flex-col-reverse sm:flex-row">
+            <Button type="button" variant="ghost" disabled={publishing} onClick={() => setPublishConfirmOpen(false)}>
+              ยกเลิก
+            </Button>
+            <Button
+              type="button"
+              className="rounded-full"
+              disabled={!publishAttestChecked || publishing || editorLocked}
+              onClick={() => void handleAttestAndPublish()}
+            >
+              {publishing ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : null}
+              เผยแพร่
             </Button>
           </DialogFooter>
         </DialogContent>

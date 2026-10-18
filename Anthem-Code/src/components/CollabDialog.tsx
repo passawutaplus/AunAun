@@ -844,7 +844,7 @@ const CollabDialog = ({
                 type="button"
                 size="icon"
                 variant="outline"
-                className="h-10 w-10 shrink-0 rounded-full border-border bg-white text-foreground shadow-none hover:bg-secondary"
+                className="h-10 w-10 shrink-0 rounded-full border-border bg-card text-foreground shadow-none hover:bg-secondary"
                 onClick={addReferenceLink}
                 aria-label="เพิ่มลิงก์"
               >

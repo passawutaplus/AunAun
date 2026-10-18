@@ -29,6 +29,10 @@
   .font-legal {
     font-family: "Sarabun", "IBM Plex Sans Thai Looped", "IBM Plex Sans Thai", ui-sans-serif, system-ui, sans-serif;
   }
+  /* Policy headings follow the looped Thai body face (base h1–h6 would switch to the heading font). */
+  .font-legal :is(h1, h2, h3, h4, h5, h6) {
+    font-family: inherit;
+  }
 }
 
 @layer base {
@@ -126,50 +130,50 @@
 
   .dark {
     color-scheme: dark;
-    /* Gallery Black #111111 field, Charcoal #282929 surfaces; primary flips to paper so pills stay legible */
-    --background: 0 0% 7%;
+    /* Warm coal (the footer's #2f2e2c family, #201F1E field); primary flips to paper so pills stay legible */
+    --background: 40 3% 12%;
     --foreground: 0 0% 96%;
-    --card: 0 0% 11%;
+    --card: 40 3% 16%;
     --card-foreground: 0 0% 96%;
-    --popover: 0 0% 11%;
+    --popover: 40 3% 15%;
     --popover-foreground: 0 0% 96%;
     --primary: 0 0% 96%;
-    --primary-foreground: 0 0% 7%;
+    --primary-foreground: 40 3% 12%;
     --primary-bright: 0 0% 96%;
     --brand: 6 85% 55%;
-    --brand-foreground: 0 0% 7%;
+    --brand-foreground: 40 3% 12%;
     --accent-warm: var(--brand);
-    --surface-strong: 180 1% 16%;
-    --secondary: 180 1% 16%;
+    --surface-strong: 40 3% 21%;
+    --secondary: 40 3% 21%;
     --secondary-foreground: 0 0% 94%;
-    --muted: 180 1% 16%;
+    --muted: 40 3% 21%;
     --muted-foreground: 40 4% 68%;
-    --accent: 180 1% 19%;
+    --accent: 40 3% 24%;
     --accent-foreground: 0 0% 96%;
     --destructive: 4 92% 69%;
-    --destructive-foreground: 0 0% 7%;
+    --destructive-foreground: 40 3% 12%;
     --success: 147 47% 56%;
-    --success-foreground: 0 0% 7%;
+    --success-foreground: 40 3% 12%;
     --warning: 40 77% 60%;
-    --warning-foreground: 0 0% 7%;
-    --border: 0 0% 24%;
-    --input: 0 0% 26%;
+    --warning-foreground: 40 3% 12%;
+    --border: 40 3% 26%;
+    --input: 40 3% 24%;
     --ring: 0 0% 96%;
-    --sidebar-background: 0 0% 6%;
+    --sidebar-background: 40 3% 10%;
     --sidebar-foreground: 0 0% 92%;
     --sidebar-primary: 0 0% 96%;
-    --sidebar-primary-foreground: 0 0% 7%;
-    --sidebar-accent: 180 1% 16%;
+    --sidebar-primary-foreground: 40 3% 12%;
+    --sidebar-accent: 40 3% 18%;
     --sidebar-accent-foreground: 0 0% 94%;
-    --sidebar-border: 0 0% 24%;
+    --sidebar-border: 40 3% 26%;
     --sidebar-ring: 0 0% 96%;
 
     /* Chat persona tokens */
     --chat-hire: 214 34% 70%;
-    --chat-hire-foreground: 0 0% 7%;
+    --chat-hire-foreground: 40 3% 12%;
     --chat-hire-soft: 214 16% 17%;
     --chat-collab: 34 14% 68%;
-    --chat-collab-foreground: 0 0% 7%;
+    --chat-collab-foreground: 40 3% 12%;
     --chat-collab-soft: 32 7% 17%;
   }
 
@@ -933,12 +937,12 @@
     background-color: hsl(var(--background));
   }
   .dark .chat-paper {
-    --background: 0 0% 7%;
+    --background: 40 4% 10%;
     --foreground: 40 12% 94%;
     --muted-foreground: 35 6% 68%;
-    --card: 180 1% 16%;
+    --card: 40 4% 14%;
     --card-foreground: 40 12% 94%;
-    --popover: 180 1% 16%;
+    --popover: 40 4% 13%;
     --popover-foreground: 40 12% 94%;
     --border: 40 5% 22%;
     --input: 40 5% 22%;
@@ -955,9 +959,9 @@
     background-color: hsl(var(--background));
   }
 
-  /* Hire / collab request popups — paper + ink, same as auth and search filter.
-     Stays light in dark mode. Accent is ink, not radiant orange. */
-  .paper-popup {
+  /* Hire / collab request popups — paper + ink in light mode; in dark mode they follow the
+     app's dark tokens like every other popup. Accent is ink, not radiant orange. */
+  html:not(.dark) .paper-popup {
     --background: 50 30% 96%;
     --foreground: 0 0% 7%;
     --muted-foreground: 0 0% 40%;
@@ -985,13 +989,13 @@
     font-family: "Agrandir Wide", "IBM Plex Sans Thai", "IBM Plex Sans", sans-serif;
     color: hsl(var(--foreground));
   }
-  .paper-popup .bg-muted\/30,
-  .paper-popup .bg-muted\/20 {
+  html:not(.dark) .paper-popup .bg-muted\/30,
+  html:not(.dark) .paper-popup .bg-muted\/20 {
     background-color: #fff;
   }
   .paper-popup input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="date"]),
   .paper-popup textarea {
-    background-color: #fff;
+    background-color: hsl(var(--card));
     border-color: hsl(var(--border));
     box-shadow: none;
   }

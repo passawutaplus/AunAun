@@ -238,7 +238,7 @@ const ChatSidebar = ({
       onSelectConversation(c.id);
       return;
     }
-    navigate(`/chat/${c.id}`);
+    navigate(`/chat/${c.id}`, { replace: true });
   };
 
   const handleCreateGroup = () => {
@@ -580,7 +580,7 @@ const ChatSidebar = ({
         onCreated={(convId) => {
           setGroupOpen(false);
           if (onSelectConversation) onSelectConversation(convId);
-          else navigate(`/chat/${convId}`);
+          else navigate(`/chat/${convId}`, { replace: true });
         }}
       />
     </aside>

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronDown, ChevronRight, ExternalLink, ImageIcon } from "lucide-react";
+import { ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
 import { InlineLoader } from "@/components/ui/BanterLoader";
 import { useReducedMotion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -27,9 +27,9 @@ import {
 import { useFollowState } from "@/hooks/useFollow";
 import { PUBLIC_PROFILE_SELECT } from "@/lib/dbSelects";
 import { profilePublicPath } from "@/lib/profileRoutes";
-import { safeHttpUrl } from "@/lib/safeUrl";
 import ChatMetaPanel from "@/components/chat/ChatMetaPanel";
 import { ChatJobPanel } from "@/components/chat/ChatJobPanel";
+import { ChatMediaGallery } from "@/components/chat/ChatMediaGallery";
 import { isCommerceEnabled } from "@/lib/aplus1Launch";
 import { CollabPlanSidebarSummary } from "@/components/chat/CollabPlanSidebarSummary";
 import { CollabPanelProgress } from "@/components/chat/CollabProgress";
@@ -156,7 +156,12 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapse
     () =>
       messages
         .filter((m) => m.attachment_url && m.message_type !== "project")
-        .map((m) => ({ url: m.attachment_url!, createdAt: m.created_at }))
+        .map((m) => ({
+          url: m.attachment_url!,
+          createdAt: m.created_at,
+          messageType: m.message_type,
+          name: m.message_type === "file" ? m.content : null,
+        }))
         .reverse(),
     [messages],
   );
@@ -171,8 +176,16 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapse
   const showPartnerWorks = !!viewUserId && viewUserId !== user?.id;
   const showHireMeta = !isGroup && (conversation.kind === "hire" || conversation.kind === "collab");
   const isCollabConv = conversation.kind === "collab" || (isGroup && conversation.group_tag === "collab");
-  /** Free launch: portfolio tabs are empty — show the job / payment tracker instead. */
+  /** Free launch: quotes / installments / receipts live in the bottom sheet, under the works tabs. */
   const showJobPanel = !isCommerceEnabled() && !isCollabConv;
+  /** Bottom sheet: job details (quotes / installments, or the collab plan) + every media item. */
+  const hasJobDetails = isCollabConv || showJobPanel || showHireMeta;
+  const metaLabel = !hasJobDetails
+    ? "มีเดียในแชท"
+    : isCollabConv
+      ? "แผนงาน / มีเดีย"
+      : "รายละเอียดงาน / มีเดีย";
+  const [sheetTab, setSheetTab] = useState<"details" | "media">("details");
   const openCollabPlan = useCollabPlanUi((st) => st.openFor);
 
   const measureProfileLimits = useCallback(() => {
@@ -452,19 +465,8 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapse
 
       <div className="relative flex-1 min-h-0 flex flex-col">
         <div className={cn("flex-1 min-h-0 overflow-y-auto bg-background", metaOpen && "overflow-hidden")}>
-          {showJobPanel ? (
-            <ChatJobPanel conversationId={conversation.id} />
-          ) : (
-          <Tabs key={viewUserId ?? "none"} defaultValue={isCollabConv ? "plan" : "mine"} className="bg-background">
+          <Tabs key={viewUserId ?? "none"} defaultValue="mine" className="bg-background">
               <TabsList className="sticky top-0 z-10 w-full rounded-none border-b border-border bg-background h-auto p-0 shadow-[0_1px_0_0_hsl(var(--border))]">
-                {isCollabConv ? (
-                  <TabsTrigger
-                    value="plan"
-                    className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-[hsl(var(--chat-collab))] data-[state=active]:bg-background data-[state=active]:shadow-none py-2 text-[11px]"
-                  >
-                    แผน & Tasks
-                  </TabsTrigger>
-                ) : null}
                 <TabsTrigger
                   value="mine"
                   className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-background data-[state=active]:shadow-none py-2 text-[11px]"
@@ -480,12 +482,6 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapse
                   </TabsTrigger>
                 )}
               </TabsList>
-              {isCollabConv ? (
-                <TabsContent value="plan" className="mt-0 space-y-3 p-3">
-                  <CollabPanelProgress conversationId={conversation.id} />
-                  <CollabPlanSidebarSummary conversationId={conversation.id} onOpen={() => openCollabPlan(conversation.id)} />
-                </TabsContent>
-              ) : null}
               <TabsContent value="mine" className="mt-0 p-2.5">
                 {user?.id && (
                   <ChatPortfolioSection
@@ -505,7 +501,6 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapse
                 </TabsContent>
               )}
             </Tabs>
-          )}
         </div>
 
         <div
@@ -521,11 +516,7 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapse
             onClick={() => setMetaOpen(false)}
             className={cn(META_BAR_CLASS, "border-b border-border")}
           >
-            {showHireMeta
-              ? conversation.kind === "hire"
-                ? (isCommerceEnabled() ? "รายละเอียดออเดอร์ / มีเดีย" : "รายละเอียดงาน / มีเดีย")
-                : "ข้อมูลแผนงานร่วมกัน"
-              : "มีเดียในแชท"}
+            {metaLabel}
             <span className={META_EXPAND_BTN_CLASS} aria-hidden>
               <ChevronDown
                 className={cn(
@@ -536,41 +527,53 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapse
             </span>
           </button>
 
-          <div className="flex-1 min-h-0 overflow-y-auto bg-background">
-            {showHireMeta && <ChatMetaPanel conversation={conversation} embedded />}
-            <div className={cn("p-4 bg-background", showHireMeta && "border-t border-border")}>
-              {attachments.length === 0 ? (
-                <div className="text-center py-6 text-muted-foreground">
-                  <ImageIcon className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                  <p className="text-sm">ยังไม่มีรูปหรือไฟล์ในแชทนี้</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-3 gap-2">
-                  {attachments.map(({ url }) => {
-                    const href = safeHttpUrl(url);
-                    if (!href) {
-                      return (
-                        <div
-                          key={url}
-                          className="aspect-square rounded-lg overflow-hidden bg-muted"
-                        />
-                      );
-                    }
-                    return (
-                      <a
-                        key={url}
-                        href={href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="aspect-square rounded-lg overflow-hidden bg-muted hover:opacity-90 transition-opacity"
-                      >
-                        <img loading="lazy" decoding="async" src={href} alt="" className="w-full h-full object-cover" />
-                      </a>
-                    );
-                  })}
-                </div>
-              )}
+          {hasJobDetails ? (
+            <div className="flex shrink-0 gap-1 border-b border-border bg-background p-2" role="tablist" aria-label="รายละเอียดหรือมีเดีย">
+              {(
+                [
+                  ["details", isCollabConv ? "แผนงาน" : "รายละเอียดงาน"],
+                  ["media", `มีเดีย${attachments.length ? ` ${attachments.length}` : ""}`],
+                ] as const
+              ).map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  role="tab"
+                  aria-selected={sheetTab === id}
+                  onClick={() => setSheetTab(id)}
+                  className={cn(
+                    "min-h-9 flex-1 rounded-full text-xs font-medium transition-colors",
+                    sheetTab === id ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted",
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
+          ) : null}
+
+          <div className="flex-1 min-h-0 overflow-y-auto bg-background">
+            {hasJobDetails && sheetTab === "details" ? (
+              <>
+                {isCollabConv ? (
+                  <div className="space-y-3 border-b border-border p-3">
+                    <CollabPanelProgress conversationId={conversation.id} />
+                    <CollabPlanSidebarSummary conversationId={conversation.id} onOpen={() => openCollabPlan(conversation.id)} />
+                  </div>
+                ) : showJobPanel ? (
+                  <ChatJobPanel conversationId={conversation.id} />
+                ) : null}
+                {showHireMeta && (
+                  <div className={cn((isCollabConv || showJobPanel) && "border-t border-border")}>
+                    <ChatMetaPanel conversation={conversation} embedded />
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="p-3">
+                <ChatMediaGallery items={attachments} />
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -582,11 +585,7 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapse
           onClick={() => setMetaOpen(true)}
           className={cn(META_BAR_CLASS, "border-t border-border")}
         >
-          {showHireMeta
-            ? conversation.kind === "hire"
-              ? (isCommerceEnabled() ? "รายละเอียดออเดอร์ / มีเดีย" : "รายละเอียดงาน / มีเดีย")
-              : "ข้อมูลแผนงานร่วมกัน"
-            : "มีเดียในแชท"}
+          {metaLabel}
           <span className={META_EXPAND_BTN_CLASS} aria-hidden>
             <ChevronDown className="w-4 h-4" />
           </span>

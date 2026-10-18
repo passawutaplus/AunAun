@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { exploreProjectsUrl } from "@/lib/exploreRoutes";
-import { Bookmark, Eye, MessageCircle, Sparkles, Calendar, Handshake, AlignLeft, Palette, Hash, Share2, Pencil, Users } from "lucide-react";
+import { Bookmark, Eye, MessageCircle, MessageSquareText, Sparkles, Calendar, Handshake, AlignLeft, Palette, Hash, Share2, Pencil, Users } from "lucide-react";
 import UserAvatar from "@/components/UserAvatar";
 import { useProfilesByIds } from "@/core/profiles";
 import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
@@ -325,7 +325,7 @@ const ProjectSidePanel = (p: Props) => {
 
         <div className="flex items-center justify-around text-xs text-muted-foreground pt-3 border-t border-border/50">
           <span className="flex items-center gap-1"><Eye className="w-3.5 h-3.5" /> {formatCompact(p.views)} วิว</span>
-          <span className="flex items-center gap-1"><MessageCircle className="w-3.5 h-3.5" /> {formatCompact(p.commentsCount)}</span>
+          <span className="flex items-center gap-1"><MessageSquareText className="w-3.5 h-3.5" aria-hidden /> {formatCompact(p.commentsCount)} คอมเมนต์</span>
         </div>
 
         <LicenseDetailBlock
