@@ -5,6 +5,13 @@ import { FEED_PROJECT_GRID_GAP } from "@/lib/feedMasonry";
 import { smoothEase, staggerReveal, viewportOnce } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
+/** Masonry column counts follow the Grid Feed picker (phone: 1/2, wider: large/medium/small). */
+const MASONRY_DESKTOP_COLUMNS = {
+  large: "columns-2 sm:columns-2 lg:columns-3",
+  medium: "columns-2 sm:columns-3 lg:columns-4 xl:columns-5",
+  small: "columns-3 sm:columns-4 lg:columns-5 xl:columns-6",
+} as const;
+
 const layoutTransition = {
   layout: { duration: 0.42, ease: smoothEase },
 };
@@ -41,7 +48,11 @@ export function FeedProjectGrid({ className, itemClassName, columnsClass, masonr
   if (masonry) {
     return (
       <div
-        className={cn("columns-2 gap-4 sm:columns-3 sm:gap-5 lg:columns-4 xl:columns-5", className)}
+        className={cn(
+          narrow ? (mobileColumns === "one" ? "columns-1" : "columns-2") : MASONRY_DESKTOP_COLUMNS[density],
+          "gap-4 sm:gap-5",
+          className,
+        )}
         data-feed-results=""
         data-feed-density="masonry"
       >
