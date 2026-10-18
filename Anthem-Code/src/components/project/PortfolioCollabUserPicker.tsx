@@ -89,10 +89,6 @@ export function PortfolioCollabUserPicker({
             <AtSign className="w-4 h-4 text-primary shrink-0" />
             แท็กเพื่อนร่วมงาน
           </p>
-          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-            แท็กได้เฉพาะคนที่ติดตามกันทั้งคู่ เมื่อเผยแพร่ผลงาน เขาจะได้แจ้งเตือนให้ยืนยัน
-            ชื่อจะขึ้นในผลงานเมื่อเขากดยอมรับ ถ้าปฏิเสธ ผลงานยังเผยแพร่ได้ตามปกติ
-          </p>
         </div>
         <Popover
           open={open}
