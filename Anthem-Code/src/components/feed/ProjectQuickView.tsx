@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { ArrowUpRight, Eye, Heart, MessageCircle } from "lucide-react";
+import { ArrowUpRight, Bookmark, Eye, Heart, MessageCircle } from "lucide-react";
+import SaveToCollectionPopover from "@/components/collections/SaveToCollectionPopover";
+import { useSavedProjectIds } from "@/hooks/useCollections";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import ConnectMessageDialog from "@/components/chat/ConnectMessageDialog";
@@ -34,6 +36,9 @@ export function ProjectQuickView({
   const reduced = useReducedMotion();
   const [chatOpen, setChatOpen] = useState(false);
   const isOwn = !!user && user.id === project.ownerId;
+  const isDbProject = /^[0-9a-f]{8}-/.test(project.id);
+  const { data: savedIds = [] } = useSavedProjectIds(user?.id);
+  const saved = isDbProject && savedIds.includes(project.id);
 
   const openChat = () => {
     if (!user) {
@@ -49,8 +54,9 @@ export function ProjectQuickView({
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
-          overlayClassName="bg-black/75 backdrop-blur-sm"
-          className="w-[calc(100vw-1.5rem)] max-w-md gap-0 overflow-hidden rounded-2xl border-0 bg-card p-0 [&>button]:rounded-full [&>button]:bg-black/45 [&>button]:p-1.5 [&>button]:text-white [&>button]:opacity-100"
+          overlayClassName="bg-black/85 backdrop-blur-sm"
+          onOpenAutoFocus={(e) => e.preventDefault()}
+          className="w-[calc(100vw-1.5rem)] max-w-md gap-0 border-0 bg-transparent p-0 text-white shadow-none [&>button]:-top-11 [&>button]:right-0 [&>button]:rounded-full [&>button]:bg-white/15 [&>button]:p-2 [&>button]:text-white [&>button]:opacity-100"
         >
           <motion.div
             initial={reduced ? false : { opacity: 0, scale: 0.94 }}
@@ -59,7 +65,7 @@ export function ProjectQuickView({
           >
             <button
               type="button"
-              className="block w-full bg-black"
+              className="flex w-full justify-center rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
               onClick={() => {
                 onOpenChange(false);
                 navigate(`/project/${project.id}`);
@@ -69,19 +75,19 @@ export function ProjectQuickView({
               <img
                 src={naturalFeedCoverUrl(project.image)}
                 alt={project.title}
-                className="mx-auto max-h-[62dvh] w-full object-contain"
+                className="mx-auto max-h-[64dvh] w-auto max-w-full rounded-2xl object-contain"
                 draggable={false}
               />
             </button>
-            <div className="space-y-3 p-4">
+            <div className="space-y-3 px-1 pt-4">
               <div className="min-w-0">
-                <DialogTitle className="truncate text-base font-semibold leading-snug text-foreground">
+                <DialogTitle className="truncate text-base font-semibold leading-snug text-white">
                   {project.title}
                 </DialogTitle>
                 <DialogDescription asChild>
                   <button
                     type="button"
-                    className="mt-1.5 flex min-w-0 items-center gap-2 text-left text-sm text-muted-foreground"
+                    className="mt-1.5 flex min-w-0 items-center gap-2 text-left text-sm text-white/75"
                     onClick={() => {
                       if (!project.ownerId) return;
                       onOpenChange(false);
@@ -95,12 +101,12 @@ export function ProjectQuickView({
                       className="h-6 w-6"
                       fallbackClassName="text-[10px]"
                     />
-                    <span className="truncate text-foreground">{project.owner}</span>
+                    <span className="truncate text-white">{project.owner}</span>
                     <VerifiedBadge verified={project.ownerVerified} size="sm" />
                   </button>
                 </DialogDescription>
               </div>
-              <div className="flex items-center gap-4 text-sm text-muted-foreground tabular-nums">
+              <div className="flex items-center gap-4 text-sm text-white/75 tabular-nums">
                 <span className="inline-flex items-center gap-1.5">
                   <Heart className="h-4 w-4" aria-hidden /> {compact(likes)}
                   <span className="sr-only">ถูกใจ</span>
@@ -115,11 +121,24 @@ export function ProjectQuickView({
                   <button
                     type="button"
                     onClick={openChat}
-                    className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
+                    className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full bg-white px-4 text-sm font-medium text-neutral-900 transition-opacity hover:opacity-90"
                   >
                     <MessageCircle className="h-4 w-4" aria-hidden />
                     ทักแชท
                   </button>
+                ) : null}
+                {isDbProject ? (
+                  <SaveToCollectionPopover projectId={project.id} align="center" side="top">
+                    <button
+                      type="button"
+                      aria-label={saved ? "เก็บในคอลเลกชันแล้ว" : "เก็บเข้าคอลเลกชัน"}
+                      aria-pressed={saved}
+                      className="inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-full border border-white/25 px-4 text-sm font-medium text-white transition-colors hover:bg-white/10"
+                    >
+                      <Bookmark className={saved ? "h-4 w-4 fill-current" : "h-4 w-4"} aria-hidden />
+                      เก็บ
+                    </button>
+                  </SaveToCollectionPopover>
                 ) : null}
                 <button
                   type="button"
@@ -127,7 +146,7 @@ export function ProjectQuickView({
                     onOpenChange(false);
                     navigate(`/project/${project.id}`);
                   }}
-                  className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-full border border-border px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+                  className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-full border border-white/25 px-4 text-sm font-medium text-white transition-colors hover:bg-white/10"
                 >
                   ดูผลงาน
                   <ArrowUpRight className="h-4 w-4" aria-hidden />

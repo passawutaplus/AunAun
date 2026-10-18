@@ -1,7 +1,7 @@
 import BriefcaseIcon from "./icons/BriefcaseIcon";
 import { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
-import { Bookmark, Eye, Handshake } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Bookmark, Eye, Handshake, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { Project } from "@/data/projectTypes";
 import { useProjectLike } from "@/hooks/useProjectInteractions";
@@ -71,6 +71,13 @@ const ProjectCard = ({
   const pressTimer = useRef<number | null>(null);
   const pressStart = useRef<{ x: number; y: number } | null>(null);
   const suppressClick = useRef(false);
+  // Phone gallery: double-tap likes (Instagram-style heart); a single tap waits a beat, then opens.
+  const lastPointer = useRef<string>("mouse");
+  const tapTimer = useRef<number | null>(null);
+  const [heartBurst, setHeartBurst] = useState(0);
+  useEffect(() => () => {
+    if (tapTimer.current) window.clearTimeout(tapTimer.current);
+  }, []);
   const cancelPress = () => {
     if (pressTimer.current) window.clearTimeout(pressTimer.current);
     pressTimer.current = null;
@@ -79,6 +86,7 @@ const ProjectCard = ({
   const longPressHandlers = gallery
     ? {
         onPointerDown: (e: React.PointerEvent) => {
+          lastPointer.current = e.pointerType;
           if (e.pointerType !== "touch") return;
           pressStart.current = { x: e.clientX, y: e.clientY };
           pressTimer.current = window.setTimeout(() => {
@@ -181,8 +189,25 @@ const ProjectCard = ({
           suppressClick.current = false;
           return;
         }
-        if (boostId) void logBoostEvent(boostId, "click");
-        navigate(`/project/${project.id}`);
+        const open = () => {
+          if (boostId) void logBoostEvent(boostId, "click");
+          navigate(`/project/${project.id}`);
+        };
+        if (!gallery || lastPointer.current !== "touch") {
+          open();
+          return;
+        }
+        if (tapTimer.current) {
+          window.clearTimeout(tapTimer.current);
+          tapTimer.current = null;
+          setHeartBurst((n) => n + 1);
+          if (isDbProject && !isLiked) toggleLike();
+          return;
+        }
+        tapTimer.current = window.setTimeout(() => {
+          tapTimer.current = null;
+          open();
+        }, 260);
       }}
       whileHover={gallery ? undefined : { y: -2 }}
       whileTap={{ scale: 0.985 }}
@@ -212,6 +237,22 @@ const ProjectCard = ({
           )}
           loading="lazy"
         />
+
+        <AnimatePresence>
+          {heartBurst > 0 ? (
+            <motion.span
+              key={heartBurst}
+              className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center"
+              initial={{ opacity: 0, scale: 0.4 }}
+              animate={{ opacity: [0, 1, 1, 0], scale: [0.4, 1.15, 1, 1.05] }}
+              transition={{ duration: 0.8, times: [0, 0.25, 0.7, 1], ease: smoothEase }}
+              onAnimationComplete={() => setHeartBurst(0)}
+              aria-hidden
+            >
+              <Heart className="h-16 w-16 fill-white text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)]" strokeWidth={1.5} />
+            </motion.span>
+          ) : null}
+        </AnimatePresence>
 
         {boosted ? (
           <div className="absolute top-2 left-2 z-10">
