@@ -1,0 +1,151 @@
+import { useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
+import { ArrowUpRight, Eye, Heart, MessageCircle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import ConnectMessageDialog from "@/components/chat/ConnectMessageDialog";
+import UserAvatar from "@/components/UserAvatar";
+import VerifiedBadge from "@/components/profile/VerifiedBadge";
+import type { Project } from "@/data/projectTypes";
+import { useAuth } from "@/hooks/useAuth";
+import { navigateToAuth } from "@/lib/authRedirect";
+import { naturalFeedCoverUrl } from "@/lib/feedProjectCover";
+import { smoothEase } from "@/lib/motion";
+import { profilePublicPath } from "@/lib/profileRoutes";
+import { absoluteUrl } from "@/lib/seo";
+
+const compact = (n: number) =>
+  n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1).replace(/\.0$/, "")}m` : n >= 1_000 ? `${(n / 1_000).toFixed(1).replace(/\.0$/, "")}k` : String(n);
+
+/** Long-press preview on the phone feed: big image + creator, title, likes, views, chat — no page load. */
+export function ProjectQuickView({
+  project,
+  likes,
+  open,
+  onOpenChange,
+}: {
+  project: Project;
+  likes: number;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const reduced = useReducedMotion();
+  const [chatOpen, setChatOpen] = useState(false);
+  const isOwn = !!user && user.id === project.ownerId;
+
+  const openChat = () => {
+    if (!user) {
+      onOpenChange(false);
+      navigateToAuth(navigate);
+      return;
+    }
+    onOpenChange(false);
+    setChatOpen(true);
+  };
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent
+          overlayClassName="bg-black/75 backdrop-blur-sm"
+          className="w-[calc(100vw-1.5rem)] max-w-md gap-0 overflow-hidden rounded-2xl border-0 bg-card p-0 [&>button]:rounded-full [&>button]:bg-black/45 [&>button]:p-1.5 [&>button]:text-white [&>button]:opacity-100"
+        >
+          <motion.div
+            initial={reduced ? false : { opacity: 0, scale: 0.94 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.28, ease: smoothEase }}
+          >
+            <button
+              type="button"
+              className="block w-full bg-black"
+              onClick={() => {
+                onOpenChange(false);
+                navigate(`/project/${project.id}`);
+              }}
+              aria-label={`เปิดผลงาน ${project.title}`}
+            >
+              <img
+                src={naturalFeedCoverUrl(project.image)}
+                alt={project.title}
+                className="mx-auto max-h-[62dvh] w-full object-contain"
+                draggable={false}
+              />
+            </button>
+            <div className="space-y-3 p-4">
+              <div className="min-w-0">
+                <DialogTitle className="truncate text-base font-semibold leading-snug text-foreground">
+                  {project.title}
+                </DialogTitle>
+                <DialogDescription asChild>
+                  <button
+                    type="button"
+                    className="mt-1.5 flex min-w-0 items-center gap-2 text-left text-sm text-muted-foreground"
+                    onClick={() => {
+                      if (!project.ownerId) return;
+                      onOpenChange(false);
+                      navigate(profilePublicPath({ user_id: project.ownerId, username: project.ownerUsername }));
+                    }}
+                  >
+                    <UserAvatar
+                      src={project.ownerAvatar}
+                      name={project.owner}
+                      username={project.ownerUsername}
+                      className="h-6 w-6"
+                      fallbackClassName="text-[10px]"
+                    />
+                    <span className="truncate text-foreground">{project.owner}</span>
+                    <VerifiedBadge verified={project.ownerVerified} size="sm" />
+                  </button>
+                </DialogDescription>
+              </div>
+              <div className="flex items-center gap-4 text-sm text-muted-foreground tabular-nums">
+                <span className="inline-flex items-center gap-1.5">
+                  <Heart className="h-4 w-4" aria-hidden /> {compact(likes)}
+                  <span className="sr-only">ถูกใจ</span>
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <Eye className="h-4 w-4" aria-hidden /> {compact(project.views ?? 0)}
+                  <span className="sr-only">วิว</span>
+                </span>
+              </div>
+              <div className="flex gap-2">
+                {!isOwn && project.ownerId ? (
+                  <button
+                    type="button"
+                    onClick={openChat}
+                    className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
+                  >
+                    <MessageCircle className="h-4 w-4" aria-hidden />
+                    ทักแชท
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => {
+                    onOpenChange(false);
+                    navigate(`/project/${project.id}`);
+                  }}
+                  className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-full border border-border px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+                >
+                  ดูผลงาน
+                  <ArrowUpRight className="h-4 w-4" aria-hidden />
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </DialogContent>
+      </Dialog>
+      {project.ownerId && !isOwn ? (
+        <ConnectMessageDialog
+          open={chatOpen}
+          onOpenChange={setChatOpen}
+          recipientId={project.ownerId}
+          recipientName={project.owner}
+          about={{ title: project.title, url: absoluteUrl(`/project/${project.id}`), coverUrl: project.image }}
+        />
+      ) : null}
+    </>
+  );
+}

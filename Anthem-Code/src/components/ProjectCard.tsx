@@ -21,6 +21,7 @@ import { PlusOneControl } from "@/components/brand/PlusOneControl";
 import UserAvatar from "@/components/UserAvatar";
 import VerifiedBadge from "@/components/profile/VerifiedBadge";
 import { extractSearchSnippet, highlight } from "@/lib/highlight";
+import { ProjectQuickView } from "@/components/feed/ProjectQuickView";
 import { profilePublicPath } from "@/lib/profileRoutes";
 
 interface ProjectCardProps {
@@ -63,6 +64,43 @@ const ProjectCard = ({
   const [menuOpen, setMenuOpen] = useState(false);
   const [collectionOpen, setCollectionOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
+  // Phone gallery: long-press (touch only) opens Quick View instead of loading the full page.
+  const [quickOpen, setQuickOpen] = useState(false);
+  /** Stays mounted after the first open so the chat dialog it launches survives the close. */
+  const [quickMounted, setQuickMounted] = useState(false);
+  const pressTimer = useRef<number | null>(null);
+  const pressStart = useRef<{ x: number; y: number } | null>(null);
+  const suppressClick = useRef(false);
+  const cancelPress = () => {
+    if (pressTimer.current) window.clearTimeout(pressTimer.current);
+    pressTimer.current = null;
+    pressStart.current = null;
+  };
+  const longPressHandlers = gallery
+    ? {
+        onPointerDown: (e: React.PointerEvent) => {
+          if (e.pointerType !== "touch") return;
+          pressStart.current = { x: e.clientX, y: e.clientY };
+          pressTimer.current = window.setTimeout(() => {
+            pressTimer.current = null;
+            suppressClick.current = true;
+            navigator.vibrate?.(12);
+            setQuickMounted(true);
+            setQuickOpen(true);
+          }, 450);
+        },
+        onPointerMove: (e: React.PointerEvent) => {
+          const s0 = pressStart.current;
+          if (s0 && Math.hypot(e.clientX - s0.x, e.clientY - s0.y) > 10) cancelPress();
+        },
+        onPointerUp: cancelPress,
+        onPointerCancel: cancelPress,
+        onContextMenu: (e: React.MouseEvent) => {
+          // Keep the OS image menu from popping up over the preview.
+          if (suppressClick.current || pressTimer.current) e.preventDefault();
+        },
+      }
+    : {};
   const boostImpLogged = useRef(false);
 
   useEffect(() => {
@@ -134,9 +172,15 @@ const ProjectCard = ({
   const showCornerBadges = projectHasDrillTag(project.tags) || project.aiAssisted;
 
   return (
+    <>
     <motion.div
-      className="group cursor-pointer"
+      className={cn("group cursor-pointer", gallery && "select-none [-webkit-touch-callout:none]")}
+      {...longPressHandlers}
       onClick={() => {
+        if (suppressClick.current) {
+          suppressClick.current = false;
+          return;
+        }
         if (boostId) void logBoostEvent(boostId, "click");
         navigate(`/project/${project.id}`);
       }}
@@ -350,6 +394,15 @@ const ProjectCard = ({
       </div>
       )}
     </motion.div>
+    {gallery && quickMounted ? (
+      <ProjectQuickView
+        project={project}
+        likes={isDbProject ? likes : project.likes}
+        open={quickOpen}
+        onOpenChange={setQuickOpen}
+      />
+    ) : null}
+    </>
   );
 };
 
