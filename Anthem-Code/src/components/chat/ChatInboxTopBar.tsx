@@ -35,7 +35,9 @@ export function ChatInboxTopBar({ onTour }: { onTour?: () => void } = {}) {
   }, [user]);
 
   return (
-    <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border bg-card px-3 sm:px-4">
+    // Phones: hidden — the list and the thread each carry their own one-row header, and
+    // My Studio / notifications / profile live in the bottom nav.
+    <header className="hidden h-14 shrink-0 items-center gap-2 border-b border-border bg-card px-3 sm:px-4 md:flex">
       <BackButton label="กลับหน้าก่อนหน้า" />
       <h1 className="text-2xl font-semibold tracking-tight text-foreground">Chat</h1>
       {onTour ? <TourHelpButton onClick={onTour} className="h-8 w-8" /> : null}

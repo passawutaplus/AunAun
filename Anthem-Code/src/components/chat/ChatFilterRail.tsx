@@ -3,7 +3,7 @@ import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
 import type { ChatKind } from "@/hooks/useChat";
 import { cn } from "@/lib/utils";
 
-const TABS: {
+export const CHAT_FILTER_TABS: {
   key: "all" | ChatKind;
   label: string;
   icon?: LucideIcon;
@@ -28,7 +28,7 @@ export function ChatFilterRail({ tab, onTabChange, className }: Props) {
       aria-label="ประเภทบทสนทนา"
       className={cn("flex items-center gap-1.5 overflow-x-auto scrollbar-hide", className)}
     >
-      {TABS.map(({ key, label, icon: Icon }) => {
+      {CHAT_FILTER_TABS.map(({ key, label, icon: Icon }) => {
         const active = tab === key;
         const accent =
           key === "hire"

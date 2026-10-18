@@ -1530,7 +1530,7 @@ const ChatThreadView = ({
               variant="ghost"
               size="icon"
               onClick={openCreateGroupDialog}
-              className="h-8 w-8 rounded-full text-muted-foreground"
+              className="hidden h-8 w-8 rounded-full text-muted-foreground md:inline-flex"
               aria-label="สร้างกลุ่ม"
               title="สร้างกลุ่ม"
             >
@@ -1634,6 +1634,13 @@ const ChatThreadView = ({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
+                {!isGroup && otherId ? (
+                  // Phones keep the header to one row: "create group" lives in this menu.
+                  <DropdownMenuItem onClick={openCreateGroupDialog} className="md:hidden">
+                    <Users className="mr-2 h-4 w-4" />
+                    สร้างกลุ่ม
+                  </DropdownMenuItem>
+                ) : null}
                 {!isGroup && otherId ? (
                   <DropdownMenuItem onClick={() => setReportOpen(true)} className="text-destructive focus:text-destructive">
                     <Flag className="mr-2 h-4 w-4" />
