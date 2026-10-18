@@ -48,6 +48,7 @@ const PortfolioManagePage = lazy(() => import("./pages/PortfolioManagePage.tsx")
 const DashboardPage = lazy(() => import("./pages/DashboardPage.tsx"));
 const DashboardHomePage = lazy(() => import("./pages/DashboardHomePage.tsx"));
 const DashboardInsightsPage = lazy(() => import("./pages/DashboardInsightsPage.tsx"));
+const DashboardBillingPage = lazy(() => import("./pages/DashboardBillingPage.tsx"));
 const DashboardPortfolioPage = lazy(() => import("./pages/DashboardPortfolioPage.tsx"));
 const DashboardReviewsPage = lazy(() => import("./pages/DashboardReviewsPage.tsx"));
 const DashboardDocumentsPage = lazy(() => import("./pages/DashboardDocumentsPage.tsx"));
@@ -193,6 +194,8 @@ const ReferralPage = lazy(() => import("./pages/ReferralPage.tsx"));
 const FollowConnectionsPage = lazy(() => import("./pages/FollowConnectionsPage.tsx"));
 const ReviewFormPreviewPage = lazy(() => import("./pages/dev/ReviewFormPreviewPage.tsx"));
 const HireCancelPreviewPage = lazy(() => import("./pages/dev/HireCancelPreviewPage.tsx"));
+const OfferDialogPreviewPage = lazy(() => import("./pages/dev/OfferDialogPreviewPage.tsx"));
+const BillingPreviewPage = lazy(() => import("./pages/dev/BillingPreviewPage.tsx"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -248,6 +251,8 @@ const App = () => (
               </Route>
               <Route path="/dev/review-form" element={<ReviewFormPreviewPage />} />
               <Route path="/dev/hire-cancel" element={<HireCancelPreviewPage />} />
+              <Route path="/dev/offer-dialog" element={<OfferDialogPreviewPage />} />
+              <Route path="/dev/billing" element={<BillingPreviewPage />} />
               <Route path="/research" element={<ResearchPage />} />
               <Route path="/research/feedback" element={<UxResearchFeedbackPage />} />
               <Route path="/auth" element={<AuthPage />} />
@@ -265,6 +270,7 @@ const App = () => (
               <Route path="/dashboard/objects" element={<RequireAuth><DashboardPortfolioPage mode="objects" /></RequireAuth>} />
               <Route path="/dashboard/catalogs" element={<RequireAuth><DashboardPortfolioPage mode="catalogs" /></RequireAuth>} />
               <Route path="/dashboard/insights" element={<RequireAuth><DashboardInsightsPage /></RequireAuth>} />
+              <Route path="/dashboard/billing" element={<RequireAuth><DashboardBillingPage /></RequireAuth>} />
               <Route path="/dashboard/reviews" element={<RequireAuth><DashboardReviewsPage /></RequireAuth>} />
               <Route path="/dashboard/documents" element={<RequireAuth><DashboardDocumentsPage /></RequireAuth>} />
               <Route path="/dashboard/payout" element={<RequireAuth><DashboardPayoutPage /></RequireAuth>} />

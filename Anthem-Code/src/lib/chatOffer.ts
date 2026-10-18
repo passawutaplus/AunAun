@@ -36,6 +36,15 @@ export type OfferPartyInfo = {
 
 export type OfferPaymentMode = "full" | "deposit";
 
+/** One installment of the payment plan. Percents across the plan add up to 100. */
+export type OfferInstallment = {
+  id: string;
+  label: string;
+  percent: number;
+  /** Optional work step this installment is due at (ChatOfferMilestone.id). */
+  milestoneId?: string | null;
+};
+
 export type ChatOfferPayload = {
   v: 1 | 2 | 3 | 4;
   title: string;
@@ -95,6 +104,12 @@ export type ChatOfferPayload = {
   internalNotes?: string | null;
   /** DB quote id when persisted. */
   quoteId?: string | null;
+  /** Payment plan (v5). Missing → derived from depositPercent. */
+  paymentPlan?: OfferInstallment[];
+  /** Quotation valid until (YYYY-MM-DD). */
+  validUntil?: string | null;
+  /** studio_documents.id of this quotation (v5). */
+  docId?: string | null;
 };
 
 export function emptyParty(type: OfferPartyType = "individual"): OfferPartyInfo {
@@ -327,6 +342,9 @@ export function parseChatOffer(content: string | null | undefined): ChatOfferPay
       clientNotes: raw.clientNotes ? clampStr(raw.clientNotes, 800) : null,
       internalNotes: raw.internalNotes ? clampStr(raw.internalNotes, 800) : null,
       quoteId: raw.quoteId ? clampStr(raw.quoteId, 40) : null,
+      paymentPlan: parsePaymentPlan(raw.paymentPlan),
+      validUntil: clampDate(raw.validUntil),
+      docId: raw.docId ? clampStr(raw.docId, 40) : null,
     };
   } catch {
     return null;
@@ -508,4 +526,110 @@ export function isValidThaiTaxId(raw: string | null | undefined): boolean {
   for (let i = 0; i < 12; i++) sum += Number(s[i]) * (13 - i);
   const check = (11 - (sum % 11)) % 10;
   return check === Number(s[12]);
+}
+
+// ---------------------------------------------------------------------------
+// Payment plan (installments)
+// ---------------------------------------------------------------------------
+
+export const PAYMENT_PLAN_PRESETS = [
+  { id: "once", label: "จ่ายครั้งเดียว", percents: [100], labels: ["ชำระเต็มจำนวน"] },
+  { id: "50-50", label: "มัดจำ 50 / 50", percents: [50, 50], labels: ["มัดจำก่อนเริ่มงาน", "ส่วนที่เหลือเมื่อส่งมอบ"] },
+  {
+    id: "30-40-30",
+    label: "3 งวด 30 / 40 / 30",
+    percents: [30, 40, 30],
+    labels: ["มัดจำก่อนเริ่มงาน", "เมื่อส่งร่าง", "เมื่อส่งมอบ"],
+  },
+] as const;
+
+export type PaymentPlanPresetId = (typeof PAYMENT_PLAN_PRESETS)[number]["id"] | "custom";
+
+export function newInstallmentId() {
+  return `pi-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+export function planFromPreset(id: Exclude<PaymentPlanPresetId, "custom">): OfferInstallment[] {
+  const preset = PAYMENT_PLAN_PRESETS.find((p) => p.id === id) ?? PAYMENT_PLAN_PRESETS[0];
+  return preset.percents.map((percent, i) => ({
+    id: newInstallmentId(),
+    label: preset.labels[i],
+    percent,
+    milestoneId: null,
+  }));
+}
+
+/** Which preset (if any) a plan matches — drives the selected chip. */
+export function planPresetId(plan: OfferInstallment[]): PaymentPlanPresetId {
+  const sig = plan.map((p) => p.percent).join("-");
+  const hit = PAYMENT_PLAN_PRESETS.find((p) => p.percents.join("-") === sig);
+  return hit ? hit.id : "custom";
+}
+
+export function planPercentTotal(plan: OfferInstallment[]): number {
+  return plan.reduce((sum, p) => sum + (Number.isFinite(p.percent) ? p.percent : 0), 0);
+}
+
+function parsePaymentPlan(raw: unknown): OfferInstallment[] | undefined {
+  if (!Array.isArray(raw) || raw.length === 0) return undefined;
+  const plan = raw.slice(0, 6).map((r, i) => {
+    const row = (r ?? {}) as Partial<OfferInstallment>;
+    return {
+      id: clampStr(row.id || `pi-${i}`, 24),
+      label: clampStr(row.label || `งวดที่ ${i + 1}`, 80),
+      percent: Math.min(100, Math.max(0, Math.round(Number(row.percent) || 0))),
+      milestoneId: row.milestoneId ? clampStr(row.milestoneId, 24) : null,
+    };
+  });
+  return planPercentTotal(plan) === 100 ? plan : undefined;
+}
+
+/** The plan to use for an offer — explicit plan, else derived from the legacy deposit percent. */
+export function offerPaymentPlan(
+  offer: Pick<ChatOfferPayload, "paymentPlan" | "depositPercent" | "paymentMode">,
+): OfferInstallment[] {
+  if (offer.paymentPlan && offer.paymentPlan.length > 0) return offer.paymentPlan;
+  const pct = offer.paymentMode === "full" ? 100 : Math.min(100, Math.max(1, offer.depositPercent ?? 100));
+  if (pct >= 100) return [{ id: "pi-full", label: "ชำระเต็มจำนวน", percent: 100 }];
+  return [
+    { id: "pi-dep", label: "มัดจำก่อนเริ่มงาน", percent: pct },
+    { id: "pi-bal", label: "ส่วนที่เหลือเมื่อส่งมอบ", percent: 100 - pct },
+  ];
+}
+
+export type InstallmentAmounts = {
+  installment: OfferInstallment;
+  no: number;
+  /** Amount before WHT (THB, 2 decimals). */
+  gross: number;
+  wht: number;
+  /** What the client actually transfers. */
+  net: number;
+};
+
+const round2 = (n: number) => Math.round(n * 100) / 100;
+
+/**
+ * Split the offer total across its plan. Single source of truth for installment money:
+ * gross = amount × percent (remainder on the last installment so the sum is exact),
+ * WHT is taken per installment, net = gross − WHT.
+ */
+export function offerInstallmentAmounts(
+  offer: Pick<
+    ChatOfferPayload,
+    "amount" | "paymentPlan" | "depositPercent" | "paymentMode" | "whtApplicable" | "whtEnabled" | "whtRate"
+  >,
+): InstallmentAmounts[] {
+  const plan = offerPaymentPlan(offer);
+  const amount = Math.max(0, offer.amount || 0);
+  const whtOn = offer.whtApplicable ?? offer.whtEnabled === true;
+  const rate = offer.whtRate ?? 3;
+  let allocated = 0;
+  return plan.map((installment, i) => {
+    const isLast = i === plan.length - 1;
+    const gross = isLast ? round2(amount - allocated) : round2((amount * installment.percent) / 100);
+    allocated = round2(allocated + gross);
+    const wht = whtOn ? offerWhtAmount(gross, rate) : 0;
+    return { installment, no: i + 1, gross, wht, net: round2(gross - wht) };
+  });
 }

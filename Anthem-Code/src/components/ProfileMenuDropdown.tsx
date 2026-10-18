@@ -10,6 +10,7 @@ import {
   BookOpen,
   ArrowLeft,
   Rocket,
+  Mail,
 } from "lucide-react";
 import ManageWorkIcon from "@/components/icons/ManageWorkIcon";
 import { useNavigate } from "react-router-dom";
@@ -138,6 +139,11 @@ export function ProfileMenuContent({ onNavigate, variant = "default" }: ProfileM
       >
         <LineMarkIcon className="w-4 h-4 mr-2" /> ติดต่อเรา Line
       </DropdownMenuItem>
+      {variant !== "forum" ? (
+        <DropdownMenuItem onClick={() => go("/learn#contact")} className="rounded-lg">
+          <Mail className="w-4 h-4 mr-2" /> Get in Touch
+        </DropdownMenuItem>
+      ) : null}
       {variant === "forum" && isAdmin ? (
         <DropdownMenuItem onClick={() => go("/forum/admin")} className="rounded-lg">
           <Shield className="w-4 h-4 mr-2" /> แอดมินฟอรัม

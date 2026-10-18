@@ -1,3 +1,4 @@
+import { isCommerceEnabled } from "@/lib/aplus1Launch";
 import BriefcaseIcon from "../icons/BriefcaseIcon";
 import { Handshake, Calendar, Coins, Paperclip, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -177,7 +178,7 @@ const ChatMetaPanel = ({
             <ChatQuoteActions conversation={conversation} />
           </div>
         )}
-        {isHire && conversation.request_id ? (
+        {isHire && conversation.request_id && isCommerceEnabled() ? (
           <>
             <HireOrderFlowPanel
               conversation={conversation}
