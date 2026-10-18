@@ -196,7 +196,7 @@ const FloatingNav = () => {
           className={cn(
             "pointer-events-auto flex h-14 w-14 shrink-0 items-center justify-center rounded-full shadow-sm transition-all duration-200 ease-out hover:opacity-90 active:scale-95",
             // Light mode: white with a black "+"; dark mode: black with a white "+". A hairline ring keeps it visible on any photo.
-            "bg-white text-[#111111] ring-1 ring-black/10 dark:bg-[#111111] dark:text-white dark:ring-white/25",
+            "bg-white text-[#111111] ring-1 ring-black/10 dark:bg-background dark:text-white dark:ring-white/25",
           )}
         >
           <Plus className="h-6 w-6" strokeWidth={2.5} />
