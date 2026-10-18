@@ -1,7 +1,7 @@
 import BriefcaseIcon from "./icons/BriefcaseIcon";
 import { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
-import { Bookmark, Eye, Handshake } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Bookmark, Eye, Handshake, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { Project } from "@/data/projectTypes";
 import { useProjectLike } from "@/hooks/useProjectInteractions";
@@ -21,6 +21,7 @@ import { PlusOneControl } from "@/components/brand/PlusOneControl";
 import UserAvatar from "@/components/UserAvatar";
 import VerifiedBadge from "@/components/profile/VerifiedBadge";
 import { extractSearchSnippet, highlight } from "@/lib/highlight";
+import { ProjectQuickView } from "@/components/feed/ProjectQuickView";
 import { profilePublicPath } from "@/lib/profileRoutes";
 
 interface ProjectCardProps {
@@ -63,6 +64,51 @@ const ProjectCard = ({
   const [menuOpen, setMenuOpen] = useState(false);
   const [collectionOpen, setCollectionOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
+  // Phone gallery: long-press (touch only) opens Quick View instead of loading the full page.
+  const [quickOpen, setQuickOpen] = useState(false);
+  /** Stays mounted after the first open so the chat dialog it launches survives the close. */
+  const [quickMounted, setQuickMounted] = useState(false);
+  const pressTimer = useRef<number | null>(null);
+  const pressStart = useRef<{ x: number; y: number } | null>(null);
+  const suppressClick = useRef(false);
+  // Phone gallery: double-tap likes (Instagram-style heart); a single tap waits a beat, then opens.
+  const lastPointer = useRef<string>("mouse");
+  const tapTimer = useRef<number | null>(null);
+  const [heartBurst, setHeartBurst] = useState(0);
+  useEffect(() => () => {
+    if (tapTimer.current) window.clearTimeout(tapTimer.current);
+  }, []);
+  const cancelPress = () => {
+    if (pressTimer.current) window.clearTimeout(pressTimer.current);
+    pressTimer.current = null;
+    pressStart.current = null;
+  };
+  const longPressHandlers = gallery
+    ? {
+        onPointerDown: (e: React.PointerEvent) => {
+          lastPointer.current = e.pointerType;
+          if (e.pointerType !== "touch") return;
+          pressStart.current = { x: e.clientX, y: e.clientY };
+          pressTimer.current = window.setTimeout(() => {
+            pressTimer.current = null;
+            suppressClick.current = true;
+            navigator.vibrate?.(12);
+            setQuickMounted(true);
+            setQuickOpen(true);
+          }, 450);
+        },
+        onPointerMove: (e: React.PointerEvent) => {
+          const s0 = pressStart.current;
+          if (s0 && Math.hypot(e.clientX - s0.x, e.clientY - s0.y) > 10) cancelPress();
+        },
+        onPointerUp: cancelPress,
+        onPointerCancel: cancelPress,
+        onContextMenu: (e: React.MouseEvent) => {
+          // Keep the OS image menu from popping up over the preview.
+          if (suppressClick.current || pressTimer.current) e.preventDefault();
+        },
+      }
+    : {};
   const boostImpLogged = useRef(false);
 
   useEffect(() => {
@@ -134,11 +180,34 @@ const ProjectCard = ({
   const showCornerBadges = projectHasDrillTag(project.tags) || project.aiAssisted;
 
   return (
+    <>
     <motion.div
-      className="group cursor-pointer"
+      className={cn("group cursor-pointer", gallery && "select-none [-webkit-touch-callout:none]")}
+      {...longPressHandlers}
       onClick={() => {
-        if (boostId) void logBoostEvent(boostId, "click");
-        navigate(`/project/${project.id}`);
+        if (suppressClick.current) {
+          suppressClick.current = false;
+          return;
+        }
+        const open = () => {
+          if (boostId) void logBoostEvent(boostId, "click");
+          navigate(`/project/${project.id}`);
+        };
+        if (!gallery || lastPointer.current !== "touch") {
+          open();
+          return;
+        }
+        if (tapTimer.current) {
+          window.clearTimeout(tapTimer.current);
+          tapTimer.current = null;
+          setHeartBurst((n) => n + 1);
+          if (isDbProject && !isLiked) toggleLike();
+          return;
+        }
+        tapTimer.current = window.setTimeout(() => {
+          tapTimer.current = null;
+          open();
+        }, 260);
       }}
       whileHover={gallery ? undefined : { y: -2 }}
       whileTap={{ scale: 0.985 }}
@@ -168,6 +237,22 @@ const ProjectCard = ({
           )}
           loading="lazy"
         />
+
+        <AnimatePresence>
+          {heartBurst > 0 ? (
+            <motion.span
+              key={heartBurst}
+              className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center"
+              initial={{ opacity: 0, scale: 0.4 }}
+              animate={{ opacity: [0, 1, 1, 0], scale: [0.4, 1.15, 1, 1.05] }}
+              transition={{ duration: 0.8, times: [0, 0.25, 0.7, 1], ease: smoothEase }}
+              onAnimationComplete={() => setHeartBurst(0)}
+              aria-hidden
+            >
+              <Heart className="h-16 w-16 fill-white text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)]" strokeWidth={1.5} />
+            </motion.span>
+          ) : null}
+        </AnimatePresence>
 
         {boosted ? (
           <div className="absolute top-2 left-2 z-10">
@@ -350,6 +435,15 @@ const ProjectCard = ({
       </div>
       )}
     </motion.div>
+    {gallery && quickMounted ? (
+      <ProjectQuickView
+        project={project}
+        likes={isDbProject ? likes : project.likes}
+        open={quickOpen}
+        onOpenChange={setQuickOpen}
+      />
+    ) : null}
+    </>
   );
 };
 
