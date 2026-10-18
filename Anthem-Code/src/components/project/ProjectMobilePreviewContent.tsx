@@ -1,4 +1,4 @@
-import { ChevronLeft, Layers3, MessageCircle, Share2 } from "lucide-react";
+import { ChevronLeft, Layers3, MessageSquareText, Share2 } from "lucide-react";
 import ProjectSidePanel from "@/components/ProjectSidePanel";
 import { ProjectContentBlocksView } from "@/components/project/ProjectContentBlocksView";
 import { FlexGridView } from "@/components/project/FlexGridView";
@@ -123,7 +123,7 @@ export function ProjectMobilePreviewContent({
 
           <section className="rounded-2xl glass-panel p-4 space-y-3 pointer-events-none opacity-90">
             <h3 className="text-sm font-medium flex items-center gap-2">
-              <MessageCircle className="w-4 h-4" />
+              <MessageSquareText className="w-4 h-4" />
               ความคิดเห็น
             </h3>
             <p className="text-xs text-muted-foreground">ความคิดเห็นจะแสดงหลังเผยแพร่ผลงาน</p>

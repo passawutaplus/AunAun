@@ -1367,7 +1367,7 @@ const ChatThreadView = ({
       <header className="flex items-center gap-2 px-3 py-2 border-b border-border bg-card shrink-0">
         {showBack && (
           <BackButton
-            onClick={onBack ?? (() => navigate("/chat"))}
+            onClick={onBack ?? (() => navigate("/chat", { replace: true }))}
             label="ย้อนกลับ"
             className="md:hidden"
           />
@@ -2086,7 +2086,7 @@ const ChatThreadView = ({
           defaultGroupTag={isHire ? "hire" : conv.kind === "collab" ? "collab" : null}
           onCreated={(convId) => {
             setInviteGroupOpen(false);
-            navigate(`/chat/${convId}`);
+            navigate(`/chat/${convId}`, { replace: true });
           }}
         />
       )}

@@ -29,6 +29,10 @@
   .font-legal {
     font-family: "Sarabun", "IBM Plex Sans Thai Looped", "IBM Plex Sans Thai", ui-sans-serif, system-ui, sans-serif;
   }
+  /* Policy headings follow the looped Thai body face (base h1–h6 would switch to the heading font). */
+  .font-legal :is(h1, h2, h3, h4, h5, h6) {
+    font-family: inherit;
+  }
 }
 
 @layer base {
