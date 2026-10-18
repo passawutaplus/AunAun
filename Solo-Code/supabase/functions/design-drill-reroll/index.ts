@@ -1,3 +1,4 @@
+import { supabaseSecretKey, supabasePublishableKey } from "../_shared/supabase-keys.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { debitAiQuota } from "../_shared/ai-quota.ts";
 import { corsHeadersForRequest } from "../_shared/cors.ts";
@@ -16,7 +17,7 @@ async function getUserId(req: Request): Promise<string | null> {
   if (!authHeader?.startsWith("Bearer ")) return null;
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+  const anonKey = supabasePublishableKey();
   const userClient = createClient(supabaseUrl, anonKey, {
     global: { headers: { Authorization: authHeader } },
   });
@@ -27,7 +28,7 @@ async function getUserId(req: Request): Promise<string | null> {
 }
 
 function adminClient() {
-  return createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  return createClient(Deno.env.get("SUPABASE_URL")!, supabaseSecretKey());
 }
 
 Deno.serve(async (req) => {
