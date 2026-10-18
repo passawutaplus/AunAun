@@ -959,9 +959,9 @@
     background-color: hsl(var(--background));
   }
 
-  /* Hire / collab request popups — paper + ink, same as auth and search filter.
-     Stays light in dark mode. Accent is ink, not radiant orange. */
-  .paper-popup {
+  /* Hire / collab request popups — paper + ink in light mode; in dark mode they follow the
+     app's dark tokens like every other popup. Accent is ink, not radiant orange. */
+  html:not(.dark) .paper-popup {
     --background: 50 30% 96%;
     --foreground: 0 0% 7%;
     --muted-foreground: 0 0% 40%;
@@ -989,13 +989,13 @@
     font-family: "Agrandir Wide", "IBM Plex Sans Thai", "IBM Plex Sans", sans-serif;
     color: hsl(var(--foreground));
   }
-  .paper-popup .bg-muted\/30,
-  .paper-popup .bg-muted\/20 {
+  html:not(.dark) .paper-popup .bg-muted\/30,
+  html:not(.dark) .paper-popup .bg-muted\/20 {
     background-color: #fff;
   }
   .paper-popup input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="date"]),
   .paper-popup textarea {
-    background-color: #fff;
+    background-color: hsl(var(--card));
     border-color: hsl(var(--border));
     box-shadow: none;
   }
