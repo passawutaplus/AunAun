@@ -59,6 +59,7 @@ import { DEMO_RESEARCH_ACCOUNTS, isDemoMode } from "@/lib/demoMode";
 import { toast } from "sonner";
 import { useSubscription } from "@/core/subscription/useSubscription";
 import { ChatFilterRail } from "@/components/chat/ChatFilterRail";
+import { ChatMobileListHeader } from "@/components/chat/ChatMobileListHeader";
 import { userFacingError } from "@/lib/userFacingError";
 
 interface Props {
@@ -68,6 +69,8 @@ interface Props {
   search: string;
   onSearchChange: (value: string) => void;
   onSelectConversation?: (conversationId: string) => void;
+  /** Replays the chat tour (phone header "?"). */
+  onTour?: () => void;
   className?: string;
 }
 
@@ -88,6 +91,7 @@ const ChatSidebar = ({
   search,
   onSearchChange,
   onSelectConversation,
+  onTour,
   className,
 }: Props) => {
   const navigate = useNavigate();
@@ -286,7 +290,15 @@ const ChatSidebar = ({
 
   return (
     <aside className={cn("flex flex-col h-full border-r border-border bg-card", className)}>
-      <div className="shrink-0 border-b border-border px-3 pb-2 pt-2.5">
+      <ChatMobileListHeader
+        tab={tab}
+        onTabChange={onTabChange}
+        search={search}
+        onSearchChange={onSearchChange}
+        onTour={onTour}
+        onCreateGroup={isAplus1SubscriptionsEnabled() ? handleCreateGroup : undefined}
+      />
+      <div className="hidden shrink-0 border-b border-border px-3 pb-2 pt-2.5 md:block">
         <div className="flex items-center gap-1.5">
           <div className="relative min-w-0 flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />

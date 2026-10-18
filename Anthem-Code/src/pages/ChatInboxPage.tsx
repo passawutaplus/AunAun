@@ -201,6 +201,7 @@ const ChatInboxPage = () => {
             search={search}
             onSearchChange={setSearch}
             onSelectConversation={selectConversation}
+            onTour={chatTour.start}
           />
           </div>
         </div>
