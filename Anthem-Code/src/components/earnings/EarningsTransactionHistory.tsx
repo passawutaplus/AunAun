@@ -18,7 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { DocumentPaper } from "@/components/documents/DocumentPaper";
+import { PrintableDocumentPaper } from "@/components/documents/DocumentPaper";
 import { formatThaiDate } from "@/lib/format";
 import { satangToThb } from "@/lib/payments/fees";
 import { formatMoneyLabel } from "@/lib/payments/fxDisplay";
@@ -476,7 +476,7 @@ export function EarningsTransactionHistory({
                     กลับไปรายละเอียดรายการ
                   </button>
                 ) : null}
-                <DocumentPaper doc={openReceipt.snapshot} />
+                <PrintableDocumentPaper doc={openReceipt.snapshot} />
               </div>
             </>
           ) : detail?.kind === "income" ? (

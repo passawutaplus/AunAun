@@ -18,7 +18,7 @@ import {
 import { isCommerceEnabled } from "@/lib/aplus1Launch";
 
 /** Live counts shown as a pill next to a menu item. */
-export type StudioBadgeKey = "hireNew" | "collabNew" | "chatUnread";
+export type StudioBadgeKey = "hireNew" | "collabNew" | "chatUnread" | "billingAttention";
 
 export type StudioNavItem = {
   id: string;
@@ -68,6 +68,7 @@ export const STUDIO_PACKAGES_PATH = "/dashboard/packages";
 export const STUDIO_OBJECTS_PATH = "/dashboard/objects";
 export const STUDIO_CATALOGS_PATH = "/dashboard/catalogs";
 export const STUDIO_INSIGHTS_PATH = "/dashboard/insights";
+export const STUDIO_BILLING_PATH = "/dashboard/billing";
 
 export const STUDIO_NAV_GROUPS: StudioNavGroup[] = [
   {
@@ -92,6 +93,17 @@ export const STUDIO_NAV_GROUPS: StudioNavGroup[] = [
         hint: "คำขอจ้าง สถานะงาน และลิงก์ผลงาน",
         icon: Briefcase,
         badge: "hireNew",
+        end: true,
+      },
+      {
+        id: "billing",
+        displayTitle: "Billing",
+        to: STUDIO_BILLING_PATH,
+        label: "เอกสารและรายรับ",
+        heroTitle: "เอกสารและรายรับ",
+        hint: "ใบเสนอราคา ใบแจ้งหนี้ ใบเสร็จ และยอดที่ยังค้างรับ",
+        icon: Receipt,
+        badge: "billingAttention",
         end: true,
       },
       {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { FileText, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import {
   formatOfferAmount,
   formatOfferDateShort,
   offerDeclineWithReasonMessage,
+  offerPaymentPlan,
   offerDepositAmount,
   offerDisplayMilestones,
   QUOTE_DECLINE_REASONS,
@@ -30,6 +31,7 @@ import {
 import { HIRE_POLICY_VERSION, PAYMENT_POLICY_VERSION } from "@/lib/legalConfig";
 import { sharedDb } from "@/integrations/supabase/client";
 import { ChatOfferTimeline } from "@/components/chat/ChatOfferTimeline";
+import { PrintButton } from "@/components/documents/PrintButton";
 import { ChatOfferPreview } from "@/components/chat/ChatOfferPreview";
 import {
   ChatCardShell,
@@ -39,6 +41,7 @@ import {
 } from "@/components/chat/ChatCardShell";
 import HireCheckoutDialog from "@/components/payments/HireCheckoutDialog";
 import { useMarkHireOfferAccepted } from "@/hooks/useHireCancelRequest";
+import { useClientRespondDoc } from "@/hooks/useStudioDocuments";
 import { isCommerceEnabled } from "@/lib/aplus1Launch";
 import { trackProductEvent } from "@/lib/productEvents";
 import { cn } from "@/lib/utils";
@@ -69,12 +72,15 @@ export function ChatOfferCard({
   const { user } = useAuth();
   const send = useSendMessage();
   const markOfferAccepted = useMarkHireOfferAccepted();
+  const respondDoc = useClientRespondDoc();
   // Free launch: a proposal is agreed in chat — no checkout, no deposit, payment is settled between the two.
   const paid = isCommerceEnabled();
+  const plan = offerPaymentPlan(offer);
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [declineMode, setDeclineMode] = useState(false);
   const [busy, setBusy] = useState(false);
+  const paperRef = useRef<HTMLDivElement>(null);
   const [agreedService, setAgreedService] = useState(false);
   const [agreedPayment, setAgreedPayment] = useState(false);
   const [declineReason, setDeclineReason] = useState<QuoteDeclineReasonId>("revise_details");
@@ -153,6 +159,11 @@ export function ChatOfferCard({
           /* RLS — chat message still records intent */
         }
       }
+      if (offer.docId) {
+        await respondDoc
+          .mutateAsync({ docId: offer.docId, action: "decline", note: declineNote.trim() || undefined })
+          .catch(() => undefined);
+      }
       await send.mutateAsync({
         conversationId,
         content: offerDeclineWithReasonMessage(offer, declineReason, declineNote),
@@ -176,6 +187,9 @@ export function ChatOfferCard({
           .update({ status: "accepted" } as never)
           .eq("id", offer.quoteId)
           .then(() => undefined, () => undefined);
+      }
+      if (offer.docId) {
+        await respondDoc.mutateAsync({ docId: offer.docId, action: "accept" }).catch(() => undefined);
       }
       if (hiringRequestId) await markOfferAccepted.mutateAsync(hiringRequestId);
       await send.mutateAsync({
@@ -235,7 +249,18 @@ export function ChatOfferCard({
             {formatOfferAmount(offer.amount)}
           </p>
         </div>
-        {!paid ? null : deposit != null ? (
+        {!paid ? (
+          plan.length > 1 ? (
+            <p className="text-[11px] text-muted-foreground">
+              แบ่งจ่าย {plan.length} งวด ·{" "}
+              {plan
+                .map((p) => `${p.percent}%`)
+                .join(" / ")}
+            </p>
+          ) : (
+            <p className="text-[11px] text-muted-foreground">จ่ายครั้งเดียว</p>
+          )
+        ) : deposit != null ? (
           <p className="text-[11px] text-muted-foreground">
             มัดจำ {depositPct}% · {formatOfferAmount(deposit)}
             {offer.depositDueDate
@@ -336,7 +361,12 @@ export function ChatOfferCard({
             </div>
           ) : (
             <div className="space-y-4 py-1">
-              <ChatOfferPreview offer={offer} className="shadow-none" />
+              <div ref={paperRef} className="space-y-2">
+                <div className="flex justify-end">
+                  <PrintButton targetRef={paperRef} docNumber={offer.number} title={offer.title} />
+                </div>
+                <ChatOfferPreview offer={offer} className="shadow-none" />
+              </div>
 
               {paid ? (
               <div className="space-y-2 rounded-xl border border-border/60 bg-muted/20 p-3">

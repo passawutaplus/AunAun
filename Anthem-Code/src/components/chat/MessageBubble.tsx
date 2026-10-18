@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { StudioDocCard } from "@/components/chat/StudioDocCard";
+import { parseStudioDocCard } from "@/lib/documents/studioDocuments";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -390,6 +392,7 @@ const MessageBubble = ({
 
   const objectCard = !deleted ? parseObjectChatCard(message.content) : null;
   const offer = !deleted ? parseChatOffer(message.content) : null;
+  const studioDoc = !deleted ? parseStudioDocCard(message.content) : null;
   const hireForward = !deleted ? parseHireForwardMessage(message.content) : null;
   const hireRejectChoice = !deleted ? parseHireRejectChoiceMessage(message.content) : null;
   const hireContinueAsk = !deleted ? parseHireContinueAskMessage(message.content) : null;
@@ -432,6 +435,7 @@ const MessageBubble = ({
   const hireBrief =
     !deleted &&
     !offer &&
+    !studioDoc &&
     !hireForward &&
     !hireRejectChoice &&
     !hireContinueAsk &&
@@ -449,6 +453,7 @@ const MessageBubble = ({
   const collabBrief =
     !deleted &&
     !offer &&
+    !studioDoc &&
     !hireForward &&
     !hireRejectChoice &&
     !hireContinueAsk &&
@@ -467,6 +472,7 @@ const MessageBubble = ({
   const collabDecline =
     !deleted &&
     !offer &&
+    !studioDoc &&
     !hireBrief &&
     !collabBrief &&
     isCollabDeclineChatMessage(rawForDisplay)
@@ -476,6 +482,7 @@ const MessageBubble = ({
   const collabPlanDoc =
     !deleted &&
     !offer &&
+    !studioDoc &&
     !hireForward &&
     !hireRejectChoice &&
     !hireContinueAsk &&
@@ -496,6 +503,7 @@ const MessageBubble = ({
   const collabDiscussionTpl =
     !deleted &&
     !offer &&
+    !studioDoc &&
     !hireBrief &&
     !collabBrief &&
     !collabDecline &&
@@ -507,6 +515,7 @@ const MessageBubble = ({
   const collabChangeReq =
     !deleted &&
     !offer &&
+    !studioDoc &&
     !collabPlanDoc &&
     !collabDiscussionTpl &&
     isChangeRequestMessage(rawForDisplay)
@@ -516,6 +525,7 @@ const MessageBubble = ({
   const collabChangeDone =
     !deleted &&
     !offer &&
+    !studioDoc &&
     !collabPlanDoc &&
     !collabChangeReq &&
     isChangeDoneMessage(rawForDisplay)
@@ -525,6 +535,7 @@ const MessageBubble = ({
   const collabStepLocked =
     !deleted &&
     !offer &&
+    !studioDoc &&
     !collabPlanDoc &&
     !collabChangeReq &&
     !collabChangeDone &&
@@ -535,6 +546,7 @@ const MessageBubble = ({
   const collabToolKind =
     !deleted &&
     !offer &&
+    !studioDoc &&
     !hireForward &&
     !hireRejectChoice &&
     !hireContinueAsk &&
@@ -558,6 +570,7 @@ const MessageBubble = ({
 
   const isStructuredChatCard = !!(
     offer ||
+    studioDoc ||
     hireForward ||
     hireRejectChoice ||
     hireContinueAsk ||
@@ -892,6 +905,12 @@ const MessageBubble = ({
                 </Link>
               </div>
             )}
+            {studioDoc && (
+              <div>
+                {replyQuote}
+                <StudioDocCard card={studioDoc} mine={mine} />
+              </div>
+            )}
             {offer && (
               <div>
                 {replyQuote}
@@ -1068,6 +1087,8 @@ const MessageBubble = ({
             )}
             {displayContent &&
               !offer &&
+              !studioDoc &&
+    !studioDoc &&
               !hireForward &&
               !hireRejectChoice &&
               !hireContinueAsk &&
@@ -1100,6 +1121,8 @@ const MessageBubble = ({
             )}
             {!displayContent &&
               !offer &&
+              !studioDoc &&
+    !studioDoc &&
               !hireForward &&
               !hireRejectChoice &&
               !hireContinueAsk &&

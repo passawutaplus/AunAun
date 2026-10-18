@@ -29,6 +29,8 @@ import { PUBLIC_PROFILE_SELECT } from "@/lib/dbSelects";
 import { profilePublicPath } from "@/lib/profileRoutes";
 import { safeHttpUrl } from "@/lib/safeUrl";
 import ChatMetaPanel from "@/components/chat/ChatMetaPanel";
+import { ChatJobPanel } from "@/components/chat/ChatJobPanel";
+import { isCommerceEnabled } from "@/lib/aplus1Launch";
 import { CollabPlanSidebarSummary } from "@/components/chat/CollabPlanSidebarSummary";
 import { CollabPanelProgress } from "@/components/chat/CollabProgress";
 import { useCollabPlanUi } from "@/stores/collabPlanUiStore";
@@ -169,6 +171,8 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapse
   const showPartnerWorks = !!viewUserId && viewUserId !== user?.id;
   const showHireMeta = !isGroup && (conversation.kind === "hire" || conversation.kind === "collab");
   const isCollabConv = conversation.kind === "collab" || (isGroup && conversation.group_tag === "collab");
+  /** Free launch: portfolio tabs are empty — show the job / payment tracker instead. */
+  const showJobPanel = !isCommerceEnabled() && !isCollabConv;
   const openCollabPlan = useCollabPlanUi((st) => st.openFor);
 
   const measureProfileLimits = useCallback(() => {
@@ -448,56 +452,60 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapse
 
       <div className="relative flex-1 min-h-0 flex flex-col">
         <div className={cn("flex-1 min-h-0 overflow-y-auto bg-background", metaOpen && "overflow-hidden")}>
+          {showJobPanel ? (
+            <ChatJobPanel conversationId={conversation.id} />
+          ) : (
           <Tabs key={viewUserId ?? "none"} defaultValue={isCollabConv ? "plan" : "mine"} className="bg-background">
-            <TabsList className="sticky top-0 z-10 w-full rounded-none border-b border-border bg-background h-auto p-0 shadow-[0_1px_0_0_hsl(var(--border))]">
-              {isCollabConv ? (
+              <TabsList className="sticky top-0 z-10 w-full rounded-none border-b border-border bg-background h-auto p-0 shadow-[0_1px_0_0_hsl(var(--border))]">
+                {isCollabConv ? (
+                  <TabsTrigger
+                    value="plan"
+                    className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-[hsl(var(--chat-collab))] data-[state=active]:bg-background data-[state=active]:shadow-none py-2 text-[11px]"
+                  >
+                    แผน & Tasks
+                  </TabsTrigger>
+                ) : null}
                 <TabsTrigger
-                  value="plan"
-                  className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-[hsl(var(--chat-collab))] data-[state=active]:bg-background data-[state=active]:shadow-none py-2 text-[11px]"
-                >
-                  แผน & Tasks
-                </TabsTrigger>
-              ) : null}
-              <TabsTrigger
-                value="mine"
-                className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-background data-[state=active]:shadow-none py-2 text-[11px]"
-              >
-                ผลงานของฉัน
-              </TabsTrigger>
-              {showPartnerWorks && (
-                <TabsTrigger
-                  value="partner"
+                  value="mine"
                   className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-background data-[state=active]:shadow-none py-2 text-[11px]"
                 >
-                  ผลงานคู่แชท
+                  ผลงานของฉัน
                 </TabsTrigger>
-              )}
-            </TabsList>
-            {isCollabConv ? (
-              <TabsContent value="plan" className="mt-0 space-y-3 p-3">
-                <CollabPanelProgress conversationId={conversation.id} />
-                <CollabPlanSidebarSummary conversationId={conversation.id} onOpen={() => openCollabPlan(conversation.id)} />
+                {showPartnerWorks && (
+                  <TabsTrigger
+                    value="partner"
+                    className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-background data-[state=active]:shadow-none py-2 text-[11px]"
+                  >
+                    ผลงานคู่แชท
+                  </TabsTrigger>
+                )}
+              </TabsList>
+              {isCollabConv ? (
+                <TabsContent value="plan" className="mt-0 space-y-3 p-3">
+                  <CollabPanelProgress conversationId={conversation.id} />
+                  <CollabPlanSidebarSummary conversationId={conversation.id} onOpen={() => openCollabPlan(conversation.id)} />
+                </TabsContent>
+              ) : null}
+              <TabsContent value="mine" className="mt-0 p-2.5">
+                {user?.id && (
+                  <ChatPortfolioSection
+                    userId={user.id}
+                    dialogTitle="ผลงานและแพ็กเกจของฉัน"
+                    conversationId={conversation.id}
+                  />
+                )}
               </TabsContent>
-            ) : null}
-            <TabsContent value="mine" className="mt-0 p-2.5">
-              {user?.id && (
-                <ChatPortfolioSection
-                  userId={user.id}
-                  dialogTitle="ผลงานและแพ็กเกจของฉัน"
-                  conversationId={conversation.id}
-                />
+              {showPartnerWorks && viewUserId && (
+                <TabsContent value="partner" className="mt-0 p-2.5">
+                  <ChatPortfolioSection
+                    userId={viewUserId}
+                    dialogTitle={`ผลงานและแพ็กเกจ — ${displayName}`}
+                    conversationId={conversation.id}
+                  />
+                </TabsContent>
               )}
-            </TabsContent>
-            {showPartnerWorks && viewUserId && (
-              <TabsContent value="partner" className="mt-0 p-2.5">
-                <ChatPortfolioSection
-                  userId={viewUserId}
-                  dialogTitle={`ผลงานและแพ็กเกจ — ${displayName}`}
-                  conversationId={conversation.id}
-                />
-              </TabsContent>
-            )}
-          </Tabs>
+            </Tabs>
+          )}
         </div>
 
         <div
@@ -515,7 +523,7 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapse
           >
             {showHireMeta
               ? conversation.kind === "hire"
-                ? "รายละเอียดออเดอร์ / มีเดีย"
+                ? (isCommerceEnabled() ? "รายละเอียดออเดอร์ / มีเดีย" : "รายละเอียดงาน / มีเดีย")
                 : "ข้อมูลแผนงานร่วมกัน"
               : "มีเดียในแชท"}
             <span className={META_EXPAND_BTN_CLASS} aria-hidden>
@@ -576,7 +584,7 @@ const ChatPartnerPanel = ({ conversation, messages, className, onClose, collapse
         >
           {showHireMeta
             ? conversation.kind === "hire"
-              ? "รายละเอียดออเดอร์ / มีเดีย"
+              ? (isCommerceEnabled() ? "รายละเอียดออเดอร์ / มีเดีย" : "รายละเอียดงาน / มีเดีย")
               : "ข้อมูลแผนงานร่วมกัน"
             : "มีเดียในแชท"}
           <span className={META_EXPAND_BTN_CLASS} aria-hidden>

@@ -24,25 +24,44 @@ describe("document numbering", () => {
   });
 
   it("formats provisional numbers like the DB (PREFIX-year-4 digits)", () => {
-    const n = makeProvisionalDocNumber("quotation", new Date("2026-08-27T12:00:00+07:00"));
+    const n = makeProvisionalDocNumber(
+      "quotation",
+      new Date("2026-08-27T12:00:00+07:00"),
+    );
     expect(n).toMatch(/^QT-2026-\d{4}$/);
   });
 
   it("keeps mock document numbers stable for the same seed", () => {
-    const a = makeStableMockDocNumber("invoice", "98AA235B", new Date("2026-01-01T00:00:00+07:00"));
-    const b = makeStableMockDocNumber("invoice", "98AA235B", new Date("2026-01-01T00:00:00+07:00"));
-    const c = makeStableMockDocNumber("receipt", "98AA235B", new Date("2026-01-01T00:00:00+07:00"));
+    const a = makeStableMockDocNumber(
+      "invoice",
+      "98AA235B",
+      new Date("2026-01-01T00:00:00+07:00"),
+    );
+    const b = makeStableMockDocNumber(
+      "invoice",
+      "98AA235B",
+      new Date("2026-01-01T00:00:00+07:00"),
+    );
+    const c = makeStableMockDocNumber(
+      "receipt",
+      "98AA235B",
+      new Date("2026-01-01T00:00:00+07:00"),
+    );
     expect(a).toBe(b);
     expect(a).toMatch(/^INV-2026-\d{4}$/);
     expect(c).not.toBe(a);
   });
 
   it("prefers stored order_code over a truncated UUID", () => {
-    expect(displayOrderCode("98aa235b-1111-4000-8000-000000000001", "ORD-2026-0001")).toBe(
-      "ORD-2026-0001",
+    expect(
+      displayOrderCode("98aa235b-1111-4000-8000-000000000001", "ORD-2026-0001"),
+    ).toBe("ORD-2026-0001");
+    expect(displayOrderCode("98aa235b-1111-4000-8000-000000000001")).toBe(
+      "98AA235B",
     );
-    expect(displayOrderCode("98aa235b-1111-4000-8000-000000000001")).toBe("98AA235B");
-    expect(orderCodeFromMetadata({ order_code: "ORD-2026-0004" })).toBe("ORD-2026-0004");
+    expect(orderCodeFromMetadata({ order_code: "ORD-2026-0004" })).toBe(
+      "ORD-2026-0004",
+    );
     expect(orderCodeFromMetadata({ offer_number: "QT-2026-0001" })).toBeNull();
   });
 
