@@ -1,5 +1,6 @@
 import { Search, X } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
+import { useEffect, useMemo, useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
+import ColorSearchButton from "@/components/feed/ColorSearchButton";
 import {
   Dialog,
   DialogContent,
@@ -44,6 +45,9 @@ type Props = {
   resultCount?: number;
   recentSearches?: string[];
   onRecentSelect?: (query: string) => void;
+  /** Colour search sits beside the field (applies right away, like on desktop). */
+  colorQuery?: string | null;
+  onColorQueryChange?: (hex: string | null) => void;
 };
 
 const PAPER = '"Iowan Old Style", Palatino, Georgia, serif';
@@ -83,6 +87,7 @@ function FilterBody({
   recentSearches = [],
   onRecentSelect,
   onHideAiChange,
+  colorControl,
 }: {
   draft: ProjectSearchFilterValue;
   setDraft: Dispatch<SetStateAction<ProjectSearchFilterValue>>;
@@ -93,6 +98,7 @@ function FilterBody({
   recentSearches?: string[];
   onRecentSelect?: (query: string) => void;
   onHideAiChange?: (hide: boolean) => void;
+  colorControl?: ReactNode;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const parent = draft.parentId === "All" ? null : getCategoryParent(draft.parentId);
@@ -133,7 +139,8 @@ function FilterBody({
 
   return (
     <div className="flex flex-col min-h-0 flex-1">
-      <div className="relative shrink-0">
+      <div className="flex shrink-0 items-center gap-2">
+      <div className="relative min-w-0 flex-1">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
           ref={inputRef}
@@ -156,6 +163,9 @@ function FilterBody({
             <X className="h-3.5 w-3.5" />
           </button>
         ) : null}
+      </div>
+      {/* Phones / tablets only — desktop keeps colour search in the toolbar. */}
+      {colorControl ? <div className="shrink-0 lg:hidden">{colorControl}</div> : null}
       </div>
 
       {!draft.search.trim() && recentSearches.length > 0 ? (
@@ -250,7 +260,12 @@ const ProjectSearchFilterSheet = ({
   resultCount,
   recentSearches = [],
   onRecentSelect,
+  colorQuery = null,
+  onColorQueryChange,
 }: Props) => {
+  const colorControl = onColorQueryChange ? (
+    <ColorSearchButton value={colorQuery} onChange={onColorQueryChange} className="h-11 w-11" />
+  ) : null;
   const isMobile = useIsMobile();
   const [draft, setDraft] = useState(value);
 
@@ -310,6 +325,7 @@ const ProjectSearchFilterSheet = ({
             recentSearches={recentSearches}
             onRecentSelect={onRecentSelect}
             onHideAiChange={onHideAiChange}
+            colorControl={colorControl}
           />
         </SheetContent>
       </Sheet>
@@ -341,6 +357,7 @@ const ProjectSearchFilterSheet = ({
           recentSearches={recentSearches}
           onRecentSelect={onRecentSelect}
           onHideAiChange={onHideAiChange}
+          colorControl={colorControl}
         />
       </DialogContent>
     </Dialog>

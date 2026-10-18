@@ -1,6 +1,6 @@
 import BriefcaseIcon from "./icons/BriefcaseIcon";
 
-import { Home, MessageCircle, Plus, User } from "lucide-react";
+import { Home, MessageCircle, Search, User } from "lucide-react";
 
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 
@@ -13,6 +13,7 @@ import { isAplus1HiringBoardEnabled, isAplus1LaunchMinimal } from "@/lib/aplus1L
 import { useAuthDialog } from "@/stores/authDialogStore";
 
 import { useAppLayout } from "@/hooks/useAppLayout";
+import { useFeedHomeNavStore } from "@/stores/feedHomeNavStore";
 
 import { ProfileMenuDropdown } from "@/components/ProfileMenuDropdown";
 import UserAvatar from "@/components/UserAvatar";
@@ -63,12 +64,15 @@ const FloatingNav = () => {
     }
   };
 
-  const openCreate = () => {
-    if (!user) {
-      openAuth("/portfolio/new");
+  /** Phones / tablets: the round button opens project search (with colour search inside). */
+  const openSearch = () => {
+    const homeNav = useFeedHomeNavStore.getState();
+    if (pathname === "/" && homeNav.active && homeNav.onFilterClick) {
+      homeNav.onFilterClick();
       return;
     }
-    navigate("/portfolio/new");
+    localStorage.setItem("feed-mode", "projects");
+    navigate("/", { state: { feedHomeReset: Date.now(), openProjectSearch: Date.now() } });
   };
 
   /** Mobile/tablet: always land on default projects feed (even when re-tapping Home). */
@@ -190,16 +194,16 @@ const FloatingNav = () => {
 
         <button
           type="button"
-          onClick={openCreate}
-          data-tour="create"
-          aria-label="ลงผลงาน"
+          onClick={openSearch}
+          data-tour="search"
+          aria-label="ค้นหาผลงาน"
           className={cn(
             "pointer-events-auto flex h-14 w-14 shrink-0 items-center justify-center rounded-full shadow-sm transition-all duration-200 ease-out hover:opacity-90 active:scale-95",
-            // Light mode: white with a black "+"; dark mode: black with a white "+". A hairline ring keeps it visible on any photo.
+            // Light mode: white with a black icon; dark mode: field colour with a white icon. A hairline ring keeps it visible on any photo.
             "bg-white text-[#111111] ring-1 ring-black/10 dark:bg-background dark:text-white dark:ring-white/25",
           )}
         >
-          <Plus className="h-6 w-6" strokeWidth={2.5} />
+          <Search className="h-6 w-6" strokeWidth={2.25} />
         </button>
       </nav>
     </>

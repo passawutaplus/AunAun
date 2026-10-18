@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { parseColorList } from "@/lib/colorSearch";
 import { ArrowRight, Plus, X } from "lucide-react";
 import { BrandLogo } from "@/components/brand/BrandLogo";
@@ -177,6 +177,9 @@ const FeedToolbar = ({
   const navigate = useNavigate();
   const [mobileSearchOpen, setMobileSearchOpen] = useState(search.length > 0);
   const [projectSheetOpen, setProjectSheetOpen] = useState(false);
+  // Bottom-nav search from another page lands here with `openProjectSearch` in the route state.
+  const routeLocation = useLocation();
+  const openSearchAt = (routeLocation.state as { openProjectSearch?: number } | null)?.openProjectSearch;
   const isProjects = mode === "projects";
   const isDesigners = mode === "designers";
   const isPackages = mode === "packages";
@@ -358,6 +361,10 @@ const FeedToolbar = ({
         filterContent,
       };
 
+  useEffect(() => {
+    if (openSearchAt && isProjects) setProjectSheetOpen(true);
+  }, [openSearchAt, isProjects]);
+
   const homeScrolled = useFeedHomeNavStore((s) => s.scrolled);
 
   useEffect(() => {
@@ -428,7 +435,18 @@ const FeedToolbar = ({
       ) : null}
       {/* Mobile / tablet */}
       <div className="relative z-10 flex items-center gap-2 lg:hidden">
-        <div className={cn(mobileSearchOpen && !isProjects ? "flex-1 min-w-0" : "shrink-0")}>
+        {isProjects ? (
+          // Projects search + colour live in the bottom-nav search button → search sheet.
+          <button
+            type="button"
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            aria-label={`${BRAND_NAME} หน้าแรก`}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <BrandLogo showWordmark={false} size="md" />
+          </button>
+        ) : (
+        <div className={cn(mobileSearchOpen ? "flex-1 min-w-0" : "shrink-0")}>
           <SearchBar
             value={search}
             onChange={onSearchChange}
@@ -450,6 +468,7 @@ const FeedToolbar = ({
               : { filterContent })}
           />
         </div>
+        )}
         <div className="ml-auto min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <FeedModeToggle
             {...toggleProps}
@@ -871,6 +890,8 @@ const FeedToolbar = ({
           resultCount={projectResultCount}
           recentSearches={recentSearches}
           onRecentSelect={onRecentSearchSelect}
+          colorQuery={colorQuery}
+          onColorQueryChange={onColorQueryChange}
         />
       ) : null}
     </div>
