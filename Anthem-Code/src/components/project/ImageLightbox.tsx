@@ -496,8 +496,10 @@ const ImageLightbox = ({
             {showActions && !zoomed ? (
               <div
                 className={cn(
-                  "absolute bottom-3 left-1/2 z-20 -translate-x-1/2",
+                  // Phones: the buttons sit under the image, not on it. Desktop: hover overlay at the bottom.
+                  "absolute left-1/2 top-full z-20 mt-3 -translate-x-1/2",
                   "opacity-100 pointer-events-auto transition-opacity duration-150",
+                  "md:bottom-3 md:top-auto md:mt-0",
                   "md:opacity-0 md:pointer-events-none md:group-hover:opacity-100 md:group-hover:pointer-events-auto",
                 )}
                 onClick={(e) => e.stopPropagation()}

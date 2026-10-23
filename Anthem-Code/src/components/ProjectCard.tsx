@@ -21,7 +21,7 @@ import { PlusOneControl } from "@/components/brand/PlusOneControl";
 import UserAvatar from "@/components/UserAvatar";
 import VerifiedBadge from "@/components/profile/VerifiedBadge";
 import { extractSearchSnippet, highlight } from "@/lib/highlight";
-import { ProjectQuickView } from "@/components/feed/ProjectQuickView";
+import { useQuickView } from "@/stores/quickViewStore";
 import { profilePublicPath } from "@/lib/profileRoutes";
 
 interface ProjectCardProps {
@@ -65,9 +65,6 @@ const ProjectCard = ({
   const [collectionOpen, setCollectionOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
   // Phone gallery: long-press (touch only) opens Quick View instead of loading the full page.
-  const [quickOpen, setQuickOpen] = useState(false);
-  /** Stays mounted after the first open so the chat dialog it launches survives the close. */
-  const [quickMounted, setQuickMounted] = useState(false);
   const pressTimer = useRef<number | null>(null);
   const pressStart = useRef<{ x: number; y: number } | null>(null);
   const suppressClick = useRef(false);
@@ -93,8 +90,7 @@ const ProjectCard = ({
             pressTimer.current = null;
             suppressClick.current = true;
             navigator.vibrate?.(12);
-            setQuickMounted(true);
-            setQuickOpen(true);
+            useQuickView.getState().openFor(project.id);
           }, 450);
         },
         onPointerMove: (e: React.PointerEvent) => {
@@ -180,7 +176,6 @@ const ProjectCard = ({
   const showCornerBadges = projectHasDrillTag(project.tags) || project.aiAssisted;
 
   return (
-    <>
     <motion.div
       className={cn("group cursor-pointer", gallery && "select-none [-webkit-touch-callout:none]")}
       {...longPressHandlers}
@@ -435,15 +430,6 @@ const ProjectCard = ({
       </div>
       )}
     </motion.div>
-    {gallery && quickMounted ? (
-      <ProjectQuickView
-        project={project}
-        likes={isDbProject ? likes : project.likes}
-        open={quickOpen}
-        onOpenChange={setQuickOpen}
-      />
-    ) : null}
-    </>
   );
 };
 

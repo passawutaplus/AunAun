@@ -202,6 +202,21 @@ const FloatingNav = () => {
           )}
         </div>
 
+        {pathname === "/" ? (
+          // Home: create sits beside search.
+          <button
+            type="button"
+            onClick={openCreate}
+            data-tour="create"
+            aria-label="ลงผลงาน"
+            className={cn(
+              "pointer-events-auto -mr-1 flex h-14 w-14 shrink-0 items-center justify-center rounded-full shadow-sm transition-all duration-200 ease-out hover:opacity-90 active:scale-95",
+              "bg-white text-[#111111] ring-1 ring-black/10 dark:bg-background dark:text-white dark:ring-white/25",
+            )}
+          >
+            <Plus className="h-6 w-6" strokeWidth={2.5} />
+          </button>
+        ) : null}
         <button
           type="button"
           onClick={onProfile ? openCreate : openSearch}

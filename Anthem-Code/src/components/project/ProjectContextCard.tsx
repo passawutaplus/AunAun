@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BookOpen, ChevronDown } from "lucide-react";
+import { BookOpen, ChevronDown, Clock, Lightbulb, Package, Sparkles, Target, UserRound, type LucideIcon } from "lucide-react";
 import { Collapsible, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import { parseProjectContextImages } from "@/components/project/ProjectContextEditorFields";
@@ -19,12 +19,15 @@ type Props = {
   className?: string;
 };
 
-type FieldItem = { label: string; value: string; images?: string[] };
+type FieldItem = { label: string; value: string; images?: string[]; icon?: LucideIcon };
 
-function FieldRow({ label, value, images, showDivider }: FieldItem & { showDivider: boolean }) {
+function FieldRow({ label, value, images, icon: Icon, showDivider }: FieldItem & { showDivider: boolean }) {
   return (
     <div className={cn("space-y-1 py-3.5", showDivider && "border-b border-border/55")}>
-      <p className="text-sm font-semibold text-foreground">{label}</p>
+      <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
+        {Icon ? <Icon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden /> : null}
+        {label}
+      </p>
       {value ? <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">{value}</p> : null}
       {images?.length ? (
         <div className={cn("grid gap-2 pt-2", images.length > 1 && "grid-cols-2")}>
@@ -56,15 +59,15 @@ const ProjectContextCard = ({ context, className }: Props) => {
   const images = parseProjectContextImages(context.context_images);
 
   const fields = [
-    creatorRole ? { label: "บทบาทของฉัน", value: creatorRole } : null,
-    brief || images.brief ? { label: "โจทย์ของงาน", value: brief, images: images.brief } : null,
+    creatorRole ? { label: "บทบาทของฉัน", value: creatorRole, icon: UserRound } : null,
+    brief || images.brief ? { label: "โจทย์ของงาน", value: brief, images: images.brief, icon: Target } : null,
     processNote || images.process
-      ? { label: "วิธีคิด / ขั้นตอนทำงาน", value: processNote, images: images.process }
+      ? { label: "วิธีคิด / ขั้นตอนทำงาน", value: processNote, images: images.process, icon: Lightbulb }
       : null,
-    deliverables ? { label: "สิ่งที่ส่งมอบ", value: deliverables } : null,
-    durationLabel ? { label: "ระยะเวลา", value: durationLabel } : null,
+    deliverables ? { label: "สิ่งที่ส่งมอบ", value: deliverables, icon: Package } : null,
+    durationLabel ? { label: "ระยะเวลา", value: durationLabel, icon: Clock } : null,
     outcomeNote || images.outcome
-      ? { label: "ผลลัพธ์ / สิ่งที่ได้เรียนรู้", value: outcomeNote, images: images.outcome }
+      ? { label: "ผลลัพธ์ / สิ่งที่ได้เรียนรู้", value: outcomeNote, images: images.outcome, icon: Sparkles }
       : null,
   ].filter((item) => item != null) as FieldItem[];
 
@@ -117,6 +120,7 @@ const ProjectContextCard = ({ context, className }: Props) => {
                 label={field.label}
                 value={field.value}
                 images={field.images}
+                icon={field.icon}
                 showDivider={index < fields.length - 1}
               />
             ))}
