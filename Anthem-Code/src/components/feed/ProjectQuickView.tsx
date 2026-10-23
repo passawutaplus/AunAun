@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion, type PanInfo } from "framer-motion";
-import { ArrowLeft, ArrowRight, ArrowUpRight, Bookmark, Eye, Heart, MessageCircle, Pointer } from "lucide-react";
+import { ArrowUpRight, Bookmark, Eye, Heart, MessageCircle, Pointer } from "lucide-react";
 import SaveToCollectionPopover from "@/components/collections/SaveToCollectionPopover";
 import { useSavedProjectIds } from "@/hooks/useCollections";
 import { useNavigate } from "react-router-dom";
@@ -27,26 +27,38 @@ const HINT_KEY = "samecor:quickview-swipe-hint";
 /** First time only: a finger sliding left / right over the image for ~2s. */
 function SwipeHint() {
   const reduced = useReducedMotion();
+  const glow = "drop-shadow-[0_1px_6px_rgba(0,0,0,0.65)]";
   return (
     <motion.div
-      className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center"
+      className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center gap-1"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.25 }}
       aria-hidden
     >
-      <div className="flex items-center gap-3 rounded-full bg-black/55 px-5 py-4 backdrop-blur-sm">
-        <ArrowLeft className="h-6 w-6 text-white/80" strokeWidth={2} />
-        <motion.span
-          animate={reduced ? undefined : { x: [-26, 26, -26, 26, 0] }}
-          transition={{ duration: 1.8, ease: "easeInOut" }}
-          className="block"
-        >
-          <Pointer className="h-12 w-12 text-white" strokeWidth={1.6} />
-        </motion.span>
-        <ArrowRight className="h-6 w-6 text-white/80" strokeWidth={2} />
-      </div>
+      {/* Curved arrows, left and right, like a swipe along an arc. */}
+      <svg viewBox="0 0 220 48" className={`h-12 w-56 text-white ${glow}`} fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M92 36 Q56 8 14 22" />
+        <path d="M30 10 L14 22 L32 32" />
+        <path d="M128 36 Q164 8 206 22" />
+        <path d="M190 10 L206 22 L188 32" />
+      </svg>
+      <motion.span
+        className={`block ${glow}`}
+        animate={
+          reduced
+            ? undefined
+            : {
+                x: [-44, -22, 0, 22, 44, 22, 0, -22, -44],
+                y: [10, -6, -14, -6, 10, -6, -14, -6, 10],
+                rotate: [-14, -7, 0, 7, 14, 7, 0, -7, -14],
+              }
+        }
+        transition={{ duration: 1.8, ease: "linear" }}
+      >
+        <Pointer className="h-12 w-12 text-white" strokeWidth={1.6} />
+      </motion.span>
     </motion.div>
   );
 }
