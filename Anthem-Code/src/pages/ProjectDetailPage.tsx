@@ -446,9 +446,9 @@ const ProjectDetailPage = () => {
                 <Button asChild size="sm" variant="outline" className="h-8 rounded-full">
                   <Link to={`/portfolio/${dbProject.id}/edit`}>แก้ไขผลงาน</Link>
                 </Button>
-              ) : project.allowHire ?? true ? (
-                <Button size="sm" className="h-8 rounded-full" onClick={openHire}>
-                  ติดต่อจ้าง
+              ) : project.ownerId ? (
+                <Button size="sm" className="h-8 rounded-full" onClick={openChat}>
+                  ทักแชท
                 </Button>
               ) : null}
             </div>
@@ -465,7 +465,7 @@ const ProjectDetailPage = () => {
                 className="w-full min-w-0 max-w-full"
                 projectId={dbProject?.id ?? project.id}
                 projectTitle={project.title}
-                onContact={!isOwner && (project.allowHire ?? true) ? openHire : undefined}
+                onContact={!isOwner && project.ownerId ? openChat : undefined}
               />
             ) : canvasBlocks.length > 0 ? (
               <ProjectContentBlocksView
@@ -473,7 +473,7 @@ const ProjectDetailPage = () => {
                 className="w-full min-w-0 max-w-4xl"
                 projectId={dbProject?.id ?? project.id}
                 projectTitle={project.title}
-                onContact={!isOwner && (project.allowHire ?? true) ? openHire : undefined}
+                onContact={!isOwner && project.ownerId ? openChat : undefined}
               />
             ) : (
               <div className="aspect-video rounded-2xl bg-muted flex items-center justify-center text-muted-foreground">

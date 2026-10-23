@@ -33,6 +33,8 @@ import { useFeedHomeNavStore } from "@/stores/feedHomeNavStore";
 import HireDialog from "@/components/HireDialog";
 import CollabDialog from "@/components/CollabDialog";
 import { FeedProjectGrid } from "@/components/feed/FeedProjectGrid";
+import { ProjectQuickViewHost } from "@/components/feed/ProjectQuickView";
+import { useQuickView } from "@/stores/quickViewStore";
 import { FeedModeTransition } from "@/components/feed/FeedModeTransition";
 import ObjectCatalog from "@/components/objects/ObjectCatalog";
 import { type FeedMode } from "@/components/feed/FeedModeToggle";
@@ -770,6 +772,14 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
     });
   }, [sortedFiltered, ads, columns, search, colorQuery]);
 
+  // Phone Quick View swipes through the feed in on-screen order.
+  useEffect(() => {
+    useQuickView
+      .getState()
+      .setProjects(feedItems.flatMap((item) => (item.kind === "project" ? [item.data] : [])));
+  }, [feedItems]);
+  useEffect(() => () => useQuickView.getState().close(), []);
+
   const searchSuggestions = useMemo(
     () => (search.trim() && filtered.length === 0 ? similarSearchSuggestions(search, recentSearches) : []),
     [search, filtered.length, recentSearches],
@@ -1020,6 +1030,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
                 )}
               </FeedProjectGrid>
               </div>
+              <ProjectQuickViewHost />
 
               {!colorMatch.pending && filtered.length === 0 && (
                 <FilterEmptyState
