@@ -446,9 +446,9 @@ const ProjectDetailPage = () => {
                 <Button asChild size="sm" variant="outline" className="h-8 rounded-full">
                   <Link to={`/portfolio/${dbProject.id}/edit`}>แก้ไขผลงาน</Link>
                 </Button>
-              ) : project.allowHire ?? true ? (
-                <Button size="sm" className="h-8 rounded-full" onClick={openHire}>
-                  ติดต่อจ้าง
+              ) : project.ownerId ? (
+                <Button size="sm" className="h-8 rounded-full" onClick={openChat}>
+                  ทักแชท
                 </Button>
               ) : null}
             </div>

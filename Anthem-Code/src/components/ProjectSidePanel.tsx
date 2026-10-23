@@ -200,7 +200,7 @@ const ProjectSidePanel = (p: Props) => {
               </div>
             </div>
           )}
-          {!ownerView ? <FollowButton freelancerId={p.ownerId} size="sm" variant="compact" /> : null}
+          {!ownerView ? <FollowButton freelancerId={p.ownerId} size="sm" variant="compact" iconOnly /> : null}
         </div>
 
         {collaborators.length > 0 ? (
@@ -229,38 +229,17 @@ const ProjectSidePanel = (p: Props) => {
           </Button>
         ) : null}
 
-        {showHire && !hireLocked && (
+        {/* One entry point: chat first, then use the hire / collab buttons inside the chat. */}
+        {p.onChat && !ownerView ? (
           <Button
-            onClick={p.onHire}
-            disabled={hireLocked}
+            onClick={p.onChat}
             size="lg"
-            title={
-              hireLocked
-                ? "ปุ่มนี้สำหรับผู้ชม — ไม่สามารถกดในผลงานของตัวเองได้"
-                : ownerView && p.localSelfHirePreview
-                  ? "Local preview — ทดลองฟอร์มจ้างได้ (ไม่เปิดแชท)"
-                  : undefined
-            }
-            className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-full shadow-sm"
+            className="w-full rounded-full bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
           >
-            <BriefcaseIcon className="w-4 h-4 mr-1.5" />
-            สนใจจ้างงาน
+            <MessageCircle className="mr-1.5 h-4 w-4" aria-hidden />
+            ทักแชท
           </Button>
-        )}
-
-        {showCollab && !ownerView && (
-          <Button
-            onClick={p.onCollab}
-            disabled={ownerView}
-            size="lg"
-            variant="outline"
-            title={ownerView ? "ปุ่มนี้สำหรับผู้ชม — ไม่สามารถกดในผลงานของตัวเองได้" : undefined}
-            className="w-full rounded-full border-primary/30 text-foreground hover:bg-primary/5 hover:text-primary hover:border-primary/50"
-          >
-            <Handshake className="w-4 h-4 mr-1.5 text-primary" />
-            สนใจคอลแลป
-          </Button>
-        )}
+        ) : null}
 
         {p.ownerId && !p.isOwner && (
           <SupportButton
@@ -285,7 +264,7 @@ const ProjectSidePanel = (p: Props) => {
           </p>
         ) : null}
 
-        <div className={cn("grid gap-2", p.onChat && !ownerView ? "grid-cols-[1fr_1fr_auto]" : "grid-cols-2")}>
+        <div className="grid grid-cols-2 gap-2">
           <PlusOneControl
             active={p.liked}
             count={p.likes}
@@ -309,18 +288,6 @@ const ProjectSidePanel = (p: Props) => {
               />
             </Button>
           </SaveToCollectionPopover>
-          {p.onChat && !ownerView ? (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={p.onChat}
-              className="h-9 w-9 shrink-0 rounded-full border border-input bg-background hover:bg-accent hover:text-accent-foreground"
-              aria-label="ทักแชทเรื่องผลงานนี้"
-              title="ทักแชทเรื่องผลงานนี้"
-            >
-              <MessageCircle className="w-4 h-4" strokeWidth={1.8} />
-            </Button>
-          ) : null}
         </div>
 
         <div className="flex items-center justify-around text-xs text-muted-foreground pt-3 border-t border-border/50">
@@ -339,7 +306,6 @@ const ProjectSidePanel = (p: Props) => {
           aiAssisted={p.aiAssisted}
           aiDisclosureNote={p.aiDisclosureNote}
           allowHire={p.allowHire}
-          onHire={hireLocked ? undefined : p.onHire}
         />
 
       </div>

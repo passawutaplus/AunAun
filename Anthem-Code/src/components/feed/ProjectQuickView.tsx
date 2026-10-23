@@ -1,6 +1,6 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion, type PanInfo } from "framer-motion";
-import { ArrowUpRight, Bookmark, Eye, Heart, MessageCircle } from "lucide-react";
+import { ArrowLeft, ArrowRight, ArrowUpRight, Bookmark, Eye, Heart, MessageCircle, Pointer } from "lucide-react";
 import SaveToCollectionPopover from "@/components/collections/SaveToCollectionPopover";
 import { useSavedProjectIds } from "@/hooks/useCollections";
 import { useNavigate } from "react-router-dom";
@@ -22,6 +22,34 @@ const compact = (n: number) =>
   n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1).replace(/\.0$/, "")}m` : n >= 1_000 ? `${(n / 1_000).toFixed(1).replace(/\.0$/, "")}k` : String(n);
 
 const SWIPE_PX = 70;
+const HINT_KEY = "samecor:quickview-swipe-hint";
+
+/** First time only: a finger sliding left / right over the image for ~2s. */
+function SwipeHint() {
+  const reduced = useReducedMotion();
+  return (
+    <motion.div
+      className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.25 }}
+      aria-hidden
+    >
+      <div className="flex items-center gap-3 rounded-full bg-black/55 px-5 py-4 backdrop-blur-sm">
+        <ArrowLeft className="h-6 w-6 text-white/80" strokeWidth={2} />
+        <motion.span
+          animate={reduced ? undefined : { x: [-26, 26, -26, 26, 0] }}
+          transition={{ duration: 1.8, ease: "easeInOut" }}
+          className="block"
+        >
+          <Pointer className="h-12 w-12 text-white" strokeWidth={1.6} />
+        </motion.span>
+        <ArrowRight className="h-6 w-6 text-white/80" strokeWidth={2} />
+      </div>
+    </motion.div>
+  );
+}
 
 const isDb = (id: string) => /^[0-9a-f]{8}-/.test(id);
 
@@ -131,6 +159,23 @@ export function ProjectQuickViewHost() {
   const [dir, setDir] = useState<1 | -1>(1);
   const dragged = useRef(false);
 
+  const [showHint, setShowHint] = useState(false);
+  useEffect(() => {
+    if (!project) return;
+    try {
+      if (localStorage.getItem(HINT_KEY)) return;
+      localStorage.setItem(HINT_KEY, "1");
+    } catch {
+      return;
+    }
+    if (projects.length > 1) {
+      setShowHint(true);
+      const t = window.setTimeout(() => setShowHint(false), 2000);
+      return () => window.clearTimeout(t);
+    }
+    // Only when the viewer opens: not on every swipe.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [!!project]);
   const lastStepAt = useRef(0);
   const go = (delta: 1 | -1) => {
     if (index == null) return;
@@ -175,6 +220,8 @@ export function ProjectQuickViewHost() {
                 exit={reduced ? undefined : { opacity: 0, x: dir * -60 }}
                 transition={{ duration: 0.26, ease: smoothEase }}
               >
+                <div className="relative">
+                <AnimatePresence>{showHint ? <SwipeHint /> : null}</AnimatePresence>
                 <motion.button
                   type="button"
                   drag={projects.length > 1 ? "x" : false}
@@ -202,12 +249,8 @@ export function ProjectQuickViewHost() {
                     draggable={false}
                   />
                 </motion.button>
+                </div>
                 <QuickViewInfo project={project} onClose={close} onChat={() => openChat(project)} />
-                {projects.length > 1 ? (
-                  <p className="mt-3 text-center text-[11px] tabular-nums text-white/50" aria-live="polite">
-                    {(index ?? 0) + 1} / {projects.length} · ปัดซ้าย-ขวาเพื่อดูผลงานถัดไป
-                  </p>
-                ) : null}
               </motion.div>
             </AnimatePresence>
           ) : null}
