@@ -165,7 +165,7 @@ export function spaceLists({ collections = [], projects = [], items = [], itemsI
   return { collections: { total: colRows.length, rows: colRows.slice(0, 3) }, projects: { total: projRows.length, rows: projRows.slice(0, 3), needPalette: projRows.filter(r => r.needsPalette).length } };
 }
 
-const ORIGIN_CHIP = { web: "Web", upload: "Upload", museum: "Museum" };
+const ORIGIN_CHIP = { web: "Web", upload: "Upload", museum: "Design Feed" };
 
 /** "Tuesday 6 Oct · 6 kept · 3 collections · 3 projects": the date is localized by the caller. */
 export function summaryParts({ items = [], collections = [], projects = [] }) {
@@ -231,5 +231,5 @@ export function topOfMindMarkup(pins) {
 }
 
 export function forYouEmptyMarkup() {
-  return `<section class='empty-state fy-empty'><div><h2>Nothing needs you today.</h2><p>Keep something new, or look around the Museum for a spark.</p><button class='primary-button' data-open>Keep something</button> <button class='ghost-button' data-view='discover'>Open the Museum</button></div></section>`;
+  return `<section class='empty-state fy-empty'><div><h2>Nothing needs you today.</h2><p>Keep something new, or look around Design Feed for a spark.</p><button class='primary-button' data-open>Keep something</button> <button class='ghost-button' data-view='discover'>Open Design Feed</button></div></section>`;
 }

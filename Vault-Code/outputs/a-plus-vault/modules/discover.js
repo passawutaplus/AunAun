@@ -14,19 +14,17 @@ export const DISCOVER_PENDING_KEY = "aplus-vault-pending-action";
 
 export const DISCOVER_CATEGORIES = [
   ["all", "All"],
-  ["poster", "Poster"],
-  ["typography", "Typography"],
-  ["illustration", "Illustration"],
-  ["textile", "Textile"],
-  ["ceramic", "Ceramic"],
-  ["furniture", "Furniture"],
+  ["logo", "Logo & Branding"],
+  ["graphic", "Graphic & Type"],
+  ["ui", "UI / UX"],
+  ["product", "Product"],
+  ["furniture", "Furniture & Interior"],
   ["architecture", "Architecture"],
-  ["photography", "Photography"],
-  ["print", "Print"],
-  ["pattern", "Pattern"],
+  ["fashion", "Fashion & Material"],
+  ["other", "Other"],
 ];
 
-const LICENSE_LABELS = { cc0: "CC0 Public Domain", pdm: "Public Domain Mark", "cc-by": "CC BY", "cc-by-sa": "CC BY-SA" };
+const LICENSE_LABELS = { credited: "Credit + source link", cc0: "CC0 Public Domain", pdm: "Public Domain Mark", "cc-by": "CC BY", "cc-by-sa": "CC BY-SA" };
 
 const DISCOVER_COLUMNS = [
   "id", "source", "source_url", "title", "license", "license_url", "attribution", "attribution_json",
@@ -71,6 +69,7 @@ export function discoverEnabled(config) {
 export function discoverMediaUrl(config, path) {
   const clean = String(path || "").replace(/^\/+/, "");
   if (!clean) return "";
+  if (/^https:\/\//i.test(String(path))) return String(path).trim(); // Design Feed: image stays at its source
   return `${restBase(config)}/storage/v1/object/public/${DISCOVER_MEDIA_BUCKET}/${clean.split("/").map(encodeURIComponent).join("/")}`;
 }
 
@@ -432,6 +431,7 @@ function attributionInfo(item) {
 /** One-line terms shown next to the license badge. CC BY / BY-SA make the credit a condition, not a courtesy. */
 export function discoverLicenseNote(license) {
   const key = String(license || "").toLowerCase();
+  if (key === "credited") return "Shown with the designer's credit and a link to the source. The work belongs to its owner: open the source, credit them, and ask before reusing it.";
   if (key === "cc-by") return "CC BY: credit the owner (required). Check the source for the full terms.";
   if (key === "cc-by-sa") return "CC BY-SA: credit the owner (required); adaptations share alike. Check the source.";
   return "Public domain or CC0 at the source. The image still belongs to its owner: check the source and credit them.";
@@ -500,7 +500,7 @@ function searchSwatch(ds) {
 export function discoverSearchMarkup(ds) {
   const active = !!((ds.colors || []).length || ds.tone || ds.shape);
   const imageIcon = `<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><rect x='3' y='5' width='18' height='14' rx='2'/><circle cx='9' cy='10' r='1.6'/><path d='m21 16-5-5-9 8'/></svg>`;
-  return `<form class='discover-top-search' data-discover-search role='search'><span class='discover-top-search-icon' aria-hidden='true'><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round'><circle cx='11' cy='11' r='7'/><path d='m16 16 4 4'/></svg></span><input name='q' type='search' value='${escA(ds.q)}' placeholder='Search title, material, culture, place…' aria-label='Search the Museum' maxlength='60' autocomplete='off'><label class='discover-image-button${ds.similar && !ds.similar.id ? " is-active" : ""}' title='Find similar by image (stays on your device)'><input type='file' accept='image/*' data-discover-image hidden><span class='sr-only'>Find similar by image</span>${imageIcon}</label><div class='discover-color-wrap'><button type='button' class='discover-color-button${active ? " is-active" : ""}' data-discover-color-toggle aria-label='Color, tone and shape' aria-expanded='${ds.colorOpen}' aria-pressed='${active}'><span style='background:${escA(searchSwatch(ds))}'></span></button>${ds.colorOpen ? discoverColorPanelMarkup(ds) : ""}</div></form>`;
+  return `<form class='discover-top-search' data-discover-search role='search'><span class='discover-top-search-icon' aria-hidden='true'><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round'><circle cx='11' cy='11' r='7'/><path d='m16 16 4 4'/></svg></span><input name='q' type='search' value='${escA(ds.q)}' placeholder='Search work, designer, material, style…' aria-label='Search Design Feed' maxlength='60' autocomplete='off'><label class='discover-image-button${ds.similar && !ds.similar.id ? " is-active" : ""}' title='Find similar by image (stays on your device)'><input type='file' accept='image/*' data-discover-image hidden><span class='sr-only'>Find similar by image</span>${imageIcon}</label><div class='discover-color-wrap'><button type='button' class='discover-color-button${active ? " is-active" : ""}' data-discover-color-toggle aria-label='Color, tone and shape' aria-expanded='${ds.colorOpen}' aria-pressed='${active}'><span style='background:${escA(searchSwatch(ds))}'></span></button>${ds.colorOpen ? discoverColorPanelMarkup(ds) : ""}</div></form>`;
 }
 
 function shapeLabel(value) {
@@ -573,7 +573,7 @@ export function setDiscoverGuest(value) {
 }
 
 export function gateMarkup() {
-  return `<div class='discover-gate'><div class='discover-gate-card'><span class='discover-gate-eyebrow'>Keep exploring</span><h2>There’s so much more.</h2><p>Log in to see everything in the Museum — and keep what inspires you in your own private Vault.</p><button type='button' class='discover-gate-cta' data-auth-open>Log in or sign up</button><small>Free during beta</small></div><span class='discover-gate-wordmark' aria-hidden='true'>A+ Vault</span></div>`;
+  return `<div class='discover-gate'><div class='discover-gate-card'><span class='discover-gate-eyebrow'>Keep exploring</span><h2>There’s so much more.</h2><p>Log in to see everything in Design Feed — and keep what inspires you in your own private Vault.</p><button type='button' class='discover-gate-cta' data-auth-open>Log in or sign up</button><small>Free during beta</small></div><span class='discover-gate-wordmark' aria-hidden='true'>A+ Vault</span></div>`;
 }
 
 function discoverResultsMarkup(ds, config, keptIds) {
