@@ -925,8 +925,6 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
             </div>
           ) : mode === "designers" ? (
             <DesignerGrid
-              onHire={handleHireDesigner}
-              onCollab={handleCollabDesigner}
               search={search}
               onClearSearch={() => setSearch("")}
               sort={designerSort}

@@ -228,8 +228,6 @@ export default function PortfolioFollowedDesignersPanel() {
                   key={designerUserId(d)}
                   data={d}
                   search={query}
-                  onHire={(id, name) => setHire({ id, name })}
-                  onCollab={(id, name) => setCollab({ id, name })}
                   newWorkCount={newWorks.get(designerUserId(d))}
                 />
               ))}
