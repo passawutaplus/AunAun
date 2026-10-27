@@ -31,11 +31,14 @@ live site full-screen, no browser chrome. Not a rewrite.
    it means you can never update this app listing again, only publish a new
    one.
 
-3. **Copy the fingerprint it prints into `public/.well-known/assetlinks.json`**,
-   replacing `REPLACE_WITH_SHA256_FINGERPRINT_FROM_BUBBLEWRAP_KEYSTORE`, then
-   deploy so `https://samecor.com/.well-known/assetlinks.json` serves it.
-   Without this step Android shows a URL bar on top of the app instead of
-   full-screen.
+3. **Fill both fingerprints into `public/.well-known/assetlinks.json`**, then
+   deploy so `https://samecor.com/.well-known/assetlinks.json` serves them:
+   - `REPLACE_WITH_UPLOAD_KEY_SHA256_FROM_BUBBLEWRAP` — printed by
+     `bubblewrap build` (or `keytool -list -v -keystore android.keystore`).
+   - `REPLACE_WITH_PLAY_APP_SIGNING_KEY_SHA256_FROM_PLAY_CONSOLE` — Play
+     Console → your app → Test and release → App integrity → App signing.
+     Google re-signs the app with this key, so without it the installed app
+     shows a URL bar instead of running full-screen.
 
 4. **Google Play Console account** — $25 one-time, your own card:
    https://play.google.com/console/signup
@@ -44,6 +47,22 @@ live site full-screen, no browser chrome. Not a rewrite.
    to Play Console, fill in the store listing (screenshots, description,
    privacy policy — `https://samecor.com/legal/privacy`), submit for review.
    Usually a few hours to ~2 days.
+
+## Drafts ready for Play Console
+
+- `play-store-listing.md` — app name, short/full description (TH + EN),
+  category, content-rating answers, target audience, graphics checklist.
+- `data-safety.md` — Data safety form answers, with three items to confirm.
+
+## What the web app does differently inside the Android app
+
+- `src/lib/appShell.ts` detects the app (start URL `/?source=android`, kept in
+  sessionStorage) and keeps the status-bar colour in step with light/dark.
+- Commerce, PX/gifts, boosts and subscriptions are switched off in the app
+  (`src/lib/aplus1Launch.ts`) — Play requires digital goods to go through
+  Play Billing.
+- Google sign-in uses a full-page redirect instead of a popup in the app.
+- Analytics events carry `shell: "android" | "pwa" | "web"`.
 
 ## Icons already meet Play Store requirements
 
