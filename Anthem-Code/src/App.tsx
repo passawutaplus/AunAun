@@ -142,6 +142,7 @@ const PrivacyPage = lazy(() => import("./pages/legal/PrivacyPage.tsx"));
 const TermsPage = lazy(() => import("./pages/legal/TermsPage.tsx"));
 const CookiesPage = lazy(() => import("./pages/legal/CookiesPage.tsx"));
 const DataRightsPage = lazy(() => import("./pages/legal/DataRightsPage.tsx"));
+const DeleteAccountPage = lazy(() => import("./pages/legal/DeleteAccountPage.tsx"));
 const IntellectualPropertyPage = lazy(() => import("./pages/legal/IntellectualPropertyPage.tsx"));
 const CommunityGuidelinesPage = lazy(() => import("./pages/legal/CommunityGuidelinesPage.tsx"));
 const CopyrightReportPage = lazy(() => import("./pages/legal/CopyrightReportPage.tsx"));
@@ -413,6 +414,7 @@ const App = () => (
               <Route path="/legal/terms" element={<TermsPage />} />
               <Route path="/legal/cookies" element={<CookiesPage />} />
               <Route path="/legal/rights" element={<DataRightsPage />} />
+              <Route path="/legal/delete-account" element={<DeleteAccountPage />} />
               <Route path="/legal/ip" element={<IntellectualPropertyPage />} />
               <Route path="/legal/community" element={<CommunityGuidelinesPage />} />
               <Route path="/legal/copyright-report" element={<CopyrightReportPage />} />

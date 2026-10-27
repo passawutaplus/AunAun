@@ -7,7 +7,7 @@
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#F8F7F2",
-  "theme_color": "#EE3D29",
+  "theme_color": "#F8F7F2",
   "lang": "th",
   "categories": ["social", "art", "business"],
   "icons": [

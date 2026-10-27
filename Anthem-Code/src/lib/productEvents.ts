@@ -4,6 +4,7 @@
  */
 
 import { supabase } from "@/integrations/supabase/client";
+import { isAndroidApp, isStandaloneDisplay } from "@/lib/appShell";
 import { isCategoryAllowed } from "@/lib/cookieConsent";
 import { noteRatingMoment } from "@/lib/ratingPrompt";
 
@@ -78,7 +79,8 @@ export async function trackProductEvent(
         _session_id: getAnalyticsSessionId(),
         _path: path.slice(0, 500),
         _referrer: referrer,
-        _props: props,
+        // shell: android app / installed PWA / browser — lets app usage be split from web.
+        _props: { ...props, shell: isAndroidApp() ? "android" : isStandaloneDisplay() ? "pwa" : "web" },
         _app: "aplus1",
       } as never,
     );
