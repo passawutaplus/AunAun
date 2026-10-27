@@ -464,17 +464,6 @@ const ExploreProjectsPage = () => {
               <ProjectCard
                 key={p.id}
                 project={p}
-                onHireClick={() => openHireForFreelancer(p.ownerId, p.title, p.id, p.image)}
-                onCollabClick={() => {
-                  setCollabTarget({
-                    recipientId: p.ownerId,
-                    recipientName: p.owner,
-                    projectId: p.id,
-                    projectTitle: p.title,
-                    projectCoverUrl: p.image,
-                  });
-                  setCollabOpen(true);
-                }}
               />
             ))}
           </StaggerGrid>

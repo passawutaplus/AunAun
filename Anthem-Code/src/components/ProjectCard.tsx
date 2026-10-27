@@ -1,7 +1,6 @@
-import BriefcaseIcon from "./icons/BriefcaseIcon";
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Bookmark, Eye, Handshake, Heart } from "lucide-react";
+import { Bookmark, Eye, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { Project } from "@/data/projectTypes";
 import { useProjectLike } from "@/hooks/useProjectInteractions";
@@ -26,8 +25,6 @@ import { profilePublicPath } from "@/lib/profileRoutes";
 
 interface ProjectCardProps {
   project: Project;
-  onHireClick?: (projectId: string) => void;
-  onCollabClick?: (projectId: string) => void;
   boosted?: boolean;
   boostId?: string;
   /** Feed masonry — preserve original cover aspect (no CDN crop). */
@@ -46,8 +43,6 @@ const formatCompact = (n: number) => {
 
 const ProjectCard = ({
   project,
-  onHireClick,
-  onCollabClick,
   boosted,
   boostId,
   naturalCover = false,
@@ -170,9 +165,6 @@ const ProjectCard = ({
     },
     ...(project.collaborators ?? []),
   ];
-  const showHire = project.allowHire ?? true;
-  const showCollab = project.allowCollab ?? true;
-  const hasCardActions = showHire || showCollab;
   const showCornerBadges = projectHasDrillTag(project.tags) || project.aiAssisted;
 
   return (
@@ -302,11 +294,11 @@ const ProjectCard = ({
           )}
         />
 
-        {/* Title on the left, hire / collab on the right. Share lives on the project page. */}
+        {/* Title only. Hire / collab live in chat. Share lives on the project page. */}
         <div
           className={cn(
             "absolute bottom-2 left-2 flex items-center gap-1 transition-all duration-200",
-            hasCardActions ? "right-10 md:right-2" : "right-2",
+            "right-2",
             menuOpen
               ? "opacity-100 translate-y-0 pointer-events-auto"
               : "opacity-0 translate-y-1 pointer-events-none md:group-hover:opacity-100 md:group-hover:translate-y-0 md:group-hover:pointer-events-auto",
@@ -330,30 +322,6 @@ const ProjectCard = ({
                 })()
               : null}
           </div>
-          {hasCardActions ? (
-            <div className="flex shrink-0 items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
-              {showHire && (
-                <button
-                  onClick={stop(() => onHireClick?.(project.id))}
-                  aria-label="สนใจจ้างงาน"
-                  title="สนใจจ้างงาน"
-                  className="p-1.5 rounded-full text-white hover:bg-white/15 transition-colors"
-                >
-                  <BriefcaseIcon className="w-4 h-4" />
-                </button>
-              )}
-              {showCollab && (
-                <button
-                  onClick={stop(() => onCollabClick?.(project.id))}
-                  aria-label="สนใจคอลแลป"
-                  title="สนใจคอลแลป"
-                  className="p-1.5 rounded-full text-white hover:bg-white/15 transition-colors"
-                >
-                  <Handshake className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-          ) : null}
         </div>
 
       </div>

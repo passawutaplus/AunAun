@@ -1007,24 +1007,6 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
                       searchQuery={search}
                       boosted={boostedSets.projects.has(item.data.id)}
                       boostId={boostMaps.projects.get(item.data.id)}
-                      onHireClick={() => {
-                        openHireForFreelancer(
-                          item.data.ownerId ?? "",
-                          item.data.title,
-                          item.data.id,
-                          item.data.image,
-                        );
-                      }}
-                      onCollabClick={() => {
-                        setCollabTarget({
-                          recipientId: item.data.ownerId,
-                          recipientName: item.data.owner,
-                          projectId: item.data.id,
-                          projectTitle: item.data.title,
-                          projectCoverUrl: item.data.image,
-                        });
-                        setCollabOpen(true);
-                      }}
                     />
                   )
                 )}
