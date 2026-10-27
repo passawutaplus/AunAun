@@ -142,6 +142,20 @@ const DesktopTopNav = () => {
 
     const update = () => {
       releaseNavWithPage();
+      // Studio home: the compact bar takes over the moment the catalog sheet is flush with the top,
+      // and the brand nav behind it fades out.
+      const flushSheet = document.querySelector<HTMLElement>("[data-feed-sheet]");
+      if (flushSheet) {
+        const bar = flushSheet.getBoundingClientRect().top <= 1;
+        useFeedHomeNavStore.getState().setScrolled(bar);
+        const nav = document.querySelector<HTMLElement>("[data-desktop-top-nav]");
+        if (nav) {
+          nav.style.transition = "opacity 0.25s ease";
+          nav.style.opacity = bar ? "0" : "";
+          nav.style.pointerEvents = bar ? "none" : "";
+        }
+        return;
+      }
       const title = document.querySelector<HTMLElement>("[data-feed-mode-title]");
       if (title) {
         const state = useFeedHomeNavStore.getState();
@@ -184,7 +198,10 @@ const DesktopTopNav = () => {
     window.addEventListener("scroll", schedule, { passive: true });
     window.addEventListener("resize", schedule);
     return () => {
-      document.querySelector<HTMLElement>("[data-desktop-top-nav]")?.style.removeProperty("top");
+      const nav = document.querySelector<HTMLElement>("[data-desktop-top-nav]");
+      nav?.style.removeProperty("top");
+      nav?.style.removeProperty("opacity");
+      nav?.style.removeProperty("pointer-events");
       cancelAnimationFrame(raf);
       window.removeEventListener("scroll", schedule);
       window.removeEventListener("resize", schedule);
