@@ -6,6 +6,7 @@ Private by default (user data); the Discover page is public catalog. App is alre
 This folder is a subfolder of the AunAun-fresh monorepo. Work only inside `Vault-Code/`; ignore `../Solo-Code`, `../Anthem-Code` etc.
 
 ## Read on demand only (not every session)
+- `docs/HANDOFF_TWIN.md` + `docs/creative-twin-vision.md` - product direction (Creative Twin) and current build plan; read before any Twin/AI-memory work
 - `outputs/a-plus-vault/docs/product-memory.md` - decision filter before adding features
 - `outputs/a-plus-vault/docs/next-implementation-order.md` - roadmap
 - `outputs/a-plus-vault/docs/data-model.md` - tables
