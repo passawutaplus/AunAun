@@ -1,7 +1,10 @@
 # Root uploads (aplus1-prod, Root Directory = Anthem-Code) only need Anthem-Code (+ Solo-Code for vendored modules).
 # Git deploys of every project in this repo also apply this file: never ignore another project's Root Directory (so1o-ops-hub = Ops-Hub).
 /micro-asana-sticky
-/Vault-Code
+# Vault-Code is the aplus-vault project (Root Directory = Vault-Code): never ignore the folder itself, only what its build does not need.
+/Vault-Code/seeder
+/Vault-Code/dist-ext
+/Vault-Code/.tmp-*
 /Monolith-Site
 /Ops-Hub/node_modules
 /Ops-Hub/dist
