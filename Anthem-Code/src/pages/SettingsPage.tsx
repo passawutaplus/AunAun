@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { PushNotificationSection } from "@/components/settings/PushNotificationSection";
 import { GetInTouchLink } from "@/components/settings/GetInTouchLink";
 import { Link, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
@@ -305,6 +306,7 @@ const SettingsPage = () => {
 
             {panel === "notifications" ? (
               <>
+                <PushNotificationSection />
                 <InAppNotificationSection />
                 <LineNotificationSection />
               </>

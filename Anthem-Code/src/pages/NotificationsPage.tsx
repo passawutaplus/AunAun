@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useNotifications } from "@/core/notifications";
 import NotificationsPanel from "@/components/notifications/NotificationsPanel";
+import { PushOptInCard } from "@/components/settings/PushNotificationSection";
 import SeoHead from "@/components/SeoHead";
 import PageLoader from "@/components/ui/PageLoader";
 import { cn } from "@/lib/utils";
@@ -61,6 +62,7 @@ const NotificationsPage = () => {
       </header>
 
       <div className="max-w-3xl mx-auto px-4 pt-5">
+        <PushOptInCard />
         <NotificationsPanel />
       </div>
     </main>
