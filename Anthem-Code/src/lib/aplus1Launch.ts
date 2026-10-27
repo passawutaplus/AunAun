@@ -169,8 +169,15 @@ export function isLaunchAllowedPath(pathname: string): boolean {
  * Coming-soon only for known deferred prefixes that are not on the allowlist.
  * Unknown URLs must fall through to the real 404 page — not “ยังไม่เปิดในเวอร์ชันนี้”.
  */
+/** Identity verification (KYC) — hidden inside the Android app until payouts open there. */
+export function isKycPath(pathname: string): boolean {
+  return pathname === "/verify" || pathname.startsWith("/verify/");
+}
+
 export function isLaunchHiddenPath(pathname: string): boolean {
   if (isRetiredPublicPath(pathname)) return true;
+  // Keeps national-ID / bank-account collection out of the app (and its Play Data safety form).
+  if (isAndroidApp() && isKycPath(pathname)) return true;
   if (isCommercePath(pathname)) return true;
   if (isHiringBoardPath(pathname)) return !isAplus1HiringBoardEnabled();
   if (!isAplus1LaunchMinimal()) return false;
