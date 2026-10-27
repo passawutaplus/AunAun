@@ -4,6 +4,7 @@ import { useAuth } from "./useAuth";
 import { toast } from "sonner";
 import { useAuthDialog } from "@/stores/authDialogStore";
 import { createBatchLoader } from "@/lib/batchLoader";
+import { hapticTap } from "@/lib/haptics";
 
 const promptAuth = () => {
   toast.info("กรุณาเข้าสู่ระบบก่อน");
@@ -73,6 +74,7 @@ export const useProjectLike = (projectId: string | undefined) => {
           .eq("user_id", user.id);
         if (error) throw error;
       } else {
+        hapticTap();
         const { error } = await supabase
           .from("project_likes")
           .insert({ project_id: projectId!, user_id: user.id });
@@ -131,6 +133,7 @@ export const useProjectBookmark = (projectId: string | undefined) => {
         if (error) throw error;
         toast.success("เอาออกจากที่บันทึกแล้ว");
       } else {
+        hapticTap();
         const { error } = await supabase
           .from("project_bookmarks")
           .insert({ project_id: projectId!, user_id: user.id });

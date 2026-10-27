@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { hapticPress } from "@/lib/haptics";
 import { AnimatePresence, motion } from "framer-motion";
 import { Bookmark, Eye, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -84,7 +85,7 @@ const ProjectCard = ({
           pressTimer.current = window.setTimeout(() => {
             pressTimer.current = null;
             suppressClick.current = true;
-            navigator.vibrate?.(12);
+            hapticPress();
             useQuickView.getState().openFor(project.id);
           }, 450);
         },
