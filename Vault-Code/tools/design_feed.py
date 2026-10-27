@@ -17,7 +17,7 @@ FEEDS = {
     "Yanko Design": "https://www.yankodesign.com/feed/",
     "Brand New": "https://www.underconsideration.com/brandnew/atom.xml",
     "Creative Boom": "https://www.creativeboom.com/feed/",
-    "Its Nice That": "https://www.itsnicethat.com/rss",
+    "Its Nice That": "https://www.itsnicethat.com/articles.rss",
     "Core77": "https://feeds.feedburner.com/core77/blog",
     "Fubiz": "https://www.fubiz.net/feed/",
 }
