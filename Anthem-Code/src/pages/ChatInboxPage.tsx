@@ -107,6 +107,11 @@ const ChatInboxPage = () => {
   };
 
   const togglePartnerPanel = () => {
+    // Below xl the panel is a slide-over, not a docked column.
+    if (!window.matchMedia("(min-width: 1280px)").matches) {
+      setShowPartnerMobile((open) => !open);
+      return;
+    }
     setPartnerPanelOpen((open) => !open);
   };
 
@@ -181,9 +186,11 @@ const ChatInboxPage = () => {
         className={cn(
           "flex min-h-0 min-w-0 flex-1 flex-col md:grid",
           "transition-[grid-template-columns] duration-[350ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
+          // Tablets get list + thread; the partner panel docks as a third column only on wide screens.
+          "md:grid-cols-[minmax(260px,320px)_1fr]",
           partnerPanelOpen
-            ? "md:grid-cols-[minmax(260px,320px)_1fr_minmax(280px,340px)]"
-            : "md:grid-cols-[minmax(260px,320px)_1fr_0fr]",
+            ? "xl:grid-cols-[minmax(260px,320px)_1fr_minmax(280px,340px)]"
+            : "xl:grid-cols-[minmax(260px,320px)_1fr_0fr]",
         )}
       >
         <div
@@ -220,7 +227,7 @@ const ChatInboxPage = () => {
 
         <div
           className={cn(
-            "hidden md:block h-full min-h-0 min-w-0 overflow-hidden",
+            "hidden xl:block h-full min-h-0 min-w-0 overflow-hidden",
             !partnerPanelOpen && "pointer-events-none",
           )}
           aria-hidden={!partnerPanelOpen}
@@ -263,7 +270,7 @@ const ChatInboxPage = () => {
               key="chat-partner-backdrop"
               type="button"
               aria-label="ปิดข้อมูลคู่แชท"
-              className="md:hidden fixed inset-x-0 top-14 bottom-0 z-40 bg-background/75 backdrop-blur-sm"
+              className="xl:hidden fixed inset-x-0 top-14 bottom-0 z-40 bg-background/75 backdrop-blur-sm"
               initial={reducedMotion ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -272,7 +279,7 @@ const ChatInboxPage = () => {
             />
             <motion.div
               key="chat-partner-panel"
-              className="md:hidden fixed right-0 top-14 bottom-0 z-50 w-[92%] max-w-sm bg-background shadow-sm"
+              className="xl:hidden fixed right-0 top-14 bottom-0 z-50 w-[92%] max-w-sm bg-background shadow-sm"
               initial={reducedMotion ? false : { x: "100%" }}
               animate={{ x: 0 }}
               exit={reducedMotion ? { opacity: 0 } : { x: "100%" }}

@@ -22,11 +22,12 @@ export const isPortfolioEditorRoute = (pathname: string) =>
 
 export const isActiveChatThread = (pathname: string) => /^\/chat\/[^/]+/.test(pathname);
 
-export function shouldHideBottomNav(pathname: string, narrowViewport: boolean): boolean {
+/** Below lg (phones and tablets) — an open chat thread owns the bottom edge for its composer. */
+export function shouldHideBottomNav(pathname: string): boolean {
   if (NAV_HIDDEN_PREFIXES.some((p) => pathname.startsWith(p))) return true;
   if (isPortfolioEditorRoute(pathname)) return true;
   if (/^\/community\/[^/]+\/edit/.test(pathname)) return true;
-  if (narrowViewport && isActiveChatThread(pathname)) return true;
+  if (isActiveChatThread(pathname)) return true;
   return false;
 }
 
