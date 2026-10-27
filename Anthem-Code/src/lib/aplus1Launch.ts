@@ -74,6 +74,7 @@ export function coerceLaunchFeedMode(mode: FeedMode): LaunchFeedMode {
  */
 export const LAUNCH_ALLOWED_ROUTE_PATTERNS: readonly RegExp[] = [
   /^\/$/,
+  /^\/search$/,
   /^\/learn(\/|$)/,
   /^\/help(\/|$)/,
   /^\/dev\/review-form$/,

@@ -16,6 +16,7 @@ import AuthCallbackPage from "./pages/AuthCallbackPage.tsx";
 import AuthForgotPage from "./pages/AuthForgotPage.tsx";
 import ResetPasswordPage from "./pages/ResetPasswordPage.tsx";
 import CookieConsent from "./components/CookieConsent.tsx";
+import AndroidAppBanner from "./components/AndroidAppBanner.tsx";
 import GoogleAnalytics from "./components/seo/GoogleAnalytics.tsx";
 import PolicyReconsentGate from "./components/legal/PolicyReconsentGate.tsx";
 import FloatingNav from "./components/FloatingNav.tsx";
@@ -29,7 +30,7 @@ import CloudPrefsSync from "./components/settings/CloudPrefsSync.tsx";
 import { InterestSurveyGate } from "./components/onboarding/InterestSurveyDialog.tsx";
 import { SkipLink } from "./components/a11y/SkipLink.tsx";
 import { OfflineBanner } from "./components/OfflineBanner.tsx";
-import RedirectTo, { JobsToHiringRedirect } from "./components/RedirectTo.tsx";
+import RedirectTo, { JobsToHiringRedirect, SearchShortcutRedirect } from "./components/RedirectTo.tsx";
 import VanityProfileRoute from "./components/profile/VanityProfileRoute.tsx";
 import RouteFallback from "./components/RouteFallback.tsx";
 import DemoModeBanner from "./components/DemoModeBanner.tsx";
@@ -235,6 +236,7 @@ const App = () => (
               <Route path="/learn" element={<LearnShell />}>
                 <Route index element={<LearnHubPage />} />
               </Route>
+              <Route path="/search" element={<SearchShortcutRedirect />} />
               <Route path="/learn/who" element={<RedirectTo to="/learn#who" />} />
               <Route path="/learn/start" element={<RedirectTo to="/learn#start" />} />
               <Route path="/learn/creators" element={<RedirectTo to="/learn#creators" />} />
@@ -445,6 +447,7 @@ const App = () => (
           <GoogleAnalytics />
           <PolicyReconsentGate />
           <FloatingNav />
+          <AndroidAppBanner />
           <AuthDialog />
           <FeedbackTicketHost />
           <RatingPrompt />

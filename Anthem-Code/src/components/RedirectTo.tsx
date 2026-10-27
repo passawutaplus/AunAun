@@ -27,4 +27,18 @@ export const JobsToHiringRedirect = () => {
   return <RedirectTo to={`/hiring/${id ?? ""}`} />;
 };
 
+/** `/search` — app-icon shortcut: land on the projects feed with search open (same as the bottom-nav search). */
+export const SearchShortcutRedirect = () => {
+  const navigate = useNavigate();
+  useEffect(() => {
+    try {
+      localStorage.setItem("feed-mode", "projects");
+    } catch {
+      /* storage blocked */
+    }
+    navigate("/", { replace: true, state: { feedHomeReset: Date.now(), openProjectSearch: Date.now() } });
+  }, [navigate]);
+  return null;
+};
+
 export default RedirectTo;
