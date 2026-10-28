@@ -10,7 +10,10 @@
       html.dark { background: #201f1e; }
       #boot { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: #f8f7f2; }
       html.dark #boot { background: #201f1e; }
-      #boot img { width: 56px; height: 56px; opacity: 0.9; }
+      #boot img { width: 56px; height: 56px; }
+      #boot .boot-dark { display: none; }
+      html.dark #boot .boot-light { display: none; }
+      html.dark #boot .boot-dark { display: block; }
     </style>
     <meta name="theme-color" content="#F8F7F2" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -65,7 +68,7 @@
         } catch (_) {}
       })();
     </script>
-    <div id="root"><div id="boot" aria-hidden="true"><img src="/brand/symbol-red.svg" width="56" height="56" alt="" /></div></div>
+    <div id="root"><div id="boot" aria-hidden="true"><img class="boot-light" src="/brand/symbol-black.svg" width="56" height="56" alt="" /><img class="boot-dark" src="/brand/symbol-white.svg" width="56" height="56" alt="" /></div></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
