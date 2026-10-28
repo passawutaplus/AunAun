@@ -392,7 +392,7 @@ export function InterestSurveyGate() {
           preferredCategories: disciplines,
           skills,
         });
-        toast.success("ตั้งค่าโปรไฟล์แล้ว — ลงผลงานแรกกันเลย", {
+        toast.success("ตั้งค่าโปรไฟล์แล้ว ยินดีต้อนรับสู่ SAMECOR", {
           action: {
             label: "ลงผลงาน",
             onClick: () => navigate("/portfolio/new"),
@@ -401,7 +401,7 @@ export function InterestSurveyGate() {
         });
       } else {
         await save(Array.from(selected));
-        toast.success("บันทึกความสนใจแล้ว — ลงผลงานแรกเพื่อเริ่มรับโอกาส", {
+        toast.success("บันทึกความสนใจแล้ว ยินดีต้อนรับสู่ SAMECOR", {
           action: {
             label: "ลงผลงาน",
             onClick: () => navigate("/portfolio/new"),
@@ -493,7 +493,7 @@ export function InterestSurveyGate() {
         : "แก้ทีหลังได้ที่โปรไฟล์ › เกี่ยวกับฉัน";
 
   const primaryLabel =
-    isSaving ? null : step === "interests" ? (isNarrow ? "ถัดไป" : "เริ่มใช้งาน") : "ลงผลงานแรก";
+    isSaving ? null : step === "interests" ? (isNarrow ? "ถัดไป" : "เข้าสู่ SAMECOR") : "เข้าสู่ SAMECOR";
 
   return (
     <ResponsiveOverlay
@@ -549,7 +549,7 @@ export function InterestSurveyGate() {
                       กำลังบันทึก…
                     </>
                   ) : (
-                    "ลงผลงานแรก"
+                    "เข้าสู่ SAMECOR"
                   )}
                 </Button>
               </div>
