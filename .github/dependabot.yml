@@ -4,9 +4,24 @@ updates:
     directory: /Solo-Code
     schedule:
       interval: weekly
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 5
+    # One PR per week for minor/patch bumps; majors are upgraded deliberately by hand.
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+      # Pinned on purpose: each release moves the typed Stripe API version.
+      - dependency-name: stripe
   - package-ecosystem: npm
     directory: /Anthem-Code
     schedule:
       interval: weekly
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
