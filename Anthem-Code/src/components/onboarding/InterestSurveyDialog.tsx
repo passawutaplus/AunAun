@@ -410,7 +410,8 @@ export function InterestSurveyGate() {
         });
       }
       setDismissed(true);
-      navigate("/portfolio/new");
+      // Land on the home feed; posting a first work stays one tap away in the toast above.
+      navigate("/");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "บันทึกไม่สำเร็จ");
     }
