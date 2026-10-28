@@ -97,7 +97,32 @@ async function resolveMeta(pathname, base) {
     url: `${base}${pathname === "/" ? "/" : pathname}`,
     image: `${base}/icons/icon-512.png`,
     noindex: false,
-    jsonLd: null,
+    // Home: who SAMECOR is, for search engines and AI answers (knowledge panel, sitelinks search).
+    jsonLd:
+      pathname === "/"
+        ? [
+            {
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: "SAMECOR",
+              url: `${base}/`,
+              logo: `${base}/icons/icon-512.png`,
+              email: "support@samecor.com",
+            },
+            {
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              name: "SAMECOR",
+              url: `${base}/`,
+              inLanguage: ["th", "en"],
+              potentialAction: {
+                "@type": "SearchAction",
+                target: `${base}/?q={search_term_string}`,
+                "query-input": "required name=search_term_string",
+              },
+            },
+          ]
+        : null,
     type: "website",
     status: 200,
   };
