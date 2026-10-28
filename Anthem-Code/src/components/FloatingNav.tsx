@@ -1,5 +1,6 @@
 import BriefcaseIcon from "./icons/BriefcaseIcon";
 
+import { Fragment, useLayoutEffect, useState } from "react";
 import { Home, MessageCircle, Plus, Search, User } from "lucide-react";
 
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
@@ -45,6 +46,71 @@ const launchNavItems = NAV_ITEMS.filter((item) => item.to === "/" || item.to ===
 const PROFILE_MATCH = (p: string) =>
   p.startsWith("/portfolio") || p.startsWith("/settings") || p.startsWith("/collections");
 
+/** Gap between the pill and the round search button, and the button's diameter (h-14). */
+const SEARCH_GAP = 12;
+const SEARCH_SIZE = 56;
+
+/**
+ * Outline of pill + a liquid "neck" + the round search button, as one shape. Both caps are
+ * circles; the neck leaves each cap at 50° on its tangent so the joint stays smooth.
+ */
+function glassOutline(w: number, h: number): string {
+  const R = h / 2;
+  const r = SEARCH_SIZE / 2;
+  const cy = h / 2;
+  const c1x = w - R;
+  const c2x = w + SEARCH_GAP + r;
+  const t = (50 * Math.PI) / 180;
+  const sin = Math.sin(t);
+  const cos = Math.cos(t);
+  const p1 = [c1x + R * cos, cy - R * sin];
+  const p2 = [c1x + R * cos, cy + R * sin];
+  const q1 = [c2x - r * cos, cy - r * sin];
+  const q2 = [c2x - r * cos, cy + r * sin];
+  const k = (q1[0] - p1[0]) / 2;
+  const n = (v: number) => v.toFixed(2);
+  return [
+    `M ${n(R)} 0 L ${n(c1x)} 0`,
+    `A ${n(R)} ${n(R)} 0 0 1 ${n(p1[0])} ${n(p1[1])}`,
+    `C ${n(p1[0] + k * sin)} ${n(p1[1] + k * cos)} ${n(q1[0] - k * sin)} ${n(q1[1] + k * cos)} ${n(q1[0])} ${n(q1[1])}`,
+    `A ${n(r)} ${n(r)} 0 1 1 ${n(q2[0])} ${n(q2[1])}`,
+    `C ${n(q2[0] - k * sin)} ${n(q2[1] - k * cos)} ${n(p2[0] + k * sin)} ${n(p2[1] - k * cos)} ${n(p2[0])} ${n(p2[1])}`,
+    `A ${n(R)} ${n(R)} 0 0 1 ${n(c1x)} ${n(h)} L ${n(R)} ${n(h)}`,
+    `A ${n(R)} ${n(R)} 0 0 1 ${n(R)} 0 Z`,
+  ].join(" ");
+}
+
+/** Frosted-glass background shared by the pill and the search button (sized from the pill). */
+function NavGlass({ pill }: { pill: HTMLDivElement | null }) {
+  const [size, setSize] = useState<{ w: number; h: number } | null>(null);
+
+  useLayoutEffect(() => {
+    const el = pill;
+    if (!el) return;
+    const measure = () => setSize({ w: el.offsetWidth, h: el.offsetHeight });
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [pill]);
+
+  if (!size || size.w === 0) return null;
+  const width = size.w + SEARCH_GAP + SEARCH_SIZE;
+  const d = glassOutline(size.w, size.h);
+
+  return (
+    <div aria-hidden className="pointer-events-none absolute left-0 top-0" style={{ width, height: size.h }}>
+      <div
+        className="absolute inset-0 bg-background/65 backdrop-blur-xl backdrop-saturate-150 dark:bg-card/50"
+        style={{ clipPath: `path('${d}')` }}
+      />
+      <svg className="absolute inset-0 overflow-visible" width={width} height={size.h}>
+        <path d={d} fill="none" className="stroke-foreground/15" strokeWidth={1} />
+      </svg>
+    </div>
+  );
+}
+
 const FloatingNav = () => {
   const { pathname, search } = useLocation();
   const navigate = useNavigate();
@@ -54,6 +120,7 @@ const FloatingNav = () => {
   const openAuth = useAuthDialog((s) => s.openSignup);
   const { showBottomNav } = useAppLayout();
   const { data: chatBadgeCount = 0 } = useChatInboxBadgeCount();
+  const [pillEl, setPillEl] = useState<HTMLDivElement | null>(null);
 
   if (!showBottomNav) return null;
 
@@ -71,10 +138,22 @@ const FloatingNav = () => {
     }
     navigate("/portfolio/new");
   };
-  /** On my profile the round button is "+ Create"; everywhere else it is search. */
-  const onProfile = pathname === "/portfolio" || (pathname.startsWith("/portfolio/") && !pathname.startsWith("/portfolio/new"));
-  /** Guests never see a "+" — creating needs an account, so the round button stays search for them. */
-  const createMode = onProfile && !!user;
+  /** Create (+) sits in the pill just before Chat; guests never see it — creating needs an account. */
+  const createActive = pathname.startsWith("/portfolio/new");
+  const createButton = (
+    <button
+      type="button"
+      onClick={openCreate}
+      data-tour="create"
+      aria-label="ลงผลงาน"
+      className={cn(
+        "relative flex items-center justify-center rounded-full transition-colors h-11 w-11 min-h-11",
+        createActive ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground hover:bg-accent",
+      )}
+    >
+      <Plus className="h-5 w-5 shrink-0" strokeWidth={2.2} />
+    </button>
+  );
 
   /** Phones / tablets: the round button opens project search (with colour search inside). */
   const openSearch = () => {
@@ -106,15 +185,14 @@ const FloatingNav = () => {
     <>
       <nav
         aria-label="เมนูหลัก"
-        className="lg:hidden fixed inset-x-0 z-30 flex items-center justify-center gap-3 px-4 pointer-events-none"
+        className="lg:hidden fixed inset-x-0 z-30 flex justify-center px-4 pointer-events-none"
         style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 0.75rem)" }}
       >
+        <div className="relative flex items-center" style={{ gap: SEARCH_GAP }}>
+        <NavGlass pill={pillEl} />
         <div
-          className={cn(
-            "pointer-events-auto flex items-center gap-0.5 rounded-full",
-            "border border-border bg-background px-1.5 py-1.5 shadow-sm",
-            "dark:bg-card",
-          )}
+          ref={setPillEl}
+          className="pointer-events-auto relative flex items-center gap-0.5 rounded-full px-1.5 py-1.5"
         >
           {navItems.map(({ to, label, icon: Icon, match, requiresAuth }) => {
             const active = match(pathname, feedMode);
@@ -143,8 +221,9 @@ const FloatingNav = () => {
             }
 
             return (
+              <Fragment key={to}>
+              {to === "/chat" && user ? createButton : null}
               <NavLink
-                key={to}
                 to={to}
                 onClick={(e) => {
                   guardAuth(e, requiresAuth, to);
@@ -165,6 +244,7 @@ const FloatingNav = () => {
                   </span>
                 )}
               </NavLink>
+              </Fragment>
             );
           })}
 
@@ -204,38 +284,17 @@ const FloatingNav = () => {
           )}
         </div>
 
-        {pathname === "/" && user ? (
-          // Home: create sits beside search.
-          <button
-            type="button"
-            onClick={openCreate}
-            data-tour="create"
-            aria-label="ลงผลงาน"
-            className={cn(
-              "pointer-events-auto -mr-1 flex h-14 w-14 shrink-0 items-center justify-center rounded-full shadow-sm transition-all duration-200 ease-out hover:opacity-90 active:scale-95",
-              "bg-white text-[#111111] ring-1 ring-black/10 dark:bg-background dark:text-white dark:ring-white/25",
-            )}
-          >
-            <Plus className="h-6 w-6" strokeWidth={2.5} />
-          </button>
-        ) : null}
         <button
           type="button"
-          onClick={createMode ? openCreate : openSearch}
-          data-tour={createMode ? "create" : "search"}
-          aria-label={createMode ? "ลงผลงาน" : "ค้นหาผลงาน"}
-          className={cn(
-            "pointer-events-auto flex h-14 w-14 shrink-0 items-center justify-center rounded-full shadow-sm transition-all duration-200 ease-out hover:opacity-90 active:scale-95",
-            // Light mode: white with a black icon; dark mode: field colour with a white icon. A hairline ring keeps it visible on any photo.
-            "bg-white text-[#111111] ring-1 ring-black/10 dark:bg-background dark:text-white dark:ring-white/25",
-          )}
+          onClick={openSearch}
+          data-tour="search"
+          aria-label="ค้นหาผลงาน"
+          // Sits on the shared glass (NavGlass); no background of its own.
+          className="pointer-events-auto relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-foreground transition-transform duration-200 ease-out active:scale-95"
         >
-          {createMode ? (
-            <Plus className="h-6 w-6" strokeWidth={2.5} />
-          ) : (
-            <Search className="h-6 w-6" strokeWidth={2.25} />
-          )}
+          <Search className="h-6 w-6" strokeWidth={2.25} />
         </button>
+        </div>
       </nav>
     </>
   );

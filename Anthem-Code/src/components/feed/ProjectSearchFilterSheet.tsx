@@ -48,9 +48,17 @@ type Props = {
   /** Colour search sits beside the field (applies right away, like on desktop). */
   colorQuery?: string | null;
   onColorQueryChange?: (hex: string | null) => void;
+  /** Projects / Designers tabs (the bottom-nav search on phones). Designer filters apply live. */
+  tab?: SearchTab;
+  onTabChange?: (tab: SearchTab) => void;
+  designerSearch?: string;
+  onDesignerSearchChange?: (query: string) => void;
+  designerFilters?: ReactNode;
+  designerResultCount?: number;
 };
 
-const PAPER = '"Iowan Old Style", Palatino, Georgia, serif';
+export type SearchTab = "projects" | "designers";
+
 
 function Chip({
   label,
@@ -251,6 +259,71 @@ function FilterBody({
   );
 }
 
+function DesignerBody({
+  search,
+  onSearchChange,
+  filters,
+  resultCount,
+  onClose,
+}: {
+  search: string;
+  onSearchChange: (query: string) => void;
+  filters?: ReactNode;
+  resultCount?: number;
+  onClose: () => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const t = window.setTimeout(() => inputRef.current?.focus(), 50);
+    return () => window.clearTimeout(t);
+  }, []);
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="relative shrink-0">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <input
+          ref={inputRef}
+          type="search"
+          value={search}
+          onChange={(e) => onSearchChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") onClose();
+          }}
+          placeholder="ค้นหาชื่อดีไซเนอร์ ทักษะ เครื่องมือ…"
+          className="w-full rounded-full border border-foreground/12 bg-white dark:bg-card py-3 pl-10 pr-10 text-sm text-foreground placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-foreground/15"
+        />
+        {search ? (
+          <button
+            type="button"
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-muted-foreground hover:bg-foreground/8"
+            aria-label="ล้างคำค้น"
+            onClick={() => onSearchChange("")}
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        ) : null}
+      </div>
+
+      <div className="mt-4 min-h-0 flex-1 overflow-y-auto overscroll-contain pb-2">{filters}</div>
+
+      <div className="mt-auto flex shrink-0 items-center gap-2 border-t border-foreground/10 pt-3">
+        <button type="button" className="rounded-full px-3 py-2 text-sm text-[#5c5954] dark:text-muted-foreground hover:text-foreground" onClick={onClose}>
+          ปิด
+        </button>
+        <button
+          type="button"
+          className="flex-1 rounded-full bg-foreground py-2.5 text-sm text-background hover:bg-foreground/90"
+          onClick={onClose}
+        >
+          {typeof resultCount === "number" ? `ดูดีไซเนอร์ (${resultCount})` : "ดูดีไซเนอร์"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 const ProjectSearchFilterSheet = ({
   open,
   onOpenChange,
@@ -262,6 +335,12 @@ const ProjectSearchFilterSheet = ({
   onRecentSelect,
   colorQuery = null,
   onColorQueryChange,
+  tab = "projects",
+  onTabChange,
+  designerSearch = "",
+  onDesignerSearchChange,
+  designerFilters,
+  designerResultCount,
 }: Props) => {
   const colorControl = onColorQueryChange ? (
     <ColorSearchButton value={colorQuery} onChange={onColorQueryChange} className="h-11 w-11" />
@@ -281,7 +360,8 @@ const ProjectSearchFilterSheet = ({
     onOpenChange(false);
   };
 
-  const title = "Search and filter projects";
+  const designersTab = tab === "designers" && !!onDesignerSearchChange;
+  const title = designersTab ? "Search designers" : "Search and filter projects";
   const paper =
     "border-border dark:border-border bg-background text-foreground shadow-sm [&>button]:text-foreground";
   const toggleHideAi = () => {
@@ -293,9 +373,43 @@ const ProjectSearchFilterSheet = ({
   };
 
   const titleRow = (
-    <span style={{ fontFamily: PAPER }} className="text-[1.65rem] font-medium leading-none tracking-tight text-foreground">
+    <span className="font-display text-[1.5rem] font-normal leading-none tracking-tight text-foreground">
       {title}
     </span>
+  );
+
+  const tabsRow = onTabChange ? (
+    <div className="mb-3 flex shrink-0 gap-1.5" role="tablist" aria-label="ค้นหา">
+      <Chip label="Projects" active={!designersTab} onClick={() => onTabChange("projects")} />
+      <Chip label="Designers" active={designersTab} onClick={() => onTabChange("designers")} />
+    </div>
+  ) : null;
+
+  const hideAiToggle = designersTab ? null : (
+    <HideAiToggle active={draft.hideAi} onToggle={toggleHideAi} className="mt-0.5 h-10 w-10 !text-foreground hover:!bg-foreground/8 [&_svg]:h-6 [&_svg]:w-6" />
+  );
+
+  const body = designersTab ? (
+    <DesignerBody
+      search={designerSearch}
+      onSearchChange={onDesignerSearchChange!}
+      filters={designerFilters}
+      resultCount={designerResultCount}
+      onClose={() => onOpenChange(false)}
+    />
+  ) : (
+    <FilterBody
+      draft={draft}
+      setDraft={setDraft}
+      onApply={apply}
+      onClose={() => onOpenChange(false)}
+      resultCount={resultCount}
+      autoFocusSearch
+      recentSearches={recentSearches}
+      onRecentSelect={onRecentSelect}
+      onHideAiChange={onHideAiChange}
+      colorControl={colorControl}
+    />
   );
 
   if (isMobile) {
@@ -312,21 +426,11 @@ const ProjectSearchFilterSheet = ({
               <div className="min-w-0">
                 <SheetTitle className="text-base font-normal">{titleRow}</SheetTitle>
               </div>
-              <HideAiToggle active={draft.hideAi} onToggle={toggleHideAi} className="mt-0.5 h-10 w-10 !text-foreground hover:!bg-foreground/8 [&_svg]:h-6 [&_svg]:w-6" />
+              {hideAiToggle}
             </div>
           </SheetHeader>
-          <FilterBody
-            draft={draft}
-            setDraft={setDraft}
-            onApply={apply}
-            onClose={() => onOpenChange(false)}
-            resultCount={resultCount}
-            autoFocusSearch
-            recentSearches={recentSearches}
-            onRecentSelect={onRecentSelect}
-            onHideAiChange={onHideAiChange}
-            colorControl={colorControl}
-          />
+          {tabsRow}
+          {body}
         </SheetContent>
       </Sheet>
     );
@@ -344,21 +448,11 @@ const ProjectSearchFilterSheet = ({
             <div className="min-w-0">
               <DialogTitle className="text-base font-normal">{titleRow}</DialogTitle>
             </div>
-            <HideAiToggle active={draft.hideAi} onToggle={toggleHideAi} className="mt-0.5 h-10 w-10 !text-foreground hover:!bg-foreground/8 [&_svg]:h-6 [&_svg]:w-6" />
+            {hideAiToggle}
           </div>
         </DialogHeader>
-        <FilterBody
-          draft={draft}
-          setDraft={setDraft}
-          onApply={apply}
-          onClose={() => onOpenChange(false)}
-          resultCount={resultCount}
-          autoFocusSearch
-          recentSearches={recentSearches}
-          onRecentSelect={onRecentSelect}
-          onHideAiChange={onHideAiChange}
-          colorControl={colorControl}
-        />
+        {tabsRow}
+        {body}
       </DialogContent>
     </Dialog>
   );
