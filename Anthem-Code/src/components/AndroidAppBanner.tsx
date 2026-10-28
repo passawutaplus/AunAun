@@ -14,7 +14,7 @@ const SHOW_DELAY_MS = 4000;
 const SHOW_ON = [/^\/$/, /^\/project\/[^/]+$/, /^\/u\/[^/]+$/];
 
 /** Off until the app is live on Google Play — fail-closed. */
-function isPlayStoreLive(): boolean {
+export function isPlayStoreLive(): boolean {
   return import.meta.env.VITE_PLAY_STORE_LIVE === "true";
 }
 

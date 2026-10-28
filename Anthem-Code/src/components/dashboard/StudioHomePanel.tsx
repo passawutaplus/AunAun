@@ -5,7 +5,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { InlineLoader } from "@/components/ui/BanterLoader";
 import { MascotCharacter } from "@/components/project/TourMascot";
-import StudioActionQueue from "@/components/dashboard/StudioActionQueue";
+import StudioActionQueue, { isStaleRequest, STALE_REQUEST_DAYS } from "@/components/dashboard/StudioActionQueue";
+import StudioPushNudge from "@/components/dashboard/StudioPushNudge";
 import StudioNoteCard from "@/components/dashboard/StudioNoteCard";
 import StudioTodoPanel from "@/components/dashboard/StudioTodoPanel";
 import { EarningsHireBalanceCard } from "@/components/earnings/EarningsHireBalanceCard";
@@ -53,9 +54,10 @@ export default function StudioHomePanel({ userId }: Props) {
     !projectsLoading && !!bounds,
   );
 
+  // Matches the action queue: requests left unanswered for a month aren't "waiting today"
   const waiting =
-    hireRequests.filter((r) => isContactedNewStatus(r.status)).length +
-    collabRequests.filter((r) => isCollabContactedNewStatus(r.status)).length;
+    hireRequests.filter((r) => isContactedNewStatus(r.status) && !isStaleRequest(r.created_at)).length +
+    collabRequests.filter((r) => isCollabContactedNewStatus(r.status) && !isStaleRequest(r.created_at)).length;
   const activeHire = hireRequests.filter((r) => r.status === HIRE_TAB_ACCEPTED);
   const activeCollab = collabRequests.filter((r) => isCollabAcceptedStatus(r.status));
   const { data: partners } = useProfilesByIds(activeCollab.map((r) => r.sender_id));
@@ -81,6 +83,9 @@ export default function StudioHomePanel({ userId }: Props) {
       };
     }),
   ].sort((a, b) => b.at.localeCompare(a.at));
+  // Jobs nobody has touched for a month are summarised, not listed as work in progress
+  const staleActive = activeRows.filter((r) => isStaleRequest(r.at));
+  const liveRows = activeRows.filter((r) => !isStaleRequest(r.at));
 
   const published = projects.filter((p) => p.status === "Published").length;
   const p = profile as
@@ -105,7 +110,7 @@ export default function StudioHomePanel({ userId }: Props) {
   const loading = hireLoading || collabLoading;
   const stats = [
     { label: "รอตอบ", value: loading ? "–" : waiting, to: STUDIO_HIRE_PATH, hot: waiting > 0, icon: Inbox },
-    { label: "กำลังทำ", value: loading ? "–" : activeRows.length, to: STUDIO_HIRE_PATH, hot: false, icon: Briefcase },
+    { label: "กำลังทำ", value: loading ? "–" : liveRows.length, to: STUDIO_HIRE_PATH, hot: false, icon: Briefcase },
     { label: "เข้าชม 7 วัน", value: overview.data?.current.views.length ?? "–", to: STUDIO_INSIGHTS_PATH, hot: false, icon: Eye },
     { label: "ผลงานที่เผยแพร่", value: projectsLoading ? "–" : published, to: STUDIO_PROJECTS_PATH, hot: false, icon: Images },
   ];
@@ -119,8 +124,8 @@ export default function StudioHomePanel({ userId }: Props) {
     ? "กำลังดูว่าวันนี้มีอะไรบ้าง…"
     : waiting > 0
       ? `มี ${waiting} เรื่องรอคุณตอบอยู่ ไปเคลียร์กันเลย`
-      : activeRows.length > 0
-        ? `ไม่มีอะไรค้างตอบ มีงานกำลังทำ ${activeRows.length} งาน สู้ ๆ`
+      : liveRows.length > 0
+        ? `ไม่มีอะไรค้างตอบ มีงานกำลังทำ ${liveRows.length} งาน สู้ ๆ`
         : published === 0
           ? "เริ่มจากลงผลงานแรก ให้คนเห็นฝีมือคุณกัน"
           : "วันนี้ว่าง ลองแชร์โปรไฟล์ให้คนเห็นมากขึ้นดีไหม";
@@ -230,17 +235,21 @@ export default function StudioHomePanel({ userId }: Props) {
           <section className="rounded-2xl border border-border/70 bg-card p-4 sm:p-5">
             <div className="mb-2 flex items-baseline justify-between">
               <h2 className="text-base font-semibold text-foreground">งานที่กำลังทำ</h2>
-              {activeRows.length > ACTIVE_ROWS ? (
+              {liveRows.length > ACTIVE_ROWS ? (
                 <Link to={STUDIO_HIRE_PATH} className="text-xs text-muted-foreground hover:text-foreground">
-                  ดูทั้งหมด {activeRows.length}
+                  ดูทั้งหมด {liveRows.length}
                 </Link>
               ) : null}
             </div>
-            {activeRows.length === 0 ? (
-              <p className="py-3 text-sm text-muted-foreground">ยังไม่มีงานที่กำลังทำ ตอบรับคำขอแล้วงานจะมาอยู่ตรงนี้</p>
+            {liveRows.length === 0 ? (
+              <p className="py-3 text-sm text-muted-foreground">
+                {staleActive.length > 0
+                  ? "ช่วงนี้ไม่มีงานที่ขยับ"
+                  : "ยังไม่มีงานที่กำลังทำ ตอบรับคำขอแล้วงานจะมาอยู่ตรงนี้"}
+              </p>
             ) : (
               <ul className="divide-y divide-border/60">
-                {activeRows.slice(0, ACTIVE_ROWS).map((row) => (
+                {liveRows.slice(0, ACTIVE_ROWS).map((row) => (
                   <li key={row.id}>
                     <Link
                       to={row.to}
@@ -268,11 +277,23 @@ export default function StudioHomePanel({ userId }: Props) {
                 ))}
               </ul>
             )}
+            {staleActive.length > 0 ? (
+              <p className="mt-3 border-t border-border/60 pt-3 text-xs text-muted-foreground">
+                ไม่เคลื่อนไหวเกิน {STALE_REQUEST_DAYS} วัน {staleActive.length} งาน —{" "}
+                <Link
+                  to={staleActive.some((r) => r.tag === "งานจ้าง") ? STUDIO_HIRE_PATH : STUDIO_COLLAB_PATH}
+                  className="font-medium text-foreground hover:underline"
+                >
+                  ส่งงาน ปิดงาน หรือคุยต่อ
+                </Link>
+              </p>
+            ) : null}
           </section>
         </div>
 
         <div className="space-y-6">
           {checklistCard}
+          <StudioPushNudge />
           <StudioTodoPanel userId={userId} queue={[]} />
           <StudioNoteCard userId={userId} />
           {!isCommerceEnabled() ? null : walletLoading ? (

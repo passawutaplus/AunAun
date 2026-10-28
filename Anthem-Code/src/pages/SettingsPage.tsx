@@ -32,6 +32,7 @@ import BillingSettingsPanel from "@/components/settings/BillingSettingsPanel";
 import { FeedbackReportsSection } from "@/components/settings/PrivacySecuritySection";
 import { AccountPrivacySection } from "@/components/settings/AccountPrivacySection";
 import { CollabTagSettingsSection } from "@/components/settings/CollabTagSettingsSection";
+import { AppDownloadSection } from "@/components/settings/AppDownloadSection";
 import { SettingsCard, useSaveStatus } from "@/components/settings/SettingsCard";
 import { ChangePasswordSection } from "@/components/settings/ChangePasswordSection";
 import { isCommerceEnabled } from "@/lib/aplus1Launch";
@@ -243,7 +244,7 @@ const SettingsPage = () => {
         id="settings-body"
         className="mx-auto flex max-w-6xl flex-col gap-6 px-4 pb-24 pt-4 lg:flex-row lg:items-start lg:gap-8 lg:pt-0"
       >
-        <SettingsSideNav activePanel={panel} onSelect={openPanel} isAdmin={!!isAdmin} />
+        <SettingsSideNav activePanel={panel} onSelect={openPanel} isAdmin={!!isAdmin} onSignOut={handleSignOut} />
 
         {showList ? (
           <MobileSettingsList groups={navGroups} onPick={openPanel} onSignOut={handleSignOut} />
@@ -326,6 +327,8 @@ const SettingsPage = () => {
             {panel === "data" ? <AccountPrivacySection /> : null}
 
             {panel === "feedback" ? <FeedbackReportsSection /> : null}
+
+            {panel === "app" ? <AppDownloadSection /> : null}
 
             {panel === "admin" && isAdmin ? (
               <SettingsCard icon={Shield} title="ผู้ดูแลระบบ" description="เครื่องมือมอนิเตอร์และจัดการทั้งระบบ">

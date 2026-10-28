@@ -98,15 +98,16 @@ const DataRightsPage = () => {
       <p className="text-sm font-medium text-foreground">ทำได้เองในแอป (เร็วกว่าอีเมล)</p>
       <div className="flex flex-wrap gap-2">
         {user ? (
-          <Button asChild size="sm">
+          // LegalLayout colours every <a> text-primary — reset it so the label stays readable on the button.
+          <Button asChild size="sm" className="!text-primary-foreground hover:!no-underline">
             <Link to="/settings">ไปที่ ตั้งค่า → ความเป็นส่วนตัว</Link>
           </Button>
         ) : (
-          <Button asChild size="sm" variant="secondary">
+          <Button asChild size="sm" variant="secondary" className="!text-secondary-foreground hover:!no-underline">
             <Link to="/auth">เข้าสู่ระบบก่อน</Link>
           </Button>
         )}
-        <Button asChild size="sm" variant="outline">
+        <Button asChild size="sm" variant="outline" className="!text-foreground hover:!no-underline">
           <Link to="/legal/copyright-report">แจ้งละเมิดลิขสิทธิ์</Link>
         </Button>
       </div>
