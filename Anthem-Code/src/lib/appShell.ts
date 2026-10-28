@@ -44,10 +44,22 @@ export function isStandaloneDisplay(): boolean {
   return Boolean(window.matchMedia?.("(display-mode: standalone)").matches || nav.standalone);
 }
 
-/** True inside the SAMECOR Android app (TWA). */
+/** User-agent suffix the Capacitor shell appends (capacitor-shell/capacitor.config.json → android.appendUserAgent). */
+const WEBVIEW_APP_UA_MARKER = "SamecorApp";
+
+/**
+ * True inside the Capacitor WebView build of the Android app. Unlike the TWA it
+ * does not share Chrome's session, and Google blocks OAuth sign-in in WebViews.
+ */
+export function isWebViewApp(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return navigator.userAgent.includes(WEBVIEW_APP_UA_MARKER);
+}
+
+/** True inside the SAMECOR Android app (TWA or Capacitor WebView). */
 export function isAndroidApp(): boolean {
   if (typeof window === "undefined") return false;
-  return readSession(ANDROID_SESSION_KEY) === "1" || launchedFromAndroidApp();
+  return isWebViewApp() || readSession(ANDROID_SESSION_KEY) === "1" || launchedFromAndroidApp();
 }
 
 function syncThemeColor(): void {
