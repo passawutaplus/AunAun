@@ -1,0 +1,12 @@
+# Signing key — never commit; back it up outside the repo.
+*.keystore
+*.jks
+
+# Build outputs
+*.aab
+*.apk
+*.idsig
+.gradle/
+build/
+app/build/
+local.properties

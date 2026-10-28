@@ -11,14 +11,17 @@
   "navigationDividerColor": "#F8F7F2",
   "navigationDividerColorDark": "#201F1E",
   "backgroundColor": "#F8F7F2",
-  "backgroundColorDark": "#201F1E",
   "enableNotifications": true,
   "startUrl": "/?source=android",
   "iconUrl": "https://samecor.com/icons/icon-512.png",
   "maskableIconUrl": "https://samecor.com/icons/icon-maskable-512.png",
   "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "./android.keystore",
+    "alias": "android"
+  },
   "appVersionName": "1.0.0",
-  "appVersionCode": 1,
+  "appVersionCode": 4,
   "shortcuts": [
     {
       "name": "ลงผลงาน",
@@ -50,9 +53,7 @@
   "isChromeOSOnly": false,
   "isMetaQuest": false,
   "fullScopeUrl": "https://samecor.com/",
-  "minSdkVersion": 21,
-  "orientation": "portrait",
-  "fingerprints": [],
+  "minSdkVersion": 24,
   "shareTarget": {
     "action": "https://samecor.com/share-target",
     "method": "POST",
@@ -70,5 +71,11 @@
         }
       ]
     }
-  }
+  },
+  "orientation": "portrait",
+  "fingerprints": [],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": [],
+  "displayOverride": [],
+  "appVersion": "1.0.0"
 }
