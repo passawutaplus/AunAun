@@ -493,7 +493,7 @@ export function InterestSurveyGate() {
         : "แก้ทีหลังได้ที่โปรไฟล์ › เกี่ยวกับฉัน";
 
   const primaryLabel =
-    isSaving ? null : step === "interests" ? (isNarrow ? "ถัดไป" : "เริ่มใช้งาน") : "เริ่มใช้งาน";
+    isSaving ? null : step === "interests" ? (isNarrow ? "ถัดไป" : "เข้าสู่ SAMECOR") : "เข้าสู่ SAMECOR";
 
   return (
     <ResponsiveOverlay
@@ -549,7 +549,7 @@ export function InterestSurveyGate() {
                       กำลังบันทึก…
                     </>
                   ) : (
-                    "เริ่มใช้งาน"
+                    "เข้าสู่ SAMECOR"
                   )}
                 </Button>
               </div>
