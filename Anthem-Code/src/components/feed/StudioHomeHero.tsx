@@ -506,6 +506,9 @@ const StudioHomeHero = ({
                       className="hero-cover-tile"
                       src={src}
                       alt=""
+                      decoding="async"
+                      // The lower half of each column sits below the fold at first paint — fetch it after the top half.
+                      loading={halfIndex === 0 ? "eager" : "lazy"}
                       style={{ "--d": `${TILE_DELAYS[columnIndex * 4 + halfIndex * 2 + row] ?? 0}s` } as CSSProperties}
                     />
                   ))}

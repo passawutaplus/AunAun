@@ -308,6 +308,8 @@ const SignupFormFields = () => {
     }
 
     setBusy(true);
+    // Sending the email takes ~3 s server-side: show the code step right away instead of making the user wait.
+    setPendingEmail(email.trim());
     try {
       const { data, error } = await supabase.auth.signUp({
         email: email.trim(), password,
@@ -316,16 +318,24 @@ const SignupFormFields = () => {
           data: { display_name: displayName || email.split("@")[0] },
         },
       });
-      if (error) toast.error(userFacingError(error));
-      else if (!data.session && data.user?.identities?.length === 0) {
+      if (error) {
+        setPendingEmail(null);
+        toast.error(userFacingError(error));
+      } else if (!data.session && data.user?.identities?.length === 0) {
         // Supabase hides "already registered" behind an empty identities list.
+        setPendingEmail(null);
         toast.error("อีเมลนี้มีบัญชีแล้ว ลองเข้าสู่ระบบแทน");
       } else {
         markPendingSignupConsent();
-        await recordSignupConsents();
-        if (data.session) toast.success("สมัครสำเร็จ ยินดีต้อนรับสู่ SAMECOR");
-        else setPendingEmail(email.trim());
+        void recordSignupConsents();
+        if (data.session) {
+          setPendingEmail(null);
+          toast.success("สมัครสำเร็จ ยินดีต้อนรับสู่ SAMECOR");
+        }
       }
+    } catch (err) {
+      setPendingEmail(null);
+      toast.error(userFacingError(err));
     } finally { setBusy(false); }
   };
 
@@ -333,6 +343,7 @@ const SignupFormFields = () => {
     return (
       <SignupVerifyCode
         email={pendingEmail}
+        sending={busy}
         onChangeEmail={() => setPendingEmail(null)}
         inputClassName="h-12 rounded-full bg-background/60 backdrop-blur border-border/60 px-4 focus-visible:ring-primary/40"
         buttonClassName="h-12 rounded-full text-base font-medium bg-foreground text-background hover:bg-foreground/90 border-0"

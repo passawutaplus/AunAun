@@ -84,7 +84,6 @@ const AuthPage = () => {
   const authHeroRef = useRef<HTMLDivElement>(null);
   const heroCycle = useHeroRotatingCycle();
   const [tab, setTab] = useState<"login" | "signup">("login");
-  const [fadeOut, setFadeOut] = useState(false);
 
   useEffect(() => {
     if (!shouldStripRedirectParam(rawRedirect)) return;
@@ -97,7 +96,6 @@ const AuthPage = () => {
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
-    setFadeOut(true);
     void (async () => {
       const { data } = await supabase
         .from("profiles")
@@ -109,7 +107,8 @@ const AuthPage = () => {
       if (cancelled) return;
       const needsInterestSurvey = !hasCompletedProfileOnboarding(data);
       const dest = needsInterestSurvey ? "/" : redirect;
-      window.setTimeout(() => navigate(dest, { replace: true }), 250);
+      // No fade-out + delay: the form keeps its spinner until we leave, so there is no blank page in between.
+      navigate(dest, { replace: true });
     })();
     return () => {
       cancelled = true;
@@ -121,9 +120,8 @@ const AuthPage = () => {
       ref={authHeroRef}
       style={paperVars}
       className={cn(
-      "relative min-h-screen overflow-x-hidden bg-background text-foreground transition-opacity duration-300",
+      "relative min-h-screen overflow-x-hidden bg-background text-foreground",
       "lg:overflow-hidden",
-      fadeOut && "opacity-0"
     )}>
       <SeoHead title="เข้าสู่ระบบ" path="/auth" noindex />
       <main id="main-content" className="contents">
@@ -262,6 +260,7 @@ const LoginForm = ({ redirect, onSwitch }: { redirect: string; onSwitch: () => v
       return;
     }
     setBusy(true);
+    let signedIn = false;
     try {
       if (!remember) sessionStorage.setItem(BRAND_STORAGE_NO_PERSIST, "1");
       else sessionStorage.removeItem(BRAND_STORAGE_NO_PERSIST);
@@ -281,9 +280,11 @@ const LoginForm = ({ redirect, onSwitch }: { redirect: string; onSwitch: () => v
         if (!remember) sessionStorage.setItem(BRAND_STORAGE_NO_PERSIST, "1");
         else sessionStorage.removeItem(BRAND_STORAGE_NO_PERSIST);
         toast.success("เข้าสู่ระบบสำเร็จ");
+        signedIn = true;
       }
     } finally {
-      setBusy(false);
+      // After a successful sign-in the page redirects; keep the spinner until then.
+      if (!signedIn) setBusy(false);
     }
   };
 
@@ -407,6 +408,8 @@ const SignupFormFields = ({ onSwitch }: { onSwitch: () => void }) => {
     }
 
     setBusy(true);
+    // Sending the email takes ~3 s server-side: show the code step right away instead of making the user wait.
+    setPendingEmail(email.trim());
     try {
       const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
@@ -416,16 +419,24 @@ const SignupFormFields = ({ onSwitch }: { onSwitch: () => void }) => {
           data: { display_name: displayName || email.split("@")[0] },
         },
       });
-      if (error) toast.error(userFacingError(error));
-      else if (!data.session && data.user?.identities?.length === 0) {
+      if (error) {
+        setPendingEmail(null);
+        toast.error(userFacingError(error));
+      } else if (!data.session && data.user?.identities?.length === 0) {
         // Supabase hides "already registered" behind an empty identities list.
+        setPendingEmail(null);
         toast.error("อีเมลนี้มีบัญชีแล้ว ลองเข้าสู่ระบบแทน");
       } else {
         markPendingSignupConsent();
-        await recordSignupConsents();
-        if (data.session) toast.success("สมัครสำเร็จ ยินดีต้อนรับสู่ SAMECOR");
-        else setPendingEmail(email.trim());
+        void recordSignupConsents();
+        if (data.session) {
+          setPendingEmail(null);
+          toast.success("สมัครสำเร็จ ยินดีต้อนรับสู่ SAMECOR");
+        }
       }
+    } catch (err) {
+      setPendingEmail(null);
+      toast.error(userFacingError(err));
     } finally {
       setBusy(false);
     }
@@ -435,6 +446,7 @@ const SignupFormFields = ({ onSwitch }: { onSwitch: () => void }) => {
     return (
       <SignupVerifyCode
         email={pendingEmail}
+        sending={busy}
         onChangeEmail={() => setPendingEmail(null)}
         inputClassName={paperInput}
         buttonClassName={paperSubmit}
