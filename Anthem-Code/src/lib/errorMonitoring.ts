@@ -9,13 +9,19 @@ export async function initErrorMonitoring(): Promise<void> {
   const dsn = import.meta.env.VITE_SENTRY_DSN as string | undefined;
   if (dsn?.trim()) {
     try {
-      const Sentry = await import("@sentry/react");
+      const [Sentry, { isAndroidApp, isStandaloneDisplay }] = await Promise.all([
+        import("@sentry/react"),
+        import("@/lib/appShell"),
+      ]);
       Sentry.init({
         dsn: dsn.trim(),
-        environment: import.meta.env.PROD ? "production" : "development",
+        // Vercel exposes VITE_VERCEL_ENV for Vite builds — keeps preview-deploy errors out of production
+        environment:
+          (import.meta.env.VITE_VERCEL_ENV as string | undefined) ?? (import.meta.env.PROD ? "production" : "development"),
         tracesSampleRate: 0.05,
         ignoreErrors: ["ResizeObserver loop"],
       });
+      Sentry.setTag("shell", isAndroidApp() ? "android" : isStandaloneDisplay() ? "pwa" : "web");
       sentryReady = true;
     } catch (err) {
       console.warn("[monitoring] Sentry init failed", err);

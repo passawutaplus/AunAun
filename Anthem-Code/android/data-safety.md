@@ -29,7 +29,7 @@ None of this is **shared** in Play's sense: Supabase, Vercel, Google Sign-In and
 | App activity → App interactions | Yes | Optional | Analytics | `product_events` (page views, likes, saves) — only with analytics consent |
 | App activity → In-app search history | Yes | Optional | Analytics, App functionality | `feed_search` events, recent searches |
 | App activity → Other user-generated content | Yes | Optional | App functionality | projects, comments, bio |
-| App info and performance → Crash logs | Yes* | Optional | Analytics | Sentry, *only if `VITE_SENTRY_DSN` is set in production |
+| App info and performance → Crash logs | Yes | Required | Analytics | Sentry (error reports: message, stack, page, browser/device type; no user PII sent) |
 | App info and performance → Diagnostics | Yes | Optional | Analytics | in-app feedback diagnostics |
 | Device or other IDs | Yes | Optional | App functionality | push subscription endpoint + keys (`shared.push_subscriptions`) — only after the user turns on notifications; removed on turn-off / sign-out |
 
@@ -40,4 +40,4 @@ None of this is **shared** in Play's sense: Supabase, Vercel, Google Sign-In and
 Checked 2026-10-28 against the live samecor.com bundle: **neither GA4 nor Sentry is configured** (no `G-…` id, no gtag loader, no Sentry DSN).
 
 1. `VITE_GA_MEASUREMENT_ID` — not set. Nothing to declare for GA. If it is turned on later, update this form first; add **App interactions → shared with Google (Analytics)** only if GA data sharing settings send data beyond service-provider use.
-2. `VITE_SENTRY_DSN` — not set. **Remove the Crash logs row** when submitting, unless Sentry is turned on before the app goes live (recommended for the closed test: sentry.io free plan → React project → put the DSN in Vercel `aplus1-prod` → redeploy).
+2. `VITE_SENTRY_DSN` — **set on 2026-10-28** (Vercel `aplus1-prod`, production + preview; Sentry org `samecor`, project javascript-react). Keep the Crash logs row. Errors are tagged `shell` = android / pwa / web.
