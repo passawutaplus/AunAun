@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
+import { REGEXP_ONLY_DIGITS } from "input-otp";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { suggestEmailFix } from "@/lib/emailTypos";
@@ -32,7 +32,6 @@ type Props = {
   /** True while the signup request (and the email send) is still in flight. */
   sending?: boolean;
   onChangeEmail: () => void;
-  inputClassName?: string;
   buttonClassName?: string;
 };
 
@@ -41,7 +40,7 @@ type Props = {
  * another browser (the WebView app keeps its own session). Typos surface naturally — the
  * address they typed is shown and can be edited.
  */
-export function SignupVerifyCode({ email, sending = false, onChangeEmail, inputClassName, buttonClassName }: Props) {
+export function SignupVerifyCode({ email, sending = false, onChangeEmail, buttonClassName }: Props) {
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [cooldown, setCooldown] = useState(RESEND_COOLDOWN_S);
@@ -59,7 +58,7 @@ export function SignupVerifyCode({ email, sending = false, onChangeEmail, inputC
   }, [cooldown, sending]);
 
   const verify = async (token: string) => {
-    if (busy || sending || token.length < CODE_LENGTH) return;
+    if (busy || sending || token.length < CODE_LENGTH || token === lastTried.current) return;
     lastTried.current = token;
     setBusy(true);
     let verified = false;
@@ -67,6 +66,8 @@ export function SignupVerifyCode({ email, sending = false, onChangeEmail, inputC
       const { error } = await supabase.auth.verifyOtp({ email, token, type: "signup" });
       if (error) {
         toast.error(userFacingError(error, "รหัสไม่ถูกต้องหรือหมดอายุ ตรวจสอบรหัสในอีเมลหรือกดส่งรหัสอีกครั้ง"));
+        setCode("");
+        lastTried.current = "";
         return;
       }
       toast.success("ยืนยันอีเมลแล้ว ยินดีต้อนรับสู่ SAMECOR");
@@ -75,12 +76,6 @@ export function SignupVerifyCode({ email, sending = false, onChangeEmail, inputC
       // On success the page redirects right after; keep the spinner until then.
       if (!verified) setBusy(false);
     }
-  };
-
-  const onCodeChange = (value: string) => {
-    const digits = value.replace(/\D/g, "").slice(0, 8);
-    setCode(digits);
-    if (digits.length === CODE_LENGTH && digits !== lastTried.current) void verify(digits);
   };
 
   const resend = async () => {
@@ -101,31 +96,40 @@ export function SignupVerifyCode({ email, sending = false, onChangeEmail, inputC
         e.preventDefault();
         void verify(code);
       }}
-      className="space-y-4"
+      className="space-y-5"
     >
-      <div className="space-y-1">
-        <p className="flex items-center gap-2 text-base font-medium">
+      <div className="space-y-1 text-center">
+        <p className="flex items-center justify-center gap-2 text-base font-medium">
           {sending && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
           {sending ? "กำลังส่งรหัสไปที่อีเมลของคุณ…" : "ส่งรหัสไปที่อีเมลของคุณแล้ว"}
         </p>
         <p className="break-all text-sm text-muted-foreground">{email}</p>
       </div>
 
-      <div className="space-y-1.5">
-        <Label htmlFor="signup-code" className="text-xs">รหัส {CODE_LENGTH} หลักจากอีเมล</Label>
-        <Input
-          id="signup-code"
-          inputMode="numeric"
-          autoComplete="one-time-code"
-          pattern="[0-9]*"
-          placeholder="••••••"
-          value={code}
-          onChange={(e) => onCodeChange(e.target.value)}
-          className={cn("text-center text-xl tracking-[0.4em]", inputClassName)}
-          disabled={sending}
-          autoFocus
-        />
-      </div>
+      <InputOTP
+        maxLength={CODE_LENGTH}
+        value={code}
+        onChange={setCode}
+        onComplete={(value) => void verify(value)}
+        pattern={REGEXP_ONLY_DIGITS}
+        disabled={sending || busy}
+        aria-label={`รหัส ${CODE_LENGTH} หลักจากอีเมล`}
+        containerClassName="justify-center"
+        autoFocus
+      >
+        <InputOTPGroup className="gap-2">
+          {Array.from({ length: CODE_LENGTH }, (_, i) => (
+            <InputOTPSlot
+              key={i}
+              index={i}
+              className={cn(
+                "h-12 w-11 rounded-xl border border-border bg-background/60 text-lg font-medium",
+                "first:rounded-l-xl first:border-l last:rounded-r-xl",
+              )}
+            />
+          ))}
+        </InputOTPGroup>
+      </InputOTP>
 
       <Button type="submit" disabled={busy || sending || code.length < CODE_LENGTH} className={cn("w-full", buttonClassName)}>
         {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -145,10 +149,6 @@ export function SignupVerifyCode({ email, sending = false, onChangeEmail, inputC
           แก้ไขอีเมล
         </button>
       </div>
-
-      <p className="text-xs text-muted-foreground">
-        ไม่เห็นอีเมล? ตรวจโฟลเดอร์สแปม หรือกด "แก้ไขอีเมล" หากพิมพ์ที่อยู่ผิด
-      </p>
     </form>
   );
 }

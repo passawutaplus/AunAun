@@ -345,7 +345,6 @@ const SignupFormFields = () => {
         email={pendingEmail}
         sending={busy}
         onChangeEmail={() => setPendingEmail(null)}
-        inputClassName="h-12 rounded-full bg-background/60 backdrop-blur border-border/60 px-4 focus-visible:ring-primary/40"
         buttonClassName="h-12 rounded-full text-base font-medium bg-foreground text-background hover:bg-foreground/90 border-0"
       />
     );

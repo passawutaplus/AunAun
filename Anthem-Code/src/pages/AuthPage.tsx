@@ -448,7 +448,6 @@ const SignupFormFields = ({ onSwitch }: { onSwitch: () => void }) => {
         email={pendingEmail}
         sending={busy}
         onChangeEmail={() => setPendingEmail(null)}
-        inputClassName={paperInput}
         buttonClassName={paperSubmit}
       />
     );
