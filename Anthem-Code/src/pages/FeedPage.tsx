@@ -33,6 +33,8 @@ import { useFeedHomeNavStore } from "@/stores/feedHomeNavStore";
 import HireDialog from "@/components/HireDialog";
 import CollabDialog from "@/components/CollabDialog";
 import { FeedProjectGrid } from "@/components/feed/FeedProjectGrid";
+import { ProjectQuickViewHost } from "@/components/feed/ProjectQuickView";
+import { useQuickView } from "@/stores/quickViewStore";
 import { FeedModeTransition } from "@/components/feed/FeedModeTransition";
 import ObjectCatalog from "@/components/objects/ObjectCatalog";
 import { type FeedMode } from "@/components/feed/FeedModeToggle";
@@ -770,6 +772,14 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
     });
   }, [sortedFiltered, ads, columns, search, colorQuery]);
 
+  // Phone Quick View swipes through the feed in on-screen order.
+  useEffect(() => {
+    useQuickView
+      .getState()
+      .setProjects(feedItems.flatMap((item) => (item.kind === "project" ? [item.data] : [])));
+  }, [feedItems]);
+  useEffect(() => () => useQuickView.getState().close(), []);
+
   const searchSuggestions = useMemo(
     () => (search.trim() && filtered.length === 0 ? similarSearchSuggestions(search, recentSearches) : []),
     [search, filtered.length, recentSearches],
@@ -915,8 +925,6 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
             </div>
           ) : mode === "designers" ? (
             <DesignerGrid
-              onHire={handleHireDesigner}
-              onCollab={handleCollabDesigner}
               search={search}
               onClearSearch={() => setSearch("")}
               sort={designerSort}
@@ -997,29 +1005,12 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
                       searchQuery={search}
                       boosted={boostedSets.projects.has(item.data.id)}
                       boostId={boostMaps.projects.get(item.data.id)}
-                      onHireClick={() => {
-                        openHireForFreelancer(
-                          item.data.ownerId ?? "",
-                          item.data.title,
-                          item.data.id,
-                          item.data.image,
-                        );
-                      }}
-                      onCollabClick={() => {
-                        setCollabTarget({
-                          recipientId: item.data.ownerId,
-                          recipientName: item.data.owner,
-                          projectId: item.data.id,
-                          projectTitle: item.data.title,
-                          projectCoverUrl: item.data.image,
-                        });
-                        setCollabOpen(true);
-                      }}
                     />
                   )
                 )}
               </FeedProjectGrid>
               </div>
+              <ProjectQuickViewHost />
 
               {!colorMatch.pending && filtered.length === 0 && (
                 <FilterEmptyState

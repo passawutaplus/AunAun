@@ -7,6 +7,7 @@ import { installFeedbackDiagnostics } from "./lib/feedbackDiagnostics";
 import { installReportableErrorToasts } from "./lib/reportableToasts";
 import { loadBrandFonts } from "./lib/loadBrandFonts";
 import { registerPwa } from "./lib/pwa";
+import { installAppShell } from "./lib/appShell";
 
 installCspReporter();
 installFeedbackDiagnostics();
@@ -14,6 +15,7 @@ installReportableErrorToasts();
 void initErrorMonitoring();
 loadBrandFonts();
 registerPwa();
+installAppShell();
 
 const initialUrl = `${window.location.origin}${window.location.pathname}`;
 document.head

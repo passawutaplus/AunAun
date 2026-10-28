@@ -1,8 +1,10 @@
-import BriefcaseIcon from "../icons/BriefcaseIcon";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import ConnectMessageDialog from "@/components/chat/ConnectMessageDialog";
+import { useAuth } from "@/hooks/useAuth";
+import { navigateToAuth } from "@/lib/authRedirect";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { ArrowRight, ChevronLeft, ChevronRight, Handshake, MapPin } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, MapPin, MessageCircle, Undo2 } from "lucide-react";
 import FollowButton from "@/components/FollowButton";
 import UserAvatar from "@/components/UserAvatar";
 import VerifiedBadge from "@/components/profile/VerifiedBadge";
@@ -26,8 +28,6 @@ import { isCommerceEnabled } from "@/lib/aplus1Launch";
 
 interface Props {
   data: DesignerCardData;
-  onHire: (recipientId: string, recipientName: string) => void;
-  onCollab: (recipientId: string, recipientName: string) => void;
   search?: string;
   /** People you follow who also follow this designer ("ติดตามโดย …"). */
   followedBy?: FollowedByPerson[];
@@ -42,14 +42,16 @@ const PREVIEW_MAX = 6;
 const arrowButtonClass =
   "absolute top-1/2 z-20 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-background/95 text-foreground shadow-sm ring-1 ring-border/70 hover:bg-background";
 
-const DesignerCard = ({ data, onHire, onCollab, search = "", followedBy = [], newWorkCount = 0 }: Props) => {
+const DesignerCard = ({ data, search = "", followedBy = [], newWorkCount = 0 }: Props) => {
   const navigate = useNavigate();
   const { profile, projects } = data;
   const profileUserId =
     (profile as { user_id?: string; id?: string }).user_id ?? profile.id;
   const featured = projects[0];
   const reducedMotion = useReducedMotion();
+  const { user } = useAuth();
   const [flipped, setFlipped] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
   const [index, setIndex] = useState(0);
   const [slideDir, setSlideDir] = useState(1);
   const canFlip = projects.length > PREVIEW;
@@ -131,7 +133,7 @@ const DesignerCard = ({ data, onHire, onCollab, search = "", followedBy = [], ne
       >
     <article
       inert={flipped ? "" : undefined}
-      className="relative h-full overflow-hidden rounded-none glass-panel p-4 flex flex-col gap-3.5 min-w-0 !shadow-none [backface-visibility:hidden]"
+      className="relative h-full overflow-hidden rounded-[6px] glass-panel p-4 flex flex-col gap-3.5 min-w-0 !shadow-none [backface-visibility:hidden]"
     >
       <div className="flex items-start gap-3">
         <div className="shrink-0">
@@ -139,8 +141,8 @@ const DesignerCard = ({ data, onHire, onCollab, search = "", followedBy = [], ne
             src={profile.avatar_url}
             name={name}
             username={profile.username}
-            className="h-[5.5rem] w-[5.5rem] rounded-none"
-            fallbackClassName="text-lg rounded-none"
+            className="h-[5.5rem] w-[5.5rem] rounded-[6px]"
+            fallbackClassName="text-lg rounded-[6px]"
           />
         </div>
 
@@ -151,7 +153,7 @@ const DesignerCard = ({ data, onHire, onCollab, search = "", followedBy = [], ne
             showFollowerCount={false}
             showFollowingLabel
             announceName={name}
-            className="h-9 px-4 text-xs"
+            className="h-9 min-w-[6.25rem] justify-center px-4 text-xs"
           />
           {newWorkCount > 0 ? (
             <p className="inline-flex items-center gap-1.5 rounded-full bg-primary px-2.5 py-0.5 text-[11px] font-medium text-primary-foreground">
@@ -209,7 +211,8 @@ const DesignerCard = ({ data, onHire, onCollab, search = "", followedBy = [], ne
         </p>
 
         {/* Zero counts read as "nobody cares" — a newcomer gets a welcome line instead. */}
-        <p className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-foreground/80 tabular-nums">
+        <div className="mt-1.5 flex min-h-9 items-center justify-between gap-3">
+        <p className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-foreground/80 tabular-nums">
           {followers > 0 ? (
             <span>
               {followers.toLocaleString("th-TH")} {followers === 1 ? "Follower" : "Followers"}
@@ -225,6 +228,21 @@ const DesignerCard = ({ data, onHire, onCollab, search = "", followedBy = [], ne
             <span className="text-muted-foreground">New on {BRAND_NAME}</span>
           ) : null}
         </p>
+          <button
+            type="button"
+            onClick={() => {
+              if (!user) {
+                navigateToAuth(navigate);
+                return;
+              }
+              setChatOpen(true);
+            }}
+            className="inline-flex h-9 w-[6.25rem] shrink-0 items-center justify-center gap-1.5 rounded-full bg-gradient-brand px-3 text-xs font-medium text-white transition hover:opacity-90"
+          >
+            <MessageCircle className="h-3.5 w-3.5 shrink-0" />
+            <span className="truncate">ทักแชท</span>
+          </button>
+        </div>
         {followedBy.length > 0 ? (
           <p
             className="mt-1.5 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground"
@@ -298,6 +316,25 @@ const DesignerCard = ({ data, onHire, onCollab, search = "", followedBy = [], ne
               </button>
             </>
           ) : null}
+          {canFlip ? (
+            <button
+              type="button"
+              aria-label={`ดูผลงานอื่นของ ${name}`}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                openGallery();
+              }}
+              className="group ml-auto inline-flex items-center gap-0.5 transition-colors hover:text-primary"
+            >
+              See more
+              <ChevronRight
+                className="h-3 w-3 transition-transform duration-200 group-hover:translate-x-1"
+                strokeWidth={2.2}
+                aria-hidden
+              />
+            </button>
+          ) : null}
         </div>
       </div>
 
@@ -326,7 +363,7 @@ const DesignerCard = ({ data, onHire, onCollab, search = "", followedBy = [], ne
                   type="button"
                   onClick={() => goto(proj.id)}
                   className={cn(
-                    "group relative overflow-hidden rounded-none bg-muted",
+                    "group relative overflow-hidden rounded-[6px] bg-muted",
                     previewFill ? "h-full" : "aspect-[4/3]",
                   )}
                   aria-label={`ดูผลงาน: ${proj.title}`}
@@ -352,43 +389,15 @@ const DesignerCard = ({ data, onHire, onCollab, search = "", followedBy = [], ne
               );
             })}
           </div>
-          {canFlip ? (
-            <button
-              type="button"
-              aria-label={`ดูผลงานอื่นของ ${name}`}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                openGallery();
-              }}
-              className={`${arrowButtonClass} right-0.5`}
-            >
-              <ChevronRight className="h-4 w-4" strokeWidth={2.2} />
-            </button>
-          ) : null}
         </div>
       ) : null}
 
-      <div className="grid grid-cols-2 gap-2">
-        <button
-          type="button"
-          onClick={() => onHire(profileUserId, name)}
-          className="flex items-center justify-center gap-1.5 rounded-full bg-gradient-brand text-white text-xs font-medium min-h-11 px-3 hover:opacity-90 transition min-w-0"
-        >
-          <BriefcaseIcon className="w-3.5 h-3.5 shrink-0" />
-          <span className="truncate">สนใจจ้างงาน</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => onCollab(profileUserId, name)}
-          className="flex items-center justify-center gap-1.5 rounded-full border border-foreground/15 bg-background text-foreground text-xs font-medium min-h-11 px-3 hover:bg-accent/40 transition min-w-0"
-        >
-          <Handshake className="w-3.5 h-3.5 shrink-0" />
-          <span className="truncate">สนใจคอลแลป</span>
-        </button>
-      </div>
       </div>
     </article>
+
+      {chatOpen ? (
+        <ConnectMessageDialog open={chatOpen} onOpenChange={setChatOpen} recipientId={profileUserId} recipientName={name} />
+      ) : null}
 
         {active ? (
           <div
@@ -430,8 +439,8 @@ const DesignerCard = ({ data, onHire, onCollab, search = "", followedBy = [], ne
                 src={profile.avatar_url}
                 name={name}
                 username={profile.username}
-                className="h-10 w-10 rounded-none ring-2 ring-white/80"
-                fallbackClassName="text-xs rounded-none"
+                className="h-10 w-10 rounded-[6px] ring-2 ring-white/80"
+                fallbackClassName="text-xs rounded-[6px]"
               />
               <button
                 type="button"
@@ -462,6 +471,19 @@ const DesignerCard = ({ data, onHire, onCollab, search = "", followedBy = [], ne
               className={`${arrowButtonClass} left-2`}
             >
               <ChevronLeft className="h-4 w-4" strokeWidth={2.2} />
+            </button>
+            <button
+              type="button"
+              aria-label="กลับไปการ์ดโปรไฟล์"
+              title="กลับไปการ์ดโปรไฟล์"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setFlipped(false);
+              }}
+              className="absolute bottom-3 left-3 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-black/55 text-white shadow-sm backdrop-blur-sm transition-colors hover:bg-black/75"
+            >
+              <Undo2 className="h-4 w-4" strokeWidth={2.2} />
             </button>
             {safeIndex < projects.length - 1 ? (
               <button

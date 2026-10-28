@@ -3,6 +3,7 @@
 import type { LucideIcon } from "lucide-react";
 import { LayoutDashboard, LifeBuoy, SlidersHorizontal, UserRound } from "lucide-react";
 import { isCommerceEnabled } from "@/lib/aplus1Launch";
+import { isAndroidApp } from "@/lib/appShell";
 
 export type SettingsPanelId =
   | "profile"
@@ -13,6 +14,7 @@ export type SettingsPanelId =
   | "visibility"
   | "data"
   | "feedback"
+  | "app"
   | "account"
   | "admin";
 
@@ -35,7 +37,7 @@ export const SETTINGS_NAV_GROUPS: SettingsNavGroup[] = [
     icon: UserRound,
     items: [
       { id: "profile", label: "โปรไฟล์" },
-      { id: "account", label: "เข้าสู่ระบบ" },
+      { id: "account", label: "บัญชีและความปลอดภัย" },
       { id: "billing", label: "เอกสาร & Billing" },
     ],
   },
@@ -57,6 +59,7 @@ export const SETTINGS_NAV_GROUPS: SettingsNavGroup[] = [
     items: [
       { id: "data", label: "ข้อมูลของฉัน" },
       { id: "feedback", label: "ฟีดแบ็ก & รายงาน" },
+      { id: "app", label: "ดาวน์โหลดแอป" },
     ],
   },
 ];
@@ -97,6 +100,8 @@ const HASH_TO_PANEL: Record<string, SettingsPanelId> = {
   data: "data",
   feedback: "feedback",
   "settings-feedback": "feedback",
+  app: "app",
+  "settings-app": "app",
   account: "account",
   "settings-account": "account",
   "settings-password": "account",
@@ -142,6 +147,7 @@ export function resolveSettingsPanel(
   if (mapped === "admin" && !opts?.isAdmin) return DEFAULT_SETTINGS_PANEL;
   // Billing / tax documents belong to the money phase.
   if (mapped === "billing" && !isCommerceEnabled()) return DEFAULT_SETTINGS_PANEL;
+  if (mapped === "app" && isAndroidApp()) return DEFAULT_SETTINGS_PANEL;
   return mapped;
 }
 
@@ -155,6 +161,7 @@ export function isSettingsPanelId(value: string): value is SettingsPanelId {
     value === "visibility" ||
     value === "data" ||
     value === "feedback" ||
+    value === "app" ||
     value === "account" ||
     value === "admin"
   );
@@ -165,9 +172,11 @@ export function settingsPanelHash(panel: SettingsPanelId): string {
 }
 
 export function buildSettingsNavGroups(isAdmin?: boolean): SettingsNavGroup[] {
-  const groups = isCommerceEnabled()
-    ? SETTINGS_NAV_GROUPS
-    : SETTINGS_NAV_GROUPS.map((g) => ({ ...g, items: g.items.filter((i) => i.id !== "billing") }));
+  // Billing waits for the money phase; "download the app" is pointless inside the app.
+  const hidden = new Set<SettingsPanelId>();
+  if (!isCommerceEnabled()) hidden.add("billing");
+  if (isAndroidApp()) hidden.add("app");
+  const groups = SETTINGS_NAV_GROUPS.map((g) => ({ ...g, items: g.items.filter((i) => !hidden.has(i.id)) }));
   if (!isAdmin) return groups;
   return [
     ...groups,

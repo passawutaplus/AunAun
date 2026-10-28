@@ -15,7 +15,7 @@ export const LEGAL_COMPANY_NAME =
   (import.meta.env.VITE_LEGAL_COMPANY_NAME as string | undefined) ?? BRAND_COMPANY;
 
 export const LEGAL_UPDATED_AT =
-  (import.meta.env.VITE_LEGAL_UPDATED_AT as string | undefined) ?? "14 สิงหาคม 2569";
+  (import.meta.env.VITE_LEGAL_UPDATED_AT as string | undefined) ?? "28 ตุลาคม 2569";
 
 /** รุ่นข้อความคำแถลงการยืนยันลิขสิทธิ์ — เก็บใน projects.rights_attestation_version */
 export const LEGAL_ATTESTATION_VERSION =

@@ -23,8 +23,6 @@ import type { OpportunityFilter } from "@/components/feed/OpportunityFilterChips
 import { projectMatchesOpportunityFilter } from "@/lib/viewAffinity";
 
 interface Props {
-  onHire: (recipientId: string, recipientName: string) => void;
-  onCollab: (recipientId: string, recipientName: string) => void;
   search?: string;
   onClearSearch?: () => void;
   sort?: DesignerSort;
@@ -52,8 +50,6 @@ const designerUserId = (d: DesignerCardData) =>
   (d.profile as { user_id?: string }).user_id ?? d.profile.id;
 
 const DesignerGrid = ({
-  onHire,
-  onCollab,
   search = "",
   onClearSearch,
   sort = "newest",
@@ -203,8 +199,6 @@ const DesignerGrid = ({
           <DesignerCard
             key={designerUserId(d)}
             data={d}
-            onHire={onHire}
-            onCollab={onCollab}
             search={search}
             followedBy={followedBy.get(designerUserId(d))}
           />

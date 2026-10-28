@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { hapticTap } from "@/lib/haptics";
 import { isInspireEnabled } from "@/lib/aplus1Launch";
 import { useNavigate } from "react-router-dom";
 import { Sparkles, Share2, ImageIcon } from "lucide-react";
@@ -55,6 +56,7 @@ const ImageActionBar = ({
 
   const handleLike = () => {
     if (!requireAuth()) return;
+    if (!liked) hapticTap();
     toggleLike.mutate(
       { projectId, imageUrl, liked },
       {

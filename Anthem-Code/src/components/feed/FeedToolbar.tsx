@@ -482,27 +482,14 @@ const FeedToolbar = ({
       <div className="relative z-10 hidden space-y-3 lg:block">
         {isCatalog ? (
           <>
-            <div data-feed-catalog-head="" className="grid grid-cols-[auto_minmax(0,1fr)] items-end gap-x-6 gap-y-1 pb-8 xl:gap-x-8">
+            <div data-feed-catalog-head="" className="flex flex-col gap-y-1 pb-8">
               <h2
                 data-feed-mode-title=""
-                className="col-start-1 row-start-1 row-span-2 self-end translate-y-7 text-[5.25rem] font-semibold leading-[0.8] tracking-tight text-foreground xl:text-[6.5rem]"
+                className="order-last mt-14 pb-4 text-[5.25rem] font-semibold leading-[0.8] tracking-tight text-foreground xl:text-[6.5rem]"
               >
                 {catalogTitle}
               </h2>
-              <div data-feed-mode-cluster="" className="col-start-2 row-start-1 flex min-w-0 items-center justify-end gap-3">
-                {showCreate && !isCommunity ? (
-                  <button
-                    type="button"
-                    onClick={onCreateClick}
-                    aria-label={isObjects ? "ลงสินค้าใหม่" : "ลงผลงานใหม่"}
-                    className="group inline-flex h-9 shrink-0 items-center overflow-hidden rounded-full bg-foreground px-[0.6rem] text-sm font-medium text-background transition-[padding] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:px-4 focus-visible:px-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none"
-                  >
-                    <Plus className="h-4 w-4 shrink-0" strokeWidth={2.5} aria-hidden />
-                    <span className="ml-0 max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:ml-1.5 group-hover:max-w-[9rem] group-hover:opacity-100 group-focus-visible:ml-1.5 group-focus-visible:max-w-[9rem] group-focus-visible:opacity-100 motion-reduce:transition-none">
-                      {isObjects ? "ลงสินค้าใหม่" : "ลงผลงานใหม่"}
-                    </span>
-                  </button>
-                ) : null}
+              <div data-feed-mode-cluster="" className={cn("flex min-w-0 items-center justify-center gap-3", homeScrolled && "invisible")}>
                 <div className="shrink-0">
                   <SearchBar
                     value={search}
@@ -519,13 +506,27 @@ const FeedToolbar = ({
                 <div className="flex min-w-0 max-w-[min(36rem,calc(100vw-2rem))] shrink items-center overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                   <FeedModeToggle {...toggleProps} />
                 </div>
+                {showCreate && !isCommunity ? (
+                  <button
+                    type="button"
+                    onClick={onCreateClick}
+                    aria-label={isObjects ? "ลงสินค้าใหม่" : "ลงผลงานใหม่"}
+                    className="group inline-flex h-9 shrink-0 items-center overflow-hidden rounded-full bg-foreground px-[0.6rem] text-sm font-medium text-background transition-[padding] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:px-4 focus-visible:px-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none"
+                  >
+                    <Plus className="h-4 w-4 shrink-0" strokeWidth={2.5} aria-hidden />
+                    <span className="ml-0 max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:ml-1.5 group-hover:max-w-[9rem] group-hover:opacity-100 group-focus-visible:ml-1.5 group-focus-visible:max-w-[9rem] group-focus-visible:opacity-100 motion-reduce:transition-none">
+                      {isObjects ? "ลงสินค้าใหม่" : "ลงผลงานใหม่"}
+                    </span>
+                  </button>
+                ) : null}
               </div>
-              <FeedModeTransition modeKey={mode} className="col-start-2 row-start-2 min-w-0">
+              <FeedModeTransition modeKey={mode} className={cn("flex min-w-0 justify-center", homeScrolled && "invisible")}>
                 <div className="w-full min-w-0">
                   {isProjects ? (
+                    <div className="flex min-w-0 items-center justify-center gap-5 sm:gap-6">
+                    <FeedModeDropdown value={feedMode} onChange={onFeedModeChange} />
                     <FilterChips
-                      align="end"
-                      rows={4}
+                      align="center"
                       options={parentChips}
                       selected={String(category)}
                       onSelect={(id) => {
@@ -539,16 +540,23 @@ const FeedToolbar = ({
                         onProjectStylesChange?.([]);
                       }}
                     />
+                    </div>
                   ) : isObjects ? (
-                    <ObjectsStudioLink className="pt-1 text-right" />
+                    <ObjectsStudioLink className="pt-1 text-center" />
                   ) : (
+                    <div className="flex min-w-0 items-center justify-center gap-5 sm:gap-6">
+                    <DesignerFeedDropdown
+                      value={designerFeedSource}
+                      onChange={onDesignerFeedSourceChange ?? (() => {})}
+                      sources={isPackages ? PACKAGE_FEED_ORDER : undefined}
+                    />
                     <DesignerCategoryChips
-                      align="end"
-                      rows={4}
+                      align="center"
                       selected={designerCategory}
                       onSelect={onDesignerCategoryChange}
                       chips={designerCategoryChips}
                     />
+                    </div>
                   )}
                 </div>
               </FeedModeTransition>

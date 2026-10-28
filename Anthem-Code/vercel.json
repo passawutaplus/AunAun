@@ -45,7 +45,7 @@
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" },
     {
-      "source": "/((?!api/|assets/|sitemap|robots\\.txt|llms\\.txt|google.*\\.html|icons/|manifest\\.webmanifest|sw\\.js).*)",
+      "source": "/((?!api/|assets/|sitemap|robots\\.txt|llms\\.txt|google.*\\.html|icons/|manifest\\.webmanifest|sw\\.js|\\.well-known/).*)",
       "destination": "/index.html"
     }
   ],
@@ -60,6 +60,13 @@
       "source": "/manifest.webmanifest",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=3600" }
+      ]
+    },
+    {
+      "source": "/.well-known/assetlinks.json",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=3600" },
+        { "key": "Content-Type", "value": "application/json; charset=utf-8" }
       ]
     },
     {

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { takeSharedMedia } from "@/lib/sharedMedia";
 import { InfoHint } from "@/components/tour/InfoHint";
 import { noteRatingMoment } from "@/lib/ratingPrompt";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
@@ -1352,6 +1353,17 @@ const ProjectEditorPage = () => {
       setUploadingGallery(false);
     }
   };
+
+  // Images shared from the Android share sheet (public/sw.js → /portfolio/new?shared=1).
+  const sharedTakenRef = useRef(false);
+  useEffect(() => {
+    if (editing || !user || sharedTakenRef.current || params.get("shared") !== "1") return;
+    sharedTakenRef.current = true;
+    void takeSharedMedia().then((files) => {
+      if (files.length) void handleGallery(files);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once when the signed-in editor opens
+  }, [editing, user, params]);
 
   const appendVideoFiles = async (videos: File[]) => {
     if (!user || !videos.length) return;

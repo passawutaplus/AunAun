@@ -2038,11 +2038,11 @@ html [data-feed-catalog-head] {
 }
 
 html [data-feed-sheet] [data-feed-catalog-head] {
-  row-gap: 2.25rem;
+  row-gap: 1.25rem;
 }
 
 html [data-feed-sheet] [data-feed-mode-cluster] {
-  padding-top: 3.5rem;
+  padding-top: 0;
 }
 
 html [data-feed-catalog-head] .gap-y-1 {
@@ -2060,17 +2060,17 @@ html [data-feed-sheet] [data-feed-catalog-head] .gap-y-1 {
   gap: 0.06em;
   margin: 0;
   color: hsl(var(--foreground));
-  font-family: "IBM Plex Sans Thai", "Sarabun", "IBM Plex Sans Thai Looped", ui-sans-serif, system-ui, sans-serif;
+  font-family: "Agrandir Wide", "IBM Plex Sans Thai", "IBM Plex Sans", sans-serif;
   font-weight: 400;
-  font-size: clamp(3.25rem, 7vw, 6.5rem);
-  letter-spacing: -0.035em;
+  font-size: clamp(2.6rem, 5.6vw, 5.2rem);
+  letter-spacing: -0.02em;
   line-height: 0.92;
   text-align: center;
 }
 
 @media (max-width: 520px) {
   .hero-poster-title {
-    font-size: clamp(2.05rem, 10.2vw, 3.25rem);
+    font-size: clamp(1.7rem, 8.2vw, 2.6rem);
   }
 }
 
