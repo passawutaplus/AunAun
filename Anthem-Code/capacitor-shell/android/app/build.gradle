@@ -34,6 +34,8 @@ android {
         release {
             if (keystorePassword) {
                 signingConfig signingConfigs.upload
+            } else if (gradle.startParameter.taskNames.any { it.toLowerCase().contains('release') }) {
+                throw new GradleException('SAMECOR_KEYSTORE_PASSWORD is empty: the release bundle would be unsigned.')
             }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'

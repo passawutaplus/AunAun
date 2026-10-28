@@ -17,7 +17,7 @@ cd Anthem-Code\capacitor-shell
 npm install
 npx cap sync android
 $env:JAVA_HOME = "C:\Program Files\Eclipse Adoptium\jdk-21.0.12.101-hotspot"
-$env:SAMECOR_KEYSTORE_PASSWORD = Read-Host "Keystore password"
+$env:SAMECOR_KEYSTORE_PASSWORD = [Net.NetworkCredential]::new('', (Read-Host "Keystore password" -AsSecureString)).Password
 cd android
 .\gradlew.bat bundleRelease
 Remove-Item Env:SAMECOR_KEYSTORE_PASSWORD
