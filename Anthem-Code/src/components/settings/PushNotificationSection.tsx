@@ -1,9 +1,17 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { BellRing, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { SettingsCard, SettingsSwitch } from "@/components/settings/SettingsCard";
-import { disablePush, enablePush, getPushState, type PushState } from "@/lib/pushNotifications";
+import {
+  disablePush,
+  enablePush,
+  getPushState,
+  getRecommendationPushes,
+  setRecommendationPushes,
+  type PushState,
+} from "@/lib/pushNotifications";
 import { userFacingError } from "@/lib/userFacingError";
 
 const CARD_DISMISS_KEY = "samecor:push-card-dismissed";
@@ -38,9 +46,50 @@ function usePushState() {
   return { state, busy, set };
 }
 
-/** Settings → การแจ้งเตือน: on/off for this device. */
+/** Account-wide switch for recommendation pushes; `?mute=recommendations` (the push button) turns it off. */
+function useRecommendationPushes() {
+  const [params, setParams] = useSearchParams();
+  const [on, setOn] = useState<boolean | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const set = async (next: boolean, quiet = false) => {
+    setBusy(true);
+    try {
+      await setRecommendationPushes(next);
+      setOn(next);
+      if (!quiet) toast.success(next ? "เปิดแจ้งเตือนแนะนำผลงานแล้ว" : "ปิดแจ้งเตือนแนะนำผลงานแล้ว");
+    } catch (err) {
+      toast.error(userFacingError(err, "บันทึกไม่สำเร็จ"));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  useEffect(() => {
+    let alive = true;
+    void getRecommendationPushes().then((value) => {
+      if (!alive) return;
+      setOn(value);
+      if (value !== null && params.get("mute") === "recommendations") {
+        const next = new URLSearchParams(params);
+        next.delete("mute");
+        setParams(next, { replace: true });
+        if (value) void set(false);
+      }
+    });
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- read once on open
+  }, []);
+
+  return { on, busy, set };
+}
+
+/** Settings → การแจ้งเตือน: on/off for this device, plus recommendation pushes for the account. */
 export function PushNotificationSection() {
   const { state, busy, set } = usePushState();
+  const recs = useRecommendationPushes();
   if (state === null || state === "unsupported" || state === "unconfigured") return null;
 
   return (
@@ -62,6 +111,22 @@ export function PushNotificationSection() {
           onChange={(next) => void set(next)}
         />
       </div>
+      {recs.on !== null ? (
+        <div className="mt-3 flex items-center justify-between gap-3 border-t border-border/60 pt-3">
+          <div className="min-w-0">
+            <p className="text-sm text-foreground">แนะนำผลงาน</p>
+            <p className="text-xs text-muted-foreground">
+              ผลงานใหม่จากคนที่คุณติดตาม และผลงานแนะนำสัปดาห์ละครั้ง — ไม่เกินวันละ 1 ครั้ง
+            </p>
+          </div>
+          <SettingsSwitch
+            checked={recs.on}
+            label="แจ้งเตือนแนะนำผลงาน"
+            disabled={recs.busy}
+            onChange={(next) => void recs.set(next)}
+          />
+        </div>
+      ) : null}
     </SettingsCard>
   );
 }

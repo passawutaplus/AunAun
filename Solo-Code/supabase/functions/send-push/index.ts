@@ -23,7 +23,7 @@ type NotificationRow = {
   metadata: Record<string, unknown> | null;
 };
 
-type PushAction = { action: string; title: string };
+type PushAction = { action: string; title: string; url?: string };
 
 type PushPayload = {
   title: string;
@@ -52,6 +52,9 @@ const httpsOrUndefined = (url: unknown) =>
 /** Notification icons must be raster: DiceBear default avatars come as SVG, ask for PNG instead. */
 const rasterAvatar = (url: string | undefined) =>
   url?.includes("api.dicebear.com/") ? url.replace(/\/svg(\?|$)/, "/png$1") : url;
+
+/** 2–3 recommended works → one 2:1 image composed by the website (api/push-collage.js). */
+const collageUrl = (ids: string[]) => `${SITE}/api/push-collage?ids=${ids.slice(0, 3).join(",")}`;
 
 const truncate = (text: string, max: number) => (text.length > max ? `${text.slice(0, max - 1)}…` : text);
 
@@ -96,9 +99,16 @@ Deno.serve(async (req) => {
   // Opened from the Android app's notification → keep the app-only rules (see src/lib/appShell.ts).
   const bodyFor = (shell: string | null) => {
     if (shell !== "android") return JSON.stringify(payload);
-    const url = new URL(payload.url);
-    url.searchParams.set("source", "android");
-    return JSON.stringify({ ...payload, url: url.toString() });
+    const tag = (href: string) => {
+      const u = new URL(href);
+      u.searchParams.set("source", "android");
+      return u.toString();
+    };
+    return JSON.stringify({
+      ...payload,
+      url: tag(payload.url),
+      actions: payload.actions.map((a) => (a.url ? { ...a, url: tag(a.url) } : a)),
+    });
   };
 
   let sent = 0;
@@ -141,7 +151,10 @@ async function buildPayload(
   const actorId = [meta.sender_id, meta.actor_id, meta.follower_id, meta.from_user_id].find(
     (v): v is string => typeof v === "string",
   );
-  const projectId = typeof meta.project_id === "string" ? meta.project_id : undefined;
+  const projectIds = Array.isArray(meta.project_ids)
+    ? meta.project_ids.filter((v): v is string => typeof v === "string")
+    : [];
+  const projectId = typeof meta.project_id === "string" ? meta.project_id : projectIds[0];
 
   const [actor, project] = await Promise.all([
     actorId
@@ -177,6 +190,48 @@ async function buildPayload(
         { action: "reply", title: "ตอบกลับ" },
         { action: "open", title: "เปิดแชท" },
       ],
+    };
+  }
+
+  if (row.kind === "rec.following" || row.kind === "rec.weekly") {
+    const following = row.kind === "rec.following";
+    return {
+      title,
+      body: truncate(text, 160),
+      // Weekly picks come from SAMECOR itself; new work is from a person you follow.
+      icon: following ? icon : FALLBACK_ICON,
+      badge: BADGE,
+      image: projectIds.length > 1 ? collageUrl(projectIds) : image,
+      url,
+      tag: row.kind,
+      renotify: false,
+      actions: following
+        ? [
+            { action: "open", title: "ดูผลงาน" },
+            ...(actorId ? [{ action: "profile", title: "ดูโปรไฟล์", url: `${SITE}/u/${actorId}` }] : []),
+          ]
+        : [
+            { action: "open", title: "ดูผลงาน" },
+            {
+              action: "mute-recs",
+              title: "ปิดแจ้งเตือนแนะนำ",
+              url: `${SITE}/settings?mute=recommendations#notifications`,
+            },
+          ],
+    };
+  }
+
+  if (row.kind.startsWith("system.")) {
+    return {
+      title,
+      body: truncate(text, 160),
+      icon: FALLBACK_ICON,
+      badge: BADGE,
+      image,
+      url,
+      tag: row.kind === "system.milestone" ? `milestone:${projectId ?? row.id}` : `n:${row.id}`,
+      renotify: false,
+      actions: [{ action: "open", title: projectId ? "ดูผลงาน" : "เปิดดู" }],
     };
   }
 

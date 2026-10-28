@@ -81,3 +81,15 @@ export async function disablePush(): Promise<PushState> {
   }
   return isSupported() ? "off" : "unsupported";
 }
+
+/** Recommendation pushes (new work from people you follow, weekly picks). null = not available yet. */
+export async function getRecommendationPushes(): Promise<boolean | null> {
+  const { data, error } = await supabase.rpc("get_notification_preferences" as never);
+  if (error) return null;
+  return (data as { recommendations?: boolean } | null)?.recommendations !== false;
+}
+
+export async function setRecommendationPushes(on: boolean): Promise<void> {
+  const { error } = await supabase.rpc("set_recommendation_notifications" as never, { _on: on } as never);
+  if (error) throw error;
+}

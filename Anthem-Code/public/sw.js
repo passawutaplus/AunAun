@@ -98,17 +98,27 @@ self.addEventListener("push", (event) => {
       image: data.image,
       tag: data.tag,
       renotify: Boolean(data.tag && data.renotify),
-      actions: Array.isArray(data.actions) ? data.actions.slice(0, 2) : [],
+      actions: Array.isArray(data.actions)
+        ? data.actions.slice(0, 2).map((a) => ({ action: a.action, title: a.title }))
+        : [],
       vibrate: [12, 60, 12],
       timestamp: Date.now(),
-      data: { url: data.url || "/notifications" },
+      data: {
+        url: data.url || "/notifications",
+        // Buttons with their own destination (ดูโปรไฟล์, ปิดแจ้งเตือนแนะนำ…).
+        actionUrls: Object.fromEntries(
+          (Array.isArray(data.actions) ? data.actions : []).filter((a) => a.url).map((a) => [a.action, a.url]),
+        ),
+      },
     }),
   );
 });
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const target = new URL((event.notification.data && event.notification.data.url) || "/notifications", self.location.origin);
+  const data = event.notification.data || {};
+  const href = (event.action && data.actionUrls && data.actionUrls[event.action]) || data.url || "/notifications";
+  const target = new URL(href, self.location.origin);
   if (target.origin !== self.location.origin) return;
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
