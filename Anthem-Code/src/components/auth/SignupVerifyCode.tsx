@@ -29,6 +29,8 @@ export function EmailTypoHint({ email, onApply }: { email: string; onApply: (fix
 
 type Props = {
   email: string;
+  /** True while the signup request (and the email send) is still in flight. */
+  sending?: boolean;
   onChangeEmail: () => void;
   inputClassName?: string;
   buttonClassName?: string;
@@ -39,20 +41,25 @@ type Props = {
  * another browser (the WebView app keeps its own session). Typos surface naturally — the
  * address they typed is shown and can be edited.
  */
-export function SignupVerifyCode({ email, onChangeEmail, inputClassName, buttonClassName }: Props) {
+export function SignupVerifyCode({ email, sending = false, onChangeEmail, inputClassName, buttonClassName }: Props) {
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [cooldown, setCooldown] = useState(RESEND_COOLDOWN_S);
   const lastTried = useRef("");
 
+  // The resend countdown starts once the first email has actually gone out.
   useEffect(() => {
-    if (cooldown <= 0) return;
+    if (!sending) setCooldown(RESEND_COOLDOWN_S);
+  }, [sending]);
+
+  useEffect(() => {
+    if (sending || cooldown <= 0) return;
     const t = window.setTimeout(() => setCooldown((s) => s - 1), 1000);
     return () => window.clearTimeout(t);
-  }, [cooldown]);
+  }, [cooldown, sending]);
 
   const verify = async (token: string) => {
-    if (busy || token.length < CODE_LENGTH) return;
+    if (busy || sending || token.length < CODE_LENGTH) return;
     lastTried.current = token;
     setBusy(true);
     try {
@@ -94,7 +101,10 @@ export function SignupVerifyCode({ email, onChangeEmail, inputClassName, buttonC
       className="space-y-4"
     >
       <div className="space-y-1">
-        <p className="text-base font-medium">ส่งรหัสไปที่อีเมลของคุณแล้ว</p>
+        <p className="flex items-center gap-2 text-base font-medium">
+          {sending && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
+          {sending ? "กำลังส่งรหัสไปที่อีเมลของคุณ…" : "ส่งรหัสไปที่อีเมลของคุณแล้ว"}
+        </p>
         <p className="break-all text-sm text-muted-foreground">{email}</p>
       </div>
 
@@ -109,11 +119,12 @@ export function SignupVerifyCode({ email, onChangeEmail, inputClassName, buttonC
           value={code}
           onChange={(e) => onCodeChange(e.target.value)}
           className={cn("text-center text-xl tracking-[0.4em]", inputClassName)}
+          disabled={sending}
           autoFocus
         />
       </div>
 
-      <Button type="submit" disabled={busy || code.length < CODE_LENGTH} className={cn("w-full", buttonClassName)}>
+      <Button type="submit" disabled={busy || sending || code.length < CODE_LENGTH} className={cn("w-full", buttonClassName)}>
         {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
         ยืนยันและเริ่มใช้งาน
       </Button>
@@ -122,10 +133,10 @@ export function SignupVerifyCode({ email, onChangeEmail, inputClassName, buttonC
         <button
           type="button"
           onClick={resend}
-          disabled={cooldown > 0}
+          disabled={sending || cooldown > 0}
           className="font-medium text-foreground underline underline-offset-2 disabled:text-muted-foreground disabled:no-underline"
         >
-          {cooldown > 0 ? `ส่งรหัสอีกครั้งใน ${cooldown} วินาที` : "ส่งรหัสอีกครั้ง"}
+          {sending || cooldown > 0 ? `ส่งรหัสอีกครั้งใน ${sending ? RESEND_COOLDOWN_S : cooldown} วินาที` : "ส่งรหัสอีกครั้ง"}
         </button>
         <button type="button" onClick={onChangeEmail} className="font-medium text-foreground underline underline-offset-2">
           แก้ไขอีเมล
