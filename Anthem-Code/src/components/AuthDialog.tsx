@@ -11,6 +11,7 @@ import { User as UserIcon, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { SocialButtons, AuthEmailSeparator } from "@/components/auth/SocialButtons";
+import { SignupVerifyCode, EmailTypoHint } from "@/components/auth/SignupVerifyCode";
 import { toast } from "sonner";
 import { BrandLogo } from "@/components/brand/BrandLogo";
 import { DemoLoginHint, DemoSignupBlocked } from "@/components/DemoAuthHints";
@@ -284,6 +285,7 @@ const SignupFormFields = () => {
   const [passTouched, setPassTouched] = useState(false);
   const [confirmTouched, setConfirmTouched] = useState(false);
   const [consentError, setConsentError] = useState<string | null>(null);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
 
   const emailValid = !email || /^\S+@\S+\.\S+$/.test(email.trim());
   const passValid = password.length >= 8;
@@ -307,7 +309,7 @@ const SignupFormFields = () => {
 
     setBusy(true);
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email: email.trim(), password,
         options: {
           emailRedirectTo: buildEmailConfirmUrl(),
@@ -315,13 +317,28 @@ const SignupFormFields = () => {
         },
       });
       if (error) toast.error(userFacingError(error));
-      else {
+      else if (!data.session && data.user?.identities?.length === 0) {
+        // Supabase hides "already registered" behind an empty identities list.
+        toast.error("อีเมลนี้มีบัญชีแล้ว ลองเข้าสู่ระบบแทน");
+      } else {
         markPendingSignupConsent();
         await recordSignupConsents();
-        toast.success("สมัครสำเร็จ กรุณาตรวจอีเมลเพื่อยืนยันบัญชีก่อนเข้าใช้งาน");
+        if (data.session) toast.success("สมัครสำเร็จ ยินดีต้อนรับสู่ SAMECOR");
+        else setPendingEmail(email.trim());
       }
     } finally { setBusy(false); }
   };
+
+  if (pendingEmail) {
+    return (
+      <SignupVerifyCode
+        email={pendingEmail}
+        onChangeEmail={() => setPendingEmail(null)}
+        inputClassName="h-12 rounded-full bg-background/60 backdrop-blur border-border/60 px-4 focus-visible:ring-primary/40"
+        buttonClassName="h-12 rounded-full text-base font-medium bg-foreground text-background hover:bg-foreground/90 border-0"
+      />
+    );
+  }
 
   return (
     <form onSubmit={submit} className="space-y-3.5">
@@ -347,6 +364,7 @@ const SignupFormFields = () => {
             emailError && "border-destructive"
           )} />
         <FieldError id="ad-su-email-error" message={emailError} />
+        <EmailTypoHint email={email} onApply={setEmail} />
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="ad-su-pass" className="text-xs">รหัสผ่าน (อย่างน้อย 8 ตัว)</Label>

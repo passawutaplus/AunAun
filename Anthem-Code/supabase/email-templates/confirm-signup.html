@@ -1,0 +1,44 @@
+<!-- Supabase Auth → Emails → Templates → "Confirm signup".
+     Subject: รหัสยืนยันอีเมล SAMECOR
+     Code only (no link): the app shows a 6-digit input right after signup. -->
+<!DOCTYPE html>
+<html lang="th">
+  <body style="margin:0;padding:0;background:#F8F7F2;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F8F7F2;">
+      <tr>
+        <td align="center" style="padding:32px 16px;">
+          <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="max-width:480px;width:100%;">
+            <tr>
+              <td style="padding:0 0 24px 0;">
+                <img src="https://samecor.com/email/logo-horizontal.png" width="140" alt="SAMECOR" style="display:block;border:0;height:auto;" />
+              </td>
+            </tr>
+            <tr>
+              <td style="background:#FFFFFF;border-radius:16px;padding:32px 28px;font-family:-apple-system,'Segoe UI',Roboto,'Noto Sans Thai',sans-serif;color:#111111;">
+                <p style="margin:0 0 8px 0;font-size:20px;font-weight:600;line-height:1.4;">ยืนยันอีเมลของคุณ</p>
+                <p style="margin:0 0 24px 0;font-size:15px;line-height:1.7;color:#4a4843;">
+                  นำรหัสนี้ไปกรอกในแอป SAMECOR เพื่อเริ่มใช้งาน
+                </p>
+                <p style="margin:0 0 24px 0;padding:18px 0;background:#F8F7F2;border-radius:12px;text-align:center;font-family:'SFMono-Regular',Consolas,'Courier New',monospace;font-size:34px;font-weight:700;letter-spacing:10px;color:#EE3D29;">
+                  {{ .Token }}
+                </p>
+                <p style="margin:0 0 6px 0;font-size:13px;line-height:1.7;color:#6b6862;">
+                  รหัสนี้ใช้ได้ภายใน 60 นาที และใช้ได้ครั้งเดียว
+                </p>
+                <p style="margin:0;font-size:13px;line-height:1.7;color:#6b6862;">
+                  หากคุณไม่ได้สมัคร SAMECOR ด้วยอีเมลนี้ ไม่ต้องทำอะไร และอย่าบอกรหัสนี้กับใคร
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:20px 4px 0 4px;font-family:-apple-system,'Segoe UI',Roboto,'Noto Sans Thai',sans-serif;font-size:12px;line-height:1.7;color:#8a867f;">
+                SAMECOR — You Create. We Connect.<br />
+                ติดต่อเรา: support@samecor.com
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

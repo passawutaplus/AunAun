@@ -8,6 +8,7 @@ import { FeedModeTransition } from "@/components/feed/FeedModeTransition";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { SocialButtons, AuthEmailSeparator } from "@/components/auth/SocialButtons";
+import { SignupVerifyCode, EmailTypoHint } from "@/components/auth/SignupVerifyCode";
 import {
   buildEmailConfirmUrl,
   safeRelativePath,
@@ -383,6 +384,7 @@ const SignupFormFields = ({ onSwitch }: { onSwitch: () => void }) => {
   const [passTouched, setPassTouched] = useState(false);
   const [confirmTouched, setConfirmTouched] = useState(false);
   const [consentError, setConsentError] = useState<string | null>(null);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
 
   const emailValid = !email || /^\S+@\S+\.\S+$/.test(email.trim());
   const passValid = password.length >= 8;
@@ -406,7 +408,7 @@ const SignupFormFields = ({ onSwitch }: { onSwitch: () => void }) => {
 
     setBusy(true);
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
         options: {
@@ -415,15 +417,30 @@ const SignupFormFields = ({ onSwitch }: { onSwitch: () => void }) => {
         },
       });
       if (error) toast.error(userFacingError(error));
-      else {
+      else if (!data.session && data.user?.identities?.length === 0) {
+        // Supabase hides "already registered" behind an empty identities list.
+        toast.error("อีเมลนี้มีบัญชีแล้ว ลองเข้าสู่ระบบแทน");
+      } else {
         markPendingSignupConsent();
         await recordSignupConsents();
-        toast.success("สมัครสำเร็จ กรุณาตรวจอีเมลเพื่อยืนยันบัญชีก่อนเข้าใช้งาน");
+        if (data.session) toast.success("สมัครสำเร็จ ยินดีต้อนรับสู่ SAMECOR");
+        else setPendingEmail(email.trim());
       }
     } finally {
       setBusy(false);
     }
   };
+
+  if (pendingEmail) {
+    return (
+      <SignupVerifyCode
+        email={pendingEmail}
+        onChangeEmail={() => setPendingEmail(null)}
+        inputClassName={paperInput}
+        buttonClassName={paperSubmit}
+      />
+    );
+  }
 
   return (
     <form onSubmit={submit} className="space-y-4">
@@ -460,6 +477,7 @@ const SignupFormFields = ({ onSwitch }: { onSwitch: () => void }) => {
           required
         />
         <FieldError id="su-email-error" message={emailError} />
+        <EmailTypoHint email={email} onApply={setEmail} />
       </div>
 
       <div className="space-y-1.5">

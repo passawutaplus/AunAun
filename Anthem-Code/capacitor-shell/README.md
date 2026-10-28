@@ -1,8 +1,7 @@
 # SAMECOR Android (Capacitor WebView shell)
 
 Loads https://samecor.com in a WebView. Replaces the Bubblewrap TWA in `../android`
-for Play closed testing (tester services would not accept a TWA). Same package
-(`com.samecor.twa`) and same upload key, so Play treats it as an update.
+for Play closed testing (tester services would not accept a TWA). New Play app `com.samecor.app` (the old `com.samecor.twa` listing is abandoned). Same upload key.
 
 - The web app detects this shell by the `SamecorApp` user-agent suffix
   (`src/lib/appShell.ts` → `isWebViewApp`). Google sign-in is hidden there because
@@ -17,7 +16,7 @@ cd Anthem-Code\capacitor-shell
 npm install
 npx cap sync android
 $env:JAVA_HOME = "C:\Program Files\Eclipse Adoptium\jdk-21.0.12.101-hotspot"
-$env:SAMECOR_KEYSTORE_PASSWORD = Read-Host "Keystore password"
+$env:SAMECOR_KEYSTORE_PASSWORD = [Net.NetworkCredential]::new('', (Read-Host "Keystore password" -AsSecureString)).Password
 cd android
 .\gradlew.bat bundleRelease
 Remove-Item Env:SAMECOR_KEYSTORE_PASSWORD

@@ -2,6 +2,6 @@
 <resources>
     <string name="app_name">SAMECOR</string>
     <string name="title_activity_main">SAMECOR</string>
-    <string name="package_name">com.samecor.twa</string>
-    <string name="custom_url_scheme">com.samecor.twa</string>
+    <string name="package_name">com.samecor.app</string>
+    <string name="custom_url_scheme">com.samecor.app</string>
 </resources>

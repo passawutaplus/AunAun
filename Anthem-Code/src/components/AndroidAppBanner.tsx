@@ -5,7 +5,7 @@ import { isAndroidApp, isStandaloneDisplay } from "@/lib/appShell";
 
 /** Play Store listing — the app id from android/twa-manifest.json. */
 export const PLAY_STORE_URL =
-  "https://play.google.com/store/apps/details?id=com.samecor.twa&utm_source=samecor_web&utm_medium=banner";
+  "https://play.google.com/store/apps/details?id=com.samecor.app&utm_source=samecor_web&utm_medium=banner";
 
 const DISMISS_KEY = "samecor:android-banner-dismissed-at";
 const DISMISS_DAYS = 30;
