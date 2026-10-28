@@ -435,8 +435,8 @@ const FeedToolbar = ({
       ) : null}
       {/* Mobile / tablet */}
       <div className="relative z-10 flex items-center gap-2 lg:hidden">
-        {isProjects ? (
-          // Projects search + colour live in the bottom-nav search button → search sheet.
+        {isProjects || isDesigners ? (
+          // Search lives in the bottom-nav search button → search sheet; the corner shows the brand mark.
           <button
             type="button"
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}

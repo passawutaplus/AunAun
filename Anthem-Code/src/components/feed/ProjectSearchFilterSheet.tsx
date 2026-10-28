@@ -50,7 +50,6 @@ type Props = {
   onColorQueryChange?: (hex: string | null) => void;
 };
 
-const PAPER = '"Iowan Old Style", Palatino, Georgia, serif';
 
 function Chip({
   label,
@@ -293,7 +292,7 @@ const ProjectSearchFilterSheet = ({
   };
 
   const titleRow = (
-    <span style={{ fontFamily: PAPER }} className="text-[1.65rem] font-medium leading-none tracking-tight text-foreground">
+    <span className="font-display text-[1.5rem] font-normal leading-none tracking-tight text-foreground">
       {title}
     </span>
   );
