@@ -368,7 +368,7 @@ const FeedToolbar = ({
   const homeScrolled = useFeedHomeNavStore((s) => s.scrolled);
 
   useEffect(() => {
-    const onFilterClick = isProjects ? () => setProjectSheetOpen(true) : undefined;
+    const onFilterClick = isProjects || isDesigners ? () => setProjectSheetOpen(true) : undefined;
     useFeedHomeNavStore.getState().register({
       search,
       searchPlaceholder,
@@ -888,7 +888,7 @@ const FeedToolbar = ({
         </p>
       ) : null}
 
-      {isProjects ? (
+      {isProjects || isDesigners ? (
         <ProjectSearchFilterSheet
           open={projectSheetOpen}
           onOpenChange={setProjectSheetOpen}
@@ -900,6 +900,13 @@ const FeedToolbar = ({
           onRecentSelect={onRecentSearchSelect}
           colorQuery={colorQuery}
           onColorQueryChange={onColorQueryChange}
+          // Designers tab switches the feed mode; its search and filters apply live.
+          tab={isDesigners ? "designers" : "projects"}
+          onTabChange={(t) => onModeChange(t)}
+          designerSearch={search}
+          onDesignerSearchChange={onSearchChange}
+          designerFilters={isDesigners ? filterContent : null}
+          designerResultCount={isDesigners ? resultCount : undefined}
         />
       ) : null}
     </div>
