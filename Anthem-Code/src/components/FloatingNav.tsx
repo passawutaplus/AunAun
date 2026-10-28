@@ -1,5 +1,6 @@
 import BriefcaseIcon from "./icons/BriefcaseIcon";
 
+import { Fragment } from "react";
 import { Home, MessageCircle, Plus, Search, User } from "lucide-react";
 
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
@@ -71,10 +72,22 @@ const FloatingNav = () => {
     }
     navigate("/portfolio/new");
   };
-  /** On my profile the round button is "+ Create"; everywhere else it is search. */
-  const onProfile = pathname === "/portfolio" || (pathname.startsWith("/portfolio/") && !pathname.startsWith("/portfolio/new"));
-  /** Guests never see a "+" — creating needs an account, so the round button stays search for them. */
-  const createMode = onProfile && !!user;
+  /** Create (+) sits in the pill just before Chat; guests never see it — creating needs an account. */
+  const createActive = pathname.startsWith("/portfolio/new");
+  const createButton = (
+    <button
+      type="button"
+      onClick={openCreate}
+      data-tour="create"
+      aria-label="ลงผลงาน"
+      className={cn(
+        "relative flex items-center justify-center rounded-full transition-colors h-11 w-11 min-h-11",
+        createActive ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground hover:bg-accent",
+      )}
+    >
+      <Plus className="h-5 w-5 shrink-0" strokeWidth={2.2} />
+    </button>
+  );
 
   /** Phones / tablets: the round button opens project search (with colour search inside). */
   const openSearch = () => {
@@ -143,8 +156,9 @@ const FloatingNav = () => {
             }
 
             return (
+              <Fragment key={to}>
+              {to === "/chat" && user ? createButton : null}
               <NavLink
-                key={to}
                 to={to}
                 onClick={(e) => {
                   guardAuth(e, requiresAuth, to);
@@ -165,6 +179,7 @@ const FloatingNav = () => {
                   </span>
                 )}
               </NavLink>
+              </Fragment>
             );
           })}
 
@@ -204,37 +219,18 @@ const FloatingNav = () => {
           )}
         </div>
 
-        {pathname === "/" && user ? (
-          // Home: create sits beside search.
-          <button
-            type="button"
-            onClick={openCreate}
-            data-tour="create"
-            aria-label="ลงผลงาน"
-            className={cn(
-              "pointer-events-auto -mr-1 flex h-14 w-14 shrink-0 items-center justify-center rounded-full shadow-sm transition-all duration-200 ease-out hover:opacity-90 active:scale-95",
-              "bg-white text-[#111111] ring-1 ring-black/10 dark:bg-background dark:text-white dark:ring-white/25",
-            )}
-          >
-            <Plus className="h-6 w-6" strokeWidth={2.5} />
-          </button>
-        ) : null}
         <button
           type="button"
-          onClick={createMode ? openCreate : openSearch}
-          data-tour={createMode ? "create" : "search"}
-          aria-label={createMode ? "ลงผลงาน" : "ค้นหาผลงาน"}
+          onClick={openSearch}
+          data-tour="search"
+          aria-label="ค้นหาผลงาน"
           className={cn(
             "pointer-events-auto flex h-14 w-14 shrink-0 items-center justify-center rounded-full shadow-sm transition-all duration-200 ease-out hover:opacity-90 active:scale-95",
             // Light mode: white with a black icon; dark mode: field colour with a white icon. A hairline ring keeps it visible on any photo.
             "bg-white text-[#111111] ring-1 ring-black/10 dark:bg-background dark:text-white dark:ring-white/25",
           )}
         >
-          {createMode ? (
-            <Plus className="h-6 w-6" strokeWidth={2.5} />
-          ) : (
-            <Search className="h-6 w-6" strokeWidth={2.25} />
-          )}
+          <Search className="h-6 w-6" strokeWidth={2.25} />
         </button>
       </nav>
     </>
