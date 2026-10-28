@@ -62,6 +62,7 @@ export function SignupVerifyCode({ email, sending = false, onChangeEmail, inputC
     if (busy || sending || token.length < CODE_LENGTH) return;
     lastTried.current = token;
     setBusy(true);
+    let verified = false;
     try {
       const { error } = await supabase.auth.verifyOtp({ email, token, type: "signup" });
       if (error) {
@@ -69,8 +70,10 @@ export function SignupVerifyCode({ email, sending = false, onChangeEmail, inputC
         return;
       }
       toast.success("ยืนยันอีเมลแล้ว ยินดีต้อนรับสู่ SAMECOR");
+      verified = true;
     } finally {
-      setBusy(false);
+      // On success the page redirects right after; keep the spinner until then.
+      if (!verified) setBusy(false);
     }
   };
 
