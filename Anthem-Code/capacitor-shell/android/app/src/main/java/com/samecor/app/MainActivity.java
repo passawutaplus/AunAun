@@ -1,4 +1,4 @@
-package com.samecor.twa;
+package com.samecor.app;
 
 import com.getcapacitor.BridgeActivity;
 

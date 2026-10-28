@@ -1,15 +1,15 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace = "com.samecor.twa"
+    namespace = "com.samecor.app"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.samecor.twa"
+        applicationId "com.samecor.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        // Continues the Play track of the Bubblewrap TWA (../android, last versionCode 4).
-        versionCode 5
-        versionName "1.0.1"
+        // New Play app (com.samecor.app); the Bubblewrap TWA lives in ../android.
+        versionCode 1
+        versionName "1.0.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
