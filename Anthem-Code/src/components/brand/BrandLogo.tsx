@@ -6,8 +6,8 @@ type Props = {
   size?: "sm" | "md";
   /**
    * Which Master file to show (Brand Book p10–11):
-   * - "brand" / "theme": primary colour lockup on light, white lockup in dark mode
-   * - "ink": primary colour lockup always (pages pinned to the light paper field)
+   * - "brand" / "theme": black lockup on light, white lockup in dark mode
+   * - "ink": black lockup always (pages pinned to the light paper field)
    * - "paper": white lockup always (dark or photo backgrounds)
    */
   tone?: "brand" | "ink" | "paper" | "theme";
@@ -16,8 +16,8 @@ type Props = {
   beta?: boolean;
 };
 
-const LOCKUP = { light: "/brand/logo-horizontal.svg", dark: "/brand/logo-horizontal-white.svg" };
-const SYMBOL = { light: "/brand/symbol-red.svg", dark: "/brand/symbol-white.svg" };
+const LOCKUP = { light: "/brand/logo-horizontal-black.svg", dark: "/brand/logo-horizontal-white.svg" };
+const SYMBOL = { light: "/brand/symbol-black.svg", dark: "/brand/symbol-white.svg" };
 
 /**
  * Master logo files only — never redraw or retype the wordmark (Brand Book p12).

@@ -53,7 +53,7 @@ const Footer = ({ className }: Props) => {
       </p>
 
       <div className="mt-10 flex select-none justify-center px-[6vw] pb-[6vh]" aria-hidden>
-        {/* Footer is the inverse of the page: white lockup on the dark light-mode footer, colour lockup on the light dark-mode footer. */}
+        {/* Footer is the inverse of the page: white lockup on the dark light-mode footer, black lockup on the light dark-mode footer. */}
         <img
           src="/brand/logo-horizontal-white.svg"
           alt=""
@@ -61,7 +61,7 @@ const Footer = ({ className }: Props) => {
           draggable={false}
         />
         <img
-          src="/brand/logo-horizontal.svg"
+          src="/brand/logo-horizontal-black.svg"
           alt=""
           className="hidden h-auto w-[clamp(14rem,40vw,38rem)] dark:block"
           draggable={false}
