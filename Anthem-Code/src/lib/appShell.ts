@@ -69,10 +69,24 @@ function syncThemeColor(): void {
   if (meta.content !== color) meta.content = color;
 }
 
+/**
+ * Pinch zoom scales the whole page, which drags fixed toolbars (side tools,
+ * bottom bars) half off screen in the app. Lock it there; in-page zoom (e.g. the
+ * image lightbox) handles its own gestures.
+ */
+function lockPageZoom(): void {
+  const meta = document.querySelector<HTMLMetaElement>('meta[name="viewport"]');
+  if (meta && !meta.content.includes("user-scalable")) {
+    meta.content = `${meta.content}, maximum-scale=1, user-scalable=no`;
+  }
+  document.documentElement.style.touchAction = "pan-x pan-y";
+}
+
 /** Call once at startup: remembers the Android launch and keeps the status bar colour in step with the theme. */
 export function installAppShell(): void {
   if (typeof window === "undefined") return;
   if (launchedFromAndroidApp()) writeSession(ANDROID_SESSION_KEY, "1");
+  if (isWebViewApp()) lockPageZoom();
 
   syncThemeColor();
   new MutationObserver(syncThemeColor).observe(document.documentElement, {
