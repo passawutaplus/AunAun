@@ -73,6 +73,8 @@ const FloatingNav = () => {
   };
   /** On my profile the round button is "+ Create"; everywhere else it is search. */
   const onProfile = pathname === "/portfolio" || (pathname.startsWith("/portfolio/") && !pathname.startsWith("/portfolio/new"));
+  /** Guests never see a "+" — creating needs an account, so the round button stays search for them. */
+  const createMode = onProfile && !!user;
 
   /** Phones / tablets: the round button opens project search (with colour search inside). */
   const openSearch = () => {
@@ -202,7 +204,7 @@ const FloatingNav = () => {
           )}
         </div>
 
-        {pathname === "/" ? (
+        {pathname === "/" && user ? (
           // Home: create sits beside search.
           <button
             type="button"
@@ -219,16 +221,16 @@ const FloatingNav = () => {
         ) : null}
         <button
           type="button"
-          onClick={onProfile ? openCreate : openSearch}
-          data-tour={onProfile ? "create" : "search"}
-          aria-label={onProfile ? "ลงผลงาน" : "ค้นหาผลงาน"}
+          onClick={createMode ? openCreate : openSearch}
+          data-tour={createMode ? "create" : "search"}
+          aria-label={createMode ? "ลงผลงาน" : "ค้นหาผลงาน"}
           className={cn(
             "pointer-events-auto flex h-14 w-14 shrink-0 items-center justify-center rounded-full shadow-sm transition-all duration-200 ease-out hover:opacity-90 active:scale-95",
             // Light mode: white with a black icon; dark mode: field colour with a white icon. A hairline ring keeps it visible on any photo.
             "bg-white text-[#111111] ring-1 ring-black/10 dark:bg-background dark:text-white dark:ring-white/25",
           )}
         >
-          {onProfile ? (
+          {createMode ? (
             <Plus className="h-6 w-6" strokeWidth={2.5} />
           ) : (
             <Search className="h-6 w-6" strokeWidth={2.25} />
