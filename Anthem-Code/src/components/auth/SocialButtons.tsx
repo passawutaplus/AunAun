@@ -3,6 +3,7 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { openOAuthPopup, signInWithOAuth } from "@/integrations/oauth";
+import { isWebViewApp } from "@/lib/appShell";
 import { cn } from "@/lib/utils";
 import { userFacingError } from "@/lib/userFacingError";
 
@@ -35,6 +36,9 @@ export function SocialButtons({
 }) {
   const [busy, setBusy] = useState(false);
 
+  // Google rejects OAuth inside embedded WebViews (disallowed_useragent); email sign-in only there.
+  if (isWebViewApp()) return null;
+
   return (
     <div className={cn(className)}>
       <Button
@@ -62,6 +66,7 @@ export function SocialButtons({
 }
 
 export function AuthEmailSeparator() {
+  if (isWebViewApp()) return null;
   return (
     <div className="relative my-1">
       <div className="absolute inset-0 flex items-center">
