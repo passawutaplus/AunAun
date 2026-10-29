@@ -4,49 +4,59 @@ import { useEffect, useState } from "react";
 const FLIP_DISTANCE = 12;
 /** Always show the bar this close to the top of the page. */
 const TOP_ZONE = 80;
+/** Below the Tailwind `lg` breakpoint (1024px) the layout is the phone/tablet one. */
+const MOBILE_QUERY = "(max-width: 1023.98px)";
 
 /**
- * X-style top bar: true while the user scrolls down (bar slides away), false as soon
- * as they scroll back up or reach the top. Inactive (always false) when `enabled` is off.
+ * X-style top bar for phones and tablets: `hidden` turns true while the user scrolls down (bar
+ * slides away) and false as soon as they scroll back up or reach the top. `scrolled` is true once
+ * the page has left the very top, so the bar can take a solid background while stuck.
+ * Does nothing (both false) on desktop widths.
  */
-export function useHideOnScroll(enabled: boolean): boolean {
-  const [hidden, setHidden] = useState(false);
+export function useHideOnScroll(): { hidden: boolean; scrolled: boolean } {
+  const [state, setState] = useState({ hidden: false, scrolled: false });
 
   useEffect(() => {
-    if (!enabled) {
-      setHidden(false);
-      return;
-    }
+    const mq = window.matchMedia(MOBILE_QUERY);
     let anchor = window.scrollY;
     let frame = 0;
 
+    const set = (hidden: boolean, scrolled: boolean) =>
+      setState((s) => (s.hidden === hidden && s.scrolled === scrolled ? s : { hidden, scrolled }));
+
     const update = () => {
       frame = 0;
+      if (!mq.matches) return set(false, false);
       const y = window.scrollY;
+      const scrolled = y > 8;
       if (y < TOP_ZONE) {
-        setHidden(false);
         anchor = y;
-        return;
+        return set(false, scrolled);
       }
       const delta = y - anchor;
       if (delta > FLIP_DISTANCE) {
-        setHidden(true);
         anchor = y;
+        set(true, scrolled);
       } else if (delta < -FLIP_DISTANCE) {
-        setHidden(false);
         anchor = y;
+        set(false, scrolled);
+      } else {
+        setState((s) => (s.scrolled === scrolled ? s : { ...s, scrolled }));
       }
     };
     const onScroll = () => {
       if (!frame) frame = window.requestAnimationFrame(update);
     };
 
+    update();
     window.addEventListener("scroll", onScroll, { passive: true });
+    mq.addEventListener("change", update);
     return () => {
       window.removeEventListener("scroll", onScroll);
+      mq.removeEventListener("change", update);
       if (frame) window.cancelAnimationFrame(frame);
     };
-  }, [enabled]);
+  }, []);
 
-  return hidden;
+  return state;
 }
