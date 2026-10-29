@@ -48,7 +48,7 @@ const Footer = ({ className }: Props) => {
       </nav>
 
       <p className="sr-only">sameCOR</p>
-      <p className="mt-4 px-[6vw] text-center text-[13px] text-[#bcbab4]">
+      <p className="mt-4 px-[6vw] text-center text-[13px] text-background/70">
         © {year} {BRAND_NAME} · All rights reserved
       </p>
 

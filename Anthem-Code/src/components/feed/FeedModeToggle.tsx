@@ -101,8 +101,14 @@ const FeedModeToggle = ({
     measure();
     const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure) : null;
     ro?.observe(track);
+    // Label widths change when the web font lands; re-measure so the pill never lags behind them.
+    let live = true;
+    void document.fonts?.ready.then(() => live && measure());
+    const raf = window.requestAnimationFrame(measure);
     window.addEventListener("resize", measure);
     return () => {
+      live = false;
+      window.cancelAnimationFrame(raf);
       ro?.disconnect();
       window.removeEventListener("resize", measure);
     };
@@ -166,6 +172,9 @@ const FeedModeToggle = ({
               active
                 ? "text-white dark:text-primary-foreground"
                 : "text-foreground/75 hover:text-foreground",
+              // The label colour assumes the sliding pill is under it; if the pill is not drawn
+              // (not measured yet / failed) paint the same fill on the button so the label stays readable.
+              active && !indicator && "bg-primary",
             )}
           >
             <Icon className="w-3.5 h-3.5 shrink-0" aria-hidden />

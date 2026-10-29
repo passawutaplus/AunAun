@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type RefObject } from "react";
 
 /** Pixels of travel in one direction before the bar flips state — ignores jitter from momentum scroll. */
 const FLIP_DISTANCE = 12;
@@ -11,9 +11,11 @@ const MOBILE_QUERY = "(max-width: 1023.98px)";
  * X-style top bar for phones and tablets: `hidden` turns true while the user scrolls down (bar
  * slides away) and false as soon as they scroll back up or reach the top. `scrolled` is true once
  * the page has left the very top, so the bar can take a solid background while stuck.
+ * The bar only hides/solidifies while it is actually stuck to the top of the screen: before that it
+ * is still in the page flow and sliding it away would leave a blank gap where it was.
  * Does nothing (both false) on desktop widths.
  */
-export function useHideOnScroll(): { hidden: boolean; scrolled: boolean } {
+export function useHideOnScroll(barRef: RefObject<HTMLElement | null>): { hidden: boolean; scrolled: boolean } {
   const [state, setState] = useState({ hidden: false, scrolled: false });
 
   useEffect(() => {
@@ -28,7 +30,14 @@ export function useHideOnScroll(): { hidden: boolean; scrolled: boolean } {
       frame = 0;
       if (!mq.matches) return set(false, false);
       const y = window.scrollY;
-      const scrolled = y > 8;
+      // Stuck = the sticky bar has reached the top edge (also true while it is slid away above it).
+      const bar = barRef.current;
+      const stuck = !!bar && bar.getBoundingClientRect().top <= 1;
+      if (!stuck) {
+        anchor = y;
+        return set(false, false);
+      }
+      const scrolled = true;
       if (y < TOP_ZONE) {
         anchor = y;
         return set(false, scrolled);
@@ -56,7 +65,7 @@ export function useHideOnScroll(): { hidden: boolean; scrolled: boolean } {
       mq.removeEventListener("change", update);
       if (frame) window.cancelAnimationFrame(frame);
     };
-  }, []);
+  }, [barRef]);
 
   return state;
 }
