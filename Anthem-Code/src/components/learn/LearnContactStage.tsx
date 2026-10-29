@@ -1,12 +1,12 @@
 import { ArrowUpRight, Mail, MapPin, MessageSquareHeart, Users } from "lucide-react";
 import { Fragment, useRef, type ReactNode } from "react";
-import { QRCodeSVG } from "qrcode.react";
 import { motion, useInView, useReducedMotion } from "framer-motion";
 import {
   BRAND_FACEBOOK_GROUP_URL,
   BRAND_FACEBOOK_URL,
   BRAND_LINE_CONTACT_URL,
   BRAND_LINE_ID,
+  BRAND_LINE_QR_URL,
   BRAND_SUPPORT_EMAIL,
 } from "@/lib/brandConfig";
 import { LEGAL_COMPANY_ADDRESS, LEGAL_COMPANY_NAME } from "@/lib/legalConfig";
@@ -179,12 +179,12 @@ export function LearnContactStage() {
             viewport={{ once: true, amount: 0.6 }}
             transition={{ duration: 0.6, ease: smoothEase }}
           >
-            <QRCodeSVG
-              value={BRAND_LINE_CONTACT_URL}
-              size={96}
-              level="M"
-              marginSize={1}
-              title={`QR code LINE ${BRAND_LINE_ID}`}
+            <img
+              src={BRAND_LINE_QR_URL}
+              alt={`QR code LINE ${BRAND_LINE_ID}`}
+              width={96}
+              height={96}
+              loading="lazy"
               className="h-24 w-24 shrink-0 rounded-lg bg-white p-1"
             />
             <span className="min-w-0">
