@@ -57,6 +57,11 @@ export default defineConfig({
   build: {
     chunkSizeWarningLimit: 600,
     rollupOptions: {
+      // /go — NFC card / QR landing page, a separate tiny entry (see go.html).
+      input: {
+        main: path.join(projectRoot, "index.html"),
+        go: path.join(projectRoot, "go.html"),
+      },
       output: {
         manualChunks(id) {
           if (!id.includes("node_modules")) return;

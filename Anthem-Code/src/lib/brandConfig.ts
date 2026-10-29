@@ -58,9 +58,8 @@ export const BRAND_SUPPORT_EMAIL = "support@samecor.com";
 export const BRAND_PRIVACY_EMAIL = "privacy@samecor.com";
 
 /** Official SAMECOR LINE Official Account (support / contact). */
-export const BRAND_LINE_CONTACT_URL = "https://lin.ee/te9XZuh";
-export const BRAND_LINE_ID = "@567rveid";
-export const BRAND_LINE_QR_URL = "https://qr-official.line.me/gs/M_567rveid_GW.png?oat_content=qr";
+export const BRAND_LINE_CONTACT_URL = "https://lin.ee/okJsEef";
+export const BRAND_LINE_ID = "@samecor";
 
 /** Official Facebook page. */
 export const BRAND_FACEBOOK_URL = "https://www.facebook.com/samecor2026";

@@ -8,9 +8,10 @@
     <style>
       html { background: #f8f7f2; }
       html.dark { background: #201f1e; }
-      #boot { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: #f8f7f2; }
-      html.dark #boot { background: #201f1e; }
-      #boot img { width: 56px; height: 56px; }
+      /* Spotlight loader screen: corner wash per the M10 spec (Mono Light / Mono Dark). Keep in step with .brand-loading-screen in src/index.css. */
+      #boot { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: radial-gradient(120% 70% at 0% 0%, rgba(17,17,17,.42), rgba(17,17,17,.12) 45%, transparent 70%), radial-gradient(90% 50% at 100% 100%, rgba(17,17,17,.07), transparent 70%), #f8f7f2; }
+      html.dark #boot { background: radial-gradient(120% 70% at 0% 0%, rgba(248,247,242,.16), rgba(248,247,242,.04) 45%, transparent 70%), radial-gradient(90% 50% at 100% 100%, rgba(248,247,242,.08), transparent 70%), #201f1e; }
+      #boot img { width: 96px; height: 96px; }
       #boot .boot-dark { display: none; }
       html.dark #boot .boot-light { display: none; }
       html.dark #boot .boot-dark { display: block; }
@@ -68,7 +69,7 @@
         } catch (_) {}
       })();
     </script>
-    <div id="root"><div id="boot" aria-hidden="true"><img class="boot-light" src="/brand/symbol-black.svg" width="56" height="56" alt="" /><img class="boot-dark" src="/brand/symbol-white.svg" width="56" height="56" alt="" /></div></div>
+    <div id="root"><div id="boot" aria-hidden="true"><img class="boot-light" src="/brand/loader-mono-light.svg" width="96" height="96" alt="" /><img class="boot-dark" src="/brand/loader-mono-dark.svg" width="96" height="96" alt="" /></div></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

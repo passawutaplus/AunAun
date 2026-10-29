@@ -1,4 +1,4 @@
-import { BanterLoader } from "@/components/ui/BanterLoader";
+import { BrandLoader } from "@/components/ui/BrandLoader";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -13,14 +13,15 @@ export default function PageLoader({ label = "กำลังโหลด...", c
     <div
       className={cn(
         "flex flex-col items-center justify-center gap-4 text-muted-foreground",
-        fullPage ? "min-h-screen bg-background" : "py-16",
+        fullPage ? "min-h-screen brand-loading-screen" : "py-16",
         className,
       )}
       role="status"
       aria-live="polite"
     >
-      <BanterLoader size="md" aria-label={label} />
-      {label ? <span className="text-sm thai-body">{label}</span> : null}
+      <BrandLoader size={fullPage ? 96 : 56} aria-label={label} />
+      {/* Logo only on screen; the label is for screen readers. */}
+      {label ? <span className="sr-only">{label}</span> : null}
     </div>
   );
 }
