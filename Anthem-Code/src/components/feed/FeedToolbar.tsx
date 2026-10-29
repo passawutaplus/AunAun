@@ -367,8 +367,8 @@ const FeedToolbar = ({
   }, [openSearchAt, isProjects]);
 
   const homeScrolled = useFeedHomeNavStore((s) => s.scrolled);
-  // Mobile: the stuck bar slides up while scrolling down and back on scroll up.
-  const barHidden = useHideOnScroll(homeScrolled);
+  // Mobile: the bar sticks to the top, slides away while scrolling down and back on scroll up.
+  const { hidden: barHidden, scrolled: barScrolled } = useHideOnScroll();
 
   useEffect(() => {
     const onFilterClick = isProjects || isDesigners ? () => setProjectSheetOpen(true) : undefined;
@@ -423,7 +423,10 @@ const FeedToolbar = ({
         "z-30 -mx-3 sm:-mx-4 lg:-mx-6 2xl:-mx-10 px-3 sm:px-4 lg:px-6 2xl:px-10 py-3 overflow-visible",
         // Mobile only: any transform here would also become the containing block of the desktop `fixed` bar below.
         "max-lg:transition-transform max-lg:duration-300 max-lg:ease-out motion-reduce:transition-none",
-        homeScrolled && barHidden && "max-lg:-translate-y-full",
+        "max-lg:sticky max-lg:top-0 max-lg:z-40",
+        barHidden && "max-lg:-translate-y-full",
+        // Transparent over the hero at the very top; solid once the page has moved.
+        barScrolled && "max-lg:border-b max-lg:border-border max-lg:bg-background",
         homeScrolled
           ? cn(
               "sticky top-0",
