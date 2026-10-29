@@ -421,8 +421,9 @@ const FeedToolbar = ({
       data-tour="home-toolbar"
       className={cn(
         "z-30 -mx-3 sm:-mx-4 lg:-mx-6 2xl:-mx-10 px-3 sm:px-4 lg:px-6 2xl:px-10 py-3 overflow-visible",
-        "transition-transform duration-300 ease-out motion-reduce:transition-none lg:translate-y-0",
-        homeScrolled && barHidden && "-translate-y-full",
+        // Mobile only: any transform here would also become the containing block of the desktop `fixed` bar below.
+        "max-lg:transition-transform max-lg:duration-300 max-lg:ease-out motion-reduce:transition-none",
+        homeScrolled && barHidden && "max-lg:-translate-y-full",
         homeScrolled
           ? cn(
               "sticky top-0",
