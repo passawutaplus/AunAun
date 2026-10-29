@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useHideOnScroll } from "@/hooks/useHideOnScroll";
 import { motion, useReducedMotion } from "framer-motion";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { parseColorList } from "@/lib/colorSearch";
@@ -366,6 +367,8 @@ const FeedToolbar = ({
   }, [openSearchAt, isProjects]);
 
   const homeScrolled = useFeedHomeNavStore((s) => s.scrolled);
+  // Mobile: the stuck bar slides up while scrolling down and back on scroll up.
+  const barHidden = useHideOnScroll(homeScrolled);
 
   useEffect(() => {
     const onFilterClick = isProjects || isDesigners ? () => setProjectSheetOpen(true) : undefined;
@@ -418,6 +421,8 @@ const FeedToolbar = ({
       data-tour="home-toolbar"
       className={cn(
         "z-30 -mx-3 sm:-mx-4 lg:-mx-6 2xl:-mx-10 px-3 sm:px-4 lg:px-6 2xl:px-10 py-3 overflow-visible",
+        "transition-transform duration-300 ease-out motion-reduce:transition-none lg:translate-y-0",
+        homeScrolled && barHidden && "-translate-y-full",
         homeScrolled
           ? cn(
               "sticky top-0",

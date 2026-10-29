@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { WanderingEyes } from "@/components/loading-ui/wandering-eyes";
+import { BrandLoader } from "@/components/ui/BrandLoader";
 
 type Size = "sm" | "md";
 
@@ -9,14 +9,9 @@ type BanterLoaderProps = {
   "aria-label"?: string;
 };
 
+/** App-wide loading mark (SAMECOR spotlight symbol). Name kept for the many existing callers. */
 export function BanterLoader({ size = "md", className, "aria-label": ariaLabel }: BanterLoaderProps) {
-  return (
-    <WanderingEyes
-      className={cn(size === "sm" ? "h-6 w-[54px]" : "h-12 w-[108px]", className)}
-      role="img"
-      aria-label={ariaLabel ?? "กำลังโหลด"}
-    />
-  );
+  return <BrandLoader size={size === "sm" ? 24 : 56} className={className} aria-label={ariaLabel ?? "กำลังโหลด"} />;
 }
 
 type InlineLoaderProps = {
@@ -40,7 +35,7 @@ export function InlineLoader({
     >
       <BanterLoader size={size} aria-label={label} />
       {label ? (
-        <p className={cn("text-sm text-muted-foreground thai-body", labelClassName)}>{label}</p>
+        <p className={cn("sr-only", labelClassName)}>{label}</p>
       ) : null}
     </div>
   );
@@ -63,7 +58,7 @@ export function CompactLoader({
     >
       <BanterLoader size="sm" aria-label={label} />
       {label ? (
-        <span className={cn("text-xs text-muted-foreground thai-body", labelClassName)}>{label}</span>
+        <span className={cn("sr-only", labelClassName)}>{label}</span>
       ) : null}
     </div>
   );

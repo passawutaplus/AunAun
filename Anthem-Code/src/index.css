@@ -2541,3 +2541,34 @@ html [data-feed-sheet] [data-feed-catalog-head] .gap-y-1 {
   max-width: 12rem;
   opacity: 1;
 }
+
+/* Brand loader (src/components/ui/BrandLoader.tsx) — Spotlight M10, Brand Book colours. */
+.brand-loader-ghost { fill: #dadad7; }
+.brand-loader-reveal { fill: #282929; }
+.dark .brand-loader-ghost { fill: #4a4b4b; }
+.dark .brand-loader-reveal { fill: #f8f7f2; }
+.brand-loader-spot {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: brand-loader-spot 3s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+@keyframes brand-loader-spot {
+  0% { transform: translate(-230px, -170px) scale(1); }
+  20% { transform: translate(220px, -120px) scale(1); }
+  40% { transform: translate(160px, 220px) scale(1); }
+  58% { transform: translate(-180px, 180px) scale(1); }
+  76%, 90% { transform: translate(0, 0) scale(5); }
+  100% { transform: translate(-230px, -170px) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .brand-loader-spot { animation: none; transform: scale(5); }
+}
+/* Full-screen loader ground: same corner wash as #boot in index.html. */
+.brand-loading-screen {
+  background: radial-gradient(120% 70% at 0% 0%, rgba(17, 17, 17, 0.42), rgba(17, 17, 17, 0.12) 45%, transparent 70%),
+    radial-gradient(90% 50% at 100% 100%, rgba(17, 17, 17, 0.07), transparent 70%), hsl(var(--background));
+}
+.dark .brand-loading-screen {
+  background: radial-gradient(120% 70% at 0% 0%, rgba(248, 247, 242, 0.16), rgba(248, 247, 242, 0.04) 45%, transparent 70%),
+    radial-gradient(90% 50% at 100% 100%, rgba(248, 247, 242, 0.08), transparent 70%), hsl(var(--background));
+}

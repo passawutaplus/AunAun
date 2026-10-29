@@ -136,6 +136,7 @@ export default function ProfileOwnerActions({
       </DropdownMenu>
 
       <ProfileSharePopover
+        showQr
         open={shareOpen}
         onOpenChange={setShareOpen}
         url={shareUrl}

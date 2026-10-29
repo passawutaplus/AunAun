@@ -62,11 +62,16 @@ export function isAndroidApp(): boolean {
   return isWebViewApp() || readSession(ANDROID_SESSION_KEY) === "1" || launchedFromAndroidApp();
 }
 
+/** Native bridge MainActivity adds in the Capacitor shell (capacitor-shell/android/.../MainActivity.java). */
+type SamecorShellBridge = { setSystemBarColor(hex: string, dark: boolean): void };
+
 function syncThemeColor(): void {
+  const dark = document.documentElement.classList.contains("dark");
+  const color = dark ? THEME_COLOR.dark : THEME_COLOR.light;
+  // WebView ignores theme-color, so paint the status / gesture bars through the shell.
+  (window as Window & { SamecorShell?: SamecorShellBridge }).SamecorShell?.setSystemBarColor(color, dark);
   const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
-  if (!meta) return;
-  const color = document.documentElement.classList.contains("dark") ? THEME_COLOR.dark : THEME_COLOR.light;
-  if (meta.content !== color) meta.content = color;
+  if (meta && meta.content !== color) meta.content = color;
 }
 
 /**
