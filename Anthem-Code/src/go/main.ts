@@ -21,7 +21,7 @@ const config = {
     },
     {
       name: "LINE Official Account",
-      href: "https://lin.ee/okJsEef",
+      href: "https://lin.ee/VMcniAW",
       icon: '<path d="M12 4C7 4 3 7.2 3 11.2c0 3.6 3.2 6.6 7.5 7.1l-.4 2.2c-.1.4.3.7.7.5 2.6-1.5 7.6-4.8 8.9-7.4.5-.8.3-1.6.3-2.4C21 7.2 17 4 12 4z"/>',
     },
   ],
