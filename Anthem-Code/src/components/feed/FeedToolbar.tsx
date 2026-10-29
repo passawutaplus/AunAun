@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useHideOnScroll } from "@/hooks/useHideOnScroll";
 import { motion, useReducedMotion } from "framer-motion";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -368,7 +368,8 @@ const FeedToolbar = ({
 
   const homeScrolled = useFeedHomeNavStore((s) => s.scrolled);
   // Mobile: the bar sticks to the top, slides away while scrolling down and back on scroll up.
-  const { hidden: barHidden, scrolled: barScrolled } = useHideOnScroll();
+  const barRef = useRef<HTMLDivElement>(null);
+  const { hidden: barHidden, scrolled: barScrolled } = useHideOnScroll(barRef);
 
   useEffect(() => {
     const onFilterClick = isProjects || isDesigners ? () => setProjectSheetOpen(true) : undefined;
@@ -417,6 +418,7 @@ const FeedToolbar = ({
 
   return (
     <div
+      ref={barRef}
       data-feed-toolbar
       data-tour="home-toolbar"
       className={cn(
