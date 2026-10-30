@@ -181,14 +181,9 @@ export default function FeedbackComposer() {
               <BetaProgress
                 userId={user?.id}
                 tone="onBrand"
-                className="mx-auto mt-5 max-w-[16rem] rounded-xl bg-primary-foreground/10 p-3 ring-1 ring-primary-foreground/20"
+                className="mx-auto mb-2 mt-5 max-w-[16rem] rounded-xl bg-primary-foreground/10 p-3 ring-1 ring-primary-foreground/20"
               />
-              <Button
-                className="mx-auto mt-6 mb-2 h-11 w-40 border-0 bg-primary-foreground text-primary hover:bg-primary-foreground/90"
-                onClick={close}
-              >
-                โอเค
-              </Button>
+              {/* No action button: close with the × or by tapping outside the card. */}
             </div>
           </div>
         ) : (
