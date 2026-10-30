@@ -1,10 +1,10 @@
 // LINE webhook of the admin bot (@samecor Messaging API channel).
 // Verifies LINE's signature, then does two things:
-//   • joins a group  -> says hello and prints the group id (to put into LINE_ADMIN_GROUP_ID)
+//   • joins a group  -> says hello and prints the group id (to put into LINE_SAMECOR_ADMIN_GROUP_ID)
 //   • "/id" or "/ping" typed in a group -> answers with the group id / that it is alive
 // Everything else is ignored. Replies use the (free) reply API, so they do not use the push quota.
 //
-// Secrets: LINE_ADMIN_CHANNEL_SECRET (signature check), LINE_ADMIN_ACCESS_TOKEN (reply).
+// Secrets: LINE_SAMECOR_ADMIN_CHANNEL_SECRET (signature check), LINE_SAMECOR_ADMIN_ACCESS_TOKEN (reply).
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -38,8 +38,8 @@ type LineEvent = {
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ ok: true });
-  const secret = Deno.env.get("LINE_ADMIN_CHANNEL_SECRET");
-  const token = Deno.env.get("LINE_ADMIN_ACCESS_TOKEN");
+  const secret = Deno.env.get("LINE_SAMECOR_ADMIN_CHANNEL_SECRET");
+  const token = Deno.env.get("LINE_SAMECOR_ADMIN_ACCESS_TOKEN");
   if (!secret) return json({ error: "not configured" }, 503);
 
   const raw = await req.text();
@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
       await reply(
         token,
         ev.replyToken,
-        `สวัสดีครับ 👋 SAMECOR Bot เข้ากลุ่มแล้ว\nรหัสกลุ่ม: ${groupId}\n(นำไปตั้งเป็น LINE_ADMIN_GROUP_ID ใน Supabase Secrets)`,
+        `สวัสดีครับ 👋 SAMECOR Bot เข้ากลุ่มแล้ว\nรหัสกลุ่ม: ${groupId}\n(นำไปตั้งเป็น LINE_SAMECOR_ADMIN_GROUP_ID ใน Supabase Secrets)`,
       );
     } else if (ev.type === "message" && ev.message?.type === "text") {
       const text = (ev.message.text ?? "").trim().toLowerCase();

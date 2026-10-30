@@ -3,9 +3,9 @@
 // it only ever sends rows that are still pending, to the one configured group.
 //
 // Secrets (Supabase → Edge Functions → Secrets), none of them in code:
-//   LINE_ADMIN_ACCESS_TOKEN   long-lived channel access token of the @samecor Messaging API channel
-//   LINE_ADMIN_GROUP_ID       id of the admin group (the bot answers "/id" in the group)
-//   LINE_ADMIN_IGNORE_EMAILS  optional, comma-separated extra emails to never alert on
+//   LINE_SAMECOR_ADMIN_ACCESS_TOKEN   long-lived channel access token of the @samecor Messaging API channel
+//   LINE_SAMECOR_ADMIN_GROUP_ID       id of the admin group (the bot answers "/id" in the group)
+//   LINE_SAMECOR_ADMIN_IGNORE_EMAILS  optional, comma-separated extra emails to never alert on
 import { createClient } from "npm:@supabase/supabase-js@2";
 import {
   type DigestInfo,
@@ -54,15 +54,15 @@ async function pushToGroup(token: string, groupId: string, texts: string[]) {
 Deno.serve(async (req) => {
   if (req.method !== "POST" && req.method !== "GET") return json({ error: "method not allowed" }, 405);
 
-  const token = Deno.env.get("LINE_ADMIN_ACCESS_TOKEN");
-  const groupId = Deno.env.get("LINE_ADMIN_GROUP_ID");
+  const token = Deno.env.get("LINE_SAMECOR_ADMIN_ACCESS_TOKEN");
+  const groupId = Deno.env.get("LINE_SAMECOR_ADMIN_GROUP_ID");
   if (!token || !groupId) return json({ skipped: "not configured" });
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!supabaseUrl || !serviceKey) return json({ error: "server misconfiguration" }, 500);
   const admin = createClient(supabaseUrl, serviceKey);
-  const extraIgnore = (Deno.env.get("LINE_ADMIN_IGNORE_EMAILS") ?? "").split(",");
+  const extraIgnore = (Deno.env.get("LINE_SAMECOR_ADMIN_IGNORE_EMAILS") ?? "").split(",");
 
   const { data: claimed, error: claimErr } = await admin.rpc("admin_line_claim", { _limit: 20 });
   if (claimErr) {
