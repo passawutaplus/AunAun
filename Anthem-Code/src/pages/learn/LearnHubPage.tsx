@@ -701,7 +701,7 @@ export default function LearnHubPage() {
         </div>
       </section>
 
-      <section id="contact" className="scroll-mt-24 border-t border-border">
+      <section id="contact" className="scroll-mt-24">
         <LearnContactStage />
       </section>
 

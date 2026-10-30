@@ -1,6 +1,6 @@
 import { ArrowUpRight, Mail, MapPin, MessageSquareHeart, Users } from "lucide-react";
-import { Fragment, useRef, type ReactNode } from "react";
-import { motion, useInView, useReducedMotion } from "framer-motion";
+import { type ReactNode } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   BRAND_FACEBOOK_GROUP_URL,
   BRAND_FACEBOOK_URL,
@@ -13,8 +13,19 @@ import { LEGAL_COMPANY_ADDRESS, LEGAL_COMPANY_NAME } from "@/lib/legalConfig";
 import { useOpenFeedbackTicket } from "@/hooks/useOpenFeedbackTicket";
 import { smoothEase } from "@/lib/motion";
 
-const HEADLINE = ["Let’s", "make", "something", "together."];
-const MARQUEE = ["LINE", "Facebook", "Community", "Email", "Feedback", "Ideas", "Collabs"];
+const MAPS_URL = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(LEGAL_COMPANY_ADDRESS)}`;
+
+/** Rise-in for each part of the section, staggered by `order`; content stays visible without script. */
+function useRise(order: number) {
+  const reduced = useReducedMotion();
+  if (reduced) return {};
+  return {
+    initial: { opacity: 0, y: 24 },
+    whileInView: { opacity: 1, y: 0 },
+    viewport: { once: true, amount: 0.4 },
+    transition: { duration: 0.6, delay: order * 0.08, ease: smoothEase },
+  };
+}
 
 function ChannelRow({
   icon,
@@ -23,7 +34,7 @@ function ChannelRow({
   href,
   onClick,
   cta,
-  index,
+  order,
 }: {
   icon: ReactNode;
   title: string;
@@ -31,23 +42,20 @@ function ChannelRow({
   href?: string;
   onClick?: () => void;
   cta: string;
-  index: number;
+  order: number;
 }) {
-  const reduced = useReducedMotion();
+  const rise = useRise(order);
   const body = (
     <>
-      <span
-        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand/10 text-brand transition-colors duration-300 group-hover:bg-brand group-hover:text-white"
-        aria-hidden
-      >
+      <span className="mt-1 shrink-0" aria-hidden>
         {icon}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-base font-medium text-foreground">{title}</span>
-        <span className="mt-0.5 block truncate text-sm text-muted-foreground">{detail}</span>
+        <span className="block text-lg font-medium leading-snug">{title}</span>
+        <span className="mt-1 block text-base leading-relaxed">{detail}</span>
       </span>
-      <span className="inline-flex min-h-11 shrink-0 items-center gap-1.5 text-sm font-medium text-foreground">
-        <span className="hidden underline decoration-brand decoration-2 underline-offset-4 sm:inline">{cta}</span>
+      <span className="inline-flex min-h-11 basis-full items-center gap-1.5 pl-9 text-base font-medium sm:basis-auto sm:self-center sm:pl-0">
+        <span className="underline decoration-2 underline-offset-4">{cta}</span>
         <ArrowUpRight
           className="h-4 w-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
           aria-hidden
@@ -56,16 +64,10 @@ function ChannelRow({
     </>
   );
   const rowClass =
-    "group flex w-full items-center gap-4 rounded-2xl px-3 py-4 text-left transition-colors duration-300 hover:bg-muted/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-4";
+    "group flex w-full flex-wrap items-start gap-x-4 gap-y-1 rounded-2xl sm:flex-nowrap px-4 py-4 text-left transition-colors duration-300 hover:bg-brand-foreground/[0.07] active:bg-brand-foreground/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-foreground sm:px-5 sm:py-5";
 
   return (
-    <motion.li
-      className="border-t border-border first:border-t-0"
-      initial={reduced ? false : { opacity: 0, x: 24 }}
-      whileInView={{ opacity: 1, x: 0 }}
-      viewport={{ once: true, amount: 0.6 }}
-      transition={{ duration: 0.55, delay: index * 0.07, ease: smoothEase }}
-    >
+    <motion.li {...rise}>
       {href ? (
         <a
           href={href}
@@ -85,9 +87,9 @@ function ChannelRow({
   );
 }
 
-function LineIcon() {
+function LineIcon({ className = "h-5 w-5" }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden>
+    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
       <path d="M12 4C6.9 4 3 7.2 3 11.1c0 3.5 3.1 6.4 7.3 7l-.4 2.4 3.3-2.3C17.4 17.4 21 14.6 21 11.1 21 7.2 17.1 4 12 4Z" />
     </svg>
   );
@@ -101,151 +103,114 @@ function FacebookIcon() {
   );
 }
 
-/** Slow outline-type strip of every channel (pauses for reduced motion). */
-function ChannelMarquee() {
-  const words = [...MARQUEE, ...MARQUEE];
-  return (
-    <div className="relative overflow-hidden border-b border-border py-5" aria-hidden>
-      <div
-        className="flex w-max animate-[work-wall-left_48s_linear_infinite] gap-10 whitespace-nowrap pr-10 motion-reduce:animate-none"
-      >
-        {words.map((w, i) => (
-          <span
-            key={`${w}-${i}`}
-            className="flex items-center gap-10 font-display text-[clamp(2rem,6vw,4.5rem)] font-light leading-none tracking-[-0.03em] text-transparent [-webkit-text-stroke:1px_hsl(var(--foreground)/0.35)]"
-          >
-            {w}
-            <span className="text-brand [-webkit-text-stroke:0]">✱</span>
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/** "Get in Touch" — every channel the team answers, plus the in-app feedback button. */
+/**
+ * "Get in Touch" — one red field. LINE is the front door (the team answers there first), so it gets the
+ * QR on desktop and a full-width button on phones, where scanning your own screen is impossible. The
+ * other channels follow as a plain list.
+ */
 export function LearnContactStage() {
   const openFeedback = useOpenFeedbackTicket();
-  const reduced = useReducedMotion();
-  const headRef = useRef<HTMLHeadingElement>(null);
-  const headIn = useInView(headRef, { once: true, amount: 0.4 });
+  const riseHead = useRise(0);
+  const riseLede = useRise(1);
+  const riseLine = useRise(2);
 
   return (
-    <div>
-      <ChannelMarquee />
-      <div className="mx-auto grid max-w-[80rem] grid-cols-[minmax(0,1fr)] gap-12 px-4 py-14 sm:px-6 lg:grid-cols-[minmax(0,28rem)_minmax(0,1fr)] lg:gap-16 lg:px-10 lg:py-20">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-brand">✱ Get in Touch</p>
-          <h2
-            ref={headRef}
-            className="mt-3 font-display text-[clamp(2.4rem,5.5vw,4.5rem)] font-light leading-[1.02] tracking-[-0.03em] text-foreground"
+    <div className="bg-brand text-brand-foreground">
+      <div className="mx-auto max-w-[80rem] px-4 py-20 sm:px-6 lg:px-10 lg:py-32">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-12 lg:items-end lg:gap-10">
+          <motion.h2
+            {...riseHead}
+            className="font-display text-[clamp(3.5rem,13vw,12.5rem)] font-light leading-[0.9] tracking-[-0.04em] lg:col-span-8"
           >
-            {HEADLINE.map((word, i) => (
-              <Fragment key={word}>
-                {i > 0 ? " " : null}
-                <span className="inline-block overflow-hidden pb-[0.08em] align-bottom">
-                  <motion.span
-                    className="inline-block"
-                    initial={reduced ? false : { y: "105%" }}
-                    animate={headIn || reduced ? { y: "0%" } : { y: "105%" }}
-                    transition={{ duration: 0.8, delay: i * 0.09, ease: smoothEase }}
-                  >
-                    {word}
-                  </motion.span>
-                </span>
-              </Fragment>
-            ))}
-          </h2>
-          <p className="mt-5 text-lg font-medium text-foreground">คุยกับทีม SAMECOR</p>
-          <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
-            มีคำถาม อยากเสนอไอเดีย หรือเจอปัญหาระหว่างใช้งาน ทักมาได้ทุกช่องทาง
-          </p>
-          <p className="mt-4 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground">
-            <span className="relative flex h-2 w-2" aria-hidden>
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-60 motion-reduce:hidden" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-            </span>
-            ทีมตอบใน LINE เร็วที่สุด
-          </p>
-
-          <motion.a
-            href={BRAND_LINE_CONTACT_URL}
-            target="_blank"
-            rel="noreferrer"
-            className="mt-8 flex max-w-sm items-center gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm transition-shadow hover:shadow-md"
-            initial={reduced ? false : { opacity: 0, y: 24, rotate: -2 }}
-            whileInView={{ opacity: 1, y: 0, rotate: 0 }}
-            whileHover={reduced ? undefined : { rotate: -1.5, y: -4 }}
-            viewport={{ once: true, amount: 0.6 }}
-            transition={{ duration: 0.6, ease: smoothEase }}
-          >
-            <img
-              src={BRAND_LINE_QR_URL}
-              alt={`QR code LINE ${BRAND_LINE_ID}`}
-              width={96}
-              height={96}
-              loading="lazy"
-              className="h-24 w-24 shrink-0 rounded-lg bg-white p-1"
-            />
-            <span className="min-w-0">
-              <span className="block text-sm font-medium text-foreground">สแกนเพื่อเพิ่มเพื่อน</span>
-              <span className="mt-0.5 block text-sm text-muted-foreground">LINE Official {BRAND_LINE_ID}</span>
-              <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-brand">
-                หรือกดเพื่อเปิด LINE <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
-              </span>
-            </span>
-          </motion.a>
+            Let’s talk.
+          </motion.h2>
+          <motion.div {...riseLede} className="lg:col-span-4 lg:pb-3">
+            <p className="text-2xl font-medium leading-snug sm:text-[1.75rem]">คุยกับทีม SAMECOR ได้ทุกเรื่อง</p>
+            <p className="mt-3 max-w-md text-lg leading-relaxed">
+              มีคำถาม อยากเสนอไอเดีย หรือเจอปัญหาระหว่างใช้งาน ทักมาได้เลย ทีมตอบใน LINE เร็วที่สุด
+            </p>
+          </motion.div>
         </div>
 
-        <div>
-          <ul className="rounded-3xl border border-border bg-card p-2 sm:p-3">
-            <ChannelRow
-              index={0}
-              icon={<LineIcon />}
-              title="LINE Official Account"
-              detail={`${BRAND_LINE_ID} · ถามได้ทุกเรื่อง ตอบเร็วที่สุด`}
+        <div className="mt-14 grid grid-cols-[minmax(0,1fr)] gap-14 lg:mt-24 lg:grid-cols-12 lg:gap-10">
+          <motion.div {...riseLine} className="lg:col-span-5">
+            <a
               href={BRAND_LINE_CONTACT_URL}
-              cta="เพิ่มเพื่อน"
-            />
-            <ChannelRow
-              index={1}
-              icon={<FacebookIcon />}
-              title="Facebook Page"
-              detail="ข่าวสาร อัปเดตฟีเจอร์ และผลงานคัดสรร"
-              href={BRAND_FACEBOOK_URL}
-              cta="ติดตาม"
-            />
-            <ChannelRow
-              index={2}
-              icon={<Users className="h-5 w-5" />}
-              title="SAMECOR Community"
-              detail="กลุ่ม Facebook สำหรับครีเอเตอร์ แลกเปลี่ยนและหาเพื่อนร่วมงาน"
-              href={BRAND_FACEBOOK_GROUP_URL}
-              cta="เข้ากลุ่ม"
-            />
-            <ChannelRow
-              index={3}
-              icon={<Mail className="h-5 w-5" />}
-              title="อีเมล"
-              detail={BRAND_SUPPORT_EMAIL}
-              href={`mailto:${BRAND_SUPPORT_EMAIL}`}
-              cta="ส่งอีเมล"
-            />
-            <ChannelRow
-              index={4}
-              icon={<MessageSquareHeart className="h-5 w-5" />}
-              title="ฟีดแบ็กในแอป"
-              detail="แนบภาพหน้าจอ บอกบั๊กหรือไอเดีย ทีมเห็นทันที"
-              onClick={() => openFeedback()}
-              cta="ส่งฟีดแบ็ก"
-            />
-          </ul>
-          <p className="mt-6 flex items-start gap-2 px-1 text-sm text-muted-foreground">
-            <MapPin className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-            <span>
-              {LEGAL_COMPANY_NAME} · {LEGAL_COMPANY_ADDRESS}
-            </span>
-          </p>
+              target="_blank"
+              rel="noreferrer"
+              className="hidden w-fit rounded-3xl bg-white p-3 transition-transform duration-300 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-foreground lg:block"
+              aria-label={`เปิด LINE Official ${BRAND_LINE_ID}`}
+            >
+              <img
+                src={BRAND_LINE_QR_URL}
+                alt={`QR code LINE ${BRAND_LINE_ID}`}
+                width={208}
+                height={208}
+                loading="lazy"
+                className="h-52 w-52"
+              />
+            </a>
+            <p className="mt-6 hidden text-lg font-medium lg:block">สแกนเพื่อเพิ่มเพื่อน LINE Official</p>
+            <a
+              href={BRAND_LINE_CONTACT_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-brand-foreground px-6 text-base font-medium text-white transition-transform duration-300 hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-brand-foreground sm:w-auto lg:mt-4"
+            >
+              <LineIcon />
+              เพิ่มเพื่อน LINE {BRAND_LINE_ID}
+            </a>
+          </motion.div>
+
+          <div className="lg:col-span-7">
+            <h3 className="px-4 text-lg font-medium sm:px-5">ช่องทางอื่น</h3>
+            <ul className="mt-3">
+              <ChannelRow
+                order={3}
+                icon={<FacebookIcon />}
+                title="Facebook Page"
+                detail="ข่าวสาร อัปเดตฟีเจอร์ และผลงานคัดสรร"
+                href={BRAND_FACEBOOK_URL}
+                cta="ติดตาม"
+              />
+              <ChannelRow
+                order={4}
+                icon={<Users className="h-5 w-5" />}
+                title="SAMECOR Community"
+                detail="กลุ่ม Facebook สำหรับครีเอเตอร์ แลกเปลี่ยนและหาเพื่อนร่วมงาน"
+                href={BRAND_FACEBOOK_GROUP_URL}
+                cta="เข้ากลุ่ม"
+              />
+              <ChannelRow
+                order={5}
+                icon={<Mail className="h-5 w-5" />}
+                title="อีเมล"
+                detail={BRAND_SUPPORT_EMAIL}
+                href={`mailto:${BRAND_SUPPORT_EMAIL}`}
+                cta="ส่งอีเมล"
+              />
+              <ChannelRow
+                order={6}
+                icon={<MessageSquareHeart className="h-5 w-5" />}
+                title="ฟีดแบ็กในแอป"
+                detail="แนบภาพหน้าจอ บอกบั๊กหรือไอเดีย ทีมเห็นทันที"
+                onClick={() => openFeedback()}
+                cta="ส่งฟีดแบ็ก"
+              />
+            </ul>
+            <a
+              href={MAPS_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="group mt-8 flex items-start gap-3 rounded-2xl px-4 py-3 text-base transition-colors hover:bg-brand-foreground/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-foreground sm:px-5"
+            >
+              <MapPin className="mt-1 h-5 w-5 shrink-0" aria-hidden />
+              <span>
+                {LEGAL_COMPANY_NAME} · {LEGAL_COMPANY_ADDRESS}
+                <span className="ml-2 whitespace-nowrap underline decoration-2 underline-offset-4">เปิดแผนที่</span>
+              </span>
+            </a>
+          </div>
         </div>
       </div>
     </div>
