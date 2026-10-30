@@ -38,7 +38,7 @@ export default function ConnectMessageDialog({ open, onOpenChange, recipientId, 
     try {
       const body = about ? `${text.trim()}
 
-ทักจากผลงาน : ${about.title}` : text;
+From : ${about.title}` : text;
       const conversationId = await openConnectChat(user.id, recipientId, body, about ? { id: about.id, title: about.title } : undefined);
       void trackProductEvent(
         "connect_message",
