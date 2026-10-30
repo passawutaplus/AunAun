@@ -53,6 +53,12 @@ export type DigestInfo = {
   reports_open: number;
   sessions_24h: number;
   android_sessions_24h: number;
+  sessions_prev?: number;
+  views_24h?: number;
+  views_prev?: number;
+  devices?: Record<string, number>;
+  top_works?: { title: string; owner: string | null; views: number }[];
+  sources?: { label: string; n: number }[];
 };
 
 const KIND_LABEL: Record<string, string> = {
@@ -168,6 +174,7 @@ export function formatDigest(d: DigestInfo, now: Date = new Date()): string {
   const date = new Intl.DateTimeFormat("th-TH", { timeZone: "Asia/Bangkok", day: "numeric", month: "long" }).format(now);
   const lines = [
     `📊 สรุปประจำวัน ${date}`,
+    `ผู้เข้าชม: ${d.sessions_24h} เซสชัน${d.views_24h !== undefined ? ` · ดู ${d.views_24h} หน้า` : ""}`,
     `สมาชิกใหม่: ${d.new_members} (รวม ${d.total_members})`,
     `ผลงานใหม่: ${d.new_works}`,
   ];
@@ -240,29 +247,157 @@ function bubble(title: string, subtitle: string | null, blocks: Box[], link: { l
 
 const flex = (altText: string, contents: Box): LineMessage => ({ type: "flex", altText: clip(altText, 400), contents });
 
+const BRAND = "#EE3D29";
+const CREAM = "#F8F7F2";
+const UP = "#1A7F4B";
+
+const DEVICE_LABEL: [string, string][] = [
+  ["mobile", "มือถือ (เว็บ)"],
+  ["desktop", "คอมพิวเตอร์"],
+  ["tablet", "แท็บเล็ต"],
+  ["android", "แอป Android"],
+  ["unknown", "ไม่ระบุ"],
+];
+
+/** "▲ 12%" / "▼ 8%" against the previous 24 h; null when there is nothing to compare with. */
+export function deltaText(now: number, prev: number | undefined): { text: string; color: string } | null {
+  if (prev === undefined || prev <= 0) return null;
+  const pct = Math.round(((now - prev) / prev) * 100);
+  if (pct === 0) return { text: "เท่าเมื่อวาน", color: MUTED };
+  return pct > 0 ? { text: `▲ ${pct}%`, color: UP } : { text: `▼ ${Math.abs(pct)}%`, color: BRAND };
+}
+
+const tile = (label: string, value: string, delta: { text: string; color: string } | null, hint?: string): Box => ({
+  type: "box",
+  layout: "vertical",
+  flex: 1,
+  paddingAll: "12px",
+  cornerRadius: "10px",
+  backgroundColor: "#FFFFFF",
+  contents: [
+    text(label, { size: "xs", color: MUTED }),
+    text(value, { size: "xxl", weight: "bold", margin: "xs" }),
+    delta ? text(delta.text, { size: "xs", color: delta.color, weight: "bold" }) : text(hint ?? " ", { size: "xs", color: MUTED }),
+  ],
+});
+
+/** Horizontal share bar: label + value on one line, a thin track with a brand-red fill under it. */
+function bar(label: string, n: number, total: number): Box {
+  const pct = total > 0 ? Math.max(3, Math.round((n / total) * 100)) : 0;
+  return {
+    type: "box",
+    layout: "vertical",
+    margin: "md",
+    contents: [
+      {
+        type: "box",
+        layout: "horizontal",
+        contents: [
+          text(label, { size: "sm", flex: 5 }),
+          text(`${n} · ${total > 0 ? Math.round((n / total) * 100) : 0}%`, { size: "sm", color: MUTED, align: "end", flex: 3 }),
+        ],
+      },
+      {
+        type: "box",
+        layout: "vertical",
+        margin: "xs",
+        height: "6px",
+        cornerRadius: "3px",
+        backgroundColor: RULE,
+        contents: [{ type: "box", layout: "vertical", width: `${pct}%`, height: "6px", cornerRadius: "3px", backgroundColor: BRAND, contents: [{ type: "filler" }] }],
+      },
+    ],
+  };
+}
+
+/** A white card on the cream body: icon + label header, then free content. */
+function card(iconName: string, label: string, contents: Box[]): Box {
+  return {
+    type: "box",
+    layout: "vertical",
+    margin: "md",
+    paddingAll: "14px",
+    cornerRadius: "12px",
+    backgroundColor: "#FFFFFF",
+    contents: [
+      { type: "box", layout: "baseline", spacing: "sm", contents: [icon(iconName), text(label, { size: "sm", weight: "bold", flex: 0 })] },
+      ...contents,
+    ],
+  };
+}
+
+const kv = (label: string, value: string): Box => ({
+  type: "box",
+  layout: "horizontal",
+  margin: "sm",
+  contents: [text(label, { size: "sm", color: "#444444", flex: 5 }), text(value, { size: "sm", weight: "bold", align: "end", flex: 3 })],
+});
+
 export function flexDigest(d: DigestInfo, now: Date = new Date()): LineMessage {
   const date = new Intl.DateTimeFormat("th-TH", { timeZone: "Asia/Bangkok", day: "numeric", month: "long", year: "numeric" }).format(now);
-  const works = d.new_works_list.slice(0, 5).map((w) => `• ${clip(w.title, 34)}${w.owner ? ` — @${w.owner}` : ""}`);
-  if (d.new_works > 5) works.push(`…และอีก ${d.new_works - 5} ชิ้น`);
-  return flex(
-    formatDigest(d, now),
-    bubble(
-      "สรุปประจำวัน",
-      date,
-      [
-        section("user-plus", "สมาชิกใหม่", `${d.new_members} คน`, [`สมาชิกทั้งหมด ${d.total_members} คน`]),
-        rule(),
-        section("image", "ผลงานใหม่", `${d.new_works} ชิ้น`, works),
-        rule(),
-        section("message", "ฟีดแบ็ก", `${d.feedback_24h} ใหม่`, [`ค้างตอบ ${d.feedback_open} รายการ`]),
-        rule(),
-        section("flag", "รายงานที่ค้างอยู่", `${d.reports_open} รายการ`),
-        rule(),
-        section("chart", "เซสชันใน 24 ชม.", `${d.sessions_24h}`, [`จากแอป Android ${d.android_sessions_24h}`]),
+  const views = d.views_24h ?? 0;
+  const devices = d.devices ?? {};
+  const devTotal = Object.values(devices).reduce((a, b) => a + b, 0);
+  const devRows = DEVICE_LABEL.filter(([k]) => (devices[k] ?? 0) > 0).map(([k, label]) => bar(label, devices[k], devTotal));
+  const topWorks = (d.top_works ?? []).map((w, i) => kv(`${i + 1}. ${clip(w.title, 22)}${w.owner ? ` @${w.owner}` : ""}`, `${w.views} ครั้ง`));
+  const sources = d.sources ?? [];
+  const srcTotal = sources.reduce((a, b) => a + b.n, 0);
+  const conv = d.sessions_24h > 0 ? Math.round((d.new_members / d.sessions_24h) * 100) : 0;
+  const works = d.new_works_list.slice(0, 4).map((w) => kv(`• ${clip(w.title, 24)}`, w.owner ? `@${w.owner}` : ""));
+  if (d.new_works > 4) works.push(text(`…และอีก ${d.new_works - 4} ชิ้น`, { size: "xs", color: MUTED, margin: "sm" }));
+
+  const blocks: Box[] = [
+    {
+      type: "box",
+      layout: "horizontal",
+      spacing: "md",
+      contents: [
+        tile("ผู้เข้าชม (เซสชัน)", `${d.sessions_24h}`, deltaText(d.sessions_24h, d.sessions_prev)),
+        tile("ยอดดูหน้า", `${views}`, deltaText(views, d.views_prev)),
       ],
-      { label: "เปิดหน้าแอดมิน", uri: `${ADMIN_SITE}/admin` },
-    ),
+    },
+    card("users", "ผู้เข้าชมแยกตามอุปกรณ์", devRows.length > 0 ? devRows : [text("ยังไม่มีข้อมูล", { size: "sm", color: MUTED, margin: "sm" })]),
+  ];
+  if (sources.length > 0) blocks.push(card("chart", "คนเข้ามาจากไหน", sources.map((s) => bar(s.label, s.n, srcTotal))));
+  if (topWorks.length > 0) blocks.push(card("image", "ผลงานที่คนดูมากสุด", topWorks));
+  blocks.push(
+    card("user-plus", "สมาชิกและผลงาน", [
+      kv("สมาชิกใหม่", `${d.new_members} คน`),
+      kv("สมาชิกทั้งหมด", `${d.total_members} คน`),
+      kv("สมัครต่อผู้เข้าชม", `${conv}%`),
+      kv("ผลงานใหม่", `${d.new_works} ชิ้น`),
+      ...works,
+    ]),
+    card("message", "ฟีดแบ็กและรายงาน", [
+      kv("ฟีดแบ็กใหม่", `${d.feedback_24h}`),
+      kv("ฟีดแบ็กค้างตอบ", `${d.feedback_open}`),
+      kv("รายงานที่ค้างอยู่", `${d.reports_open}`),
+    ]),
   );
+
+  return flex(formatDigest(d, now), {
+    type: "bubble",
+    size: "mega",
+    header: {
+      type: "box",
+      layout: "vertical",
+      paddingAll: "18px",
+      backgroundColor: INK,
+      contents: [
+        text("SAMECOR", { size: "xs", color: BRAND, weight: "bold" }),
+        text("สรุปประจำวัน", { size: "xl", weight: "bold", color: "#FFFFFF", margin: "xs" }),
+        text(`${date} · 24 ชม.ที่ผ่านมา`, { size: "xs", color: "#BDBDBD", margin: "xs" }),
+      ],
+    },
+    body: { type: "box", layout: "vertical", paddingAll: "14px", backgroundColor: CREAM, contents: blocks },
+    footer: {
+      type: "box",
+      layout: "vertical",
+      paddingAll: "12px",
+      backgroundColor: CREAM,
+      contents: [{ type: "button", style: "primary", height: "sm", color: INK, action: { type: "uri", label: "เปิดหน้าแอดมิน", uri: `${ADMIN_SITE}/admin` } }],
+    },
+  });
 }
 
 export function flexMember(m: MemberInfo): LineMessage {
