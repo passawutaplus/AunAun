@@ -28,6 +28,14 @@ export function isInspireEnabled(): boolean {
  * plus the forum stay hidden. Data is kept — phase 2 turns it back on with
  * VITE_SAMECOR_COMMERCE_ENABLED=true. Fail-closed: off unless set.
  */
+/**
+ * Beta-test period (Play closed testing): shows the mobile feedback button in the feed bar.
+ * On by default; set VITE_SAMECOR_BETA_FEEDBACK=false (and redeploy) once the beta ends.
+ */
+export function isBetaFeedbackEnabled(): boolean {
+  return import.meta.env.VITE_SAMECOR_BETA_FEEDBACK !== "false";
+}
+
 export function isCommerceEnabled(): boolean {
   // Google Play: digital goods bought inside the Android app must go through Play Billing.
   if (isAndroidApp()) return false;

@@ -63,6 +63,7 @@ import {
   type DBProject,
 } from "@/hooks/useProjects";
 import { useAuth } from "@/hooks/useAuth";
+import { hasStoredSession } from "@/lib/authHint";
 import { useShowFirstPostLabel } from "@/hooks/useHasPublishedProject";
 import { consumePendingHire, navigateToAuth, stashPendingHire } from "@/lib/authRedirect";
 import {
@@ -111,7 +112,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   const queryClient = useQueryClient();
   const { columns } = useFeedGridDensity();
   const houseColumnOffset = useRef(Math.floor(Math.random() * 12));
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { queries: recentSearches, record: recordSearch } = useSearchHistory(user?.id);
   const showFirstPostLabel = useShowFirstPostLabel(user?.id);
   const [search, setSearch] = useState("");
@@ -154,7 +155,11 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   const [designerTools, setDesignerTools] = useState<string[]>([]);
   const [studioFeedSource, setStudioFeedSource] = useState<StudioFeedSource>("all");
   const { filter: communityFilter, setFilter: setCommunityFilter, clearTag } = useCommunityFeedFilter();
-  const studioHome = mode === "projects" || mode === "designers" || mode === "packages" || mode === "objects";
+  const catalogMode = mode === "projects" || mode === "designers" || mode === "packages" || mode === "objects";
+  // The home hero (and the sheet that slides over it) is for guests only: members land straight on the feed,
+  // so a refresh never parks them on the hero again.
+  const showHero = authLoading ? !hasStoredSession() : !user;
+  const studioHome = catalogMode && showHero;
 
   useEffect(() => {
     if (!studioHome) return;
@@ -831,7 +836,9 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
           studioHome ? "pt-0 space-y-0" : "pt-4 space-y-4",
         )}
       >
-        <FeedHero mode={mode} onModeChange={changeMode} search={search} onSearchChange={applyHeroSearch} />
+        {(!catalogMode || studioHome) && (
+          <FeedHero mode={mode} onModeChange={changeMode} search={search} onSearchChange={applyHeroSearch} />
+        )}
 
         <div
           data-feed-sheet={studioHome ? "" : undefined}
