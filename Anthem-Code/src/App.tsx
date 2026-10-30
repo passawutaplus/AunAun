@@ -25,6 +25,7 @@ import RequireAuth from "./components/RequireAuth.tsx";
 import AdminGuard from "./components/admin/AdminGuard.tsx";
 import AuthDialog from "./components/AuthDialog.tsx";
 import FeedbackTicketHost from "./components/feedback/FeedbackTicketHost.tsx";
+import PullToRefresh from "./components/PullToRefresh.tsx";
 import RatingPrompt from "./components/feedback/RatingPrompt.tsx";
 import CloudPrefsSync from "./components/settings/CloudPrefsSync.tsx";
 import { InterestSurveyGate } from "./components/onboarding/InterestSurveyDialog.tsx";
@@ -450,6 +451,7 @@ const App = () => (
           <AndroidAppBanner />
           <AuthDialog />
           <FeedbackTicketHost />
+          <PullToRefresh />
           <RatingPrompt />
           <CloudPrefsSync />
           <InterestSurveyGate />
