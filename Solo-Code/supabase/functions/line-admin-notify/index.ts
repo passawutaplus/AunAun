@@ -15,8 +15,7 @@ import {
   type LineMessage,
   flexDigest,
   flexFeedback,
-  flexMember,
-  flexMembersBurst,
+  flexMembersBatch,
   flexReport,
   isIgnoredEmail,
 } from "../_shared/line-admin-format.ts";
@@ -91,8 +90,7 @@ Deno.serve(async (req) => {
         sentIds.push(r.id);
       }
     }
-    if (members.length >= MEMBER_BURST_AT) texts.push(flexMembersBurst(members));
-    else for (const m of members) texts.push(flexMember(m));
+    if (members.length > 0) texts.push(flexMembersBatch(members));
   }
 
   for (const r of rows) {

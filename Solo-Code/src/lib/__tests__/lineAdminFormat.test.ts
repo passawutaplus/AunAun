@@ -5,6 +5,7 @@ import {
   flexDigest,
   flexFeedback,
   flexMember,
+  flexMembersBatch,
   formatDigest,
   formatFeedback,
   formatMember,
@@ -130,5 +131,23 @@ describe("flex messages", () => {
   it("feedback without message or ticket still builds", () => {
     const m = flexFeedback({ ticket_number: null, kind: null, rating: null, message: null, route: null, created_at: "2026-10-30T07:28:00Z", username: null, from_app: false });
     expect(m.type).toBe("flex");
+  });
+});
+
+describe("members batch (every 2 h)", () => {
+  const mk = (i: number) => ({ id: String(i), email: `u${i}@gmail.com`, provider: i % 2 ? "google" : "email", joined_at: "2026-10-30T07:28:00Z", username: `u${i}`, display_name: `User ${i}`, works: 0 });
+  it("lists names and full emails in one card", () => {
+    const m = flexMembersBatch([mk(1), mk(2)]);
+    expect(m.type).toBe("flex");
+    const json = JSON.stringify(m);
+    expect(json).toContain("2 คน");
+    expect(json).toContain("u1@gmail.com");
+    expect(json).toContain("User 2");
+  });
+  it("caps the list at 15", () => {
+    const json = JSON.stringify(flexMembersBatch(Array.from({ length: 20 }, (_, i) => mk(i))));
+    expect(json).toContain("u14@gmail.com");
+    expect(json).not.toContain("u15@gmail.com");
+    expect(json).toContain("อีก 5 คน");
   });
 });
