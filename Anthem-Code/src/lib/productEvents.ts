@@ -52,6 +52,12 @@ export function getAnalyticsSessionId(): string {
   }
 }
 
+/** Screen class by viewport width (phone / tablet / desktop) so traffic can be split in the admin dashboard. */
+function deviceClass(): "mobile" | "tablet" | "desktop" {
+  const w = window.innerWidth;
+  return w < 768 ? "mobile" : w < 1024 ? "tablet" : "desktop";
+}
+
 export async function trackProductEvent(
   eventName: ProductEventName,
   props: Record<string, unknown> = {},
@@ -80,7 +86,7 @@ export async function trackProductEvent(
         _path: path.slice(0, 500),
         _referrer: referrer,
         // shell: android app / installed PWA / browser — lets app usage be split from web.
-        _props: { ...props, shell: isAndroidApp() ? "android" : isStandaloneDisplay() ? "pwa" : "web" },
+        _props: { ...props, shell: isAndroidApp() ? "android" : isStandaloneDisplay() ? "pwa" : "web", device: deviceClass() },
         _app: "aplus1",
       } as never,
     );

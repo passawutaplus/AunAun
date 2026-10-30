@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   clip,
+  deltaText,
   flexDigest,
   flexFeedback,
   flexMember,
@@ -97,9 +98,30 @@ describe("flex messages", () => {
     if (m.type !== "flex") return;
     expect(m.altText).toContain("สรุปประจำวัน");
     const json = JSON.stringify(m.contents);
-    for (const i of ["user-plus", "image", "message", "flag", "chart"]) expect(json).toContain(`/line-icons/${i}.png`);
+    for (const i of ["user-plus", "message", "users"]) expect(json).toContain(`/line-icons/${i}.png`);
     expect(json).toContain("https://samecor.com/admin");
     expect(m.altText.length).toBeLessThanOrEqual(400);
+  });
+  it("dashboard shows device split, sources, top works and deltas", () => {
+    const m = flexDigest({
+      ...digest, sessions_prev: 50, views_24h: 269, views_prev: 72,
+      devices: { mobile: 30, desktop: 10, android: 28, unknown: 8 },
+      sources: [{ label: "QR / NFC", n: 17 }, { label: "Facebook", n: 4 }],
+      top_works: [{ title: "To day", owner: "goodnight", views: 7 }],
+    });
+    const json = JSON.stringify(m);
+    expect(json).toContain("มือถือ (เว็บ)");
+    expect(json).toContain("คอมพิวเตอร์");
+    expect(json).toContain("QR / NFC");
+    expect(json).toContain("To day");
+    expect(json).toContain("▲ 52%");
+    expect(json).toContain("▲ 274%");
+  });
+  it("deltaText handles empty / equal / down", () => {
+    expect(deltaText(5, 0)).toBeNull();
+    expect(deltaText(5, undefined)).toBeNull();
+    expect(deltaText(5, 5)?.text).toBe("เท่าเมื่อวาน");
+    expect(deltaText(5, 10)?.text).toBe("▼ 50%");
   });
   it("member keeps the full email", () => {
     const m = flexMember({ id: "1", email: "full.addr@gmail.com", provider: "email", joined_at: "2026-10-30T07:28:00Z", username: "u", display_name: "U", works: 2 });
