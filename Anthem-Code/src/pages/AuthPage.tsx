@@ -40,7 +40,6 @@ import {
 } from "@/lib/loginEmailPrefill";
 import { userFacingError } from "@/lib/userFacingError";
 
-const PAPER_SERIF = '"Iowan Old Style", Palatino, Georgia, serif';
 
 /** Brand Book light field (Studio White canvas, Gallery Black ink), pinned on the login page in every theme. */
 const paperVars = {
@@ -144,10 +143,7 @@ const AuthPage = () => {
             aria-hidden
           />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] bg-gradient-to-t from-background from-[18%] via-background/80 via-[55%] to-transparent px-8 pb-8 pt-24">
-            <p
-              className="text-left text-[clamp(2.6rem,4vw,3.75rem)] font-normal leading-[0.92] tracking-tight text-foreground"
-              style={{ fontFamily: PAPER_SERIF }}
-            >
+            <p className="text-left font-display text-[clamp(1.9rem,2.9vw,3rem)] font-light leading-[1.05] tracking-[-0.02em] text-foreground">
               <span className="block">1 Profile to</span>
               <span className="block">
                 <HeroHundredPlus /> <HeroRotatingWord cycle={heroCycle} lang="en" />
