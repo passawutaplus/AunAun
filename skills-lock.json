@@ -6,12 +6,6 @@
       "sourceType": "github",
       "skillPath": "skills/checklist-design/SKILL.md",
       "computedHash": "e1ad62f89c31ee6b1012264e86c97682f5a1b5715e8d2017452267a1f05a4847"
-    },
-    "design-taste-frontend": {
-      "source": "Leonxlnx/taste-skill",
-      "sourceType": "github",
-      "skillPath": "skills/taste-skill/SKILL.md",
-      "computedHash": "6ac8ba6089dcbc303744a507a4587113c5d845ca2f658b3ce2b0b5eab108fb0d"
     }
   }
 }
