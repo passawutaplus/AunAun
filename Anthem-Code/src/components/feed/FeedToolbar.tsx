@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useHideOnScroll } from "@/hooks/useHideOnScroll";
+import { isBetaFeedbackEnabled } from "@/lib/aplus1Launch";
+import { useAuth } from "@/hooks/useAuth";
+import FeedbackHeaderPill from "@/components/feedback/FeedbackHeaderPill";
 import { motion, useReducedMotion } from "framer-motion";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { parseColorList } from "@/lib/colorSearch";
@@ -367,6 +370,9 @@ const FeedToolbar = ({
   }, [openSearchAt, isProjects]);
 
   const homeScrolled = useFeedHomeNavStore((s) => s.scrolled);
+  const { user } = useAuth();
+  // Beta test only: members get a feedback button beside the mode toggle (the desktop nav has its own).
+  const showBetaFeedback = Boolean(user) && isBetaFeedbackEnabled();
   // Mobile: the bar sticks to the top, slides away while scrolling down and back on scroll up.
   const barRef = useRef<HTMLDivElement>(null);
   const { hidden: barHidden, scrolled: barScrolled } = useHideOnScroll(barRef);
@@ -480,7 +486,13 @@ const FeedToolbar = ({
           />
         </div>
         )}
-        <div className="ml-auto min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {showBetaFeedback ? <FeedbackHeaderPill className="ml-auto" /> : null}
+        <div
+          className={cn(
+            "min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+            !showBetaFeedback && "ml-auto",
+          )}
+        >
           <FeedModeToggle
             {...toggleProps}
             compact={mobileSearchOpen && !isProjects}
