@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { PushNotificationSection } from "@/components/settings/PushNotificationSection";
 import { GetInTouchLink } from "@/components/settings/GetInTouchLink";
+import { AppVersionRow, CopyrightLine, SettingsLegalList } from "@/components/settings/SettingsLegalLinks";
 import { Link, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, LogOut, MapPin, Shield, User } from "lucide-react";
@@ -448,6 +449,8 @@ function MobileSettingsList({
           </ul>
         </div>
       ))}
+      <SettingsLegalList />
+      <AppVersionRow />
       <button
         type="button"
         onClick={onSignOut}
@@ -456,6 +459,7 @@ function MobileSettingsList({
         <LogOut className="h-4 w-4" />
         ออกจากระบบ
       </button>
+      <CopyrightLine className="pb-2" />
     </div>
   );
 }
