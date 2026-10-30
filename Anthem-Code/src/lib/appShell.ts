@@ -56,6 +56,21 @@ export function isWebViewApp(): boolean {
   return navigator.userAgent.includes(WEBVIEW_APP_UA_MARKER);
 }
 
+/**
+ * Version of the installed Android app ("1.0.2 (3)"), read from the native shell bridge
+ * (capacitor-shell MainActivity.getAppVersion). Null on the web and in app builds older than the bridge.
+ */
+export function getNativeAppVersion(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const bridge = (window as Window & { SamecorShell?: { getAppVersion?: () => unknown } }).SamecorShell;
+    const v = typeof bridge?.getAppVersion === "function" ? bridge.getAppVersion() : null;
+    return typeof v === "string" && v.trim() ? v.trim() : null;
+  } catch {
+    return null;
+  }
+}
+
 /** True inside the SAMECOR Android app (TWA or Capacitor WebView). */
 export function isAndroidApp(): boolean {
   if (typeof window === "undefined") return false;

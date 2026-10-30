@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { LogOut } from "lucide-react";
 import { GetInTouchLink } from "@/components/settings/GetInTouchLink";
+import { AppVersionRow, CopyrightLine, SettingsLegalNav } from "@/components/settings/SettingsLegalLinks";
 import { cn } from "@/lib/utils";
 import {
   buildSettingsNavGroups,
@@ -64,6 +65,7 @@ export default function SettingsSideNav({
         ))}
         {onSignOut ? (
           <div className="mx-3.5 mt-1 border-t border-border/60 pb-1 pt-1.5">
+            <AppVersionRow className="pb-1 text-left" />
             <button
               type="button"
               onClick={onSignOut}
@@ -74,7 +76,13 @@ export default function SettingsSideNav({
           </div>
         ) : null}
       </div>
-      {variant === "panel" ? <GetInTouchLink className="mt-3" /> : null}
+      {variant === "panel" ? (
+        <>
+          <GetInTouchLink className="mt-3" />
+          <SettingsLegalNav className="mt-3" />
+          <CopyrightLine className="mt-3" />
+        </>
+      ) : null}
     </nav>
   );
 }
