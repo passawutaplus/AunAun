@@ -8,6 +8,7 @@ import { installReportableErrorToasts } from "./lib/reportableToasts";
 import { loadBrandFonts } from "./lib/loadBrandFonts";
 import { registerPwa } from "./lib/pwa";
 import { installAppShell } from "./lib/appShell";
+import { installBootGate } from "./lib/bootGate";
 
 installCspReporter();
 installFeedbackDiagnostics();
@@ -16,6 +17,7 @@ void initErrorMonitoring();
 loadBrandFonts();
 registerPwa();
 installAppShell();
+installBootGate();
 
 const initialUrl = `${window.location.origin}${window.location.pathname}`;
 document.head
