@@ -583,8 +583,8 @@ const ProjectDetailPage = () => {
           recipientId={project.ownerId}
           recipientName={project.owner}
           about={{
+            id: project.id,
             title: project.title,
-            url: absoluteUrl(`/project/${project.id}`),
             coverUrl: dbProject?.cover_url,
           }}
         />
