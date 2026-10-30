@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   clip,
+  flexDigest,
+  flexFeedback,
+  flexMember,
   formatDigest,
   formatFeedback,
   formatMember,
@@ -79,5 +82,31 @@ describe("formatters", () => {
     expect(t).toContain("สมาชิกใหม่: 3 (รวม 50)");
     expect(t).toContain("อีก 2 ชิ้น");
     expect(t).toContain("Android 5");
+  });
+});
+
+describe("flex messages", () => {
+  const digest = {
+    total_members: 19, new_members: 1, new_works: 1,
+    new_works_list: [{ title: "To day", owner: "goodnight" }],
+    feedback_24h: 1, feedback_open: 3, reports_open: 0, sessions_24h: 76, android_sessions_24h: 28,
+  };
+  it("digest is a bubble with icons, a text altText and an admin link", () => {
+    const m = flexDigest(digest);
+    expect(m.type).toBe("flex");
+    if (m.type !== "flex") return;
+    expect(m.altText).toContain("สรุปประจำวัน");
+    const json = JSON.stringify(m.contents);
+    for (const i of ["user-plus", "image", "message", "flag", "chart"]) expect(json).toContain(`/line-icons/${i}.png`);
+    expect(json).toContain("https://samecor.com/admin");
+    expect(m.altText.length).toBeLessThanOrEqual(400);
+  });
+  it("member keeps the full email", () => {
+    const m = flexMember({ id: "1", email: "full.addr@gmail.com", provider: "email", joined_at: "2026-10-30T07:28:00Z", username: "u", display_name: "U", works: 2 });
+    expect(JSON.stringify(m)).toContain("full.addr@gmail.com");
+  });
+  it("feedback without message or ticket still builds", () => {
+    const m = flexFeedback({ ticket_number: null, kind: null, rating: null, message: null, route: null, created_at: "2026-10-30T07:28:00Z", username: null, from_app: false });
+    expect(m.type).toBe("flex");
   });
 });

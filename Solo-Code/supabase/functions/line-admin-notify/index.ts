@@ -12,11 +12,12 @@ import {
   type FeedbackInfo,
   type MemberInfo,
   type ReportInfo,
-  formatDigest,
-  formatFeedback,
-  formatMember,
-  formatMembersBurst,
-  formatReport,
+  type LineMessage,
+  flexDigest,
+  flexFeedback,
+  flexMember,
+  flexMembersBurst,
+  flexReport,
   isIgnoredEmail,
 } from "../_shared/line-admin-format.ts";
 
@@ -27,15 +28,15 @@ const MEMBER_BURST_AT = 4; // this many sign-ups in one run -> one summary messa
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 
-async function pushToGroup(token: string, groupId: string, texts: string[]) {
+async function pushToGroup(token: string, groupId: string, msgs: LineMessage[]) {
   // LINE allows up to 5 messages per push call; each at most 5000 characters.
-  for (let i = 0; i < texts.length; i += 5) {
+  for (let i = 0; i < msgs.length; i += 5) {
     const res = await fetch("https://api.line.me/v2/bot/message/push", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({
         to: groupId,
-        messages: texts.slice(i, i + 5).map((text) => ({ type: "text", text: text.slice(0, 4900) })),
+        messages: msgs.slice(i, i + 5),
       }),
     });
     if (!res.ok) {
@@ -72,7 +73,7 @@ Deno.serve(async (req) => {
   const rows = (claimed ?? []) as OutboxRow[];
   if (rows.length === 0) return json({ processed: 0 });
 
-  const texts: string[] = [];
+  const texts: LineMessage[] = [];
   const sentIds: number[] = [];
   const skippedIds: number[] = [];
 
@@ -90,8 +91,8 @@ Deno.serve(async (req) => {
         sentIds.push(r.id);
       }
     }
-    if (members.length >= MEMBER_BURST_AT) texts.push(formatMembersBurst(members));
-    else for (const m of members) texts.push(formatMember(m));
+    if (members.length >= MEMBER_BURST_AT) texts.push(flexMembersBurst(members));
+    else for (const m of members) texts.push(flexMember(m));
   }
 
   for (const r of rows) {
@@ -99,20 +100,20 @@ Deno.serve(async (req) => {
       const { data } = await admin.rpc("admin_line_feedback_info", { _id: r.ref_id });
       const f = ((data ?? []) as FeedbackInfo[])[0];
       if (f) {
-        texts.push(formatFeedback(f));
+        texts.push(flexFeedback(f));
         sentIds.push(r.id);
       } else skippedIds.push(r.id);
     } else if (r.kind === "report" && r.ref_id) {
       const { data } = await admin.rpc("admin_line_report_info", { _id: r.ref_id });
       const rep = ((data ?? []) as ReportInfo[])[0];
       if (rep) {
-        texts.push(formatReport(rep));
+        texts.push(flexReport(rep));
         sentIds.push(r.id);
       } else skippedIds.push(r.id);
     } else if (r.kind === "digest") {
       const { data } = await admin.rpc("admin_line_digest");
       if (data) {
-        texts.push(formatDigest(data as DigestInfo));
+        texts.push(flexDigest(data as DigestInfo));
         sentIds.push(r.id);
       } else skippedIds.push(r.id);
     }
