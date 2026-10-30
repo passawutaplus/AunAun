@@ -5,6 +5,7 @@ import {
   flexDigest,
   flexFeedback,
   flexMember,
+  batchWindow,
   flexMembersBatch,
   formatDigest,
   formatFeedback,
@@ -149,5 +150,25 @@ describe("members batch (every 2 h)", () => {
     expect(json).toContain("u14@gmail.com");
     expect(json).not.toContain("u15@gmail.com");
     expect(json).toContain("อีก 5 คน");
+  });
+});
+
+describe("batchWindow", () => {
+  it("2-hour slots in Bangkok time, 08:00 covers the night", () => {
+    expect(batchWindow(new Date("2026-10-30T03:00:00Z"))).toBe("08:00–10:00 น.");
+    expect(batchWindow(new Date("2026-10-30T01:00:00Z"))).toBe("00:00–08:00 น.");
+    expect(batchWindow(new Date("2026-10-30T05:00:00Z"))).toBe("10:00–12:00 น.");
+    expect(batchWindow(new Date("2026-10-30T17:00:00Z"))).toBe("22:00–00:00 น.");
+  });
+  it("member card shows the window and each sign-up time", () => {
+    const json = JSON.stringify(
+      flexMembersBatch(
+        [{ id: "1", email: "a@gmail.com", provider: "google", joined_at: "2026-10-30T09:05:00Z", username: "a", display_name: "A", works: 0 }],
+        new Date("2026-10-30T09:00:00Z"),
+      ),
+    );
+    expect(json).toContain("ช่วง 14:00–16:00 น.");
+    expect(json).toContain("สมัคร 16:05 น.");
+    expect(json).toContain("separator");
   });
 });
