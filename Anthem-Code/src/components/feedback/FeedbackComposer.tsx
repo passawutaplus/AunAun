@@ -148,45 +148,46 @@ export default function FeedbackComposer() {
       <div
         className={cn(
           "relative flex max-h-[92dvh] w-full max-w-[440px] flex-col overflow-hidden rounded-t-2xl shadow-sm sm:rounded-2xl",
-          doneNumber ? "bg-gradient-brand text-white" : "bg-background",
+          // Thank-you card: ink fill in light mode, paper fill in dark mode — text follows via primary-foreground.
+          doneNumber ? "bg-primary text-primary-foreground" : "bg-background",
         )}
       >
         {doneNumber ? (
           <div className="relative px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-10 text-center">
             <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-              <div className="absolute -left-10 -top-16 h-44 w-44 rounded-full bg-white/25 blur-2xl" />
+              <div className="absolute -left-10 -top-16 h-44 w-44 rounded-full bg-primary-foreground/10 blur-2xl" />
               <div className="absolute -bottom-16 -right-8 h-52 w-52 rounded-full bg-warning/10 blur-3xl" />
-              <div className="absolute left-1/2 top-8 h-28 w-40 -translate-x-1/2 rounded-full bg-white/15 blur-2xl" />
+              <div className="absolute left-1/2 top-8 h-28 w-40 -translate-x-1/2 rounded-full bg-primary-foreground/10 blur-2xl" />
             </div>
             <button
               type="button"
               aria-label="ปิด"
-              className="absolute right-3 top-3 z-10 rounded-md p-1 text-white/80 hover:text-white"
+              className="absolute right-3 top-3 z-10 rounded-md p-1 text-primary-foreground/80 hover:text-primary-foreground"
               onClick={close}
             >
               <X className="h-4 w-4" />
             </button>
             <div className="relative">
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-white/20 ring-1 ring-white/30">
-                <Check className="h-6 w-6 text-white" strokeWidth={2.5} />
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary-foreground/15 ring-1 ring-primary-foreground/30">
+                <Check className="h-6 w-6 text-primary-foreground" strokeWidth={2.5} />
               </div>
-              <h2 className="text-xl font-bold tracking-tight">ได้รับแล้ว ขอบคุณ</h2>
-              <p className="mx-auto mt-2 max-w-[18rem] text-[13px] leading-relaxed text-white/90">
-                ทีมจะอ่านทุกข้อความ และแจ้งกลับเมื่อนำไปใช้หรือแก้แล้ว
+              <h2 className="text-xl font-bold tracking-tight">ขอบคุณมากนะ ได้รับแล้ว 🙌</h2>
+              <p className="mx-auto mt-2 max-w-[18rem] text-[13px] leading-relaxed text-primary-foreground/90">
+                ทีมเราอ่านเองทุกข้อความเลย ถ้าแก้หรือนำไปใช้แล้ว จะบอกให้รู้นะ
               </p>
-              <p className="mt-3 text-sm text-white/80">
-                เลขตั๋ว <span className="font-mono font-medium text-white">{doneNumber}</span>
+              <p className="mt-3 text-sm text-primary-foreground/80">
+                เลขอ้างอิงของคุณ <span className="font-mono font-medium text-primary-foreground">{doneNumber}</span>
               </p>
               <BetaProgress
                 userId={user?.id}
                 tone="onBrand"
-                className="mx-auto mt-5 max-w-[16rem] rounded-xl bg-white/10 p-3 ring-1 ring-white/20"
+                className="mx-auto mt-5 max-w-[16rem] rounded-xl bg-primary-foreground/10 p-3 ring-1 ring-primary-foreground/20"
               />
               <Button
-                className="mx-auto mt-6 mb-2 h-11 w-40 border-0 bg-white text-primary hover:bg-white/90"
+                className="mx-auto mt-6 mb-2 h-11 w-40 border-0 bg-primary-foreground text-primary hover:bg-primary-foreground/90"
                 onClick={close}
               >
-                ปิด
+                โอเค
               </Button>
             </div>
           </div>
