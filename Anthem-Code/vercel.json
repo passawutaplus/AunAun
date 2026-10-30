@@ -46,7 +46,7 @@
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/go", "destination": "/go.html" },
     {
-      "source": "/((?!api/|assets/|sitemap|robots\\.txt|llms\\.txt|google.*\\.html|icons/|manifest\\.webmanifest|sw\\.js|\\.well-known/).*)",
+      "source": "/((?!api/|assets/|line-icons/|sitemap|robots\\.txt|llms\\.txt|google.*\\.html|icons/|manifest\\.webmanifest|sw\\.js|\\.well-known/).*)",
       "destination": "/index.html"
     }
   ],
