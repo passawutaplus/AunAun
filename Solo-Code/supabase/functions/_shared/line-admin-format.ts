@@ -181,3 +181,144 @@ export function formatDigest(d: DigestInfo, now: Date = new Date()): string {
   lines.push(`${ADMIN_SITE}/admin`);
   return lines.join("\n");
 }
+
+// ---------------------------------------------------------------------------
+// Flex Message versions (what the group actually receives): flat black icons, one block per category.
+// The plain-text formatters above stay as the notification preview (altText) and as a fallback.
+// ---------------------------------------------------------------------------
+
+export type LineMessage =
+  | { type: "text"; text: string }
+  | { type: "flex"; altText: string; contents: Record<string, unknown> };
+
+const ICON_BASE = `${ADMIN_SITE}/line-icons`;
+const INK = "#111111";
+const MUTED = "#8A8A8A";
+const RULE = "#E6E4DE";
+
+type Box = Record<string, unknown>;
+
+const text = (t: string, o: Box = {}): Box => ({ type: "text", text: t, color: INK, wrap: true, ...o });
+const icon = (name: string): Box => ({ type: "icon", url: `${ICON_BASE}/${name}.png`, size: "md" });
+const rule = (): Box => ({ type: "separator", margin: "lg", color: RULE });
+
+/** One category block: icon + small label on top, the value big underneath, optional detail lines. */
+function section(iconName: string, label: string, value: string, details: string[] = []): Box {
+  const contents: Box[] = [
+    {
+      type: "box",
+      layout: "baseline",
+      spacing: "sm",
+      contents: [icon(iconName), text(label, { size: "sm", color: MUTED, flex: 0 })],
+    },
+    text(value, { size: "xl", weight: "bold", margin: "xs" }),
+  ];
+  for (const d of details) contents.push(text(d, { size: "sm", color: "#444444", margin: "xs" }));
+  return { type: "box", layout: "vertical", margin: "lg", contents };
+}
+
+function bubble(title: string, subtitle: string | null, blocks: Box[], link: { label: string; uri: string }): Box {
+  const head: Box[] = [text(title, { size: "lg", weight: "bold" })];
+  if (subtitle) head.push(text(subtitle, { size: "xs", color: MUTED, margin: "xs" }));
+  return {
+    type: "bubble",
+    size: "kilo",
+    body: {
+      type: "box",
+      layout: "vertical",
+      paddingAll: "20px",
+      contents: [...head, rule(), ...blocks],
+    },
+    footer: {
+      type: "box",
+      layout: "vertical",
+      paddingAll: "12px",
+      contents: [{ type: "button", style: "link", height: "sm", color: INK, action: { type: "uri", label: link.label, uri: link.uri } }],
+    },
+  };
+}
+
+const flex = (altText: string, contents: Box): LineMessage => ({ type: "flex", altText: clip(altText, 400), contents });
+
+export function flexDigest(d: DigestInfo, now: Date = new Date()): LineMessage {
+  const date = new Intl.DateTimeFormat("th-TH", { timeZone: "Asia/Bangkok", day: "numeric", month: "long", year: "numeric" }).format(now);
+  const works = d.new_works_list.slice(0, 5).map((w) => `• ${clip(w.title, 34)}${w.owner ? ` — @${w.owner}` : ""}`);
+  if (d.new_works > 5) works.push(`…และอีก ${d.new_works - 5} ชิ้น`);
+  return flex(
+    formatDigest(d, now),
+    bubble(
+      "สรุปประจำวัน",
+      date,
+      [
+        section("user-plus", "สมาชิกใหม่", `${d.new_members} คน`, [`สมาชิกทั้งหมด ${d.total_members} คน`]),
+        rule(),
+        section("image", "ผลงานใหม่", `${d.new_works} ชิ้น`, works),
+        rule(),
+        section("message", "ฟีดแบ็ก", `${d.feedback_24h} ใหม่`, [`ค้างตอบ ${d.feedback_open} รายการ`]),
+        rule(),
+        section("flag", "รายงานที่ค้างอยู่", `${d.reports_open} รายการ`),
+        rule(),
+        section("chart", "เซสชันใน 24 ชม.", `${d.sessions_24h}`, [`จากแอป Android ${d.android_sessions_24h}`]),
+      ],
+      { label: "เปิดหน้าแอดมิน", uri: `${ADMIN_SITE}/admin` },
+    ),
+  );
+}
+
+export function flexMember(m: MemberInfo): LineMessage {
+  const name = m.display_name || m.username || "(ไม่มีชื่อ)";
+  const via = m.provider === "google" ? "Google" : "อีเมล";
+  const details = [`อีเมล: ${m.email ?? "-"}`, `สมัครด้วย ${via} · ${bkkTime(m.joined_at)}`];
+  if (m.works > 0) details.push(`ลงผลงานแล้ว ${m.works} ชิ้น`);
+  return flex(
+    formatMember(m),
+    bubble("สมาชิกใหม่", null, [section("user-plus", m.username ? `@${m.username}` : "สมาชิก", name, details)], {
+      label: m.username ? "ดูโปรไฟล์" : "เปิดหน้าแอดมิน",
+      uri: m.username ? `${ADMIN_SITE}/${m.username}` : `${ADMIN_SITE}/admin`,
+    }),
+  );
+}
+
+export function flexMembersBurst(members: MemberInfo[]): LineMessage {
+  const lines = members.slice(0, 10).map((m) => `• ${m.display_name || m.username || "(ไม่มีชื่อ)"} — ${m.email ?? "-"}`);
+  if (members.length > 10) lines.push(`…และอีก ${members.length - 10} คน`);
+  return flex(
+    formatMembersBurst(members),
+    bubble("สมาชิกใหม่", null, [section("users", "สมัครพร้อมกัน", `${members.length} คน`, lines)], {
+      label: "เปิดหน้าแอดมิน",
+      uri: `${ADMIN_SITE}/admin`,
+    }),
+  );
+}
+
+export function flexFeedback(f: FeedbackInfo): LineMessage {
+  const kind = KIND_LABEL[f.kind ?? ""] ?? f.kind ?? "ฟีดแบ็ก";
+  const stars = f.rating ? ` ${"★".repeat(Math.max(0, Math.min(5, f.rating)))}` : "";
+  const msg = clip(f.message, 120);
+  const meta = [f.username ? `โดย @${f.username}` : "", f.route ? `หน้า ${f.route}` : "", bkkTime(f.created_at)].filter(Boolean).join(" · ");
+  return flex(
+    formatFeedback(f),
+    bubble(
+      "ฟีดแบ็กใหม่",
+      f.ticket_number,
+      [section("message", f.from_app ? "จากแอป" : "จากเว็บ", `${kind}${stars}`, [...(msg ? [`"${msg}"`] : []), meta])],
+      { label: "เปิดหน้าฟีดแบ็ก", uri: `${ADMIN_SITE}/admin/feedback` },
+    ),
+  );
+}
+
+export function flexReport(r: ReportInfo): LineMessage {
+  const target = TARGET_LABEL[r.target_type ?? ""] ?? r.target_type ?? "เนื้อหา";
+  const reason = REASON_LABEL[r.reason ?? ""] ?? r.reason ?? "-";
+  const details = clip(r.details, 120);
+  const meta = [r.reporter ? `รายงานโดย @${r.reporter}` : "", bkkTime(r.created_at)].filter(Boolean).join(" · ");
+  return flex(
+    formatReport(r),
+    bubble(
+      "มีรายงานใหม่",
+      null,
+      [section("flag", `${target}${r.target_owner ? ` ของ @${r.target_owner}` : ""}`, reason, [...(details ? [`"${details}"`] : []), meta])],
+      { label: "เปิดหน้ารายงาน", uri: `${ADMIN_SITE}/admin/reports` },
+    ),
+  );
+}
