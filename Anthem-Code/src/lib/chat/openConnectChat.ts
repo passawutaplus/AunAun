@@ -5,7 +5,13 @@ import { isBlockedFromOpportunity } from "@/hooks/useCommunityPostInteractions";
  * "Just connect": open (or reuse) a plain chat with another creator — no hire / collab request needed.
  * Reuses an existing connect chat between the two people in either direction.
  */
-export async function openConnectChat(senderId: string, otherId: string, note: string): Promise<string> {
+export async function openConnectChat(
+  senderId: string,
+  otherId: string,
+  note: string,
+  /** Chat started from a work: sent right after the text as a work card (message_type "project"). */
+  project?: { id: string; title: string },
+): Promise<string> {
   if (senderId === otherId) throw new Error("ทักแชทตัวเองไม่ได้");
   if (await isBlockedFromOpportunity(senderId, otherId).catch(() => false)) {
     throw new Error("ส่งข้อความหาผู้ใช้นี้ไม่ได้");
@@ -65,6 +71,18 @@ export async function openConnectChat(senderId: string, otherId: string, note: s
     void supabase.functions.invoke("notify-anthem-chat", {
       body: { conversation_id: conversationId, message_id: (inserted as { id: string }).id },
     });
+  }
+  if (project) {
+    // The card is best-effort: the greeting above already went out, so a failure here must not block the chat.
+    await supabase
+      .from("messages")
+      .insert({
+        conversation_id: conversationId,
+        sender_id: senderId,
+        content: project.title,
+        message_type: "project",
+        project_id: project.id,
+      } as never);
   }
   return conversationId;
 }

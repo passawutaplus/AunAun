@@ -15,7 +15,6 @@ import { navigateToAuth } from "@/lib/authRedirect";
 import { naturalFeedCoverUrl } from "@/lib/feedProjectCover";
 import { smoothEase } from "@/lib/motion";
 import { profilePublicPath } from "@/lib/profileRoutes";
-import { absoluteUrl } from "@/lib/seo";
 import { useQuickView } from "@/stores/quickViewStore";
 
 const compact = (n: number) =>
@@ -274,7 +273,7 @@ export function ProjectQuickViewHost() {
           onOpenChange={(open) => !open && setChatFor(null)}
           recipientId={chatFor.ownerId}
           recipientName={chatFor.owner}
-          about={{ title: chatFor.title, url: absoluteUrl(`/project/${chatFor.id}`), coverUrl: chatFor.image }}
+          about={{ id: chatFor.id, title: chatFor.title, coverUrl: chatFor.image }}
         />
       ) : null}
     </>
