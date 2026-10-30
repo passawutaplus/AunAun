@@ -142,6 +142,16 @@ export function formatMembersBurst(members: MemberInfo[]): string {
   return lines.join("\n");
 }
 
+/** One message for every sign-up of the last 2-hour window. */
+export function formatMembersBatch(members: MemberInfo[]): string {
+  const lines = [`🆕 สมาชิกใหม่ ${members.length} คน`];
+  for (const m of members.slice(0, 15)) {
+    lines.push(`• ${m.display_name || m.username || "(ไม่มีชื่อ)"} — ${m.email ?? "-"} (${m.provider === "google" ? "Google" : "อีเมล"})`);
+  }
+  if (members.length > 15) lines.push(`…และอีก ${members.length - 15} คน`);
+  return lines.join("\n");
+}
+
 export function formatFeedback(f: FeedbackInfo): string {
   const kind = KIND_LABEL[f.kind ?? ""] ?? f.kind ?? "ฟีดแบ็ก";
   const stars = f.rating ? ` ${"★".repeat(Math.max(0, Math.min(5, f.rating)))}` : "";
@@ -420,6 +430,21 @@ export function flexMembersBurst(members: MemberInfo[]): LineMessage {
   return flex(
     formatMembersBurst(members),
     bubble("สมาชิกใหม่", null, [section("users", "สมัครพร้อมกัน", `${members.length} คน`, lines)], {
+      label: "เปิดหน้าแอดมิน",
+      uri: `${ADMIN_SITE}/admin`,
+    }),
+  );
+}
+
+export function flexMembersBatch(members: MemberInfo[], now: Date = new Date()): LineMessage {
+  const lines = members.slice(0, 15).map(
+    (m) => `• ${m.display_name || m.username || "(ไม่มีชื่อ)"}${m.username ? ` @${m.username}` : ""}
+   ${m.email ?? "-"} · ${m.provider === "google" ? "Google" : "อีเมล"}`,
+  );
+  if (members.length > 15) lines.push(`…และอีก ${members.length - 15} คน`);
+  return flex(
+    formatMembersBatch(members),
+    bubble("สมาชิกใหม่", `อัปเดต ${bkkTime(now.toISOString())}`, [section("user-plus", "ในช่วงที่ผ่านมา", `${members.length} คน`, lines)], {
       label: "เปิดหน้าแอดมิน",
       uri: `${ADMIN_SITE}/admin`,
     }),
