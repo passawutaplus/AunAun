@@ -10,7 +10,7 @@ export const Route = createFileRoute("/terms")({
     buildPublicPageHead({
       title: "ข้อกำหนดการใช้งาน",
       description:
-        "ข้อกำหนดและเงื่อนไข So1o Freelancer — แพ็ก Pro/Pro+ Stripe Connect Support Hub หน้าลูกค้า Track/Brief และ ecosystem Aplus1",
+        "ข้อกำหนดและเงื่อนไข So1o Freelancer — แพ็ก Pro/Pro+ Stripe Connect Support Hub หน้าลูกค้า Track/Brief และ ecosystem SAMECOR",
       path: "/terms",
     }),
   component: TermsPage,
@@ -52,10 +52,10 @@ function TermsPage() {
         </p>
       </LegalSectionBlock>
 
-      <LegalSectionBlock id="ecosystem" title="3. So1o + Aplus1 (Ecosystem)">
+      <LegalSectionBlock id="ecosystem" title="3. So1o + SAMECOR (Ecosystem)">
         <ul className="list-disc pl-5 space-y-1.5">
           <li>
-            <strong>So1o</strong> = หลังบ้านฟรีแลนซ์ ({LEGAL.siteUrl}) · <strong>Aplus1</strong> =
+            <strong>So1o</strong> = หลังบ้านฟรีแลนซ์ ({LEGAL.siteUrl}) · <strong>SAMECOR</strong> =
             โชว์เคสผลงาน ({LEGAL.ecosystemUrl}) — บัญชีเดียว สมัครครั้งเดียว
           </li>
           <li>
@@ -76,7 +76,7 @@ function TermsPage() {
             target="_blank"
             rel="noopener noreferrer"
           >
-            ข้อกำหนด Aplus1
+            ข้อกำหนด SAMECOR
           </a>
           {" · "}
           <a
@@ -85,7 +85,7 @@ function TermsPage() {
             target="_blank"
             rel="noopener noreferrer"
           >
-            PDPA Aplus1
+            PDPA SAMECOR
           </a>
         </p>
       </LegalSectionBlock>

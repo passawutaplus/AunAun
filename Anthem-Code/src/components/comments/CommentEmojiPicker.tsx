@@ -42,7 +42,7 @@ export function CommentEmojiPicker({ onPick, disabled }: Props) {
       </button>
       {open ? (
         <div
-          className="absolute left-0 bottom-full z-30 mb-1 w-56 max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-popover p-2 shadow-lg"
+          className="absolute left-0 bottom-full z-30 mb-1 w-56 max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-popover p-2 shadow-sm"
           role="listbox"
           aria-label="เลือกอีโมจิ"
         >

@@ -4,16 +4,19 @@ import { Checkbox } from "@/components/ui/checkbox";
 import type { Category } from "@/data/projectTypes";
 import type { ProjectChipFilter } from "@/lib/drillProject";
 
-export type DesignerSort = "newest" | "projects" | "views";
+export type DesignerSort = "newest" | "projects" | "views" | "price_asc";
 
-export const SORT_LABELS: Record<DesignerSort, string> = {
+export const SORT_LABELS: Partial<Record<DesignerSort, string>> = {
   newest: "ล่าสุด",
   projects: "ผลงานมากสุด",
   views: "วิวมากสุด",
 };
 
-export const PACKAGE_SORT_LABELS: Record<DesignerSort, string> = {
-  ...SORT_LABELS,
+/** Packages: "newest" keeps the feed's own order (For you / ล่าสุด / ติดตาม). */
+export const PACKAGE_SORT_LABELS: Partial<Record<DesignerSort, string>> = {
+  newest: "แนะนำ",
+  views: "วิวมากสุด",
+  price_asc: "ราคาต่ำสุด",
   projects: "ราคาสูงสุด",
 };
 
@@ -33,7 +36,7 @@ interface FilterPanelProps {
   selectedFeedMode?: string;
   onFeedModeSelect?: (v: string) => void;
   showFeedModes?: boolean;
-  sortLabels?: Record<DesignerSort, string>;
+  sortLabels?: Partial<Record<DesignerSort, string>>;
 }
 
 export const FilterPanel = ({

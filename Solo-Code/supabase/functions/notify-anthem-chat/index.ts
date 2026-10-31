@@ -49,8 +49,9 @@ Deno.serve(async (req) => {
   }
 
   const admin = createClient(supabaseUrl, serviceKey);
+  const shared = sharedDb(admin);
 
-  const { data: conv } = await admin
+  const { data: conv } = await shared
     .from("conversations")
     .select("id, client_id, freelancer_id, project_title, conversation_type, kind")
     .eq("id", body.conversation_id)
@@ -62,7 +63,7 @@ Deno.serve(async (req) => {
 
   let recipientIds: string[] = [];
   if (isGroup) {
-    const { data: members } = await admin
+    const { data: members } = await shared
       .from("conversation_members")
       .select("user_id")
       .eq("conversation_id", body.conversation_id);
@@ -79,12 +80,12 @@ Deno.serve(async (req) => {
   }
 
   const { data: msgRow } = body.message_id
-    ? await admin
+    ? await shared
         .from("messages")
         .select("id, content, sender_id, message_type")
         .eq("id", body.message_id)
         .maybeSingle()
-    : await admin
+    : await shared
         .from("messages")
         .select("id, content, sender_id, message_type")
         .eq("conversation_id", body.conversation_id)
@@ -158,7 +159,7 @@ Deno.serve(async (req) => {
           templateData: {
             recipientName: notify.displayName ?? "คุณ",
             senderName,
-            conversationTitle: conv.project_title ?? "แชท Pixel100",
+            conversationTitle: conv.project_title ?? "แชท SAMECOR",
             preview,
             actionUrl,
           },

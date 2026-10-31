@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/hooks/useAuth";
 import { SensitiveActionReauthProvider } from "@/components/legal/SensitiveActionReauthProvider";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { isInspireEnabled } from "@/lib/aplus1Launch";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -15,6 +16,7 @@ import AuthCallbackPage from "./pages/AuthCallbackPage.tsx";
 import AuthForgotPage from "./pages/AuthForgotPage.tsx";
 import ResetPasswordPage from "./pages/ResetPasswordPage.tsx";
 import CookieConsent from "./components/CookieConsent.tsx";
+import AndroidAppBanner from "./components/AndroidAppBanner.tsx";
 import GoogleAnalytics from "./components/seo/GoogleAnalytics.tsx";
 import PolicyReconsentGate from "./components/legal/PolicyReconsentGate.tsx";
 import FloatingNav from "./components/FloatingNav.tsx";
@@ -23,10 +25,13 @@ import RequireAuth from "./components/RequireAuth.tsx";
 import AdminGuard from "./components/admin/AdminGuard.tsx";
 import AuthDialog from "./components/AuthDialog.tsx";
 import FeedbackTicketHost from "./components/feedback/FeedbackTicketHost.tsx";
+import PullToRefresh from "./components/PullToRefresh.tsx";
+import RatingPrompt from "./components/feedback/RatingPrompt.tsx";
+import CloudPrefsSync from "./components/settings/CloudPrefsSync.tsx";
 import { InterestSurveyGate } from "./components/onboarding/InterestSurveyDialog.tsx";
 import { SkipLink } from "./components/a11y/SkipLink.tsx";
 import { OfflineBanner } from "./components/OfflineBanner.tsx";
-import RedirectTo, { JobsToHiringRedirect } from "./components/RedirectTo.tsx";
+import RedirectTo, { JobsToHiringRedirect, SearchShortcutRedirect } from "./components/RedirectTo.tsx";
 import VanityProfileRoute from "./components/profile/VanityProfileRoute.tsx";
 import RouteFallback from "./components/RouteFallback.tsx";
 import DemoModeBanner from "./components/DemoModeBanner.tsx";
@@ -44,6 +49,8 @@ const PortfolioProfilePage = lazy(() => import("./pages/PortfolioProfilePage.tsx
 const PortfolioManagePage = lazy(() => import("./pages/PortfolioManagePage.tsx"));
 const DashboardPage = lazy(() => import("./pages/DashboardPage.tsx"));
 const DashboardHomePage = lazy(() => import("./pages/DashboardHomePage.tsx"));
+const DashboardInsightsPage = lazy(() => import("./pages/DashboardInsightsPage.tsx"));
+const DashboardBillingPage = lazy(() => import("./pages/DashboardBillingPage.tsx"));
 const DashboardPortfolioPage = lazy(() => import("./pages/DashboardPortfolioPage.tsx"));
 const DashboardReviewsPage = lazy(() => import("./pages/DashboardReviewsPage.tsx"));
 const DashboardDocumentsPage = lazy(() => import("./pages/DashboardDocumentsPage.tsx"));
@@ -78,6 +85,7 @@ const InspireBoardsPage = lazy(() => import("./pages/InspireBoardsPage.tsx"));
 const InspireBoardDetailPage = lazy(() => import("./pages/InspireBoardDetailPage.tsx"));
 const MyReportsPage = lazy(() => import("./pages/MyReportsPage.tsx"));
 const MyFeedbackPage = lazy(() => import("./pages/MyFeedbackPage.tsx"));
+const ChangelogPage = lazy(() => import("./pages/ChangelogPage.tsx"));
 const VerificationPage = lazy(() => import("./pages/VerificationPage.tsx"));
 const AdminLayout = lazy(() => import("./components/admin/AdminLayout"));
 const OverviewPage = lazy(() => import("./pages/admin/OverviewPage"));
@@ -136,6 +144,7 @@ const PrivacyPage = lazy(() => import("./pages/legal/PrivacyPage.tsx"));
 const TermsPage = lazy(() => import("./pages/legal/TermsPage.tsx"));
 const CookiesPage = lazy(() => import("./pages/legal/CookiesPage.tsx"));
 const DataRightsPage = lazy(() => import("./pages/legal/DataRightsPage.tsx"));
+const DeleteAccountPage = lazy(() => import("./pages/legal/DeleteAccountPage.tsx"));
 const IntellectualPropertyPage = lazy(() => import("./pages/legal/IntellectualPropertyPage.tsx"));
 const CommunityGuidelinesPage = lazy(() => import("./pages/legal/CommunityGuidelinesPage.tsx"));
 const CopyrightReportPage = lazy(() => import("./pages/legal/CopyrightReportPage.tsx"));
@@ -171,7 +180,7 @@ const AdvertisePage = lazy(() => import("./pages/AdvertisePage.tsx"));
 const LearnShell = lazy(() =>
   import("./components/learn/LearnShell.tsx").then((m) => ({ default: m.LearnShell })),
 );
-const LearnHubPage = lazy(() => import("./pages/learn/LearnHubPage.tsx"));
+const PlatformLandingPage = lazy(() => import("./pages/learn/PlatformLandingPage.tsx"));
 const HelpShell = lazy(() =>
   import("./components/help/HelpShell.tsx").then((m) => ({ default: m.HelpShell })),
 );
@@ -188,6 +197,8 @@ const ReferralPage = lazy(() => import("./pages/ReferralPage.tsx"));
 const FollowConnectionsPage = lazy(() => import("./pages/FollowConnectionsPage.tsx"));
 const ReviewFormPreviewPage = lazy(() => import("./pages/dev/ReviewFormPreviewPage.tsx"));
 const HireCancelPreviewPage = lazy(() => import("./pages/dev/HireCancelPreviewPage.tsx"));
+const OfferDialogPreviewPage = lazy(() => import("./pages/dev/OfferDialogPreviewPage.tsx"));
+const BillingPreviewPage = lazy(() => import("./pages/dev/BillingPreviewPage.tsx"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -224,8 +235,9 @@ const App = () => (
               <Route element={<PageTransition />}>
               <Route path="/" element={<Index />} />
               <Route path="/learn" element={<LearnShell />}>
-                <Route index element={<LearnHubPage />} />
+                <Route index element={<PlatformLandingPage />} />
               </Route>
+              <Route path="/search" element={<SearchShortcutRedirect />} />
               <Route path="/learn/who" element={<RedirectTo to="/learn#who" />} />
               <Route path="/learn/start" element={<RedirectTo to="/learn#start" />} />
               <Route path="/learn/creators" element={<RedirectTo to="/learn#creators" />} />
@@ -235,6 +247,7 @@ const App = () => (
               <Route path="/learn/trust" element={<RedirectTo to="/learn#trust" />} />
               <Route path="/learn/px" element={<RedirectTo to="/learn" />} />
               <Route path="/learn/faq" element={<RedirectTo to="/help" />} />
+              <Route path="/changelog" element={<ChangelogPage />} />
               <Route path="/help" element={<HelpShell />}>
                 <Route index element={<HelpHubPage />} />
                 <Route path=":categoryId" element={<HelpCategoryPage />} />
@@ -242,6 +255,8 @@ const App = () => (
               </Route>
               <Route path="/dev/review-form" element={<ReviewFormPreviewPage />} />
               <Route path="/dev/hire-cancel" element={<HireCancelPreviewPage />} />
+              <Route path="/dev/offer-dialog" element={<OfferDialogPreviewPage />} />
+              <Route path="/dev/billing" element={<BillingPreviewPage />} />
               <Route path="/research" element={<ResearchPage />} />
               <Route path="/research/feedback" element={<UxResearchFeedbackPage />} />
               <Route path="/auth" element={<AuthPage />} />
@@ -258,6 +273,8 @@ const App = () => (
               <Route path="/dashboard/packages" element={<RequireAuth><DashboardPortfolioPage mode="packages" /></RequireAuth>} />
               <Route path="/dashboard/objects" element={<RequireAuth><DashboardPortfolioPage mode="objects" /></RequireAuth>} />
               <Route path="/dashboard/catalogs" element={<RequireAuth><DashboardPortfolioPage mode="catalogs" /></RequireAuth>} />
+              <Route path="/dashboard/insights" element={<RequireAuth><DashboardInsightsPage /></RequireAuth>} />
+              <Route path="/dashboard/billing" element={<RequireAuth><DashboardBillingPage /></RequireAuth>} />
               <Route path="/dashboard/reviews" element={<RequireAuth><DashboardReviewsPage /></RequireAuth>} />
               <Route path="/dashboard/documents" element={<RequireAuth><DashboardDocumentsPage /></RequireAuth>} />
               <Route path="/dashboard/payout" element={<RequireAuth><DashboardPayoutPage /></RequireAuth>} />
@@ -276,8 +293,14 @@ const App = () => (
               <Route path="/drill" element={<DrillGalleryPage />} />
               <Route path="/explore/:kind/:value" element={<ExploreProjectsPage />} />
               <Route path="/similar/:projectId" element={<SimilarImagesPage />} />
-              <Route path="/inspire" element={<RequireAuth><InspireBoardsPage /></RequireAuth>} />
-              <Route path="/inspire/:boardId" element={<RequireAuth><InspireBoardDetailPage /></RequireAuth>} />
+              {isInspireEnabled() ? (
+                <>
+                  <Route path="/inspire" element={<RequireAuth><InspireBoardsPage /></RequireAuth>} />
+                  <Route path="/inspire/:boardId" element={<RequireAuth><InspireBoardDetailPage /></RequireAuth>} />
+                </>
+              ) : (
+                <Route path="/inspire/*" element={<Navigate to="/portfolio" replace />} />
+              )}
               <Route path="/u/:userId" element={<PublicProfilePage />} />
               <Route path="/u/:userId/followers" element={<FollowConnectionsPage />} />
               <Route path="/earnings" element={<RequireAuth><EarningsPage /></RequireAuth>} />
@@ -394,6 +417,7 @@ const App = () => (
               <Route path="/legal/terms" element={<TermsPage />} />
               <Route path="/legal/cookies" element={<CookiesPage />} />
               <Route path="/legal/rights" element={<DataRightsPage />} />
+              <Route path="/legal/delete-account" element={<DeleteAccountPage />} />
               <Route path="/legal/ip" element={<IntellectualPropertyPage />} />
               <Route path="/legal/community" element={<CommunityGuidelinesPage />} />
               <Route path="/legal/copyright-report" element={<CopyrightReportPage />} />
@@ -424,8 +448,12 @@ const App = () => (
           <GoogleAnalytics />
           <PolicyReconsentGate />
           <FloatingNav />
+          <AndroidAppBanner />
           <AuthDialog />
           <FeedbackTicketHost />
+          <PullToRefresh />
+          <RatingPrompt />
+          <CloudPrefsSync />
           <InterestSurveyGate />
           </ErrorBoundary>
         </BrowserRouter>

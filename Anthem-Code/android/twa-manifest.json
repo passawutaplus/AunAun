@@ -1,0 +1,81 @@
+{
+  "packageId": "com.samecor.twa",
+  "host": "samecor.com",
+  "name": "SAMECOR",
+  "launcherName": "SAMECOR",
+  "display": "standalone",
+  "themeColor": "#F8F7F2",
+  "themeColorDark": "#201F1E",
+  "navigationColor": "#F8F7F2",
+  "navigationColorDark": "#201F1E",
+  "navigationDividerColor": "#F8F7F2",
+  "navigationDividerColorDark": "#201F1E",
+  "backgroundColor": "#F8F7F2",
+  "enableNotifications": true,
+  "startUrl": "/?source=android",
+  "iconUrl": "https://samecor.com/icons/icon-512.png",
+  "maskableIconUrl": "https://samecor.com/icons/icon-maskable-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "./android.keystore",
+    "alias": "android"
+  },
+  "appVersionName": "1.0.0",
+  "appVersionCode": 4,
+  "shortcuts": [
+    {
+      "name": "ลงผลงาน",
+      "shortName": "ลงผลงาน",
+      "url": "/portfolio/new?source=android",
+      "chosenIconUrl": "https://samecor.com/icons/icon-192.png"
+    },
+    {
+      "name": "ค้นหา",
+      "shortName": "ค้นหา",
+      "url": "/search?source=android",
+      "chosenIconUrl": "https://samecor.com/icons/icon-192.png"
+    },
+    {
+      "name": "แชท",
+      "shortName": "แชท",
+      "url": "/chat?source=android",
+      "chosenIconUrl": "https://samecor.com/icons/icon-192.png"
+    }
+  ],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://samecor.com/manifest.webmanifest",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://samecor.com/",
+  "minSdkVersion": 24,
+  "shareTarget": {
+    "action": "https://samecor.com/share-target",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        {
+          "name": "media",
+          "accept": [
+            "image/*"
+          ]
+        }
+      ]
+    }
+  },
+  "orientation": "portrait",
+  "fingerprints": [],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": [],
+  "displayOverride": [],
+  "appVersion": "1.0.0"
+}

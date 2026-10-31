@@ -55,7 +55,7 @@ async function fetchLiveCatalog(supabaseUrl, anonKey) {
   };
   const rest = `${supabaseUrl.replace(/\/$/, "")}/rest/v1`;
 
-  const [projectsRes, profilesRes, seriesRes, jobsRes] = await Promise.all([
+  const [projectsRes, profilesRes, seriesRes, collectionsRes, jobsRes, servicesRes, objectsRes] = await Promise.all([
     fetch(
       `${rest}/projects?select=id,cover_url,title&status=eq.Published&order=created_at.desc&limit=120`,
       { headers: anthemHeaders },
@@ -68,12 +68,25 @@ async function fetchLiveCatalog(supabaseUrl, anonKey) {
       `${rest}/project_series?select=id&is_public=eq.true&order=updated_at.desc&limit=40`,
       { headers: anthemHeaders },
     ),
+    // Public collections with enough works to be worth indexing (thin ones stay out).
+    fetch(
+      `${rest}/collections?select=id&is_public=eq.true&item_count=gte.3&order=updated_at.desc&limit=60`,
+      { headers: anthemHeaders },
+    ),
     hiringBoard
       ? fetch(
           `${rest}/job_posts?select=id&status=eq.open&post_type=eq.hiring&hiring_org_id=not.is.null&order=created_at.desc&limit=60`,
           { headers: anthemHeaders },
         )
       : Promise.resolve({ ok: true, json: async () => [] }),
+    fetch(
+      `${rest}/creator_services?select=id&status=eq.Published&order=updated_at.desc&limit=120`,
+      { headers: anthemHeaders },
+    ),
+    fetch(
+      `${rest}/creator_objects?select=id&status=eq.Published&order=updated_at.desc&limit=200`,
+      { headers: anthemHeaders },
+    ),
   ]);
 
   if (!projectsRes.ok) {
@@ -120,7 +133,32 @@ async function fetchLiveCatalog(supabaseUrl, anonKey) {
     jobIds = jobs.map((j) => j.id).filter(Boolean);
   }
 
-  return { projectIds, profileUserIds, vanityHandles, seriesIds, jobIds, images };
+  let collectionIds = [];
+  if (collectionsRes.ok) {
+    const collections = await collectionsRes.json();
+    collectionIds = collections.map((c) => c.id).filter(Boolean);
+  } else {
+    console.warn(`collections fetch ${collectionsRes.status} — skipping collection URLs`);
+  }
+
+  let serviceIds = [];
+  // Packages are hidden during the free launch — list them again with the commerce phase.
+  if (servicesRes.ok && process.env.VITE_SAMECOR_COMMERCE_ENABLED === "true") {
+    const services = await servicesRes.json();
+    serviceIds = services.map((s) => s.id).filter(Boolean);
+  } else {
+    console.warn(`services fetch ${servicesRes.status} — skipping package URLs`);
+  }
+
+  let objectIds = [];
+  if (objectsRes.ok) {
+    const objects = await objectsRes.json();
+    objectIds = objects.map((o) => o.id).filter(Boolean);
+  } else {
+    console.warn(`objects fetch ${objectsRes.status} — skipping object URLs`);
+  }
+
+  return { projectIds, profileUserIds, vanityHandles, seriesIds, collectionIds, jobIds, serviceIds, objectIds, images };
 }
 
 loadDotEnv();
@@ -136,7 +174,7 @@ if (supabaseUrl && anonKey) {
   try {
     live = await fetchLiveCatalog(supabaseUrl, anonKey);
     console.log(
-      `Live catalog: ${live.projectIds.length} projects, ${live.profileUserIds.length} profiles, ${live.vanityHandles.length} @handles, ${live.seriesIds.length} series, ${live.jobIds.length} jobs`,
+      `Live catalog: ${live.projectIds.length} projects, ${live.profileUserIds.length} profiles, ${live.vanityHandles.length} @handles, ${live.seriesIds.length} series, ${live.collectionIds.length} collections, ${live.serviceIds.length} packages, ${live.objectIds.length} objects, ${live.jobIds.length} jobs`,
     );
   } catch (err) {
     console.warn(`Live catalog fetch failed — using seed catalog. (${err.message})`);

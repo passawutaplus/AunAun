@@ -14,7 +14,14 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { FORUM_PATH } from "@/lib/brandConfig";
+import {
+  BRAND_FACEBOOK_GROUP_URL,
+  BRAND_FACEBOOK_URL,
+  BRAND_LINE_CONTACT_URL,
+  FORUM_PATH,
+} from "@/lib/brandConfig";
+import LineMarkIcon from "@/components/icons/LineMarkIcon";
+import { isCommerceEnabled } from "@/lib/aplus1Launch";
 import { cn } from "@/lib/utils";
 
 type CommunityItem = {
@@ -32,6 +39,7 @@ const COMMUNITY_ITEMS: CommunityItem[] = [
     title: "Facebook Group",
     description: "คุยกับครีเอเตอร์และอัปเดตชุมชน",
     icon: UsersRound,
+    external: BRAND_FACEBOOK_GROUP_URL,
   },
   {
     id: "forum",
@@ -49,7 +57,7 @@ const COMMUNITY_ITEMS: CommunityItem[] = [
   },
 ];
 
-/** Placeholder social marks — UI only, not linked yet. */
+/** Social marks — linked when the account exists, otherwise a disabled placeholder. */
 function XMark({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
@@ -74,13 +82,14 @@ function FacebookMark({ className }: { className?: string }) {
   );
 }
 
-const SOCIAL_PLACEHOLDERS = [
+const SOCIALS: { id: string; label: string; Icon: React.ComponentType<{ className?: string }>; href?: string }[] = [
+  { id: "facebook", label: "Facebook", Icon: FacebookMark, href: BRAND_FACEBOOK_URL },
+  { id: "line", label: "LINE", Icon: LineMarkIcon, href: BRAND_LINE_CONTACT_URL },
   { id: "instagram", label: "Instagram", Icon: Instagram },
   { id: "x", label: "X", Icon: XMark },
-  { id: "facebook", label: "Facebook", Icon: FacebookMark },
   { id: "youtube", label: "YouTube", Icon: Youtube },
   { id: "tiktok", label: "TikTok", Icon: TikTokMark },
-] as const;
+];
 
 const itemClass =
   "flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left transition-colors hover:bg-accent/70";
@@ -103,11 +112,11 @@ export function CommunityNavDropdown({ className }: { className?: string }) {
       <DropdownMenuContent
         align="start"
         sideOffset={10}
-        className="w-[22rem] rounded-2xl border border-border/70 bg-background p-2 shadow-lg"
+        className="w-[22rem] rounded-2xl border border-border/70 bg-background p-2 shadow-sm"
         onCloseAutoFocus={(e) => e.preventDefault()}
       >
         <div className="flex flex-col gap-0.5 p-1">
-          {COMMUNITY_ITEMS.map((item) => {
+          {COMMUNITY_ITEMS.filter((item) => item.id !== "forum" || isCommerceEnabled()).map((item) => {
             const Icon = item.icon;
             const body = (
               <>
@@ -122,6 +131,14 @@ export function CommunityNavDropdown({ className }: { className?: string }) {
                 </span>
               </>
             );
+
+            if (item.external) {
+              return (
+                <a key={item.id} href={item.external} target="_blank" rel="noopener noreferrer" className={itemClass}>
+                  {body}
+                </a>
+              );
+            }
 
             if (item.to) {
               return (
@@ -150,7 +167,20 @@ export function CommunityNavDropdown({ className }: { className?: string }) {
         <div className="flex items-center gap-3 px-3 py-2.5">
           <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Follow Us</span>
           <div className="flex min-w-0 flex-wrap items-center gap-1">
-            {SOCIAL_PLACEHOLDERS.map(({ id, label, Icon }) => (
+            {SOCIALS.map(({ id, label, Icon, href }) =>
+              href ? (
+                <Button
+                  key={id}
+                  asChild
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                >
+                  <a href={href} target="_blank" rel="noopener noreferrer" aria-label={label} title={label}>
+                    <Icon className="h-4 w-4" />
+                  </a>
+                </Button>
+              ) : (
               <Button
                 key={id}
                 type="button"
@@ -163,7 +193,8 @@ export function CommunityNavDropdown({ className }: { className?: string }) {
               >
                 <Icon className="h-4 w-4" />
               </Button>
-            ))}
+              ),
+            )}
           </div>
         </div>
       </DropdownMenuContent>

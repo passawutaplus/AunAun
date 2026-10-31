@@ -17,6 +17,8 @@ type Props = {
   className?: string;
   projectId?: string;
   projectTitle?: string;
+  /** Lightbox "contact about this work" button. */
+  onContact?: () => void;
 };
 
 function collectImageUrls(layout: FlexGridLayout): string[] {
@@ -37,6 +39,7 @@ export function FlexGridView({
   className,
   projectId,
   projectTitle,
+  onContact,
 }: Props) {
   const layout = parseFlexGridLayout(rawLayout);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -114,6 +117,7 @@ export function FlexGridView({
         onIndexChange={setLightboxIndex}
         projectId={projectId}
         projectTitle={projectTitle}
+        onContact={onContact}
         alt={projectTitle ?? ""}
       />
     </div>

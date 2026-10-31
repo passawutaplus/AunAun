@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import {
   captureViewportOrRect,
   clampRectToViewport,
+  precaptureViewport,
+  type ViewportPrecapture,
   normalizeDragRect,
   type CaptureRect,
 } from "@/lib/feedbackCapture";
@@ -17,8 +19,20 @@ export default function FeedbackSnipOverlay() {
   const [start, setStart] = useState<{ x: number; y: number } | null>(null);
   const [current, setCurrent] = useState<{ x: number; y: number } | null>(null);
 
+  const preRef = useRef<ViewportPrecapture | null>(null);
+
+  // Composer has just unmounted; wait for that paint, then rasterize while the user drags
   useEffect(() => {
-    void import("html-to-image");
+    let raf2 = 0;
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => {
+        preRef.current = precaptureViewport();
+      });
+    });
+    return () => {
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+    };
   }, []);
 
   const rect: CaptureRect | null =
@@ -41,7 +55,7 @@ export default function FeedbackSnipOverlay() {
       setCapturing(true);
       await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
       try {
-        const dataUrl = await captureViewportOrRect(crop);
+        const dataUrl = await captureViewportOrRect(crop, preRef.current);
         beginCompose(dataUrl);
       } catch {
         toast.error("แคปหน้าจอไม่สำเร็จ — พิมพ์หรืออัปโหลดรูปแทนได้");
@@ -67,7 +81,7 @@ export default function FeedbackSnipOverlay() {
         data-feedback-ui
         className="fixed inset-0 z-[80] flex items-center justify-center bg-background/40"
       >
-        <div className="inline-flex items-center gap-2 rounded-full bg-background px-4 py-2 text-sm shadow-lg">
+        <div className="inline-flex items-center gap-2 rounded-full bg-background px-4 py-2 text-sm shadow-sm">
           <Loader2 className="h-4 w-4 animate-spin" />
           กำลังแคปหน้าจอ
         </div>
@@ -78,7 +92,7 @@ export default function FeedbackSnipOverlay() {
   return (
     <div data-feedback-ui className="fixed inset-0 z-[80]">
       <div className="pointer-events-none absolute inset-x-0 top-3 z-10 flex justify-center px-3">
-        <div className="pointer-events-auto flex flex-wrap items-center gap-2 rounded-full border border-border bg-background/95 px-3 py-1.5 text-xs shadow-lg">
+        <div className="pointer-events-auto flex flex-wrap items-center gap-2 rounded-full border border-border bg-background/95 px-3 py-1.5 text-xs shadow-sm">
           <span className="text-muted-foreground">ลากเพื่อเลือกพื้นที่</span>
           <button
             type="button"

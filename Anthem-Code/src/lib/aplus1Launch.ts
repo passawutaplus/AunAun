@@ -1,3 +1,4 @@
+import { isAndroidApp } from "@/lib/appShell";
 import type { FeedMode } from "@/components/feed/FeedModeToggle";
 
 /**
@@ -14,11 +15,60 @@ export function isAplus1LaunchMinimal(): boolean {
   return !isAplus1FullProduct();
 }
 
+/**
+ * Inspiration (save images to mood boards): switched off for launch. Opt-in with VITE_INSPIRE_ENABLED=true.
+ * Hides the profile tab, the "Inspire" button on images and the /inspire routes.
+ */
+export function isInspireEnabled(): boolean {
+  return import.meta.env.VITE_INSPIRE_ENABLED === "true";
+}
+
+/**
+ * Free MVP launch: no money moves through SAMECOR, and the selling surfaces (Packages, Objects)
+ * plus the forum stay hidden. Data is kept — phase 2 turns it back on with
+ * VITE_SAMECOR_COMMERCE_ENABLED=true. Fail-closed: off unless set.
+ */
+/**
+ * Beta-test period (Play closed testing): shows the mobile feedback button in the feed bar.
+ * On by default; set VITE_SAMECOR_BETA_FEEDBACK=false (and redeploy) once the beta ends.
+ */
+export function isBetaFeedbackEnabled(): boolean {
+  return import.meta.env.VITE_SAMECOR_BETA_FEEDBACK !== "false";
+}
+
+export function isCommerceEnabled(): boolean {
+  // Google Play: digital goods bought inside the Android app must go through Play Billing.
+  if (isAndroidApp()) return false;
+  return import.meta.env.VITE_SAMECOR_COMMERCE_ENABLED === "true";
+}
+
+/** Routes that belong to the money / selling phase. */
+export const COMMERCE_ROUTE_PATTERNS: readonly RegExp[] = [
+  /^\/earnings(\/|$)/,
+  /^\/dashboard\/(payout|documents|packages|objects)(\/|$)/,
+  /^\/portfolio\/packages(\/|$)/,
+  /^\/service\/[^/]+$/,
+  /^\/object\/[^/]+$/,
+  /^\/contracts(\/|$)/,
+  /^\/forum(\/|$)/,
+];
+
+export function isCommercePath(pathname: string): boolean {
+  return !isCommerceEnabled() && COMMERCE_ROUTE_PATTERNS.some((re) => re.test(pathname));
+}
+
+const COMMERCE_FEED_MODES: readonly FeedMode[] = ["packages", "objects"];
+
+/** Packages / Objects feed tabs are part of the selling phase. */
+export function isFeedModeVisible(mode: FeedMode): boolean {
+  return isCommerceEnabled() || !COMMERCE_FEED_MODES.includes(mode);
+}
+
 export const LAUNCH_FEED_MODES = ["projects", "designers", "packages", "objects"] as const;
 export type LaunchFeedMode = (typeof LAUNCH_FEED_MODES)[number];
 
 export function isLaunchFeedMode(mode: FeedMode): mode is LaunchFeedMode {
-  return (LAUNCH_FEED_MODES as readonly string[]).includes(mode);
+  return (LAUNCH_FEED_MODES as readonly string[]).includes(mode) && isFeedModeVisible(mode);
 }
 
 export function coerceLaunchFeedMode(mode: FeedMode): LaunchFeedMode {
@@ -32,6 +82,7 @@ export function coerceLaunchFeedMode(mode: FeedMode): LaunchFeedMode {
  */
 export const LAUNCH_ALLOWED_ROUTE_PATTERNS: readonly RegExp[] = [
   /^\/$/,
+  /^\/search$/,
   /^\/learn(\/|$)/,
   /^\/help(\/|$)/,
   /^\/dev\/review-form$/,
@@ -127,8 +178,16 @@ export function isLaunchAllowedPath(pathname: string): boolean {
  * Coming-soon only for known deferred prefixes that are not on the allowlist.
  * Unknown URLs must fall through to the real 404 page — not “ยังไม่เปิดในเวอร์ชันนี้”.
  */
+/** Identity verification (KYC) — hidden inside the Android app until payouts open there. */
+export function isKycPath(pathname: string): boolean {
+  return pathname === "/verify" || pathname.startsWith("/verify/");
+}
+
 export function isLaunchHiddenPath(pathname: string): boolean {
   if (isRetiredPublicPath(pathname)) return true;
+  // Keeps national-ID / bank-account collection out of the app (and its Play Data safety form).
+  if (isAndroidApp() && isKycPath(pathname)) return true;
+  if (isCommercePath(pathname)) return true;
   if (isHiringBoardPath(pathname)) return !isAplus1HiringBoardEnabled();
   if (!isAplus1LaunchMinimal()) return false;
   if (isLaunchAllowedPath(pathname)) return false;
@@ -142,7 +201,7 @@ export const LAUNCH_COMING_SOON_TH =
 
 /** Paid tiers (Pro / Pro+ / In-House) — disabled at launch; everyone uses free limits. */
 export function isAplus1SubscriptionsEnabled(): boolean {
-  if (isAplus1LaunchMinimal()) return false;
+  if (isAplus1LaunchMinimal() || isAndroidApp()) return false;
   return import.meta.env.VITE_APLUS1_SUBSCRIPTIONS_ENABLED === "true";
 }
 
@@ -210,7 +269,7 @@ export function isLaunchCollabEnabled(): boolean {
  * Re-enable with VITE_APLUS1_PX_ENABLED=true and VITE_APLUS1_FULL_PRODUCT=true.
  */
 export function isAplus1PxEnabled(): boolean {
-  if (isAplus1LaunchMinimal()) return false;
+  if (isAplus1LaunchMinimal() || isAndroidApp()) return false;
   return import.meta.env.VITE_APLUS1_PX_ENABLED === "true";
 }
 
@@ -237,7 +296,7 @@ export function isLaunchDesignDrillEnabled(): boolean {
 
 /** Boost (post/project promotion) — disabled at launch until explicitly enabled. */
 export function isLaunchBoostEnabled(): boolean {
-  if (isAplus1LaunchMinimal()) return false;
+  if (isAplus1LaunchMinimal() || isAndroidApp()) return false;
   return import.meta.env.VITE_APLUS1_BOOST_ENABLED === "true";
 }
 

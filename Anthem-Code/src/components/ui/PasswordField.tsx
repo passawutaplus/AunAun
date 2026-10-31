@@ -25,7 +25,7 @@ type Props = {
 const STRENGTH_BAR: Record<string, string> = {
   empty: "bg-muted",
   weak: "bg-destructive",
-  fair: "bg-amber-500",
+  fair: "bg-warning",
   good: "bg-emerald-500/80",
   strong: "bg-emerald-600",
 };

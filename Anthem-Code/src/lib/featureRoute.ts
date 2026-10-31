@@ -32,3 +32,18 @@ const HIDDEN_FEATURE_PREFIXES = ["/auth", "/admin", "/forum", "/verify"];
 export function shouldHideFeedbackFab(pathname: string): boolean {
   return HIDDEN_FEATURE_PREFIXES.some((p) => pathname.startsWith(p)) || pathname === "/";
 }
+
+/** Pages a user can pick in the feedback composer (defaults to the current route). */
+export const FEEDBACK_PAGE_OPTIONS: { value: string; label: string }[] = [
+  { value: "feed", label: "หน้าแรก / ฟีด" },
+  { value: "project_detail", label: "หน้าผลงาน" },
+  { value: "project_editor", label: "ลงผลงาน / แก้ไข" },
+  { value: "portfolio", label: "พอร์ตของฉัน" },
+  { value: "public_profile", label: "โปรไฟล์" },
+  { value: "chat", label: "แชท / จ้าง / Collab" },
+  { value: "hiring", label: "หาคนร่วมงาน" },
+  { value: "collections", label: "คอลเลกชัน" },
+  { value: "notifications", label: "การแจ้งเตือน" },
+  { value: "settings", label: "ตั้งค่า" },
+  { value: "other", label: "อื่น ๆ / ทั้งแอป" },
+];

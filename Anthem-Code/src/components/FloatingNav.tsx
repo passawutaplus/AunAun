@@ -1,6 +1,7 @@
 import BriefcaseIcon from "./icons/BriefcaseIcon";
 
-import { Home, MessageCircle, Plus, User } from "lucide-react";
+import { Fragment, useLayoutEffect, useState } from "react";
+import { Home, MessageCircle, Plus, Search, User } from "lucide-react";
 
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 
@@ -13,6 +14,7 @@ import { isAplus1HiringBoardEnabled, isAplus1LaunchMinimal } from "@/lib/aplus1L
 import { useAuthDialog } from "@/stores/authDialogStore";
 
 import { useAppLayout } from "@/hooks/useAppLayout";
+import { useFeedHomeNavStore } from "@/stores/feedHomeNavStore";
 
 import { ProfileMenuDropdown } from "@/components/ProfileMenuDropdown";
 import UserAvatar from "@/components/UserAvatar";
@@ -44,6 +46,71 @@ const launchNavItems = NAV_ITEMS.filter((item) => item.to === "/" || item.to ===
 const PROFILE_MATCH = (p: string) =>
   p.startsWith("/portfolio") || p.startsWith("/settings") || p.startsWith("/collections");
 
+/** Gap between the pill and the round search button, and the button's diameter (h-14). */
+const SEARCH_GAP = 12;
+const SEARCH_SIZE = 56;
+
+/**
+ * Outline of pill + a liquid "neck" + the round search button, as one shape. Both caps are
+ * circles; the neck leaves each cap at 50° on its tangent so the joint stays smooth.
+ */
+function glassOutline(w: number, h: number): string {
+  const R = h / 2;
+  const r = SEARCH_SIZE / 2;
+  const cy = h / 2;
+  const c1x = w - R;
+  const c2x = w + SEARCH_GAP + r;
+  const t = (50 * Math.PI) / 180;
+  const sin = Math.sin(t);
+  const cos = Math.cos(t);
+  const p1 = [c1x + R * cos, cy - R * sin];
+  const p2 = [c1x + R * cos, cy + R * sin];
+  const q1 = [c2x - r * cos, cy - r * sin];
+  const q2 = [c2x - r * cos, cy + r * sin];
+  const k = (q1[0] - p1[0]) / 2;
+  const n = (v: number) => v.toFixed(2);
+  return [
+    `M ${n(R)} 0 L ${n(c1x)} 0`,
+    `A ${n(R)} ${n(R)} 0 0 1 ${n(p1[0])} ${n(p1[1])}`,
+    `C ${n(p1[0] + k * sin)} ${n(p1[1] + k * cos)} ${n(q1[0] - k * sin)} ${n(q1[1] + k * cos)} ${n(q1[0])} ${n(q1[1])}`,
+    `A ${n(r)} ${n(r)} 0 1 1 ${n(q2[0])} ${n(q2[1])}`,
+    `C ${n(q2[0] - k * sin)} ${n(q2[1] - k * cos)} ${n(p2[0] + k * sin)} ${n(p2[1] - k * cos)} ${n(p2[0])} ${n(p2[1])}`,
+    `A ${n(R)} ${n(R)} 0 0 1 ${n(c1x)} ${n(h)} L ${n(R)} ${n(h)}`,
+    `A ${n(R)} ${n(R)} 0 0 1 ${n(R)} 0 Z`,
+  ].join(" ");
+}
+
+/** Frosted-glass background shared by the pill and the search button (sized from the pill). */
+function NavGlass({ pill }: { pill: HTMLDivElement | null }) {
+  const [size, setSize] = useState<{ w: number; h: number } | null>(null);
+
+  useLayoutEffect(() => {
+    const el = pill;
+    if (!el) return;
+    const measure = () => setSize({ w: el.offsetWidth, h: el.offsetHeight });
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [pill]);
+
+  if (!size || size.w === 0) return null;
+  const width = size.w + SEARCH_GAP + SEARCH_SIZE;
+  const d = glassOutline(size.w, size.h);
+
+  return (
+    <div aria-hidden className="pointer-events-none absolute left-0 top-0" style={{ width, height: size.h }}>
+      <div
+        className="absolute inset-0 bg-background/65 backdrop-blur-xl backdrop-saturate-150 dark:bg-card/50"
+        style={{ clipPath: `path('${d}')` }}
+      />
+      <svg className="absolute inset-0 overflow-visible" width={width} height={size.h}>
+        <path d={d} fill="none" className="stroke-foreground/15" strokeWidth={1} />
+      </svg>
+    </div>
+  );
+}
+
 const FloatingNav = () => {
   const { pathname, search } = useLocation();
   const navigate = useNavigate();
@@ -53,6 +120,7 @@ const FloatingNav = () => {
   const openAuth = useAuthDialog((s) => s.openSignup);
   const { showBottomNav } = useAppLayout();
   const { data: chatBadgeCount = 0 } = useChatInboxBadgeCount();
+  const [pillEl, setPillEl] = useState<HTMLDivElement | null>(null);
 
   if (!showBottomNav) return null;
 
@@ -69,6 +137,33 @@ const FloatingNav = () => {
       return;
     }
     navigate("/portfolio/new");
+  };
+  /** Create (+) sits in the pill just before Chat; guests never see it — creating needs an account. */
+  const createActive = pathname.startsWith("/portfolio/new");
+  const createButton = (
+    <button
+      type="button"
+      onClick={openCreate}
+      data-tour="create"
+      aria-label="ลงผลงาน"
+      className={cn(
+        "relative flex items-center justify-center rounded-full transition-colors h-11 w-11 min-h-11",
+        createActive ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground hover:bg-accent",
+      )}
+    >
+      <Plus className="h-5 w-5 shrink-0" strokeWidth={2.2} />
+    </button>
+  );
+
+  /** Phones / tablets: the round button opens project search (with colour search inside). */
+  const openSearch = () => {
+    const homeNav = useFeedHomeNavStore.getState();
+    if (pathname === "/" && homeNav.active && homeNav.onFilterClick) {
+      homeNav.onFilterClick();
+      return;
+    }
+    localStorage.setItem("feed-mode", "projects");
+    navigate("/", { state: { feedHomeReset: Date.now(), openProjectSearch: Date.now() } });
   };
 
   /** Mobile/tablet: always land on default projects feed (even when re-tapping Home). */
@@ -90,17 +185,14 @@ const FloatingNav = () => {
     <>
       <nav
         aria-label="เมนูหลัก"
-        className="lg:hidden fixed inset-x-0 z-30 flex items-center justify-center gap-3 px-4 pointer-events-none"
+        className="lg:hidden fixed inset-x-0 z-30 flex justify-center px-4 pointer-events-none"
         style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 0.75rem)" }}
       >
+        <div className="relative flex items-center" style={{ gap: SEARCH_GAP }}>
+        <NavGlass pill={pillEl} />
         <div
-          className={cn(
-            "pointer-events-auto flex items-center gap-0.5 rounded-full",
-            "border border-border/80 bg-background/90 px-1.5 py-1.5 shadow-lg shadow-black/25",
-            "dark:border-border dark:bg-card/90 dark:shadow-black/50",
-            "backdrop-blur-xl supports-[backdrop-filter]:bg-background/75 dark:supports-[backdrop-filter]:bg-card/80",
-          )}
-          style={{ WebkitBackdropFilter: "blur(20px)" }}
+          ref={setPillEl}
+          className="pointer-events-auto relative flex items-center gap-0.5 rounded-full px-1.5 py-1.5"
         >
           {navItems.map(({ to, label, icon: Icon, match, requiresAuth }) => {
             const active = match(pathname, feedMode);
@@ -129,8 +221,9 @@ const FloatingNav = () => {
             }
 
             return (
+              <Fragment key={to}>
+              {to === "/chat" && user ? createButton : null}
               <NavLink
-                key={to}
                 to={to}
                 onClick={(e) => {
                   guardAuth(e, requiresAuth, to);
@@ -146,11 +239,12 @@ const FloatingNav = () => {
               >
                 <Icon className="h-5 w-5 shrink-0" strokeWidth={active ? 2.2 : 2} />
                 {showChatBadge && (
-                  <span className="absolute top-0.5 right-0.5 min-w-[14px] h-[14px] px-0.5 rounded-full bg-primary text-white text-[9px] font-semibold flex items-center justify-center leading-none">
+                  <span className="absolute top-0.5 right-0.5 min-w-[14px] h-[14px] px-0.5 rounded-full bg-primary text-primary-foreground text-[9px] font-semibold flex items-center justify-center leading-none">
                     {chatBadgeCount > 99 ? "99+" : chatBadgeCount}
                   </span>
                 )}
               </NavLink>
+              </Fragment>
             );
           })}
 
@@ -192,15 +286,15 @@ const FloatingNav = () => {
 
         <button
           type="button"
-          onClick={openCreate}
-          aria-label="ลงผลงาน"
-          className={cn(
-            "pointer-events-auto flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-white shadow-lg shadow-black/20 transition-all duration-200 ease-out hover:opacity-90 active:scale-95",
-            pathname === "/" || pathname.startsWith("/learn") ? "bg-[#2f2e2c]" : "bg-gradient-brand",
-          )}
+          onClick={openSearch}
+          data-tour="search"
+          aria-label="ค้นหาผลงาน"
+          // Sits on the shared glass (NavGlass); no background of its own.
+          className="pointer-events-auto relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-foreground transition-transform duration-200 ease-out active:scale-95"
         >
-          <Plus className="h-6 w-6" strokeWidth={2.5} />
+          <Search className="h-6 w-6" strokeWidth={2.25} />
         </button>
+        </div>
       </nav>
     </>
   );

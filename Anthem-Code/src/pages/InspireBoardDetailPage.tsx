@@ -109,7 +109,7 @@ const InspireBoardDetailPage = () => {
 
   return (
     <div className="min-h-screen bg-app-ambient pb-24 lg:pb-12">
-      <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border">
+      <div className="sticky top-0 z-20 bg-background border-b border-border">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
           <BackButton
             onClick={() => navigate("/inspire")}

@@ -1,4 +1,5 @@
 import LegalLayout from "@/components/LegalLayout";
+import FreeLaunchMoneyNotice from "@/components/legal/FreeLaunchMoneyNotice";
 import { LEGAL_APP_NAME, LEGAL_COMPANY_ADDRESS, LEGAL_COMPANY_NAME, LEGAL_COMPANY_TAX_ID, LEGAL_DPO_EMAIL, LEGAL_SOLO_NAME, LEGAL_SOLO_URL, LEGAL_WEBSITE } from "@/lib/legalConfig";
 
 const PrivacyPage = () => (
@@ -11,6 +12,11 @@ const PrivacyPage = () => (
     <p className="text-sm text-muted-foreground">
       เราเขียนนโยบายนี้ให้อ่านเข้าใจง่าย — หากมีคำถาม ติดต่อ DPO ได้ที่ด้านล่าง
     </p>
+    <p className="text-sm text-muted-foreground">
+      นโยบายนี้ใช้กับทั้งเว็บไซต์ {LEGAL_WEBSITE} และแอป {LEGAL_APP_NAME} บน Android ซึ่งเปิดบริการเดียวกัน
+      และเก็บข้อมูลชุดเดียวกัน
+    </p>
+    <FreeLaunchMoneyNotice scope="privacy" />
 
     <h2>1. ผู้ควบคุมข้อมูลส่วนบุคคล</h2>
     <p>
@@ -108,6 +114,22 @@ const PrivacyPage = () => (
       <li>ข้อมูลการใช้งาน: หน้าที่เข้าชม การให้ +1/บุ๊กมาร์ก สถิติการเข้าชมผลงาน</li>
       <li>ข้อมูลอุปกรณ์และเทคนิค: ประเภทเบราว์เซอร์ ที่อยู่ IP (โดยผู้ให้บริการโฮสติ้ง)</li>
       <li>คุกกี้และ local storage — ดูรายละเอียดใน <a href="/legal/cookies">นโยบายคุกกี้</a></li>
+      <li>
+        ข้อมูลการรับแจ้งเตือน (push) — เฉพาะเมื่อคุณกดเปิดแจ้งเตือนบนเครื่อง: ที่อยู่สำหรับส่งแจ้งเตือน (endpoint)
+        กุญแจเข้ารหัสของเครื่อง ประเภทเบราว์เซอร์/แอป และเวลาที่ใช้ล่าสุด
+      </li>
+      <li>
+        รายงานข้อผิดพลาดทางเทคนิค (ถ้าเปิดใช้) — ข้อความ error หน้าที่เกิดเหตุ และประเภทอุปกรณ์ เพื่อแก้บั๊ก
+      </li>
+    </ul>
+    <h3>3.4.1 แอป Android และการแชร์จากเครื่อง</h3>
+    <ul>
+      <li>แอป Android ไม่ขอสิทธิ์เข้าถึงรายชื่อ ตำแหน่ง ไมโครโฟน หรือคลังภาพทั้งหมด</li>
+      <li>
+        เมื่อคุณแชร์รูปจากแอปอื่นเข้า {LEGAL_APP_NAME} รูปจะถูกพักไว้ในเครื่องก่อน
+        และส่งขึ้นเซิร์ฟเวอร์ก็ต่อเมื่อคุณกดโพสต์เท่านั้น
+      </li>
+      <li>การสั่นตอบสนอง (haptics) ทำงานในเครื่องเท่านั้น ไม่มีการเก็บข้อมูล</li>
     </ul>
     <h3>3.5 ข้อมูลเกี่ยวกับแพ็กเกจบริการ</h3>
     <ul>
@@ -184,7 +206,23 @@ const PrivacyPage = () => (
             <td className="p-3 text-muted-foreground align-top">สถิติการเข้าชมผลงาน ปรับปรุงฟีด</td>
             <td className="p-3 align-top">ความยินยอม / ประโยชน์โดยชอบ</td>
           </tr>
-          <tr>
+          <tr className="border-b border-border/40">
+            <td className="p-3 align-top">แจ้งเตือนบนเครื่อง (push)</td>
+            <td className="p-3 text-muted-foreground align-top">
+              แจ้งข้อความแชท คำขอจ้าง/คอลแลป และเรื่องบัญชี — แจ้งแนะนำผลงานไม่เกินวันละครั้ง
+              โดยเลือกจากคนที่คุณติดตามและผลงานที่คุณสนใจ ปิดแยกได้ใน{" "}
+              <a href="/settings#notifications" className="text-primary hover:underline">
+                ตั้งค่า → การแจ้งเตือน
+              </a>
+            </td>
+            <td className="p-3 align-top">ความยินยอม (เปิดเองบนเครื่อง ถอนได้ทุกเมื่อ)</td>
+          </tr>
+          <tr className="border-b border-border/40">
+            <td className="p-3 align-top">รายงานข้อผิดพลาด</td>
+            <td className="p-3 text-muted-foreground align-top">ตรวจจับและแก้บั๊ก ให้บริการทำงานได้เสถียร</td>
+            <td className="p-3 align-top">ประโยชน์โดยชอบด้วยกฎหมาย</td>
+          </tr>
+          <tr className="border-b border-border/40">
             <td className="p-3 align-top">Ecosystem {LEGAL_SOLO_NAME}</td>
             <td className="p-3 text-muted-foreground align-top">ซิงค์แพ็กเกจ โควต้า และบัญชีร่วม</td>
             <td className="p-3 align-top">สัญญา / บริการที่ร้องขอ</td>
@@ -207,13 +245,23 @@ const PrivacyPage = () => (
         เราไม่เก็บเลขบัตรเต็มบนเซิร์ฟเวอร์ของเรา — Omise จัดการ tokenization ตามมาตรฐาน PCI
       </li>
       <li><strong>Google OAuth</strong> — เมื่อคุณเลือกเข้าสู่ระบบด้วย Google</li>
+      <li><strong>Vercel</strong> — โฮสต์เว็บไซต์และ API (บันทึก IP และ request log ตามปกติของการให้บริการ)</li>
+      <li>
+        <strong>บริการส่ง push ของเบราว์เซอร์/ระบบปฏิบัติการ</strong> (เช่น Google Firebase Cloud Messaging, Apple, Mozilla)
+        — ส่งแจ้งเตือนถึงเครื่องคุณ เนื้อหาถูกเข้ารหัสระหว่างทาง
+      </li>
+      <li>
+        <strong>Google Analytics 4</strong> — สถิติการใช้งานแบบรวม โหลดเฉพาะเมื่อคุณยินยอมคุกกี้วิเคราะห์
+      </li>
+      <li><strong>Sentry</strong> — รายงานข้อผิดพลาดทางเทคนิค (เมื่อเปิดใช้)</li>
+      <li><strong>Google Play</strong> — เมื่อคุณติดตั้งแอป Android (เป็นไปตามนโยบายของ Google)</li>
       <li><strong>ผู้ให้บริการ AI</strong> — เฉพาะเมื่อคุณใช้ฟีเจอร์ร่างสัญญา/แนะนำผลงาน (ส่งเฉพาะข้อมูลที่จำเป็น)</li>
     </ul>
     <p>เราไม่ขายข้อมูลส่วนบุคคลของคุณให้บุคคลที่สามเพื่อการตลาด</p>
 
     <h2>6. การโอนข้อมูลไปต่างประเทศ</h2>
     <p>
-      ผู้ให้บริการบางราย (เช่น Supabase, Google, Omise) อาจประมวลผลข้อมูลบนเซิร์ฟเวอร์ต่างประเทศ
+      ผู้ให้บริการบางราย (เช่น Supabase, Vercel, Google, Sentry, Omise) อาจประมวลผลข้อมูลบนเซิร์ฟเวอร์ต่างประเทศ
       เราจะใช้มาตรการคุ้มครองที่เหมาะสมตามที่ PDPA กำหนด เช่น ข้อตกลงมาตรฐานสัญญา
       หรือการรับรองว่าปลายทางมีมาตรฐานคุ้มครองข้อมูลที่เพียงพอ
     </p>
@@ -222,6 +270,10 @@ const PrivacyPage = () => (
     <ul>
       <li>ข้อมูลบัญชี: ตลอดระยะที่บัญชีเปิดใช้งาน และภายในระยะเวลาที่กฎหมายกำหนดหลังปิดบัญชี</li>
       <li>บันทึกการแจ้งเตือนและธุรกรรม: ตามความจำเป็นทางบัญชีและความปลอดภัย</li>
+      <li>
+        ข้อมูลการรับแจ้งเตือน (push): ลบทันทีเมื่อคุณปิดแจ้งเตือน ออกจากระบบบนเครื่องนั้น ลบบัญชี
+        หรือเมื่อเครื่องยกเลิกการรับ / ถอนการติดตั้งแอป
+      </li>
       <li>
         ข้อมูลธุรกรรมจ้างงาน ใบเสร็จค่าธรรมเนียม และเอกสารภาษีที่เกี่ยวข้อง:
         เก็บ<strong>อย่างน้อย 5 ปี</strong> นับจากปีภาษีที่เกี่ยวข้อง หรือตามระยะที่กฎหมายภาษีและบัญชีกำหนด (แล้วแต่ระยะที่ยาวกว่า)

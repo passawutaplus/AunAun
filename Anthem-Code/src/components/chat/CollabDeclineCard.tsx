@@ -32,7 +32,8 @@ const CollabDeclineCard = ({ content, mine }: Props) => {
 
   return (
     <ChatCardShell
-      tone="collab"
+      tone="neutral"
+      family="collab"
       icon={HeartHandshake}
       title="ไม่สนใจคำชวนคอลแลป"
       meta="คุยต่อได้"

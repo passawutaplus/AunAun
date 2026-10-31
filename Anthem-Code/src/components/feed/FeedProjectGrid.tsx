@@ -5,6 +5,27 @@ import { FEED_PROJECT_GRID_GAP } from "@/lib/feedMasonry";
 import { smoothEase, staggerReveal, viewportOnce } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
+/** Masonry column counts follow the Grid Feed picker (phone: 1/2, desktop lg / xl: large / medium / small). */
+const MASONRY_DESKTOP_COLUMNS = {
+  large: { lg: 3, xl: 3 },
+  medium: { lg: 4, xl: 5 },
+  small: { lg: 5, xl: 6 },
+} as const;
+
+const XL_QUERY = "(min-width: 1280px)";
+
+function useIsXl() {
+  const [xl, setXl] = useState(() => typeof window !== "undefined" && window.matchMedia(XL_QUERY).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(XL_QUERY);
+    const sync = () => setXl(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+  return xl;
+}
+
 const layoutTransition = {
   layout: { duration: 0.42, ease: smoothEase },
 };
@@ -24,6 +45,7 @@ type Props = {
 export function FeedProjectGrid({ className, itemClassName, columnsClass, masonry = false, children }: Props) {
   const { density, mobileColumns, narrow, gridClass } = useFeedGridDensity();
   const reduced = useReducedMotion();
+  const xl = useIsXl();
   const items = Children.toArray(children);
   const resolvedGrid = columnsClass ?? gridClass;
   const layoutKey = columnsClass ? "locked" : narrow ? mobileColumns : density;
@@ -39,21 +61,32 @@ export function FeedProjectGrid({ className, itemClassName, columnsClass, masonr
   }, [layoutKey]);
 
   if (masonry) {
+    // Deal items into columns left → right (CSS columns fill top → bottom, so a short
+    // filtered result stacked down the left edge).
+    const count = narrow
+      ? mobileColumns === "one"
+        ? 1
+        : 2
+      : MASONRY_DESKTOP_COLUMNS[density][xl ? "xl" : "lg"];
+    const columns: ReactNode[][] = Array.from({ length: count }, () => []);
+    items.forEach((child, i) => {
+      columns[i % count].push(
+        isValidElement(child) ? (
+          <div key={child.key ?? `feed-item-${i}`} className={cn("mb-4 sm:mb-5", itemClassName)}>
+            {child}
+          </div>
+        ) : (
+          child
+        ),
+      );
+    });
     return (
-      <div
-        className={cn("columns-2 gap-2 sm:columns-3 sm:gap-2.5 lg:columns-4 xl:columns-5", className)}
-        data-feed-results=""
-        data-feed-density="masonry"
-      >
-        {items.map((child, i) =>
-          isValidElement(child) ? (
-            <div key={child.key ?? `feed-item-${i}`} className={cn("mb-2 break-inside-avoid sm:mb-2.5", itemClassName)}>
-              {child}
-            </div>
-          ) : (
-            child
-          ),
-        )}
+      <div className={cn("flex items-start gap-4 sm:gap-5", className)} data-feed-results="" data-feed-density="masonry">
+        {columns.map((col, c) => (
+          <div key={c} className="flex min-w-0 flex-1 flex-col">
+            {col}
+          </div>
+        ))}
       </div>
     );
   }

@@ -143,6 +143,10 @@ export type CreatorObject = {
   license_note: string;
   /** Published portfolio projects this object comes from. */
   reference_project_ids: string[];
+  /** Flat shipping per order (0 = free; downloads never ship). */
+  shipping_thb: number;
+  /** Paid copies so far (server counted). */
+  sold_count: number;
   status: ObjectStatus;
   created_at: string;
   updated_at: string;
@@ -163,6 +167,8 @@ export type ObjectOrder = {
   status: ObjectOrderStatus;
   tracking_code: string;
   unit_price_thb: number;
+  /** Included in amount_satang. */
+  shipping_satang: number;
   amount_satang: number;
   platform_fee_satang: number;
   seller_net_satang: number;
@@ -174,6 +180,7 @@ export type ObjectOrder = {
   charge_id: string;
   paid_at: string | null;
   received_at: string | null;
+  shipped_at: string | null;
   seller_release: "held" | "pending" | "available";
   created_at: string;
   updated_at: string;
@@ -254,6 +261,54 @@ export function sellerReleaseLabel(release: string): string {
   if (release === "available") return "พร้อมถอนตามรอบ Payso";
   if (release === "pending") return "เงินรอผู้ซื้อกดรับของ";
   return "";
+}
+
+/** Copies in the edition: 1 for unique, the last number of the label for limited, null = open (same rule as the database). */
+export function editionTotal(edition: string, label: string): number | null {
+  if (edition === "unique") return 1;
+  if (edition !== "limited") return null;
+  const match = label.trim().match(/(\d+)\s*$/);
+  return match ? Number(match[1]) : null;
+}
+
+type StockFields = Pick<CreatorObject, "edition" | "edition_label" | "sold_count" | "finishes">;
+
+/** Options that carry their own stock count (then the option is what sells out, not the edition). */
+export function hasOptionStock(item: Pick<CreatorObject, "finishes">): boolean {
+  return item.finishes.some((row) => typeof row.stock === "number");
+}
+
+/**
+ * Copies left, or null when unlimited. With option stock, pass the option to get its own count
+ * (no option = all options together).
+ */
+export function objectRemaining(item: StockFields, optionName?: string): number | null {
+  if (hasOptionStock(item)) {
+    const rows = optionName ? item.finishes.filter((row) => row.name === optionName) : item.finishes;
+    if (rows.some((row) => typeof row.stock !== "number")) return null;
+    return rows.reduce((sum, row) => sum + Math.max(0, row.stock ?? 0), 0);
+  }
+  const total = editionTotal(item.edition, item.edition_label);
+  return total == null ? null : Math.max(0, total - (item.sold_count ?? 0));
+}
+
+export function isObjectSoldOut(item: StockFields): boolean {
+  const left = objectRemaining(item);
+  if (left === 0) return true;
+  return isEditionSoldOut(item.edition, item.edition_label);
+}
+
+/** The seller's name for the option axis (e.g. สี / ขนาด), kept in specs by the editor. */
+export const OPTION_SPEC_LABEL = "ตัวเลือก";
+
+export function optionAxisLabel(item: Pick<CreatorObject, "specs">): string {
+  return item.specs.find((row) => row.label === OPTION_SPEC_LABEL)?.value.trim() || OPTION_SPEC_LABEL;
+}
+
+/** Lowest price a buyer can pay (base or any option with its own price). */
+export function lowestPrice(item: Pick<CreatorObject, "price_thb" | "finishes">): number {
+  const prices = [item.price_thb, ...item.finishes.map((row) => row.price_thb ?? 0)].filter((value) => value > 0);
+  return prices.length ? Math.min(...prices) : item.price_thb;
 }
 
 export function editionLabel(id: string): string {

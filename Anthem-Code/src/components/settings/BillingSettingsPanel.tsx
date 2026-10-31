@@ -158,7 +158,7 @@ export default function BillingSettingsPanel({ userId, profile, onSaved }: Props
             </Link>
           </div>
         ) : (
-          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 space-y-2">
+          <div className="rounded-xl border border-warning/30 bg-warning/10 px-4 py-3 space-y-2">
             <p className="text-sm text-foreground">ยังไม่มีบัญชีรับเงิน</p>
             <Link
               to="/verify"

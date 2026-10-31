@@ -191,7 +191,7 @@ export function DrillDailyInlineCard({ className }: Props) {
           </div>
 
           {completedToday && (
-            <p className="text-xs text-primary font-medium">ทำโจทย์วันนี้เสร็จแล้ว — เก่งมาก!</p>
+            <p className="text-xs text-primary font-medium">ทำโจทย์วันนี้เสร็จแล้ว</p>
           )}
         </div>
 

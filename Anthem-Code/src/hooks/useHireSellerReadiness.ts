@@ -9,6 +9,10 @@ import {
 import type { BillingProfileFields } from "@/lib/billingProfile";
 import { mergeBillingWithKyc } from "@/lib/billingFromKyc";
 import { isKycExpired, resolveKycExpiresAt } from "@/lib/kycIdentity";
+import { isCommerceEnabled } from "@/lib/aplus1Launch";
+
+/** Free MVP: no money moves through SAMECOR, so taking hire requests needs no KYC / bank / billing. */
+const FREE_LAUNCH_READY: HireSellerReadiness = { ready: true, items: [], missingLabels: [], kycPending: false };
 
 function emailConfirmedFromUser(user: { email_confirmed_at?: string | null; confirmed_at?: string | null } | null | undefined): boolean {
   if (!user) return false;
@@ -111,6 +115,8 @@ export function useHireSellerReadiness(userId?: string): HireSellerReadiness & {
       kycPending: pendingKyc,
     });
   }, [user, profile, payout, payoutError, kycRequests]);
+
+  if (!isCommerceEnabled()) return { ...FREE_LAUNCH_READY, isLoading: false };
 
   return {
     ...result,

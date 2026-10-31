@@ -19,6 +19,9 @@ const viteCacheDir = path.resolve(projectRoot, "..", ".vite-cache", "anthem-code
 export default defineConfig({
   root: projectRoot,
   cacheDir: viteCacheDir,
+  define: {
+    __APP_BUILD__: JSON.stringify((process.env.VERCEL_GIT_COMMIT_SHA ?? "dev").slice(0, 7)),
+  },
   server: {
     host: "::",
     port: Number(process.env.PORT ?? 8080),
@@ -54,9 +57,17 @@ export default defineConfig({
   build: {
     chunkSizeWarningLimit: 600,
     rollupOptions: {
+      // /go — NFC card / QR landing page, a separate tiny entry (see go.html).
+      input: {
+        main: path.join(projectRoot, "index.html"),
+        go: path.join(projectRoot, "go.html"),
+      },
       output: {
         manualChunks(id) {
           if (!id.includes("node_modules")) return;
+          // Class helpers used by the app shell. Unassigned, Rollup folds them into "recharts" (a dependency
+          // of it), and every page then preloads the whole chart library just for cn().
+          if (/node_modules\/(clsx|tailwind-merge|class-variance-authority)\//.test(id)) return "ui-utils";
           if (id.includes("recharts")) return "recharts";
           if (id.includes("@radix-ui")) return "radix";
           if (id.includes("@supabase")) return "supabase";

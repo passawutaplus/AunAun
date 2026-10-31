@@ -32,7 +32,7 @@ const ROWS: Row[] = [
 
 function StatusIcon({ status }: { status: Status }) {
   if (status === "done") return <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />;
-  if (status === "partial") return <CircleDashed className="h-4 w-4 text-amber-600 dark:text-amber-400" />;
+  if (status === "partial") return <CircleDashed className="h-4 w-4 text-warning dark:text-warning" />;
   if (status === "manual") return <ExternalLink className="h-4 w-4 text-sky-600 dark:text-sky-400" />;
   return <CircleAlert className="h-4 w-4 text-destructive" />;
 }

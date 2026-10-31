@@ -113,10 +113,10 @@ export const LINE_NOTIFY_GROUPS: LineNotifyGroup[] = [
   },
   {
     id: "anthem",
-    label: { th: "จากหน้าร้านโชว์เคส", en: "Pixel100 showcase" },
+    label: { th: "จาก SAMECOR", en: "SAMECOR" },
     description: {
-      th: "คำขอจ้าง แชท ของขวัญ และกิจกรรมจากหน้าร้าน Pixel100",
-      en: "Hire, chat, gifts, and showcase activity on Pixel100",
+      th: "คำขอจ้าง แชท ของขวัญ และกิจกรรมบน SAMECOR",
+      en: "Hire, chat, gifts, and activity on SAMECOR",
     },
     kinds: [
       {

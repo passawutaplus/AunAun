@@ -1,7 +1,9 @@
 /** Settings page panels — click switches content (not scroll-spy). */
 
 import type { LucideIcon } from "lucide-react";
-import { LayoutDashboard, Settings2, Shield, UserRound } from "lucide-react";
+import { LayoutDashboard, LifeBuoy, SlidersHorizontal, UserRound } from "lucide-react";
+import { isCommerceEnabled } from "@/lib/aplus1Launch";
+import { isAndroidApp } from "@/lib/appShell";
 
 export type SettingsPanelId =
   | "profile"
@@ -9,7 +11,10 @@ export type SettingsPanelId =
   | "notifications"
   | "chat"
   | "preferences"
-  | "privacy"
+  | "visibility"
+  | "data"
+  | "feedback"
+  | "app"
   | "account"
   | "admin";
 
@@ -27,31 +32,34 @@ export type SettingsNavGroup = {
 
 export const SETTINGS_NAV_GROUPS: SettingsNavGroup[] = [
   {
-    id: "group-profile",
-    label: "โปรไฟล์",
+    id: "group-account",
+    label: "บัญชีของฉัน",
     icon: UserRound,
     items: [
-      { id: "profile", label: "แก้ไขโปรไฟล์" },
+      { id: "profile", label: "โปรไฟล์" },
+      { id: "account", label: "บัญชีและความปลอดภัย" },
       { id: "billing", label: "เอกสาร & Billing" },
     ],
   },
   {
-    id: "group-settings",
-    label: "การตั้งค่า",
-    icon: Settings2,
+    id: "group-usage",
+    label: "การใช้งาน",
+    icon: SlidersHorizontal,
     items: [
       { id: "notifications", label: "การแจ้งเตือน" },
       { id: "chat", label: "แชท" },
+      { id: "visibility", label: "การมองเห็น & แท็ก" },
       { id: "preferences", label: "การแสดงผล" },
     ],
   },
   {
-    id: "group-privacy",
-    label: "ความเป็นส่วนตัว",
-    icon: Shield,
+    id: "group-help",
+    label: "ข้อมูลและความช่วยเหลือ",
+    icon: LifeBuoy,
     items: [
-      { id: "privacy", label: "ความเป็นส่วนตัว & ความปลอดภัย" },
-      { id: "account", label: "บัญชี" },
+      { id: "data", label: "ข้อมูลของฉัน" },
+      { id: "feedback", label: "ฟีดแบ็ก & รายงาน" },
+      { id: "app", label: "ดาวน์โหลดแอป" },
     ],
   },
 ];
@@ -83,8 +91,17 @@ const HASH_TO_PANEL: Record<string, SettingsPanelId> = {
   "settings-chat": "chat",
   preferences: "preferences",
   "settings-preferences": "preferences",
-  privacy: "privacy",
-  "settings-privacy": "privacy",
+  visibility: "visibility",
+  "settings-visibility": "visibility",
+  "settings-tag": "visibility",
+  // "privacy" used to hold tagging + PDPA + reports; PDPA is the part people link to
+  privacy: "data",
+  "settings-privacy": "data",
+  data: "data",
+  feedback: "feedback",
+  "settings-feedback": "feedback",
+  app: "app",
+  "settings-app": "app",
   account: "account",
   "settings-account": "account",
   "settings-password": "account",
@@ -128,6 +145,9 @@ export function resolveSettingsPanel(
   if (!raw) return DEFAULT_SETTINGS_PANEL;
   const mapped = HASH_TO_PANEL[raw] ?? (isSettingsPanelId(raw) ? raw : DEFAULT_SETTINGS_PANEL);
   if (mapped === "admin" && !opts?.isAdmin) return DEFAULT_SETTINGS_PANEL;
+  // Billing / tax documents belong to the money phase.
+  if (mapped === "billing" && !isCommerceEnabled()) return DEFAULT_SETTINGS_PANEL;
+  if (mapped === "app" && isAndroidApp()) return DEFAULT_SETTINGS_PANEL;
   return mapped;
 }
 
@@ -138,7 +158,10 @@ export function isSettingsPanelId(value: string): value is SettingsPanelId {
     value === "notifications" ||
     value === "chat" ||
     value === "preferences" ||
-    value === "privacy" ||
+    value === "visibility" ||
+    value === "data" ||
+    value === "feedback" ||
+    value === "app" ||
     value === "account" ||
     value === "admin"
   );
@@ -149,9 +172,14 @@ export function settingsPanelHash(panel: SettingsPanelId): string {
 }
 
 export function buildSettingsNavGroups(isAdmin?: boolean): SettingsNavGroup[] {
-  if (!isAdmin) return SETTINGS_NAV_GROUPS;
+  // Billing waits for the money phase; "download the app" is pointless inside the app.
+  const hidden = new Set<SettingsPanelId>();
+  if (!isCommerceEnabled()) hidden.add("billing");
+  if (isAndroidApp()) hidden.add("app");
+  const groups = SETTINGS_NAV_GROUPS.map((g) => ({ ...g, items: g.items.filter((i) => !hidden.has(i.id)) }));
+  if (!isAdmin) return groups;
   return [
-    ...SETTINGS_NAV_GROUPS,
+    ...groups,
     {
       id: "group-admin",
       label: "ระบบ",

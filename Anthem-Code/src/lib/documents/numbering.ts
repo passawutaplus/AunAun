@@ -19,15 +19,22 @@ export function docNumberYear(now = new Date()): number {
     timeZone: "Asia/Bangkok",
     year: "numeric",
   }).formatToParts(now);
-  return Number(parts.find((p) => p.type === "year")?.value) || now.getFullYear();
+  return (
+    Number(parts.find((p) => p.type === "year")?.value) || now.getFullYear()
+  );
 }
 
-export function isSequentialDocNumber(value: string | null | undefined): boolean {
+export function isSequentialDocNumber(
+  value: string | null | undefined,
+): boolean {
   return !!value && SEQUENTIAL_DOC_NUMBER.test(value.trim());
 }
 
 /** Client-side fallback when RPC is unavailable. Not a running series. */
-export function makeProvisionalDocNumber(kind: DocNumberKind, now = new Date()): string {
+export function makeProvisionalDocNumber(
+  kind: DocNumberKind,
+  now = new Date(),
+): string {
   const y = docNumberYear(now);
   const n = String(Math.floor(Math.random() * 9000) + 1000).padStart(4, "0");
   return `${PREFIX[kind]}-${y}-${n}`;
@@ -59,9 +66,7 @@ export function displayOrderCode(
   return id.replace(/-/g, "").slice(0, 8).toUpperCase();
 }
 
-export function orderCodeFromMetadata(
-  metadata: unknown,
-): string | null {
+export function orderCodeFromMetadata(metadata: unknown): string | null {
   if (!metadata || typeof metadata !== "object") return null;
   const code = (metadata as { order_code?: unknown }).order_code;
   return typeof code === "string" && code.trim() ? code.trim() : null;
@@ -72,9 +77,12 @@ export function orderCodeFromMetadata(
  * Call only when persisting — not when a dialog opens.
  */
 export async function allocateDocNumber(kind: DocNumberKind): Promise<string> {
-  const { data, error } = await sharedDb.rpc("next_doc_number" as never, {
-    p_kind: kind,
-  } as never);
+  const { data, error } = await sharedDb.rpc(
+    "next_doc_number" as never,
+    {
+      p_kind: kind,
+    } as never,
+  );
   if (!error && typeof data === "string" && isSequentialDocNumber(data)) {
     return data.trim();
   }

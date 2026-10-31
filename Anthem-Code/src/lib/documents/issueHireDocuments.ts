@@ -1,7 +1,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { OfferPartyInfo } from "@/lib/chatOffer";
-import type { BusinessDocument, DocumentLineItem } from "@/lib/documents/documentPayload";
-import { allocateDocNumber, makeProvisionalDocNumber } from "@/lib/documents/numbering";
+import type {
+  BusinessDocument,
+  DocumentLineItem,
+} from "@/lib/documents/documentPayload";
+import {
+  allocateDocNumber,
+  makeProvisionalDocNumber,
+} from "@/lib/documents/numbering";
 import { LEGAL_COMPANY_NAME } from "@/lib/legalConfig";
 import type { HireDocumentKind } from "@/lib/payments/types";
 
@@ -39,7 +45,8 @@ export function buildPlatformFeeReceiptSnapshot(input: {
   referenceDocNumber?: string | null;
 }): BusinessDocument {
   const issuedAt = input.issuedAt ?? new Date().toISOString();
-  const docNumber = input.docNumber ?? makeProvisionalDocNumber("platform_fee_receipt");
+  const docNumber =
+    input.docNumber ?? makeProvisionalDocNumber("platform_fee_receipt");
   return {
     kind: "platform_fee_receipt",
     docNumber,
@@ -72,7 +79,10 @@ export function buildInvoiceSnapshot(input: {
   issuedAt?: string;
   whtRate?: number;
 }): BusinessDocument {
-  const subtotal = input.lineItems.reduce((s, it) => s + Math.round(it.amount * 100), 0);
+  const subtotal = input.lineItems.reduce(
+    (s, it) => s + Math.round(it.amount * 100),
+    0,
+  );
   const whtSatang = input.order.whtSatang ?? 0;
   const total = Math.max(0, subtotal - whtSatang);
   return {
@@ -103,7 +113,10 @@ export function buildReceiptSnapshot(input: {
   paymentMethodLabel?: string | null;
   providerChargeId?: string | null;
 }): BusinessDocument {
-  const subtotal = input.lineItems.reduce((s, it) => s + Math.round(it.amount * 100), 0);
+  const subtotal = input.lineItems.reduce(
+    (s, it) => s + Math.round(it.amount * 100),
+    0,
+  );
   const whtSatang = input.order.whtSatang ?? 0;
   return {
     kind: "receipt",

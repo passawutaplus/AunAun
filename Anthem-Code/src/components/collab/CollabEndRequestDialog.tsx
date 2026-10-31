@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AlertTriangle, Ban, Loader2, LogOut } from "lucide-react";
+import { Ban, ChevronDown, Loader2, LogOut, ShieldOff, UserCheck, XCircle } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -18,21 +18,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  COLLAB_END_REASONS,
-  COLLAB_END_WITHDRAW_WARNING,
-  collabEndPlanStepLabel,
-  collabEndTierHint,
-  type CollabEndRequestRow,
-  type CollabEndTier,
-} from "@/lib/collabEndRequest";
-import { cn } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
+import { COLLAB_END_REASONS, type CollabEndRequestRow, type CollabEndTier } from "@/lib/collabEndRequest";
 
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   mode: "create" | "edit";
   tier: CollabEndTier;
+  /** @deprecated pipeline step — no longer shown. */
   planStep?: string | null;
   planRightsSnapshot?: string | null;
   progressCount?: number;
@@ -46,7 +40,6 @@ const CollabEndRequestDialog = ({
   onOpenChange,
   mode,
   tier,
-  planStep,
   planRightsSnapshot,
   progressCount = 0,
   existing,
@@ -55,6 +48,7 @@ const CollabEndRequestDialog = ({
 }: Props) => {
   const [reasonId, setReasonId] = useState<string>(COLLAB_END_REASONS[0].id);
   const [note, setNote] = useState("");
+  const [understood, setUnderstood] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -65,11 +59,11 @@ const CollabEndRequestDialog = ({
     }
     setReasonId(COLLAB_END_REASONS[0].id);
     setNote("");
+    setUnderstood(false);
   }, [open, mode, existing]);
 
-  const canSubmit = reasonId !== "other" || note.trim().length > 0;
+  const canSubmit = (reasonId !== "other" || note.trim().length > 0) && (mode === "edit" || understood);
 
-  const stepLabel = collabEndPlanStepLabel(planStep ?? existing?.plan_step);
   const showWorkContext = tier === "active";
   const rightsPreview =
     planRightsSnapshot?.trim() || existing?.plan_rights_snapshot?.trim() || null;
@@ -82,14 +76,8 @@ const CollabEndRequestDialog = ({
             <Ban className="w-5 h-5 text-destructive" />
             {mode === "edit" ? "แก้ไขเหตุผลถอนตัว" : "ถอนตัวจากคอลแลป"}
           </DialogTitle>
-          <DialogDescription className="text-left space-y-1">
-            <span className="block">{collabEndTierHint(tier)}</span>
-            {stepLabel ? (
-              <span className="block text-foreground/80">ขั้นปัจจุบัน: 「{stepLabel}」</span>
-            ) : null}
-            <span className="block font-medium text-destructive/90">
-              ยุติก่อนจบ = ไม่นับเป็นจบงาน — สถานะจะเป็น「ยกเลิก」
-            </span>
+          <DialogDescription className="text-left">
+            อีกฝ่ายทำต่อได้ทันที — คอลแลปนี้จะนับเป็น「ยกเลิก」สำหรับคุณ
           </DialogDescription>
         </DialogHeader>
 
@@ -125,42 +113,44 @@ const CollabEndRequestDialog = ({
             />
           </div>
 
-          <div
-            className={cn(
-              "space-y-2.5 rounded-xl border p-3",
-              showWorkContext
-                ? "border-destructive/35 bg-destructive/5"
-                : "border-destructive/25 bg-destructive/[0.03]",
-            )}
-          >
-            <div className="flex gap-2">
-              <AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
-              <div className="space-y-1 min-w-0">
-                <p className="text-sm font-semibold text-destructive">
-                  {COLLAB_END_WITHDRAW_WARNING.title}
-                </p>
-                <p className="text-xs text-foreground/85 leading-relaxed">
-                  {COLLAB_END_WITHDRAW_WARNING.body}
-                </p>
-                <p className="text-[11px] text-muted-foreground leading-relaxed">
-                  {COLLAB_END_WITHDRAW_WARNING.footnote}
-                </p>
-              </div>
-            </div>
-
+          <div className="space-y-2.5 rounded-xl bg-muted/50 p-3">
+            <p className="text-xs font-medium text-foreground">เมื่อถอนตัว</p>
+            <ul className="space-y-2 text-xs text-foreground/85">
+              <li className="flex gap-2">
+                <ShieldOff className="mt-0.5 h-3.5 w-3.5 shrink-0 text-destructive" aria-hidden />
+                สละสิทธิ์และเครดิตในงานนี้ทั้งหมด
+              </li>
+              <li className="flex gap-2">
+                <UserCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
+                อีกฝ่ายทำต่อและใช้งานที่ทำร่วมกันได้ (อาจให้เครดิตคุณภายหลังตามดุลยพินิจ)
+              </li>
+              <li className="flex gap-2">
+                <XCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
+                ไม่นับเป็นงานที่จบ
+              </li>
+            </ul>
             {showWorkContext && progressCount > 0 ? (
-              <p className="text-xs text-foreground/80 pl-6">
-                ความคืบหน้าของคุณในแผน: {progressCount} ชิ้น
-              </p>
+              <p className="text-xs text-muted-foreground">งานที่คุณทำไปแล้วในแผน: {progressCount} ชิ้น</p>
             ) : null}
-
             {showWorkContext && rightsPreview ? (
-              <p className="text-xs text-muted-foreground whitespace-pre-wrap rounded-lg bg-background/60 p-2 border border-border/60 ml-6">
-                <span className="font-medium text-foreground/80">สิทธิ์ในแผน (จะสละทั้งหมด): </span>
-                {rightsPreview}
-              </p>
+              <details className="group text-xs">
+                <summary className="flex cursor-pointer list-none items-center gap-1 text-muted-foreground hover:text-foreground">
+                  <ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" aria-hidden />
+                  ดูสิทธิ์ในแผนที่จะสละ
+                </summary>
+                <p className="mt-1.5 whitespace-pre-wrap rounded-lg border border-border/60 bg-background p-2 text-muted-foreground">
+                  {rightsPreview}
+                </p>
+              </details>
             ) : null}
           </div>
+
+          {mode === "create" ? (
+            <label className="flex cursor-pointer items-start gap-2 text-sm">
+              <Checkbox checked={understood} onCheckedChange={(v) => setUnderstood(v === true)} disabled={busy} className="mt-0.5" />
+              เข้าใจแล้ว ว่าจะสละสิทธิ์และเครดิตในงานนี้
+            </label>
+          ) : null}
         </div>
 
         <DialogFooter className="gap-2 sm:gap-0 flex-col sm:flex-row">
@@ -171,7 +161,7 @@ const CollabEndRequestDialog = ({
             disabled={busy}
             onClick={() => onOpenChange(false)}
           >
-            ทำต่อ
+            ยังไม่ถอนตัว
           </Button>
           <Button
             type="button"
@@ -190,7 +180,7 @@ const CollabEndRequestDialog = ({
             ) : (
               <LogOut className="w-4 h-4 mr-1" />
             )}
-            {mode === "edit" ? "บันทึกการแก้ไข" : "ยืนยันถอนตัว"}
+            {mode === "edit" ? "บันทึกการแก้ไข" : "ถอนตัว"}
           </Button>
         </DialogFooter>
       </DialogContent>

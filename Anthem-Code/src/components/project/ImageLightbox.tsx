@@ -7,10 +7,29 @@ import {
   type TouchEvent as ReactTouchEvent,
 } from "react";
 import { createPortal } from "react-dom";
+import { Link } from "react-router-dom";
 import { AnimatePresence, motion, useMotionValue } from "framer-motion";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, MessageCircle, X } from "lucide-react";
 import ImageActionBar from "@/components/project/ImageActionBar";
+import LightboxColorTools from "@/components/project/LightboxColorTools";
+import {
+  GuidesMenu,
+  LightboxFilterDefs,
+  LightboxGuidesOverlay,
+  LightboxLoupe,
+  LoupeButton,
+  OrientationButtons,
+  UPRIGHT,
+  ViewModeMenu,
+  lightboxFilter,
+  orientationTransform,
+  toImagePoint,
+  type ImageOrientation,
+  type LightboxGuide,
+  type LightboxViewMode,
+} from "@/components/project/LightboxViewTools";
 import { lightboxBackdropVariants, lightboxTransition } from "@/lib/motion";
+import { isolateColorUrl } from "@/lib/imageColorTools";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -26,9 +45,40 @@ type Props = {
   onClose: () => void;
   projectId?: string;
   projectTitle?: string;
+  /** "Contact about this work" — opens the hire/contact flow for this project. */
+  onContact?: () => void;
+  /** Link to the full project, for pages that open a work without passing through it. */
+  projectLink?: { href: string; label: string };
 };
 
 const SWIPE_PX = 56;
+
+/** Read one pixel of the image at a relative point (0–1). Null when the host blocks reading pixels. */
+async function sampleImageColor(src: string, rx: number, ry: number): Promise<string | null> {
+  const img = new Image();
+  img.crossOrigin = "anonymous";
+  img.src = src;
+  try {
+    await img.decode();
+  } catch {
+    return null;
+  }
+  const canvas = document.createElement("canvas");
+  canvas.width = 1;
+  canvas.height = 1;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  if (!ctx) return null;
+  const sx = Math.min(img.naturalWidth - 1, Math.max(0, Math.floor(rx * img.naturalWidth)));
+  const sy = Math.min(img.naturalHeight - 1, Math.max(0, Math.floor(ry * img.naturalHeight)));
+  ctx.drawImage(img, sx, sy, 1, 1, 0, 0, 1, 1);
+  try {
+    const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+    return `#${[r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("")}`;
+  } catch {
+    return null;
+  }
+}
+
 const ZOOM_SCALE = 2;
 const CLICK_MOVE_PX = 6;
 
@@ -51,6 +101,8 @@ const ImageLightbox = ({
   onClose,
   projectId,
   projectTitle,
+  onContact,
+  projectLink,
 }: Props) => {
   const list =
     images && images.length > 0
@@ -68,6 +120,21 @@ const ImageLightbox = ({
   const [dragHint, setDragHint] = useState(0);
   const [zoomed, setZoomed] = useState(false);
   const [panning, setPanning] = useState(false);
+  const [grayscale, setGrayscale] = useState(false);
+  const [viewMode, setViewMode] = useState<LightboxViewMode>("normal");
+  const [blurPx, setBlurPx] = useState(6);
+  const [orientation, setOrientation] = useState<ImageOrientation>(UPRIGHT);
+  const imgRef = useRef<HTMLImageElement>(null);
+  const [guide, setGuide] = useState<LightboxGuide>("none");
+  const [spiralTurn, setSpiralTurn] = useState(0);
+  const [loupe, setLoupe] = useState(false);
+  const [loupeZoom, setLoupeZoom] = useState(4);
+  const [isolateHex, setIsolateHex] = useState<string | null>(null);
+  const [isolatedSrc, setIsolatedSrc] = useState<string | null>(null);
+  const loupeRef = useRef(false);
+  loupeRef.current = loupe;
+  const [pickMode, setPickMode] = useState(false);
+  const [pickedHex, setPickedHex] = useState<string | null>(null);
 
   // Direct motion values so pan updates every frame without React re-render lag.
   const x = useMotionValue(0);
@@ -116,6 +183,8 @@ const ImageLightbox = ({
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
+      // A dialog opened from inside the lightbox (e.g. share) handles its own keys first.
+      if (document.querySelector('[role="dialog"][data-state="open"]')) return;
       if (e.key === "Escape") {
         e.preventDefault();
         e.stopPropagation();
@@ -127,6 +196,21 @@ const ImageLightbox = ({
         return;
       }
       if (zoomedRef.current) return;
+      const typing = (e.target as HTMLElement | null)?.closest("input, textarea, [contenteditable]");
+      if (!typing && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        if (e.key === "z" || e.key === "Z") {
+          setLoupe((v) => !v);
+          return;
+        }
+        if (e.key === "m" || e.key === "M") {
+          setOrientation((o) => ({ ...o, flipX: !o.flipX }));
+          return;
+        }
+        if (e.key === "r" || e.key === "R") {
+          setOrientation((o) => ({ ...o, rotate: ((o.rotate + 90) % 360) as ImageOrientation["rotate"] }));
+          return;
+        }
+      }
       if (e.key === "ArrowLeft") {
         e.preventDefault();
         e.stopPropagation();
@@ -147,11 +231,37 @@ const ImageLightbox = ({
 
   useEffect(() => {
     resetView();
+    setPickMode(false);
+    setPickedHex(null);
+    setIsolateHex(null);
   }, [open, safeIndex, resetView]);
+
+  // Colour isolate renders a processed copy of the image; drop it when the colour or image changes.
+  useEffect(() => {
+    if (!isolateHex || !currentSrc) {
+      setIsolatedSrc(null);
+      return;
+    }
+    let url: string | null = null;
+    let alive = true;
+    void isolateColorUrl(currentSrc, isolateHex).then((u) => {
+      url = u;
+      if (!alive) {
+        if (u) URL.revokeObjectURL(u);
+        return;
+      }
+      if (!u) setIsolateHex(null);
+      setIsolatedSrc(u);
+    });
+    return () => {
+      alive = false;
+      if (url) URL.revokeObjectURL(url);
+    };
+  }, [isolateHex, currentSrc]);
 
   // Keep swipe-nav when not zoomed (touch on backdrop/stage).
   const onTouchStart = (e: ReactTouchEvent) => {
-    if (zoomedRef.current) return;
+    if (zoomedRef.current || loupeRef.current) return;
     touchStartX.current = e.changedTouches[0]?.clientX ?? null;
     setDragHint(0);
   };
@@ -214,8 +324,8 @@ const ImageLightbox = ({
   }, [open, applyZoom, x, y]);
 
   const onStagePointerDown = (e: ReactPointerEvent) => {
-    // Ignore secondary buttons / UI chrome.
-    if (e.button !== 0) return;
+    // Ignore secondary buttons / UI chrome. The loupe replaces tap-to-zoom while it's on.
+    if (e.button !== 0 || loupeRef.current) return;
     e.stopPropagation();
     e.preventDefault();
     dragRef.current = {
@@ -230,6 +340,8 @@ const ImageLightbox = ({
   };
 
   const showActions = !!projectId && !!projectTitle && !!currentSrc;
+  const imageFilter = lightboxFilter(viewMode, blurPx, grayscale);
+  const shownSrc = isolatedSrc ?? currentSrc;
 
   return createPortal(
     <AnimatePresence>
@@ -255,6 +367,7 @@ const ImageLightbox = ({
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
         >
+          <LightboxFilterDefs />
           <button
             type="button"
             onClick={(e) => {
@@ -302,58 +415,171 @@ const ImageLightbox = ({
             </>
           ) : null}
 
+          {!zoomed ? (
+            <div className="absolute bottom-4 left-1/2 z-30 w-max max-w-[95vw] -translate-x-1/2">
+              <LightboxColorTools
+                src={currentSrc}
+                grayscale={grayscale}
+                onGrayscaleChange={setGrayscale}
+                pickMode={pickMode}
+                onPickModeChange={(on) => {
+                  setPickMode(on);
+                  if (on) setLoupe(false);
+                }}
+                pickedHex={pickedHex}
+                isolateHex={isolateHex}
+                onIsolateChange={setIsolateHex}
+              >
+                <OrientationButtons value={orientation} onChange={setOrientation} />
+                <LoupeButton
+                  on={loupe}
+                  onChange={(on) => {
+                    setLoupe(on);
+                    if (on) setPickMode(false);
+                  }}
+                />
+                <ViewModeMenu
+                  mode={viewMode}
+                  onModeChange={setViewMode}
+                  blurPx={blurPx}
+                  onBlurChange={setBlurPx}
+                />
+                <GuidesMenu
+                  guide={guide}
+                  onGuideChange={setGuide}
+                  spiralTurn={spiralTurn}
+                  onSpiralTurn={() => setSpiralTurn((t) => t + 1)}
+                />
+              </LightboxColorTools>
+            </div>
+          ) : null}
+
           {/* Full-stage drag surface when zoomed so pan isn't limited to the unscaled box. */}
           <div
             className={cn(
               "group z-10 flex items-center justify-center",
               zoomed
                 ? "absolute inset-0 cursor-grab touch-none"
-                : "relative max-h-[92vh] max-w-[95vw]",
+                : "relative max-h-[78vh] max-w-[95vw] -translate-y-6",
               zoomed && panning && "cursor-grabbing",
-              !zoomed && "cursor-zoom-in",
+              !zoomed && !loupe && "cursor-zoom-in",
             )}
             onClick={(e) => e.stopPropagation()}
             onPointerDown={onStagePointerDown}
           >
-            <motion.img
-              key={currentSrc}
-              src={currentSrc}
-              alt={alt}
-              initial={{ opacity: 0 }}
-              animate={{
-                opacity: 1,
-                // Swipe hint only when not zoomed (pan uses motion values instead).
-                x: zoomed ? undefined : dragHint * 0.15,
-              }}
-              exit={{ opacity: 0 }}
-              transition={lightboxTransition}
-              style={zoomed ? { x, y, scale } : { scale }}
-              className="pointer-events-none max-h-[92vh] max-w-[95vw] origin-center rounded-lg object-contain shadow-2xl select-none"
-              draggable={false}
-            />
-
+            {/* Flips / quarter turns wrap the image and its guides so both turn together. */}
+            <div
+              className="relative transition-transform duration-300"
+              style={{ transform: zoomed ? undefined : orientationTransform(orientation) }}
+            >
+              <motion.img
+                ref={imgRef}
+                key={currentSrc}
+                src={shownSrc}
+                alt={alt}
+                initial={{ opacity: 0 }}
+                animate={{
+                  opacity: 1,
+                  // Swipe hint only when not zoomed (pan uses motion values instead).
+                  x: zoomed ? undefined : dragHint * 0.15,
+                }}
+                exit={{ opacity: 0 }}
+                transition={lightboxTransition}
+                style={{ ...(zoomed ? { x, y, scale } : { scale }), filter: imageFilter }}
+                className={cn(
+                  "pointer-events-none origin-center rounded-lg object-contain shadow-sm select-none transition-[filter] duration-300",
+                  // Turned sideways the image's width becomes its on-screen height — swap the limits.
+                  !zoomed && orientation.rotate % 180 ? "max-h-[95vw] max-w-[78vh]" : "max-h-[78vh] max-w-[95vw]",
+                )}
+                draggable={false}
+                onContextMenu={(e) => e.preventDefault()}
+              />
+              {!zoomed ? <LightboxGuidesOverlay guide={guide} spiralTurn={spiralTurn} /> : null}
+            </div>
             {/* Bottom-center actions: always on mobile; hover on desktop. Hidden while zoomed 200%. */}
             {showActions && !zoomed ? (
               <div
                 className={cn(
-                  "absolute bottom-3 left-1/2 z-20 -translate-x-1/2",
+                  // Phones: the buttons sit under the image, not on it. Desktop: hover overlay at the bottom.
+                  "absolute left-1/2 top-full z-20 mt-3 -translate-x-1/2",
                   "opacity-100 pointer-events-auto transition-opacity duration-150",
+                  "md:bottom-3 md:top-auto md:mt-0",
                   "md:opacity-0 md:pointer-events-none md:group-hover:opacity-100 md:group-hover:pointer-events-auto",
                 )}
                 onClick={(e) => e.stopPropagation()}
                 onPointerDown={(e) => e.stopPropagation()}
               >
-                <ImageActionBar
-                  projectId={projectId!}
-                  projectTitle={projectTitle!}
-                  imageUrl={currentSrc}
-                  imageIndex={safeIndex}
-                  forceVisible
-                  className="justify-center whitespace-nowrap"
-                />
+                <div className="flex items-center gap-2">
+                  <ImageActionBar
+                    projectId={projectId!}
+                    projectTitle={projectTitle!}
+                    imageUrl={currentSrc}
+                    imageIndex={safeIndex}
+                    forceVisible
+                    className="justify-center whitespace-nowrap"
+                  />
+                  {onContact ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onClose();
+                        onContact();
+                      }}
+                      aria-label="ทักแชทจากภาพนี้"
+                      title="ทักแชทจากภาพนี้"
+                      className="group/chat inline-flex shrink-0 items-center whitespace-nowrap rounded-full border border-white/10 bg-black/25 px-3 py-2 text-xs font-medium text-white shadow-sm backdrop-blur-md transition-all hover:bg-black/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+                    >
+                      <MessageCircle className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                      {/* Icon only; the label slides out on hover / keyboard focus (desktop) */}
+                      <span className="max-w-0 overflow-hidden opacity-0 transition-all duration-200 group-hover/chat:ml-1.5 group-hover/chat:max-w-[9rem] group-hover/chat:opacity-100 group-focus-visible/chat:ml-1.5 group-focus-visible/chat:max-w-[9rem] group-focus-visible/chat:opacity-100 motion-reduce:transition-none">
+                        ทักแชทจากภาพนี้
+                      </span>
+                    </button>
+                  ) : null}
+                  {projectLink ? (
+                    <Link
+                      to={projectLink.href}
+                      className="inline-flex shrink-0 items-center whitespace-nowrap rounded-full border border-white/10 bg-black/25 px-3 py-2 text-xs font-medium text-white shadow-sm backdrop-blur-md transition-all hover:bg-black/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+                    >
+                      {projectLink.label}
+                    </Link>
+                  ) : null}
+                </div>
               </div>
             ) : null}
           </div>
+          {loupe && !zoomed && !pickMode ? (
+            <LightboxLoupe
+              src={shownSrc}
+              imgRef={imgRef}
+              filter={imageFilter}
+              orientation={orientation}
+              zoom={loupeZoom}
+              onZoomChange={setLoupeZoom}
+            />
+          ) : null}
+          {pickMode && !zoomed ? (
+            <div
+              role="button"
+              tabIndex={0}
+              aria-label="แตะเพื่อเลือกสีจากภาพ"
+              className="absolute inset-0 z-20 cursor-crosshair"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                const img = imgRef.current;
+                const pt = img ? toImagePoint(img, e.clientX, e.clientY, orientation) : null;
+                if (!pt) {
+                  setPickMode(false);
+                  return;
+                }
+                void sampleImageColor(currentSrc, pt.x / pt.w, pt.y / pt.h).then((hex) => {
+                  if (hex) setPickedHex(hex);
+                  setPickMode(false);
+                });
+              }}
+            />
+          ) : null}
         </motion.div>
       ) : null}
     </AnimatePresence>,

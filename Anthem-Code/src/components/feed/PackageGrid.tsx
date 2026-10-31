@@ -9,6 +9,7 @@ import PackageCard from "./PackageCard";
 import { FeedProjectGrid } from "@/components/feed/FeedProjectGrid";
 import { FEED_PROJECT_GRID_GAP, PACKAGE_FEED_GRID } from "@/lib/feedMasonry";
 import { fuzzyMatchAll } from "@/lib/fuzzyMatch";
+import { normalizeProjectCategory } from "@/data/projectTypes";
 import { cn } from "@/lib/utils";
 import type { DesignerSort } from "./DesignerToolbar";
 import type { DesignerFeedSource } from "./DesignerFeedDropdown";
@@ -23,6 +24,7 @@ import { getFeedSearchCategoryWeights } from "@/lib/feedSearchSignals";
 import {
   pickOnePackagePerOwner,
   rankPackagesByPrice,
+  rankPackagesByPriceAsc,
   rankPackagesForYou,
   rankPackagesNewest,
   scorePackageInterest,
@@ -37,6 +39,9 @@ interface Props {
 }
 
 const ownerId = (d: PackageFeedCard) => d.service.owner_id;
+
+const categoryKey = (value: string) =>
+  (normalizeProjectCategory(value) ?? value).toLowerCase().replace(/\s+/g, "");
 
 const PackageGrid = ({
   search = "",
@@ -70,11 +75,12 @@ const PackageGrid = ({
       rows = rows.filter((d) => fuzzyMatchAll(search, d.searchHaystack));
     }
     if (categories.length > 0) {
-      const set = new Set(categories.map((c) => c.toLowerCase()));
+      // "UI/UX" and "UI / UX" are the same category.
+      const set = new Set(categories.map(categoryKey));
       rows = rows.filter(
         (d) =>
-          (d.service.category && set.has(d.service.category.toLowerCase())) ||
-          d.service.tags.some((t) => set.has(t.toLowerCase())),
+          (d.service.category && set.has(categoryKey(d.service.category))) ||
+          d.service.tags.some((t) => set.has(categoryKey(t))),
       );
     }
 
@@ -90,12 +96,16 @@ const PackageGrid = ({
       searchQuery: search.trim(),
     };
 
+    // One package per creator keeps discovery varied — but a search or category filter shows every match.
     const unique =
-      feedSource === "saved"
+      feedSource === "saved" || search.trim() || categories.length > 0
         ? rows
         : pickOnePackagePerOwner(rows, (row) => {
             if (sort === "projects") {
               return row.service.price_min_thb || row.service.price_thb || 0;
+            }
+            if (sort === "price_asc") {
+              return -(row.service.price_min_thb || row.service.price_thb || Number.MAX_SAFE_INTEGER);
             }
             if (feedSource === "newest") {
               const t = Date.parse(row.service.updated_at);
@@ -105,6 +115,7 @@ const PackageGrid = ({
           });
 
     if (sort === "projects") return rankPackagesByPrice(unique);
+    if (sort === "price_asc") return rankPackagesByPriceAsc(unique);
     if (feedSource === "newest") return rankPackagesNewest(unique);
     return rankPackagesForYou(unique, signals);
   }, [data, search, categories, sort, feedSource, user, followedIds, savedIds, interests]);
@@ -216,19 +227,28 @@ const PackageGrid = ({
   }
 
   return (
-    <PackageGridCards filtered={filtered} search={search} />
+    <PackageGridCards filtered={filtered} search={search} sort={sort} />
   );
 };
 
 function PackageGridCards({
-  filtered,
+  filtered: rows,
   search,
+  sort,
 }: {
   filtered: PackageFeedCard[];
   search: string;
+  sort: DesignerSort;
 }) {
-  const serviceIds = useMemo(() => filtered.map((d) => d.service.id), [filtered]);
+  const serviceIds = useMemo(() => rows.map((d) => d.service.id), [rows]);
   const { data: statsById = {} } = usePackageFeedStats(serviceIds);
+  const filtered = useMemo(
+    () =>
+      sort === "views"
+        ? [...rows].sort((a, b) => (statsById[b.service.id]?.views ?? 0) - (statsById[a.service.id]?.views ?? 0))
+        : rows,
+    [rows, sort, statsById],
+  );
 
   return (
     <div className="space-y-3">

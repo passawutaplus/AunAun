@@ -2,6 +2,8 @@
 
 const DEFAULT_SEEK_SEC = 0.25;
 const MAX_EDGE = 1280;
+/** Some codecs (e.g. HEVC .mov in Chrome) never fire loadeddata; do not let that stall the upload. */
+const LOAD_TIMEOUT_MS = 8000;
 
 function loadVideo(objectUrl: string): Promise<HTMLVideoElement> {
   return new Promise((resolve, reject) => {
@@ -17,11 +19,13 @@ function loadVideo(objectUrl: string): Promise<HTMLVideoElement> {
     };
 
     const cleanup = () => {
+      window.clearTimeout(timer);
       video.onloadeddata = null;
       video.onerror = null;
       video.onseeked = null;
     };
 
+    const timer = window.setTimeout(() => fail("อ่านวิดีโอเพื่อสร้าง thumbnail ไม่ทัน"), LOAD_TIMEOUT_MS);
     video.onerror = () => fail("อ่านวิดีโอเพื่อสร้าง thumbnail ไม่สำเร็จ");
     video.onloadeddata = () => {
       const duration = Number.isFinite(video.duration) ? video.duration : 0;

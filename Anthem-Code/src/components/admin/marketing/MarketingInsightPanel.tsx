@@ -72,7 +72,7 @@ export default function MarketingInsightPanel() {
           <Wand2 className="h-4 w-4" />
           {isRunning ? "Running…" : "Run task"}
         </button>
-        <p className="mt-4 text-xs text-amber-800">{marketingT(uiLanguage, "aiDisclaimer")}</p>
+        <p className="mt-4 text-xs text-warning">{marketingT(uiLanguage, "aiDisclaimer")}</p>
       </MarketingCard>
       <MarketingCard className="p-5">
         {latest ? (

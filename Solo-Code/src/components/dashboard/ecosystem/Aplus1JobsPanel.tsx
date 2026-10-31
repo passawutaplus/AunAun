@@ -49,7 +49,7 @@ export function Aplus1JobsPanel({ onOpenQuotations }: { onOpenQuotations?: () =>
       .filter(Boolean)
       .join("\n\n");
     storeAnthemQuotationHandoff({
-      projectName: hire.project_title || "งานจาก Aplus1",
+      projectName: hire.project_title || "งานจาก SAMECOR",
       clientName: hire.client_name || "ลูกค้า",
       clientEmail: hire.email ?? undefined,
       clientPhone: hire.phone ?? undefined,
@@ -64,7 +64,7 @@ export function Aplus1JobsPanel({ onOpenQuotations }: { onOpenQuotations?: () =>
     return (
       <Card className="glass border-border shadow-soft">
         <CardContent className="p-4 text-sm text-muted-foreground">
-          กำลังโหลดงานจาก Aplus1…
+          กำลังโหลดงานจาก SAMECOR…
         </CardContent>
       </Card>
     );
@@ -75,7 +75,7 @@ export function Aplus1JobsPanel({ onOpenQuotations }: { onOpenQuotations?: () =>
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-semibold flex items-center gap-2">
           <Handshake className="h-4 w-4 text-primary" />
-          งานจาก Aplus1
+          งานจาก SAMECOR
         </CardTitle>
         <p className="text-xs text-muted-foreground">
           คำขอจ้างจากหน้าร้าน — สร้างใบเสนอราคาใน So1o ได้ทันที
@@ -91,7 +91,7 @@ export function Aplus1JobsPanel({ onOpenQuotations }: { onOpenQuotations?: () =>
               rel="noopener noreferrer"
               className="text-primary hover:underline"
             >
-              Aplus1
+              SAMECOR
             </a>{" "}
             เพื่อรับงาน
           </p>
@@ -133,7 +133,7 @@ export function Aplus1JobsPanel({ onOpenQuotations }: { onOpenQuotations?: () =>
                     rel="noopener noreferrer"
                   >
                     <ExternalLink className="h-3 w-3 mr-1" />
-                    Aplus1
+                    SAMECOR
                   </a>
                 </Button>
               </div>
@@ -143,7 +143,7 @@ export function Aplus1JobsPanel({ onOpenQuotations }: { onOpenQuotations?: () =>
         {hires.length > 0 && (
           <p className="text-[10px] text-muted-foreground flex items-center gap-1 pt-1">
             <MessageCircle className="h-3 w-3" />
-            เปิดแชทจ้างงานได้จาก Aplus1 → แชท
+            เปิดแชทจ้างงานได้จาก SAMECOR → แชท
           </p>
         )}
       </CardContent>

@@ -150,7 +150,7 @@ function ProfileIdentityPanel({
           type="button"
           onClick={onPickAvatar}
           disabled={avatarBusy}
-          className="pointer-events-auto relative h-24 w-24 cursor-pointer overflow-hidden rounded-full border-4 border-background bg-muted shadow-lg disabled:cursor-wait sm:h-28 sm:w-28"
+          className="pointer-events-auto relative h-24 w-24 cursor-pointer overflow-hidden rounded-full border-4 border-background bg-muted shadow-sm disabled:cursor-wait sm:h-28 sm:w-28"
           aria-label="อัปโหลดรูปโปรไฟล์"
         >
           {avatarUrl ? (
@@ -392,7 +392,7 @@ export function InterestSurveyGate() {
           preferredCategories: disciplines,
           skills,
         });
-        toast.success("ตั้งค่าโปรไฟล์แล้ว — ลงผลงานแรกกันเลย", {
+        toast.success("ตั้งค่าโปรไฟล์แล้ว ยินดีต้อนรับสู่ SAMECOR", {
           action: {
             label: "ลงผลงาน",
             onClick: () => navigate("/portfolio/new"),
@@ -401,7 +401,7 @@ export function InterestSurveyGate() {
         });
       } else {
         await save(Array.from(selected));
-        toast.success("บันทึกความสนใจแล้ว — ลงผลงานแรกเพื่อเริ่มรับโอกาส", {
+        toast.success("บันทึกความสนใจแล้ว ยินดีต้อนรับสู่ SAMECOR", {
           action: {
             label: "ลงผลงาน",
             onClick: () => navigate("/portfolio/new"),
@@ -410,7 +410,8 @@ export function InterestSurveyGate() {
         });
       }
       setDismissed(true);
-      navigate("/portfolio/new");
+      // Land on the home feed; posting a first work stays one tap away in the toast above.
+      navigate("/");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "บันทึกไม่สำเร็จ");
     }
@@ -492,7 +493,7 @@ export function InterestSurveyGate() {
         : "แก้ทีหลังได้ที่โปรไฟล์ › เกี่ยวกับฉัน";
 
   const primaryLabel =
-    isSaving ? null : step === "interests" ? (isNarrow ? "ถัดไป" : "เริ่มใช้งาน") : "ลงผลงานแรก";
+    isSaving ? null : step === "interests" ? (isNarrow ? "ถัดไป" : "เข้าสู่ SAMECOR") : "เข้าสู่ SAMECOR";
 
   return (
     <ResponsiveOverlay
@@ -548,7 +549,7 @@ export function InterestSurveyGate() {
                       กำลังบันทึก…
                     </>
                   ) : (
-                    "ลงผลงานแรก"
+                    "เข้าสู่ SAMECOR"
                   )}
                 </Button>
               </div>

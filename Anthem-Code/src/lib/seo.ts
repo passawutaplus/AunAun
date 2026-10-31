@@ -44,7 +44,7 @@ export function absoluteUrl(path: string): string {
 }
 
 /** Brand mark — replace with a dedicated 1200×630 OG asset when available. */
-export const DEFAULT_OG_IMAGE = `${APLUS1_PRODUCTION_URL}/icons/icon-512.png`;
+export const DEFAULT_OG_IMAGE = `${APLUS1_PRODUCTION_URL}/brand/og-image.png`;
 
 /** Strip query/hash — canonical paths must be clean. */
 export function canonicalPath(path: string): string {

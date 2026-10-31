@@ -26,7 +26,7 @@ const ReportTrigger = ({
       type="button"
       aria-label={label}
       className={cn(
-        "inline-flex items-center gap-1 shrink-0 text-muted-foreground/50 hover:text-destructive/80 transition-colors",
+        "inline-flex items-center gap-1 shrink-0 text-muted-foreground hover:text-destructive/80 transition-colors",
         variant === "icon" && "p-2 min-h-11 min-w-11 rounded-md hover:bg-muted/30",
         variant === "text" && "text-xs min-h-11 px-2",
         className,

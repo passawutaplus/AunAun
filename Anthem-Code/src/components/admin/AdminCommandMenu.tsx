@@ -31,7 +31,7 @@ export default function AdminCommandMenu({ open, onOpenChange }: Props) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {/* The dialog is portalled outside the admin wrapper, so it carries the admin tokens itself. */}
-      <DialogContent className="admin-theme overflow-hidden border-admin-border bg-admin-bg p-0 text-admin-fg shadow-xl sm:max-w-xl">
+      <DialogContent className="admin-theme overflow-hidden border-admin-border bg-admin-bg p-0 text-admin-fg shadow-sm sm:max-w-xl">
         <DialogTitle className="sr-only">ค้นหาเมนูหลังบ้าน</DialogTitle>
         <DialogDescription className="sr-only">พิมพ์ชื่อหน้าหรือคำที่เกี่ยวข้อง แล้วกด Enter เพื่อไปที่หน้านั้น</DialogDescription>
         <Command className="bg-admin-bg text-admin-fg [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:font-mono [&_[cmdk-group-heading]]:text-[10px] [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.16em] [&_[cmdk-group-heading]]:text-admin-muted">

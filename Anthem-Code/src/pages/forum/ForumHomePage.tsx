@@ -84,11 +84,11 @@ export default function ForumHomePage() {
             <Link
               key={a.id}
               to={`/forum/t/${a.id}`}
-              className="flex items-start gap-3 rounded-xl border border-orange-200/80 bg-orange-50/60 dark:border-orange-900/50 dark:bg-orange-950/30 px-4 py-3 hover:bg-orange-50 dark:hover:bg-orange-950/50 transition-colors"
+              className="flex items-start gap-3 rounded-xl border border-border bg-card px-4 py-3 hover:bg-secondary transition-colors"
             >
-              <Megaphone className="h-4 w-4 mt-0.5 shrink-0 text-orange-600 dark:text-orange-400" />
+              <Megaphone className="h-4 w-4 mt-0.5 shrink-0 text-brand" />
               <span className="min-w-0">
-                <span className="block text-[11px] font-semibold uppercase tracking-wide text-orange-700/80 dark:text-orange-300/80">
+                <span className="block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                   ประกาศจากทีม
                 </span>
                 <span className="block text-sm font-semibold text-foreground leading-snug">{a.title}</span>

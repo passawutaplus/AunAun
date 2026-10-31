@@ -4,7 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   Eye,
   Globe,
-  LayoutGrid,
+  Bookmark,
   Mail,
   Plus,
 } from "lucide-react";
@@ -29,6 +29,7 @@ import {
   CREATOR_SERVICES_MAX,
   useCreatorServices,
   useDeleteCreatorService,
+  useUpsertCreatorService,
   useReorderCreatorServices,
   type CreatorService,
 } from "@/hooks/useCreatorServices";
@@ -36,6 +37,7 @@ import {
   EMPTY_PACKAGE_STATS,
   usePackageManageStats,
 } from "@/hooks/usePackageManageStats";
+import { usePackageOwnerStats } from "@/hooks/usePackageSignals";
 import { usePackageStatsByService } from "@/hooks/usePackageServiceStats";
 import {
   DEFAULT_PACKAGE_MANAGE_SORT,
@@ -60,6 +62,8 @@ export default function PortfolioPackagesManagePanel({ ownerId }: Props) {
     includeDrafts: true,
   });
   const remove = useDeleteCreatorService(ownerId);
+  const upsert = useUpsertCreatorService(ownerId);
+  const { data: ownerStats } = usePackageOwnerStats(!!ownerId);
   const reorder = useReorderCreatorServices(ownerId);
 
   const [search, setSearch] = useState("");
@@ -71,6 +75,12 @@ export default function PortfolioPackagesManagePanel({ ownerId }: Props) {
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const publishedCount = services.filter((s) => s.status === "Published").length;
+  // Guests' views and saves come from an owner-only RPC (saves are private per user otherwise).
+  const guestViews = useMemo(
+    () => [...(ownerStats?.values() ?? [])].reduce((n, v) => n + v.guestViews, 0),
+    [ownerStats],
+  );
+  const saves = useMemo(() => [...(ownerStats?.values() ?? [])].reduce((n, v) => n + v.saves, 0), [ownerStats]);
   const slotsLeft = Math.max(0, CREATOR_SERVICES_MAX - services.length);
   const atLimit = slotsLeft <= 0;
   const serviceIds = useMemo(() => services.map((s) => s.id), [services]);
@@ -104,6 +114,41 @@ export default function PortfolioPackagesManagePanel({ ownerId }: Props) {
       return;
     }
     navigate("/portfolio/packages/new");
+  };
+
+  const duplicate = (svc: CreatorService) => {
+    if (atLimit) {
+      toast.message(`ลงได้สูงสุด ${CREATOR_SERVICES_MAX} แพ็กเกจ — แก้ไขหรือลบอันเดิมก่อน`);
+      return;
+    }
+    upsert.mutate(
+      {
+        patch: {
+          title: `${svc.title} (สำเนา)`.slice(0, 120),
+          price_thb: svc.price_thb,
+          price_min_thb: svc.price_min_thb,
+          summary: svc.summary,
+          deliverables: svc.deliverables,
+          duration_label: svc.duration_label,
+          concepts_label: svc.concepts_label,
+          revisions_label: svc.revisions_label,
+          exclusions_note: svc.exclusions_note,
+          cover_url: svc.cover_url,
+          gallery_urls: svc.gallery_urls,
+          category: svc.category,
+          tags: svc.tags,
+          reference_project_ids: svc.reference_project_ids,
+          status: "Draft",
+          tiers: svc.tiers,
+          addons: svc.addons,
+          faq: svc.faq,
+        },
+      },
+      {
+        onSuccess: () => toast.success("ทำสำเนาเป็นแบบร่างแล้ว"),
+        onError: (e) => toast.error(mapWriteFlowError(e, "ทำสำเนาไม่สำเร็จ")),
+      },
+    );
   };
 
   const openEdit = (svc: CreatorService) => {
@@ -148,7 +193,7 @@ export default function PortfolioPackagesManagePanel({ ownerId }: Props) {
             className="rounded-full"
             onClick={openCreate}
           >
-            <Plus className="w-4 h-4 mr-1" /> Add Package
+            <Plus className="w-4 h-4 mr-1" /> เพิ่มแพ็กเกจ
           </Button>
         </div>
       ) : null}
@@ -156,9 +201,9 @@ export default function PortfolioPackagesManagePanel({ ownerId }: Props) {
       <PackageOverviewChart ownerId={ownerId} serviceIds={serviceIds} />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatsCard label="ทั้งหมด" value={services.length} icon={LayoutGrid} />
         <StatsCard label="เผยแพร่" value={publishedCount} icon={Globe} accent />
-        <StatsCard label="คนดูแพ็กเกจ" value={packageStats.viewCount} icon={Eye} />
+        <StatsCard label="คนดูแพ็กเกจ" value={packageStats.viewCount + guestViews} icon={Eye} />
+        <StatsCard label="คนบันทึก" value={saves} icon={Bookmark} />
         <StatsCard label="กดจ้าง" value={packageStats.hireCount} icon={Mail} accent />
       </div>
 
@@ -175,7 +220,7 @@ export default function PortfolioPackagesManagePanel({ ownerId }: Props) {
                 onClick={openCreate}
               >
                 <Plus className="w-4 h-4 mr-1" />
-                Add Package
+                เพิ่มแพ็กเกจ
               </Button>
             ) : undefined
           }
@@ -259,6 +304,7 @@ export default function PortfolioPackagesManagePanel({ ownerId }: Props) {
                       onPreview={() => setPreviewService(svc)}
                       onEdit={() => openEdit(svc)}
                       onDelete={() => setPendingDeleteId(svc.id)}
+                      onDuplicate={atLimit || upsert.isPending ? undefined : () => duplicate(svc)}
                     />
                   </motion.div>
                 );

@@ -20,8 +20,8 @@ const STATUS_ORDER = ["backlog", "todo", "in_progress", "in_review", "done"] as 
 
 const PRIORITY_STYLE: Record<string, string> = {
   critical: "text-red-600",
-  high: "text-orange-600",
-  medium: "text-amber-700",
+  high: "text-warning",
+  medium: "text-warning",
   low: "text-admin-muted",
 };
 
@@ -44,7 +44,7 @@ function TaskCard({
           <p className="text-sm font-medium text-admin-fg leading-snug">{task.title}</p>
         </div>
         {fromTracking ? (
-          <span className="shrink-0 rounded bg-amber-500/10 px-1.5 py-0.5 text-[9px] text-amber-700">
+          <span className="shrink-0 rounded bg-warning/10 px-1.5 py-0.5 text-[9px] text-warning">
             tracking
           </span>
         ) : null}

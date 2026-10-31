@@ -29,6 +29,7 @@ import {
   getLicenseMeta,
   type LicenseType,
 } from "@/lib/licenses";
+import { userFacingError } from "@/lib/userFacingError";
 
 type ContractType = "project" | "fulltime";
 
@@ -170,7 +171,7 @@ const ContractEditorInner = () => {
       setDraft(md);
       toast.success("ร่างสัญญาเรียบร้อย");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(userFacingError(e)),
   });
 
   const save = useMutation({
@@ -203,7 +204,7 @@ const ContractEditorInner = () => {
       toast.success("บันทึกร่างแล้ว");
       qc.invalidateQueries({ queryKey: ["contracts"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(userFacingError(e)),
   });
 
   const copyDraft = async () => {
@@ -223,7 +224,7 @@ const ContractEditorInner = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="border-b border-border/40 backdrop-blur-md bg-background/60 sticky top-0 z-20">
+      <div className="border-b border-border/40 bg-background sticky top-0 z-20">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <BackButton />
@@ -418,7 +419,7 @@ const ContractEditorInner = () => {
             )}
           </div>
           <p className="text-[11px] text-muted-foreground mt-3 leading-relaxed">
-            ⚠️ เอกสารนี้เป็นเพียงร่างที่สร้างด้วย AI ควรให้ทนายความตรวจสอบก่อนนำไปใช้จริง
+            เอกสารนี้เป็นเพียงร่างที่สร้างด้วย AI ควรให้ทนายความตรวจสอบก่อนนำไปใช้จริง
           </p>
         </div>
       </div>

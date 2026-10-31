@@ -60,3 +60,12 @@ verify_jwt = true
 
 [functions.notify-kyc]
 verify_jwt = true
+
+[functions.anthem-churn-email]
+verify_jwt = false
+
+[functions.line-admin-notify]
+verify_jwt = false
+
+[functions.line-admin-webhook]
+verify_jwt = false

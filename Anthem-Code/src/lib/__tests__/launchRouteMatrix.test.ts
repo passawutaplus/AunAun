@@ -6,6 +6,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
  */
 import { isLaunchHiddenPath } from "@/lib/aplus1Launch";
 
+// These suites describe the full (commerce-on) route map; the free-launch gate has its own tests in commerceGate.test.ts.
+beforeEach(() => {
+  vi.stubEnv("VITE_SAMECOR_COMMERCE_ENABLED", "true");
+});
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
+
 const APP_ROUTE_SAMPLES: { path: string; launchEnabled: boolean }[] = [
   { path: "/", launchEnabled: true },
   { path: "/learn", launchEnabled: true },

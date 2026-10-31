@@ -1,3 +1,4 @@
+import { isCommerceEnabled } from "@/lib/aplus1Launch";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -11,7 +12,6 @@ import { ProfileHiringRequestsSection } from "@/components/profile/ProfileHiring
 import LinkWorkDialog, { type LinkWorkKind } from "@/components/dashboard/LinkWorkDialog";
 import { DashboardLinkedWorkStrip } from "@/components/dashboard/DashboardRequestStrips";
 import StudioLayout from "@/components/dashboard/StudioLayout";
-import InboxOverviewChart from "@/components/dashboard/InboxOverviewChart";
 import { supabase } from "@/integrations/supabase/client";
 import {
   HIRE_TAB_ACCEPTED,
@@ -187,12 +187,6 @@ export default function DashboardPage({ mode: modeProp }: Props) {
       ) : (
         <>
           {mode === "hire" ? (
-            <InboxOverviewChart variant="hire" rows={hireRequests} loading={hireLoading} />
-          ) : (
-            <InboxOverviewChart variant="collab" rows={collabRequests} loading={collabLoading} />
-          )}
-
-          {mode === "hire" ? (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               <StatsCard
                 label={HIRE_TAB_CONTACTED_NEW}
@@ -218,7 +212,7 @@ export default function DashboardPage({ mode: modeProp }: Props) {
             </div>
           )}
 
-          {mode === "hire" ? (
+          {mode === "hire" && isCommerceEnabled() ? (
             <p className="text-xs text-muted-foreground">
               เอกสารใบเสร็จ 50 ทวิ และประมาณการภาษีอยู่ที่{" "}
               <Link to="/dashboard/documents" className="font-medium text-primary hover:underline">

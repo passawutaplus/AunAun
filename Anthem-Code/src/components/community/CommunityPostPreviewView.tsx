@@ -78,8 +78,8 @@ export function CommunityPostPreviewView({
             className={cn(
               "mx-auto w-full max-w-[340px] overflow-hidden bg-background",
               fitContainer
-                ? "h-full min-h-0 rounded-[1.75rem] border-[6px] border-foreground/10 shadow-lg flex flex-col"
-                : "rounded-[1.75rem] border-[6px] border-foreground/10 shadow-lg",
+                ? "h-full min-h-0 rounded-[1.75rem] border-[6px] border-foreground/10 shadow-sm flex flex-col"
+                : "rounded-[1.75rem] border-[6px] border-foreground/10 shadow-sm",
             )}
           >
             <div className={cn("p-2", fitContainer && "flex-1 min-h-0 overflow-y-auto")}>
@@ -96,8 +96,8 @@ export function CommunityPostPreviewView({
           className={cn(
             "mx-auto w-full max-w-[340px] overflow-hidden bg-background",
             fitContainer
-              ? "h-full min-h-0 rounded-[1.75rem] border-[6px] border-foreground/10 shadow-lg"
-              : "rounded-[1.75rem] border-[6px] border-foreground/10 shadow-lg",
+              ? "h-full min-h-0 rounded-[1.75rem] border-[6px] border-foreground/10 shadow-sm"
+              : "rounded-[1.75rem] border-[6px] border-foreground/10 shadow-sm",
           )}
         >
           {detailContent}

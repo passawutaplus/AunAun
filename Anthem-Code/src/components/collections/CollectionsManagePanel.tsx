@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { ArrowLeft, Layers3, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FeedModeTransition } from "@/components/feed/FeedModeTransition";
+import ProfileTabHeading from "@/components/profile/ProfileTabHeading";
 import { useCollections } from "@/hooks/useCollections";
 import CollectionCard from "@/components/collections/CollectionCard";
 import {
@@ -117,10 +118,21 @@ export default function CollectionsManagePanel({ userId, embedded }: Props) {
     );
   }
 
+  const newCollectionButton = (
+    <Button
+      size="sm"
+      onClick={() => setFormOpen(true)}
+      variant="gradient"
+      className="rounded-full shrink-0"
+    >
+      <Plus className="w-4 h-4 mr-1" /> คอลเลกชันใหม่
+    </Button>
+  );
+
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        {selection !== "folders" ? (
+      {selection !== "folders" ? (
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <Button
             type="button"
             size="sm"
@@ -130,26 +142,15 @@ export default function CollectionsManagePanel({ userId, embedded }: Props) {
           >
             <ArrowLeft className="w-4 h-4 mr-1" /> คอลเลกชันทั้งหมด
           </Button>
-        ) : (
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <Layers3 className="w-5 h-5 text-primary shrink-0" />
-              <h2 className="text-lg font-semibold text-foreground">คอลเลกชันทั้งหมด</h2>
-            </div>
-            <p className="text-sm text-muted-foreground mt-1">
-              เลือกคอลเลกชันเพื่อดูรายละเอียด หรือปรับขนาดการ์ดได้
-            </p>
-          </div>
-        )}
-        <Button
-          size="sm"
-          onClick={() => setFormOpen(true)}
-          variant="gradient"
-          className="rounded-full shrink-0"
-        >
-          <Plus className="w-4 h-4 mr-1" /> คอลเลกชันใหม่
-        </Button>
-      </div>
+          {newCollectionButton}
+        </div>
+      ) : (
+        <ProfileTabHeading
+          title="Collections"
+          count={collections.length}
+          actions={newCollectionButton}
+        />
+      )}
 
       <FeedModeTransition modeKey={selection}>
         {selection !== "folders" ? (
@@ -160,7 +161,7 @@ export default function CollectionsManagePanel({ userId, embedded }: Props) {
           />
         ) : collections.length === 0 ? (
           <div className="text-center py-16 glass-panel rounded-2xl">
-            <Layers3 className="w-12 h-12 text-muted-foreground/40 mx-auto mb-3" />
+            <Layers3 className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
             <p className="text-foreground font-medium mb-1">ยังไม่มีคอลเลกชัน</p>
             <p className="text-sm text-muted-foreground mb-4">
               สร้างคอลเลกชันแรก แล้วเริ่มเก็บผลงานที่คุณรัก

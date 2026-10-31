@@ -19,6 +19,9 @@ export type ProjectAsset = {
   scan_status: ProjectAssetScanStatus;
   scan_reason?: string | null;
   scanned_at?: string | null;
+  /** Written only by the scan Edge Function; the database strips it from anything the browser sends. */
+  server_scanned_at?: string | null;
+  scan_engine?: string;
 };
 
 export type StoredProjectAsset = Omit<ProjectAsset, "id"> & { id?: string };
@@ -101,6 +104,8 @@ function normalizeStoredAsset(raw: Record<string, unknown>): ProjectAsset | null
       scan_status,
       scan_reason: raw.scan_reason != null ? String(raw.scan_reason) : null,
       scanned_at: typeof raw.scanned_at === "string" ? raw.scanned_at : null,
+      server_scanned_at: typeof raw.server_scanned_at === "string" ? raw.server_scanned_at : null,
+      scan_engine: typeof raw.scan_engine === "string" ? raw.scan_engine : undefined,
     };
   }
 
@@ -117,6 +122,8 @@ function normalizeStoredAsset(raw: Record<string, unknown>): ProjectAsset | null
     scan_status,
     scan_reason: raw.scan_reason != null ? String(raw.scan_reason) : null,
     scanned_at: typeof raw.scanned_at === "string" ? raw.scanned_at : null,
+    server_scanned_at: typeof raw.server_scanned_at === "string" ? raw.server_scanned_at : null,
+    scan_engine: typeof raw.scan_engine === "string" ? raw.scan_engine : undefined,
   };
 }
 
@@ -166,6 +173,8 @@ export function toStoredProjectAssets(assets: ProjectAsset[]): StoredProjectAsse
       scan_status: a.scan_status,
       scan_reason: a.scan_reason ?? null,
       scanned_at: a.scanned_at ?? null,
+      server_scanned_at: a.server_scanned_at ?? null,
+      scan_engine: a.scan_engine,
     };
     if (a.kind === "link") {
       return { ...base, url: a.url?.trim() ?? "" };
@@ -197,6 +206,11 @@ export function hasPendingProjectAssets(assets: ProjectAsset[]): boolean {
   return assets.some((a) => a.scan_status === "pending");
 }
 
+/** Anything the server has not judged under the current rules (pending, unstamped or an older engine). */
+export function needsServerScan(assets: ProjectAsset[]): boolean {
+  return assets.some((a) => a.scan_status === "pending" || !a.server_scanned_at || a.scan_engine !== "v2");
+}
+
 export function projectAssetDownloadUrl(asset: ProjectAsset): string | undefined {
   if (asset.kind === "link") return safeHttpUrl(asset.url);
   return undefined;
@@ -207,6 +221,32 @@ export function fileExtension(name: string): string {
   const idx = base.lastIndexOf(".");
   if (idx < 0) return "";
   return base.slice(idx + 1).toLowerCase();
+}
+
+/** Leading bytes each allowed type must start with (client-side sanity check; the server scan stays authoritative). */
+const FILE_SIGNATURES: Record<string, (b: Uint8Array) => boolean> = {
+  pdf: (b) => b[0] === 0x25 && b[1] === 0x50 && b[2] === 0x44 && b[3] === 0x46,
+  zip: (b) => b[0] === 0x50 && b[1] === 0x4b && (b[2] === 0x03 || b[2] === 0x05 || b[2] === 0x07),
+  png: (b) => b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47,
+  jpg: (b) => b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff,
+  jpeg: (b) => b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff,
+  webp: (b) => b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 && b[8] === 0x57 && b[9] === 0x45,
+  ttf: (b) => (b[0] === 0x00 && b[1] === 0x01 && b[2] === 0x00 && b[3] === 0x00) || (b[0] === 0x74 && b[1] === 0x72),
+  otf: (b) => b[0] === 0x4f && b[1] === 0x54 && b[2] === 0x54 && b[3] === 0x4f,
+  woff: (b) => b[0] === 0x77 && b[1] === 0x4f && b[2] === 0x46 && b[3] === 0x46,
+  woff2: (b) => b[0] === 0x77 && b[1] === 0x4f && b[2] === 0x46 && b[3] === 0x32,
+};
+
+/** True when the file's first bytes match its extension (e.g. an .exe renamed to .pdf fails). */
+export async function fileSignatureMatchesExtension(file: File): Promise<boolean> {
+  const check = FILE_SIGNATURES[fileExtension(file.name)];
+  if (!check) return false;
+  try {
+    const head = new Uint8Array(await file.slice(0, 16).arrayBuffer());
+    return check(head);
+  } catch {
+    return false;
+  }
 }
 
 export function isAllowedProjectAssetFile(file: File): boolean {

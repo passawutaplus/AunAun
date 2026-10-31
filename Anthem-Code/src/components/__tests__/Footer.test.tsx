@@ -19,10 +19,10 @@ describe("Footer", () => {
     renderFooter();
     expect(screen.queryByRole("heading", { name: /ผลงานจริง/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "แชร์ผลงาน" })).not.toBeInTheDocument();
-    expect(screen.getByText(/สงวนลิขสิทธิ์/)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "ข้อกำหนด" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "ศูนย์ช่วยเหลือ" })).toBeInTheDocument();
-    expect(screen.getByText("aplus1")).toBeInTheDocument();
+    expect(screen.getByText(/All rights reserved/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Terms" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Help Center" })).toBeInTheDocument();
+    expect(screen.getByText("sameCOR")).toBeInTheDocument();
     expect(screen.queryByRole("img")).not.toBeInTheDocument();
   });
 });

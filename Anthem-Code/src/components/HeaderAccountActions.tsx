@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { ChevronDown, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ChatNavButton from "@/components/chat/ChatNavButton";
+import FeedbackHeaderPill from "@/components/feedback/FeedbackHeaderPill";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import { ProfileMenuDropdown } from "@/components/ProfileMenuDropdown";
 import UserAvatar from "@/components/UserAvatar";
@@ -54,6 +55,7 @@ export function HeaderAccountActions({ className }: Props) {
 
   return (
     <div className={cn("flex shrink-0 items-center gap-1 sm:gap-2", className)}>
+      <FeedbackHeaderPill />
       <ChatNavButton />
       <NotificationBell />
       <ProfileMenuDropdown

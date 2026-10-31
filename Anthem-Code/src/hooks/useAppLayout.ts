@@ -21,7 +21,7 @@ export function useAppLayout() {
     return () => mq.removeEventListener("change", sync);
   }, []);
 
-  const navHidden = shouldHideBottomNav(pathname, isMobile);
+  const navHidden = shouldHideBottomNav(pathname);
   const showBottomNav = belowLg && !navHidden;
 
   return {

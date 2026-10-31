@@ -82,7 +82,7 @@ export function ProfileReviewsSection({ subjectUserId, className }: Props) {
         <p className="text-sm text-destructive">โหลดรีวิวไม่สำเร็จ — อาจยังไม่ได้สร้างตารางบนเซิร์ฟเวอร์</p>
       ) : list.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border/70 px-5 py-10 text-center">
-          <MessageSquareHeart className="mx-auto h-8 w-8 text-muted-foreground/50" aria-hidden />
+          <MessageSquareHeart className="mx-auto h-8 w-8 text-muted-foreground" aria-hidden />
           <p className="mt-3 text-sm font-medium text-foreground">ยังไม่มีรีวิวในหมวดนี้</p>
           <p className="mt-1 text-sm text-muted-foreground">
             รีวิวจะโผล่หลังจบงานจ้างหรือคอลแลป — และบอกได้ว่ามาจากแพ็กเกจไหน

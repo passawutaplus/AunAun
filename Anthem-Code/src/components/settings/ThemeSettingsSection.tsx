@@ -16,12 +16,12 @@ export function ThemeSettingsSection({ embedded = false }: { embedded?: boolean 
 
   const content = (
     <>
-      <div className="flex items-center gap-2">
-        <Palette className="w-5 h-5 text-primary" />
-        <h3 className={embedded ? "text-sm font-medium text-foreground" : "font-semibold text-foreground"}>
-          การแสดงผล
-        </h3>
-      </div>
+      {embedded ? null : (
+        <div className="flex items-center gap-2">
+          <Palette className="w-5 h-5 text-primary" />
+          <h3 className="font-semibold text-foreground">การแสดงผล</h3>
+        </div>
+      )}
 
       <div className="space-y-3">
         <ThemeModePicker label="โหมดแสดงผล" disabled={!mounted} />

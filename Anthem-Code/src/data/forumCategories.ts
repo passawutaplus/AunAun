@@ -22,41 +22,42 @@ export type ForumCategoryTone = {
   softActive: string;
 };
 
+/** Brand Book: lanes differ by a small swatch only; text and fills stay neutral. */
 export const FORUM_CATEGORY_TONES: Record<ForumAllCategorySlug, ForumCategoryTone> = {
   announcements: {
-    swatch: "bg-orange-500",
-    icon: "text-orange-600 dark:text-orange-400",
-    text: "text-orange-800 dark:text-orange-300",
-    soft: "hover:bg-orange-50 dark:hover:bg-orange-950/40",
-    softActive: "bg-orange-50 text-orange-900 dark:bg-orange-950/50 dark:text-orange-200",
+    swatch: "bg-brand",
+    icon: "text-brand",
+    text: "text-foreground",
+    soft: "hover:bg-secondary",
+    softActive: "bg-secondary text-foreground",
   },
   help: {
-    swatch: "bg-sky-500",
-    icon: "text-sky-600 dark:text-sky-400",
-    text: "text-sky-800 dark:text-sky-300",
-    soft: "hover:bg-sky-50 dark:hover:bg-sky-950/40",
-    softActive: "bg-sky-50 text-sky-800 dark:bg-sky-950/50 dark:text-sky-200",
+    swatch: "bg-chat-hire",
+    icon: "text-muted-foreground",
+    text: "text-foreground",
+    soft: "hover:bg-secondary",
+    softActive: "bg-secondary text-foreground",
   },
   bug: {
-    swatch: "bg-rose-500",
-    icon: "text-rose-600 dark:text-rose-400",
-    text: "text-rose-800 dark:text-rose-300",
-    soft: "hover:bg-rose-50 dark:hover:bg-rose-950/40",
-    softActive: "bg-rose-50 text-rose-800 dark:bg-rose-950/50 dark:text-rose-200",
+    swatch: "bg-destructive",
+    icon: "text-muted-foreground",
+    text: "text-foreground",
+    soft: "hover:bg-secondary",
+    softActive: "bg-secondary text-foreground",
   },
   idea: {
-    swatch: "bg-amber-500",
-    icon: "text-amber-600 dark:text-amber-400",
-    text: "text-amber-800 dark:text-amber-300",
-    soft: "hover:bg-amber-50 dark:hover:bg-amber-950/40",
-    softActive: "bg-amber-50 text-amber-900 dark:bg-amber-950/50 dark:text-amber-200",
+    swatch: "bg-foreground/60",
+    icon: "text-muted-foreground",
+    text: "text-foreground",
+    soft: "hover:bg-secondary",
+    softActive: "bg-secondary text-foreground",
   },
   feedback: {
-    swatch: "bg-violet-500",
-    icon: "text-violet-600 dark:text-violet-400",
-    text: "text-violet-800 dark:text-violet-300",
-    soft: "hover:bg-violet-50 dark:hover:bg-violet-950/40",
-    softActive: "bg-violet-50 text-violet-800 dark:bg-violet-950/50 dark:text-violet-200",
+    swatch: "bg-chat-collab",
+    icon: "text-muted-foreground",
+    text: "text-foreground",
+    soft: "hover:bg-secondary",
+    softActive: "bg-secondary text-foreground",
   },
 };
 
@@ -65,11 +66,11 @@ export function forumCategoryTone(slug: string | undefined | null): ForumCategor
     return FORUM_CATEGORY_TONES[slug as ForumAllCategorySlug];
   }
   return {
-    swatch: "bg-primary/70",
+    swatch: "bg-foreground/40",
     icon: "text-muted-foreground",
     text: "text-muted-foreground",
-    soft: "hover:bg-muted",
-    softActive: "bg-primary/10 text-primary",
+    soft: "hover:bg-secondary",
+    softActive: "bg-secondary text-foreground",
   };
 }
 

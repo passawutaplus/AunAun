@@ -3,22 +3,41 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#0a0a0a" />
+    <script src="/theme-boot.js"></script>
+    <script src="/app-shell-boot.js"></script>
+    <!-- Instant brand screen: shown until React mounts so the app never opens on a blank page. -->
+    <style>
+      html { background: #f8f7f2; }
+      html.dark { background: #201f1e; }
+      /* Spotlight loader screen: corner wash per the M10 spec (Mono Light / Mono Dark). Keep in step with .brand-loading-screen in src/index.css. */
+      #boot { position: fixed; inset: 0; z-index: 2147483000; opacity: 1; transition: opacity 380ms ease; display: flex; align-items: center; justify-content: center; background: radial-gradient(120% 70% at 0% 0%, rgba(17,17,17,.42), rgba(17,17,17,.12) 45%, transparent 70%), radial-gradient(90% 50% at 100% 100%, rgba(17,17,17,.07), transparent 70%), #f8f7f2; }
+      html.dark #boot { background: radial-gradient(120% 70% at 0% 0%, rgba(248,247,242,.16), rgba(248,247,242,.04) 45%, transparent 70%), radial-gradient(90% 50% at 100% 100%, rgba(248,247,242,.08), transparent 70%), #201f1e; }
+      #boot.boot-hide { opacity: 0; pointer-events: none; }
+      @media (prefers-reduced-motion: reduce) { #boot { transition: none; } }
+      #boot img { width: 96px; height: 96px; }
+      #boot .boot-dark { display: none; }
+      html.dark #boot .boot-light { display: none; }
+      html.dark #boot .boot-dark { display: block; }
+    </style>
+    <meta name="theme-color" content="#F8F7F2" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="SAMECOR" />
     <meta name="mobile-web-app-capable" content="yes" />
     <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" href="/brand/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <!-- Production: security headers enforced via vercel.json / nginx.conf -->
     <!-- Local dev: Report-Only CSP for violation monitoring (see docs/csp-report.md) -->
     <meta http-equiv="Content-Security-Policy-Report-Only" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://accounts.google.com https://solofreelancer.com https://www.solofreelancer.com https://*.stripe.com https://checkout.stripe.com https://api.stripe.com https://api.frankfurter.app; frame-src 'self' https://accounts.google.com https://checkout.stripe.com https://js.stripe.com; media-src 'self' data: blob: https:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';" />
     <title>SAMECOR — You Create. We Connect.</title>
-    <meta name="description" content="SAMECOR เชื่อมผลงานของคุณกับคน โปรเจกต์ และโอกาสถัดไป — 1 Profile. 100+ Opportunities." />
+    <meta name="description" content="SAMECOR เชื่อมผลงานของคุณกับคน โปรเจกต์ และโอกาสถัดไป — You Create. We Connect." />
     <meta name="author" content="SAMECOR" />
-    <meta name="robots" content="index, follow" />
+    <meta name="robots" content="index, follow, noai, noimageai" />
     <link rel="canonical" href="https://samecor.com/" />
     <!-- Brand + editor fonts load async (see loadBrandFonts / loadProjectTextFonts) — avoid render-blocking. -->
+    <link rel="preload" href="/fonts/Agrandir-Wide-Light.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://images.unsplash.com" />
@@ -29,29 +48,19 @@
     <meta property="og:site_name" content="SAMECOR" />
     <meta property="og:title" content="SAMECOR — You Create. We Connect." />
     <meta property="og:description" content="Create your profile. Connect through your work. Discover new opportunities." />
-    <meta property="og:image" content="https://samecor.com/icons/icon-512.png" />
+    <meta property="og:image" content="https://samecor.com/brand/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="SAMECOR — You Create. We Connect." />
     <meta name="twitter:description" content="Create your profile. Connect through your work. Discover new opportunities." />
-    <meta name="twitter:image" content="https://samecor.com/icons/icon-512.png" />
+    <meta name="twitter:image" content="https://samecor.com/brand/og-image.png" />
   </head>
 
   <body>
-    <script>
-      (function () {
-        try {
-          var key = "an1hem-theme";
-          var stored = localStorage.getItem(key);
-          var preferDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-          var theme = stored || "system";
-          var dark = theme === "dark" || (theme === "system" && preferDark);
-          if (dark) document.documentElement.classList.add("dark");
-          else document.documentElement.classList.remove("dark");
-        } catch (_) {}
-      })();
-    </script>
     <div id="root"></div>
+    <div id="boot" aria-hidden="true"><img class="boot-light" src="/brand/loader-mono-light.svg" width="96" height="96" alt="" /><img class="boot-dark" src="/brand/loader-mono-dark.svg" width="96" height="96" alt="" /></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

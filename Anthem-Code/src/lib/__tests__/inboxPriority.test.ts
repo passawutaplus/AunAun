@@ -16,8 +16,8 @@ describe("parseInboxPriority", () => {
 
 describe("inboxPriorityDotClass", () => {
   it("uses distinct colors", () => {
-    expect(inboxPriorityDotClass("ปกติ")).toContain("emerald");
-    expect(inboxPriorityDotClass("รอได้")).toContain("amber");
-    expect(inboxPriorityDotClass("ด่วน")).toContain("red");
+    expect(inboxPriorityDotClass("ปกติ")).toContain("success");
+    expect(inboxPriorityDotClass("รอได้")).toContain("warning");
+    expect(inboxPriorityDotClass("ด่วน")).toContain("destructive");
   });
 });

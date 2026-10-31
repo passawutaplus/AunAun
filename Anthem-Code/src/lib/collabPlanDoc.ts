@@ -46,6 +46,12 @@ export type CollabAlignPayload = {
   deliverables: string;
   rights: string;
   attachments: CollabAttachment[];
+  /** Agreement (short plan) fields — see lib/collabAgreement.ts. Absent on old pipeline plans. */
+  what?: string;
+  roleMap?: Record<string, string>;
+  destinations?: string[];
+  rightsPreset?: string;
+  sentAt?: string | null;
 };
 
 export type CollabStepNotePayload = {
@@ -590,6 +596,20 @@ export function normalizeCollabPlanDocument(
         ),
         rights: asString(alignRaw.rights),
         attachments: asAttachments(alignRaw.attachments),
+        ...(typeof alignRaw.what === "string"
+          ? {
+              what: alignRaw.what,
+              roleMap:
+                alignRaw.roleMap && typeof alignRaw.roleMap === "object"
+                  ? Object.fromEntries(
+                      Object.entries(alignRaw.roleMap as Record<string, unknown>).map(([k, v]) => [k, asString(v)]),
+                    )
+                  : {},
+              destinations: asStringList(alignRaw.destinations),
+              rightsPreset: asString(alignRaw.rightsPreset),
+              sentAt: typeof alignRaw.sentAt === "string" ? alignRaw.sentAt : null,
+            }
+          : {}),
       },
       create: normalizeStepNotePayload(
         p.create && typeof p.create === "object"

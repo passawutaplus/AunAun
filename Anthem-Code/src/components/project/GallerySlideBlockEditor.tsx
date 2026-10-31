@@ -85,7 +85,7 @@ function SortableThumb({
         "h-14 w-20 shrink-0 overflow-hidden rounded-none border-2 transition-all touch-none",
         "cursor-grab active:cursor-grabbing",
         active ? "border-primary" : "border-transparent opacity-60 hover:opacity-100",
-        isDragging && "z-20 opacity-100 shadow-lg ring-2 ring-primary/50",
+        isDragging && "z-20 opacity-100 shadow-sm ring-2 ring-primary/50",
         disabled && "cursor-default",
       )}
       {...attributes}
@@ -151,7 +151,7 @@ export function GallerySlideBlockEditor({
           {uploading ? (
             <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
           ) : (
-            <Plus className="h-8 w-8 text-muted-foreground/50" strokeWidth={1.25} />
+            <Plus className="h-8 w-8 text-muted-foreground" strokeWidth={1.25} />
           )}
           <span className="text-xs text-muted-foreground">อัปโหลดภาพสไลด์</span>
         </button>
@@ -199,7 +199,7 @@ export function GallerySlideBlockEditor({
               aria-label="ภาพก่อนหน้า"
               disabled={disabled}
               onClick={() => api?.scrollPrev()}
-              className="absolute left-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-background/20 text-foreground/55 shadow-none backdrop-blur-[2px] hover:bg-background/40 hover:text-foreground/80"
+              className="absolute left-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-background/20 text-muted-foreground shadow-none backdrop-blur-[2px] hover:bg-background/40 hover:text-foreground/80"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
@@ -208,7 +208,7 @@ export function GallerySlideBlockEditor({
               aria-label="ภาพถัดไป"
               disabled={disabled}
               onClick={() => api?.scrollNext()}
-              className="absolute right-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-background/20 text-foreground/55 shadow-none backdrop-blur-[2px] hover:bg-background/40 hover:text-foreground/80"
+              className="absolute right-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-background/20 text-muted-foreground shadow-none backdrop-blur-[2px] hover:bg-background/40 hover:text-foreground/80"
             >
               <ChevronRight className="h-4 w-4" />
             </button>

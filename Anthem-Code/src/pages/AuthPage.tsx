@@ -8,6 +8,7 @@ import { FeedModeTransition } from "@/components/feed/FeedModeTransition";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { SocialButtons, AuthEmailSeparator } from "@/components/auth/SocialButtons";
+import { SignupVerifyCode, EmailTypoHint } from "@/components/auth/SignupVerifyCode";
 import {
   buildEmailConfirmUrl,
   safeRelativePath,
@@ -37,20 +38,20 @@ import {
   loginEmailFormatError,
   loginPasswordEmptyError,
 } from "@/lib/loginEmailPrefill";
+import { userFacingError } from "@/lib/userFacingError";
 
-const PAPER_SERIF = '"Iowan Old Style", Palatino, Georgia, serif';
 
-/** Same paper field as the studio home, so login doesn't sit on the old glass theme. */
+/** Brand Book light field (Studio White canvas, Gallery Black ink), pinned on the login page in every theme. */
 const paperVars = {
-  "--background": "0 0% 96%",
-  "--foreground": "40 3% 18%",
-  "--muted-foreground": "30 4% 41%",
+  "--background": "50 30% 96%",
+  "--foreground": "0 0% 7%",
+  "--muted-foreground": "0 0% 40%",
   "--card": "0 0% 100%",
-  "--card-foreground": "40 3% 18%",
+  "--card-foreground": "0 0% 7%",
   "--popover": "0 0% 100%",
-  "--popover-foreground": "40 3% 18%",
-  "--border": "40 5% 86%",
-  "--input": "40 5% 86%",
+  "--popover-foreground": "0 0% 7%",
+  "--border": "60 6% 90%",
+  "--input": "60 6% 90%",
   "--muted": "40 6% 92%",
   "--secondary": "40 6% 92%",
   "--secondary-foreground": "40 3% 18%",
@@ -59,18 +60,18 @@ const paperVars = {
   "--primary": "40 3% 18%",
   "--primary-foreground": "0 0% 96%",
   "--ring": "40 3% 18%",
-  color: "#2f2e2c",
-  backgroundColor: "#f5f5f5",
+  color: "hsl(var(--foreground))",
+  backgroundColor: "hsl(var(--background))",
 } as CSSProperties;
 
 const paperInput =
-  "h-11 rounded-full border-[#e4e1db] bg-white text-[#2f2e2c] shadow-none backdrop-blur-none placeholder:text-[#6b6862] focus-visible:ring-[#2f2e2c]/25";
+  "h-11 rounded-full border-border bg-white text-foreground shadow-none backdrop-blur-none placeholder:text-[#6b6862] focus-visible:ring-ring/25";
 
 const paperSubmit =
-  "h-11 w-full rounded-full border-0 bg-[#2f2e2c] text-base font-medium text-[#f5f5f5] shadow-none hover:bg-[#2f2e2c]/90";
+  "h-11 w-full rounded-full border-0 bg-foreground text-base font-medium text-background shadow-none hover:bg-foreground/90";
 
 const paperGoogle =
-  "rounded-full border-[#e4e1db] bg-white text-[#2f2e2c] shadow-none backdrop-blur-none hover:bg-[#f5f5f5]";
+  "rounded-full border-border bg-white text-foreground shadow-none backdrop-blur-none hover:bg-secondary";
 
 const AuthPage = () => {
   const navigate = useNavigate();
@@ -82,7 +83,6 @@ const AuthPage = () => {
   const authHeroRef = useRef<HTMLDivElement>(null);
   const heroCycle = useHeroRotatingCycle();
   const [tab, setTab] = useState<"login" | "signup">("login");
-  const [fadeOut, setFadeOut] = useState(false);
 
   useEffect(() => {
     if (!shouldStripRedirectParam(rawRedirect)) return;
@@ -95,7 +95,6 @@ const AuthPage = () => {
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
-    setFadeOut(true);
     void (async () => {
       const { data } = await supabase
         .from("profiles")
@@ -107,7 +106,8 @@ const AuthPage = () => {
       if (cancelled) return;
       const needsInterestSurvey = !hasCompletedProfileOnboarding(data);
       const dest = needsInterestSurvey ? "/" : redirect;
-      window.setTimeout(() => navigate(dest, { replace: true }), 250);
+      // No fade-out + delay: the form keeps its spinner until we leave, so there is no blank page in between.
+      navigate(dest, { replace: true });
     })();
     return () => {
       cancelled = true;
@@ -119,16 +119,15 @@ const AuthPage = () => {
       ref={authHeroRef}
       style={paperVars}
       className={cn(
-      "relative min-h-screen overflow-x-hidden bg-[#f5f5f5] text-[#2f2e2c] transition-opacity duration-300",
+      "relative min-h-screen overflow-x-hidden bg-background text-foreground",
       "lg:overflow-hidden",
-      fadeOut && "opacity-0"
     )}>
       <SeoHead title="เข้าสู่ระบบ" path="/auth" noindex />
       <main id="main-content" className="contents">
       <BackButton
         to="/"
         label="กลับหน้าแรก"
-        className="absolute top-4 left-4 z-30 border-[#e4e1db] bg-white/90 text-[#2f2e2c] hover:bg-white"
+        className="absolute top-4 left-4 z-30 border-border bg-white/90 text-foreground hover:bg-white"
       />
 
       <div className="relative z-10 min-h-screen grid lg:grid-cols-2">
@@ -143,11 +142,8 @@ const AuthPage = () => {
             className="pointer-events-none absolute inset-x-0 top-0 z-[2] h-16 bg-gradient-to-b from-background/50 to-transparent"
             aria-hidden
           />
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] bg-gradient-to-t from-[#f5f5f5] from-[18%] via-[#f5f5f5]/80 via-[55%] to-transparent px-8 pb-8 pt-24">
-            <p
-              className="text-left text-[clamp(2.6rem,4vw,3.75rem)] font-normal leading-[0.92] tracking-tight text-[#2f2e2c]"
-              style={{ fontFamily: PAPER_SERIF }}
-            >
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] bg-gradient-to-t from-background from-[18%] via-background/80 via-[55%] to-transparent px-8 pb-8 pt-24">
+            <p className="text-left font-display text-[clamp(1.9rem,2.9vw,3rem)] font-light leading-[1.05] tracking-[-0.02em] text-foreground">
               <span className="block">1 Profile to</span>
               <span className="block">
                 <HeroHundredPlus /> <HeroRotatingWord cycle={heroCycle} lang="en" />
@@ -156,7 +152,7 @@ const AuthPage = () => {
             <p className="mt-3 max-w-md text-sm font-normal leading-relaxed text-[#6b6862]">
               <span className="inline-flex flex-wrap items-baseline gap-x-1.5">
                 <span>ให้ผลงานพาคุณไปสู่</span>
-                <HeroRotatingWord cycle={heroCycle} lang="th" className="font-medium text-[#2f2e2c]" />
+                <HeroRotatingWord cycle={heroCycle} lang="th" className="font-medium text-foreground" />
                 <span>ใหม่ๆ</span>
               </span>
             </p>
@@ -173,7 +169,7 @@ const AuthPage = () => {
               <BrandLogo size="sm" tone="ink" />
             </div>
 
-            <h1 className="mb-6 font-display text-[2.15rem] font-medium leading-tight tracking-tight text-[#2f2e2c]">
+            <h1 className="mb-6 font-display text-[2.15rem] font-medium leading-tight tracking-tight text-foreground">
               {tab === "login" ? "ยินดีต้อนรับกลับมา" : "สร้างบัญชีใหม่"}
             </h1>
             {tab === "signup" ? (
@@ -183,16 +179,16 @@ const AuthPage = () => {
             ) : null}
 
             <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)} className="w-full">
-              <TabsList className="mb-6 grid h-11 w-full grid-cols-2 rounded-full bg-[#2f2e2c]/8 p-1">
+              <TabsList className="mb-6 grid h-11 w-full grid-cols-2 rounded-full bg-foreground/8 p-1">
                 <TabsTrigger
                   value="login"
-                  className="rounded-full text-[#6b6862] data-[state=active]:!bg-[#2f2e2c] data-[state=active]:!text-[#f5f5f5] data-[state=active]:shadow-none"
+                  className="rounded-full text-[#6b6862] data-[state=active]:!bg-foreground data-[state=active]:!text-background data-[state=active]:shadow-none"
                 >
                   เข้าสู่ระบบ
                 </TabsTrigger>
                 <TabsTrigger
                   value="signup"
-                  className="rounded-full text-[#6b6862] data-[state=active]:!bg-[#2f2e2c] data-[state=active]:!text-[#f5f5f5] data-[state=active]:shadow-none"
+                  className="rounded-full text-[#6b6862] data-[state=active]:!bg-foreground data-[state=active]:!text-background data-[state=active]:shadow-none"
                 >
                   สมัครสมาชิก
                 </TabsTrigger>
@@ -260,6 +256,7 @@ const LoginForm = ({ redirect, onSwitch }: { redirect: string; onSwitch: () => v
       return;
     }
     setBusy(true);
+    let signedIn = false;
     try {
       if (!remember) sessionStorage.setItem(BRAND_STORAGE_NO_PERSIST, "1");
       else sessionStorage.removeItem(BRAND_STORAGE_NO_PERSIST);
@@ -279,9 +276,11 @@ const LoginForm = ({ redirect, onSwitch }: { redirect: string; onSwitch: () => v
         if (!remember) sessionStorage.setItem(BRAND_STORAGE_NO_PERSIST, "1");
         else sessionStorage.removeItem(BRAND_STORAGE_NO_PERSIST);
         toast.success("เข้าสู่ระบบสำเร็จ");
+        signedIn = true;
       }
     } finally {
-      setBusy(false);
+      // After a successful sign-in the page redirects; keep the spinner until then.
+      if (!signedIn) setBusy(false);
     }
   };
 
@@ -339,7 +338,7 @@ const LoginForm = ({ redirect, onSwitch }: { redirect: string; onSwitch: () => v
           <Checkbox checked={remember} onCheckedChange={(v) => setRemember(v === true)} />
           จดจำฉันไว้
         </label>
-        <Link to="/auth/forgot" className="text-xs text-[#2f2e2c] underline underline-offset-2">
+        <Link to="/auth/forgot" className="text-xs text-foreground underline underline-offset-2">
           ลืมรหัสผ่าน?
         </Link>
       </div>
@@ -355,7 +354,7 @@ const LoginForm = ({ redirect, onSwitch }: { redirect: string; onSwitch: () => v
 
       <p className="text-center text-xs text-[#6b6862]">
         ยังไม่มีบัญชี?{" "}
-        <button type="button" onClick={onSwitch} className="font-medium text-[#2f2e2c] underline underline-offset-2">
+        <button type="button" onClick={onSwitch} className="font-medium text-foreground underline underline-offset-2">
           สมัครสมาชิกที่นี่
         </button>
       </p>
@@ -382,6 +381,7 @@ const SignupFormFields = ({ onSwitch }: { onSwitch: () => void }) => {
   const [passTouched, setPassTouched] = useState(false);
   const [confirmTouched, setConfirmTouched] = useState(false);
   const [consentError, setConsentError] = useState<string | null>(null);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
 
   const emailValid = !email || /^\S+@\S+\.\S+$/.test(email.trim());
   const passValid = password.length >= 8;
@@ -404,8 +404,10 @@ const SignupFormFields = ({ onSwitch }: { onSwitch: () => void }) => {
     }
 
     setBusy(true);
+    // Sending the email takes ~3 s server-side: show the code step right away instead of making the user wait.
+    setPendingEmail(email.trim());
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
         options: {
@@ -413,16 +415,39 @@ const SignupFormFields = ({ onSwitch }: { onSwitch: () => void }) => {
           data: { display_name: displayName || email.split("@")[0] },
         },
       });
-      if (error) toast.error(error.message);
-      else {
+      if (error) {
+        setPendingEmail(null);
+        toast.error(userFacingError(error));
+      } else if (!data.session && data.user?.identities?.length === 0) {
+        // Supabase hides "already registered" behind an empty identities list.
+        setPendingEmail(null);
+        toast.error("อีเมลนี้มีบัญชีแล้ว ลองเข้าสู่ระบบแทน");
+      } else {
         markPendingSignupConsent();
-        await recordSignupConsents();
-        toast.success("สมัครสำเร็จ! กรุณาตรวจอีเมลเพื่อยืนยันบัญชีก่อนเข้าใช้งาน");
+        void recordSignupConsents();
+        if (data.session) {
+          setPendingEmail(null);
+          toast.success("สมัครสำเร็จ ยินดีต้อนรับสู่ SAMECOR");
+        }
       }
+    } catch (err) {
+      setPendingEmail(null);
+      toast.error(userFacingError(err));
     } finally {
       setBusy(false);
     }
   };
+
+  if (pendingEmail) {
+    return (
+      <SignupVerifyCode
+        email={pendingEmail}
+        sending={busy}
+        onChangeEmail={() => setPendingEmail(null)}
+        buttonClassName={paperSubmit}
+      />
+    );
+  }
 
   return (
     <form onSubmit={submit} className="space-y-4">
@@ -459,6 +484,7 @@ const SignupFormFields = ({ onSwitch }: { onSwitch: () => void }) => {
           required
         />
         <FieldError id="su-email-error" message={emailError} />
+        <EmailTypoHint email={email} onApply={setEmail} />
       </div>
 
       <div className="space-y-1.5">
@@ -509,7 +535,7 @@ const SignupFormFields = ({ onSwitch }: { onSwitch: () => void }) => {
 
       <p className="text-center text-xs text-[#6b6862]">
         มีบัญชีอยู่แล้ว?{" "}
-        <button type="button" onClick={onSwitch} className="font-medium text-[#2f2e2c] underline underline-offset-2">
+        <button type="button" onClick={onSwitch} className="font-medium text-foreground underline underline-offset-2">
           เข้าสู่ระบบ
         </button>
       </p>

@@ -5,12 +5,16 @@ import { repairMp4Container } from "@/lib/repairMp4Container";
 import { UPLOAD_STAGE, type UploadStageReporter } from "@/lib/uploadProgress";
 
 const MAX_INPUT_MB = 300;
+/** Phones / tablets: transcoding a huge file in the browser runs out of memory or takes forever. */
+const MAX_INPUT_MB_TOUCH = 100;
 /** Final upload ceiling after compression (matches uploadVideo). */
 const MAX_OUTPUT_MB = 50;
 /** Trigger a second, harder pass when the first output is still above this. */
 const TARGET_MB = 45;
 /** Already-web-friendly H.264 mp4 below this size skips transcoding entirely. */
 const SKIP_COMPRESS_BELOW_MB = 20;
+/** On touch devices an H.264 clip up to this size goes up as-is — no 31MB engine download, no slow transcode. */
+const SKIP_COMPRESS_BELOW_MB_TOUCH = TARGET_MB;
 /** Abort a stuck transcode so the user can retry instead of hanging forever. */
 const TRANSCODE_TIMEOUT_MS = 5 * 60_000;
 
@@ -44,14 +48,24 @@ function mapTranscodeError(err: unknown): Error {
   return new Error(msg || "แปลงวิดีโอไม่สำเร็จ");
 }
 
+function isTouchDevice(): boolean {
+  return typeof window !== "undefined" && Boolean(window.matchMedia?.("(pointer: coarse)").matches);
+}
+
 /** Client-side prepare+transcode — repairs broken mdat/moov, forces HEVC→H.264. */
 export async function compressCommunityVideo(
   file: File,
   reporter?: UploadStageReporter,
 ): Promise<File> {
   if (!isVideoFile(file)) throw new Error("ไฟล์ไม่ใช่วิดีโอ");
-  if (file.size > MAX_INPUT_MB * 1024 * 1024) {
-    throw new Error(`วิดีโอใหญ่เกิน ${MAX_INPUT_MB}MB — ลองคลิปสั้นลงหรือย่อก่อนอัป`);
+  const touch = isTouchDevice();
+  const maxInputMb = touch ? MAX_INPUT_MB_TOUCH : MAX_INPUT_MB;
+  if (file.size > maxInputMb * 1024 * 1024) {
+    throw new Error(
+      touch
+        ? `วิดีโอใหญ่เกิน ${maxInputMb}MB สำหรับมือถือ — ตัดคลิปให้สั้นลง หรืออัปจากคอมพิวเตอร์ (สูงสุด ${MAX_INPUT_MB}MB)`
+        : `วิดีโอใหญ่เกิน ${maxInputMb}MB — ลองคลิปสั้นลงหรือย่อก่อนอัป`,
+    );
   }
 
   reporter?.onStage?.(UPLOAD_STAGE.checkingVideo);
@@ -71,7 +85,7 @@ export async function compressCommunityVideo(
   if (
     !prepared.needsTranscode &&
     isWebFriendlyMp4(source) &&
-    source.size <= SKIP_COMPRESS_BELOW_MB * 1024 * 1024
+    source.size <= (touch ? SKIP_COMPRESS_BELOW_MB_TOUCH : SKIP_COMPRESS_BELOW_MB) * 1024 * 1024
   ) {
     return source;
   }

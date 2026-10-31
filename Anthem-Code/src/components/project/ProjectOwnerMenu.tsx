@@ -46,7 +46,7 @@ export function ProjectOwnerMenu({ projectId, projectTitle, className, triggerCl
             className={
               triggerClassName ??
               cn(
-                "inline-flex items-center justify-center rounded-md p-2 min-h-11 min-w-11 text-muted-foreground/50 hover:bg-muted/30 hover:text-foreground transition-colors",
+                "inline-flex items-center justify-center rounded-md p-2 min-h-11 min-w-11 text-muted-foreground hover:bg-muted/30 hover:text-foreground transition-colors",
                 className,
               )
             }

@@ -10,6 +10,7 @@ import {
   BookOpen,
   ArrowLeft,
   Rocket,
+  Mail,
 } from "lucide-react";
 import ManageWorkIcon from "@/components/icons/ManageWorkIcon";
 import { useNavigate } from "react-router-dom";
@@ -31,6 +32,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { cn } from "@/lib/utils";
 import { openBrandLineContact } from "@/lib/brandConfig";
 import LineMarkIcon from "@/components/icons/LineMarkIcon";
+import { isCommerceEnabled } from "@/lib/aplus1Launch";
 import { toast } from "sonner";
 
 function preventClose(e: PointerEvent) {
@@ -58,6 +60,9 @@ export function ProfileMenuContent({ onNavigate, variant = "default" }: ProfileM
     onNavigate?.();
   };
 
+  // Wallet, seller verification and the forum come back with the commerce phase.
+  const commerce = isCommerceEnabled();
+
   const signOut = async () => {
     await signOutApp(queryClient);
     navigate(variant === "forum" ? "/forum" : "/");
@@ -78,9 +83,11 @@ export function ProfileMenuContent({ onNavigate, variant = "default" }: ProfileM
           <DropdownMenuItem onClick={() => go("/dashboard")} className="rounded-lg">
             <ManageWorkIcon className="w-4 h-4 mr-2" /> My Studio
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => go("/earnings")} className="rounded-lg">
-            <Wallet className="w-4 h-4 mr-2" /> My Wallet
-          </DropdownMenuItem>
+          {commerce ? (
+            <DropdownMenuItem onClick={() => go("/earnings")} className="rounded-lg">
+              <Wallet className="w-4 h-4 mr-2" /> My Wallet
+            </DropdownMenuItem>
+          ) : null}
         </>
       ) : (
         <>
@@ -95,7 +102,7 @@ export function ProfileMenuContent({ onNavigate, variant = "default" }: ProfileM
           </DropdownMenuItem>
         </>
       )}
-      {variant !== "forum" && !isVerified ? (
+      {variant !== "forum" && !isVerified && commerce ? (
         <DropdownMenuItem onClick={() => go("/verify")} className="rounded-lg">
           <Rocket className="w-4 h-4 mr-2" /> Become a Creator
         </DropdownMenuItem>
@@ -110,7 +117,7 @@ export function ProfileMenuContent({ onNavigate, variant = "default" }: ProfileM
       >
         <MessageSquarePlus className="w-4 h-4 mr-2" /> ส่งฟีดแบ็ก
       </DropdownMenuItem>
-      {variant !== "forum" ? (
+      {variant !== "forum" && commerce ? (
         <DropdownMenuItem
           onClick={() => {
             window.open("/forum", "_blank", "noopener,noreferrer");
@@ -132,6 +139,11 @@ export function ProfileMenuContent({ onNavigate, variant = "default" }: ProfileM
       >
         <LineMarkIcon className="w-4 h-4 mr-2" /> ติดต่อเรา Line
       </DropdownMenuItem>
+      {variant !== "forum" ? (
+        <DropdownMenuItem onClick={() => go("/learn#contact")} className="rounded-lg">
+          <Mail className="w-4 h-4 mr-2" /> Get in Touch
+        </DropdownMenuItem>
+      ) : null}
       {variant === "forum" && isAdmin ? (
         <DropdownMenuItem onClick={() => go("/forum/admin")} className="rounded-lg">
           <Shield className="w-4 h-4 mr-2" /> แอดมินฟอรัม

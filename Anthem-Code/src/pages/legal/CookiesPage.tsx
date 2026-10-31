@@ -54,6 +54,7 @@ const CookiesPage = () => (
       <li><strong>Supabase Auth</strong> — จัดการเซสชันการเข้าสู่ระบบ</li>
       <li><strong>Google</strong> — เมื่อคุณเลือก &quot;เข้าสู่ระบบด้วย Google&quot; (เป็นไปตามนโยบายของ Google)</li>
       <li><strong>Stripe</strong> — เมื่อชำระ subscription ผ่าน {LEGAL_SOLO_NAME} (ecosystem)</li>
+      <li><strong>Google Analytics 4</strong> — เฉพาะเมื่อคุณยินยอมคุกกี้วิเคราะห์ ใช้ดูสถิติการใช้งานแบบรวม ไม่ใช้ยิงโฆษณา</li>
     </ul>
     <p>
       เราไม่ใช้ป้ายโฆษณาติดตามข้ามเว็บ (third-party ad tracking) ในปัจจุบัน

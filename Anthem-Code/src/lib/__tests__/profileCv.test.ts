@@ -6,7 +6,12 @@ import {
   parseCvAddressDetail,
   parseCvVisibility,
   cvPortraitUrl,
+  cvPhotoVisible,
   cvReadiness,
+  defaultCvShowPhoto,
+  parseCvTemplate,
+  parseCvHeadingFont,
+  profileCvToJson,
   educationDetailLine,
   educationDetailLines,
   educationNeedsFaculty,
@@ -21,7 +26,7 @@ import {
   splitFullName,
   isSimpleThaiPhone,
 } from "@/lib/profileCv";
-import { normalizeExperienceItem } from "@/lib/validators";
+import { experienceItemSchema, normalizeExperienceItem } from "@/lib/validators";
 import { profileAboutPath, profileAboutUrl } from "@/lib/profileRoutes";
 
 describe("parseProfileCv", () => {
@@ -296,5 +301,97 @@ describe("profileAboutUrl", () => {
     expect(profileAboutUrl({ user_id: "u1", username: "momo" }, "https://aplus1.app")).toBe(
       "https://aplus1.app/@momo?tab=about",
     );
+  });
+});
+
+describe("cv layout and photo", () => {
+  it("defaults to the wide grid and keeps the photo for legacy CVs", () => {
+    const cv = parseProfileCv({ fullName: "Momo" });
+    expect(cv.template).toBe("grid");
+    expect(cv.showPhoto).toBeNull();
+    expect(cvPhotoVisible(cv)).toBe(true);
+  });
+
+  it("round-trips layout and showPhoto through parse and profileCvToJson", () => {
+    const cv = parseProfileCv({ template: "grid", showPhoto: false });
+    expect(cv).toMatchObject({ template: "grid", showPhoto: false });
+    expect(cvPhotoVisible(cv)).toBe(false);
+    expect(profileCvToJson(cv)).toMatchObject({ template: "grid", showPhoto: false });
+  });
+
+  it("rejects unknown layouts", () => {
+    expect(parseCvTemplate("three")).toBe("grid");
+    expect(parseCvTemplate(undefined)).toBe("grid");
+    expect(parseCvTemplate("editorial")).toBe("editorial");
+  });
+
+  it("maps the retired standard heading font onto Poppins and rejects unknown ones", () => {
+    expect(parseCvHeadingFont("standard")).toBe("poppins");
+    expect(parseCvHeadingFont("poppins")).toBe("poppins");
+    expect(parseCvHeadingFont("ibm")).toBe("ibm");
+    expect(parseCvHeadingFont("comic")).toBe("agrandir");
+    expect(profileCvToJson(parseProfileCv({ headingFont: "standard" })).headingFont).toBe("poppins");
+  });
+
+  it("photo default: on for Thai, off for English, existing CVs keep their photo", () => {
+    expect(defaultCvShowPhoto(null, "th")).toBe(true);
+    expect(defaultCvShowPhoto({}, "en")).toBe(false);
+    expect(defaultCvShowPhoto({ fullName: "Momo" }, "en")).toBe(true);
+    expect(defaultCvShowPhoto({ fullName: "Momo", showPhoto: false }, "th")).toBe(false);
+  });
+});
+
+describe("experience description limit", () => {
+  it("accepts four 200-char highlights joined into the description", () => {
+    const highlights = Array.from({ length: 4 }, () => "ก".repeat(200));
+    const parsed = experienceItemSchema.safeParse({
+      title: "Designer",
+      highlights,
+      description: highlights.join("\n"),
+    });
+    expect(parsed.success).toBe(true);
+  });
+});
+
+describe("Phase 3 CV fields", () => {
+  it("defaults the new opt-in blocks to hidden and the language to English", () => {
+    const cv = parseProfileCv({});
+    expect(cv.docLang).toBe("en");
+    expect(cv.visibility).toMatchObject({
+      birthDate: false,
+      nationality: false,
+      military: false,
+      references: false,
+    });
+    expect(cv.references).toEqual([]);
+  });
+
+  it("round-trips the new fields and clamps them", () => {
+    const parsed = parseProfileCv({
+      nameEn: "  Sam   Ple ",
+      docLang: "th",
+      nationality: " Thai ",
+      military: "exempt",
+      references: [
+        { name: "A", role: "r", contact: "c" },
+        { name: "  " },
+        { name: "B" },
+        { name: "C" },
+        { name: "D" },
+      ],
+      visibility: { references: true, military: true },
+    });
+    expect(parsed.nameEn).toBe("Sam Ple");
+    expect(parsed.docLang).toBe("th");
+    expect(parsed.nationality).toBe("Thai");
+    expect(parsed.military).toBe("exempt");
+    expect(parsed.references.map((r) => r.name)).toEqual(["A", "B", "C"]);
+    expect(parseProfileCv(profileCvToJson(parsed))).toEqual(parsed);
+  });
+
+  it("ignores unknown language and military values", () => {
+    const cv = parseProfileCv({ docLang: "fr", military: "other" });
+    expect(cv.docLang).toBe("en");
+    expect(cv.military).toBeNull();
   });
 });

@@ -20,6 +20,15 @@ function formatBaht(amount: number): string {
 }
 
 export function chatProtocolPreviewText(content: string | null | undefined): string | null {
+  if (content?.startsWith("__SAMECOR_DOC__:")) {
+    const kind = extractJsonStringField(content, "kind");
+    const net = extractJsonNumberField(content, "net");
+    const no = extractJsonNumberField(content, "installmentNo");
+    const total = extractJsonNumberField(content, "installmentTotal");
+    const inst = no && total && total > 1 ? ` งวด ${no}/${total}` : "";
+    const label = kind === "receipt" ? "ออกใบเสร็จ" : "ส่งใบแจ้งหนี้";
+    return `${label}${inst}${net != null ? ` · ${formatBaht(net)}` : ""}`;
+  }
   if (!content?.includes("__APLUS1_")) return null;
 
   if (content.includes("__APLUS1_OFFER__")) {

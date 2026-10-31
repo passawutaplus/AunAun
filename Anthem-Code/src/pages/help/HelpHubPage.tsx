@@ -12,6 +12,7 @@ import {
   searchHelpArticles,
 } from "@/data/helpContent";
 import { BRAND_NAME, BRAND_SUPPORT_EMAIL, FORUM_PATH } from "@/lib/brandConfig";
+import { isCommerceEnabled } from "@/lib/aplus1Launch";
 import { cn } from "@/lib/utils";
 
 export default function HelpHubPage() {
@@ -74,10 +75,14 @@ export default function HelpHubPage() {
           </h2>
           {results.length === 0 ? (
             <p className="mt-4 text-sm text-muted-foreground">
-              ไม่พบบทความที่ตรงกับ “{query.trim()}” — ลองคำอื่น หรือถามใน{" "}
-              <Link to={FORUM_PATH} className="text-primary hover:underline">
-                Forum
-              </Link>
+              ไม่พบบทความที่ตรงกับ “{query.trim()}” — ลองคำอื่น{isCommerceEnabled() ? (
+                <>
+                  {" "}หรือถามใน{" "}
+                  <Link to={FORUM_PATH} className="text-primary hover:underline">
+                    Forum
+                  </Link>
+                </>
+              ) : null}
             </p>
           ) : (
             <ul className="mt-4 space-y-2">
@@ -159,15 +164,17 @@ export default function HelpHubPage() {
             <div className="mx-auto max-w-5xl px-4 py-10 text-center sm:px-6 sm:pb-14">
               <h2 className="text-base font-semibold text-foreground">ยังหาไม่เจอ?</h2>
               <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-                ถามใน Forum หรืออีเมล{" "}
+                {isCommerceEnabled() ? "ถามใน Forum หรืออีเมล" : "ติดต่อทางอีเมล"}{" "}
                 <a href={`mailto:${BRAND_SUPPORT_EMAIL}`} className="text-primary hover:underline">
                   {BRAND_SUPPORT_EMAIL}
                 </a>
               </p>
               <div className="mt-5 flex flex-wrap justify-center gap-4 text-sm">
-                <Link to={FORUM_PATH} className="text-primary hover:underline">
-                  Forum
-                </Link>
+                {isCommerceEnabled() ? (
+                  <Link to={FORUM_PATH} className="text-primary hover:underline">
+                    Forum
+                  </Link>
+                ) : null}
                 <Link to="/learn" className="text-primary hover:underline">
                   About
                 </Link>

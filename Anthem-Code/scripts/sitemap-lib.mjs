@@ -88,6 +88,8 @@ export function catalogProjectId(i) {
  *   vanityHandles?: string[],
  *   seriesIds?: string[],
  *   jobIds?: string[],
+ *   serviceIds?: string[],
+ *   objectIds?: string[],
  *   explorePaths?: string[],
  *   images?: { loc: string, imageLoc: string, title?: string }[],
  * }} [opts]
@@ -105,6 +107,9 @@ export function buildSitemapUrls(opts = {}) {
       : Array.from({ length: CATALOG_PROFILE_COUNT }, (_, i) => catalogUid(i));
   const vanityHandles = (opts.vanityHandles || []).filter(Boolean);
   const seriesIds = opts.seriesIds || [];
+  const collectionIds = opts.collectionIds || [];
+  const serviceIds = opts.serviceIds || [];
+  const objectIds = opts.objectIds || [];
   const jobIds = hiringBoard ? opts.jobIds || [] : [];
   const explorePaths = opts.explorePaths || [];
 
@@ -148,6 +153,24 @@ export function buildSitemapUrls(opts = {}) {
       changefreq: "weekly",
       group: "series",
     })),
+    ...collectionIds.map((id) => ({
+      loc: `/collections/${id}`,
+      priority: "0.6",
+      changefreq: "weekly",
+      group: "collections",
+    })),
+    ...serviceIds.map((id) => ({
+      loc: `/service/${id}`,
+      priority: "0.7",
+      changefreq: "weekly",
+      group: "packages",
+    })),
+    ...objectIds.map((id) => ({
+      loc: `/object/${id}`,
+      priority: "0.7",
+      changefreq: "weekly",
+      group: "objects",
+    })),
     ...explorePaths.map((loc) => ({
       loc,
       priority: "0.6",
@@ -173,7 +196,12 @@ export function buildSitemapUrls(opts = {}) {
     );
   }
 
-  return urls.filter((u) => !EXCLUDED_PATHS.some((ex) => u.loc === ex || u.loc.startsWith(`${ex}/`)));
+  // "/collections" is excluded as a list page; individual public collections are listed on purpose.
+  return urls.filter(
+    (u) =>
+      u.group === "collections" ||
+      !EXCLUDED_PATHS.some((ex) => u.loc === ex || u.loc.startsWith(`${ex}/`)),
+  );
 }
 
 function urlsetXml(normalizedBase, urls, { images = [] } = {}) {
@@ -226,6 +254,9 @@ export function buildSitemapBundles(base, opts = {}) {
     projects: urls.filter((u) => u.group === "projects"),
     profiles: urls.filter((u) => u.group === "profiles"),
     series: urls.filter((u) => u.group === "series"),
+    collections: urls.filter((u) => u.group === "collections"),
+    packages: urls.filter((u) => u.group === "packages"),
+    objects: urls.filter((u) => u.group === "objects"),
     explore: urls.filter((u) => u.group === "explore"),
     jobs: urls.filter((u) => u.group === "jobs"),
     studios: urls.filter((u) => u.group === "studios"),

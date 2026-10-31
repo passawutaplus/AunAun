@@ -1,6 +1,7 @@
-import { useState, useMemo, useEffect, useRef, type CSSProperties } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
+import { releaseBoot } from "@/lib/bootGate";
 import { Button } from "@/components/ui/button";
 import { LogIn } from "lucide-react";
 import QueryStatusPanel, { FilterEmptyState } from "@/components/ui/QueryStatusPanel";
@@ -16,7 +17,7 @@ import FeedToolbar from "@/components/feed/FeedToolbar";
 import HomeHeroWash from "@/components/feed/HomeHeroWash";
 import SeoHead from "@/components/SeoHead";
 import { shouldNoindexSearchParams } from "@/lib/seo";
-import { COLOR_MATCH_MIN, normalizeColorQuery } from "@/lib/colorSearch";
+import { COLOR_MATCH_MIN, normalizeColorList } from "@/lib/colorSearch";
 import { similarSearchSuggestions } from "@/lib/searchSuggestions";
 import { useCoverColorScores } from "@/hooks/useCoverColorScores";
 import DrillFeedPanel from "@/components/drill/DrillFeedPanel";
@@ -33,6 +34,8 @@ import { useFeedHomeNavStore } from "@/stores/feedHomeNavStore";
 import HireDialog from "@/components/HireDialog";
 import CollabDialog from "@/components/CollabDialog";
 import { FeedProjectGrid } from "@/components/feed/FeedProjectGrid";
+import { ProjectQuickViewHost } from "@/components/feed/ProjectQuickView";
+import { useQuickView } from "@/stores/quickViewStore";
 import { FeedModeTransition } from "@/components/feed/FeedModeTransition";
 import ObjectCatalog from "@/components/objects/ObjectCatalog";
 import { type FeedMode } from "@/components/feed/FeedModeToggle";
@@ -51,6 +54,7 @@ import {
   projectMatchesSubs,
   type CategoryParentId,
 } from "@/data/categoryTaxonomy";
+import { getCategoryParent as getFeedCategoryParent, getCategorySub as getFeedCategorySub } from "@/data/categoryTaxonomy";
 import { isCategoryAllowed } from "@/lib/cookieConsent";
 import {
   usePublishedProjects,
@@ -60,6 +64,7 @@ import {
   type DBProject,
 } from "@/hooks/useProjects";
 import { useAuth } from "@/hooks/useAuth";
+import { hasStoredSession } from "@/lib/authHint";
 import { useShowFirstPostLabel } from "@/hooks/useHasPublishedProject";
 import { consumePendingHire, navigateToAuth, stashPendingHire } from "@/lib/authRedirect";
 import {
@@ -83,6 +88,10 @@ import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
 import { DESIGN_DRILL_CHIP } from "@/lib/drillProject";
 import { markOnboardingVisit, type OnboardingVisitId } from "@/lib/onboardingStorage";
 import { rankProjectsForSearch } from "@/lib/projectSearchRank";
+import { GuideTour } from "@/components/tour/GuideTour";
+import { TourHelpButton } from "@/components/tour/TourHelpButton";
+import { HOME_TOUR } from "@/components/tour/tours";
+import { usePageTour } from "@/hooks/usePageTour";
 
 type FeedMode2 = "Explore" | SpecialFilter;
 const requiresAuth = (m: FeedMode2) => m === "Following";
@@ -104,12 +113,12 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   const queryClient = useQueryClient();
   const { columns } = useFeedGridDensity();
   const houseColumnOffset = useRef(Math.floor(Math.random() * 12));
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { queries: recentSearches, record: recordSearch } = useSearchHistory(user?.id);
   const showFirstPostLabel = useShowFirstPostLabel(user?.id);
   const [search, setSearch] = useState("");
   const [colorQuery, setColorQuery] = useState<string | null>(() =>
-    normalizeColorQuery(searchParams.get("color")),
+    normalizeColorList(searchParams.get("color")),
   );
   /** Hero field searches the full project catalog and falls back to nearest matches. */
   const [heroProjectSearch, setHeroProjectSearch] = useState(false);
@@ -147,88 +156,153 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   const [designerTools, setDesignerTools] = useState<string[]>([]);
   const [studioFeedSource, setStudioFeedSource] = useState<StudioFeedSource>("all");
   const { filter: communityFilter, setFilter: setCommunityFilter, clearTag } = useCommunityFeedFilter();
-  const studioHome = mode === "projects" || mode === "designers" || mode === "packages" || mode === "objects";
+  const catalogMode = mode === "projects" || mode === "designers" || mode === "packages" || mode === "objects";
+  // The home hero (and the sheet that slides over it) is for guests only: members land straight on the feed,
+  // so a refresh never parks them on the hero again.
+  const showHero = authLoading ? !hasStoredSession() : !user;
+  const studioHome = catalogMode && showHero;
 
   useEffect(() => {
     if (!studioHome) return;
     const { body, documentElement } = document;
     const prevBody = body.style.backgroundColor;
     const prevHtml = documentElement.style.backgroundColor;
-    body.style.backgroundColor = "#f5f5f5";
-    documentElement.style.backgroundColor = "#f5f5f5";
+    body.style.backgroundColor = "hsl(var(--background))";
+    documentElement.style.backgroundColor = "hsl(var(--background))";
     return () => {
       body.style.backgroundColor = prevBody;
       documentElement.style.backgroundColor = prevHtml;
     };
   }, [studioHome]);
 
+  // Hero -> catalog sheet.
+  // Settle: once the user has stopped scrolling down (wheel, trackpad momentum, touch all finished) with the
+  // sheet near the top, ease it flush. Any new input cancels the ease at once, and scrolling up never pulls.
+  // The old version scrolled *while* the user was scrolling and locked for 700 ms, so the two fought and the
+  // sheet jumped. CSS scroll-snap was tried too: Chrome pulls each wheel notch back to the nearest snap point.
+  // Paint: corner radius / nav hairline follow --feed-flush-p, written once per frame.
   useEffect(() => {
     if (!studioHome) return;
+    const root = document.documentElement;
+    root.setAttribute("data-feed-home", "");
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let raf = 0;
+    let flushed: boolean | null = null;
     let lastY = window.scrollY;
-    let locking = false;
-    let releaseTimer = 0;
-    let slideFrame = 0;
+    let lastDir = 0;
+    let idleTimer = 0;
+    let ease = 0;
+    let touching = false;
 
-    const release = () => {
-      locking = false;
-      lastY = window.scrollY;
-      window.cancelAnimationFrame(slideFrame);
-    };
-
-    const markFlush = (sheet: HTMLElement, top: number) => {
+    const paint = () => {
+      raf = 0;
+      const sheet = document.querySelector<HTMLElement>("[data-feed-sheet]");
+      if (!sheet) return;
+      const top = sheet.getBoundingClientRect().top;
       const flush = top <= 1;
-      sheet.toggleAttribute("data-flush", flush);
-      document.documentElement.toggleAttribute("data-feed-flush", flush);
-      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (flush !== flushed) {
+        flushed = flush;
+        sheet.toggleAttribute("data-flush", flush);
+        root.toggleAttribute("data-feed-flush", flush);
+      }
       const span = Math.min(200, window.innerHeight * 0.24);
       const travel = Math.min(1, Math.max(0, (span - top) / span));
       const eased = travel * travel * (3 - 2 * travel);
-      const progress = reduce ? (flush ? 1 : 0) : eased;
-      document.documentElement.style.setProperty("--feed-flush-p", progress.toFixed(4));
+      const progress = (reduce ? (flush ? 1 : 0) : eased).toFixed(3);
+      // Written on the sheet (--feed-flush-p is registered inherits: false, so its grid is not restyled)
+      // and on the small nav (inherited, for its ::after hairline) — never on <html>.
+      sheet.style.setProperty("--feed-flush-p", progress);
+      document.querySelector<HTMLElement>("[data-desktop-top-nav]")?.style.setProperty("--feed-nav-line", progress);
+    };
+    const schedule = () => {
+      if (!raf) raf = window.requestAnimationFrame(paint);
     };
 
-    const trackSlide = () => {
+    const stopEase = () => {
+      if (!ease) return;
+      window.cancelAnimationFrame(ease);
+      ease = 0;
+      lastY = window.scrollY;
+    };
+
+    const settle = () => {
+      idleTimer = 0;
+      if (touching || ease || lastDir <= 0) return;
       const sheet = document.querySelector<HTMLElement>("[data-feed-sheet]");
-      if (sheet) markFlush(sheet, sheet.getBoundingClientRect().top);
-      if (locking) slideFrame = window.requestAnimationFrame(trackSlide);
+      if (!sheet) return;
+      const top = sheet.getBoundingClientRect().top;
+      if (top <= 1 || top > window.innerHeight * 0.35) return;
+      const from = window.scrollY;
+      const to = from + top;
+      if (reduce) {
+        window.scrollTo(0, to);
+        lastY = window.scrollY;
+        return;
+      }
+      const start = performance.now();
+      const duration = Math.min(420, 180 + top * 0.8);
+      const step = (now: number) => {
+        const t = Math.min(1, (now - start) / duration);
+        const eased = 1 - (1 - t) ** 3;
+        window.scrollTo(0, Math.round(from + (to - from) * eased));
+        lastY = window.scrollY;
+        ease = t < 1 ? window.requestAnimationFrame(step) : 0;
+      };
+      ease = window.requestAnimationFrame(step);
+    };
+
+    const armSettle = () => {
+      window.clearTimeout(idleTimer);
+      idleTimer = window.setTimeout(settle, 140);
     };
 
     const onScroll = () => {
+      schedule();
+      if (ease) return; // our own easing
       const y = window.scrollY;
-      const delta = y - lastY;
+      if (Math.abs(y - lastY) > 0.5) lastDir = Math.sign(y - lastY);
       lastY = y;
-      const sheet = document.querySelector<HTMLElement>("[data-feed-sheet]");
-      if (sheet) markFlush(sheet, sheet.getBoundingClientRect().top);
-      if (locking) {
-        if (delta < -2) {
-          window.clearTimeout(releaseTimer);
-          window.scrollTo({ top: y, behavior: "auto" });
-          release();
-        }
-        return;
-      }
-      if (delta <= 0.5) return;
-      if (!sheet) return;
-      const top = sheet.getBoundingClientRect().top;
-      const zone = Math.min(180, window.innerHeight * 0.2);
-      if (top <= 1 || top > zone) return;
-      locking = true;
-      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      window.scrollTo({ top: y + top, behavior: reduce ? "auto" : "smooth" });
-      window.cancelAnimationFrame(slideFrame);
-      slideFrame = window.requestAnimationFrame(trackSlide);
-      window.clearTimeout(releaseTimer);
-      releaseTimer = window.setTimeout(release, reduce ? 40 : 700);
+      if (!touching) armSettle();
+    };
+    // The user took over: drop the ease and wait for the next pause.
+    const onInput = () => {
+      stopEase();
+      window.clearTimeout(idleTimer);
+    };
+    const onTouchStart = () => {
+      touching = true;
+      onInput();
+    };
+    const onTouchEnd = () => {
+      touching = false;
+      armSettle();
     };
 
     window.addEventListener("scroll", onScroll, { passive: true });
-    onScroll();
+    window.addEventListener("resize", schedule);
+    window.addEventListener("wheel", onInput, { passive: true });
+    window.addEventListener("keydown", onInput);
+    window.addEventListener("pointerdown", onInput);
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchend", onTouchEnd, { passive: true });
+    window.addEventListener("touchcancel", onTouchEnd, { passive: true });
+    paint();
     return () => {
-      document.documentElement.removeAttribute("data-feed-flush");
-      document.documentElement.style.removeProperty("--feed-flush-p");
+      root.removeAttribute("data-feed-home");
+      root.removeAttribute("data-feed-flush");
+      document.querySelector<HTMLElement>("[data-feed-sheet]")?.style.removeProperty("--feed-flush-p");
+      document.querySelector<HTMLElement>("[data-desktop-top-nav]")?.style.removeProperty("--feed-nav-line");
       window.removeEventListener("scroll", onScroll);
-      window.cancelAnimationFrame(slideFrame);
-      window.clearTimeout(releaseTimer);
+      window.removeEventListener("resize", schedule);
+      window.removeEventListener("wheel", onInput);
+      window.removeEventListener("keydown", onInput);
+      window.removeEventListener("pointerdown", onInput);
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchend", onTouchEnd);
+      window.removeEventListener("touchcancel", onTouchEnd);
+      window.cancelAnimationFrame(raf);
+      window.cancelAnimationFrame(ease);
+      window.clearTimeout(idleTimer);
     };
   }, [studioHome]);
 
@@ -309,7 +383,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   };
 
   const applyColorQuery = (hex: string | null) => {
-    const next = normalizeColorQuery(hex);
+    const next = normalizeColorList(hex);
     setColorQuery(next);
     const params = new URLSearchParams(searchParams);
     if (next) params.set("color", next);
@@ -355,6 +429,18 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
     navigate("/?drill=1", { replace: true });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
+
+  // Deep link from a project's category badge: /?cat=<parent>&sub=<sub> opens the project feed filtered.
+  useEffect(() => {
+    const parent = getFeedCategoryParent(searchParams.get("cat"));
+    if (!parent) return;
+    const subId = searchParams.get("sub");
+    setMode("projects");
+    setCategory(parent.id);
+    setProjectLeaves([]);
+    setProjectStyles(subId && getFeedCategorySub(parent, subId) ? [subId] : []);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [searchParams]);
 
   const setFeedCategory = (next: FeedCategoryChip) => {
     setCategory(next);
@@ -473,7 +559,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   }, [searchParams]);
 
   useEffect(() => {
-    const next = normalizeColorQuery(searchParams.get("color"));
+    const next = normalizeColorList(searchParams.get("color"));
     setColorQuery(next);
     if (!next) return;
     const view = searchParams.get("mode");
@@ -503,6 +589,9 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   const projectsLoading = (heroProjectSearch ? published : activeProjectsQuery).isLoading;
   const projectsError = (heroProjectSearch ? published : activeProjectsQuery).isError;
   const projectsSlow = useSlowLoadFallback(projectsLoading);
+  useEffect(() => {
+    if (!projectsLoading && !authLoading) releaseBoot();
+  }, [projectsLoading, authLoading]);
   const refetchProjects = () => {
     void activeProjectsQuery.refetch();
   };
@@ -692,6 +781,14 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
     });
   }, [sortedFiltered, ads, columns, search, colorQuery]);
 
+  // Phone Quick View swipes through the feed in on-screen order.
+  useEffect(() => {
+    useQuickView
+      .getState()
+      .setProjects(feedItems.flatMap((item) => (item.kind === "project" ? [item.data] : [])));
+  }, [feedItems]);
+  useEffect(() => () => useQuickView.getState().close(), []);
+
   const searchSuggestions = useMemo(
     () => (search.trim() && filtered.length === 0 ? similarSearchSuggestions(search, recentSearches) : []),
     [search, filtered.length, recentSearches],
@@ -724,35 +821,13 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
     setCollabOpen(true);
   };
 
+  // First-visit home tour (everyone, guests too); "?" bottom-left replays it.
+  const homeTour = usePageTour("home", !projectsLoading);
+
   return (
     <main
       id="main-content"
       data-studio-home={studioHome ? "" : undefined}
-      style={
-        studioHome
-          ? ({
-              "--background": "0 0% 96%",
-              "--foreground": "40 3% 18%",
-              "--muted-foreground": "30 4% 41%",
-              "--card": "0 0% 100%",
-              "--card-foreground": "40 3% 18%",
-              "--popover": "0 0% 100%",
-              "--popover-foreground": "40 3% 18%",
-              "--border": "40 5% 86%",
-              "--input": "40 5% 86%",
-              "--muted": "40 6% 92%",
-              "--secondary": "40 6% 92%",
-              "--secondary-foreground": "40 3% 18%",
-              "--accent": "40 6% 92%",
-              "--accent-foreground": "40 3% 18%",
-              "--primary": "40 3% 18%",
-              "--primary-bright": "40 3% 18%",
-              "--ring": "40 3% 18%",
-              color: "#2f2e2c",
-              backgroundColor: "#f5f5f5",
-            } as CSSProperties)
-          : undefined
-      }
       className={cn("relative min-h-screen bg-app-ambient", MOBILE_PAGE_BOTTOM_CLASS)}
     >
       {(shouldNoindexSearchParams(searchParams) || search.trim().length > 0 || Boolean(colorQuery)) && (
@@ -765,13 +840,15 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
           studioHome ? "pt-0 space-y-0" : "pt-4 space-y-4",
         )}
       >
-        <FeedHero mode={mode} onModeChange={changeMode} search={search} onSearchChange={applyHeroSearch} />
+        {(!catalogMode || studioHome) && (
+          <FeedHero mode={mode} onModeChange={changeMode} search={search} onSearchChange={applyHeroSearch} />
+        )}
 
         <div
           data-feed-sheet={studioHome ? "" : undefined}
           className={
             studioHome
-              ? "relative z-10 min-h-[100dvh] !-mt-[calc(100dvh-8px)] -mx-3 rounded-t-[2.75rem] bg-[#f5f5f5] px-3 pt-6 shadow-[0_-32px_70px_-40px_rgba(47,46,44,0.55)] sm:-mx-[calc(1rem+25px)] sm:px-[calc(1rem+25px)] lg:-mx-[calc(1.5rem+25px)] lg:px-[calc(1.5rem+25px)] 2xl:-mx-[calc(2.5rem+25px)] 2xl:px-[calc(2.5rem+25px)]"
+              ? "relative z-10 min-h-[100dvh] !-mt-[calc(100dvh-8px)] -mx-3 rounded-t-[2.75rem] bg-background px-3 pt-6 shadow-sm dark:border-t dark:border-white/[0.06] dark:shadow-sm sm:-mx-[calc(1rem+25px)] sm:px-[calc(1rem+25px)] lg:-mx-[calc(1.5rem+25px)] lg:px-[calc(1.5rem+25px)] 2xl:-mx-[calc(2.5rem+25px)] 2xl:px-[calc(2.5rem+25px)]"
               : undefined
           }
         >
@@ -859,8 +936,6 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
             </div>
           ) : mode === "designers" ? (
             <DesignerGrid
-              onHire={handleHireDesigner}
-              onCollab={handleCollabDesigner}
               search={search}
               onClearSearch={() => setSearch("")}
               sort={designerSort}
@@ -926,6 +1001,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
                   กำลังเทียบสีจากปกผลงาน
                 </p>
               ) : null}
+              <div data-tour="home-feed">
               <FeedProjectGrid masonry>
                 {feedItems.map((item) =>
                   item.kind === "ad" ? (
@@ -940,28 +1016,12 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
                       searchQuery={search}
                       boosted={boostedSets.projects.has(item.data.id)}
                       boostId={boostMaps.projects.get(item.data.id)}
-                      onHireClick={() => {
-                        openHireForFreelancer(
-                          item.data.ownerId ?? "",
-                          item.data.title,
-                          item.data.id,
-                          item.data.image,
-                        );
-                      }}
-                      onCollabClick={() => {
-                        setCollabTarget({
-                          recipientId: item.data.ownerId,
-                          recipientName: item.data.owner,
-                          projectId: item.data.id,
-                          projectTitle: item.data.title,
-                          projectCoverUrl: item.data.image,
-                        });
-                        setCollabOpen(true);
-                      }}
                     />
                   )
                 )}
               </FeedProjectGrid>
+              </div>
+              <ProjectQuickViewHost />
 
               {!colorMatch.pending && filtered.length === 0 && (
                 <FilterEmptyState
@@ -1027,6 +1087,9 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
         projectTitle={collabTarget.projectTitle}
         projectCoverUrl={collabTarget.projectCoverUrl}
       />
+      {/* Desktop only — on phones it sat on top of the feed; Settings → ทัวร์แนะนำ replays it there */}
+      <TourHelpButton onClick={homeTour.start} className="fixed bottom-6 left-4 z-30 hidden shadow-sm lg:inline-flex" />
+      <GuideTour tourId="home" label="ทัวร์แนะนำหน้าแรก" steps={HOME_TOUR} open={homeTour.open} onClose={homeTour.close} />
     </main>
   );
 };

@@ -101,7 +101,7 @@ const SeoHead = ({
     document.documentElement.lang = "th";
 
     upsertMeta(META_IDS.description, "name", "description", desc);
-    upsertMeta(META_IDS.robots, "name", "robots", noindex ? "noindex, nofollow" : "index, follow");
+    upsertMeta(META_IDS.robots, "name", "robots", noindex ? "noindex, nofollow, noai, noimageai" : "index, follow, noai, noimageai");
     upsertMeta(META_IDS.ogTitle, "property", "og:title", fullTitle);
     upsertMeta(META_IDS.ogDesc, "property", "og:description", desc);
     upsertMeta(META_IDS.ogImage, "property", "og:image", img);

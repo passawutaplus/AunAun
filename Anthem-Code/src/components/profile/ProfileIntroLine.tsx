@@ -102,7 +102,7 @@ export default function ProfileIntroLine({
               rows={3}
               maxLength={PROFILE_INTRO_MAX}
               placeholder="เช่น นักออกแบบแพ็กเกจ รับงานแบรนด์และงานพิมพ์"
-              className="w-full px-3 py-2 rounded-xl bg-secondary border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground/40"
+              className="w-full px-3 py-2 rounded-xl bg-secondary border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground"
             />
             <p className="text-[11px] text-muted-foreground text-right">
               {draft.length}/{PROFILE_INTRO_MAX}

@@ -1,6 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useHideOnScroll } from "@/hooks/useHideOnScroll";
+import { isBetaFeedbackEnabled } from "@/lib/aplus1Launch";
+import { useAuth } from "@/hooks/useAuth";
+import FeedbackHeaderPill from "@/components/feedback/FeedbackHeaderPill";
 import { motion, useReducedMotion } from "framer-motion";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { parseColorList } from "@/lib/colorSearch";
 import { ArrowRight, Plus, X } from "lucide-react";
 import { BrandLogo } from "@/components/brand/BrandLogo";
 import { ScrollBlur } from "@/components/ScrollBlur";
@@ -176,6 +181,9 @@ const FeedToolbar = ({
   const navigate = useNavigate();
   const [mobileSearchOpen, setMobileSearchOpen] = useState(search.length > 0);
   const [projectSheetOpen, setProjectSheetOpen] = useState(false);
+  // Bottom-nav search from another page lands here with `openProjectSearch` in the route state.
+  const routeLocation = useLocation();
+  const openSearchAt = (routeLocation.state as { openProjectSearch?: number } | null)?.openProjectSearch;
   const isProjects = mode === "projects";
   const isDesigners = mode === "designers";
   const isPackages = mode === "packages";
@@ -330,7 +338,7 @@ const FeedToolbar = ({
   const searchPlaceholder = isCommunity
     ? "ค้นหาโพสต์ชุมชน"
     : isDesigners
-      ? "ค้นหาดีไซเนอร์"
+      ? "ค้นหาครีเอเตอร์"
       : isPackages
         ? "ค้นหาแพ็กเกจ"
         : isObjects
@@ -357,10 +365,20 @@ const FeedToolbar = ({
         filterContent,
       };
 
+  useEffect(() => {
+    if (openSearchAt && isProjects) setProjectSheetOpen(true);
+  }, [openSearchAt, isProjects]);
+
   const homeScrolled = useFeedHomeNavStore((s) => s.scrolled);
+  const { user } = useAuth();
+  // Beta test only: members get a feedback button beside the mode toggle (the desktop nav has its own).
+  const showBetaFeedback = Boolean(user) && isBetaFeedbackEnabled();
+  // Mobile: the bar sticks to the top, slides away while scrolling down and back on scroll up.
+  const barRef = useRef<HTMLDivElement>(null);
+  const { hidden: barHidden, scrolled: barScrolled } = useHideOnScroll(barRef);
 
   useEffect(() => {
-    const onFilterClick = isProjects ? () => setProjectSheetOpen(true) : undefined;
+    const onFilterClick = isProjects || isDesigners ? () => setProjectSheetOpen(true) : undefined;
     useFeedHomeNavStore.getState().register({
       search,
       searchPlaceholder,
@@ -406,15 +424,23 @@ const FeedToolbar = ({
 
   return (
     <div
+      ref={barRef}
       data-feed-toolbar
+      data-tour="home-toolbar"
       className={cn(
         "z-30 -mx-3 sm:-mx-4 lg:-mx-6 2xl:-mx-10 px-3 sm:px-4 lg:px-6 2xl:px-10 py-3 overflow-visible",
+        // Mobile only: any transform here would also become the containing block of the desktop `fixed` bar below.
+        "max-lg:transition-transform max-lg:duration-300 max-lg:ease-out motion-reduce:transition-none",
+        "max-lg:sticky max-lg:top-0 max-lg:z-40",
+        barHidden && "max-lg:-translate-y-full",
+        // Transparent over the hero at the very top; solid once the page has moved.
+        barScrolled && "max-lg:border-b max-lg:border-border max-lg:bg-background",
         homeScrolled
           ? cn(
               "sticky top-0",
               isCatalog
-                ? "z-40 bg-transparent shadow-none lg:static"
-                : "bg-background/80 backdrop-blur-md shadow-[0_-24px_48px_-8px_hsl(var(--background))] supports-[backdrop-filter]:bg-background/65",
+                ? "z-40 border-b border-border bg-background shadow-none lg:static lg:border-0 lg:bg-transparent"
+                : "border-b border-border bg-background",
             )
           : "relative bg-transparent shadow-none",
       )}
@@ -426,7 +452,18 @@ const FeedToolbar = ({
       ) : null}
       {/* Mobile / tablet */}
       <div className="relative z-10 flex items-center gap-2 lg:hidden">
-        <div className={cn(mobileSearchOpen && !isProjects ? "flex-1 min-w-0" : "shrink-0")}>
+        {isProjects || isDesigners ? (
+          // Search lives in the bottom-nav search button → search sheet; the corner shows the brand mark.
+          <button
+            type="button"
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            aria-label={`${BRAND_NAME} หน้าแรก`}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <BrandLogo showWordmark={false} size="md" />
+          </button>
+        ) : (
+        <div className={cn(mobileSearchOpen ? "flex-1 min-w-0" : "shrink-0")}>
           <SearchBar
             value={search}
             onChange={onSearchChange}
@@ -448,7 +485,14 @@ const FeedToolbar = ({
               : { filterContent })}
           />
         </div>
-        <div className="ml-auto min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        )}
+        {showBetaFeedback ? <FeedbackHeaderPill className="ml-auto" /> : null}
+        <div
+          className={cn(
+            "min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+            !showBetaFeedback && "ml-auto",
+          )}
+        >
           <FeedModeToggle
             {...toggleProps}
             compact={mobileSearchOpen && !isProjects}
@@ -461,14 +505,14 @@ const FeedToolbar = ({
       <div className="relative z-10 hidden space-y-3 lg:block">
         {isCatalog ? (
           <>
-            <div data-feed-catalog-head="" className="grid grid-cols-[auto_minmax(0,1fr)] items-end gap-x-6 gap-y-1 pb-8 xl:gap-x-8">
+            <div data-feed-catalog-head="" className="flex flex-col gap-y-1 pb-8">
               <h2
                 data-feed-mode-title=""
-                className="col-start-1 row-start-1 row-span-2 self-end translate-y-7 text-[5.25rem] font-semibold leading-[0.8] tracking-tight text-foreground xl:text-[6.5rem]"
+                className="order-last mt-14 pb-4 text-[5.25rem] font-semibold leading-[0.8] tracking-tight text-foreground xl:text-[6.5rem]"
               >
                 {catalogTitle}
               </h2>
-              <div data-feed-mode-cluster="" className="col-start-2 row-start-1 flex min-w-0 items-center justify-end gap-3">
+              <div data-feed-mode-cluster="" className={cn("flex min-w-0 items-center justify-center gap-3", homeScrolled && "invisible")}>
                 <div className="shrink-0">
                   <SearchBar
                     value={search}
@@ -485,13 +529,27 @@ const FeedToolbar = ({
                 <div className="flex min-w-0 max-w-[min(36rem,calc(100vw-2rem))] shrink items-center overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                   <FeedModeToggle {...toggleProps} />
                 </div>
+                {showCreate && !isCommunity ? (
+                  <button
+                    type="button"
+                    onClick={onCreateClick}
+                    aria-label={isObjects ? "ลงสินค้าใหม่" : "ลงผลงานใหม่"}
+                    className="group inline-flex h-9 shrink-0 items-center overflow-hidden rounded-full bg-foreground px-[0.6rem] text-sm font-medium text-background transition-[padding] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:px-4 focus-visible:px-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none"
+                  >
+                    <Plus className="h-4 w-4 shrink-0" strokeWidth={2.5} aria-hidden />
+                    <span className="ml-0 max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:ml-1.5 group-hover:max-w-[9rem] group-hover:opacity-100 group-focus-visible:ml-1.5 group-focus-visible:max-w-[9rem] group-focus-visible:opacity-100 motion-reduce:transition-none">
+                      {isObjects ? "ลงสินค้าใหม่" : "ลงผลงานใหม่"}
+                    </span>
+                  </button>
+                ) : null}
               </div>
-              <FeedModeTransition modeKey={mode} className="col-start-2 row-start-2 min-w-0">
+              <FeedModeTransition modeKey={mode} className={cn("flex min-w-0 justify-center", homeScrolled && "invisible")}>
                 <div className="w-full min-w-0">
                   {isProjects ? (
+                    <div className="flex min-w-0 items-center justify-center gap-5 sm:gap-6">
+                    <FeedModeDropdown value={feedMode} onChange={onFeedModeChange} />
                     <FilterChips
-                      align="end"
-                      rows={4}
+                      align="center"
                       options={parentChips}
                       selected={String(category)}
                       onSelect={(id) => {
@@ -505,16 +563,23 @@ const FeedToolbar = ({
                         onProjectStylesChange?.([]);
                       }}
                     />
+                    </div>
                   ) : isObjects ? (
-                    <ObjectsStudioLink className="pt-1 text-right" />
+                    <ObjectsStudioLink className="pt-1 text-center" />
                   ) : (
+                    <div className="flex min-w-0 items-center justify-center gap-5 sm:gap-6">
+                    <DesignerFeedDropdown
+                      value={designerFeedSource}
+                      onChange={onDesignerFeedSourceChange ?? (() => {})}
+                      sources={isPackages ? PACKAGE_FEED_ORDER : undefined}
+                    />
                     <DesignerCategoryChips
-                      align="end"
-                      rows={4}
+                      align="center"
                       selected={designerCategory}
                       onSelect={onDesignerCategoryChange}
                       chips={designerCategoryChips}
                     />
+                    </div>
                   )}
                 </div>
               </FeedModeTransition>
@@ -528,9 +593,9 @@ const FeedToolbar = ({
             inert={!homeScrolled ? "" : undefined}
             style={{ pointerEvents: homeScrolled ? "auto" : "none" }}
           >
-            <div className="border-b border-[#e4e1db] bg-[#f5f5f5]/95 backdrop-blur-md">
+            <div className="border-b border-border bg-background">
               <div className="mx-auto flex max-w-[1920px] flex-col px-[calc(1.5rem+25px)] 2xl:px-[calc(2.5rem+25px)]">
-                <div className="relative flex h-14 items-center gap-3 border-b border-[#e4e1db]/80">
+                <div className="relative flex h-14 items-center gap-3 border-b border-border/80">
                   <button
                     type="button"
                     className="relative z-10 shrink-0 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -541,7 +606,7 @@ const FeedToolbar = ({
                       useFeedHomeNavStore.getState().setScrolled(false);
                     }}
                   >
-                    <BrandLogo size="sm" tone="ink" />
+                    <BrandLogo beta size="sm" tone="theme" />
                   </button>
                   <div className="pointer-events-none absolute inset-x-0 top-0 flex h-14 items-center justify-center">
                     <div className="pointer-events-auto flex items-center gap-3">
@@ -656,7 +721,7 @@ const FeedToolbar = ({
                   useFeedHomeNavStore.getState().setScrolled(false);
                 }}
               >
-                <BrandLogo size="sm" />
+                <BrandLogo beta size="sm" />
               </button>
               <div className="min-w-0 flex-1 max-w-[min(28rem,38vw)] xl:max-w-[32rem]">
                 <SearchBar
@@ -811,12 +876,16 @@ const FeedToolbar = ({
             onClick={() => onColorQueryChange?.(null)}
             className="inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary px-2.5 py-1 text-[11px] text-foreground"
           >
-            <span
-              aria-hidden
-              className="h-3 w-3 rounded-full border border-black/10"
-              style={{ backgroundColor: colorQuery }}
-            />
-            สี {colorQuery}
+            <span aria-hidden className="flex -space-x-1">
+              {parseColorList(colorQuery).map((hex) => (
+                <span
+                  key={hex}
+                  className="h-3 w-3 rounded-full border border-background shadow-[0_0_0_1px_rgba(0,0,0,0.12)]"
+                  style={{ backgroundColor: hex }}
+                />
+              ))}
+            </span>
+            {parseColorList(colorQuery).length > 1 ? `${parseColorList(colorQuery).length} สี` : `สี ${colorQuery}`}
             <X className="h-3 w-3 text-muted-foreground" />
             <span className="sr-only">ล้างสี</span>
           </button>
@@ -842,7 +911,7 @@ const FeedToolbar = ({
         </p>
       ) : null}
 
-      {isProjects ? (
+      {isProjects || isDesigners ? (
         <ProjectSearchFilterSheet
           open={projectSheetOpen}
           onOpenChange={setProjectSheetOpen}
@@ -852,6 +921,15 @@ const FeedToolbar = ({
           resultCount={projectResultCount}
           recentSearches={recentSearches}
           onRecentSelect={onRecentSearchSelect}
+          colorQuery={colorQuery}
+          onColorQueryChange={onColorQueryChange}
+          // Designers tab switches the feed mode; its search and filters apply live.
+          tab={isDesigners ? "designers" : "projects"}
+          onTabChange={(t) => onModeChange(t)}
+          designerSearch={search}
+          onDesignerSearchChange={onSearchChange}
+          designerFilters={isDesigners ? filterContent : null}
+          designerResultCount={isDesigners ? resultCount : undefined}
         />
       ) : null}
     </div>

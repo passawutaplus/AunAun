@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import UserAvatar from "@/components/UserAvatar";
 import VerifiedBadge from "@/components/profile/VerifiedBadge";
 import { AnimatedDensityGrid } from "@/components/ui/AnimatedDensityGrid";
@@ -25,7 +25,57 @@ type CardProps = {
   density: CollectionGridDensity;
   owner?: ProfileLite | null;
   onRemove?: () => void;
+  /** Owner is picking several works: the whole card toggles instead of opening the project. */
+  selectMode?: boolean;
+  selected?: boolean;
+  onToggleSelect?: () => void;
+  /** This work is the collection's chosen cover. */
+  isCover?: boolean;
 };
+
+/** Covers the whole card while selecting, so a click toggles instead of navigating. */
+function SelectOverlay({
+  title,
+  selected,
+  onToggle,
+}: {
+  title: string;
+  selected?: boolean;
+  onToggle?: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-pressed={!!selected}
+      aria-label={`เลือก ${title}`}
+      className={cn(
+        "absolute inset-0 z-10 rounded-md transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+        selected && "ring-2 ring-primary",
+      )}
+    >
+      <span
+        aria-hidden
+        className={cn(
+          "absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full border",
+          selected
+            ? "border-primary bg-primary text-primary-foreground"
+            : "border-white/80 bg-black/35 text-transparent",
+        )}
+      >
+        <Check className="h-3.5 w-3.5" />
+      </span>
+    </button>
+  );
+}
+
+function CoverChip() {
+  return (
+    <span className="pointer-events-none absolute left-2 top-2 z-[5] rounded-full bg-background/85 px-2 py-0.5 text-[10px] font-medium text-foreground backdrop-blur">
+      ปกคอลเลกชัน
+    </span>
+  );
+}
 
 function OwnerRow({
   project,
@@ -82,13 +132,23 @@ function OwnerRow({
   );
 }
 
-function CollectionWorkCard({ project, density, owner, onRemove }: CardProps) {
+function CollectionWorkCard({
+  project,
+  density,
+  owner,
+  onRemove,
+  selectMode,
+  selected,
+  onToggleSelect,
+  isCover,
+}: CardProps) {
   const title = project.title?.trim() || "ไม่มีชื่อ";
   const list = density === "list";
 
   if (list) {
     return (
       <div className="group relative flex items-center gap-3 rounded-xl px-3 py-2.5 glass-panel">
+        {selectMode ? <SelectOverlay title={title} selected={selected} onToggle={onToggleSelect} /> : null}
         <Link to={`/project/${project.id}`} className="flex min-w-0 flex-1 items-center gap-3">
           <div className="relative h-14 w-20 shrink-0 overflow-hidden rounded-md bg-muted">
             {project.cover_url ? (
@@ -102,12 +162,13 @@ function CollectionWorkCard({ project, density, owner, onRemove }: CardProps) {
           </div>
           <div className="min-w-0">
             <h3 className="line-clamp-1 text-sm font-medium text-foreground">{title}</h3>
+            {isCover ? <p className="text-[11px] text-muted-foreground">ปกคอลเลกชัน</p> : null}
           </div>
         </Link>
         <div className="min-w-0 max-w-[42%] shrink">
           <OwnerRow project={project} owner={owner} compact />
         </div>
-        {onRemove ? (
+        {onRemove && !selectMode ? (
           <button
             type="button"
             onClick={(e) => {
@@ -127,6 +188,8 @@ function CollectionWorkCard({ project, density, owner, onRemove }: CardProps) {
 
   return (
     <div className="group relative">
+      {selectMode ? <SelectOverlay title={title} selected={selected} onToggle={onToggleSelect} /> : null}
+      {isCover ? <CoverChip /> : null}
       <Link to={`/project/${project.id}`} className="block">
         <div
           className={cn(
@@ -154,7 +217,7 @@ function CollectionWorkCard({ project, density, owner, onRemove }: CardProps) {
       <div className="mt-2 px-0.5">
         <OwnerRow project={project} owner={owner} />
       </div>
-      {onRemove ? (
+      {onRemove && !selectMode ? (
         <button
           type="button"
           onClick={(e) => {
@@ -163,7 +226,7 @@ function CollectionWorkCard({ project, density, owner, onRemove }: CardProps) {
             onRemove();
           }}
           aria-label="เอาออก"
-          className="absolute right-2 top-2 rounded-full border border-white/15 bg-background/70 p-1.5 shadow-sm backdrop-blur-md transition-opacity hover:bg-destructive hover:text-destructive-foreground md:opacity-0 md:group-hover:opacity-100"
+          className="absolute right-2 top-2 rounded-full border border-white/15 bg-background/70 p-1.5 shadow-sm backdrop-blur-md transition-opacity hover:bg-destructive hover:text-destructive-foreground md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 focus-visible:opacity-100"
         >
           <X className="h-3.5 w-3.5" />
         </button>
@@ -177,6 +240,11 @@ type GridProps = {
   density: CollectionGridDensity;
   layoutGroupId: string;
   onRemove?: (projectId: string) => void | Promise<void>;
+  selectMode?: boolean;
+  selectedIds?: ReadonlySet<string>;
+  onToggleSelect?: (projectId: string) => void;
+  /** Cover image of the collection, to mark the work it came from. */
+  coverUrl?: string | null;
 };
 
 /** Collection item cards: full image, title on the photo, owner profile under the card. */
@@ -185,6 +253,10 @@ export function CollectionWorkItemsGrid({
   density,
   layoutGroupId,
   onRemove,
+  selectMode,
+  selectedIds,
+  onToggleSelect,
+  coverUrl,
 }: GridProps) {
   const ownerIds = useMemo(
     () => [...new Set(projects.map((p) => p.owner_id).filter((id): id is string => !!id))],
@@ -206,6 +278,10 @@ export function CollectionWorkItemsGrid({
           density={density}
           owner={project.owner_id ? ownersMap[project.owner_id] ?? null : null}
           onRemove={onRemove ? () => void onRemove(project.id) : undefined}
+          selectMode={selectMode}
+          selected={selectedIds?.has(project.id)}
+          onToggleSelect={onToggleSelect ? () => onToggleSelect(project.id) : undefined}
+          isCover={!!coverUrl && project.cover_url === coverUrl}
         />
       ))}
     </AnimatedDensityGrid>

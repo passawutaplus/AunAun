@@ -1,19 +1,28 @@
 import { useState } from "react";
+import { StudioDocCard } from "@/components/chat/StudioDocCard";
+import { parseStudioDocCard } from "@/lib/documents/studioDocuments";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { format, isToday, isYesterday } from "date-fns";
 import { th } from "date-fns/locale";
 import {
+  AlarmClock,
+  CircleCheck,
   Copy,
   ExternalLink,
   FileText,
   Flag,
+  Hourglass,
+  ListPlus,
   Languages,
   Megaphone,
   MoreVertical,
   Reply,
+  Pencil,
   Undo2,
+  UserCheck,
+  type LucideIcon,
 } from "lucide-react";
 import ReportDialog from "@/components/report/ReportDialog";
 import { Button } from "@/components/ui/button";
@@ -87,16 +96,10 @@ import {
   isChangeRequestMessage,
   isCollabPlanDocumentMessage,
   isStepLockedMessage,
-  parseChangeRequestMessage,
 } from "@/lib/collabToolkit";
 import { CollabToolkitCard } from "@/components/chat/CollabToolkitCard";
-import { CollabPlanDocCard } from "@/components/chat/CollabPlanDocCard";
-import {
-  CollabChangeDoneCard,
-  CollabChangeRequestCard,
-  CollabDiscussionTemplateCard,
-  CollabStepLockedCard,
-} from "@/components/chat/CollabPlanEventCards";
+import { CollabAgreementCard, isCollabAgreementMessage } from "@/components/chat/CollabAgreementCard";
+import { CollabWelcomeCard, LegacyCollabPlanCard, isCollabWelcomeMessage } from "@/components/chat/CollabProgress";
 import { UNSEND_WINDOW_MS, type Message } from "@/hooks/useChat";
 import { useSignedStorageUrl } from "@/hooks/useSignedStorageUrl";
 import { toast } from "sonner";
@@ -149,6 +152,20 @@ export function looksForeignLanguage(text: string | null | undefined): boolean {
   return thai / letters.length < 0.45;
 }
 
+/** Icon + tone for one-line system messages (task reminders, assignments, plan edits). */
+function systemLineStyle(text: string): { icon: LucideIcon | null; text: string; ok: boolean } {
+  const t = text.replace(/^⏰\s*/, "");
+  if (text.startsWith("⏰")) return { icon: AlarmClock, text: t, ok: false };
+  if (/^ปิดคอลแลปแล้ว/.test(text)) return { icon: CircleCheck, text: t, ok: true };
+  if (/ขอปิดคอลแลป/.test(text)) return { icon: CircleCheck, text: t, ok: false };
+  if (/ไม่ได้คุยกัน 7 วัน/.test(text)) return { icon: Hourglass, text: t, ok: false };
+  if (/ทุกคนตกลงแผน/.test(text)) return { icon: CircleCheck, text: t.replace(/\s*✓$/, ""), ok: true };
+  if (/มอบงาน|รับงาน/.test(text)) return { icon: UserCheck, text: t, ok: false };
+  if (/แก้แผน|แก้.*ยืนยันแผนใหม่/.test(text)) return { icon: Pencil, text: t, ok: false };
+  if (/ยกเลิกการตกลงแผน/.test(text)) return { icon: Undo2, text: t, ok: false };
+  return { icon: null, text, ok: false };
+}
+
 interface Props {
   message: Message;
   mine: boolean;
@@ -189,6 +206,8 @@ interface Props {
   collabChangeAlreadyApproved?: boolean;
   collabChangeApproveBusy?: boolean;
   onReply?: (message: Message) => void;
+  /** Collab chats: turn this message into a task on the board. */
+  onAddTask?: (message: Message) => void;
   onUnsend?: (message: Message) => void;
   /** Pin/announce message to conversation header (LINE-style). */
   onAnnounce?: (message: Message, previewText: string) => void;
@@ -227,6 +246,7 @@ const MessageBubble = ({
   collabChangeAlreadyApproved = false,
   collabChangeApproveBusy = false,
   onReply,
+  onAddTask,
   onUnsend,
   onAnnounce,
   getSenderLabel,
@@ -350,9 +370,9 @@ const MessageBubble = ({
 
   const mineBg =
     kind === "hire"
-      ? "bg-[hsl(var(--chat-hire))] text-white"
+      ? "bg-[hsl(var(--chat-hire))] text-[hsl(var(--chat-hire-foreground))]"
       : kind === "collab"
-        ? "bg-gradient-to-br from-[hsl(var(--chat-collab))] to-[hsl(var(--chat-collab)/0.8)] text-white"
+        ? "bg-chat-collab text-[hsl(var(--chat-collab-foreground))]"
         : "bg-primary text-primary-foreground";
   const theirBg =
     kind === "hire"
@@ -372,6 +392,7 @@ const MessageBubble = ({
 
   const objectCard = !deleted ? parseObjectChatCard(message.content) : null;
   const offer = !deleted ? parseChatOffer(message.content) : null;
+  const studioDoc = !deleted ? parseStudioDocCard(message.content) : null;
   const hireForward = !deleted ? parseHireForwardMessage(message.content) : null;
   const hireRejectChoice = !deleted ? parseHireRejectChoiceMessage(message.content) : null;
   const hireContinueAsk = !deleted ? parseHireContinueAskMessage(message.content) : null;
@@ -401,6 +422,8 @@ const MessageBubble = ({
     isHireProtocolMessage(rawForDisplay) ||
     !!detectCollabToolKind(rawForDisplay) ||
     isCollabPlanDocumentMessage(rawForDisplay) ||
+    isCollabAgreementMessage(rawForDisplay) ||
+    isCollabWelcomeMessage(rawForDisplay) ||
     isAlignDiscussionTemplateMessage(rawForDisplay) ||
     isCollabDeclineChatMessage(rawForDisplay) ||
     !!collabEnd ||
@@ -412,6 +435,7 @@ const MessageBubble = ({
   const hireBrief =
     !deleted &&
     !offer &&
+    !studioDoc &&
     !hireForward &&
     !hireRejectChoice &&
     !hireContinueAsk &&
@@ -429,6 +453,7 @@ const MessageBubble = ({
   const collabBrief =
     !deleted &&
     !offer &&
+    !studioDoc &&
     !hireForward &&
     !hireRejectChoice &&
     !hireContinueAsk &&
@@ -447,6 +472,7 @@ const MessageBubble = ({
   const collabDecline =
     !deleted &&
     !offer &&
+    !studioDoc &&
     !hireBrief &&
     !collabBrief &&
     isCollabDeclineChatMessage(rawForDisplay)
@@ -456,6 +482,7 @@ const MessageBubble = ({
   const collabPlanDoc =
     !deleted &&
     !offer &&
+    !studioDoc &&
     !hireForward &&
     !hireRejectChoice &&
     !hireContinueAsk &&
@@ -476,6 +503,7 @@ const MessageBubble = ({
   const collabDiscussionTpl =
     !deleted &&
     !offer &&
+    !studioDoc &&
     !hireBrief &&
     !collabBrief &&
     !collabDecline &&
@@ -487,6 +515,7 @@ const MessageBubble = ({
   const collabChangeReq =
     !deleted &&
     !offer &&
+    !studioDoc &&
     !collabPlanDoc &&
     !collabDiscussionTpl &&
     isChangeRequestMessage(rawForDisplay)
@@ -496,6 +525,7 @@ const MessageBubble = ({
   const collabChangeDone =
     !deleted &&
     !offer &&
+    !studioDoc &&
     !collabPlanDoc &&
     !collabChangeReq &&
     isChangeDoneMessage(rawForDisplay)
@@ -505,6 +535,7 @@ const MessageBubble = ({
   const collabStepLocked =
     !deleted &&
     !offer &&
+    !studioDoc &&
     !collabPlanDoc &&
     !collabChangeReq &&
     !collabChangeDone &&
@@ -515,6 +546,7 @@ const MessageBubble = ({
   const collabToolKind =
     !deleted &&
     !offer &&
+    !studioDoc &&
     !hireForward &&
     !hireRejectChoice &&
     !hireContinueAsk &&
@@ -538,6 +570,7 @@ const MessageBubble = ({
 
   const isStructuredChatCard = !!(
     offer ||
+    studioDoc ||
     hireForward ||
     hireRejectChoice ||
     hireContinueAsk ||
@@ -581,10 +614,10 @@ const MessageBubble = ({
           mine ? "bg-black/15 border-white/70" : "bg-black/5 border-primary/50",
         )}
       >
-        <span className={cn("block text-[10px] font-semibold truncate", mine ? "text-white/90" : "text-primary")}>
+        <span className={cn("block text-[10px] font-semibold truncate", mine ? "opacity-90" : "text-primary")}>
           {getSenderLabel?.(replyTo.sender_id) ?? "ข้อความเดิม"}
         </span>
-        <span className={cn("block text-[11px] truncate mt-0.5", mine ? "text-white/75" : "text-muted-foreground")}>
+        <span className={cn("block text-[11px] truncate mt-0.5", mine ? "opacity-75" : "text-muted-foreground")}>
           {replyPreviewText(replyTo)}
         </span>
       </button>
@@ -611,10 +644,19 @@ const MessageBubble = ({
 
   // Structured cards (hire reject / continue / forward / offer) win over system-pill rendering.
   if (isSystem && !deleted && !isStructuredChatCard) {
+    const text = String(displayContent ?? "");
+    const sys = systemLineStyle(text);
+    const SysIcon = sys.icon;
     return (
       <div className="flex justify-center my-2 px-4">
-        <p className="text-xs text-center text-muted-foreground bg-muted/80 px-3 py-1.5 rounded-full max-w-[90%] leading-relaxed">
-          {displayContent}
+        <p
+          className={cn(
+            "inline-flex max-w-[90%] items-start gap-1.5 rounded-full border px-3 py-1.5 text-center text-xs leading-relaxed",
+            sys.ok ? "border-transparent bg-emerald-500/15 text-emerald-700 dark:text-emerald-400" : "border-border bg-card text-muted-foreground",
+          )}
+        >
+          {SysIcon ? <SysIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden /> : null}
+          <span>{sys.text}</span>
         </p>
       </div>
     );
@@ -640,6 +682,12 @@ const MessageBubble = ({
             <DropdownMenuItem onClick={() => onReply(message)}>
               <Reply className="w-4 h-4 mr-2" />
               ตอบกลับ
+            </DropdownMenuItem>
+          ) : null}
+          {onAddTask && message.message_type === "text" && message.content?.trim() ? (
+            <DropdownMenuItem onClick={() => onAddTask(message)}>
+              <ListPlus className="w-4 h-4 mr-2" />
+              เพิ่มเป็น Task
             </DropdownMenuItem>
           ) : null}
           <DropdownMenuItem onClick={() => void copyMessage()}>
@@ -736,7 +784,7 @@ const MessageBubble = ({
                       <p
                         className={cn(
                           "text-[10px] truncate",
-                          mine ? "text-white/75" : "text-muted-foreground",
+                          mine ? "opacity-75" : "text-muted-foreground",
                         )}
                       >
                         #{projectFromLabel.replace(/^#/, "")}
@@ -802,11 +850,16 @@ const MessageBubble = ({
                     <div className="flex h-16 items-center justify-center bg-muted text-xs text-muted-foreground">สินค้า</div>
                   )}
                   <div className={cn("space-y-0.5 px-3 py-2", mine ? "bg-black/10" : "bg-card")}>
-                    <p className={cn("text-[10px]", mine ? "text-white/75" : "text-muted-foreground")}>สินค้า</p>
+                    <p className={cn("text-[10px]", mine ? "opacity-75" : "text-muted-foreground")}>สินค้า</p>
                     <div className="flex items-center justify-between gap-2">
                       <span className="truncate text-sm font-medium">{objectCard.title}</span>
                       <span className="shrink-0 text-sm">{formatBaht(objectCard.price_thb)}</span>
                     </div>
+                    {objectCard.option || objectCard.qty ? (
+                      <p className={cn("truncate text-xs", mine ? "opacity-80" : "text-muted-foreground")}>
+                        {[objectCard.option, objectCard.qty ? `${objectCard.qty} ชิ้น` : ""].filter(Boolean).join(" · ")}
+                      </p>
+                    ) : null}
                   </div>
                 </Link>
               </div>
@@ -838,18 +891,24 @@ const MessageBubble = ({
                     </div>
                   )}
                   <div className={cn("px-3 py-2 space-y-0.5", mine ? "bg-black/10" : "bg-card")}>
-                    <p className={cn("text-[10px]", mine ? "text-white/75" : "text-muted-foreground")}>
+                    <p className={cn("text-[10px]", mine ? "opacity-75" : "text-muted-foreground")}>
                       Package
                     </p>
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-sm font-medium truncate">{serviceCard.title}</span>
                       <ExternalLink className="w-3.5 h-3.5 shrink-0 opacity-70" />
                     </div>
-                    <p className={cn("text-xs font-semibold tabular-nums", mine ? "text-white" : "text-primary")}>
+                    <p className={cn("text-xs font-semibold tabular-nums", mine ? "" : "text-primary")}>
                       {formatServicePrice(serviceCard.price_thb)}
                     </p>
                   </div>
                 </Link>
+              </div>
+            )}
+            {studioDoc && (
+              <div>
+                {replyQuote}
+                <StudioDocCard card={studioDoc} mine={mine} />
               </div>
             )}
             {offer && (
@@ -1003,53 +1062,21 @@ const MessageBubble = ({
                 <CollabDeclineCard content={collabDecline} mine={mine} />
               </div>
             )}
-            {collabPlanDoc && (
+            {!deleted && isCollabWelcomeMessage(rawForDisplay) && (
               <div>
-                {replyQuote}
-                <CollabPlanDocCard
-                  content={collabPlanDoc}
-                  onOpenPlan={() => onOpenCollabPlan?.()}
-                />
+                <CollabWelcomeCard conversationId={message.conversation_id} onOpenPlan={onOpenCollabPlan} />
               </div>
             )}
-            {collabDiscussionTpl && (
+            {!deleted && isCollabAgreementMessage(rawForDisplay) && (
               <div>
                 {replyQuote}
-                <CollabDiscussionTemplateCard onOpenPlan={() => onOpenCollabPlan?.()} />
+                <CollabAgreementCard conversationId={message.conversation_id} messageId={message.id} onOpenPlan={onOpenCollabPlan} />
               </div>
             )}
-            {collabChangeReq && (
+            {(collabPlanDoc || collabDiscussionTpl || collabChangeReq || collabChangeDone || collabStepLocked) && (
               <div>
                 {replyQuote}
-                <CollabChangeRequestCard
-                  content={collabChangeReq}
-                  mine={mine}
-                  alreadyApproved={collabChangeAlreadyApproved}
-                  busy={collabChangeApproveBusy}
-                  onApprove={() => {
-                    const parsed = parseChangeRequestMessage(collabChangeReq);
-                    if (parsed?.requestId) onApproveCollabChange?.(parsed.requestId);
-                  }}
-                  onOpenPlan={() => onOpenCollabPlan?.()}
-                />
-              </div>
-            )}
-            {collabChangeDone && (
-              <div>
-                {replyQuote}
-                <CollabChangeDoneCard
-                  content={collabChangeDone}
-                  onOpenPlan={() => onOpenCollabPlan?.()}
-                />
-              </div>
-            )}
-            {collabStepLocked && (
-              <div>
-                {replyQuote}
-                <CollabStepLockedCard
-                  content={collabStepLocked}
-                  onOpenPlan={() => onOpenCollabPlan?.()}
-                />
+                <LegacyCollabPlanCard onOpenPlan={onOpenCollabPlan} />
               </div>
             )}
             {collabToolKind && (
@@ -1060,6 +1087,8 @@ const MessageBubble = ({
             )}
             {displayContent &&
               !offer &&
+              !studioDoc &&
+    !studioDoc &&
               !hireForward &&
               !hireRejectChoice &&
               !hireContinueAsk &&
@@ -1092,6 +1121,8 @@ const MessageBubble = ({
             )}
             {!displayContent &&
               !offer &&
+              !studioDoc &&
+    !studioDoc &&
               !hireForward &&
               !hireRejectChoice &&
               !hireContinueAsk &&

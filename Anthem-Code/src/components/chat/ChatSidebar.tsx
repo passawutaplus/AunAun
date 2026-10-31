@@ -58,13 +58,19 @@ import { cn } from "@/lib/utils";
 import { DEMO_RESEARCH_ACCOUNTS, isDemoMode } from "@/lib/demoMode";
 import { toast } from "sonner";
 import { useSubscription } from "@/core/subscription/useSubscription";
+import { ChatFilterRail } from "@/components/chat/ChatFilterRail";
+import { ChatMobileListHeader } from "@/components/chat/ChatMobileListHeader";
+import { userFacingError } from "@/lib/userFacingError";
 
 interface Props {
   selectedId?: string;
   tab: "all" | ChatKind;
+  onTabChange: (tab: "all" | ChatKind) => void;
   search: string;
   onSearchChange: (value: string) => void;
   onSelectConversation?: (conversationId: string) => void;
+  /** Replays the chat tour (phone header "?"). */
+  onTour?: () => void;
   className?: string;
 }
 
@@ -81,9 +87,11 @@ type LastMessageRow = {
 const ChatSidebar = ({
   selectedId,
   tab,
+  onTabChange,
   search,
   onSearchChange,
   onSelectConversation,
+  onTour,
   className,
 }: Props) => {
   const navigate = useNavigate();
@@ -234,7 +242,7 @@ const ChatSidebar = ({
       onSelectConversation(c.id);
       return;
     }
-    navigate(`/chat/${c.id}`);
+    navigate(`/chat/${c.id}`, { replace: true });
   };
 
   const handleCreateGroup = () => {
@@ -258,7 +266,7 @@ const ChatSidebar = ({
       { conversationId: convId, pinned: wasPinned },
       {
         onSuccess: () => toast.success(wasPinned ? "เลิกปักหมุดแล้ว" : "ปักหมุดแล้ว"),
-        onError: (err: Error) => toast.error(err.message || "ปักหมุดไม่สำเร็จ"),
+        onError: (err: Error) => toast.error(userFacingError(err, "ปักหมุดไม่สำเร็จ")),
       },
     );
   };
@@ -276,13 +284,21 @@ const ChatSidebar = ({
         setDeleteTargetId(null);
         if (selectedId === id) navigate("/chat");
       },
-      onError: (err: Error) => toast.error(err.message || "ลบแชทไม่สำเร็จ"),
+      onError: (err: Error) => toast.error(userFacingError(err, "ลบแชทไม่สำเร็จ")),
     });
   };
 
   return (
     <aside className={cn("flex flex-col h-full border-r border-border bg-card", className)}>
-      <div className="shrink-0 border-b border-border px-3 pb-2 pt-2.5">
+      <ChatMobileListHeader
+        tab={tab}
+        onTabChange={onTabChange}
+        search={search}
+        onSearchChange={onSearchChange}
+        onTour={onTour}
+        onCreateGroup={isAplus1SubscriptionsEnabled() ? handleCreateGroup : undefined}
+      />
+      <div className="hidden shrink-0 border-b border-border px-3 pb-2 pt-2.5 md:block">
         <div className="flex items-center gap-1.5">
           <div className="relative min-w-0 flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -306,6 +322,7 @@ const ChatSidebar = ({
             </Button>
           ) : null}
         </div>
+        <ChatFilterRail tab={tab} onTabChange={onTabChange} className="mt-2" />
       </div>
 
       <div className="flex-1 overflow-y-auto px-1.5 py-1">
@@ -347,6 +364,7 @@ const ChatSidebar = ({
             const p = otherId ? profilesMap[otherId] : undefined;
             const last = lastMessages[c.id];
             const isHire = c.kind === "hire";
+            const isConnect = c.kind === "connect";
             const isLocked = Boolean(
               isHire &&
                 ((c.request_id && lockedHireRequestIds.has(c.request_id)) ||
@@ -373,7 +391,9 @@ const ChatSidebar = ({
                   : "border-primary"
               : isHire
                 ? "border-[hsl(var(--chat-hire))]"
-                : "border-[hsl(var(--chat-collab))]";
+                : isConnect
+                  ? "border-primary"
+                  : "border-[hsl(var(--chat-collab))]";
             const badgeBg = isGroup
               ? groupTag === "hire"
                 ? "bg-[hsl(var(--chat-hire-soft))] text-[hsl(var(--chat-hire))]"
@@ -392,7 +412,9 @@ const ChatSidebar = ({
                   : "กลุ่ม"
               : isHire
                 ? "จ้าง"
-                : "คอลแลป";
+                : isConnect
+                  ? null
+                  : "คอลแลป";
 
             return (
               <li key={c.id} className="relative">
@@ -422,14 +444,16 @@ const ChatSidebar = ({
                     <div className="flex items-center gap-2">
                       <div className="flex items-center gap-1.5 min-w-0 flex-1">
                         <span className="font-semibold text-foreground truncate text-sm">{listName}</span>
-                        <span
-                          className={cn(
-                            "shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded-full",
-                            badgeBg,
-                          )}
-                        >
-                          {listBadge}
-                        </span>
+                        {listBadge ? (
+                          <span
+                            className={cn(
+                              "shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded-full",
+                              badgeBg,
+                            )}
+                          >
+                            {listBadge}
+                          </span>
+                        ) : null}
                         {isLocked && (
                           <span className="shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
                             {HIRE_CHAT_LOCKED_LIST_LABEL}
@@ -568,7 +592,7 @@ const ChatSidebar = ({
         onCreated={(convId) => {
           setGroupOpen(false);
           if (onSelectConversation) onSelectConversation(convId);
-          else navigate(`/chat/${convId}`);
+          else navigate(`/chat/${convId}`, { replace: true });
         }}
       />
     </aside>

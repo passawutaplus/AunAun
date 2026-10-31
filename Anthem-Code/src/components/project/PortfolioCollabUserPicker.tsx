@@ -1,16 +1,14 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { AtSign, Check, Clock, Plus, Search, UserRound, X } from "lucide-react";
+import { AtSign, Ban, Check, Clock, Plus, Search, UserRound, X } from "lucide-react";
 import { CompactLoader } from "@/components/ui/BanterLoader";
 import UserAvatar from "@/components/UserAvatar";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import {
-  fetchMutualFollowCandidates,
-  type TaggedUserSummary,
-} from "@/lib/communityTaggedUsers";
-import { MAX_PORTFOLIO_COLLAB_USERS } from "@/lib/portfolioCollabInvites";
+import type { TaggedUserSummary } from "@/lib/communityTaggedUsers";
+import { fetchTaggableCollabCandidates, MAX_PORTFOLIO_COLLAB_USERS } from "@/lib/portfolioCollabInvites";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -20,6 +18,10 @@ type Props = {
   onChange: (users: TaggedUserSummary[]) => void;
   acceptedUsers?: TaggedUserSummary[];
   pendingUsers?: TaggedUserSummary[];
+  /** Said no to this work: shown for the poster's information, cannot be tagged again here. */
+  declinedUsers?: TaggedUserSummary[];
+  /** Cancel a tag nobody has answered yet (saved works only). */
+  onCancelPending?: (user: TaggedUserSummary) => void;
 };
 
 function userLabel(u: TaggedUserSummary) {
@@ -34,6 +36,8 @@ export function PortfolioCollabUserPicker({
   onChange,
   acceptedUsers = [],
   pendingUsers = [],
+  declinedUsers = [],
+  onCancelPending,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -41,13 +45,14 @@ export function PortfolioCollabUserPicker({
   const { data: candidates = [], isLoading } = useQuery({
     queryKey: ["mutual-follow-candidates", userId],
     enabled: open && !!userId,
-    queryFn: () => fetchMutualFollowCandidates(userId),
+    queryFn: () => fetchTaggableCollabCandidates(userId),
   });
 
   const lockedIds = useMemo(
-    () => new Set([...acceptedUsers, ...pendingUsers].map((u) => u.user_id)),
-    [acceptedUsers, pendingUsers],
+    () => new Set([...acceptedUsers, ...pendingUsers, ...declinedUsers].map((u) => u.user_id)),
+    [acceptedUsers, pendingUsers, declinedUsers],
   );
+  const declinedIds = useMemo(() => new Set(declinedUsers.map((u) => u.user_id)), [declinedUsers]);
   const selectedIds = useMemo(() => new Set(selected.map((u) => u.user_id)), [selected]);
   const totalCount = acceptedUsers.length + pendingUsers.length + selected.length;
 
@@ -78,11 +83,13 @@ export function PortfolioCollabUserPicker({
 
   return (
     <section className="space-y-2">
-      <div className="flex items-center gap-2">
-        <p className="flex min-w-0 flex-1 items-center gap-2 text-sm font-normal text-foreground">
-          <AtSign className="w-4 h-4 text-primary shrink-0" />
-          แท็กเพื่อนร่วมงาน
-        </p>
+      <div className="flex items-start gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="flex items-center gap-2 text-sm font-normal text-foreground">
+            <AtSign className="w-4 h-4 text-primary shrink-0" />
+            แท็กเพื่อนร่วมงาน
+          </p>
+        </div>
         <Popover
           open={open}
           onOpenChange={(next) => {
@@ -97,12 +104,13 @@ export function PortfolioCollabUserPicker({
               aria-label="เลือกเพื่อนที่ติดตามกัน"
               title={totalCount >= maxTags ? `แท็กได้สูงสุด ${maxTags} คน` : "เลือกเพื่อนที่ติดตามกัน"}
               className={cn(
-                "inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-sm",
+                "inline-flex h-9 shrink-0 items-center gap-1 rounded-full border border-border bg-background px-3 text-xs font-medium text-foreground shadow-sm",
                 "hover:border-primary/50 hover:text-primary",
                 "disabled:cursor-not-allowed disabled:opacity-50",
               )}
             >
-              <Plus className="h-3 w-3" strokeWidth={2.5} />
+              <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
+              แท็กเพื่อน
             </button>
           </PopoverTrigger>
           <PopoverContent align="end" className="w-[min(100vw-2rem,360px)] p-0">
@@ -122,12 +130,28 @@ export function PortfolioCollabUserPicker({
                 <CompactLoader label="กำลังโหลดรายชื่อ…" className="py-6" />
               )}
               {!isLoading && candidates.length === 0 && (
+                <div className="py-6 px-4 text-center">
+                  <p className="text-sm text-foreground">ยังไม่มีคนที่แท็กได้</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    ติดตามครีเอเตอร์ที่ร่วมงานด้วย เมื่อเขาติดตามกลับ จะแท็กกันในผลงานได้
+                    (คนที่ปิดรับการแท็กจะไม่ขึ้นในรายชื่อ)
+                  </p>
+                  <Link
+                    to="/?mode=designers"
+                    className="mt-3 inline-flex text-xs font-medium text-primary underline-offset-4 hover:underline"
+                  >
+                    ไปหน้า Designers
+                  </Link>
+                </div>
+              )}
+              {!isLoading && candidates.length > 0 && filtered.length === 0 && (
                 <p className="text-xs text-muted-foreground text-center py-6 px-3">
-                  ยังไม่มีเพื่อนที่ติดตามกันและกัน
+                  ไม่พบชื่อนี้ในคนที่ติดตามกันทั้งคู่
                 </p>
               )}
               {filtered.map((u) => {
-                const on = selectedIds.has(u.user_id) || lockedIds.has(u.user_id);
+                const declined = declinedIds.has(u.user_id);
+                const on = !declined && (selectedIds.has(u.user_id) || lockedIds.has(u.user_id));
                 const locked = lockedIds.has(u.user_id);
                 return (
                   <button
@@ -148,7 +172,9 @@ export function PortfolioCollabUserPicker({
                         <span className="block text-xs text-muted-foreground truncate">@{u.username}</span>
                       )}
                     </span>
-                    {on ? (
+                    {declined ? (
+                      <span className="shrink-0 text-[11px] text-muted-foreground">ปฏิเสธแล้ว</span>
+                    ) : on ? (
                       <Check className="w-4 h-4 text-primary shrink-0" />
                     ) : (
                       <UserRound className="w-4 h-4 text-muted-foreground shrink-0 opacity-40" />
@@ -161,7 +187,7 @@ export function PortfolioCollabUserPicker({
         </Popover>
       </div>
 
-      {(acceptedUsers.length > 0 || pendingUsers.length > 0 || selected.length > 0) && (
+      {(acceptedUsers.length > 0 || pendingUsers.length > 0 || declinedUsers.length > 0 || selected.length > 0) && (
         <div className="flex flex-wrap gap-2">
           {acceptedUsers.map((u) => (
             <span
@@ -178,12 +204,36 @@ export function PortfolioCollabUserPicker({
           {pendingUsers.map((u) => (
             <span
               key={u.user_id}
-              className="inline-flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/5 pl-1.5 pr-2 py-1"
+              className="inline-flex items-center gap-2 rounded-xl border border-warning/30 bg-warning/5 pl-1.5 pr-2 py-1"
             >
               <UserAvatar src={u.avatar_url} name={u.display_name} className="w-8 h-8" />
               <span className="text-xs font-medium max-w-[100px] truncate">{userLabel(u)}</span>
-              <Badge variant="outline" className="text-[9px] h-4 px-1 gap-0.5 border-amber-500/40 text-amber-600">
+              <Badge variant="outline" className="text-[9px] h-4 px-1 gap-0.5 border-warning/40 text-warning">
                 <Clock className="w-2.5 h-2.5" /> รอตอบรับ
+              </Badge>
+              {onCancelPending ? (
+                <button
+                  type="button"
+                  onClick={() => onCancelPending(u)}
+                  className="-mr-1 p-1 rounded-full hover:bg-destructive/10 hover:text-destructive"
+                  aria-label={`ยกเลิกการแท็ก ${u.display_name}`}
+                  title="ยกเลิกการแท็ก (เขายังไม่ได้ตอบ)"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              ) : null}
+            </span>
+          ))}
+          {declinedUsers.map((u) => (
+            <span
+              key={u.user_id}
+              title="ปฏิเสธการแท็กในผลงานนี้ — ชื่อจะไม่ขึ้นในผลงาน"
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-muted/40 pl-1.5 pr-2 py-1 opacity-70"
+            >
+              <UserAvatar src={u.avatar_url} name={u.display_name} className="w-8 h-8 grayscale" />
+              <span className="text-xs font-medium max-w-[100px] truncate">{userLabel(u)}</span>
+              <Badge variant="outline" className="text-[9px] h-4 px-1 gap-0.5 text-muted-foreground">
+                <Ban className="w-2.5 h-2.5" /> ปฏิเสธ
               </Badge>
             </span>
           ))}

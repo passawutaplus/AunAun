@@ -15,7 +15,7 @@ export const LEGAL_COMPANY_NAME =
   (import.meta.env.VITE_LEGAL_COMPANY_NAME as string | undefined) ?? BRAND_COMPANY;
 
 export const LEGAL_UPDATED_AT =
-  (import.meta.env.VITE_LEGAL_UPDATED_AT as string | undefined) ?? "14 สิงหาคม 2569";
+  (import.meta.env.VITE_LEGAL_UPDATED_AT as string | undefined) ?? "28 ตุลาคม 2569";
 
 /** รุ่นข้อความคำแถลงการยืนยันลิขสิทธิ์ — เก็บใน projects.rights_attestation_version */
 export const LEGAL_ATTESTATION_VERSION =
@@ -55,7 +55,7 @@ export const LEGAL_COMPANY_TAX_ID =
 
 export const LEGAL_COMPANY_ADDRESS =
   (import.meta.env.VITE_LEGAL_COMPANY_ADDRESS as string | undefined) ??
-  "กรุงเทพมหานคร ประเทศไทย";
+  "90 เพชรเกษม 63/2 แขวงหลักสอง เขตบางแค กรุงเทพมหานคร 10160";
 
 /** เมื่อ true ออกใบเสร็จค่าธรรมเนียมเป็นใบกำกับภาษี (VAT 7%) */
 export const LEGAL_VAT_REGISTERED =

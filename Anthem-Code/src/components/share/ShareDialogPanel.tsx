@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { BRAND_ICON_SRC } from "@/components/share/brandMarks";
-import { BRAND_MARK, BRAND_NAME } from "@/lib/brandConfig";
+import { BRAND_NAME } from "@/lib/brandConfig";
 import {
   SHARE_TARGETS,
   sharePageHost,
@@ -106,13 +106,7 @@ const ShareDialogPanel = ({
               </div>
             )}
             <div className="absolute inset-x-0 bottom-0 flex items-center gap-2 bg-gradient-to-t from-black/75 via-black/30 to-transparent px-3 pb-2.5 pt-10">
-              <span
-                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-gradient-brand text-[9px] font-medium leading-none text-white"
-                aria-hidden
-              >
-                {BRAND_MARK}
-              </span>
-              <span className="truncate text-xs font-medium text-white">{BRAND_NAME}</span>
+              <img src="/brand/logo-horizontal-white.svg" alt={BRAND_NAME} className="h-6 w-auto" draggable={false} />
             </div>
           </div>
           <div className="space-y-0.5 px-3 py-2.5">

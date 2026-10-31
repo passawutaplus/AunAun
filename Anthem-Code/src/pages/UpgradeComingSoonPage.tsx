@@ -17,7 +17,7 @@ export function UpgradeComingSoonPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border/60 bg-background/80 backdrop-blur sticky top-0 z-40">
+      <header className="border-b border-border/60 bg-background sticky top-0 z-40">
         <div className="mx-auto max-w-2xl px-4 sm:px-6 h-14 flex items-center justify-between">
           <BackButton
             onClick={() => navigate(user ? "/settings" : "/")}
@@ -31,7 +31,7 @@ export function UpgradeComingSoonPage() {
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 text-primary mb-6">
           <Crown className="w-8 h-8" />
         </div>
-        <Badge variant="outline" className="mb-4 gap-1.5 border-amber-500/40 text-amber-700 dark:text-amber-400">
+        <Badge variant="outline" className="mb-4 gap-1.5 border-warning/40 text-warning dark:text-warning">
           <Clock className="w-3.5 h-3.5" />
           Coming soon
         </Badge>

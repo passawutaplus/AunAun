@@ -1,0 +1,14 @@
+{
+  "appId": "com.samecor.app",
+  "appName": "SAMECOR",
+  "webDir": "www",
+  "server": {
+    "url": "https://samecor.com",
+    "androidScheme": "https",
+    "errorPath": "offline.html"
+  },
+  "android": {
+    "appendUserAgent": "SamecorApp",
+    "allowMixedContent": false
+  }
+}

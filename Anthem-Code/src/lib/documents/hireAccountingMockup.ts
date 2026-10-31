@@ -10,7 +10,10 @@ import {
   type ChatOfferPayload,
   type OfferPartyInfo,
 } from "@/lib/chatOffer";
-import type { BusinessDocument, DocumentLineItem } from "@/lib/documents/documentPayload";
+import type {
+  BusinessDocument,
+  DocumentLineItem,
+} from "@/lib/documents/documentPayload";
 import {
   buildInvoiceSnapshot,
   buildReceiptSnapshot,
@@ -144,7 +147,10 @@ export function buildHireAccountingMockup(input: {
 }): HireAccountingMockup {
   const offer = input.offer;
   const jobThb = Math.max(0, Math.round(offer.amount || 0));
-  const depositPct = Math.min(100, Math.max(1, Math.round(offer.depositPercent ?? 50)));
+  const depositPct = Math.min(
+    100,
+    Math.max(1, Math.round(offer.depositPercent ?? 50)),
+  );
   const isDeposit = depositPct < 100;
   const expectedDeposit = isDeposit
     ? offerDepositAmount(jobThb, depositPct)
@@ -155,10 +161,14 @@ export function buildHireAccountingMockup(input: {
       : Math.round(expectedDeposit);
   const balanceThb = Math.max(0, jobThb - paidThb);
   const now = input.paidAt || new Date().toISOString();
-  const seed = (input.orderCodeSeed || "MOCKORD1").replace(/-/g, "").slice(0, 8).toUpperCase();
+  const seed = (input.orderCodeSeed || "MOCKORD1")
+    .replace(/-/g, "")
+    .slice(0, 8)
+    .toUpperCase();
   const orderId = `00000000-0000-4000-8000-${seed.padEnd(12, "0").slice(0, 12).toLowerCase()}`;
 
-  const quoteNumber = offer.number || makeStableMockDocNumber("quotation", seed);
+  const quoteNumber =
+    offer.number || makeStableMockDocNumber("quotation", seed);
   const issuer = partyFromOffer("issuer", offer, input.partnerName);
   const client = partyFromOffer("client", offer, input.clientName);
   const lineItems = lineItemsFromOffer(offer);
@@ -173,7 +183,10 @@ export function buildHireAccountingMockup(input: {
     jobPriceSatang: jobSatang,
     platformFeeSatang: Math.round(jobSatang * 0.1),
     platformFeePercent: 10,
-    sellerNetSatang: Math.max(0, jobSatang - Math.round(jobSatang * 0.1) - whtSatang),
+    sellerNetSatang: Math.max(
+      0,
+      jobSatang - Math.round(jobSatang * 0.1) - whtSatang,
+    ),
     whtSatang,
     buyerPaysSatang: paidSatang,
     quoteId: offer.quoteId ?? null,
@@ -279,7 +292,8 @@ export function buildHireAccountingMockup(input: {
       depositPercent: depositPct,
       paidThb,
       balanceThb,
-      methodLabel: METHOD_TH[input.paymentMethod || "promptpay"] || "พร้อมเพย์ (QR)",
+      methodLabel:
+        METHOD_TH[input.paymentMethod || "promptpay"] || "พร้อมเพย์ (QR)",
       paidAtLabel,
       isDeposit,
       quoteNumber,

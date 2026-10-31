@@ -74,9 +74,9 @@ export default function ResearchPage() {
           <UxChecklistPdfDownload variant="banner" />
         </section>
 
-        <section className="rounded-2xl border border-amber-500/30 bg-amber-500/8 p-4 space-y-2">
+        <section className="rounded-2xl border border-warning/30 bg-warning/8 p-4 space-y-2">
           <h2 className="font-semibold text-foreground flex items-center gap-2">
-            <ClipboardList className="w-4 h-4 text-amber-600" />
+            <ClipboardList className="w-4 h-4 text-warning" />
             อ่านก่อนเริ่ม{demo ? " (โหมด demo)" : " (บัญชีจริง)"}
           </h2>
           <ul className="text-base text-foreground space-y-1.5 list-disc pl-5">

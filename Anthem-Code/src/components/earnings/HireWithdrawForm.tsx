@@ -175,7 +175,7 @@ export function HireWithdrawForm({
             placeholder="0"
             value={formatThbGrouped(digits)}
             onChange={(e) => setDigits(digitsFromThbInput(e.target.value))}
-            className="min-w-0 flex-1 bg-transparent text-lg font-semibold tabular-nums text-foreground outline-none placeholder:text-muted-foreground/40"
+            className="min-w-0 flex-1 bg-transparent text-lg font-semibold tabular-nums text-foreground outline-none placeholder:text-muted-foreground"
           />
           <button
             type="button"

@@ -102,6 +102,14 @@ export const useUpdateProfile = (userId: string | undefined) => {
         p.cvContactPublic !== undefined ||
         p.cvAbout !== undefined ||
         p.cvAddressDetail !== undefined ||
+        p.cvNameEn !== undefined ||
+        p.cvDocLang !== undefined ||
+        p.cvNationality !== undefined ||
+        p.cvMilitary !== undefined ||
+        p.cvReferences !== undefined ||
+        p.cvTemplate !== undefined ||
+        p.cvHeadingFont !== undefined ||
+        p.cvShowPhoto !== undefined ||
         p.cvVisibility !== undefined
       ) {
         const firstName = (p.cvFirstName ?? "").trim();
@@ -126,6 +134,14 @@ export const useUpdateProfile = (userId: string | undefined) => {
           contactPublic: p.cvContactPublic === true,
           about: (p.cvAbout ?? "").trim().slice(0, 500),
           addressDetail: p.cvAddressDetail === "full" ? "full" : "short",
+          nameEn: (p.cvNameEn ?? "").trim(),
+          docLang: p.cvDocLang === "th" ? "th" : "en",
+          nationality: (p.cvNationality ?? "").trim(),
+          military: p.cvMilitary ?? null,
+          references: p.cvReferences ?? [],
+          template: p.cvTemplate === "index" || p.cvTemplate === "editorial" ? p.cvTemplate : "grid",
+          headingFont: p.cvHeadingFont === "poppins" || p.cvHeadingFont === "ibm" ? p.cvHeadingFont : "agrandir",
+          showPhoto: typeof p.cvShowPhoto === "boolean" ? p.cvShowPhoto : null,
           visibility: p.cvVisibility ?? {},
         } as unknown as Json;
       }

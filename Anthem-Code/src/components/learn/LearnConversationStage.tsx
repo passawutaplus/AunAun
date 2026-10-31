@@ -31,9 +31,9 @@ const CARD_TONE = {
     solid: "bg-[#2d5fae]",
   },
   collab: {
-    border: "border-[#f1d0c3]",
-    header: "bg-[#fcefe9] text-[#bf4a1f]",
-    solid: "bg-[#bf4a1f]",
+    border: "border-brand/30",
+    header: "bg-brand/10 text-brand",
+    solid: "bg-brand",
   },
 } as const;
 
@@ -52,14 +52,14 @@ function MockCard({
 }) {
   const t = CARD_TONE[tone];
   return (
-    <div className={cn("w-full min-w-[16rem] max-w-[22rem] overflow-hidden rounded-2xl border bg-white text-[#2f2e2c] shadow-sm", t.border)}>
+    <div className={cn("w-full min-w-[16rem] max-w-[22rem] overflow-hidden rounded-2xl border bg-white text-foreground shadow-sm", t.border)}>
       <div className={cn("flex items-center gap-1.5 px-3 py-2 text-[11px] font-semibold", t.header)}>
         <Icon className="h-3.5 w-3.5 shrink-0" />
         {title}
       </div>
       <div className="space-y-2.5 px-3 py-3">{children}</div>
       <div className="flex gap-2 px-3 pb-3">
-        <span className="flex h-8 flex-1 items-center justify-center rounded-full border border-[#e4e1db] text-[11px] text-[#6b6862]">
+        <span className="flex h-8 flex-1 items-center justify-center rounded-full border border-border text-[11px] text-muted-foreground">
           ไม่สนใจ
         </span>
         <span className={cn("flex h-8 flex-1 items-center justify-center rounded-full text-[11px] font-medium text-white", t.solid)}>
@@ -163,26 +163,26 @@ function composerAt(v: number): string {
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-start justify-between gap-3 text-xs">
-      <span className="shrink-0 text-[#8a867f]">{label}</span>
-      <span className="text-right font-medium text-[#2f2e2c]">{value}</span>
+      <span className="shrink-0 text-muted-foreground">{label}</span>
+      <span className="text-right font-medium text-foreground">{value}</span>
     </div>
   );
 }
 
 function WorkRef() {
   return (
-    <div className="flex items-center gap-2.5 rounded-xl bg-[#f5f5f5] p-1.5 pr-3">
+    <div className="flex items-center gap-2.5 rounded-xl bg-background p-1.5 pr-3">
       <img src={ART_IMAGE} alt="" className="h-10 w-12 shrink-0 rounded-lg object-cover" draggable={false} />
       <span className="min-w-0">
-        <span className="block text-[10px] text-[#8a867f]">อ้างอิงจากผลงาน</span>
-        <span className="block truncate text-[11px] font-medium text-[#2f2e2c]">{ART_TITLE}</span>
+        <span className="block text-[10px] text-muted-foreground">อ้างอิงจากผลงาน</span>
+        <span className="block truncate text-[11px] font-medium text-foreground">{ART_TITLE}</span>
       </span>
     </div>
   );
 }
 
 function Note({ children }: { children: string }) {
-  return <p className="border-l-2 border-[#e4e1db] pl-2.5 text-[11px] leading-relaxed text-[#6b6862]">{children}</p>;
+  return <p className="border-l-2 border-border pl-2.5 text-[11px] leading-relaxed text-muted-foreground">{children}</p>;
 }
 
 function HireCardMock() {
@@ -251,10 +251,10 @@ function CardPair({
         }}
       >
         <div className="text-center">
-          <p className="text-[clamp(1.7rem,3vw,2.4rem)] leading-none tracking-[-0.03em] text-[#2f2e2c]" style={SERIF}>
+          <p className="text-[clamp(1.7rem,3vw,2.4rem)] leading-none tracking-[-0.03em] text-foreground" style={SERIF}>
             {label}
           </p>
-          <p className="mt-1.5 text-[11px] uppercase tracking-[0.16em] text-[#6b6862]">{line}</p>
+          <p className="mt-1.5 text-[11px] uppercase tracking-[0.16em] text-muted-foreground">{line}</p>
         </div>
         {children}
       </motion.div>
@@ -310,7 +310,7 @@ function DocShell({
 }) {
   const t = CARD_TONE[tone];
   return (
-    <div className={cn("w-full overflow-hidden rounded-2xl border bg-white text-[#2f2e2c] shadow-[0_30px_80px_-34px_rgba(47,46,44,0.45)]", t.border)}>
+    <div className={cn("w-full overflow-hidden rounded-2xl border bg-white text-foreground shadow-sm", t.border)}>
       <div className={cn("flex items-center gap-2 px-4 py-2.5", t.header)}>
         <Icon className="h-4 w-4 shrink-0" aria-hidden />
         <span className="text-[11px] font-semibold">{kicker}</span>
@@ -330,18 +330,18 @@ function QuoteDoc({ p, range }: { p: MotionValue<number>; range: readonly [numbe
   return (
     <DocShell tone="hire" icon={FileText} kicker="Hire · ใบเสนอราคา" title="ปกนิทาน “ตามปลาคาร์ปกลับบ้าน”" meta="QT-2026-0142">
       <div className="mt-2 grid grid-cols-2 gap-2 text-[10px]">
-        <div className="rounded-lg bg-[#f7f6f3] px-2.5 py-1.5">
-          <p className="text-[#8a867f]">ผู้เสนอราคา</p>
+        <div className="rounded-lg bg-muted px-2.5 py-1.5">
+          <p className="text-muted-foreground">ผู้เสนอราคา</p>
           <p className="truncate text-[11px] font-medium">Ploy Sirinya</p>
         </div>
-        <div className="rounded-lg bg-[#f7f6f3] px-2.5 py-1.5">
-          <p className="text-[#8a867f]">ลูกค้า · นิติบุคคล</p>
+        <div className="rounded-lg bg-muted px-2.5 py-1.5">
+          <p className="text-muted-foreground">ลูกค้า · นิติบุคคล</p>
           <p className="truncate text-[11px] font-medium">Mali Studio</p>
         </div>
       </div>
 
       <div className="mt-3 text-[11px]">
-        <div className="grid grid-cols-[1rem_minmax(0,1fr)_2rem_3.4rem_3.6rem] gap-1.5 border-b border-[#ece9e3] pb-1 text-[10px] text-[#8a867f]">
+        <div className="grid grid-cols-[1rem_minmax(0,1fr)_2rem_3.4rem_3.6rem] gap-1.5 border-b border-muted pb-1 text-[10px] text-muted-foreground">
           <span>#</span>
           <span>รายละเอียด</span>
           <span className="text-right">จำนวน</span>
@@ -350,8 +350,8 @@ function QuoteDoc({ p, range }: { p: MotionValue<number>; range: readonly [numbe
         </div>
         {QUOTE_ITEMS.map((item, i) => (
           <Reveal key={item.name} on={l >= item.at}>
-            <div className="grid grid-cols-[1rem_minmax(0,1fr)_2rem_3.4rem_3.6rem] gap-1.5 border-b border-[#f3f1ec] py-1.5 tabular-nums">
-              <span className="text-[#8a867f]">{i + 1}</span>
+            <div className="grid grid-cols-[1rem_minmax(0,1fr)_2rem_3.4rem_3.6rem] gap-1.5 border-b border-muted py-1.5 tabular-nums">
+              <span className="text-muted-foreground">{i + 1}</span>
               <span className="truncate">{item.name}</span>
               <span className="text-right">{item.qty}</span>
               <span className="text-right">{item.unit}</span>
@@ -365,13 +365,13 @@ function QuoteDoc({ p, range }: { p: MotionValue<number>; range: readonly [numbe
         {QUOTE_TOTALS.map((row) => (
           <Reveal key={row.label} on={l >= row.at}>
             <div className="flex justify-between tabular-nums">
-              <span className="text-[#6b6862]">{row.label}</span>
+              <span className="text-muted-foreground">{row.label}</span>
               <span>{row.value}</span>
             </div>
           </Reveal>
         ))}
         <Reveal on={l >= 0.6}>
-          <div className="flex items-baseline justify-between border-t border-[#ece9e3] pt-1.5">
+          <div className="flex items-baseline justify-between border-t border-muted pt-1.5">
             <span className="text-xs font-medium">ยอดรวม</span>
             <span className="text-base font-semibold tabular-nums">฿29,100</span>
           </div>
@@ -379,10 +379,10 @@ function QuoteDoc({ p, range }: { p: MotionValue<number>; range: readonly [numbe
       </div>
 
       <Reveal on={l >= 0.68} className="mt-2.5">
-        <p className="text-[10px] text-[#8a867f]">ไทม์ไลน์และงวดงาน</p>
+        <p className="text-[10px] text-muted-foreground">ไทม์ไลน์และงวดงาน</p>
         <div className="mt-1 flex flex-wrap gap-1">
           {QUOTE_MILESTONES.map((m, i) => (
-            <span key={m} className="rounded-full border border-[#e4e1db] px-2 py-0.5 text-[10px]">
+            <span key={m} className="rounded-full border border-border px-2 py-0.5 text-[10px]">
               {i + 1}. {m}
             </span>
           ))}
@@ -397,7 +397,7 @@ function QuoteDoc({ p, range }: { p: MotionValue<number>; range: readonly [numbe
           </p>
         ) : (
           <div className="flex gap-2">
-            <span className="flex h-8 flex-1 items-center justify-center rounded-full border border-[#e4e1db] text-[11px] text-[#6b6862]">
+            <span className="flex h-8 flex-1 items-center justify-center rounded-full border border-border text-[11px] text-muted-foreground">
               ปฏิเสธ
             </span>
             <span className="flex h-8 flex-[1.6] items-center justify-center rounded-full bg-[#2d5fae] text-[11px] font-medium text-white">
@@ -434,10 +434,10 @@ function PlanDoc({ p, range }: { p: MotionValue<number>; range: readonly [number
             <span
               className={cn(
                 "block h-1 rounded-full transition-colors duration-500",
-                i < step ? "bg-[#bf4a1f]" : i === step ? "bg-[#bf4a1f]/50" : "bg-[#ece9e3]",
+                i < step ? "bg-brand" : i === step ? "bg-brand/50" : "bg-muted",
               )}
             />
-            <span className={cn("mt-1 block truncate text-[9.5px]", i === step ? "font-medium text-[#bf4a1f]" : "text-[#8a867f]")}>
+            <span className={cn("mt-1 block truncate text-[9.5px]", i === step ? "font-medium text-brand" : "text-muted-foreground")}>
               {i + 1} {label}
             </span>
           </li>
@@ -446,26 +446,26 @@ function PlanDoc({ p, range }: { p: MotionValue<number>; range: readonly [number
 
       <div className="mt-3 space-y-2 text-[11px]">
         <Reveal on={l >= 0.06}>
-          <p className="text-[10px] text-[#8a867f]">ไอเดีย</p>
+          <p className="text-[10px] text-muted-foreground">ไอเดีย</p>
           <p>ให้ปลาคาร์ปว่ายข้ามตลาดกลางคืน ยาว 30 วินาที</p>
         </Reveal>
         <Reveal on={l >= 0.14}>
-          <p className="text-[10px] text-[#8a867f]">ใครทำอะไร</p>
+          <p className="text-[10px] text-muted-foreground">ใครทำอะไร</p>
           <p>Ploy — ภาพนิ่ง 5 ฉาก · Pixel Lab — Motion + เสียง</p>
         </Reveal>
         <Reveal on={l >= 0.22}>
-          <p className="text-[10px] text-[#8a867f]">รายละเอียดไทม์ไลน์</p>
+          <p className="text-[10px] text-muted-foreground">รายละเอียดไทม์ไลน์</p>
           <p>3 สัปดาห์ · ร่างแรกสัปดาห์ที่ 1</p>
         </Reveal>
         <Reveal on={l >= 0.3}>
-          <p className="text-[10px] text-[#8a867f]">สิทธิ์ / เครดิต</p>
+          <p className="text-[10px] text-muted-foreground">สิทธิ์ / เครดิต</p>
           <div className="mt-1 flex flex-wrap gap-1">
             {PLAN_RIGHTS.map((r, i) => (
               <span
                 key={r}
                 className={cn(
                   "rounded-full border px-2 py-0.5 text-[10px]",
-                  i === 0 || i === 3 ? "border-[#bf4a1f] bg-[#fcefe9] text-[#bf4a1f]" : "border-[#e4e1db] text-[#8a867f]",
+                  i === 0 || i === 3 ? "border-brand bg-brand/10 text-brand" : "border-border text-muted-foreground",
                 )}
               >
                 {r}
@@ -474,7 +474,7 @@ function PlanDoc({ p, range }: { p: MotionValue<number>; range: readonly [number
           </div>
         </Reveal>
         <Reveal on={l >= 0.5}>
-          <p className="text-[10px] text-[#8a867f]">ชิ้นงานที่ต้องทำ</p>
+          <p className="text-[10px] text-muted-foreground">ชิ้นงานที่ต้องทำ</p>
           <ul className="mt-1 space-y-1">
             {PLAN_TASKS.map((task) => {
               const done = l >= task.at;
@@ -483,12 +483,12 @@ function PlanDoc({ p, range }: { p: MotionValue<number>; range: readonly [number
                   <span
                     className={cn(
                       "flex h-3.5 w-3.5 items-center justify-center rounded border transition-colors duration-300",
-                      done ? "border-[#bf4a1f] bg-[#bf4a1f] text-white" : "border-[#d6d2ca] text-transparent",
+                      done ? "border-brand bg-brand text-white" : "border-border text-transparent",
                     )}
                   >
                     <Check className="h-2.5 w-2.5" strokeWidth={3} aria-hidden />
                   </span>
-                  <span className={cn(done && "text-[#8a867f] line-through")}>{task.label}</span>
+                  <span className={cn(done && "text-muted-foreground line-through")}>{task.label}</span>
                 </li>
               );
             })}
@@ -496,14 +496,14 @@ function PlanDoc({ p, range }: { p: MotionValue<number>; range: readonly [number
         </Reveal>
       </div>
 
-      <div className="mt-3 flex items-center gap-2 border-t border-[#ece9e3] pt-2.5 text-[10px]">
+      <div className="mt-3 flex items-center gap-2 border-t border-muted pt-2.5 text-[10px]">
         {[
-          { name: "Ploy", tone: "bg-[#2f2e2c]" },
+          { name: "Ploy", tone: "bg-foreground" },
           { name: "Pixel Lab", tone: "bg-[#7a8b99]" },
         ].map((who, i) => (
           <span key={who.name} className="flex items-center gap-1.5">
             <span className={cn("flex h-5 w-5 items-center justify-center rounded-full text-[9px] text-white", who.tone)}>{who.name[0]}</span>
-            <span className={cn("transition-colors", confirmed[i] ? "text-[#23804a]" : "text-[#a8a49c]")}>
+            <span className={cn("transition-colors", confirmed[i] ? "text-[#23804a]" : "text-muted-foreground")}>
               {confirmed[i] ? "ยืนยันแล้ว" : "รอยืนยัน"}
             </span>
           </span>
@@ -511,7 +511,7 @@ function PlanDoc({ p, range }: { p: MotionValue<number>; range: readonly [number
         <span
           className={cn(
             "ml-auto rounded-full px-2 py-0.5 transition-colors",
-            step === 3 ? "bg-[#bf4a1f] text-white" : "bg-[#f3f1ec] text-[#8a867f]",
+            step === 3 ? "bg-brand text-white" : "bg-muted text-muted-foreground",
           )}
         >
           {step === 3 ? "ครบแล้ว" : `ขั้นที่ ${step + 1}/4`}
@@ -564,11 +564,11 @@ function DocPair({ p, compact }: { p: MotionValue<number>; compact: boolean }) {
 /* Chat window                                                         */
 /* ------------------------------------------------------------------ */
 
-const AVATAR_TONES = ["bg-[#2f2e2c]", "bg-[#b59a7a]", "bg-[#7a8b99]"];
+const AVATAR_TONES = ["bg-foreground", "bg-[#b59a7a]", "bg-[#7a8b99]"];
 const MEMBER_TONE: Record<string, string> = {
   "Pixel Lab": "bg-[#7a8b99]",
   Tonkla: "bg-[#b59a7a]",
-  Ploy: "bg-[#2f2e2c]",
+  Ploy: "bg-foreground",
 };
 const GROUP_NAME = "ทีม Koi Motion";
 const GROUP_MEMBERS = ["Ploy", "Pixel Lab", "Tonkla"] as const;
@@ -600,45 +600,45 @@ function ThreadBubble({
   published: boolean;
 }) {
   if (item.kind === "system") {
-    return <p className="mx-auto rounded-full bg-[#f5f5f5] px-3 py-1 text-[10px] text-[#8a867f]">{item.text}</p>;
+    return <p className="mx-auto rounded-full bg-background px-3 py-1 text-[10px] text-muted-foreground">{item.text}</p>;
   }
   if (item.kind === "them") {
     return (
       <div className="max-w-[85%]">
-        {item.from ? <p className="mb-0.5 pl-1 text-[10px] text-[#8a867f]">{item.from}</p> : null}
-        <p className="rounded-2xl rounded-tl-md bg-[#f1efea] px-3 py-2 text-xs leading-relaxed text-[#2f2e2c]">{item.text}</p>
+        {item.from ? <p className="mb-0.5 pl-1 text-[10px] text-muted-foreground">{item.from}</p> : null}
+        <p className="rounded-2xl rounded-tl-md bg-muted px-3 py-2 text-xs leading-relaxed text-foreground">{item.text}</p>
       </div>
     );
   }
   if (item.kind === "me") {
     return (
-      <p className="ml-auto max-w-[80%] rounded-2xl rounded-tr-md bg-[#2f2e2c] px-3 py-2 text-xs leading-relaxed text-white">
+      <p className="ml-auto max-w-[80%] rounded-2xl rounded-tr-md bg-foreground px-3 py-2 text-xs leading-relaxed text-white">
         {item.text}
       </p>
     );
   }
   if (item.kind === "attach") {
     return (
-      <div className="ml-auto w-[9.5rem] overflow-hidden rounded-2xl rounded-tr-md border border-[#e4e1db] bg-white">
+      <div className="ml-auto w-[9.5rem] overflow-hidden rounded-2xl rounded-tr-md border border-border bg-white">
         <img src={attachImage} alt="" className="aspect-[4/3] w-full object-cover" draggable={false} />
-        <p className="truncate px-2.5 py-1.5 text-[11px] text-[#2f2e2c]">งานแนวใกล้กัน</p>
+        <p className="truncate px-2.5 py-1.5 text-[11px] text-foreground">งานแนวใกล้กัน</p>
       </div>
     );
   }
   if (item.kind === "project") {
     return (
-      <div className="ml-auto w-[16rem] max-w-full overflow-hidden rounded-2xl border border-[#f1d0c3] bg-white">
-        <div className="flex items-center gap-1.5 bg-[#fcefe9] px-3 py-1.5 text-[11px] font-semibold text-[#bf4a1f]">
+      <div className="ml-auto w-[16rem] max-w-full overflow-hidden rounded-2xl border border-brand/30 bg-white">
+        <div className="flex items-center gap-1.5 bg-brand/10 px-3 py-1.5 text-[11px] font-semibold text-brand">
           <Handshake className="h-3.5 w-3.5" />
           ลงผลงานร่วมกัน
         </div>
         <div className="flex gap-2.5 p-2.5">
           <img src={ART_IMAGE} alt="" className="h-14 w-16 shrink-0 rounded-lg object-cover" draggable={false} />
           <div className="min-w-0">
-            <p className="truncate text-xs font-medium text-[#2f2e2c]">Night Market Koi — Motion</p>
+            <p className="truncate text-xs font-medium text-foreground">Night Market Koi — Motion</p>
             <div className="mt-1 flex flex-wrap gap-1">
               {GROUP_MEMBERS.map((name) => (
-                <span key={name} className="inline-flex items-center gap-1 rounded-full bg-[#f5f5f5] py-0.5 pl-0.5 pr-1.5 text-[9.5px] text-[#2f2e2c]">
+                <span key={name} className="inline-flex items-center gap-1 rounded-full bg-background py-0.5 pl-0.5 pr-1.5 text-[9.5px] text-foreground">
                   <span className={cn("flex h-3.5 w-3.5 items-center justify-center rounded-full text-[8px] text-white", MEMBER_TONE[name])}>
                     {name[0]}
                   </span>
@@ -648,7 +648,7 @@ function ThreadBubble({
             </div>
           </div>
         </div>
-        <p className={cn("px-3 pb-2 text-[11px]", published ? "font-medium text-[#23804a]" : "text-[#8a867f]")}>
+        <p className={cn("px-3 pb-2 text-[11px]", published ? "font-medium text-[#23804a]" : "text-muted-foreground")}>
           {published ? "เผยแพร่แล้ว · ขึ้นทั้ง 3 โปรไฟล์" : "รอทุกคนตอบรับ"}
         </p>
       </div>
@@ -660,8 +660,8 @@ function ThreadBubble({
         <BriefIcon className="h-3.5 w-3.5" />
         คำขอจ้างงาน
       </div>
-      <p className="px-3 pt-2 text-xs text-[#2f2e2c]">ปกนิทาน + ภาพใน 6 ภาพ · 25,000–40,000 บาท · 5 สัปดาห์</p>
-      <p className={cn("px-3 pb-2 pt-1 text-[11px]", accepted ? "font-medium text-[#23804a]" : "text-[#8a867f]")}>
+      <p className="px-3 pt-2 text-xs text-foreground">ปกนิทาน + ภาพใน 6 ภาพ · 25,000–40,000 บาท · 5 สัปดาห์</p>
+      <p className={cn("px-3 pb-2 pt-1 text-[11px]", accepted ? "font-medium text-[#23804a]" : "text-muted-foreground")}>
         {accepted ? "รับเรื่องแล้ว" : "รอคุณตอบรับ"}
       </p>
     </div>
@@ -735,8 +735,8 @@ function ChatWindowContent({
   return (
     <div className="grid h-full grid-cols-1 bg-white md:grid-cols-[12.5rem_minmax(0,1fr)_13rem]">
       {/* Chats */}
-      <aside className="hidden flex-col border-r border-[#ece9e3] md:flex">
-        <p className="px-4 py-3 text-xs font-medium text-[#2f2e2c]">แชท</p>
+      <aside className="hidden flex-col border-r border-muted md:flex">
+        <p className="px-4 py-3 text-xs font-medium text-foreground">แชท</p>
         <AnimatePresence initial={false}>
           {inGroup ? (
             <motion.div
@@ -747,26 +747,26 @@ function ChatWindowContent({
               transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
               className="overflow-hidden"
             >
-              <div className="flex items-center gap-2.5 bg-[#f5f5f5] px-4 py-2.5">
+              <div className="flex items-center gap-2.5 bg-background px-4 py-2.5">
                 <GroupAvatars size="h-6 w-6" />
                 <span className="min-w-0">
-                  <span className="flex items-center gap-1 text-xs font-medium text-[#2f2e2c]">
+                  <span className="flex items-center gap-1 text-xs font-medium text-foreground">
                     <span className="truncate">{GROUP_NAME}</span>
                   </span>
-                  <span className="block truncate text-[10px] text-[#bf4a1f]">คอลแลป · 3 คน</span>
+                  <span className="block truncate text-[10px] text-brand">คอลแลป · 3 คน</span>
                 </span>
               </div>
             </motion.div>
           ) : null}
         </AnimatePresence>
         {chats.map(([name, preview], i) => (
-          <div key={name} className={cn("flex items-center gap-2.5 px-4 py-2.5", i === 0 && !inGroup && "bg-[#f5f5f5]")}>
+          <div key={name} className={cn("flex items-center gap-2.5 px-4 py-2.5", i === 0 && !inGroup && "bg-background")}>
             <span className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-medium text-white", AVATAR_TONES[i])}>
               {name.slice(0, 1)}
             </span>
             <span className="min-w-0">
-              <span className="block truncate text-xs font-medium text-[#2f2e2c]">{name}</span>
-              <span className="block truncate text-[11px] text-[#8a867f]">{preview}</span>
+              <span className="block truncate text-xs font-medium text-foreground">{name}</span>
+              <span className="block truncate text-[11px] text-muted-foreground">{preview}</span>
             </span>
           </div>
         ))}
@@ -774,21 +774,21 @@ function ChatWindowContent({
 
       {/* Thread */}
       <div className="flex min-h-0 min-w-0 flex-col">
-        <div className="flex items-center gap-2.5 border-b border-[#ece9e3] px-4 py-3">
+        <div className="flex items-center gap-2.5 border-b border-muted px-4 py-3">
           {inGroup ? (
             <>
               <GroupAvatars size="h-7 w-7" />
               <span className="min-w-0">
-                <span className="block truncate text-xs font-medium text-[#2f2e2c]">{GROUP_NAME}</span>
-                <span className="block text-[10px] text-[#8a867f]">3 สมาชิก</span>
+                <span className="block truncate text-xs font-medium text-foreground">{GROUP_NAME}</span>
+                <span className="block text-[10px] text-muted-foreground">3 สมาชิก</span>
               </span>
-              <span className="ml-auto rounded-full bg-[#fcefe9] px-2.5 py-1 text-[10px] font-medium text-[#bf4a1f]">คอลแลป</span>
+              <span className="ml-auto rounded-full bg-brand/10 px-2.5 py-1 text-[10px] font-medium text-brand">คอลแลป</span>
             </>
           ) : (
             <>
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2f2e2c] text-[11px] font-medium text-white">M</span>
-              <span className="text-xs font-medium text-[#2f2e2c]">Mali Studio</span>
-              <span className="ml-auto max-w-[9rem] truncate rounded-full bg-[#f5f5f5] px-2.5 py-1 text-[10px] text-[#6b6862]">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-foreground text-[11px] font-medium text-white">M</span>
+              <span className="text-xs font-medium text-foreground">Mali Studio</span>
+              <span className="ml-auto max-w-[9rem] truncate rounded-full bg-background px-2.5 py-1 text-[10px] text-muted-foreground">
                 จาก {workTitle}
               </span>
             </>
@@ -817,32 +817,32 @@ function ChatWindowContent({
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, transition: { duration: 0.1 } }}
-                className="flex w-fit gap-1 rounded-2xl rounded-tl-md bg-[#f1efea] px-3 py-3"
+                className="flex w-fit gap-1 rounded-2xl rounded-tl-md bg-muted px-3 py-3"
               >
                 {[0, 1, 2].map((dot) => (
-                  <span key={dot} className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#8a867f]" style={{ animationDelay: `${dot * 140}ms` }} />
+                  <span key={dot} className="h-1.5 w-1.5 animate-pulse rounded-full bg-muted-foreground" style={{ animationDelay: `${dot * 140}ms` }} />
                 ))}
               </motion.div>
             ) : null}
           </AnimatePresence>
         </div>
 
-        <div className="flex items-center gap-2 border-t border-[#ece9e3] px-3 py-3">
-          <Paperclip className="h-4 w-4 shrink-0 text-[#8a867f]" aria-hidden />
-          <div className="flex h-9 min-w-0 flex-1 items-center rounded-full bg-[#f5f5f5] px-3.5 text-xs">
+        <div className="flex items-center gap-2 border-t border-muted px-3 py-3">
+          <Paperclip className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+          <div className="flex h-9 min-w-0 flex-1 items-center rounded-full bg-background px-3.5 text-xs">
             {composer ? (
-              <span className="truncate text-[#2f2e2c]">
+              <span className="truncate text-foreground">
                 {composer}
-                <span className="ml-px inline-block h-3.5 w-px translate-y-0.5 animate-pulse bg-[#2f2e2c]" />
+                <span className="ml-px inline-block h-3.5 w-px translate-y-0.5 animate-pulse bg-foreground" />
               </span>
             ) : (
-              <span className="text-[#a8a49c]">พิมพ์ข้อความ…</span>
+              <span className="text-muted-foreground">พิมพ์ข้อความ…</span>
             )}
           </div>
           <span
             className={cn(
               "flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors",
-              composer ? "bg-[#2f2e2c] text-white" : "bg-[#ece9e3] text-[#a8a49c]",
+              composer ? "bg-foreground text-white" : "bg-muted text-muted-foreground",
             )}
           >
             <Send className="h-3.5 w-3.5" aria-hidden />
@@ -851,8 +851,8 @@ function ChatWindowContent({
       </div>
 
       {/* Your work (sidebar) */}
-      <aside className="relative z-20 hidden border-l border-[#ece9e3] md:block">
-        <p className="px-4 py-3 text-xs font-medium text-[#2f2e2c]">ผลงานของคุณ</p>
+      <aside className="relative z-20 hidden border-l border-muted md:block">
+        <p className="px-4 py-3 text-xs font-medium text-foreground">ผลงานของคุณ</p>
         <div className="grid grid-cols-2 gap-2 px-3">
           {panelWorks.map((src, i) => (
             <div key={src + i} ref={i === 1 ? cellRef : undefined} className="relative aspect-square">
@@ -868,14 +868,14 @@ function ChatWindowContent({
                   src={src}
                   alt=""
                   draggable={false}
-                  className="pointer-events-none absolute inset-0 h-full w-full rounded-lg object-cover shadow-xl"
+                  className="pointer-events-none absolute inset-0 h-full w-full rounded-lg object-cover shadow-sm"
                   style={{ x: flyX, y: flyY, scale: flyScale, opacity: flyOpacity }}
                 />
               ) : null}
             </div>
           ))}
         </div>
-        <p className="px-4 pt-3 text-[11px] leading-relaxed text-[#8a867f]">
+        <p className="px-4 pt-3 text-[11px] leading-relaxed text-muted-foreground">
           {inGroup ? "ผลงานร่วมจะขึ้นในโปรไฟล์ของทุกคนในกลุ่ม" : "เลือกชิ้นงานจากแถบนี้ แล้วส่งเข้าแชทได้เลย"}
         </p>
       </aside>
@@ -884,7 +884,7 @@ function ChatWindowContent({
 }
 
 const WINDOW_CLASS =
-  "h-[min(36rem,74dvh)] w-[min(66rem,calc(100vw-2rem))] overflow-hidden rounded-[1.25rem] border border-[#e4e1db] bg-white shadow-[0_30px_80px_-30px_rgba(47,46,44,0.35)]";
+  "h-[min(36rem,74dvh)] w-[min(66rem,calc(100vw-2rem))] overflow-hidden rounded-[1.25rem] border border-border bg-white shadow-sm";
 
 /**
  * Pinned scroll story: a project → Hire / Collab cards come out of the middle →
@@ -912,13 +912,13 @@ export function LearnConversationStage({ works }: { works: string[] }) {
 
   const heading = (
     <>
-      <p className="text-[clamp(1.7rem,3.2vw,2.6rem)] leading-none tracking-[-0.03em] text-[#2f2e2c]" style={SERIF}>
+      <p className="text-[clamp(1.7rem,3.2vw,2.6rem)] leading-none tracking-[-0.03em] text-foreground" style={SERIF}>
         Then open a
       </p>
-      <h2 className="mt-2 text-[clamp(3rem,9.5vw,7.5rem)] font-medium leading-[0.84] tracking-[-0.06em] text-[#2f2e2c]">
+      <h2 className="mt-2 text-[clamp(3rem,9.5vw,7.5rem)] font-medium leading-[0.84] tracking-[-0.06em] text-foreground">
         Conversation
       </h2>
-      <p className="mx-auto mt-4 max-w-sm text-[11px] uppercase leading-[1.7] tracking-[0.16em] text-[#6b6862]">
+      <p className="mx-auto mt-4 max-w-sm text-[11px] uppercase leading-[1.7] tracking-[0.16em] text-muted-foreground">
         Hire, collab, or just talk. It starts from the work.
       </p>
     </>
@@ -930,11 +930,11 @@ export function LearnConversationStage({ works }: { works: string[] }) {
         {heading}
         <div className="mx-auto mt-12 flex max-w-[52rem] flex-wrap items-start justify-center gap-8 text-left">
           <div className="flex w-[min(25rem,100%)] flex-col items-center gap-3">
-            <p className="text-[2rem] leading-none text-[#2f2e2c]" style={SERIF}>Hire</p>
+            <p className="text-[2rem] leading-none text-foreground" style={SERIF}>Hire</p>
             <QuoteDoc p={staticProgress} range={[0, 1]} />
           </div>
           <div className="flex w-[min(25rem,100%)] flex-col items-center gap-3">
-            <p className="text-[2rem] leading-none text-[#2f2e2c]" style={SERIF}>Collab</p>
+            <p className="text-[2rem] leading-none text-foreground" style={SERIF}>Collab</p>
             <PlanDoc p={staticProgress} range={[0, 1]} />
           </div>
         </div>
@@ -943,7 +943,7 @@ export function LearnConversationStage({ works }: { works: string[] }) {
             <ChatWindowContent p={staticProgress} works={works} workTitle={workTitle} />
           </div>
         </div>
-        <p className="mt-8 text-[clamp(1.5rem,2.6vw,2.2rem)] text-[#2f2e2c]" style={SERIF}>
+        <p className="mt-8 text-[clamp(1.5rem,2.6vw,2.2rem)] text-foreground" style={SERIF}>
           From the work, to a conversation, to a team.
         </p>
       </div>
@@ -971,11 +971,11 @@ export function LearnConversationStage({ works }: { works: string[] }) {
               <img
                 src={ART_IMAGE}
                 alt=""
-                className="aspect-[4/3] w-full rounded-[1.1rem] bg-[#e4e1db] object-cover shadow-[0_24px_60px_-28px_rgba(47,46,44,0.5)]"
+                className="aspect-[4/3] w-full rounded-[1.1rem] bg-border object-cover shadow-sm"
                 draggable={false}
               />
-              <p className="mt-3 text-center text-sm font-medium tracking-[-0.01em] text-[#2f2e2c]">{ART_TITLE}</p>
-              <p className="mt-0.5 text-center text-[11px] uppercase tracking-[0.16em] text-[#8a867f]">{ART_BY}</p>
+              <p className="mt-3 text-center text-sm font-medium tracking-[-0.01em] text-foreground">{ART_TITLE}</p>
+              <p className="mt-0.5 text-center text-[11px] uppercase tracking-[0.16em] text-muted-foreground">{ART_BY}</p>
             </motion.div>
           </div>
 
@@ -989,13 +989,13 @@ export function LearnConversationStage({ works }: { works: string[] }) {
           <DocPair p={p} compact={compact} />
 
           <motion.p
-            className="absolute inset-x-0 bottom-[6vh] z-30 hidden px-4 text-center text-[11px] uppercase tracking-[0.16em] text-[#6b6862] md:block"
+            className="absolute inset-x-0 bottom-[6vh] z-30 hidden px-4 text-center text-[11px] uppercase tracking-[0.16em] text-muted-foreground md:block"
             style={{ opacity: noteOpacity }}
           >
             Every request keeps the work it came from. No cold briefs.
           </motion.p>
           <motion.p
-            className="absolute inset-x-0 top-[9vh] z-30 hidden px-4 text-center text-[11px] uppercase tracking-[0.16em] text-[#6b6862] md:block"
+            className="absolute inset-x-0 top-[9vh] z-30 hidden px-4 text-center text-[11px] uppercase tracking-[0.16em] text-muted-foreground md:block"
             style={{ opacity: docNoteOpacity }}
           >
             A hire gets a real quotation. A collab gets a plan you both sign off.
@@ -1008,7 +1008,7 @@ export function LearnConversationStage({ works }: { works: string[] }) {
           </div>
 
           <motion.p
-            className="absolute inset-x-0 bottom-[11vh] z-30 px-4 text-center text-[clamp(1.4rem,2.6vw,2.2rem)] leading-none tracking-[-0.02em] text-[#2f2e2c]"
+            className="absolute inset-x-0 bottom-[11vh] z-30 px-4 text-center text-[clamp(1.4rem,2.6vw,2.2rem)] leading-none tracking-[-0.02em] text-foreground"
             style={{ ...SERIF, opacity: captionOpacity }}
           >
             From the work, to a conversation, to a team.
