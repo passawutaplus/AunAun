@@ -9,12 +9,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { useCreateObjectOrder } from "@/hooks/useCreatorObjects";
 import { objectErrorText } from "@/lib/objects/db";
 import { createObjectCharge, objectPayEnabled, syncObjectCharge } from "@/lib/objects/pay";
-import { OBJECT_PLATFORM_FEE_PERCENT, formatBaht, type CreatorObject } from "@/lib/objects/taxonomy";
+import { formatBaht, type CreatorObject } from "@/lib/objects/taxonomy";
 
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  item: Pick<CreatorObject, "id" | "title" | "owner_id" | "price_thb" | "fulfillment">;
+  item: Pick<CreatorObject, "id" | "title" | "owner_id" | "price_thb" | "fulfillment"> & { shipping_thb?: number };
   buyerId: string;
   qty: number;
   finish: string;
@@ -45,7 +45,10 @@ export default function ObjectPaySheet({
   const [qr, setQr] = useState<string | null>(null);
   const [paid, setPaid] = useState(false);
   const [paying, setPaying] = useState(false);
-  const shownSatang = amountSatang && amountSatang > 0 ? amountSatang : item.price_thb * qty * 100;
+  const shippingThb = needsShip ? Math.max(0, item.shipping_thb ?? 0) : 0;
+  // Same sum the database snapshots (option price × qty + flat shipping); the QR uses the server amount.
+  const shownSatang =
+    amountSatang && amountSatang > 0 ? amountSatang : (item.price_thb * qty + shippingThb) * 100;
 
   useEffect(() => {
     if (!open) return;
@@ -130,10 +133,23 @@ export default function ObjectPaySheet({
           <DialogTitle>{paid ? "จ่ายแล้ว" : chargeId ? "สแกนพร้อมเพย์" : "สั่งซื้อ"}</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-muted-foreground">{item.title}</p>
+        {!amountSatang ? (
+          <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 text-sm">
+            <dt className="text-muted-foreground">{qty > 1 ? `สินค้า × ${qty}` : "สินค้า"}</dt>
+            <dd className="tabular-nums">{formatBaht(item.price_thb * qty)}</dd>
+            {needsShip ? (
+              <>
+                <dt className="text-muted-foreground">ค่าส่ง</dt>
+                <dd className="tabular-nums">{shippingThb > 0 ? formatBaht(shippingThb) : "ฟรี"}</dd>
+              </>
+            ) : null}
+          </dl>
+        ) : null}
         <p className="text-2xl font-medium">{formatBaht(Math.round(shownSatang / 100))}</p>
         <p className="text-xs leading-5 text-muted-foreground">
-          จ่ายผ่าน Payso ค่าธรรมเนียมแพลตฟอร์ม {OBJECT_PLATFORM_FEE_PERCENT}% หักจากคนขายตอนสั่ง
-          เงินคนขายพร้อมถอนเมื่อคุณกดรับของ แล้วโอนตามรอบ T+7
+          {needsShip
+            ? "เงินของคุณถูกพักไว้กับ SAMECOR คนขายได้รับเมื่อคุณกดรับของ (หรือครบ 7 วันหลังส่งของ)"
+            : "จ่ายแล้วดาวน์โหลดไฟล์ได้ทันทีจากหน้าสินค้า"}
         </p>
         {paid ? (
           <Button type="button" className="w-full" onClick={finishPaid}>

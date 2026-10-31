@@ -7,6 +7,7 @@ import { findHelpArticleBySlug, getHelpArticle } from "@/data/helpContent";
 import { BRAND_NAME, BRAND_SUPPORT_EMAIL, FORUM_PATH } from "@/lib/brandConfig";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { isCommerceEnabled, isCommercePath } from "@/lib/aplus1Launch";
 
 export default function HelpArticlePage() {
   const { categoryId, slug } = useParams<{ categoryId: string; slug: string }>();
@@ -18,6 +19,7 @@ export default function HelpArticlePage() {
   }
 
   const { category, article } = match;
+  const visibleLinks = (article.links ?? []).filter((link) => !isCommercePath(link.to.split(/[?#]/)[0]));
   const related = (article.related ?? [])
     .map((relSlug) => findHelpArticleBySlug(relSlug))
     .filter(Boolean) as NonNullable<ReturnType<typeof findHelpArticleBySlug>>[];
@@ -72,10 +74,10 @@ export default function HelpArticlePage() {
           </FadeUp>
         ) : null}
 
-        {article.links && article.links.length > 0 ? (
+        {visibleLinks.length > 0 ? (
           <FadeUp delay={0.1}>
             <div className="mt-8 flex flex-wrap gap-2">
-              {article.links.map((link) => (
+              {visibleLinks.map((link) => (
                 <HelpAuthLink
                   key={link.to + link.label}
                   to={link.to}
@@ -111,15 +113,17 @@ export default function HelpArticlePage() {
         <section className="mt-12 rounded-2xl border border-border/60 bg-background/50 px-5 py-6 text-center">
           <p className="text-sm font-medium text-foreground">ยังไม่เจอคำตอบ?</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            ถามใน Forum หรืออีเมล{" "}
+            {isCommerceEnabled() ? "ถามใน Forum หรืออีเมล" : "ติดต่อทางอีเมล"}{" "}
             <a href={`mailto:${BRAND_SUPPORT_EMAIL}`} className="text-primary hover:underline">
               {BRAND_SUPPORT_EMAIL}
             </a>
           </p>
           <div className="mt-4 flex flex-wrap justify-center gap-4 text-sm">
-            <Link to={FORUM_PATH} className="text-primary hover:underline">
-              Forum
-            </Link>
+            {isCommerceEnabled() ? (
+              <Link to={FORUM_PATH} className="text-primary hover:underline">
+                Forum
+              </Link>
+            ) : null}
             <Link to="/learn" className="text-primary hover:underline">
               About
             </Link>

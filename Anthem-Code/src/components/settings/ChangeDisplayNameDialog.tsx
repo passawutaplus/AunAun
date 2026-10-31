@@ -87,7 +87,7 @@ export function ChangeDisplayNameDialog({
         </DialogHeader>
 
         {onCooldown && cooldownUntil ? (
-          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-foreground">
+          <div className="rounded-xl border border-warning/30 bg-warning/10 px-4 py-3 text-xs text-foreground">
             ยังเปลี่ยนไม่ได้ — ครั้งถัดไปได้หลัง{" "}
             {cooldownUntil.toLocaleDateString("th-TH", {
               day: "numeric",
@@ -114,7 +114,7 @@ export function ChangeDisplayNameDialog({
                 autoFocus
                 maxLength={60}
                 placeholder="ชื่อที่คนอื่นเห็น"
-                className="flex-1 bg-transparent px-3 py-2.5 text-sm text-foreground placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground/40 focus:outline-none"
+                className="flex-1 bg-transparent px-3 py-2.5 text-sm text-foreground placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground focus:outline-none"
               />
             </div>
             {tooLong ? (

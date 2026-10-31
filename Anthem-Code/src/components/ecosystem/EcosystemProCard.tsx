@@ -34,7 +34,7 @@ export function EcosystemProCard({ className, compact }: Props) {
   return (
     <section
       className={cn(
-        "rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/8 via-card to-card p-4 sm:p-5",
+        "rounded-3xl border border-border bg-card p-4 sm:p-5",
         className,
       )}
       aria-labelledby="ecosystem-pro-heading"

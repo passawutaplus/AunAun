@@ -16,8 +16,10 @@ export const config = {
   ],
 };
 
+// AI search / answer bots (OAI-SearchBot, ChatGPT-User, Claude-User, Claude-SearchBot) don't run
+// JavaScript either — without this they'd see an empty SPA shell instead of the work.
 const BOT_UA =
-  /googlebot|bingbot|yandex|baiduspider|twitterbot|facebookexternalhit|linkedinbot|slackbot|discordbot|whatsapp|telegrambot|applebot|duckduckbot|semrushbot|ahrefsbot|bytespider|gptbot|claudebot|perplexity|line\/|micromessenger|instagram/i;
+  /googlebot|google-inspectiontool|bingbot|yandex|baiduspider|twitterbot|facebookexternalhit|meta-externalfetcher|linkedinbot|slackbot|discordbot|whatsapp|telegrambot|applebot|duckduckbot|semrushbot|ahrefsbot|bytespider|gptbot|oai-searchbot|chatgpt-user|claudebot|claude-user|claude-searchbot|perplexity|pinterest|redditbot|kakaotalk|embedly|iframely|mastodon|skypeuripreview|line\/|micromessenger|instagram/i;
 
 export default async function middleware(request) {
   const ua = request.headers.get("user-agent") || "";

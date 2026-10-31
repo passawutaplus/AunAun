@@ -66,7 +66,7 @@ export function exportHtmlToPdf(title: string, htmlBody: string): void {
 <style>
 body{font-family:system-ui,sans-serif;padding:24px;color:#111}
 h1{font-size:20px} table{width:100%;border-collapse:collapse;margin-top:16px;font-size:12px}
-th,td{border:1px solid #ddd;padding:6px;text-align:left} th{background:#f5f5f5}
+th,td{border:1px solid #ddd;padding:6px;text-align:left} th{background:#F8F7F2}
 .note{margin-top:16px;font-size:11px;color:#666}
 </style></head><body>
 <h1>${escapeHtml(title)}</h1>

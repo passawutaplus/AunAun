@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAdminDismissNotification } from "@/hooks/admin/useAdminMutations";
 import { resolveNotificationLink } from "@/lib/notificationLinks";
 import { formatThaiDate } from "@/lib/format";
+import { userFacingError } from "@/lib/userFacingError";
 
 interface Row {
   id: string;
@@ -85,7 +86,7 @@ export default function AdminNotificationsPage() {
                     onClick: () =>
                       dismiss.mutate(r.id, {
                         onSuccess: () => toast.success("ซ่อนแล้ว"),
-                        onError: (e: Error) => toast.error(e.message),
+                        onError: (e: Error) => toast.error(userFacingError(e)),
                       }),
                   },
                 ]

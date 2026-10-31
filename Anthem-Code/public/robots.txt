@@ -10,6 +10,20 @@ Allow: /
 User-agent: facebookexternalhit
 Allow: /
 
+# Creators' work is not training data — opt out of AI-training crawlers (search/answer bots stay allowed).
+User-agent: GPTBot
+User-agent: CCBot
+User-agent: Google-Extended
+User-agent: anthropic-ai
+User-agent: ClaudeBot
+User-agent: Applebot-Extended
+User-agent: Bytespider
+User-agent: meta-externalagent
+User-agent: cohere-ai
+User-agent: Diffbot
+User-agent: Omgilibot
+Disallow: /
+
 User-agent: *
 Allow: /
 Disallow: /admin

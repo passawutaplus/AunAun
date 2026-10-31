@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { hapticTap } from "@/lib/haptics";
+import { isInspireEnabled } from "@/lib/aplus1Launch";
 import { useNavigate } from "react-router-dom";
 import { Sparkles, Share2, ImageIcon } from "lucide-react";
 import { PlusOneControl } from "@/components/brand/PlusOneControl";
@@ -10,6 +12,7 @@ import InspirePopover from "@/components/inspire/InspirePopover";
 import SharePopover from "@/components/share/SharePopover";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { userFacingError } from "@/lib/userFacingError";
 
 interface Props {
   projectId: string;
@@ -53,17 +56,18 @@ const ImageActionBar = ({
 
   const handleLike = () => {
     if (!requireAuth()) return;
+    if (!liked) hapticTap();
     toggleLike.mutate(
       { projectId, imageUrl, liked },
       {
         onSuccess: () => toast.success(liked ? "ยกเลิกแล้ว" : "ถูกใจแล้ว"),
-        onError: (e: Error) => toast.error(e.message),
+        onError: (e: Error) => toast.error(userFacingError(e)),
       },
     );
   };
 
   const btn =
-    "flex shrink-0 items-center gap-1.5 px-3 py-2 rounded-full bg-black/25 hover:bg-black/45 text-white text-xs font-medium backdrop-blur-md [-webkit-backdrop-filter:blur(12px)] transition-all border border-white/10 shadow-lg";
+    "flex shrink-0 items-center gap-1.5 px-3 py-2 rounded-full bg-black/25 hover:bg-black/45 text-white text-xs font-medium backdrop-blur-md [-webkit-backdrop-filter:blur(12px)] transition-all border border-white/10 shadow-sm";
 
   const labelClass = vertical ? "inline" : "hidden sm:inline";
 
@@ -84,11 +88,13 @@ const ImageActionBar = ({
       <PlusOneControl
         active={liked}
         count={likes}
+        showCount={likes > 0}
         onClick={handleLike}
         ariaLabel={liked ? "ยกเลิกถูกใจ" : "ถูกใจ"}
         className={`${btn} text-white hover:text-white hover:bg-black/45 [&_span]:text-white/90`}
       />
 
+      {isInspireEnabled() ? (
       <InspirePopover
         open={inspireOpen}
         onOpenChange={(o) => {
@@ -103,6 +109,7 @@ const ImageActionBar = ({
           <span className={labelClass}>Inspire</span>
         </button>
       </InspirePopover>
+      ) : null}
 
       {!vertical ? (
         <span aria-hidden="true" className="w-px h-6 bg-white/30 self-center mx-0.5 rounded-full" />

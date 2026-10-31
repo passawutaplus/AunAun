@@ -76,22 +76,14 @@ function MockImage({
   /** Slight visual difference between slides */
   tone?: number;
 }) {
-  const shift = (tone % 4) * 12;
   return (
     <div
       className={cn(
-        "relative flex items-center justify-center overflow-hidden rounded-sm bg-gradient-to-br from-muted via-muted/80 to-foreground/10",
+        "relative flex items-center justify-center overflow-hidden rounded-sm bg-muted",
         tall ? "min-h-[72px]" : "min-h-[48px]",
         className,
       )}
     >
-      <div
-        className="absolute inset-0 opacity-40"
-        style={{
-          backgroundImage: `radial-gradient(circle at ${28 + shift}% ${22 + shift * 0.4}%, hsl(var(--primary) / ${0.28 + (tone % 3) * 0.06}), transparent 55%), radial-gradient(circle at ${78 - shift}% ${68 - shift * 0.3}%, hsl(var(--foreground) / 0.14), transparent 50%)`,
-        }}
-        aria-hidden
-      />
       <Image className="relative h-5 w-5 text-muted-foreground/80" strokeWidth={1.5} aria-hidden />
     </div>
   );
@@ -195,7 +187,7 @@ function MockupSlot({ slot }: { slot: CanvasTemplateModule }) {
   }
   if (slot.kind === "video") {
     return (
-      <div className="relative flex min-h-[72px] items-center justify-center overflow-hidden rounded-sm bg-gradient-to-br from-muted via-muted/70 to-foreground/15">
+      <div className="relative flex min-h-[72px] items-center justify-center overflow-hidden rounded-sm bg-muted">
         <Film className="h-5 w-5 text-muted-foreground/80" strokeWidth={1.5} aria-hidden />
       </div>
     );

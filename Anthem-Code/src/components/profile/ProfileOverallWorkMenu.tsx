@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import {
   Check,
   Layers3,
+  Link2,
   Lock,
   MoreHorizontal,
   Pencil,
@@ -61,6 +62,8 @@ export function ProfileOverallWorkMenu({ project, allProjects }: Props) {
   );
 
   const pinned = !!project.is_pinned;
+  // Drafts and private works have no public page, so only edit and delete apply to them.
+  const isPublished = project.status === "Published";
   const title = project.title?.trim() || "ผลงานนี้";
   const shareUrl =
     typeof window !== "undefined"
@@ -82,6 +85,15 @@ export function ProfileOverallWorkMenu({ project, allProjects }: Props) {
         onError: (e) => toast.error(e instanceof Error ? e.message : "ปักหมุดไม่สำเร็จ"),
       },
     );
+  };
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success("คัดลอกลิงก์แล้ว");
+    } catch {
+      toast.error("คัดลอกไม่สำเร็จ");
+    }
   };
 
   const handleToggleCollection = async (collectionId: string, isIn: boolean) => {
@@ -137,72 +149,82 @@ export function ProfileOverallWorkMenu({ project, allProjects }: Props) {
         >
           <DropdownMenuItem
             className="cursor-pointer gap-2 rounded-lg"
-            disabled={pin.isPending || unpin.isPending}
-            onSelect={handlePin}
-          >
-            <Pin className={cn("h-3.5 w-3.5", pinned && "fill-current text-primary")} />
-            {pinned ? "เลิกปักหมุด" : "ปักหมุด"}
-          </DropdownMenuItem>
-
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger className="cursor-pointer gap-2 rounded-lg">
-              <Layers3 className="h-3.5 w-3.5" />
-              เข้าCollections
-            </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent className="max-h-56 min-w-[13rem] overflow-y-auto rounded-xl p-1.5">
-              {collections.length === 0 ? (
-                <p className="px-2 py-2 text-xs text-muted-foreground">ยังไม่มีคอลเลกชัน</p>
-              ) : (
-                collections.map((c) => {
-                  const isIn = activeIds.includes(c.id);
-                  return (
-                    <DropdownMenuItem
-                      key={c.id}
-                      className="cursor-pointer gap-2 rounded-lg"
-                      disabled={toggleCollection.isPending}
-                      onSelect={(e) => {
-                        e.preventDefault();
-                        void handleToggleCollection(c.id, isIn);
-                      }}
-                    >
-                      <span className="min-w-0 flex-1 truncate">{c.name}</span>
-                      {!c.is_public ? <Lock className="h-3 w-3 shrink-0 text-muted-foreground" /> : null}
-                      {isIn ? <Check className="h-3.5 w-3.5 shrink-0 text-primary" /> : null}
-                    </DropdownMenuItem>
-                  );
-                })
-              )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                className="cursor-pointer gap-2 rounded-lg text-primary focus:text-primary"
-                onSelect={(e) => {
-                  e.preventDefault();
-                  setMenuOpen(false);
-                  setCreateCollectionOpen(true);
-                }}
-              >
-                สร้างคอลเลกชันใหม่
-              </DropdownMenuItem>
-            </DropdownMenuSubContent>
-          </DropdownMenuSub>
-
-          <DropdownMenuItem
-            className="cursor-pointer gap-2 rounded-lg"
-            onSelect={() => {
-              setMenuOpen(false);
-              setShareOpen(true);
-            }}
-          >
-            <Share2 className="h-3.5 w-3.5" />
-            แชร์
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            className="cursor-pointer gap-2 rounded-lg"
             onSelect={() => navigate(`/portfolio/${project.id}/edit`)}
           >
             <Pencil className="h-3.5 w-3.5" />
             แก้ไข
           </DropdownMenuItem>
+
+          {isPublished ? (
+            <>
+              <DropdownMenuItem className="cursor-pointer gap-2 rounded-lg" onSelect={() => void handleCopyLink()}>
+                <Link2 className="h-3.5 w-3.5" />
+                คัดลอกลิงก์
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="cursor-pointer gap-2 rounded-lg"
+                disabled={pin.isPending || unpin.isPending}
+                onSelect={handlePin}
+              >
+                <Pin className={cn("h-3.5 w-3.5", pinned && "fill-current text-primary")} />
+                {pinned ? "เลิกปักหมุด" : "ปักหมุด"}
+              </DropdownMenuItem>
+
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="cursor-pointer gap-2 rounded-lg">
+                  <Layers3 className="h-3.5 w-3.5" />
+                  เพิ่มเข้าคอลเลกชัน
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent className="max-h-56 min-w-[13rem] overflow-y-auto rounded-xl p-1.5">
+                  {collections.length === 0 ? (
+                    <p className="px-2 py-2 text-xs text-muted-foreground">ยังไม่มีคอลเลกชัน</p>
+                  ) : (
+                    collections.map((c) => {
+                      const isIn = activeIds.includes(c.id);
+                      return (
+                        <DropdownMenuItem
+                          key={c.id}
+                          className="cursor-pointer gap-2 rounded-lg"
+                          disabled={toggleCollection.isPending}
+                          onSelect={(e) => {
+                            e.preventDefault();
+                            void handleToggleCollection(c.id, isIn);
+                          }}
+                        >
+                          <span className="min-w-0 flex-1 truncate">{c.name}</span>
+                          {!c.is_public ? <Lock className="h-3 w-3 shrink-0 text-muted-foreground" /> : null}
+                          {isIn ? <Check className="h-3.5 w-3.5 shrink-0 text-primary" /> : null}
+                        </DropdownMenuItem>
+                      );
+                    })
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="cursor-pointer gap-2 rounded-lg text-primary focus:text-primary"
+                    onSelect={(e) => {
+                      e.preventDefault();
+                      setMenuOpen(false);
+                      setCreateCollectionOpen(true);
+                    }}
+                  >
+                    สร้างคอลเลกชันใหม่
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+
+              <DropdownMenuItem
+                className="cursor-pointer gap-2 rounded-lg"
+                onSelect={() => {
+                  setMenuOpen(false);
+                  setShareOpen(true);
+                }}
+              >
+                <Share2 className="h-3.5 w-3.5" />
+                แชร์
+              </DropdownMenuItem>
+            </>
+          ) : null}
+
           <DropdownMenuSeparator />
           <DropdownMenuItem
             className="cursor-pointer gap-2 rounded-lg text-destructive focus:text-destructive"

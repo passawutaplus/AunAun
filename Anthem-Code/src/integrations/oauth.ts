@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { isStandaloneDisplay } from "@/lib/appShell";
 import {
   buildOAuthCallbackUrl,
   clearStaleOAuthPkceState,
@@ -18,6 +19,9 @@ const POPUP_AUTH_TIMEOUT_MS = 120_000;
  */
 export function openOAuthPopup(): Window | null {
   if (typeof window === "undefined") return null;
+  // Installed PWA / Android app: a popup opens as a separate tab that never hands the
+  // session back, so sign-in uses the full-page redirect instead.
+  if (isStandaloneDisplay()) return null;
   const width = 480;
   const height = 640;
   const left = window.screenX + Math.max(0, (window.outerWidth - width) / 2);

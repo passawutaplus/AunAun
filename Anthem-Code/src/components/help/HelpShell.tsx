@@ -14,7 +14,7 @@ export function HelpShell() {
   return (
     <main className={cn("min-h-screen bg-app-ambient", MOBILE_PAGE_BOTTOM_CLASS)}>
       {/* Mobile-only section tabs — desktop uses DesktopTopNav site chrome */}
-      <div className="sticky top-0 z-30 border-b border-border/40 bg-background/40 backdrop-blur-xl supports-[backdrop-filter]:bg-background/30 lg:hidden">
+      <div className="sticky top-0 z-30 border-b border-border/40 bg-background lg:hidden">
         <div className="mx-auto flex max-w-5xl items-center gap-2 overflow-x-auto px-4 py-2.5 sm:px-6 scrollbar-none">
           <NavLink to="/help" end className={navClass}>
             Help

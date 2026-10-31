@@ -39,6 +39,27 @@ export function normalizeColorQuery(raw: string | null | undefined): string | nu
   return /^#[0-9a-f]{6}$/.test(hex) ? hex : null;
 }
 
+/** A search can combine up to this many colors. */
+export const MAX_SEARCH_COLORS = 3;
+
+/** "#aabbcc,#112233" (or a single hex) → normalized, de-duplicated list of at most 3 colors. */
+export function parseColorList(raw: string | null | undefined): string[] {
+  if (!raw) return [];
+  const out: string[] = [];
+  for (const part of raw.split(",")) {
+    const hex = normalizeColorQuery(part);
+    if (hex && !out.includes(hex)) out.push(hex);
+    if (out.length >= MAX_SEARCH_COLORS) break;
+  }
+  return out;
+}
+
+/** The comma-joined form kept in the URL (?color=) and in feed state, or null when empty. */
+export function normalizeColorList(raw: string | null | undefined): string | null {
+  const list = parseColorList(raw);
+  return list.length ? list.join(",") : null;
+}
+
 export function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
   const normalized = normalizeColorQuery(hex);
   if (!normalized) return null;
@@ -148,6 +169,18 @@ export function scorePaletteAgainstColor(hex: string, palette: PaletteStop[]): n
     best = Math.max(best, pair * presence);
   }
   return best;
+}
+
+/**
+ * A cover must contain EVERY picked color: the result is the weakest color's match while any color is
+ * below COLOR_MATCH_MIN (so the feed's cut-off drops it), otherwise the average, which orders the grid.
+ */
+export function scorePaletteAgainstColors(hexes: string[], palette: PaletteStop[]): number {
+  if (hexes.length === 0) return 0;
+  const scores = hexes.map((hex) => scorePaletteAgainstColor(hex, palette));
+  const weakest = Math.min(...scores);
+  if (weakest < COLOR_MATCH_MIN) return weakest;
+  return scores.reduce((a, b) => a + b, 0) / scores.length;
 }
 
 export function warmSearchPalettes(urls: string[]): void {

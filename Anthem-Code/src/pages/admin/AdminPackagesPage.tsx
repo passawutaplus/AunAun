@@ -20,6 +20,7 @@ import {
   useAdminSetCreatorServiceStatus,
 } from "@/hooks/admin/useAdminMutations";
 import { formatThaiDate } from "@/lib/format";
+import { userFacingError } from "@/lib/userFacingError";
 
 type StatusFilter = "all" | "Published" | "Draft";
 
@@ -119,7 +120,7 @@ export default function AdminPackagesPage() {
                   {
                     onSuccess: () =>
                       toast.success(next === "Published" ? "เผยแพร่แล้ว" : "ตั้งเป็นแบบร่างแล้ว"),
-                    onError: (e: Error) => toast.error(e.message),
+                    onError: (e: Error) => toast.error(userFacingError(e)),
                   },
                 );
               },
@@ -131,7 +132,7 @@ export default function AdminPackagesPage() {
                 if (!window.confirm(`ลบแพ็กเกจ "${r.title}"?`)) return;
                 remove.mutate(r.id, {
                   onSuccess: () => toast.success("ลบแพ็กเกจแล้ว"),
-                  onError: (e: Error) => toast.error(e.message),
+                  onError: (e: Error) => toast.error(userFacingError(e)),
                 });
               },
             },

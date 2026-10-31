@@ -6,7 +6,7 @@
 export const ORIGINS = [
   { id: "web", label: "From the web", short: "Web" },
   { id: "upload", label: "My files", short: "My files" },
-  { id: "museum", label: "From Museum", short: "Museum" },
+  { id: "museum", label: "From Design Feed", short: "Design Feed" },
 ];
 const ORIGIN_ALIASES = { web: "web", site: "web", link: "web", upload: "upload", uploads: "upload", file: "upload", files: "upload", mine: "upload", my: "upload", museum: "museum", discover: "museum" };
 

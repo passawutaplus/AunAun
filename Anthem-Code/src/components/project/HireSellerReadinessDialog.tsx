@@ -36,8 +36,8 @@ export function HireSellerReadinessDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto rounded-2xl">
         <DialogHeader className="text-left space-y-1.5">
-          <div className="w-10 h-10 rounded-2xl bg-amber-500/15 flex items-center justify-center mb-1">
-            <AlertCircle className="w-5 h-5 text-amber-600" />
+          <div className="w-10 h-10 rounded-2xl bg-warning/15 flex items-center justify-center mb-1">
+            <AlertCircle className="w-5 h-5 text-warning" />
           </div>
           <DialogTitle>ยังเปิดปุ่มจ้างงานไม่ได้</DialogTitle>
           <DialogDescription className="text-sm leading-relaxed">
@@ -57,7 +57,7 @@ export function HireSellerReadinessDialog({
             <p className="text-[11px] text-muted-foreground">
               ความคืบหน้า {doneCount}/{readiness.items.length} ขั้นตอน
             </p>
-            <ul className="space-y-1.5 rounded-xl border border-amber-500/30 bg-amber-500/5 p-2">
+            <ul className="space-y-1.5 rounded-xl border border-warning/30 bg-warning/5 p-2">
               {readiness.items.map((item) => (
                 <li key={item.id}>
                   <Link
@@ -73,7 +73,7 @@ export function HireSellerReadinessDialog({
                         "mt-0.5 w-5 h-5 rounded-full border flex items-center justify-center shrink-0",
                         item.done
                           ? "bg-emerald-500 border-emerald-500 text-white"
-                          : "border-amber-600/55",
+                          : "border-warning/55",
                       )}
                     >
                       {item.done ? <Check className="w-3 h-3" /> : null}

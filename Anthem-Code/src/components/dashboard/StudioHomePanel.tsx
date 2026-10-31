@@ -1,96 +1,109 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, Handshake, Heart } from "lucide-react";
-import StatsCard from "@/components/StatsCard";
+import { Briefcase, Check, ChevronRight, Circle, Eye, Handshake, Images, Inbox, Share2 } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { InlineLoader } from "@/components/ui/BanterLoader";
+import { MascotCharacter } from "@/components/project/TourMascot";
+import StudioActionQueue, { isStaleRequest, STALE_REQUEST_DAYS } from "@/components/dashboard/StudioActionQueue";
+import StudioPushNudge from "@/components/dashboard/StudioPushNudge";
 import StudioNoteCard from "@/components/dashboard/StudioNoteCard";
 import StudioTodoPanel from "@/components/dashboard/StudioTodoPanel";
-import StudioPulseChart, { type StudioPulseScope } from "@/components/dashboard/StudioPulseChart";
-import StudioIdentityCard from "@/components/dashboard/StudioIdentityCard";
 import { EarningsHireBalanceCard } from "@/components/earnings/EarningsHireBalanceCard";
-import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useHiringRequests } from "@/hooks/useHiringRequests";
 import { useReceivedCollabRequests } from "@/hooks/useCollabRequests";
 import { useMyProjects } from "@/hooks/useProjects";
 import { useHireWallet } from "@/hooks/useHireWallet";
-import { useHireSellerReadiness } from "@/hooks/useHireSellerReadiness";
-import { useSubjectWorkReviews } from "@/hooks/useWorkReviews";
 import { usePortfolioOverviewSeries } from "@/hooks/usePortfolioOverviewSeries";
-import { usePackageOverviewSeries } from "@/hooks/usePackageOverviewSeries";
-import { useCreatorServices } from "@/hooks/useCreatorServices";
-import { useStudioRangeLikes } from "@/hooks/useStudioRangeLikes";
-import { isContactedNewStatus, HIRE_TAB_ACCEPTED, isHireCompletedStatus } from "@/lib/hiringStatus";
-import { isCollabAcceptedStatus, isCollabContactedNewStatus, isCollabCompletedStatus } from "@/lib/collabInbox";
+import { useProfilesByIds } from "@/core/profiles";
+import { isContactedNewStatus, HIRE_TAB_ACCEPTED } from "@/lib/hiringStatus";
+import { isCollabAcceptedStatus, isCollabContactedNewStatus } from "@/lib/collabInbox";
 import { PAYOUT_MIN_SATANG } from "@/lib/payments/payoutPolicy";
 import { formatMoneyLabel } from "@/lib/payments/fxDisplay";
 import { satangToThb } from "@/lib/payments/fees";
 import { withdrawStartPath } from "@/lib/payments/withdrawPin";
-import { getProjectStatsRangeBounds, type ProjectStatsDateRange } from "@/lib/projectStatsDateRange";
-import { STUDIO_HIRE_PATH, STUDIO_PROJECTS_PATH } from "@/lib/studioNav";
+import { getProjectStatsRangeBounds } from "@/lib/projectStatsDateRange";
+import { isCommerceEnabled } from "@/lib/aplus1Launch";
+import { optimizedFeedImageUrl } from "@/lib/feedProjectCover";
+import { ABOUT_ME_EDIT_HREF } from "@/lib/settingsNav";
+import { STUDIO_COLLAB_PATH, STUDIO_HIRE_PATH, STUDIO_INSIGHTS_PATH, STUDIO_PROJECTS_PATH } from "@/lib/studioNav";
+import { cn } from "@/lib/utils";
 
 type Props = {
   userId: string;
 };
 
+const ACTIVE_ROWS = 5;
+
+/** My Studio home: what needs you today first, then numbers, work in progress, profile checklist, own notes. */
 export default function StudioHomePanel({ userId }: Props) {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const { data: profile } = useProfile(userId);
   const { data: hireRequests = [], isLoading: hireLoading } = useHiringRequests(userId);
   const { data: collabRequests = [], isLoading: collabLoading } = useReceivedCollabRequests();
   const { data: projects = [], isLoading: projectsLoading } = useMyProjects(userId);
   const { view: wallet, isLoading: walletLoading, isPreview, resetPreview } = useHireWallet(userId);
-  const readiness = useHireSellerReadiness(userId);
-  const { data: reviews = [], isLoading: reviewsLoading } = useSubjectWorkReviews(userId);
-  const [dateRange, setDateRange] = useState<ProjectStatsDateRange>({ preset: "7d" });
-  const [pulseScope, setPulseScope] = useState<StudioPulseScope>("projects");
-  const bounds = useMemo(() => getProjectStatsRangeBounds(dateRange), [dateRange]);
-  const fromIso = bounds?.from.toISOString();
-  const toIso = bounds?.to.toISOString();
 
-  const hireNew = hireRequests.filter((r) => isContactedNewStatus(r.status)).length;
-  const hireActive = hireRequests.filter((r) => r.status === HIRE_TAB_ACCEPTED).length;
-  const collabNew = collabRequests.filter((r) => isCollabContactedNewStatus(r.status)).length;
-  const collabActive = collabRequests.filter((r) => isCollabAcceptedStatus(r.status)).length;
-  const hireCompleted = hireRequests.filter((r) => isHireCompletedStatus(r.status)).length;
-  const collabCompleted = collabRequests.filter((r) => isCollabCompletedStatus(r.status)).length;
-  const joinedAt = profile?.created_at ?? user?.created_at;
-  const reviewPending = reviews.filter((r) => !r.reply_at).length;
+  const bounds = useMemo(() => getProjectStatsRangeBounds({ preset: "7d" }), []);
   const projectIds = projects.map((p) => p.id);
-  const { data: services = [] } = useCreatorServices(userId, { includeDrafts: true });
-  const serviceIds = useMemo(() => services.map((service) => service.id), [services]);
-  const pulseEnabled = !projectsLoading && !!bounds;
-  const projectOverview = usePortfolioOverviewSeries(userId, projectIds, fromIso, toIso, pulseEnabled);
-  const packageOverview = usePackageOverviewSeries(
+  const overview = usePortfolioOverviewSeries(
     userId,
-    serviceIds,
-    fromIso,
-    toIso,
-    pulseEnabled && pulseScope === "packages",
+    projectIds,
+    bounds?.from.toISOString(),
+    bounds?.to.toISOString(),
+    !projectsLoading && !!bounds,
   );
-  const likesQuery = useStudioRangeLikes(projectIds, fromIso, toIso, pulseEnabled);
-  const viewCount =
-    pulseScope === "packages"
-      ? (packageOverview.data?.current.views.length ?? 0)
-      : (projectOverview.data?.current.views.length ?? 0);
-  const followerCount = projectOverview.data?.current.followers.length ?? 0;
-  const likeCount = likesQuery.data ?? 0;
 
-  const statsLoading =
-    hireLoading || collabLoading || projectsLoading || reviewsLoading || readiness.isLoading;
+  // Matches the action queue: requests left unanswered for a month aren't "waiting today"
+  const waiting =
+    hireRequests.filter((r) => isContactedNewStatus(r.status) && !isStaleRequest(r.created_at)).length +
+    collabRequests.filter((r) => isCollabContactedNewStatus(r.status) && !isStaleRequest(r.created_at)).length;
+  const activeHire = hireRequests.filter((r) => r.status === HIRE_TAB_ACCEPTED);
+  const activeCollab = collabRequests.filter((r) => isCollabAcceptedStatus(r.status));
+  const { data: partners } = useProfilesByIds(activeCollab.map((r) => r.sender_id));
 
-  const queue = [
-    { to: STUDIO_HIRE_PATH, label: "จ้างงานรอตอบ", count: hireNew, kind: "hire" as const },
-    { to: STUDIO_HIRE_PATH, label: "งานจ้างที่กำลังทำ", count: hireActive, kind: "hire" as const },
-    { to: "/dashboard/collab", label: "คอลแลปรอตอบ", count: collabNew, kind: "collab" as const },
-    { to: "/dashboard/collab", label: "คอลแลปที่กำลังทำ", count: collabActive, kind: "collab" as const },
-    ...(reviewPending > 0
-      ? [{ to: "/dashboard/reviews", label: "รีวิวยังไม่ตอบ", count: reviewPending, kind: "review" as const }]
-      : []),
+  const activeRows = [
+    ...activeHire.map((r) => ({
+      id: `h-${r.id}`,
+      title: r.project_title || "งานจ้าง",
+      meta: r.client_name || "",
+      tag: "งานจ้าง",
+      to: STUDIO_HIRE_PATH,
+      at: r.updated_at,
+    })),
+    ...activeCollab.map((r) => {
+      const p = partners?.map[r.sender_id];
+      return {
+        id: `c-${r.id}`,
+        title: `คอลแลปกับ ${p?.display_name || (p?.username ? `@${p.username}` : "ครีเอเตอร์")}`,
+        meta: (r.collab_types ?? []).slice(0, 2).join(", "),
+        tag: "คอลแลป",
+        to: STUDIO_COLLAB_PATH,
+        at: r.updated_at,
+      };
+    }),
+  ].sort((a, b) => b.at.localeCompare(a.at));
+  // Jobs nobody has touched for a month are summarised, not listed as work in progress
+  const staleActive = activeRows.filter((r) => isStaleRequest(r.at));
+  const liveRows = activeRows.filter((r) => !isStaleRequest(r.at));
+
+  const publishedWorks = projects.filter((p) => p.status === "Published");
+  const published = publishedWorks.length;
+  const latest = [...publishedWorks].sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
+  const latestCover = latest?.cover_url?.trim() || latest?.gallery_urls?.find((url) => url?.trim()) || "";
+  const p = profile as
+    | { avatar_url?: string | null; bio?: string | null; skills?: string[] | null; opportunity_status?: string | null }
+    | undefined;
+  const checklist = [
+    { id: "avatar", label: "ใส่รูปโปรไฟล์", done: !!p?.avatar_url, to: ABOUT_ME_EDIT_HREF },
+    { id: "work", label: "ลงผลงานแรก", done: published > 0, to: "/portfolio/new" },
+    { id: "bio", label: "เขียนแนะนำตัว", done: !!p?.bio?.trim(), to: ABOUT_ME_EDIT_HREF },
+    { id: "skills", label: "ใส่สกิล", done: (p?.skills?.length ?? 0) > 0, to: ABOUT_ME_EDIT_HREF },
+    { id: "open", label: "บอกว่าเปิดรับงานแบบไหน", done: !!p?.opportunity_status, to: ABOUT_ME_EDIT_HREF },
   ];
+  const doneCount = checklist.filter((c) => c.done).length;
 
-  const missingReady = readiness.items.filter((item) => !item.done);
   const canWithdraw = isPreview && wallet.availableSatang >= PAYOUT_MIN_SATANG;
   const withdrawHint = !isPreview
     ? "ระบบถอนจริงกำลังเปิด — ทดลองกดได้ในเดโม่หรือโหมดตัวอย่าง"
@@ -98,45 +111,227 @@ export default function StudioHomePanel({ userId }: Props) {
       ? `อีก ${formatMoneyLabel(satangToThb(Math.max(0, PAYOUT_MIN_SATANG - wallet.availableSatang)), "THB")} ถึงขั้นต่ำถอน`
       : undefined;
 
+  const loading = hireLoading || collabLoading;
+  const stats = [
+    { label: "รอตอบ", value: loading ? "–" : waiting, to: STUDIO_HIRE_PATH, hot: waiting > 0, icon: Inbox },
+    { label: "กำลังทำ", value: loading ? "–" : liveRows.length, to: STUDIO_HIRE_PATH, hot: false, icon: Briefcase },
+    { label: "เข้าชม 7 วัน", value: overview.data?.current.views.length ?? "–", to: STUDIO_INSIGHTS_PATH, hot: false, icon: Eye },
+    { label: "ผลงานที่เผยแพร่", value: projectsLoading ? "–" : published, to: STUDIO_PROJECTS_PATH, hot: false, icon: Images },
+  ];
+
+  const name = (profile?.display_name || profile?.username || "").trim();
+  const today = new Date().toLocaleDateString("th-TH", { weekday: "long", day: "numeric", month: "long" });
+  const publicHref = profile?.username ? `/@${profile.username}` : `/u/${userId}`;
+
+  // Mascot's line changes with how busy today is
+  const greetingLine = loading
+    ? "กำลังดูว่าวันนี้มีอะไรบ้าง…"
+    : waiting > 0
+      ? `มี ${waiting} เรื่องรอคุณตอบอยู่ ไปเคลียร์กันเลย`
+      : liveRows.length > 0
+        ? `ไม่มีอะไรค้างตอบ มีงานกำลังทำ ${liveRows.length} งาน สู้ ๆ`
+        : published === 0
+          ? "เริ่มจากลงผลงานแรก ให้คนเห็นฝีมือคุณกัน"
+          : "วันนี้ว่าง ลองแชร์โปรไฟล์ให้คนเห็นมากขึ้นดีไหม";
+
+  const shareProfile = async () => {
+    const url = `${window.location.origin}${publicHref}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: name || "โปรไฟล์ของฉัน", url });
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      toast.success("คัดลอกลิงก์โปรไฟล์แล้ว");
+    } catch {
+      /* share cancelled */
+    }
+  };
+
+  const checklistCard =
+    doneCount < checklist.length ? (
+      <section className="rounded-3xl border border-border/70 bg-card p-4 sm:p-5">
+        <div className="mb-2 flex items-baseline justify-between">
+          <h2 className="text-sm font-medium text-foreground">ทำโปรไฟล์ให้ครบ</h2>
+          <span className="text-xs tabular-nums text-muted-foreground">
+            {doneCount}/{checklist.length}
+          </span>
+        </div>
+        <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-secondary">
+          <div className="h-full rounded-full bg-foreground" style={{ width: `${(doneCount / checklist.length) * 100}%` }} />
+        </div>
+        <ul className="space-y-0.5">
+          {checklist.map((c) => (
+            <li key={c.id}>
+              {c.done ? (
+                <span className="flex items-center gap-2.5 py-1.5 text-sm text-muted-foreground line-through decoration-muted-foreground/40">
+                  <Check className="h-4 w-4 text-emerald-600" aria-hidden />
+                  {c.label}
+                </span>
+              ) : (
+                <Link to={c.to} className="group flex items-center gap-2.5 py-1.5 text-sm text-foreground">
+                  <Circle className="h-4 w-4 text-muted-foreground" aria-hidden />
+                  <span className="flex-1 group-hover:underline">{c.label}</span>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" aria-hidden />
+                </Link>
+              )}
+            </li>
+          ))}
+        </ul>
+      </section>
+    ) : null;
+
   return (
     <div className="space-y-6">
-      <div className="space-y-3">
-        <StudioIdentityCard
-          userId={userId}
-          displayName={profile?.display_name}
-          username={profile?.username}
-          avatarUrl={profile?.avatar_url}
-          joinedAt={joinedAt}
-          hireCompleted={hireCompleted}
-          collabCompleted={collabCompleted}
-        />
-        <StudioPulseChart
-          userId={userId}
-          projectIds={projectIds}
-          enabled={!projectsLoading}
-          dateRange={dateRange}
-          onDateRangeChange={setDateRange}
-          scope={pulseScope}
-          onScopeChange={setPulseScope}
-        />
-        <div className="grid grid-cols-3 gap-3">
-          <Link to={STUDIO_PROJECTS_PATH} className="min-w-0">
-            <StatsCard label="ยอดเข้าชม" value={viewCount} icon={Eye} />
-          </Link>
-          <Link to={STUDIO_PROJECTS_PATH} className="min-w-0">
-            <StatsCard label="กดไลค์" value={likeCount} icon={Heart} />
-          </Link>
-          <Link to="/portfolio/followers" className="min-w-0">
-            <StatsCard label="ผู้ติดตาม" value={followerCount} icon={Handshake} />
-          </Link>
+      <section className="flex items-center gap-4">
+        <MascotCharacter className="h-20 w-24 shrink-0 sm:h-24 sm:w-28" />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm text-muted-foreground">{today}</p>
+          <h2 className="mt-0.5 truncate text-2xl font-medium text-foreground">สวัสดี{name ? ` ${name}` : ""}</h2>
+          <p className="mt-0.5 text-sm text-foreground/80">{greetingLine}</p>
+        </div>
+      </section>
+
+      <div className="grid gap-3.5 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+        {latest ? (
+          <section className="relative isolate flex min-h-[300px] items-end overflow-hidden rounded-[28px] bg-[#111] text-[#F8F7F2] lg:min-h-[340px]">
+            {latestCover ? (
+              <img
+                src={optimizedFeedImageUrl(latestCover, { width: 1200, quality: 78, natural: false })}
+                alt=""
+                className="absolute inset-0 -z-20 h-full w-full object-cover"
+              />
+            ) : null}
+            <div className="absolute inset-0 -z-10 bg-gradient-to-t from-black/70 via-black/10 to-transparent" aria-hidden />
+            <span className="absolute left-4 top-4 inline-flex items-center gap-2 rounded-full bg-black/55 py-1.5 pl-2.5 pr-3 text-xs backdrop-blur">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" aria-hidden />
+              ผลงานล่าสุด
+            </span>
+            <div className="grid w-full gap-3 p-5 sm:p-6">
+              <h2 className={cn("truncate pb-1 text-4xl leading-tight sm:text-5xl", /[\u0E00-\u0E7F]/.test(latest.title) ? "font-medium" : "font-['Newsreader',Georgia,serif] italic")}>
+                {latest.title}
+              </h2>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="flex gap-4 text-sm opacity-90">
+                  <span>เข้าชม {(latest.views ?? 0).toLocaleString()}</span>
+                  <span>ถูกใจ {(latest.likes ?? 0).toLocaleString()}</span>
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Button asChild size="sm" className="rounded-full bg-[#F8F7F2] text-[#111] hover:bg-[#F8F7F2]/90">
+                    <Link to={`/project/${latest.id}`}>ดูผลงาน</Link>
+                  </Button>
+                  <Button asChild size="sm" variant="ghost" className="rounded-full border border-white/30 bg-white/10 text-white backdrop-blur hover:bg-white/20 hover:text-white">
+                    <Link to={publicHref}>
+                      <Eye className="mr-1.5 h-4 w-4" />
+                      ดูโปรไฟล์
+                    </Link>
+                  </Button>
+                  <Button type="button" size="sm" variant="ghost" className="rounded-full border border-white/30 bg-white/10 text-white backdrop-blur hover:bg-white/20 hover:text-white" onClick={() => void shareProfile()}>
+                    <Share2 className="mr-1.5 h-4 w-4" />
+                    แชร์โปรไฟล์
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </section>
+        ) : (
+          <section className="flex min-h-[300px] flex-col items-start justify-end gap-3 rounded-[28px] bg-secondary p-6 lg:min-h-[340px]">
+            <h2 className="text-2xl font-medium text-foreground">ลงผลงานแรกของคุณ</h2>
+            <Button asChild size="sm" className="rounded-full">
+              <Link to="/portfolio/new">ลงผลงานแรก</Link>
+            </Button>
+          </section>
+        )}
+
+        <div data-tour="studio-stats" className="grid grid-cols-2 gap-3.5">
+          {stats.map((st) => {
+            const Icon = st.icon;
+            return (
+              <Link
+                key={st.label}
+                to={st.to}
+                className="flex flex-col justify-between gap-4 rounded-[22px] border border-border/70 bg-card p-4 transition-transform hover:-translate-y-0.5"
+              >
+                <span className={cn("flex h-9 w-9 items-center justify-center rounded-xl", st.hot ? "bg-foreground text-background" : "bg-secondary text-foreground")}>
+                  <Icon className="h-[18px] w-[18px]" aria-hidden />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-3xl font-medium leading-tight tabular-nums text-foreground">{st.value}</span>
+                  <span className="block truncate text-sm text-muted-foreground">{st.label}</span>
+                </span>
+              </Link>
+            );
+          })}
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
-        <StudioTodoPanel userId={userId} queue={statsLoading ? [] : queue} />
-        <div className="space-y-4">
+      <div className="grid gap-3.5 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:items-start">
+        <div className="min-w-0 space-y-3.5">
+          <StudioActionQueue hire={hireRequests} collab={collabRequests} loading={loading} />
+
+          <section className="rounded-3xl border border-border/70 bg-card p-4 sm:p-5">
+            <div className="mb-2 flex items-baseline justify-between">
+              <h2 className="text-base font-medium text-foreground">งานที่กำลังทำ</h2>
+              {liveRows.length > ACTIVE_ROWS ? (
+                <Link to={STUDIO_HIRE_PATH} className="text-xs text-muted-foreground hover:text-foreground">
+                  ดูทั้งหมด {liveRows.length}
+                </Link>
+              ) : null}
+            </div>
+            {liveRows.length === 0 ? (
+              <p className="py-3 text-sm text-muted-foreground">
+                {staleActive.length > 0
+                  ? "ช่วงนี้ไม่มีงานที่ขยับ"
+                  : "ยังไม่มีงานที่กำลังทำ ตอบรับคำขอแล้วงานจะมาอยู่ตรงนี้"}
+              </p>
+            ) : (
+              <ul className="space-y-0.5">
+                {liveRows.slice(0, ACTIVE_ROWS).map((row) => (
+                  <li key={row.id}>
+                    <Link
+                      to={row.to}
+                      className="-mx-2 flex items-center gap-3 rounded-2xl px-2 py-2.5 transition-colors hover:bg-secondary/60"
+                    >
+                      <span
+                        className={cn(
+                          "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-secondary text-foreground",
+                        )}
+                      >
+                        {row.tag === "งานจ้าง" ? <Briefcase className="h-4 w-4" /> : <Handshake className="h-4 w-4" />}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-medium text-foreground">{row.title}</span>
+                        <span className="block truncate text-xs text-muted-foreground">
+                          {[row.meta, `อัปเดต ${updatedAgo(row.at)}`].filter(Boolean).join(" · ")}
+                        </span>
+                      </span>
+                      <span className="hidden shrink-0 rounded-full bg-secondary px-2.5 py-0.5 text-xs text-muted-foreground sm:inline">{row.tag}</span>
+                      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {staleActive.length > 0 ? (
+              <p className="mt-3 border-t border-border/60 pt-3 text-xs text-muted-foreground">
+                ไม่เคลื่อนไหวเกิน {STALE_REQUEST_DAYS} วัน {staleActive.length} งาน —{" "}
+                <Link
+                  to={staleActive.some((r) => r.tag === "งานจ้าง") ? STUDIO_HIRE_PATH : STUDIO_COLLAB_PATH}
+                  className="font-medium text-foreground hover:underline"
+                >
+                  ส่งงาน ปิดงาน หรือคุยต่อ
+                </Link>
+              </p>
+            ) : null}
+          </section>
+        </div>
+
+        <div className="min-w-0 space-y-3.5">
+          {checklistCard}
+          <StudioPushNudge />
+          <StudioTodoPanel userId={userId} queue={[]} />
           <StudioNoteCard userId={userId} />
-          {walletLoading ? (
+          {!isCommerceEnabled() ? null : walletLoading ? (
             <InlineLoader />
           ) : (
             <EarningsHireBalanceCard
@@ -153,28 +348,14 @@ export default function StudioHomePanel({ userId }: Props) {
           )}
         </div>
       </div>
-
-      {!statsLoading && missingReady.length > 0 ? (
-        <section className="space-y-3">
-          <h2 className="text-base font-semibold text-foreground">ความพร้อมรับงาน</h2>
-          <ul className="divide-y divide-border/70 overflow-hidden rounded-2xl glass-panel">
-            {missingReady.map((item) => (
-              <li key={item.id}>
-                <Link
-                  to={item.href}
-                  className="flex items-center justify-between gap-3 px-4 py-3 text-sm hover:bg-secondary/40"
-                >
-                  <span>
-                    <span className="block font-medium text-foreground">{item.label}</span>
-                    <span className="block text-xs text-muted-foreground">{item.hint}</span>
-                  </span>
-                  <span className="shrink-0 text-xs text-primary">ไปทำ</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
     </div>
   );
+}
+
+function updatedAgo(iso: string) {
+  const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
+  if (days <= 0) return "วันนี้";
+  if (days === 1) return "เมื่อวาน";
+  if (days < 30) return `${days} วันก่อน`;
+  return new Date(iso).toLocaleDateString("th-TH", { day: "numeric", month: "short" });
 }

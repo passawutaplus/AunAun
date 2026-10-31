@@ -57,7 +57,7 @@ const JobCard = ({ job, compact, onClick, showActions = true, overlayBadge, over
       initial="rest"
       whileHover={reduced ? undefined : "hover"}
       className={cn(
-        "group/card overflow-hidden rounded-[1.6rem] bg-card shadow-md hover:shadow-lg transition-shadow h-full flex flex-col border border-border/40",
+        "group/card overflow-hidden rounded-[1.6rem] bg-card shadow-md hover:shadow-sm transition-shadow h-full flex flex-col border border-border/40",
         compact && "shadow-sm",
       )}
     >
@@ -70,7 +70,7 @@ const JobCard = ({ job, compact, onClick, showActions = true, overlayBadge, over
             loading="lazy"
           />
         ) : (
-          <div className={cn("absolute inset-0 bg-gradient-to-br", roleCategoryGradient(job.role_category))}>
+          <div className={cn("absolute inset-0", roleCategoryGradient(job.role_category))}>
             <div className="absolute inset-0 flex flex-col justify-end p-4">
               <p className="text-white/90 text-xs font-medium tracking-widest">ประกาศจ้าง</p>
               <h3 className="text-white text-xl font-semibold thai-display leading-tight drop-shadow">{roleTitle}</h3>

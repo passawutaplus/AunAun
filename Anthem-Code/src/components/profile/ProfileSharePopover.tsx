@@ -1,12 +1,9 @@
 import { ReactNode, useState } from "react";
 import { ExternalLink } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import ShareDialogPanel from "@/components/share/ShareDialogPanel";
+import ProfileQrCode from "@/components/profile/ProfileQrCode";
 
 type Props = {
   url: string;
@@ -20,6 +17,8 @@ type Props = {
   onShared?: () => void;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  /** Owner view: show a downloadable QR code of the profile link. */
+  showQr?: boolean;
 };
 
 const ProfileSharePopover = ({
@@ -32,6 +31,7 @@ const ProfileSharePopover = ({
   onShared,
   open: openProp,
   onOpenChange,
+  showQr = false,
 }: Props) => {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const open = openProp ?? uncontrolledOpen;
@@ -65,15 +65,20 @@ const ProfileSharePopover = ({
           onPlatform={() => onShared?.()}
           onDone={() => setOpen(false)}
           extraFooter={
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={handleOpenPublic}
-              className="mt-3 h-11 w-full justify-center gap-2 rounded-xl text-sm font-medium"
-            >
-              <ExternalLink className="h-4 w-4" aria-hidden />
-              เปิดหน้าที่ลูกค้าเห็น
-            </Button>
+            <>
+              {showQr ? (
+                <ProfileQrCode url={url} fileLabel={displayPath.slice(1)} />
+              ) : null}
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={handleOpenPublic}
+                className="mt-3 h-11 w-full justify-center gap-2 rounded-xl text-sm font-medium"
+              >
+                <ExternalLink className="h-4 w-4" aria-hidden />
+                เปิดหน้าที่ลูกค้าเห็น
+              </Button>
+            </>
           }
         />
       </DialogContent>

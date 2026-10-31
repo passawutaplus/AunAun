@@ -39,7 +39,7 @@ export function ForumUserAvatar({
       {isAdmin ? (
         <span
           className={cn(
-            "absolute -bottom-0.5 -right-0.5 flex items-center justify-center rounded-full bg-amber-500 text-white ring-2 ring-background",
+            "absolute -bottom-0.5 -right-0.5 flex items-center justify-center rounded-full bg-warning text-warning-foreground ring-2 ring-background",
             badgeSize,
           )}
           aria-label="แอดมิน"
@@ -73,7 +73,7 @@ export function ForumRankChip({
 }) {
   if (isAdmin) {
     return (
-      <span className="inline-flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[11px] font-medium text-amber-800">
+      <span className="inline-flex items-center gap-1 rounded-md border border-warning/30 bg-warning/10 px-1.5 py-0.5 text-[11px] font-medium text-warning">
         <Shield className="h-3 w-3" />
         แอดมิน
       </span>

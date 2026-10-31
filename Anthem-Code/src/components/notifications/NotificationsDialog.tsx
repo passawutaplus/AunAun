@@ -52,7 +52,7 @@ const NotificationsDialog = ({ open, onOpenChange }: NotificationsDialogProps) =
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent
           side="bottom"
-          className="flex flex-col gap-0 p-0 h-[min(88dvh,720px)] rounded-t-[1.35rem] border-x-0 border-b-0 border-t border-border/50 bg-popover shadow-[0_-8px_40px_rgba(0,0,0,0.12)]"
+          className="flex flex-col gap-0 p-0 h-[min(88dvh,720px)] rounded-t-[1.35rem] border-x-0 border-b-0 border-t border-border/50 bg-popover shadow-sm"
           aria-describedby={undefined}
         >
           <div className="shrink-0 flex flex-col items-center pt-2.5 pb-1">
@@ -77,7 +77,7 @@ const NotificationsDialog = ({ open, onOpenChange }: NotificationsDialogProps) =
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="flex flex-col gap-0 p-0 w-[calc(100%-2rem)] max-w-3xl max-h-[min(85vh,680px)] overflow-hidden rounded-2xl border-border/60 bg-popover shadow-2xl [&>button]:top-7 [&>button]:right-5"
+        className="flex flex-col gap-0 p-0 w-[calc(100%-2rem)] max-w-3xl max-h-[min(85vh,680px)] overflow-hidden rounded-2xl border-border/60 bg-popover shadow-sm [&>button]:top-7 [&>button]:right-5"
         aria-describedby={undefined}
       >
         <DialogHeader className="shrink-0 px-6 pb-2 pt-6">

@@ -1,4 +1,4 @@
-# Aplus1
+# SAMECOR
 
 > Creative social app for freelancers and designers in Thailand — show work, get discovered, hire and collaborate.
 
@@ -13,7 +13,7 @@
 
 ## Product
 
-Aplus1 (1px / Anthem) lets creatives publish a portfolio, browse projects and designers, and start hire or collab conversations. Soft-launch focuses on profiles and project discovery; some marketplace routes may be gated.
+SAMECOR (1px / Anthem) lets creatives publish a portfolio, browse projects and designers, and start hire or collab conversations. Soft-launch focuses on profiles and project discovery; some marketplace routes may be gated.
 
 ## Contact
 

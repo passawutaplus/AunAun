@@ -27,11 +27,11 @@ export function writeCollectionGridDensity(key: string, density: CollectionGridD
 export function collectionGridClass(density: CollectionGridDensity): string {
   switch (density) {
     case "large":
-      return "grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4";
+      return "grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5";
     case "medium":
-      return "grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3";
+      return "grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5";
     case "small":
-      return "grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2";
+      return "grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 sm:gap-5";
     case "list":
       return "flex flex-col gap-2";
   }
@@ -41,11 +41,11 @@ export function collectionGridClass(density: CollectionGridDensity): string {
 export function collectionMasonryClass(density: CollectionGridDensity): string {
   switch (density) {
     case "large":
-      return "columns-1 lg:columns-2 xl:columns-3 gap-2";
+      return "columns-1 lg:columns-2 xl:columns-3 gap-4 sm:gap-5";
     case "medium":
-      return "columns-2 lg:columns-3 xl:columns-4 gap-2";
+      return "columns-2 lg:columns-3 xl:columns-4 gap-4 sm:gap-5";
     case "small":
-      return "columns-2 lg:columns-4 xl:columns-5 2xl:columns-6 gap-1.5";
+      return "columns-2 lg:columns-4 xl:columns-5 2xl:columns-6 gap-4 sm:gap-5";
     case "list":
       return "flex flex-col gap-2";
   }
@@ -53,5 +53,5 @@ export function collectionMasonryClass(density: CollectionGridDensity): string {
 
 export function collectionMasonryItemClass(density: CollectionGridDensity): string {
   if (density === "list") return "";
-  return density === "small" ? "mb-1.5 break-inside-avoid" : "mb-2 break-inside-avoid";
+  return "mb-4 break-inside-avoid sm:mb-5";
 }

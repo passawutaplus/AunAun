@@ -18,7 +18,7 @@ const HouseAdCard = () => {
           loading="lazy"
         />
         <span
-          className="absolute right-2 top-2 rounded-full border border-black/10 bg-[#f5f5f5]/95 px-2 py-0.5 text-[10px] tracking-wider text-[#6b6762]"
+          className="absolute right-2 top-2 rounded-full border border-black/10 bg-background/95 px-2 py-0.5 text-[10px] tracking-wider text-[#6b6762]"
           aria-label="Sponsored"
         >
           Sponsored

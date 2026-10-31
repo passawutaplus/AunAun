@@ -27,7 +27,7 @@ type BucketRow = { name: string; objects: number; bytes: number; truncated: bool
 function UsageBar({ percent, label }: { percent: number; label: string }) {
   const clamped = Math.min(100, Math.max(0, percent));
   const color =
-    clamped >= 100 ? "bg-red-500" : clamped >= 70 ? "bg-amber-500" : "bg-emerald-500";
+    clamped >= 100 ? "bg-red-500" : clamped >= 70 ? "bg-warning" : "bg-emerald-500";
   return (
     <div className="space-y-1.5">
       <div className="flex justify-between text-xs gap-2">
@@ -43,7 +43,7 @@ function UsageBar({ percent, label }: { percent: number; label: string }) {
 
 function statusTone(status: "ok" | "watch" | "over") {
   if (status === "over") return "border-red-500/40 bg-red-500/5 text-red-700 dark:text-red-300";
-  if (status === "watch") return "border-amber-500/40 bg-amber-500/5 text-amber-800 dark:text-amber-200";
+  if (status === "watch") return "border-warning/40 bg-warning/5 text-warning dark:text-warning";
   return "border-emerald-500/40 bg-emerald-500/5 text-emerald-800 dark:text-emerald-200";
 }
 

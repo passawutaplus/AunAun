@@ -66,7 +66,7 @@ const ManageProjectCard = ({
   const statusBadges = (
     <>
       {isPinned && (
-        <Badge className="bg-amber-500 text-white text-[10px] border-0 px-1.5 py-0">
+        <Badge className="bg-warning text-warning-foreground text-[10px] border-0 px-1.5 py-0">
           <Pin className="w-2.5 h-2.5 mr-0.5" /> ปักหมุด
         </Badge>
       )}
@@ -120,7 +120,7 @@ const ManageProjectCard = ({
           type="button"
           onClick={isPinned ? onUnpin : onPin}
           disabled={orderBusy}
-          className="p-1.5 rounded-lg hover:bg-amber-500/10 text-muted-foreground hover:text-amber-600 transition-colors"
+          className="p-1.5 rounded-lg hover:bg-warning/10 text-muted-foreground hover:text-warning transition-colors"
           aria-label={isPinned ? "ยกเลิกปักหมุด" : "ปักหมุด"}
         >
           {isPinned ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}

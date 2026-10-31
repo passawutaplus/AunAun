@@ -1,4 +1,4 @@
-import { FORUM_PATH } from "@/lib/brandConfig";
+import { BRAND_FACEBOOK_URL, BRAND_LINE_CONTACT_URL, BRAND_LINE_ID, BRAND_SUPPORT_EMAIL, FORUM_PATH } from "@/lib/brandConfig";
 import type { LucideIcon } from "lucide-react";
 import {
   Compass,
@@ -241,16 +241,16 @@ export const HELP_CATEGORIES: HelpCategory[] = [
     articles: [
       {
         slug: "explore-basics",
-        title: "Explore ผลงานกับค้นหาดีไซเนอร์",
+        title: "Explore ผลงานกับค้นหาครีเอเตอร์",
         summary: "เริ่มจากสไตล์งานจริง แล้วค่อยเปิดโปรไฟล์คน",
         body: [
-          "โหมดผลงานให้คุณเลื่อนดูงานจริงก่อน ส่วนโหมดดีไซเนอร์เน้นคนและโปรไฟล์",
+          "โหมดผลงานให้คุณเลื่อนดูงานจริงก่อน ส่วนโหมดครีเอเตอร์เน้นคนและโปรไฟล์",
           "เลือกตามเป้าหมาย — หาสไตล์ใกล้โจทย์ หรือหาคนที่เปิดรับโอกาส",
         ],
         links: [{ label: "ไป Explore", to: "/" }],
         related: ["filter-style", "collections"],
         popular: true,
-        keywords: ["explore", "ค้นหา", "ดีไซเนอร์", "ฟีด"],
+        keywords: ["explore", "ค้นหา", "ครีเอเตอร์", "ดีไซเนอร์", "ฟีด"],
       },
       {
         slug: "filter-style",
@@ -567,10 +567,13 @@ export const HELP_CATEGORIES: HelpCategory[] = [
         summary: "เมื่อหาคำตอบใน Help ไม่เจอ",
         body: [
           "ถามใน Forum ได้ถ้าเป็นคำถามทั่วไปหรืออยากได้ความเห็นจากชุมชน",
-          "เรื่องบัญชี ความปลอดภัย หรือข้อมูลส่วนบุคคล ใช้อีเมลซัพพอร์ตจะเหมาะกว่า",
+          "เรื่องบัญชี ความปลอดภัย หรือข้อมูลส่วนบุคคล ทักทีมทาง LINE หรืออีเมลซัพพอร์ตจะเหมาะกว่า",
+          `LINE ${BRAND_LINE_ID} · อีเมล ${BRAND_SUPPORT_EMAIL}`,
         ],
         links: [
           { label: "Forum", to: FORUM_PATH },
+          { label: `LINE ${BRAND_LINE_ID}`, to: BRAND_LINE_CONTACT_URL },
+          { label: "Facebook SAMECOR", to: BRAND_FACEBOOK_URL },
         ],
         related: ["report-content", "data-rights"],
         keywords: ["ซัพพอร์ต", "ติดต่อ", "forum", "help", "support"],

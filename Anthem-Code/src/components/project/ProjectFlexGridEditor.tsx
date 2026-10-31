@@ -872,7 +872,7 @@ export function ProjectFlexGridEditor({
           pendingPosterRef.current = null;
           if (!file || !pending) return;
           if (!/^image\//i.test(file.type) && !/\.(jpe?g|png|webp|heic|heif)$/i.test(file.name)) {
-            toast.error("รองรับเฉพาะ JPG, PNG");
+            toast.error("รองรับ JPG, PNG, WebP, HEIC");
             return;
           }
           onSetModulePoster?.(pending.boardId, pending.moduleId, file);
@@ -1375,6 +1375,7 @@ function BoardSurface({
 function ModuleUploadingOverlay({
   className,
   label = "กำลังอัปโหลด",
+  percent,
 }: {
   className?: string;
   label?: string;
@@ -1389,6 +1390,11 @@ function ModuleUploadingOverlay({
     >
       <Loader2 className="h-7 w-7 animate-spin text-primary" aria-hidden />
       <p className="max-w-[160px] text-center text-[11px] font-medium text-foreground">{label}</p>
+      {typeof percent === "number" ? (
+        <div className="h-1 w-20 overflow-hidden rounded-full bg-muted" aria-hidden>
+          <div className="h-full rounded-full bg-primary" style={{ width: `${Math.max(0, Math.min(100, Math.round(percent)))}%` }} />
+        </div>
+      ) : null}
     </div>
   );
 }

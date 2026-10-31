@@ -22,6 +22,7 @@ import {
   resolvePostalCode,
 } from "@/lib/thaiAddressLookup";
 import { cn } from "@/lib/utils";
+import AddressCombobox from "@/components/profile/AddressCombobox";
 
 type AddressInvalid = {
   line1?: boolean;
@@ -195,27 +196,17 @@ export default function ProfileAddressEditor({
             {copy.province}
             {required ? <ReqStar /> : null}
           </Label>
-          <Select
-            key={`province-${province || "none"}`}
-            value={province || undefined}
+          <AddressCombobox
+            id={`${idPrefix}-province`}
+            value={province}
+            options={THAI_PROVINCES}
+            placeholder={copy.selectProvince}
+            noneLabel={required ? undefined : copy.unspecified}
+            noneValue={NONE}
+            invalid={invalid?.province}
+            className={triggerClass(invalid?.province)}
             onValueChange={onProvince}
-          >
-            <SelectTrigger
-              id={`${idPrefix}-province`}
-              className={triggerClass(invalid?.province)}
-              aria-invalid={invalid?.province}
-            >
-              <SelectValue placeholder={copy.selectProvince} />
-            </SelectTrigger>
-            <SelectContent className="max-h-72">
-              {!required && <SelectItem value={NONE}>{copy.unspecified}</SelectItem>}
-              {THAI_PROVINCES.map((p) => (
-                <SelectItem key={p} value={p}>
-                  {p}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          />
         </div>
 
         <div className="space-y-1.5" data-kyc-error={invalid?.district ? "true" : undefined}>
@@ -223,28 +214,18 @@ export default function ProfileAddressEditor({
             {copy.district}
             {required ? <ReqStar /> : null}
           </Label>
-          <Select
-            key={`district-${province}-${value.district.trim() || "none"}`}
-            value={value.district.trim() || undefined}
-            onValueChange={onDistrict}
+          <AddressCombobox
+            id={`${idPrefix}-district`}
+            value={value.district.trim()}
+            options={districts}
+            placeholder={districtDisabled ? copy.selectDistrictFirst : copy.selectDistrict}
+            noneLabel={required ? undefined : copy.unspecified}
+            noneValue={NONE}
             disabled={districtDisabled}
-          >
-            <SelectTrigger
-              id={`${idPrefix}-district`}
-              className={triggerClass(invalid?.district)}
-              aria-invalid={invalid?.district}
-            >
-              <SelectValue placeholder={districtDisabled ? copy.selectDistrictFirst : copy.selectDistrict} />
-            </SelectTrigger>
-            <SelectContent className="max-h-72">
-              {!required && <SelectItem value={NONE}>{copy.unspecified}</SelectItem>}
-              {districts.map((d) => (
-                <SelectItem key={d} value={d}>
-                  {d}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            invalid={invalid?.district}
+            className={triggerClass(invalid?.district)}
+            onValueChange={onDistrict}
+          />
         </div>
 
         <div className="space-y-1.5" data-kyc-error={invalid?.subdistrict ? "true" : undefined}>
@@ -252,30 +233,18 @@ export default function ProfileAddressEditor({
             {copy.subdistrict}
             {required ? <ReqStar /> : null}
           </Label>
-          <Select
-            key={`subdistrict-${province}-${value.district.trim()}-${value.subdistrict.trim() || "none"}`}
-            value={value.subdistrict.trim() || undefined}
-            onValueChange={onSubdistrict}
+          <AddressCombobox
+            id={`${idPrefix}-subdistrict`}
+            value={value.subdistrict.trim()}
+            options={subdistricts}
+            placeholder={subdistrictDisabled ? copy.selectSubdistrictFirst : copy.selectSubdistrict}
+            noneLabel={required ? undefined : copy.unspecified}
+            noneValue={NONE}
             disabled={subdistrictDisabled}
-          >
-            <SelectTrigger
-              id={`${idPrefix}-subdistrict`}
-              className={triggerClass(invalid?.subdistrict)}
-              aria-invalid={invalid?.subdistrict}
-            >
-              <SelectValue
-                placeholder={subdistrictDisabled ? copy.selectSubdistrictFirst : copy.selectSubdistrict}
-              />
-            </SelectTrigger>
-            <SelectContent className="max-h-72">
-              {!required && <SelectItem value={NONE}>{copy.unspecified}</SelectItem>}
-              {subdistricts.map((s) => (
-                <SelectItem key={s} value={s}>
-                  {s}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            invalid={invalid?.subdistrict}
+            className={triggerClass(invalid?.subdistrict)}
+            onValueChange={onSubdistrict}
+          />
         </div>
 
         <div className="space-y-1.5" data-kyc-error={invalid?.postalCode ? "true" : undefined}>

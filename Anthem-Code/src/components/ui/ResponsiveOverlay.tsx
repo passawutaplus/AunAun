@@ -65,9 +65,9 @@ export function ResponsiveOverlay({
   const stackOverlayClass = stacked ? "z-[70]" : undefined;
   const stackContentClass = stacked ? "z-[71]" : undefined;
   const paper = tone === "paper";
-  const overlayClassName = cn(paper && "bg-[#2f2e2c]/40", stackOverlayClass);
+  const overlayClassName = cn(paper && "bg-foreground/40", stackOverlayClass);
   const paperSurface = paper
-    ? "paper-popup border-[#e4e1db] bg-[#f5f5f5] text-[#2f2e2c] shadow-[0_28px_80px_-36px_rgba(47,46,44,0.55)] [&>button]:text-[#2f2e2c]"
+    ? "paper-popup border-border bg-background text-foreground shadow-sm [&>button]:text-foreground"
     : undefined;
   const blockDismiss = preventDismiss
     ? {
@@ -86,7 +86,7 @@ export function ResponsiveOverlay({
           className={cn(
             "flex flex-col gap-0 p-0 h-[min(88dvh,720px)] rounded-t-[1.35rem]",
             "border-x-0 border-b-0 border-t border-border/50",
-            "shadow-[0_-8px_40px_rgba(0,0,0,0.12)]",
+            "shadow-sm",
             hideCloseButton && "[&>button]:hidden",
             stackContentClass,
             sheetClassName,
@@ -136,7 +136,7 @@ export function ResponsiveOverlay({
         overlayClassName={overlayClassName}
         className={cn(
           "flex flex-col gap-0 p-0 w-[calc(100%-2rem)] max-w-2xl",
-          "max-h-[min(85vh,680px)] overflow-hidden rounded-2xl border-border/60 shadow-2xl",
+          "max-h-[min(85vh,680px)] overflow-hidden rounded-2xl border-border/60 shadow-sm",
           hideCloseButton && "[&>button]:hidden",
           stackContentClass,
           desktopClassName,

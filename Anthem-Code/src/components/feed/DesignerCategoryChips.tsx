@@ -68,9 +68,12 @@ const DesignerCategoryChips = ({
   if (align === "center") {
     return (
       <SlidingChipRail layoutGroupId={GROUP_ID} className={className}>
-        <div className="flex w-max max-w-full items-center justify-center gap-5 overflow-x-auto scrollbar-hide sm:gap-6">
+        <HorizontalScrollRail
+          wrapperClassName="w-max max-w-full"
+          className="flex items-center gap-5 sm:gap-6"
+        >
           {chips.map(chipButton)}
-        </div>
+        </HorizontalScrollRail>
       </SlidingChipRail>
     );
   }

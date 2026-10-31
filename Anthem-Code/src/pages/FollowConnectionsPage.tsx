@@ -29,7 +29,7 @@ const FollowConnectionsPage = () => {
   return (
     <div className={cn("min-h-screen bg-app-ambient lg:pb-8", MOBILE_PAGE_BOTTOM_CLASS)}>
       <SeoHead title="ผู้ติดตาม" path={isOwn ? "/portfolio/followers" : `/u/${subjectId}/followers`} noindex />
-      <header className="sticky top-0 z-20 bg-background/60 backdrop-blur-xl border-b border-border/40">
+      <header className="sticky top-0 z-20 bg-background border-b border-border/40">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
           <BackButton />
           <h1 className="font-medium text-lg thai-display">

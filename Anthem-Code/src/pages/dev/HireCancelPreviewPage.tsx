@@ -26,14 +26,21 @@ export default function HireCancelPreviewPage() {
       />
       <div className="mx-auto max-w-lg space-y-6">
         <div className="text-center space-y-2">
-          <h1 className="thai-display text-2xl font-semibold">พรีวิวขอยกเลิกงาน</h1>
+          <h1 className="thai-display text-2xl font-semibold">
+            พรีวิวขอยกเลิกงาน
+          </h1>
           <p className="text-sm text-muted-foreground">
-            โหมดเดโม่ — กดเปิด popup ได้ทันที ไม่บันทึกข้อมูล · เทียบกับ flow จริงในแชทออเดอร์
+            โหมดเดโม่ — กดเปิด popup ได้ทันที ไม่บันทึกข้อมูล · เทียบกับ flow
+            จริงในแชทออเดอร์
           </p>
         </div>
 
         <div className="flex flex-wrap items-center justify-center gap-3">
-          <Button type="button" className="rounded-full" onClick={() => openAs("client")}>
+          <Button
+            type="button"
+            className="rounded-full"
+            onClick={() => openAs("client")}
+          >
             เปิดแบบผู้จ้าง
           </Button>
           <Button
@@ -44,7 +51,12 @@ export default function HireCancelPreviewPage() {
           >
             เปิดแบบฟรีแลนซ์
           </Button>
-          <Button type="button" variant="ghost" className="rounded-full" asChild>
+          <Button
+            type="button"
+            variant="ghost"
+            className="rounded-full"
+            asChild
+          >
             <Link to="/">กลับหน้าแรก</Link>
           </Button>
         </div>

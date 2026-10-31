@@ -9,8 +9,8 @@ import { fadeUpTransition, fadeUpVariants } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 const PERKS = [
-  "เข้าถึงกลุ่มครีเอทีฟโดยตรง ผ่านฟีดผลงาน",
-  `ครีเอทีฟผ่านการตรวจโดยทีม ${BRAND_NAME}`,
+  "เข้าถึงกลุ่มครีเอเตอร์โดยตรง ผ่านฟีดผลงาน",
+  `ครีเอเตอร์ผ่านการตรวจโดยทีม ${BRAND_NAME}`,
   "เลือกรูปแบบโฆษณาได้ตามเป้าหมายแคมเปญ",
   "ดูยอดแสดงและคลิกได้หลังเผยแพร่",
 ] as const;
@@ -121,7 +121,7 @@ const AdvertiseHero = ({ formMode, onSelectMode }: Props) => {
           transition={fadeUpTransition(0.24)}
         >
           <div className="text-center text-white">
-            <p className="text-xs font-medium tracking-[0.12em] text-white/60">Designer & Artist ทั้งหมด</p>
+            <p className="text-xs font-medium tracking-[0.12em] text-white/80">Designer & Artist ทั้งหมด</p>
             {showNumbers ? (
               <p className="mt-1 text-4xl font-semibold tabular-nums tracking-tight md:text-5xl">
                 {formatStat(users)}

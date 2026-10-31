@@ -23,7 +23,7 @@ const LegalLayout = ({ title, updatedAt = LEGAL_UPDATED_AT, children }: LegalLay
 
   return (
     <div className="min-h-screen bg-background font-legal font-normal">
-      <header className="sticky top-0 z-10 border-b border-border/60 bg-background/80 backdrop-blur-md">
+      <header className="sticky top-0 z-10 border-b border-border/60 bg-background">
         <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3">
           <BackButton to="/legal" label="กลับดัชนีกฎหมาย" className="-ml-1" />
           <div className="min-w-0">

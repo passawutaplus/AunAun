@@ -164,7 +164,7 @@ export default function HireDeliveryCard({
             <Button
               type="button"
               variant="outline"
-              className="w-full rounded-full border-amber-500/50 text-amber-700 hover:bg-amber-500/10"
+              className="w-full rounded-full border-warning/50 text-warning hover:bg-warning/10"
               disabled={busy}
               onClick={() => setDisputeOpen(true)}
             >
@@ -180,7 +180,7 @@ export default function HireDeliveryCard({
           ) : null}
 
           {order?.status === "disputed" ? (
-            <p className="text-xs text-amber-800 bg-amber-500/10 rounded-lg px-3 py-2">
+            <p className="text-xs text-warning bg-warning/10 rounded-lg px-3 py-2">
               อยู่ระหว่างข้อพิพาท — ทีมงานจะตรวจสอบ
             </p>
           ) : null}

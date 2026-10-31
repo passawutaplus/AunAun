@@ -1,9 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Check, Expand, Loader2, MessageCircle, X } from "lucide-react";
+import { Check, Clock3, Expand, Layers, Loader2, MessageCircle, Pencil, X } from "lucide-react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Checkbox } from "@/components/ui/checkbox";
+import type { PackageChoice } from "@/hooks/useChatAboutPackage";
 import {
   formatServiceDurationDays,
+  formatServicePrice,
   formatServicePriceRange,
   formatServiceRevisions,
   servicePreviewUrls,
@@ -12,6 +16,7 @@ import {
 import { isVideoUrl } from "@/lib/videoAccept";
 import { packageDetailTags, packageTagFeedUrl } from "@/lib/packageRoutes";
 import HireTargetProfilePreview from "@/components/opportunity/HireTargetProfilePreview";
+import ServicePackageActions from "@/components/services/ServicePackageActions";
 import ServicePackageWorksSection from "@/components/services/ServicePackageWorksSection";
 import ImageLightbox from "@/components/project/ImageLightbox";
 import { cn } from "@/lib/utils";
@@ -29,7 +34,13 @@ type Props = {
   variant?: "dialog" | "page";
   /** Hide creator header (e.g. live editor preview) */
   hideCreator?: boolean;
-  onRequest: (service: CreatorService) => void;
+  onRequest: (service: CreatorService, choice?: PackageChoice) => void;
+  /** Viewer owns this package: the CTA becomes "แก้ไขแพ็กเกจ". */
+  onEdit?: () => void;
+  /** Accepted / closed jobs on this package. */
+  hireCount?: number;
+  /** Creator's typical first reply in hire chats (minutes). */
+  responseMinutes?: number | null;
   /** Parent dialogs can block dismiss while the lightbox is open. */
   onLightboxOpenChange?: (open: boolean) => void;
 };
@@ -50,6 +61,9 @@ export default function ServiceDetailView({
   variant = "dialog",
   hideCreator,
   onRequest,
+  onEdit,
+  hireCount = 0,
+  responseMinutes = null,
   onLightboxOpenChange,
 }: Props) {
   const media = servicePreviewUrls(service);
@@ -63,9 +77,41 @@ export default function ServiceDetailView({
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const active = media[Math.min(activeIdx, Math.max(0, media.length - 1))] ?? null;
   const duration = formatServiceDurationDays(service.duration_label);
-  const revisions = formatServiceRevisions(service.revisions_label);
-  const exclusions = service.exclusions_note?.trim() || "";
+  const flatRevisions = formatServiceRevisions(service.revisions_label);
+  const flatExclusions = service.exclusions_note?.trim() || "";
   const isPage = variant === "page";
+  // Save / share only on the real page, not in editor previews.
+  const showActions = isPage && !previewOnly;
+  const tiers = service.tiers ?? [];
+  const addons = service.addons ?? [];
+  const faq = service.faq ?? [];
+  const [tierIdx, setTierIdx] = useState(0);
+  const [requestedTier, setRequestedTier] = useState<number | null>(null);
+  const [pickedAddons, setPickedAddons] = useState<number[]>([]);
+  const tier = tiers.length ? tiers[Math.min(tierIdx, tiers.length - 1)] : null;
+  const addonTotal = pickedAddons.reduce((sum, i) => sum + (addons[i]?.price_thb ?? 0), 0);
+  const choice: PackageChoice = { tier, addons: pickedAddons.map((i) => addons[i]).filter(Boolean) };
+  const priceLabel = tier
+    ? formatServicePrice(tier.price_thb + addonTotal)
+    : addonTotal > 0
+      ? formatServicePriceRange(
+          (service.price_min_thb || service.price_thb) + addonTotal,
+          service.price_thb + addonTotal,
+        )
+      : formatServicePriceRange(service.price_min_thb, service.price_thb);
+  const shownDuration = tier?.duration_days ? `${tier.duration_days} วัน` : duration;
+  const revisions = tier ? (tier.revisions ? formatServiceRevisions(String(tier.revisions)) : "") : flatRevisions;
+  // Package-wide note (saved before tiers existed) shows under every tier.
+  const exclusions = tier?.exclusions.trim() || flatExclusions;
+  const deliverables = tier?.deliverables.length ? tier.deliverables : service.deliverables;
+  const responseLabel =
+    responseMinutes == null
+      ? null
+      : responseMinutes <= 60
+        ? "ตอบกลับภายใน 1 ชม."
+        : responseMinutes <= 24 * 60
+          ? `ตอบกลับภายใน ~${Math.ceil(responseMinutes / 60)} ชม.`
+          : null;
 
   useEffect(() => {
     onLightboxOpenChange?.(lightboxOpen);
@@ -86,7 +132,12 @@ export default function ServiceDetailView({
     setLightbox(true);
   };
 
-  const requestButton = (
+  const requestButton = onEdit ? (
+    <Button type="button" variant="outline" className="w-full rounded-full gap-1.5 min-h-11" onClick={onEdit}>
+      <Pencil className="w-4 h-4" aria-hidden />
+      แก้ไขแพ็กเกจ
+    </Button>
+  ) : (
     <Button
       type="button"
       className="w-full rounded-full gap-1.5 min-h-11"
@@ -94,7 +145,7 @@ export default function ServiceDetailView({
       aria-disabled={previewOnly || busy}
       onClick={() => {
         if (previewOnly) return;
-        onRequest(service);
+        onRequest(service, choice);
       }}
     >
       {busy && !previewOnly ? (
@@ -113,14 +164,37 @@ export default function ServiceDetailView({
         isPage && "md:sticky md:top-20",
       )}
     >
-      <p className="text-2xl font-semibold text-primary tabular-nums lg:text-[1.75rem]">
-        {formatServicePriceRange(service.price_min_thb, service.price_thb)}
-      </p>
-      {duration || revisions ? (
+      {tiers.length > 1 ? (
+        <div
+          className="grid gap-1 rounded-full bg-muted/50 p-1"
+          style={{ gridTemplateColumns: `repeat(${tiers.length}, minmax(0, 1fr))` }}
+          role="tablist"
+          aria-label="ระดับแพ็กเกจ"
+        >
+          {tiers.map((t, i) => (
+            <button
+              key={`${t.name}-${i}`}
+              type="button"
+              role="tab"
+              aria-selected={i === tierIdx}
+              onClick={() => setTierIdx(i)}
+              className={cn(
+                "truncate rounded-full px-2 py-1.5 text-xs font-medium transition-colors",
+                i === tierIdx ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {t.name}
+            </button>
+          ))}
+        </div>
+      ) : null}
+      <p className="text-2xl font-semibold text-primary tabular-nums lg:text-[1.75rem]">{priceLabel}</p>
+      {tier?.summary ? <p className="-mt-1 text-sm text-muted-foreground">{tier.summary}</p> : null}
+      {shownDuration || revisions ? (
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-          {duration ? (
+          {shownDuration ? (
             <span>
-              ระยะเวลา: <span className="text-foreground font-medium">{duration}</span>
+              ระยะเวลา: <span className="text-foreground font-medium">{shownDuration}</span>
             </span>
           ) : null}
           {revisions ? (
@@ -131,6 +205,39 @@ export default function ServiceDetailView({
         </div>
       ) : previewOnly ? (
         <p className="text-sm text-muted-foreground">ระยะเวลา: —</p>
+      ) : null}
+      {addons.length > 0 && !onEdit ? (
+        <div className="space-y-1.5 border-t border-border/50 pt-3">
+          <p className="text-xs font-medium text-foreground">บริการเสริม</p>
+          {addons.map((a, i) => (
+            <label key={`${a.label}-${i}`} className="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground">
+              <Checkbox
+                checked={pickedAddons.includes(i)}
+                disabled={previewOnly}
+                onCheckedChange={(v) => setPickedAddons((cur) => (v ? [...cur, i] : cur.filter((x) => x !== i)))}
+              />
+              <span className="min-w-0 flex-1 truncate">{a.label}</span>
+              <span className="shrink-0 tabular-nums">+{formatServicePrice(a.price_thb)}</span>
+            </label>
+          ))}
+        </div>
+      ) : addons.length > 0 ? (
+        <p className="text-xs text-muted-foreground">บริการเสริม {addons.length} รายการ</p>
+      ) : null}
+      {hireCount > 0 || responseLabel ? (
+        <div className="flex flex-wrap gap-1.5 text-[11px]">
+          {hireCount > 0 ? (
+            <span className="rounded-full border border-border/60 px-2 py-0.5 text-muted-foreground">
+              จ้างแล้ว {hireCount.toLocaleString("th-TH")} ครั้ง
+            </span>
+          ) : null}
+          {responseLabel ? (
+            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/40 px-2 py-0.5 text-emerald-600 dark:text-emerald-400">
+              <Clock3 className="h-3 w-3" aria-hidden />
+              {responseLabel}
+            </span>
+          ) : null}
+        </div>
       ) : null}
       {/* Desktop / tablet CTA in sidebar */}
       <div className="hidden md:block">{requestButton}</div>
@@ -153,8 +260,14 @@ export default function ServiceDetailView({
         {service.title}
       </h2>
 
-      {detailTags.length > 0 ? (
-        <div className="flex flex-wrap gap-1.5">
+      {showActions || detailTags.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-1.5">
+          {showActions ? (
+            <>
+              <ServicePackageActions serviceId={service.id} title={service.title} />
+              {detailTags.length > 0 ? <span className="mx-1.5 h-5 w-px bg-border" aria-hidden /> : null}
+            </>
+          ) : null}
           {detailTags.map((tag) => (
             <Link
               key={tag}
@@ -178,11 +291,11 @@ export default function ServiceDetailView({
 
   const sidebarDetailsBlock = (
     <>
-      {service.deliverables.length > 0 ? (
+      {deliverables.length > 0 ? (
         <div className="space-y-2">
-          <h3 className="text-sm font-semibold">สิ่งที่คุณจะได้</h3>
+          <h3 className="text-sm font-semibold">สิ่งที่คุณจะได้{tiers.length > 1 && tier ? ` · ${tier.name}` : ""}</h3>
           <ul className="space-y-1.5">
-            {service.deliverables.map((d, i) => (
+            {deliverables.map((d, i) => (
               <li
                 key={`${d}-${i}`}
                 className="flex items-start gap-2 text-sm text-muted-foreground"
@@ -300,6 +413,20 @@ export default function ServiceDetailView({
 
           <div className="space-y-3 pt-1">{aboutBlock}</div>
 
+          {faq.length > 0 ? (
+            <div className="space-y-1 pt-2">
+              <h3 className="text-sm font-semibold">คำถามที่พบบ่อย</h3>
+              <Accordion type="single" collapsible className="w-full">
+                {faq.map((item, i) => (
+                  <AccordionItem key={i} value={`faq-${i}`} className="border-border/50">
+                    <AccordionTrigger className="py-3 text-left text-sm">{item.q}</AccordionTrigger>
+                    <AccordionContent className="whitespace-pre-wrap text-sm text-muted-foreground">{item.a}</AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            </div>
+          ) : null}
+
           {/* Mobile: price under media + about */}
           <div className="md:hidden">{priceBlock}</div>
         </div>
@@ -318,6 +445,101 @@ export default function ServiceDetailView({
         </div>
       </div>
 
+      {tiers.length > 1 ? (
+        <section
+          className={cn("space-y-3 border-t border-border/50", isPage ? "p-4 md:p-5 lg:p-6" : "p-4 md:p-5")}
+          aria-labelledby="tier-compare-title"
+        >
+          <h3 id="tier-compare-title" className="flex items-center gap-1.5 text-sm font-semibold">
+            <Layers className="h-4 w-4 text-primary" aria-hidden />
+            เปรียบเทียบแพ็กเกจ
+          </h3>
+          <div className="overflow-x-auto rounded-xl border border-border/60">
+            <table className="w-full min-w-[32rem] border-collapse text-sm">
+              <thead>
+                <tr className="bg-muted/30">
+                  <th className="w-28 p-3 text-left text-xs font-normal text-muted-foreground" />
+                  {tiers.map((t, i) => (
+                    <th key={`${t.name}-${i}`} scope="col" className="p-3 text-left align-top">
+                      <span className="block text-sm font-semibold text-foreground">{t.name}</span>
+                      <span className="block text-base font-semibold tabular-nums text-foreground">
+                        {formatServicePrice(t.price_thb)}
+                      </span>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {(
+                  [
+                    ["รายละเอียด", (t) => t.summary || "–"],
+                    ["ระยะเวลา", (t) => (t.duration_days ? `${t.duration_days} วัน` : "–")],
+                    ["แก้ไข", (t) => (t.revisions ? `${t.revisions} รอบ` : "–")],
+                    [
+                      "สิ่งที่ได้",
+                      (t) =>
+                        t.deliverables.length ? (
+                          <ul className="space-y-1">
+                            {t.deliverables.map((d, k) => (
+                              <li key={k} className="flex items-start gap-1.5">
+                                <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
+                                <span>{d}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          "–"
+                        ),
+                    ],
+                  ] as [string, (t: (typeof tiers)[number]) => ReactNode][]
+                ).map(([label, render]) => (
+                  <tr key={label} className="border-t border-border/50 align-top">
+                    <th scope="row" className="p-3 text-left text-xs font-normal text-muted-foreground">
+                      {label}
+                    </th>
+                    {tiers.map((t, i) => (
+                      <td
+                        key={`${label}-${i}`}
+                        className="whitespace-pre-wrap p-3 text-foreground/90"
+                      >
+                        {render(t)}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+                {onEdit ? null : (
+                  <tr className="border-t border-border/50">
+                    <td />
+                    {tiers.map((t, i) => (
+                      <td key={`req-${i}`} className="p-3">
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="w-full gap-1.5 rounded-full"
+                          disabled={previewOnly || busy}
+                          onClick={() => {
+                            if (previewOnly) return;
+                            setRequestedTier(i);
+                            onRequest(service, { tier: t, addons: choice.addons });
+                          }}
+                        >
+                          {busy && requestedTier === i ? (
+                            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                          ) : (
+                            <MessageCircle className="h-4 w-4" aria-hidden />
+                          )}
+                          ขอใช้บริการนี้
+                        </Button>
+                      </td>
+                    ))}
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
+
       {/* Mobile sticky CTA */}
       {!previewOnly ? (
         <div
@@ -328,22 +550,23 @@ export default function ServiceDetailView({
           )}
         >
           <div className="flex items-center gap-3 max-w-lg mx-auto">
-            <p className="min-w-0 flex-1 text-base font-semibold text-primary tabular-nums truncate">
-              {formatServicePriceRange(service.price_min_thb, service.price_thb)}
-            </p>
-            <Button
-              type="button"
-              className="rounded-full gap-1.5 min-h-11 px-5 shrink-0"
-              disabled={busy}
-              onClick={() => onRequest(service)}
-            >
-              {busy ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <MessageCircle className="w-4 h-4" />
-              )}
-              ขอใช้บริการนี้
-            </Button>
+            <p className="min-w-0 flex-1 text-base font-semibold text-primary tabular-nums truncate">{priceLabel}</p>
+            {onEdit ? (
+              <Button type="button" variant="outline" className="rounded-full gap-1.5 min-h-11 px-5 shrink-0" onClick={onEdit}>
+                <Pencil className="w-4 h-4" aria-hidden />
+                แก้ไขแพ็กเกจ
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                className="rounded-full gap-1.5 min-h-11 px-5 shrink-0"
+                disabled={busy}
+                onClick={() => onRequest(service, choice)}
+              >
+                {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageCircle className="w-4 h-4" />}
+                ขอใช้บริการนี้
+              </Button>
+            )}
           </div>
         </div>
       ) : (

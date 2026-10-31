@@ -70,7 +70,7 @@ export default function AdminDataHubPage() {
       />
 
       <div className="mb-4 border border-admin-border bg-admin-surface rounded-sm p-3 flex gap-2 text-sm text-admin-muted">
-        <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5 text-amber-600" />
+        <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5 text-warning" />
         <p>
           ไฟล์ส่งออกอาจมีอีเมล / ชื่อติดต่อจากคำขอจ้าง — ใช้เฉพาะทีมภายใน ตาม PDPA
           และนโยบายคุกกี้ analytics · CSV ใช้ UTF-8 พร้อม BOM เพื่อให้ Excel แสดงภาษาไทยถูกต้อง

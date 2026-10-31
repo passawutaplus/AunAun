@@ -11,13 +11,13 @@ describe("SeoHead", () => {
   it("sets noindex robots meta when noindex prop is true", () => {
     render(<SeoHead title="รายได้ของฉัน" path="/earnings" noindex />);
     const robots = document.querySelector('meta[name="robots"]');
-    expect(robots?.getAttribute("content")).toBe("noindex, nofollow");
+    expect(robots?.getAttribute("content")).toBe("noindex, nofollow, noai, noimageai");
   });
 
   it("sets index,follow for public pages", () => {
     render(<SeoHead path="/jobs" title="งานจ้างดีไซน์" />);
     const robots = document.querySelector('meta[name="robots"]');
-    expect(robots?.getAttribute("content")).toBe("index, follow");
+    expect(robots?.getAttribute("content")).toBe("index, follow, noai, noimageai");
   });
 
   it("sets absolute canonical link for the page path", () => {

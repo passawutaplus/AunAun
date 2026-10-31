@@ -1,0 +1,50 @@
+<!-- Supabase Auth → Emails → Templates → "Confirm signup".
+     Subject: รหัสยืนยันอีเมล SAMECOR
+     Code only (no link): the app shows a 6-digit input right after signup.
+     The logo sits on its own cream plate (logo-plate.png) so it stays readable when Gmail/Outlook invert colours. -->
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="supported-color-schemes" content="light dark" />
+    <style>
+      @media (prefers-color-scheme: dark) {
+        .bg { background: #1c1b1a !important; }
+        .card { background: #262524 !important; }
+        .ink { color: #f8f7f2 !important; }
+        .muted { color: #a9a59d !important; }
+        .code-box { background: #1c1b1a !important; }
+      }
+    </style>
+  </head>
+  <body class="bg" style="margin:0;padding:0;background:#F8F7F2;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="bg" style="background:#F8F7F2;">
+      <tr>
+        <td align="center" style="padding:32px 16px;">
+          <table role="presentation" width="440" cellpadding="0" cellspacing="0" style="max-width:440px;width:100%;">
+            <tr>
+              <td style="padding:0 0 20px 4px;">
+                <img src="https://samecor.com/email/logo-plate.png" width="182" height="56" alt="SAMECOR" style="display:block;border:0;width:182px;height:56px;" />
+              </td>
+            </tr>
+            <tr>
+              <td class="card" style="background:#FFFFFF;border-radius:16px;padding:32px 28px;font-family:-apple-system,'Segoe UI',Roboto,'Noto Sans Thai',sans-serif;">
+                <p class="ink" style="margin:0 0 6px 0;font-size:20px;font-weight:600;line-height:1.4;color:#111111;">รหัสยืนยันของคุณ</p>
+                <p class="muted" style="margin:0 0 24px 0;font-size:15px;line-height:1.6;color:#5c5953;">กรอกรหัสนี้ในแอป SAMECOR เพื่อยืนยันอีเมล</p>
+                <p class="code-box" style="margin:0 0 24px 0;padding:16px 0;background:#F8F7F2;border-radius:12px;text-align:center;font-family:'SFMono-Regular',Consolas,'Courier New',monospace;font-size:32px;font-weight:700;letter-spacing:6px;color:#EE3D29;">{{ .Token }}</p>
+                <p class="muted" style="margin:0;font-size:13px;line-height:1.7;color:#7b776f;">หมดอายุใน 60 นาที ใช้ได้ครั้งเดียว<br />ถ้าคุณไม่ได้สมัคร ไม่ต้องทำอะไร และอย่าบอกรหัสนี้กับใคร</p>
+              </td>
+            </tr>
+            <tr>
+              <td class="muted" style="padding:16px 4px 0 4px;font-family:-apple-system,'Segoe UI',Roboto,'Noto Sans Thai',sans-serif;font-size:12px;line-height:1.7;color:#8a867f;">
+                You Create. We Connect. · support@samecor.com
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

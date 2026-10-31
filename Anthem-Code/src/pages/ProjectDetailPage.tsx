@@ -45,6 +45,7 @@ import { HeaderAccountActions } from "@/components/HeaderAccountActions";
 import { useAdCampaign, logAdEvent } from "@/hooks/useAds";
 import { Megaphone, ExternalLink } from "lucide-react";
 import { absoluteUrl, truncateDescription } from "@/lib/seo";
+import ConnectMessageDialog from "@/components/chat/ConnectMessageDialog";
 import { breadcrumbJsonLd, creativeWorkJsonLd } from "@/lib/seoSchemas";
 import { openSafeExternalUrl } from "@/lib/externalUrl";
 import { FadeUp } from "@/components/motion/FadeUp";
@@ -56,7 +57,10 @@ import {
 } from "@/lib/portfolioLinkedPosts";
 import { profilesPublicFrom, PUBLIC_PROFILE_READ_SELECT } from "@/lib/profileAccess";
 import PackageReturnBanner from "@/components/services/PackageReturnBanner";
+import ProjectCollabInviteBanner from "@/components/project/ProjectCollabInviteBanner";
 import { cn } from "@/lib/utils";
+import UserAvatar from "@/components/UserAvatar";
+import { RelatedObjectsRow, RelatedPackagesRow, SimilarWorksRow } from "@/components/project/ProjectMoreSections";
 import { isVideoUrl } from "@/lib/videoAccept";
 
 const ProjectDetailPage = () => {
@@ -175,7 +179,8 @@ const ProjectDetailPage = () => {
   const canvasBlocks = dbProject
     ? resolveProjectCanvas({
         content_blocks: (dbProject as { content_blocks?: unknown }).content_blocks,
-        description: dbProject.description,
+        // The short description already has its own card in the side panel; do not repeat it in the canvas.
+        description: null,
         gallery_urls: dbProject.gallery_urls ?? [],
         video_urls: ((dbProject as { video_urls?: string[] }).video_urls) ?? [],
       })
@@ -225,6 +230,7 @@ const ProjectDetailPage = () => {
           deliverables: (dbProject as { deliverables?: string }).deliverables,
           duration_label: (dbProject as { duration_label?: string }).duration_label,
           outcome_note: (dbProject as { outcome_note?: string }).outcome_note,
+          context_images: (dbProject as { context_images?: unknown }).context_images,
           opportunity_types: (dbProject as { opportunity_types?: string[] }).opportunity_types,
           opportunity_note: (dbProject as { opportunity_note?: string }).opportunity_note,
         },
@@ -233,6 +239,7 @@ const ProjectDetailPage = () => {
 
   const [hireOpen, setHireOpen] = useState(false);
   const [collabOpen, setCollabOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
 
   const projectIdForLike = dbProject?.id;
   const { likes: likeCount, isLiked: liked, toggle: toggleLike, canInteract } = useProjectLike(projectIdForLike);
@@ -266,6 +273,14 @@ const ProjectDetailPage = () => {
       return;
     }
     setHireOpen(true);
+  };
+
+  const openChat = () => {
+    if (!user) {
+      navigateToAuth(navigate);
+      return;
+    }
+    setChatOpen(true);
   };
 
   const handleLike = () => {
@@ -350,7 +365,7 @@ const ProjectDetailPage = () => {
           breadcrumbJsonLd(crumbs),
         ]}
       />
-      <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border">
+      <div className="sticky top-0 z-20 bg-background border-b border-border">
         <div
           className={cn(
             "max-w-[1920px] mx-auto px-3 sm:px-[calc(1rem+25px)] lg:px-[calc(1.5rem+25px)] 2xl:px-[calc(2.5rem+25px)] py-3 flex items-center justify-between gap-3",
@@ -378,6 +393,19 @@ const ProjectDetailPage = () => {
       </div>
 
       <div className="max-w-[1920px] mx-auto px-3 sm:px-[calc(1rem+25px)] lg:px-[calc(1.5rem+25px)] 2xl:px-[calc(2.5rem+25px)] py-6 lg:py-10">
+        {dbProject?.id && user?.id && user.id !== dbProject.owner_id ? (
+          <ProjectCollabInviteBanner
+            projectId={dbProject.id}
+            ownerName={
+              ownerProfile?.display_name ||
+              (ownerProfile as { username?: string | null } | null | undefined)?.username ||
+              "เจ้าของผลงาน"
+            }
+            isCollaborator={(
+              (dbProject as { collab_user_ids?: string[] | null }).collab_user_ids ?? []
+            ).includes(user.id)}
+          />
+        ) : null}
         {sponsorAd && sponsorAdId ? (
           <div className="mb-4 rounded-xl border border-primary/25 bg-primary/5 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-start gap-3">
@@ -406,9 +434,24 @@ const ProjectDetailPage = () => {
           </div>
         ) : null}
         {/* Centered canvas + sidebar cluster — wider than old 1fr|320 so margins balance. */}
-        <div className="mx-auto flex w-full max-w-[84rem] flex-col gap-8 lg:flex-row lg:items-start lg:justify-center lg:gap-10 xl:gap-12">
-          {/* Left: Gallery + below-fold content */}
-          <div className="min-w-0 w-full max-w-4xl space-y-4 overflow-x-clip lg:flex-1">
+        {/* Grid so phones read: work → creator & actions → comments / more works; desktop keeps the sticky side panel. */}
+        <div className="mx-auto grid w-full max-w-[84rem] grid-cols-1 gap-8 lg:grid-cols-[minmax(0,56rem)_22.5rem] lg:justify-center lg:gap-x-10 xl:grid-cols-[minmax(0,56rem)_24rem] xl:gap-x-12">
+          <div className="min-w-0 w-full space-y-4 overflow-x-clip lg:col-start-1 lg:row-start-1">
+            <div className="flex items-center gap-3 lg:hidden">
+              <Link to={`/u/${project.ownerId}`} className="flex min-w-0 flex-1 items-center gap-2">
+                <UserAvatar src={project.ownerAvatar} name={project.owner} className="h-8 w-8" fallbackClassName="text-[10px]" />
+                <span className="truncate text-sm font-medium text-foreground">{project.owner}</span>
+              </Link>
+              {isOwner && dbProject ? (
+                <Button asChild size="sm" variant="outline" className="h-8 rounded-full">
+                  <Link to={`/portfolio/${dbProject.id}/edit`}>แก้ไขผลงาน</Link>
+                </Button>
+              ) : project.ownerId ? (
+                <Button size="sm" className="h-8 rounded-full" onClick={openChat}>
+                  ทักแชท
+                </Button>
+              ) : null}
+            </div>
             {dbProject && (
               <ProjectCreditsBlock
                 studioId={(dbProject as any).studio_id}
@@ -422,6 +465,7 @@ const ProjectDetailPage = () => {
                 className="w-full min-w-0 max-w-full"
                 projectId={dbProject?.id ?? project.id}
                 projectTitle={project.title}
+                onContact={!isOwner && project.ownerId ? openChat : undefined}
               />
             ) : canvasBlocks.length > 0 ? (
               <ProjectContentBlocksView
@@ -429,6 +473,7 @@ const ProjectDetailPage = () => {
                 className="w-full min-w-0 max-w-4xl"
                 projectId={dbProject?.id ?? project.id}
                 projectTitle={project.title}
+                onContact={!isOwner && project.ownerId ? openChat : undefined}
               />
             ) : (
               <div className="aspect-video rounded-2xl bg-muted flex items-center justify-center text-muted-foreground">
@@ -436,21 +481,11 @@ const ProjectDetailPage = () => {
               </div>
             )}
 
-            <div className="pt-12 lg:pt-16 space-y-6">
-              {linkedPosts.length > 0 && <ProjectLinkedPostsBlock posts={linkedPosts} />}
-              <ProjectContextCard context={project.context} />
-              <CommentSection projectId={project.id} />
-              <OwnerOtherWorks
-                ownerId={project.ownerId}
-                excludeProjectId={project.id}
-                ownerName={project.owner}
-              />
-            </div>
           </div>
 
           {/* Right: Side panel — sticky + self-scroll when hovered */}
           <FadeUp
-            className="w-full min-w-0 shrink-0 lg:sticky lg:top-20 lg:w-[22.5rem] lg:self-start lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto lg:overscroll-contain xl:w-[24rem] scrollbar-hide"
+            className="w-full min-w-0 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto lg:overscroll-contain scrollbar-hide"
             delay={0.06}
           >
             <ProjectSidePanel
@@ -474,6 +509,7 @@ const ProjectDetailPage = () => {
               onLike={handleLike}
               onHire={openHire}
               onCollab={() => setCollabOpen(true)}
+              onChat={project.ownerId ? openChat : undefined}
               allowHire={project.allowHire}
               allowCollab={project.allowCollab}
               isOwner={isOwner}
@@ -494,8 +530,29 @@ const ProjectDetailPage = () => {
               shareImageUrl={coverImage || undefined}
               onHidden={() => navigate("/", { replace: true })}
               onBlocked={() => navigate("/", { replace: true })}
+              collaboratorIds={((dbProject as { collab_user_ids?: string[] | null } | undefined)?.collab_user_ids) ?? []}
             />
           </FadeUp>
+
+          <div className="min-w-0 w-full space-y-6 pt-4 lg:col-start-1 lg:row-start-2 lg:pt-8">
+            {linkedPosts.length > 0 && <ProjectLinkedPostsBlock posts={linkedPosts} />}
+            <ProjectContextCard context={project.context} />
+            <CommentSection projectId={project.id} />
+            <OwnerOtherWorks
+              ownerId={project.ownerId}
+              excludeProjectId={project.id}
+              ownerName={project.owner}
+            />
+            <RelatedPackagesRow projectId={dbProject?.id} />
+            <RelatedObjectsRow projectId={dbProject?.id} />
+            <SimilarWorksRow
+              projectId={dbProject?.id}
+              ownerId={project.ownerId}
+              category={dbProject?.category ?? undefined}
+              tags={project.tags}
+              tools={project.tools}
+            />
+          </div>
         </div>
       </div>
 
@@ -505,7 +562,7 @@ const ProjectDetailPage = () => {
         onOpenChange={setHireOpen}
         projectTitle={project.title}
         projectId={project.id}
-        projectCoverUrl={dbProject?.cover_url || dbProject?.gallery_urls?.[0]}
+        projectCoverUrl={dbProject?.cover_url || dbProject?.gallery_urls?.find((u) => !/\.(mp4|webm|mov|m4v)(\?|$)/i.test(u))}
         freelancerId={project.ownerId}
         freelancerUsername={ownerUsername ?? project.owner}
       />
@@ -517,8 +574,21 @@ const ProjectDetailPage = () => {
         recipientName={project.owner}
         projectId={project.id}
         projectTitle={project.title}
-        projectCoverUrl={dbProject?.cover_url || dbProject?.gallery_urls?.[0]}
+        projectCoverUrl={dbProject?.cover_url || dbProject?.gallery_urls?.find((u) => !/\.(mp4|webm|mov|m4v)(\?|$)/i.test(u))}
       />
+      {project.ownerId ? (
+        <ConnectMessageDialog
+          open={chatOpen}
+          onOpenChange={setChatOpen}
+          recipientId={project.ownerId}
+          recipientName={project.owner}
+          about={{
+            id: project.id,
+            title: project.title,
+            coverUrl: dbProject?.cover_url,
+          }}
+        />
+      ) : null}
     </main>
   );
 };

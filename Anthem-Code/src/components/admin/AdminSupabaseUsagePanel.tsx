@@ -42,7 +42,7 @@ function UsageBar({ percent, label }: { percent: number | null | undefined; labe
   }
   const clamped = Math.min(100, Math.max(0, percent));
   const color =
-    clamped >= 90 ? "bg-red-500" : clamped >= 70 ? "bg-amber-500" : "bg-emerald-500";
+    clamped >= 90 ? "bg-red-500" : clamped >= 70 ? "bg-warning" : "bg-emerald-500";
   return (
     <div className="space-y-1">
       <div className="flex justify-between text-xs">
@@ -176,14 +176,14 @@ export default function AdminSupabaseUsagePanel() {
 
       <div
         className={`border rounded-sm p-4 space-y-3 ${
-          configOk ? "border-emerald-500/30 bg-emerald-500/5" : "border-amber-500/40 bg-amber-500/5"
+          configOk ? "border-emerald-500/30 bg-emerald-500/5" : "border-warning/40 bg-warning/5"
         }`}
       >
         <div className="flex items-center gap-2 text-sm font-medium text-admin-fg">
           {configOk ? (
             <CheckCircle2 className="h-4 w-4 text-emerald-600" />
           ) : (
-            <AlertTriangle className="h-4 w-4 text-amber-600" />
+            <AlertTriangle className="h-4 w-4 text-warning" />
           )}
           Client config
         </div>
@@ -196,7 +196,7 @@ export default function AdminSupabaseUsagePanel() {
           <span className="px-2 py-0.5 rounded bg-admin-hover">latency {latency_ms}ms</span>
         </div>
         {!mgmtOk && platform.managementNote && (
-          <p className="text-xs text-amber-700">{platform.managementNote}</p>
+          <p className="text-xs text-warning">{platform.managementNote}</p>
         )}
         <div className="flex flex-wrap gap-2">
           <a

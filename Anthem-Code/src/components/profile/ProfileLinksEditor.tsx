@@ -191,7 +191,7 @@ export default function ProfileLinksEditor({ value, onChange }: Props) {
                   }}
                   placeholder={platform.placeholder}
                   maxLength={255}
-                  className="w-full rounded-xl border border-border bg-secondary px-3 py-2 text-sm text-foreground placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  className="w-full rounded-xl border border-border bg-secondary px-3 py-2 text-sm text-foreground placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
                 />
               </div>
             </div>
@@ -214,7 +214,7 @@ export default function ProfileLinksEditor({ value, onChange }: Props) {
                 onChange={(e) => setOtherTitle(e.target.value)}
                 maxLength={60}
                 placeholder={t.channelPh}
-                className="mt-1 w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm text-foreground placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                className="mt-1 w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm text-foreground placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
@@ -234,7 +234,7 @@ export default function ProfileLinksEditor({ value, onChange }: Props) {
                 onChange={(e) => setOtherUrl(e.target.value)}
                 maxLength={255}
                 placeholder={t.linkPh}
-                className="mt-1 w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm text-foreground placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                className="mt-1 w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm text-foreground placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();

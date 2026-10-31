@@ -74,9 +74,12 @@ const FilterChips = ({ options, selected, onSelect, categories, align = "start",
   if (align === "center") {
     return (
       <SlidingChipRail layoutGroupId={GROUP_ID}>
-        <div className="flex w-max max-w-full items-center justify-center gap-5 overflow-x-auto pb-1 scrollbar-hide sm:gap-6">
+        <HorizontalScrollRail
+          wrapperClassName="w-max max-w-full"
+          className="flex items-center gap-5 pb-1 sm:gap-6"
+        >
           {chips.map(chipButton)}
-        </div>
+        </HorizontalScrollRail>
       </SlidingChipRail>
     );
   }

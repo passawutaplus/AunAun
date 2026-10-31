@@ -63,7 +63,7 @@ function SortableMediaThumb({
         "relative shrink-0 rounded-xl overflow-hidden bg-muted touch-none",
         thumbClass,
         "cursor-grab active:cursor-grabbing",
-        isDragging && "z-10 opacity-80 shadow-lg ring-2 ring-primary/40",
+        isDragging && "z-10 opacity-80 shadow-sm ring-2 ring-primary/40",
       )}
       {...attributes}
       {...listeners}

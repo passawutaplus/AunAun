@@ -12,9 +12,9 @@ import {
 } from "@/lib/cookieConsent";
 
 const acceptClass =
-  "min-h-10 rounded-full border-0 bg-[#2f2e2c] px-4 text-[#f5f5f5] shadow-none hover:bg-[#2f2e2c]/90 hover:text-[#f5f5f5]";
+  "min-h-10 rounded-full border-0 bg-foreground px-4 text-background shadow-none hover:bg-foreground/90 hover:text-background";
 const declineClass =
-  "min-h-10 rounded-full border-[#e4e1db] bg-white text-[#2f2e2c] shadow-none hover:border-[#e4e1db] hover:bg-[#f5f5f5] hover:text-[#2f2e2c]";
+  "min-h-10 rounded-full border-border dark:border-border bg-white dark:bg-card text-foreground shadow-none hover:border-border dark:border-border hover:bg-background hover:text-foreground";
 
 const CookieConsent = () => {
   const { pathname } = useLocation();
@@ -63,13 +63,13 @@ const CookieConsent = () => {
           aria-label="แบนเนอร์ความยินยอมคุกกี้"
         >
           {compactAuth ? (
-            <div className="pointer-events-auto rounded-2xl border border-[#e4e1db] bg-[#f5f5f5] p-3 text-[#2f2e2c] shadow-[0_16px_40px_-18px_rgba(47,46,44,0.45)]">
+            <div className="pointer-events-auto rounded-2xl border border-border dark:border-border bg-background p-3 text-foreground shadow-sm">
               <div className="flex items-start gap-2">
-                <div className="flex shrink-0 items-center justify-center text-[#2f2e2c]">
+                <div className="flex shrink-0 items-center justify-center text-foreground">
                   <Cookie className="h-4 w-4" strokeWidth={2.25} aria-hidden />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-medium text-[#2f2e2c]">
+                  <p className="text-xs font-medium text-foreground">
                     เราใช้คุกกี้ตาม พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล (PDPA)
                   </p>
                   <div className="mt-2 flex flex-wrap gap-1.5">
@@ -85,7 +85,7 @@ const CookieConsent = () => {
                   type="button"
                   aria-label="ปิดและใช้คุกกี้จำเป็นเท่านั้น"
                   onClick={essentialOnly}
-                  className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[#6b6862] hover:bg-[#2f2e2c]/8 hover:text-[#2f2e2c]"
+                  className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-foreground/8 hover:text-foreground"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -93,25 +93,25 @@ const CookieConsent = () => {
             </div>
           ) : (
             <div className="pointer-events-none mx-auto w-fit max-w-[calc(100%-1.5rem)] sm:max-w-[min(100%-2rem,52rem)]">
-              <div className="pointer-events-auto rounded-2xl border border-[#e4e1db] bg-[#f5f5f5] px-4 py-3 text-[#2f2e2c] shadow-[0_16px_48px_-20px_rgba(47,46,44,0.45)] sm:px-5">
+              <div className="pointer-events-auto rounded-2xl border border-border dark:border-border bg-background px-4 py-3 text-foreground shadow-sm sm:px-5">
               <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:gap-4">
                 <div className="flex min-w-0 flex-1 items-start gap-2.5">
-                  <Cookie className="mt-0.5 h-5 w-5 shrink-0 text-[#2f2e2c]" strokeWidth={2.25} aria-hidden />
+                  <Cookie className="mt-0.5 h-5 w-5 shrink-0 text-foreground" strokeWidth={2.25} aria-hidden />
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-[#2f2e2c]">
+                    <p className="text-sm font-medium text-foreground">
                       เราใช้คุกกี้ตาม พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล (PDPA)
                     </p>
-                    <p className="mt-0.5 text-xs text-[#6b6862]">
+                    <p className="mt-0.5 text-xs text-muted-foreground">
                       คุกกี้ที่จำเป็นช่วยให้ใช้งานได้ ส่วนคุกกี้อื่นช่วยจดจำการตั้งค่าและวิเคราะห์การใช้งาน — อ่าน{" "}
-                      <Link to="/legal/cookies" className="text-[#2f2e2c] underline underline-offset-2">
+                      <Link to="/legal/cookies" className="text-foreground underline underline-offset-2">
                         นโยบายคุกกี้
                       </Link>
                       {" · "}
-                      <Link to="/legal/privacy" className="text-[#2f2e2c] underline underline-offset-2">
+                      <Link to="/legal/privacy" className="text-foreground underline underline-offset-2">
                         ความเป็นส่วนตัว
                       </Link>
                       {" · "}
-                      <Link to="/legal/terms" className="text-[#2f2e2c] underline underline-offset-2">
+                      <Link to="/legal/terms" className="text-foreground underline underline-offset-2">
                         ข้อกำหนด
                       </Link>
                     </p>

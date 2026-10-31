@@ -46,8 +46,8 @@ export function DemoSignupBlocked({ onSwitchToLogin }: { onSwitchToLogin: () => 
   if (!isDemoMode()) return null;
 
   return (
-    <div className="rounded-xl border border-amber-500/30 bg-amber-500/8 p-4 space-y-3 text-center">
-      <Info className="w-5 h-5 text-amber-600 mx-auto" aria-hidden />
+    <div className="rounded-xl border border-warning/30 bg-warning/8 p-4 space-y-3 text-center">
+      <Info className="w-5 h-5 text-warning mx-auto" aria-hidden />
       <p className="text-sm font-medium">{DEMO_SIGNUP_BLOCKED}</p>
       <div className="flex flex-col sm:flex-row gap-2 justify-center">
         <Button type="button" size="sm" className="rounded-full gap-1.5" onClick={onSwitchToLogin}>

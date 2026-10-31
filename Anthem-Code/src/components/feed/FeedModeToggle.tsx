@@ -4,7 +4,7 @@ import { Box, LayoutGrid, Target, Users } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import PackagesIcon from "@/components/icons/PackagesIcon";
-import { isLaunchDesignDrillEnabled } from "@/lib/aplus1Launch";
+import { isFeedModeVisible, isLaunchDesignDrillEnabled } from "@/lib/aplus1Launch";
 
 export type FeedMode = "projects" | "designers" | "packages" | "objects" | "studios" | "community";
 
@@ -58,7 +58,8 @@ const FeedModeToggle = ({
   const [indicator, setIndicator] = useState<IndicatorBox | null>(null);
 
   const visible = items.filter(
-    (item) => item.id !== "drill" || isLaunchDesignDrillEnabled(),
+    (item) =>
+      item.id === "drill" ? isLaunchDesignDrillEnabled() : isFeedModeVisible(item.id as FeedMode),
   );
 
   /** Equal-width segments → pill mostly translates X (feels like a clean L/R slide). */
@@ -100,8 +101,14 @@ const FeedModeToggle = ({
     measure();
     const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure) : null;
     ro?.observe(track);
+    // Label widths change when the web font lands; re-measure so the pill never lags behind them.
+    let live = true;
+    void document.fonts?.ready.then(() => live && measure());
+    const raf = window.requestAnimationFrame(measure);
     window.addEventListener("resize", measure);
     return () => {
+      live = false;
+      window.cancelAnimationFrame(raf);
       ro?.disconnect();
       window.removeEventListener("resize", measure);
     };
@@ -111,7 +118,7 @@ const FeedModeToggle = ({
     <div
       ref={trackRef}
       className={cn(
-        "relative shrink-0 flex items-center rounded-full border border-border bg-white p-0.5 shadow-none transition-[width] duration-200",
+        "relative shrink-0 flex items-center rounded-full border border-border bg-white p-0.5 shadow-none transition-[width] duration-200 dark:bg-card",
         packed && visible.length === 2 && "w-[14.5rem]",
         packed && visible.length === 3 && "w-[21.75rem]",
         !compact && visible.length >= 4 && "w-max",
@@ -163,8 +170,11 @@ const FeedModeToggle = ({
               visibility,
               packed && "flex-1",
               active
-                ? "text-white"
+                ? "text-white dark:text-primary-foreground"
                 : "text-foreground/75 hover:text-foreground",
+              // The label colour assumes the sliding pill is under it; if the pill is not drawn
+              // (not measured yet / failed) paint the same fill on the button so the label stays readable.
+              active && !indicator && "bg-primary",
             )}
           >
             <Icon className="w-3.5 h-3.5 shrink-0" aria-hidden />

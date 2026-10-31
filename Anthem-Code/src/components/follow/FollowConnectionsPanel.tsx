@@ -69,7 +69,7 @@ const FollowConnectionsPanel = ({ userId, defaultTab = "followers" }: Props) => 
               <EmptyState
                 icon={Users}
                 title="ยังไม่ได้ติดตามใคร"
-                description="ติดตามดีไซเนอร์เพื่อดูผลงานและอัปเดตของพวกเขา"
+                description="ติดตามครีเอเตอร์เพื่อดูผลงานและอัปเดตของพวกเขา"
               />
             ) : (
               following.map((u) => <FollowUserRow key={u.userId} user={u} showFollowBack />)

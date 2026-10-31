@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, BarChart3, Clock, Eye, Mail, Pencil, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, BarChart3, Clock, Copy, Eye, Mail, Pencil, Trash2 } from "lucide-react";
 import PackagesIcon from "@/components/icons/PackagesIcon";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -16,6 +16,8 @@ type Props = {
   onStats?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  /** Make a draft copy of this package. */
+  onDuplicate?: () => void;
   onPreview?: () => void;
   canMoveUp?: boolean;
   canMoveDown?: boolean;
@@ -32,6 +34,7 @@ export default function ManageServiceCard({
   onStats,
   onEdit,
   onDelete,
+  onDuplicate,
   onPreview,
   canMoveUp,
   canMoveDown,
@@ -121,6 +124,17 @@ export default function ManageServiceCard({
           title="แก้ไข"
         >
           <Pencil className="w-3.5 h-3.5" />
+        </button>
+      ) : null}
+      {onDuplicate ? (
+        <button
+          type="button"
+          onClick={onDuplicate}
+          className="p-2.5 min-h-10 min-w-10 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors touch-manipulation inline-flex items-center justify-center"
+          aria-label="ทำสำเนาแพ็กเกจ"
+          title="ทำสำเนา"
+        >
+          <Copy className="w-3.5 h-3.5" />
         </button>
       ) : null}
       {onDelete ? (

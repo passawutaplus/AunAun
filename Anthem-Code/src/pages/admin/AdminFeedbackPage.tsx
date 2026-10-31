@@ -14,8 +14,43 @@ import { toCsv, downloadCsv } from "@/lib/csv";
 import FeedbackKindBadge from "@/components/feedback/FeedbackKindBadge";
 import FeedbackScreenshotThumb from "@/components/feedback/FeedbackScreenshotThumb";
 import { FEEDBACK_KINDS, feedbackKindLabel } from "@/lib/feedbackTicket";
+import AdminReleaseNotesPanel from "@/components/admin/AdminReleaseNotesPanel";
+import { cn } from "@/lib/utils";
 
-type FeedbackRow = {
+const isRatingOnly = (kind: string | null) => !kind || kind === "rating";
+
+function FilterChips({
+  options,
+  value,
+  onChange,
+}: {
+  options: { id: string; label: string; count?: number }[];
+  value: string;
+  onChange: (id: string) => void;
+}) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {options.map((o) => (
+        <button
+          key={o.id}
+          type="button"
+          onClick={() => onChange(o.id)}
+          className={cn(
+            "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+            value === o.id
+              ? "border-foreground bg-foreground text-background"
+              : "border-admin-border bg-admin-surface text-admin-muted hover:text-foreground",
+          )}
+        >
+          {o.label}
+          {o.count != null ? <span className="ml-1 opacity-70">{o.count}</span> : null}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+export type FeedbackRow = {
   id: string;
   user_id: string;
   feature: string;
@@ -32,6 +67,7 @@ type FeedbackRow = {
   ticket_number: string | null;
   screenshot_path: string;
   annotation_json?: unknown;
+  diagnostics?: { build?: string; viewport?: string; errors?: { at: string; text: string }[] } | null;
 };
 
 type UxResearchRow = {
@@ -53,11 +89,12 @@ const RANGES = [
   { key: "90d", label: "90 วัน", days: 90 },
 ];
 
-const STATUSES = ["all", "new", "reviewing", "resolved", "dismissed"] as const;
+const STATUSES = ["all", "new", "reviewing", "adopted", "resolved", "dismissed"] as const;
 const STATUS_LABEL: Record<string, string> = {
   all: "ทุกสถานะ",
   new: "ใหม่",
   reviewing: "กำลังดู",
+  adopted: "นำไปใช้",
   resolved: "แก้แล้ว",
   dismissed: "ปิด",
 };
@@ -129,9 +166,32 @@ export default function AdminFeedbackPage() {
       (r) =>
         (status === "all" || r.status === status) &&
         (feature === "all" || r.feature === feature) &&
-        (kind === "all" || (kind === "rating" ? !r.kind : r.kind === kind)),
+        (kind === "all" || (kind === "rating" ? isRatingOnly(r.kind) : r.kind === kind)),
     );
   }, [rows, status, feature, kind]);
+
+  // Chip counts: each dimension counts within the other active filters
+  const kindCounts = useMemo(() => {
+    const m: Record<string, number> = { all: 0 };
+    for (const r of rows) {
+      if ((status !== "all" && r.status !== status) || (feature !== "all" && r.feature !== feature)) continue;
+      m.all += 1;
+      const k = isRatingOnly(r.kind) ? "rating" : (r.kind as string);
+      m[k] = (m[k] ?? 0) + 1;
+    }
+    return m;
+  }, [rows, status, feature]);
+
+  const statusCounts = useMemo(() => {
+    const m: Record<string, number> = { all: 0 };
+    for (const r of rows) {
+      if (feature !== "all" && r.feature !== feature) continue;
+      if (kind !== "all" && (kind === "rating" ? !isRatingOnly(r.kind) : r.kind !== kind)) continue;
+      m.all += 1;
+      m[r.status] = (m[r.status] ?? 0) + 1;
+    }
+    return m;
+  }, [rows, feature, kind]);
 
   const features = useMemo(() => Array.from(new Set(rows.map((r) => r.feature))).sort(), [rows]);
 
@@ -287,6 +347,40 @@ export default function AdminFeedbackPage() {
       ),
     },
     {
+      key: "diag",
+      header: "เครื่อง",
+      render: (r) => {
+        const d = r.diagnostics;
+        const errors = d?.errors ?? [];
+        return (
+          <span
+            className="font-mono text-[10px] text-admin-muted"
+            title={[r.user_agent, ...errors.map((e) => `${e.at}  ${e.text}`)].filter(Boolean).join("\n")}
+          >
+            {d?.build ?? "—"} · {d?.viewport || r.viewport || "—"}
+            {errors.length ? <span className="ml-1 text-red-600">{errors.length} err</span> : null}
+          </span>
+        );
+      },
+    },
+    {
+      key: "note",
+      header: "ตอบผู้ใช้",
+      render: (r) => (
+        <input
+          key={`${r.id}-${r.admin_note}`}
+          defaultValue={r.admin_note ?? ""}
+          placeholder="โน้ตถึงผู้ส่ง (ส่งไปพร้อมแจ้งเตือน)"
+          maxLength={300}
+          onBlur={(e) => {
+            const next = e.target.value.trim();
+            if (next !== (r.admin_note ?? "")) update.mutate({ id: r.id, patch: { admin_note: next } });
+          }}
+          className="w-44 rounded border border-border bg-background px-1.5 py-0.5 text-xs"
+        />
+      ),
+    },
+    {
       key: "status",
       header: "สถานะ",
       render: (r) => (
@@ -295,7 +389,7 @@ export default function AdminFeedbackPage() {
           onChange={(e) => update.mutate({ id: r.id, patch: { status: e.target.value } })}
           className="text-xs bg-background border border-border rounded px-1.5 py-0.5"
         >
-          {["new", "reviewing", "resolved", "dismissed"].map((s) => (
+          {["new", "reviewing", "adopted", "resolved", "dismissed"].map((s) => (
             <option key={s} value={s}>{STATUS_LABEL[s] ?? s}</option>
           ))}
         </select>
@@ -317,13 +411,14 @@ export default function AdminFeedbackPage() {
       <SectionHeader
         eyebrow="voice of user"
         title="ฟีดแบ็กผู้ใช้"
-        description="ตั๋วจากเมนูโปรไฟล์ คะแนนในแอป และแนวโน้มรายวัน — ส่งออก CSV ได้"
+        description="ตั๋วจากปุ่มฟีดแบ็ก คะแนนในแอป และ changelog — เปลี่ยนสถานะแล้วผู้ส่งได้รับแจ้งเตือน"
       />
 
       <Tabs value={mainTab} onValueChange={setMainTab}>
         <TabsList className="bg-admin-surface border border-admin-border mb-4">
           <TabsTrigger value="in-app">ฟีดแบ็กในแอป</TabsTrigger>
           <TabsTrigger value="ux-research">UX Research</TabsTrigger>
+          <TabsTrigger value="changelog">Changelog</TabsTrigger>
         </TabsList>
 
         <TabsContent value="in-app" className="space-y-0">
@@ -333,24 +428,6 @@ export default function AdminFeedbackPage() {
             {RANGES.map((r) => <TabsTrigger key={r.key} value={r.key}>{r.label}</TabsTrigger>)}
           </TabsList>
         </Tabs>
-        <select
-          value={status}
-          onChange={(e) => setStatus(e.target.value as typeof status)}
-          className="text-xs bg-background border border-border rounded px-2 py-1.5"
-        >
-          {STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
-        </select>
-        <select
-          value={kind}
-          onChange={(e) => setKind(e.target.value)}
-          className="text-xs bg-background border border-border rounded px-2 py-1.5"
-        >
-          <option value="all">ทุกแท็ก</option>
-          {FEEDBACK_KINDS.map((k) => (
-            <option key={k} value={k}>{feedbackKindLabel(k)}</option>
-          ))}
-          <option value="rating">คะแนนอย่างเดียว</option>
-        </select>
         <select
           value={feature}
           onChange={(e) => setFeature(e.target.value)}
@@ -362,6 +439,27 @@ export default function AdminFeedbackPage() {
         <Button size="sm" variant="outline" onClick={exportCsv} className="ml-auto">
           <Download className="w-3.5 h-3.5 mr-1" /> Export CSV
         </Button>
+      </div>
+
+      <div className="mb-4 space-y-2">
+        <FilterChips
+          value={kind}
+          onChange={setKind}
+          options={[
+            { id: "all", label: "ทุกแท็ก", count: kindCounts.all ?? 0 },
+            ...FEEDBACK_KINDS.filter((k) => k !== "rating").map((k) => ({
+              id: k,
+              label: feedbackKindLabel(k),
+              count: kindCounts[k] ?? 0,
+            })),
+            { id: "rating", label: "คะแนน", count: kindCounts.rating ?? 0 },
+          ]}
+        />
+        <FilterChips
+          value={status}
+          onChange={(id) => setStatus(id as typeof status)}
+          options={STATUSES.map((s) => ({ id: s, label: STATUS_LABEL[s], count: statusCounts[s] ?? 0 }))}
+        />
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
@@ -442,6 +540,10 @@ export default function AdminFeedbackPage() {
       )}
 
       <DataTable columns={cols} rows={filtered} loading={isLoading} rowKey={(r) => r.id} empty="ยังไม่มีฟีดแบ็กในช่วงนี้" />
+        </TabsContent>
+
+        <TabsContent value="changelog">
+          <AdminReleaseNotesPanel feedback={rows} />
         </TabsContent>
 
         <TabsContent value="ux-research">

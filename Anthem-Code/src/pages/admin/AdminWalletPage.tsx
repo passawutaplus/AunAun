@@ -13,6 +13,7 @@ import { useAdminRejectCashout } from "@/hooks/admin/useAdminMutations";
 import { Wallet, ArrowDownLeft, ArrowUpRight, Gift } from "lucide-react";
 import { formatThaiDate } from "@/lib/format";
 import { notifyAnthem } from "@/lib/notifyAnthem";
+import { userFacingError } from "@/lib/userFacingError";
 
 interface LedgerRow {
   id: string;
@@ -79,7 +80,7 @@ export default function AdminWalletPage() {
       qc.invalidateQueries({ queryKey: ["admin-gift-overview"] });
       qc.invalidateQueries({ queryKey: ["admin-alert-counts"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(userFacingError(e)),
   });
 
   const { q, setQ, filtered } = useSearch(ledger.data, ["entry_type", "user_name", "status", "note"]);

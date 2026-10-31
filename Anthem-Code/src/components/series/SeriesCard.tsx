@@ -107,7 +107,7 @@ export function SeriesCard({
   );
 
   const shellClass = cn(
-    "group block rounded-[8px] overflow-hidden glass-panel hover:shadow-lg transition-all text-left w-full",
+    "group block rounded-[8px] overflow-hidden glass-panel hover:shadow-sm transition-all text-left w-full",
     list && "flex items-center gap-3 p-2",
     className,
   );

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { MessageCircle, Send, Reply } from "lucide-react";
+import { MessageSquareText, Send, Reply } from "lucide-react";
 import { InlineLoader } from "@/components/ui/BanterLoader";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -65,26 +65,19 @@ function CommentRow({
 
   return (
     <div className={cn(depth > 0 && "ml-4 md:ml-8 border-l-2 border-border/60 pl-3")}>
-      <div className="rounded-2xl glass-panel p-4 flex gap-3">
+      <div className="flex gap-3 rounded-2xl border border-border bg-card p-4">
         <UserAvatar
           src={c.profile?.avatar_url}
           name={c.profile?.display_name ?? "?"}
-          className="w-10 h-10 shrink-0"
+          className="h-10 w-10 shrink-0"
           fallbackClassName="bg-primary/15 text-primary"
         />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <p className="text-sm font-semibold text-foreground">{c.profile?.display_name ?? "ผู้ใช้"}</p>
-            <span className="text-xs text-muted-foreground">{formatThaiDate(c.created_at)}</span>
-            {canReply && userId && (
-              <button
-                type="button"
-                onClick={() => onReply(c)}
-                className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1"
-              >
-                <Reply className="w-3 h-3" /> ตอบกลับ
-              </button>
-            )}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start gap-2">
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold text-foreground">{c.profile?.display_name ?? "ผู้ใช้"}</p>
+              <span className="text-xs text-muted-foreground">{formatThaiDate(c.created_at)}</span>
+            </div>
             {mine ? (
               <CommentOwnerMenu
                 deleting={deleteMut.isPending}
@@ -102,15 +95,12 @@ function CommentRow({
                 }}
               />
             ) : (
-              <div className="ml-auto flex items-center">
-                <CommentVoteButtons commentId={c.id} />
-                <CommentViewerMenu
-                  commentId={c.id}
-                  authorId={c.user_id}
-                  authorName={c.profile?.display_name ?? "ผู้ใช้นี้"}
-                  reportType="comment"
-                />
-              </div>
+              <CommentViewerMenu
+                commentId={c.id}
+                authorId={c.user_id}
+                authorName={c.profile?.display_name ?? "ผู้ใช้นี้"}
+                reportType="comment"
+              />
             )}
           </div>
           {editing ? (
@@ -142,10 +132,25 @@ function CommentRow({
               </div>
             </div>
           ) : (
-            <p className="text-base text-foreground mt-1 whitespace-pre-wrap break-words">
+            <p className="mt-2 whitespace-pre-wrap break-words text-[15px] leading-relaxed text-foreground">
               {renderCommentMentions(c.content)}
             </p>
           )}
+          {/* Votes and reply share one row under the text */}
+          {!editing && (!mine || (canReply && userId)) ? (
+            <div className="-ml-2 mt-2 flex items-center gap-1">
+              {!mine ? <CommentVoteButtons commentId={c.id} /> : null}
+              {canReply && userId ? (
+                <button
+                  type="button"
+                  onClick={() => onReply(c)}
+                  className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  <Reply className="h-3.5 w-3.5" aria-hidden /> ตอบกลับ
+                </button>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -299,7 +304,7 @@ const CommentSection = ({ projectId }: Props) => {
   return (
     <section className="space-y-4">
       <h2 className="text-xl font-medium text-foreground flex items-center gap-2">
-        <MessageCircle className="w-5 h-5 text-primary" />
+        <MessageSquareText className="w-5 h-5 text-primary" />
         ความคิดเห็น {totalCount > 0 && <span className="text-muted-foreground text-sm font-normal">({totalCount})</span>}
       </h2>
 

@@ -1,3 +1,4 @@
+import { isCommerceEnabled } from "@/lib/aplus1Launch";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -91,6 +92,8 @@ const getSessionId = () => {
 export const useActiveAds = (limit = 12) =>
   useQuery({
     queryKey: ["active-ads", limit],
+    // Ads are a paid surface — off for the free launch.
+    enabled: isCommerceEnabled(),
     staleTime: 5 * 60_000,
     retry: false,
     refetchOnWindowFocus: false,

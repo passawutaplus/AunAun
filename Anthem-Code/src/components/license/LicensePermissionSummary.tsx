@@ -22,7 +22,7 @@ export function LicenseBoolRow({
           <Check className="h-3.5 w-3.5" aria-hidden /> ได้
         </span>
       ) : value === "partial" ? (
-        <span className="flex items-center gap-1 text-amber-600">
+        <span className="flex items-center gap-1 text-warning">
           <Minus className="h-3.5 w-3.5" aria-hidden /> ติดต่อเจ้าของ
         </span>
       ) : value === "optional" ? (

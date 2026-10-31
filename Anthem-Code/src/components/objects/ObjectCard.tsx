@@ -18,7 +18,7 @@ const TONE: Record<string, string> = {
   ceramic: "bg-[#e6d5c8]",
   glass: "bg-[#d5e4e6]",
   textile: "bg-[#ddd4cf]",
-  mixed: "bg-[#e4e1db]",
+  mixed: "bg-border",
   pdf: "bg-[#efe8dc]",
   figma: "bg-[#e6e3f2]",
   "print-ready": "bg-[#e5eee4]",

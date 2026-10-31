@@ -229,7 +229,7 @@ export function DesignDrillSection() {
           <div>
             <h2 className="text-lg font-bold tracking-tight">Design Drill</h2>
             <p className="text-xs text-muted-foreground">
-              โจทย์ฝึกดีไซน์รายวัน → โพสผลงานที่ Aplus1
+              โจทย์ฝึกดีไซน์รายวัน → โพสผลงานที่ SAMECOR
             </p>
           </div>
         </div>
@@ -389,7 +389,7 @@ export function DesignDrillSection() {
           {((inProgress && drillMatchesProgress) || completedToday) && (
             <Button variant="outline" onClick={handlePost} className="gap-1.5">
               <ExternalLink className="h-3.5 w-3.5" aria-hidden />
-              โพส Aplus1
+              โพส SAMECOR
             </Button>
           )}
         </div>

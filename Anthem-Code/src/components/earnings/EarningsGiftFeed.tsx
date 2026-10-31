@@ -38,7 +38,7 @@ export function EarningsGiftFeed({ items, giftById, senderById, onGoPortfolio }:
       {items.length === 0 ? (
         <div className="text-center py-8 space-y-3">
           <p className="text-sm text-muted-foreground">
-            ยังไม่มีคนส่งของขวัญให้คุณ — ลงผลงานเจ๋ง ๆ ไว้รอเลย!
+            ยังไม่มีของขวัญ — เมื่อมีคนส่งให้คุณจะเห็นที่นี่
           </p>
           {onGoPortfolio && (
             <Button type="button" variant="outline" className="rounded-full" onClick={onGoPortfolio}>

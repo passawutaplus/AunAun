@@ -284,7 +284,7 @@ export function AiUsageSettingsSection() {
                       rel="noopener noreferrer"
                       className="text-primary hover:underline"
                     >
-                      Aplus1
+                      SAMECOR
                     </a>
                   </p>
                 )}

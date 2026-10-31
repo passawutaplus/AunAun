@@ -20,6 +20,7 @@ import {
 } from "@/lib/projectStatsDateRange";
 import { defaultViewGranularity } from "@/lib/projectViewSeries";
 import { cn } from "@/lib/utils";
+import { isCommerceEnabled } from "@/lib/aplus1Launch";
 import { smoothEase } from "@/lib/motion";
 
 export type StudioPulseScope = "projects" | "packages";
@@ -106,7 +107,7 @@ function StudioScopeToggle({
       ref={trackRef}
       role="tablist"
       aria-label="สลับยอดเข้าชม"
-      className="relative flex w-[min(14.5rem,100%)] shrink-0 items-center rounded-full glass-panel p-0.5 transition-shadow duration-200 hover:shadow-md hover:shadow-primary/20"
+      className="relative flex w-[min(14.5rem,100%)] shrink-0 items-center rounded-full glass-panel p-0.5 transition-shadow duration-200 hover:shadow-md"
     >
       {indicator ? (
         reduced ? (
@@ -225,14 +226,14 @@ export default function StudioPulseChart({
             onChange={onDateRangeChange}
             className="h-8 max-w-[8.5rem]"
           />
-          <StudioScopeToggle scope={scope} onScopeChange={onScopeChange} />
+          {isCommerceEnabled() ? <StudioScopeToggle scope={scope} onScopeChange={onScopeChange} /> : null}
         </div>
       </div>
 
       <div className="h-56 w-full sm:h-64">
         {!bounds ? (
           <div className="flex h-full flex-col items-center justify-center gap-2 px-4 text-center">
-            <Eye className="h-8 w-8 text-muted-foreground/50" aria-hidden />
+            <Eye className="h-8 w-8 text-muted-foreground" aria-hidden />
             <p className="text-sm text-foreground">เลือกช่วงวันก่อน</p>
             <p className="text-xs text-muted-foreground">กดปฏิทินด้านบน แล้วใส่ตั้งแต่วันที่ถึงวันที่</p>
           </div>
@@ -242,7 +243,7 @@ export default function StudioPulseChart({
           </div>
         ) : !hasSignal ? (
           <div className="flex h-full flex-col items-center justify-center gap-2 px-4 text-center">
-            <Eye className="h-8 w-8 text-muted-foreground/50" aria-hidden />
+            <Eye className="h-8 w-8 text-muted-foreground" aria-hidden />
             <p className="text-sm text-foreground">
               {isPackages ? "ยังไม่มีคนดูแพ็กเกจในช่วงนี้" : "ยังไม่มีคนดูผลงานในช่วงนี้"}
             </p>

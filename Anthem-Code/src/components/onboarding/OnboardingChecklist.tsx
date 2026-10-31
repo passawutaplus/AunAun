@@ -107,17 +107,17 @@ export default function OnboardingChecklist({ variant = "full" }: Props) {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -8, scale: 0.98 }}
           transition={{ duration: 0.28, ease: "easeOut" }}
-          className="rounded-3xl border border-primary/25 bg-gradient-to-br from-primary/10 via-card to-card p-5 sm:p-6"
+          className="rounded-3xl border border-border bg-card p-5 sm:p-6"
         >
           <div className="flex items-center gap-3">
             <PartyPopper className="h-6 w-6 text-primary shrink-0" />
             <div className="flex-1 min-w-0">
               <h2 className="text-base font-semibold text-foreground">
-                {tourMode ? "ทัวร์ครบแล้ว — พร้อมใช้งานต่อ!" : "ยินดีด้วย — ทำภารกิจ Welcome Bonus ครบแล้ว!"}
+                {tourMode ? "ทัวร์ครบแล้ว — ใช้งานต่อได้เลย" : "ยินดีด้วย — ทำภารกิจ Welcome Bonus ครบแล้ว"}
               </h2>
               <p className="text-sm text-muted-foreground mt-0.5">
                 {tourMode
-                  ? "คุณคุ้นกับฟีด ดีไซเนอร์ และการลงผลงานแล้ว — ลงผลงานต่อหรือส่งลิงก์โปรไฟล์ให้ลูกค้าได้เลย"
+                  ? "คุณคุ้นกับฟีด ครีเอเตอร์ และการลงผลงานแล้ว — ลงผลงานต่อหรือส่งลิงก์โปรไฟล์ให้ลูกค้าได้เลย"
                   : `รับโบนัสรวม ${pxEarned.toLocaleString()} px — ใช้ส่งของขวัญให้ครีเอเตอร์ได้ที่ผลงานในฟีด`}
               </p>
             </div>
@@ -144,7 +144,7 @@ export default function OnboardingChecklist({ variant = "full" }: Props) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: "easeOut" }}
       className={cn(
-        "rounded-3xl border border-primary/25 bg-gradient-to-br from-primary/10 via-card to-card",
+        "rounded-3xl border border-border bg-card",
         variant === "full" ? "p-5 sm:p-6" : "p-4",
       )}
     >
@@ -226,7 +226,7 @@ export default function OnboardingChecklist({ variant = "full" }: Props) {
           </div>
 
           {!tourMode && welcomeCapReached && !allMissionsClaimed && (
-            <p className="mt-3 text-xs text-amber-600 dark:text-amber-400 leading-relaxed rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2">
+            <p className="mt-3 text-xs text-warning dark:text-warning leading-relaxed rounded-lg border border-warning/30 bg-warning/10 px-3 py-2">
               รับครบโควต้า {welcomeCap.toLocaleString()} px แล้ว — ภารกิจที่ยังไม่รับจะไม่ได้ px เพิ่ม
               แต่ทำต่อเพื่อเรียนรู้แพลตฟอร์มได้
             </p>
@@ -296,7 +296,7 @@ export default function OnboardingChecklist({ variant = "full" }: Props) {
                       </p>
                     )}
                     {task.id === "like" && signals && !task.done && !claimed && (
-                      <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1">
+                      <p className="text-[10px] text-warning dark:text-warning mt-1">
                         {likeMissionHint(signals) ?? ""}
                       </p>
                     )}
@@ -343,7 +343,7 @@ export default function OnboardingChecklist({ variant = "full" }: Props) {
           )}
           {tourMode && (
             <p className="mt-3 text-[10px] text-muted-foreground leading-snug line-clamp-2">
-              ทำทีละขั้น — ฟีด ดีไซเนอร์ ลงผลงาน แชร์โปรไฟล์ · ทำครบแล้วค่อยปิดได้
+              ทำทีละขั้น — ฟีด ครีเอเตอร์ ลงผลงาน แชร์โปรไฟล์ · ทำครบแล้วค่อยปิดได้
             </p>
           )}
         </>

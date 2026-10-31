@@ -3,6 +3,7 @@ import { z } from "npm:zod@3";
 import { corsHeadersForRequest } from "../_shared/cors.ts";
 import { anthemSiteUrl } from "../_shared/anthem-email-html.ts";
 import { dispatchAnthemNotification } from "../_shared/anthem-notify-dispatch.ts";
+import { anthemDb } from "../_shared/ecosystem-db.ts";
 
 const BodySchema = z.object({
   request_id: z.string().uuid(),
@@ -50,8 +51,9 @@ Deno.serve(async (req) => {
   }
 
   const admin = createClient(supabaseUrl, serviceKey);
+  const anthem = anthemDb(admin);
 
-  const { data: collab } = await admin
+  const { data: collab } = await anthem
     .from("collab_requests")
     .select("id, sender_id, recipient_id, project_id, collab_types, message, other_type_note")
     .eq("id", body.request_id)
@@ -68,7 +70,7 @@ Deno.serve(async (req) => {
 
   let projectTitle = "";
   if (collab.project_id) {
-    const { data: project } = await admin
+    const { data: project } = await anthem
       .from("projects")
       .select("title")
       .eq("id", collab.project_id)

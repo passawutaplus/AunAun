@@ -71,7 +71,7 @@ function SortableSlideThumb({
         className={cn(
           "relative block h-14 w-[4.5rem] overflow-hidden rounded-lg border bg-muted cursor-grab active:cursor-grabbing",
           active ? "border-primary ring-2 ring-primary/30" : "border-border/60",
-          isDragging && "ring-2 ring-primary/50 shadow-lg",
+          isDragging && "ring-2 ring-primary/50 shadow-sm",
         )}
         {...attributes}
         {...listeners}
