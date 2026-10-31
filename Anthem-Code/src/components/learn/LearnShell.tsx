@@ -1,6 +1,5 @@
 import { useLayoutEffect } from "react";
 import { Outlet } from "react-router-dom";
-import { LearnScrollBlur } from "@/components/learn/LearnScrollBlur";
 import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
 import { cn } from "@/lib/utils";
 
@@ -13,7 +12,6 @@ export function LearnShell() {
 
   return (
     <main className={cn("min-h-screen bg-background text-foreground", MOBILE_PAGE_BOTTOM_CLASS)}>
-      <LearnScrollBlur />
       <Outlet />
     </main>
   );

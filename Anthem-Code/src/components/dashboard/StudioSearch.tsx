@@ -58,7 +58,7 @@ const SHORTCUTS: Entry[] = [
 const IDLE_SHORTCUTS = 4;
 
 /** Top-bar search for My Studio: pages, settings, your works, hire and collab requests. */
-export default function StudioSearch({ className, compact = false }: { className?: string; compact?: boolean }) {
+export default function StudioSearch({ className }: { className?: string }) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -82,35 +82,20 @@ export default function StudioSearch({ className, compact = false }: { className
 
   return (
     <>
-      {compact ? (
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          data-tour="studio-search"
-          aria-label="ค้นหาใน My Studio"
-          title="ค้นหา (Ctrl K)"
-          className={cn(
-            "flex h-9 w-full items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground",
-            className,
-          )}
-        >
-          <Search className="h-4 w-4" />
-        </button>
-      ) : (
       <button
         type="button"
         onClick={() => setOpen(true)}
         data-tour="studio-search"
+        aria-label="ค้นหาใน My Studio"
         className={cn(
-          "flex h-9 w-full items-center gap-2 rounded-lg border border-border/70 bg-background/70 px-2.5 text-left text-sm text-muted-foreground shadow-sm transition-colors hover:border-foreground/20 hover:bg-background",
+          "flex h-10 w-10 shrink-0 items-center justify-center gap-2.5 rounded-full border border-border/70 bg-card text-left text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:h-11 lg:w-auto lg:justify-start lg:pl-4 lg:pr-2",
           className,
         )}
       >
         <Search className="h-4 w-4 shrink-0" />
-        <span className="min-w-0 flex-1 truncate">ค้นหา…</span>
-        <kbd className="hidden rounded border border-border bg-background px-1.5 text-[10px] font-medium sm:inline">Ctrl K</kbd>
+        <span className="hidden min-w-0 flex-1 truncate lg:block">ค้นหาหน้า ผลงาน หรือลูกค้า</span>
+        <kbd className="hidden rounded-full bg-secondary px-2.5 py-1 text-xs font-normal text-muted-foreground lg:inline">Ctrl K</kbd>
       </button>
-      )}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="top-[12%] translate-y-0 overflow-hidden p-0 shadow-sm sm:max-w-xl">

@@ -25,6 +25,7 @@ import { satangToThb } from "@/lib/payments/fees";
 import { withdrawStartPath } from "@/lib/payments/withdrawPin";
 import { getProjectStatsRangeBounds } from "@/lib/projectStatsDateRange";
 import { isCommerceEnabled } from "@/lib/aplus1Launch";
+import { optimizedFeedImageUrl } from "@/lib/feedProjectCover";
 import { ABOUT_ME_EDIT_HREF } from "@/lib/settingsNav";
 import { STUDIO_COLLAB_PATH, STUDIO_HIRE_PATH, STUDIO_INSIGHTS_PATH, STUDIO_PROJECTS_PATH } from "@/lib/studioNav";
 import { cn } from "@/lib/utils";
@@ -87,7 +88,10 @@ export default function StudioHomePanel({ userId }: Props) {
   const staleActive = activeRows.filter((r) => isStaleRequest(r.at));
   const liveRows = activeRows.filter((r) => !isStaleRequest(r.at));
 
-  const published = projects.filter((p) => p.status === "Published").length;
+  const publishedWorks = projects.filter((p) => p.status === "Published");
+  const published = publishedWorks.length;
+  const latest = [...publishedWorks].sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
+  const latestCover = latest?.cover_url?.trim() || latest?.gallery_urls?.find((url) => url?.trim()) || "";
   const p = profile as
     | { avatar_url?: string | null; bio?: string | null; skills?: string[] | null; opportunity_status?: string | null }
     | undefined;
@@ -146,15 +150,15 @@ export default function StudioHomePanel({ userId }: Props) {
 
   const checklistCard =
     doneCount < checklist.length ? (
-      <section className="rounded-2xl border border-border/70 bg-card p-4 sm:p-5">
+      <section className="rounded-3xl border border-border/70 bg-card p-4 sm:p-5">
         <div className="mb-2 flex items-baseline justify-between">
-          <h2 className="text-sm font-semibold text-foreground">ทำโปรไฟล์ให้ครบ</h2>
+          <h2 className="text-sm font-medium text-foreground">ทำโปรไฟล์ให้ครบ</h2>
           <span className="text-xs tabular-nums text-muted-foreground">
             {doneCount}/{checklist.length}
           </span>
         </div>
         <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-secondary">
-          <div className="h-full rounded-full bg-brand" style={{ width: `${(doneCount / checklist.length) * 100}%` }} />
+          <div className="h-full rounded-full bg-foreground" style={{ width: `${(doneCount / checklist.length) * 100}%` }} />
         </div>
         <ul className="space-y-0.5">
           {checklist.map((c) => (
@@ -179,62 +183,95 @@ export default function StudioHomePanel({ userId }: Props) {
 
   return (
     <div className="space-y-6">
-      <section className="relative flex flex-wrap items-center gap-x-5 gap-y-4 overflow-hidden rounded-3xl border border-border bg-card px-4 py-4 sm:px-6">
-        <MascotCharacter className="h-24 w-28 shrink-0 sm:h-28 sm:w-32" />
+      <section className="flex items-center gap-4">
+        <MascotCharacter className="h-20 w-24 shrink-0 sm:h-24 sm:w-28" />
         <div className="min-w-0 flex-1">
           <p className="text-sm text-muted-foreground">{today}</p>
-          <h2 className="mt-0.5 truncate text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-            สวัสดี{name ? ` ${name}` : ""}
-          </h2>
-          <p className="mt-1 text-sm text-foreground/80">{greetingLine}</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button asChild variant="outline" size="sm" className="rounded-full">
-            <Link to={publicHref}>
-              <Eye className="mr-1.5 h-4 w-4" />
-              ดูโปรไฟล์
-            </Link>
-          </Button>
-          <Button type="button" variant="outline" size="sm" className="rounded-full" onClick={() => void shareProfile()}>
-            <Share2 className="mr-1.5 h-4 w-4" />
-            แชร์โปรไฟล์
-          </Button>
+          <h2 className="mt-0.5 truncate text-2xl font-medium text-foreground">สวัสดี{name ? ` ${name}` : ""}</h2>
+          <p className="mt-0.5 text-sm text-foreground/80">{greetingLine}</p>
         </div>
       </section>
 
-      <div data-tour="studio-stats" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {stats.map((st) => {
-          const Icon = st.icon;
-          return (
-            <Link
-              key={st.label}
-              to={st.to}
-              className="group flex items-center gap-3 rounded-2xl border border-border/70 bg-card px-4 py-3.5 transition-colors hover:border-foreground/20"
-            >
-              <span
-                className={cn(
-                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl",
-                  st.hot ? "bg-foreground text-background" : "bg-secondary text-foreground",
-                )}
+      <div className="grid gap-3.5 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+        {latest ? (
+          <section className="relative isolate flex min-h-[300px] items-end overflow-hidden rounded-[28px] bg-[#111] text-[#F8F7F2] lg:min-h-[340px]">
+            {latestCover ? (
+              <img
+                src={optimizedFeedImageUrl(latestCover, { width: 1200, quality: 78, natural: false })}
+                alt=""
+                className="absolute inset-0 -z-20 h-full w-full object-cover"
+              />
+            ) : null}
+            <div className="absolute inset-0 -z-10 bg-gradient-to-t from-black/70 via-black/10 to-transparent" aria-hidden />
+            <span className="absolute left-4 top-4 inline-flex items-center gap-2 rounded-full bg-black/55 py-1.5 pl-2.5 pr-3 text-xs backdrop-blur">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" aria-hidden />
+              ผลงานล่าสุด
+            </span>
+            <div className="grid w-full gap-3 p-5 sm:p-6">
+              <h2 className={cn("truncate pb-1 text-4xl leading-tight sm:text-5xl", /[\u0E00-\u0E7F]/.test(latest.title) ? "font-medium" : "font-['Newsreader',Georgia,serif] italic")}>
+                {latest.title}
+              </h2>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="flex gap-4 text-sm opacity-90">
+                  <span>เข้าชม {(latest.views ?? 0).toLocaleString()}</span>
+                  <span>ถูกใจ {(latest.likes ?? 0).toLocaleString()}</span>
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Button asChild size="sm" className="rounded-full bg-[#F8F7F2] text-[#111] hover:bg-[#F8F7F2]/90">
+                    <Link to={`/project/${latest.id}`}>ดูผลงาน</Link>
+                  </Button>
+                  <Button asChild size="sm" variant="ghost" className="rounded-full border border-white/30 bg-white/10 text-white backdrop-blur hover:bg-white/20 hover:text-white">
+                    <Link to={publicHref}>
+                      <Eye className="mr-1.5 h-4 w-4" />
+                      ดูโปรไฟล์
+                    </Link>
+                  </Button>
+                  <Button type="button" size="sm" variant="ghost" className="rounded-full border border-white/30 bg-white/10 text-white backdrop-blur hover:bg-white/20 hover:text-white" onClick={() => void shareProfile()}>
+                    <Share2 className="mr-1.5 h-4 w-4" />
+                    แชร์โปรไฟล์
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </section>
+        ) : (
+          <section className="flex min-h-[300px] flex-col items-start justify-end gap-3 rounded-[28px] bg-secondary p-6 lg:min-h-[340px]">
+            <h2 className="text-2xl font-medium text-foreground">ลงผลงานแรกของคุณ</h2>
+            <Button asChild size="sm" className="rounded-full">
+              <Link to="/portfolio/new">ลงผลงานแรก</Link>
+            </Button>
+          </section>
+        )}
+
+        <div data-tour="studio-stats" className="grid grid-cols-2 gap-3.5">
+          {stats.map((st) => {
+            const Icon = st.icon;
+            return (
+              <Link
+                key={st.label}
+                to={st.to}
+                className="flex flex-col justify-between gap-4 rounded-[22px] border border-border/70 bg-card p-4 transition-transform hover:-translate-y-0.5"
               >
-                <Icon className="h-5 w-5" aria-hidden />
-              </span>
-              <span className="min-w-0">
-                <span className="block text-2xl font-semibold leading-tight tabular-nums text-foreground">{st.value}</span>
-                <span className="block truncate text-xs text-muted-foreground">{st.label}</span>
-              </span>
-            </Link>
-          );
-        })}
+                <span className={cn("flex h-9 w-9 items-center justify-center rounded-xl", st.hot ? "bg-foreground text-background" : "bg-secondary text-foreground")}>
+                  <Icon className="h-[18px] w-[18px]" aria-hidden />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-3xl font-medium leading-tight tabular-nums text-foreground">{st.value}</span>
+                  <span className="block truncate text-sm text-muted-foreground">{st.label}</span>
+                </span>
+              </Link>
+            );
+          })}
+        </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3 lg:items-start">
-        <div className="space-y-6 lg:col-span-2">
+      <div className="grid gap-3.5 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:items-start">
+        <div className="min-w-0 space-y-3.5">
           <StudioActionQueue hire={hireRequests} collab={collabRequests} loading={loading} />
 
-          <section className="rounded-2xl border border-border/70 bg-card p-4 sm:p-5">
+          <section className="rounded-3xl border border-border/70 bg-card p-4 sm:p-5">
             <div className="mb-2 flex items-baseline justify-between">
-              <h2 className="text-base font-semibold text-foreground">งานที่กำลังทำ</h2>
+              <h2 className="text-base font-medium text-foreground">งานที่กำลังทำ</h2>
               {liveRows.length > ACTIVE_ROWS ? (
                 <Link to={STUDIO_HIRE_PATH} className="text-xs text-muted-foreground hover:text-foreground">
                   ดูทั้งหมด {liveRows.length}
@@ -248,19 +285,16 @@ export default function StudioHomePanel({ userId }: Props) {
                   : "ยังไม่มีงานที่กำลังทำ ตอบรับคำขอแล้วงานจะมาอยู่ตรงนี้"}
               </p>
             ) : (
-              <ul className="divide-y divide-border/60">
+              <ul className="space-y-0.5">
                 {liveRows.slice(0, ACTIVE_ROWS).map((row) => (
                   <li key={row.id}>
                     <Link
                       to={row.to}
-                      className="-mx-2 flex items-center gap-3 rounded-xl px-2 py-2.5 transition-colors hover:bg-secondary/50"
+                      className="-mx-2 flex items-center gap-3 rounded-2xl px-2 py-2.5 transition-colors hover:bg-secondary/60"
                     >
                       <span
                         className={cn(
-                          "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl",
-                          row.tag === "งานจ้าง"
-                            ? "bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-300"
-                            : "bg-brand/10 text-foreground",
+                          "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-secondary text-foreground",
                         )}
                       >
                         {row.tag === "งานจ้าง" ? <Briefcase className="h-4 w-4" /> : <Handshake className="h-4 w-4" />}
@@ -271,6 +305,7 @@ export default function StudioHomePanel({ userId }: Props) {
                           {[row.meta, `อัปเดต ${updatedAgo(row.at)}`].filter(Boolean).join(" · ")}
                         </span>
                       </span>
+                      <span className="hidden shrink-0 rounded-full bg-secondary px-2.5 py-0.5 text-xs text-muted-foreground sm:inline">{row.tag}</span>
                       <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
                     </Link>
                   </li>
@@ -291,7 +326,7 @@ export default function StudioHomePanel({ userId }: Props) {
           </section>
         </div>
 
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-3.5">
           {checklistCard}
           <StudioPushNudge />
           <StudioTodoPanel userId={userId} queue={[]} />
