@@ -95,6 +95,8 @@
     --sidebar-accent-foreground: 40 3% 18%;
     --sidebar-border: 60 6% 90%;
     --sidebar-ring: 40 3% 18%;
+    --studio-side: 45 16% 91%;
+    --studio-panel: 48 38% 98%;
 
     /* Chat persona tokens — Brand Book: two calm non-red tones. Hire = slate ink, Collab = warm stone. */
     --chat-hire: 214 30% 34%;
@@ -159,6 +161,8 @@
     --border: 40 3% 26%;
     --input: 40 3% 24%;
     --ring: 0 0% 96%;
+    --studio-side: 0 0% 7%;
+    --studio-panel: 60 2% 10%;
     --sidebar-background: 40 3% 10%;
     --sidebar-foreground: 0 0% 92%;
     --sidebar-primary: 0 0% 96%;
