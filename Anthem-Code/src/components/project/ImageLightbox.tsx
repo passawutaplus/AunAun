@@ -7,6 +7,7 @@ import {
   type TouchEvent as ReactTouchEvent,
 } from "react";
 import { createPortal } from "react-dom";
+import { Link } from "react-router-dom";
 import { AnimatePresence, motion, useMotionValue } from "framer-motion";
 import { ChevronLeft, ChevronRight, MessageCircle, X } from "lucide-react";
 import ImageActionBar from "@/components/project/ImageActionBar";
@@ -46,6 +47,8 @@ type Props = {
   projectTitle?: string;
   /** "Contact about this work" — opens the hire/contact flow for this project. */
   onContact?: () => void;
+  /** Link to the full project, for pages that open a work without passing through it. */
+  projectLink?: { href: string; label: string };
 };
 
 const SWIPE_PX = 56;
@@ -99,6 +102,7 @@ const ImageLightbox = ({
   projectId,
   projectTitle,
   onContact,
+  projectLink,
 }: Props) => {
   const list =
     images && images.length > 0
@@ -531,6 +535,14 @@ const ImageLightbox = ({
                         ทักแชทจากภาพนี้
                       </span>
                     </button>
+                  ) : null}
+                  {projectLink ? (
+                    <Link
+                      to={projectLink.href}
+                      className="inline-flex shrink-0 items-center whitespace-nowrap rounded-full border border-white/10 bg-black/25 px-3 py-2 text-xs font-medium text-white shadow-sm backdrop-blur-md transition-all hover:bg-black/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+                    >
+                      {projectLink.label}
+                    </Link>
                   ) : null}
                 </div>
               </div>

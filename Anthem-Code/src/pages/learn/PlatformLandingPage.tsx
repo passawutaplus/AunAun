@@ -7,7 +7,8 @@ import { CollabBoard } from "@/components/landing/CollabBoard";
 import { LandingHeader } from "@/components/landing/LandingHeader";
 import { LookCloser } from "@/components/landing/LookCloser";
 import { QuoteChat } from "@/components/landing/QuoteChat";
-import { SHOWCASE, SHOWCASE_WIDE, type LandingWork } from "@/components/landing/showcase";
+import { ShowcaseGallery } from "@/components/landing/ShowcaseGallery";
+import { SHOWCASE_CATEGORIES, SHOWCASE_HERO, SHOWCASE_WIDE, buildShowcase, type LandingWork } from "@/components/landing/showcase";
 import { TrendCard } from "@/components/landing/TrendCard";
 import { useLandingCopy } from "@/components/landing/useLandingCopy";
 import { useLandingMotion, useMouseTrail } from "@/components/landing/useLandingMotion";
@@ -26,8 +27,6 @@ import {
 import { optimizedFeedImageUrl } from "@/lib/feedProjectCover";
 
 const MARQUEE = ["Graphic", "Illustration", "UX/UI", "Motion", "Photo", "3D", "Branding", "Typography"];
-// Member works woven into the examples, one after every second example.
-const MAX_MEMBER_WORKS = 6;
 
 const ICONS = [
   <>
@@ -59,6 +58,7 @@ const toWork = (p: DBProject): LandingWork | null => {
     title: p.title,
     category: p.category ?? "",
     src: optimizedFeedImageUrl(cover, { width: 640, quality: 75, natural: false }),
+    full: cover,
     href: `/project/${p.id}`,
   };
 };
@@ -86,7 +86,7 @@ function Stack() {
 
   return (
     <div ref={ref} className={`stack reveal ${phase === "intro" ? "intro" : ""} ${phase === "drawn" ? "drawn" : ""}`}>
-      {SHOWCASE.slice(0, 5).map((w, i) => (
+      {SHOWCASE_HERO.map((w, i) => (
         <div
           key={w.id}
           className="c"
@@ -147,17 +147,13 @@ export default function PlatformLandingPage() {
   const [wordOut, setWordOut] = useState(false);
   const [slide, setSlide] = useState(0);
 
-  const works = useMemo(() => {
-    const members = (data ?? []).map(toWork).filter((w): w is LandingWork => !!w).slice(0, MAX_MEMBER_WORKS);
-    return SHOWCASE.flatMap((w, i) => (i % 2 === 1 && members[(i - 1) / 2] ? [w, members[(i - 1) / 2]] : [w]));
-  }, [data]);
-  const categories = useMemo(() => [...new Set(works.map((w) => w.category).filter(Boolean))].slice(0, 6), [works]);
-  const shown = category ? works.filter((w) => w.category === category) : works;
-  const trailSrcs = useMemo(() => works.map((w) => w.src), [works]);
+  const { all, byCategory } = useMemo(() => buildShowcase((data ?? []).map(toWork).filter((w): w is LandingWork => !!w)), [data]);
+  const shown = category ? byCategory[category] : all;
+  const trailSrcs = useMemo(() => all.map((w) => w.src), [all]);
   const postHref = user ? "/portfolio/new" : "/auth";
   const rollWords = ["Opportunities", "Designers", "Artists", "Projects", "Collaborations"];
 
-  useLandingMotion(rootRef, [lang, works.length, category]);
+  useLandingMotion(rootRef, [lang, data, category]);
   useMouseTrail(zoneRef, trailSrcs);
 
   const jump = useCallback((id: string) => {
@@ -173,7 +169,7 @@ export default function PlatformLandingPage() {
     if (!el) return;
     const id = window.setTimeout(() => window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 72 }), 120);
     return () => window.clearTimeout(id);
-  }, [hash, works.length]);
+  }, [hash, data]);
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -262,30 +258,14 @@ export default function PlatformLandingPage() {
               </h2>
               <p className="sub">{t("works.sub")}</p>
             </div>
-            {categories.length > 1 ? (
-              <div className="filters">
-                {["", ...categories].map((c) => (
-                  <button key={c || "all"} type="button" className="chip" aria-pressed={c === category} onClick={() => setCategory(c)}>
-                    {c || t("all")}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-            <div className="gallery">
-              {shown.map((w) =>
-                w.href ? (
-                  <Link key={w.id} className="g reveal" to={w.href} aria-label={w.title}>
-                    <img src={w.src} alt="" loading="lazy" />
-                    <div className="ov">{w.title}</div>
-                  </Link>
-                ) : (
-                  <div key={w.id} className="g reveal">
-                    <img src={w.src} alt={w.title} loading="lazy" />
-                    <div className="ov">{t("sample")}</div>
-                  </div>
-                ),
-              )}
+            <div className="filters">
+              {["", ...SHOWCASE_CATEGORIES].map((c) => (
+                <button key={c || "all"} type="button" className="chip" aria-pressed={c === category} onClick={() => setCategory(c)}>
+                  {c || t("all")}
+                </button>
+              ))}
             </div>
+            <ShowcaseGallery works={shown} t={t} />
           </div>
         </section>
 
