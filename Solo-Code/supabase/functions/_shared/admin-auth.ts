@@ -1,7 +1,8 @@
+import { supabaseSecretKey, supabasePublishableKey } from "./supabase-keys.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 export function adminClient() {
-  return createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  return createClient(Deno.env.get("SUPABASE_URL")!, supabaseSecretKey());
 }
 
 export async function assertAdmin(userId: string, logTag = "admin"): Promise<boolean> {
@@ -26,7 +27,7 @@ export async function requireAdminUser(
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+  const anonKey = supabasePublishableKey();
   const userClient = createClient(supabaseUrl, anonKey, {
     global: { headers: { Authorization: authHeader } },
   });
