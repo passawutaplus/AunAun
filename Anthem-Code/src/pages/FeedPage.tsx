@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
+import { releaseBoot } from "@/lib/bootGate";
 import { Button } from "@/components/ui/button";
 import { LogIn } from "lucide-react";
 import QueryStatusPanel, { FilterEmptyState } from "@/components/ui/QueryStatusPanel";
@@ -588,6 +589,9 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   const projectsLoading = (heroProjectSearch ? published : activeProjectsQuery).isLoading;
   const projectsError = (heroProjectSearch ? published : activeProjectsQuery).isError;
   const projectsSlow = useSlowLoadFallback(projectsLoading);
+  useEffect(() => {
+    if (!projectsLoading && !authLoading) releaseBoot();
+  }, [projectsLoading, authLoading]);
   const refetchProjects = () => {
     void activeProjectsQuery.refetch();
   };

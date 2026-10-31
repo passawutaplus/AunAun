@@ -9,7 +9,6 @@
   },
   "android": {
     "appendUserAgent": "SamecorApp",
-    "backgroundColor": "#F8F7F2",
     "allowMixedContent": false
   }
 }
