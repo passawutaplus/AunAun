@@ -7,6 +7,7 @@ import { CollabBoard } from "@/components/landing/CollabBoard";
 import { LandingHeader } from "@/components/landing/LandingHeader";
 import { LookCloser } from "@/components/landing/LookCloser";
 import { QuoteChat } from "@/components/landing/QuoteChat";
+import { SHOWCASE, SHOWCASE_WIDE, type LandingWork } from "@/components/landing/showcase";
 import { TrendCard } from "@/components/landing/TrendCard";
 import { useLandingCopy } from "@/components/landing/useLandingCopy";
 import { useLandingMotion, useMouseTrail } from "@/components/landing/useLandingMotion";
@@ -25,9 +26,8 @@ import {
 import { optimizedFeedImageUrl } from "@/lib/feedProjectCover";
 
 const MARQUEE = ["Graphic", "Illustration", "UX/UI", "Motion", "Photo", "3D", "Branding", "Typography"];
-const MAX_WORKS = 12;
-// Brand-owned images for sample cards, so made-up numbers never sit on a member's work.
-const SAMPLE_IMAGES = { cover: "/learn/learn-film-cover.png", a: "/learn/learn-film-poster.png", b: "/learn/learn-film-silk.png", c: "/learn/learn-film-box.png" };
+// Member works woven into the examples, one after every second example.
+const MAX_MEMBER_WORKS = 6;
 
 const ICONS = [
   <>
@@ -51,23 +51,23 @@ const ICONS = [
   </>,
 ];
 
-type Work = { id: string; title: string; category: string; cover: string };
+const toWork = (p: DBProject): LandingWork | null => {
+  const cover = p.cover_url?.trim() || p.gallery_urls?.find((url) => url?.trim());
+  if (!cover) return null;
+  return {
+    id: p.id,
+    title: p.title,
+    category: p.category ?? "",
+    src: optimizedFeedImageUrl(cover, { width: 640, quality: 75, natural: false }),
+    href: `/project/${p.id}`,
+  };
+};
 
-const toWork = (p: DBProject): Work => ({
-  id: p.id,
-  title: p.title,
-  category: p.category ?? "",
-  cover: p.cover_url?.trim() || p.gallery_urls?.find((url) => url?.trim()) || "",
-});
-const sized = (url: string, width: number) => optimizedFeedImageUrl(url, { width, quality: 75, natural: false });
-
-function Stack({ works }: { works: Work[] }) {
+function Stack() {
   const ref = useRef<HTMLDivElement>(null);
   const [phase, setPhase] = useState<"intro" | "open" | "drawn">("intro");
-  const ready = works.length > 0;
 
   useEffect(() => {
-    if (!ready) return;
     const timers: number[] = [];
     const once = new IntersectionObserver(
       ([e]) => {
@@ -82,21 +82,19 @@ function Stack({ works }: { works: Work[] }) {
       once.disconnect();
       timers.forEach((id) => window.clearTimeout(id));
     };
-  }, [ready]);
+  }, []);
 
   return (
     <div ref={ref} className={`stack reveal ${phase === "intro" ? "intro" : ""} ${phase === "drawn" ? "drawn" : ""}`}>
-      {works.slice(0, 5).map((w, i) => (
-        <Link
+      {SHOWCASE.slice(0, 5).map((w, i) => (
+        <div
           key={w.id}
           className="c"
-          to={`/project/${w.id}`}
-          aria-label={w.title}
           style={{ "--dx": `${(2 - i) * 14}%`, "--dy": `${20 - i * 6}%`, "--dly": phase === "drawn" ? "0ms" : `${150 + i * 110}ms` } as React.CSSProperties}
         >
-          <img src={sized(w.cover, 640)} alt="" />
-          {w.category ? <span className="tag">{w.category}</span> : null}
-        </Link>
+          <img src={w.src} alt="" />
+          <span className="tag">{w.category}</span>
+        </div>
       ))}
       <svg className="frame" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
         <path d="M0 14V0h14" />
@@ -149,11 +147,13 @@ export default function PlatformLandingPage() {
   const [wordOut, setWordOut] = useState(false);
   const [slide, setSlide] = useState(0);
 
-  const works = useMemo(() => (data ?? []).map(toWork).filter((w) => w.cover).slice(0, MAX_WORKS), [data]);
-  const categories = useMemo(() => [...new Set(works.map((w) => w.category).filter(Boolean))].slice(0, 5), [works]);
+  const works = useMemo(() => {
+    const members = (data ?? []).map(toWork).filter((w): w is LandingWork => !!w).slice(0, MAX_MEMBER_WORKS);
+    return SHOWCASE.flatMap((w, i) => (i % 2 === 1 && members[(i - 1) / 2] ? [w, members[(i - 1) / 2]] : [w]));
+  }, [data]);
+  const categories = useMemo(() => [...new Set(works.map((w) => w.category).filter(Boolean))].slice(0, 6), [works]);
   const shown = category ? works.filter((w) => w.category === category) : works;
-  const closing = works.slice(5, 10);
-  const trailSrcs = useMemo(() => works.map((w) => sized(w.cover, 320)), [works]);
+  const trailSrcs = useMemo(() => works.map((w) => w.src), [works]);
   const postHref = user ? "/portfolio/new" : "/auth";
   const rollWords = ["Opportunities", "Designers", "Artists", "Projects", "Collaborations"];
 
@@ -192,10 +192,9 @@ export default function PlatformLandingPage() {
   }, [rollWords.length]);
 
   useEffect(() => {
-    if (closing.length < 2) return;
-    const id = window.setInterval(() => setSlide((i) => (i + 1) % closing.length), 5000);
+    const id = window.setInterval(() => setSlide((i) => (i + 1) % SHOWCASE_WIDE.length), 5000);
     return () => window.clearInterval(id);
-  }, [closing.length]);
+  }, []);
 
   const copyEmail = () => {
     void navigator.clipboard?.writeText(BRAND_SUPPORT_EMAIL).catch(() => {});
@@ -239,7 +238,7 @@ export default function PlatformLandingPage() {
               </Link>
             </div>
           </div>
-          <Stack works={works} />
+          <Stack />
         </div>
 
         <div className="marquee" aria-hidden="true">
@@ -273,12 +272,19 @@ export default function PlatformLandingPage() {
               </div>
             ) : null}
             <div className="gallery">
-              {shown.map((w) => (
-                <Link key={w.id} className="g reveal" to={`/project/${w.id}`} aria-label={w.title}>
-                  <img src={sized(w.cover, 640)} alt="" loading="lazy" />
-                  <div className="ov">{w.title}</div>
-                </Link>
-              ))}
+              {shown.map((w) =>
+                w.href ? (
+                  <Link key={w.id} className="g reveal" to={w.href} aria-label={w.title}>
+                    <img src={w.src} alt="" loading="lazy" />
+                    <div className="ov">{w.title}</div>
+                  </Link>
+                ) : (
+                  <div key={w.id} className="g reveal">
+                    <img src={w.src} alt={w.title} loading="lazy" />
+                    <div className="ov">{t("sample")}</div>
+                  </div>
+                ),
+              )}
             </div>
           </div>
         </section>
@@ -290,7 +296,7 @@ export default function PlatformLandingPage() {
               <h2 className="en">More than a picture.</h2>
               <p className="sub">{t("look.sub")}</p>
             </div>
-            <LookCloser src={works[0] ? sized(works[0].cover, 1280) : undefined} t={t} behind={list<[string, string][]>("bts")} />
+            <LookCloser src="/landing/works/market.jpg" t={t} behind={list<[string, string][]>("bts")} />
           </div>
         </section>
 
@@ -312,7 +318,7 @@ export default function PlatformLandingPage() {
               </div>
               <div className="pf-card reveal">
                 <div className="pf-cover">
-                  <img src={SAMPLE_IMAGES.cover} alt="" />
+                  <img src="/landing/works/painting.jpg" alt="" />
                 </div>
                 <div className="pf-body">
                   <span className="pf-av" />
@@ -320,7 +326,7 @@ export default function PlatformLandingPage() {
                   <small className="muted">Illustrator · Branding</small>
                   <div className="pf-link">samecor.com/@yourname</div>
                   <div className="pf-works">
-                    {[SAMPLE_IMAGES.a, SAMPLE_IMAGES.b, SAMPLE_IMAGES.c].map((src) => (
+                    {["market", "silk", "toy"].map((id) => `/landing/works/${id}.jpg`).map((src) => (
                       <img key={src} src={src} alt="" />
                     ))}
                   </div>
@@ -351,7 +357,7 @@ export default function PlatformLandingPage() {
               <p className="sub">{t("da.sub")}</p>
             </div>
             <div className="dash reveal">
-              <TrendCard t={t} image={SAMPLE_IMAGES.a} />
+              <TrendCard t={t} image="/landing/works/poster.jpg" />
               <ul className="do-list">
                 {list<string[]>("da.list").map((x) => (
                   <li key={x}>{x}</li>
@@ -384,7 +390,7 @@ export default function PlatformLandingPage() {
               <div className="card credit reveal">
                 <p className="k">{t("cr.k")}</p>
                 <div className="cr">
-                  <img src={SAMPLE_IMAGES.b} alt="" />
+                  <img src="/landing/works/chrome.jpg" alt="" />
                   <div className="cr-by">
                     <span className="av" />
                     <span className="av" />
@@ -452,8 +458,8 @@ export default function PlatformLandingPage() {
         <section className="block">
           <div className="wrap">
             <div className="meet reveal">
-              {closing.map((w, i) => (
-                <img key={w.id} src={sized(w.cover, 1600)} alt="" loading="lazy" className={i === slide ? "on" : undefined} />
+              {SHOWCASE_WIDE.map((src, i) => (
+                <img key={src} src={src} alt="" loading="lazy" className={i === slide ? "on" : undefined} />
               ))}
               <div className="in">
                 <p className="eyebrow star" />
@@ -467,13 +473,11 @@ export default function PlatformLandingPage() {
                     Explore Work
                   </Link>
                 </div>
-                {closing.length > 1 ? (
-                  <div className="dots">
-                    {closing.map((w, i) => (
-                      <button key={w.id} type="button" aria-label={String(i + 1)} className={i === slide ? "on" : undefined} onClick={() => setSlide(i)} />
-                    ))}
-                  </div>
-                ) : null}
+                <div className="dots">
+                  {SHOWCASE_WIDE.map((src, i) => (
+                    <button key={src} type="button" aria-label={String(i + 1)} className={i === slide ? "on" : undefined} onClick={() => setSlide(i)} />
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -539,6 +543,7 @@ export default function PlatformLandingPage() {
           </div>
           <div className="copy">
             <span>© 2026 SAMECOR. All rights reserved.</span>
+            <span>{t("ft.note")}</span>
             <span>Made in Thailand</span>
           </div>
         </div>

@@ -409,5 +409,6 @@
   .sl .big .l { transform: none; }
   .sl .frame path { stroke-dashoffset: 0; }
 }
-.sl a.g, .sl a.c { display: block; cursor: pointer; }
+.sl a.g { display: block; cursor: pointer; }
+.sl div.g, .sl .stack .c { cursor: default; }
 .sl .stack .c:nth-child(n) { transition-delay: var(--dly, 0ms); }
