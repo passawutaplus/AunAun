@@ -119,7 +119,7 @@ export default function MarketingOutreachPanel() {
   return (
     <div className="space-y-4">
       <MarketingCard className="marketing-callout-warn p-4">
-        <div className="flex gap-2 text-sm text-amber-900">
+        <div className="flex gap-2 text-sm text-warning">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           Anti-spam: ส่งเฉพาะ lead ที่มีสิทธิ์ติดต่อ โปร่งใส มี opt-out — ห้าม bulk DM โซเชียลภายนอก
         </div>

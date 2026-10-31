@@ -6,6 +6,7 @@ Private by default (user data); the Discover page is public catalog. App is alre
 This folder is a subfolder of the AunAun-fresh monorepo. Work only inside `Vault-Code/`; ignore `../Solo-Code`, `../Anthem-Code` etc.
 
 ## Read on demand only (not every session)
+- `docs/HANDOFF_TWIN.md` + `docs/creative-twin-vision.md` - product direction (Creative Twin) and current build plan; read before any Twin/AI-memory work
 - `outputs/a-plus-vault/docs/product-memory.md` - decision filter before adding features
 - `outputs/a-plus-vault/docs/next-implementation-order.md` - roadmap
 - `outputs/a-plus-vault/docs/data-model.md` - tables
@@ -21,7 +22,7 @@ This folder is a subfolder of the AunAun-fresh monorepo. Work only inside `Vault
 - `supabase-*.sql` - migrations (schema, moodboard-phase1, extension-*, alpha-hardening, scale-hardening, feedback-admin, discover-seeder)
 - `api/vault/*` + `lib/*.mjs` - Vercel serverless capture API (Bearer token)
 - `vault-extension/` - Chrome extension MV3 (v0.2.1): popup, content, background
-- `seeder/` - SEPARATE Next.js app (port 3010, own package.json): fills `discover_items` from Met/AIC (CC0)
+- `seeder/` - SEPARATE Next.js app (port 3010, own package.json): legacy Museum filler (paused; Design Feed bot is `tools/design_feed.py`)
 - `scripts/` - qa.mjs + qa-security.mjs (guards), smoke tests, deploy scripts
 - PWA/security: `sw.js`, `manifest.webmanifest`, `modules/pwa.js`, CSP in `vercel.json` (no inline scripts), `SECURITY.md`; landing pages use `marketing.css/js`; error pages generated from `error-page.template.html`
 - Routes (vercel.json): `/vault`, `/moodboards/*`, `/discover` -> app shell
@@ -52,6 +53,6 @@ User sends screenshots with red boxes/arrows + a short note. Red box/arrow = tar
 - NEVER read, print, or commit `.env*` (`.env.local` exists here). Never expose service-role/AI keys in client or extension.
 - Don't run SQL, deploy, push, or touch live Supabase data unless told.
 - Don't become: generic bookmark manager, cloud drive, full design editor.
-- Bots/crawlers: only open-license (CC0, PDM, CC BY, CC BY-SA; never NC/ND) sources via official APIs, respect ToS/robots; never scrape Pinterest/Behance/Google Images/Unsplash/Pexels in bulk (see seeder/README step 7). Images with unknown rights stay private (`rights_status=unknown`), never on public Discover.
+- Design Feed (replaced the Museum, Oct 2026): public items are curated design work from published RSS/official feeds, shown as a HOTLINKED preview (never re-hosted) with designer credit + https source link; DB check `discover_items_published_ok` enforces credit, https source and https image. Owners can request removal via Report. Bots: RSS/official feeds only, respect ToS/robots; never scrape Pinterest/Behance/Google Images/Unsplash/Pexels in bulk. User-saved images with unknown rights stay private (`rights_status=unknown`).
 - Before public sharing of user-saved images: need Report/Takedown (Thai Copyright Act ss.43/6-43/8), ToS, rights badge.
 - Public share/discover pages: show credit/source; keep `noindex` unless told otherwise.

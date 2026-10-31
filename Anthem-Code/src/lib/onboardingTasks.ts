@@ -99,7 +99,7 @@ export const ONBOARDING_TASKS: OnboardingTaskDef[] = [
   {
     id: "follow",
     title: "ติดตามครีเอเตอร์",
-    description: "ติดตามดีไซเนอร์ที่ชอบจากฟีดหรือแท็บ Designers",
+    description: "ติดตามครีเอเตอร์ที่ชอบจากฟีดหรือแท็บ Designers",
     href: "/?mode=designers",
     icon: Sparkles,
     rewardPx: 8,
@@ -181,7 +181,7 @@ const LAUNCH_TASK_COPY: Partial<Record<OnboardingTaskId, Pick<OnboardingTaskDef,
     description: "เปิดหน้าแรก ดูผลงานใน Projects",
   },
   explore_designers: {
-    title: "สำรวจดีไซเนอร์",
+    title: "สำรวจครีเอเตอร์",
     description: "เปิดแท็บ Designers ดูครีเอเตอร์",
   },
   follow: {

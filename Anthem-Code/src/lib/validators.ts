@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { formatPeriodRange } from "@/lib/cvDates";
 import { LICENSE_TYPES } from "@/lib/licenses";
 import {
   COMMUNITY_MEDIA_MAX_IMAGES,
@@ -85,31 +86,16 @@ export const hireInviteBriefSchema = z
     details: z
       .string()
       .trim()
-      .min(20, "กรุณาอธิบายรายละเอียดงานอย่างน้อย 20 ตัวอักษร")
+      .min(10, "เล่างานสั้น ๆ อย่างน้อย 10 ตัวอักษร")
       .max(1000),
     budgetAmount: z.number().int().positive().max(10_000_000).optional(),
-    budgetMin: z
-      .number({
-        error: "กรุณาระบุงบประมาณต่ำสุด", // zod 4: replaces required_error / invalid_type_error
-      })
-      .int()
-      .nonnegative()
-      .max(10_000_000),
-    budgetMax: z
-      .number({
-        error: "กรุณาระบุงบประมาณสูงสุด", // zod 4: replaces required_error / invalid_type_error
-      })
-      .int()
-      .nonnegative()
-      .max(10_000_000),
-    deadline: z
-      .string()
-      .trim()
-      .min(1, "กรุณาเลือกกำหนดส่งงาน")
-      .max(50),
+    // Budget and deadline help the first message but never block it — details can be agreed in chat.
+    budgetMin: z.number().int().nonnegative().max(10_000_000).optional(),
+    budgetMax: z.number().int().nonnegative().max(10_000_000).optional(),
+    deadline: z.string().trim().max(50).optional(),
   })
   .superRefine((val, ctx) => {
-    if (val.budgetMin > val.budgetMax) {
+    if (val.budgetMin != null && val.budgetMax != null && val.budgetMin > val.budgetMax) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "งบต่ำสุดต้องไม่เกินงบสูงสุด",
@@ -162,7 +148,8 @@ export const experienceItemSchema = z.object({
   periodEnd: z.string().trim().max(40).optional().default(""),
   isCurrent: z.boolean().optional().default(false),
   employmentType: z.enum(experienceEmploymentTypes).optional().nullable().default(null),
-  description: z.string().trim().max(400).optional().default(""),
+  /** Holds the highlights joined by newlines (4 × 200 chars + separators). */
+  description: z.string().trim().max(810).optional().default(""),
   highlights: z.array(z.string().trim().min(1).max(200)).max(4).optional().default([]),
 });
 export type ExperienceItem = z.infer<typeof experienceItemSchema>;
@@ -176,16 +163,9 @@ export function formatExperiencePeriod(
     isCurrent?: boolean | null;
   },
   presentLabel = "Present",
+  lang: "th" | "en" = "en",
 ): string {
-  const start = (item.periodStart ?? "").trim();
-  const end = (item.periodEnd ?? "").trim();
-  const current = !!item.isCurrent;
-  if (start) {
-    if (current) return `${start} - ${presentLabel}`;
-    if (end) return `${start} - ${end}`;
-    return start;
-  }
-  return (item.period ?? "").trim();
+  return formatPeriodRange(item, presentLabel, lang);
 }
 
 export function normalizeExperienceItem(raw: unknown): ExperienceItem | null {
@@ -409,6 +389,21 @@ export const profileSchema = z.object({
   cvFirstName: z.string().trim().max(40).optional().default(""),
   cvLastName: z.string().trim().max(40).optional().default(""),
   cvBirthDate: z.string().trim().max(10).optional().default(""),
+  cvNameEn: z.string().trim().max(80).optional().default(""),
+  cvDocLang: z.enum(["en", "th"]).optional().default("en"),
+  cvNationality: z.string().trim().max(40).optional().default(""),
+  cvMilitary: z.enum(["completed", "exempt", "not_required"]).nullable().optional().default(null),
+  cvReferences: z
+    .array(
+      z.object({
+        name: z.string().trim().min(1).max(60),
+        role: z.string().trim().max(80).optional().default(""),
+        contact: z.string().trim().max(80).optional().default(""),
+      }),
+    )
+    .max(3)
+    .optional()
+    .default([]),
   cvDesiredRole: z.string().trim().max(60).optional().default(""),
   cvContactEmail: z.string().trim().max(120).optional().default(""),
   cvContactLine: z.string().trim().max(50).optional().default(""),
@@ -416,6 +411,9 @@ export const profileSchema = z.object({
   cvContactPublic: z.boolean().optional().default(false),
   cvAbout: z.string().trim().max(500).optional().default(""),
   cvAddressDetail: z.enum(["short", "full"]).optional().default("short"),
+  cvTemplate: z.enum(["editorial", "index", "grid"]).optional().default("grid"),
+  cvHeadingFont: z.enum(["poppins", "ibm", "agrandir"]).optional().default("agrandir"),
+  cvShowPhoto: z.boolean().nullable().optional().default(null),
   cvVisibility: z
     .object({
       about: z.boolean().optional(),
@@ -433,6 +431,10 @@ export const profileSchema = z.object({
       portfolio: z.boolean().optional(),
       website: z.boolean().optional(),
       socials: z.boolean().optional(),
+      birthDate: z.boolean().optional(),
+      nationality: z.boolean().optional(),
+      military: z.boolean().optional(),
+      references: z.boolean().optional(),
     })
     .optional(),
 });
@@ -474,6 +476,15 @@ export const projectSchema = z.object({
   deliverables: z.string().trim().max(200).optional().default(""),
   duration_label: z.string().trim().max(60).optional().default(""),
   outcome_note: z.string().trim().max(1500).optional().default(""),
+  context_images: z
+    .object({
+      brief: z.array(z.string().url()).max(4),
+      process: z.array(z.string().url()).max(4),
+      outcome: z.array(z.string().url()).max(4),
+    })
+    .partial()
+    .optional()
+    .default({}),
   opportunity_types: z.array(z.string().trim().min(1).max(40)).max(10).default([]),
   opportunity_note: z.string().trim().max(500).optional().default(""),
   external_links: z
@@ -565,12 +576,16 @@ export const projectDraftSchema = projectSchema;
 export type ProjectDraftInput = z.infer<typeof projectDraftSchema>;
 
 /** Missing title/cover — shared by draft + publish gates. */
-export function validateProjectBasics(input: {
-  title?: string | null;
-  cover_url?: string | null;
-}): string | null {
+export function validateProjectBasics(
+  input: {
+    title?: string | null;
+    cover_url?: string | null;
+  },
+  /** A draft only needs a title; publishing also needs a cover. */
+  opts: { requireCover?: boolean } = {},
+): string | null {
   if (!input.title?.trim()) return "กรอกชื่องานก่อน";
-  if (!input.cover_url?.trim()) return "อัปโหลดภาพปกก่อน";
+  if (opts.requireCover && !input.cover_url?.trim()) return "อัปโหลดภาพปกก่อน";
   return null;
 }
 

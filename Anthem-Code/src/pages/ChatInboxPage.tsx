@@ -1,4 +1,7 @@
 import { useEffect, useState } from "react";
+import { GuideTour } from "@/components/tour/GuideTour";
+import { CHAT_TOUR } from "@/components/tour/tours";
+import { usePageTour } from "@/hooks/usePageTour";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { MessageCircle, RefreshCw } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -9,7 +12,6 @@ import ChatSidebar from "@/components/chat/ChatSidebar";
 import ChatThreadView from "@/components/chat/ChatThreadView";
 import ChatPartnerPanel from "@/components/chat/ChatPartnerPanel";
 import { ChatErrorBoundary } from "@/components/chat/ChatErrorBoundary";
-import { ChatFilterRail } from "@/components/chat/ChatFilterRail";
 import { ChatInboxTopBar } from "@/components/chat/ChatInboxTopBar";
 import { InlineLoader } from "@/components/ui/BanterLoader";
 import { cn } from "@/lib/utils";
@@ -83,12 +85,13 @@ const ChatInboxPage = () => {
   const showSidebarMobile = !hasThread;
   const showThreadMobile = hasThread;
 
+  // Moving around inside /chat replaces the entry, so Back leaves chat to the page you came from.
   const selectConversation = (conversationId: string) => {
-    navigate(`/chat/${conversationId}`, { replace: false });
+    navigate(`/chat/${conversationId}`, { replace: true });
   };
 
   const clearConversation = () => {
-    navigate("/chat", { replace: false });
+    navigate("/chat", { replace: true });
   };
 
   const retryThread = () => {
@@ -104,6 +107,11 @@ const ChatInboxPage = () => {
   };
 
   const togglePartnerPanel = () => {
+    // Below xl the panel is a slide-over, not a docked column.
+    if (!window.matchMedia("(min-width: 1280px)").matches) {
+      setShowPartnerMobile((open) => !open);
+      return;
+    }
     setPartnerPanelOpen((open) => !open);
   };
 
@@ -167,20 +175,22 @@ const ChatInboxPage = () => {
     </>
   );
 
+  // First visit to chat: short tour of list / cards / Plan & Tasks; "?" in the top bar replays it.
+  const chatTour = usePageTour("chat", true, 1200);
+
   return (
     <main id="main-content" className="chat-paper flex h-[100dvh] flex-col overflow-hidden bg-background">
-      <ChatInboxTopBar />
+      <ChatInboxTopBar onTour={chatTour.start} />
       <div className="flex min-h-0 flex-1">
-      <div className={cn("h-full shrink-0", showSidebarMobile ? "flex" : "hidden", "md:flex")}>
-        <ChatFilterRail tab={tab} onTabChange={setTab} />
-      </div>
       <div
         className={cn(
           "flex min-h-0 min-w-0 flex-1 flex-col md:grid",
           "transition-[grid-template-columns] duration-[350ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
+          // Tablets get list + thread; the partner panel docks as a third column only on wide screens.
+          "md:grid-cols-[minmax(260px,320px)_1fr]",
           partnerPanelOpen
-            ? "md:grid-cols-[minmax(260px,320px)_1fr_minmax(280px,340px)]"
-            : "md:grid-cols-[minmax(260px,320px)_1fr_0fr]",
+            ? "xl:grid-cols-[minmax(260px,320px)_1fr_minmax(280px,340px)]"
+            : "xl:grid-cols-[minmax(260px,320px)_1fr_0fr]",
         )}
       >
         <div
@@ -190,13 +200,17 @@ const ChatInboxPage = () => {
             "md:flex",
           )}
         >
+          <div data-tour="chat-list" className="flex h-full min-h-0 flex-col">
           <ChatSidebar
             selectedId={id}
             tab={tab}
+            onTabChange={setTab}
             search={search}
             onSearchChange={setSearch}
             onSelectConversation={selectConversation}
+            onTour={chatTour.start}
           />
+          </div>
         </div>
 
         <div
@@ -206,17 +220,20 @@ const ChatInboxPage = () => {
             "md:flex",
           )}
         >
-          <ChatErrorBoundary onBack={clearConversation}>{threadContent}</ChatErrorBoundary>
+          <div data-tour={id ? "chat-thread" : undefined} className="flex h-full min-h-0 flex-col">
+            <ChatErrorBoundary onBack={clearConversation}>{threadContent}</ChatErrorBoundary>
+          </div>
         </div>
 
         <div
           className={cn(
-            "hidden md:block h-full min-h-0 min-w-0 overflow-hidden",
+            "hidden xl:block h-full min-h-0 min-w-0 overflow-hidden",
             !partnerPanelOpen && "pointer-events-none",
           )}
           aria-hidden={!partnerPanelOpen}
         >
           <motion.div
+            data-tour={partnerPanelOpen && conv ? "chat-side" : undefined}
             className="h-full w-full min-w-[280px] max-w-[340px] ml-auto"
             initial={false}
             animate={
@@ -253,7 +270,7 @@ const ChatInboxPage = () => {
               key="chat-partner-backdrop"
               type="button"
               aria-label="ปิดข้อมูลคู่แชท"
-              className="md:hidden fixed inset-x-0 top-14 bottom-0 z-40 bg-background/75 backdrop-blur-sm"
+              className="xl:hidden fixed inset-x-0 top-14 bottom-0 z-40 bg-background/75 backdrop-blur-sm"
               initial={reducedMotion ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -262,7 +279,7 @@ const ChatInboxPage = () => {
             />
             <motion.div
               key="chat-partner-panel"
-              className="md:hidden fixed right-0 top-14 bottom-0 z-50 w-[92%] max-w-sm bg-background shadow-xl"
+              className="xl:hidden fixed right-0 top-14 bottom-0 z-50 w-[92%] max-w-sm bg-background shadow-sm"
               initial={reducedMotion ? false : { x: "100%" }}
               animate={{ x: 0 }}
               exit={reducedMotion ? { opacity: 0 } : { x: "100%" }}
@@ -279,6 +296,7 @@ const ChatInboxPage = () => {
           </>
         )}
       </AnimatePresence>
+      <GuideTour tourId="chat" label="ทัวร์แนะนำแชท" steps={CHAT_TOUR} open={chatTour.open} onClose={chatTour.close} />
     </main>
   );
 };

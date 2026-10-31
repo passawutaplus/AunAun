@@ -60,7 +60,7 @@ export default function HirePromptPayView({
           "flex items-start gap-2 rounded-xl px-3 py-2 text-xs leading-relaxed",
           expired
             ? "bg-destructive/10 text-destructive"
-            : "bg-amber-500/10 text-amber-700 dark:text-amber-400",
+            : "bg-warning/10 text-warning dark:text-warning",
         )}
       >
         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />

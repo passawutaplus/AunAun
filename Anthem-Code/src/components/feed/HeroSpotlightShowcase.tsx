@@ -38,7 +38,7 @@ const HeroSpotlightShowcase = ({ slides, variant }: Props) => {
   if (!current) {
     return (
       <div
-        className="absolute inset-0 bg-gradient-to-br from-primary/[0.06] via-muted/30 to-muted/50 animate-pulse"
+        className="absolute inset-0 bg-muted animate-pulse"
         aria-hidden
       />
     );

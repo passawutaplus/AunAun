@@ -3,6 +3,7 @@ import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { ChevronDown, Plus, User } from "lucide-react";
 import { BrandLogo } from "@/components/brand/BrandLogo";
 import ChatNavButton from "@/components/chat/ChatNavButton";
+import FeedbackHeaderPill from "@/components/feedback/FeedbackHeaderPill";
 import JobsNavButton from "@/components/jobs/JobsNavButton";
 import { CommunityNavDropdown } from "@/components/CommunityNavDropdown";
 import NotificationBell from "@/components/notifications/NotificationBell";
@@ -28,11 +29,9 @@ function shouldShowDesktopTopNav(pathname: string): boolean {
   if (isPortfolioEditorRoute(pathname)) return false;
   return (
     pathname === "/" ||
-    pathname.startsWith("/learn") ||
     pathname.startsWith("/help") ||
     pathname.startsWith("/forum") ||
-    pathname.startsWith("/dashboard") ||
-    pathname.startsWith("/earnings") ||
+    // My Studio (/dashboard, /earnings) has its own back-office top bar
     pathname.startsWith("/portfolio") ||
     pathname.startsWith("/settings") ||
     isPublicProfilePath(pathname) ||
@@ -40,9 +39,8 @@ function shouldShowDesktopTopNav(pathname: string): boolean {
   );
 }
 
-/** Shared translucent glass for sticky top bars. */
-export const DESKTOP_TOP_NAV_GLASS =
-  "border-b border-border/40 bg-background/40 backdrop-blur-xl supports-[backdrop-filter]:bg-background/30";
+/** Shared solid bar for sticky top bars (owner 2026-10-18: no see-through blur, easier to read on phones). */
+export const DESKTOP_TOP_NAV_GLASS = "border-b border-border bg-background";
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
   cn(
@@ -143,6 +141,20 @@ const DesktopTopNav = () => {
 
     const update = () => {
       releaseNavWithPage();
+      // Studio home: the compact bar takes over the moment the catalog sheet is flush with the top,
+      // and the brand nav behind it fades out.
+      const flushSheet = document.querySelector<HTMLElement>("[data-feed-sheet]");
+      if (flushSheet) {
+        const bar = flushSheet.getBoundingClientRect().top <= 1;
+        useFeedHomeNavStore.getState().setScrolled(bar);
+        const nav = document.querySelector<HTMLElement>("[data-desktop-top-nav]");
+        if (nav) {
+          nav.style.transition = "opacity 0.25s ease";
+          nav.style.opacity = bar ? "0" : "";
+          nav.style.pointerEvents = bar ? "none" : "";
+        }
+        return;
+      }
       const title = document.querySelector<HTMLElement>("[data-feed-mode-title]");
       if (title) {
         const state = useFeedHomeNavStore.getState();
@@ -185,7 +197,10 @@ const DesktopTopNav = () => {
     window.addEventListener("scroll", schedule, { passive: true });
     window.addEventListener("resize", schedule);
     return () => {
-      document.querySelector<HTMLElement>("[data-desktop-top-nav]")?.style.removeProperty("top");
+      const nav = document.querySelector<HTMLElement>("[data-desktop-top-nav]");
+      nav?.style.removeProperty("top");
+      nav?.style.removeProperty("opacity");
+      nav?.style.removeProperty("pointer-events");
       cancelAnimationFrame(raf);
       window.removeEventListener("scroll", schedule);
       window.removeEventListener("resize", schedule);
@@ -216,11 +231,11 @@ const DesktopTopNav = () => {
       className={cn("flex min-w-0 items-center", isGuestHome ? "gap-6 xl:gap-8" : "gap-6")}
       aria-label="เมนูหลัก"
     >
-      <CommunityNavDropdown className={isHome ? "text-[#f5f5f5]/80 hover:text-[#f5f5f5]" : undefined} />
+      <CommunityNavDropdown className={isHome ? "text-background/80 hover:text-background" : undefined} />
       <NavLink
         to="/learn"
         end={false}
-        className={isHome ? "text-[13px] font-medium text-[#f5f5f5] transition-opacity hover:opacity-70" : linkClass}
+        className={isHome ? "text-[13px] font-medium text-background transition-opacity hover:opacity-70" : linkClass}
       >
         About
       </NavLink>
@@ -237,9 +252,9 @@ const DesktopTopNav = () => {
         "z-40 hidden lg:block sticky top-0 transition-opacity duration-300 motion-reduce:transition-none",
         coveredByFeedBar && "pointer-events-none opacity-0",
         isLearn
-          ? "border-b border-[#e4e1db] bg-[#f5f5f5] text-[#2f2e2c] shadow-none"
+          ? "border-b border-border bg-background text-foreground shadow-none"
           : isHome
-            ? "border-0 bg-transparent text-[#2f2e2c] shadow-none"
+            ? "border-0 bg-transparent text-foreground shadow-none"
             : glass
               ? DESKTOP_TOP_NAV_GLASS
               : "border-0 bg-transparent shadow-none",
@@ -252,10 +267,14 @@ const DesktopTopNav = () => {
         <button
           type="button"
           onClick={goHome}
-          className="shrink-0 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className={cn(
+            "shrink-0 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            // Over the home feed's photos the logo needs a solid plate (Brand Book p11)
+            isHome && "rounded-xl bg-background px-2.5 py-1.5",
+          )}
           aria-label={`${BRAND_NAME} หน้าแรก`}
         >
-          <BrandLogo size="sm" tone={isHome || isLearn ? "ink" : "brand"} />
+          <BrandLogo beta size="sm" tone={isLearn ? "ink" : isHome ? "theme" : "brand"} />
         </button>
 
         {!isHome && !isGuestHome ? mainNav : null}
@@ -264,7 +283,7 @@ const DesktopTopNav = () => {
           {isHome ? (
             <NavLink
               to="/learn"
-              className="text-[13px] font-medium text-[#2f2e2c] transition-opacity hover:opacity-70"
+              className="text-[13px] font-medium text-foreground transition-opacity hover:opacity-70"
             >
               Get in Touch
             </NavLink>
@@ -275,36 +294,34 @@ const DesktopTopNav = () => {
             <button
               type="button"
               onClick={onShareProject}
-              aria-label="Share your Project"
+              aria-label="ลงผลงานใหม่"
               className={cn(
                 "group relative hidden h-9 items-center overflow-visible rounded-full sm:inline-flex",
-                isLearn ? "bg-[#2f2e2c] px-1.5" : "first-post-create first-post-create-idle",
+                "bg-foreground px-1.5",
               )}
             >
-              {isLearn ? null : <span className="first-post-create-beam rounded-full" aria-hidden />}
               <span
                 className={cn(
                   "relative z-10 inline-flex h-full items-center gap-2 rounded-full py-0 pl-1.5 pr-3.5 text-sm font-medium",
-                  isLearn
-                    ? "bg-transparent text-[#f5f5f5]"
-                    : "first-post-create-inner m-[1.5px] border border-border/60 bg-foreground text-background",
+                  "bg-transparent text-background",
                 )}
               >
                 <span
                   className={cn(
                     "inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full",
-                    isLearn ? "bg-[#f5f5f5] text-[#2f2e2c]" : "bg-gradient-brand text-white",
+                    "bg-background text-foreground",
                   )}
                 >
                   <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
                 </span>
-                <span className="whitespace-nowrap">Share your Project</span>
+                <span className="whitespace-nowrap">ลงผลงานใหม่</span>
               </span>
             </button>
           )}
           <JobsNavButton />
           {user && (
             <>
+              <FeedbackHeaderPill />
               <ChatNavButton />
               <NotificationBell />
             </>
@@ -334,12 +351,13 @@ const DesktopTopNav = () => {
               size="sm"
               onClick={() => navigate("/auth")}
               className={
-                isHome || isLearn
-                  ? "h-8 rounded-sm bg-[#2f2e2c] px-3 text-[13px] font-normal text-[#f5f5f5] hover:bg-[#2f2e2c]/90"
-                  : "rounded-full bg-gradient-brand text-white hover:opacity-90"
+                isLearn
+                  ? "h-8 rounded-sm bg-foreground px-3 text-[13px] font-normal text-background hover:bg-foreground/90"
+                  : isHome
+                    ? "h-8 rounded-sm bg-foreground px-3 text-[13px] font-normal text-background hover:bg-foreground/90"
+                    : "h-8 rounded-full bg-foreground px-4 text-[13px] font-normal text-background hover:bg-foreground/90"
               }
             >
-              {isHome || isLearn ? null : <User className="mr-1.5 h-4 w-4" />}
               เข้าสู่ระบบ
             </Button>
           )}

@@ -13,6 +13,7 @@ import type { HireOrderStatus, HireWhtStatus } from "@/lib/payments/types";
 import { getSupabaseErrorMessage, isBenignQueryError, isMissingResourceError } from "@/lib/supabaseErrors";
 import { sharedStorage, SHARED_MEDIA_BUCKET } from "@/integrations/supabase/sharedStorageClient";
 import { toast } from "sonner";
+import { userFacingError } from "@/lib/userFacingError";
 
 export type HireOrderRow = {
   id: string;
@@ -518,7 +519,7 @@ export function useSubmitHireWork() {
       void qc.invalidateQueries({ queryKey: ["hire-order-by-request"] });
       toast.success("ส่งผลงานแล้ว — รอผู้จ้างยืนยัน");
     },
-    onError: (e) => toast.error(getSupabaseErrorMessage(e)),
+    onError: (e) => toast.error(userFacingError(e)),
   });
 }
 
@@ -594,7 +595,7 @@ export function useApproveHireWork() {
       void qc.invalidateQueries({ queryKey: ["hiring_requests"] });
       toast.success("ยืนยันรับผลงานแล้ว — ปล่อยเงินให้ผู้รับงาน");
     },
-    onError: (e) => toast.error(getSupabaseErrorMessage(e)),
+    onError: (e) => toast.error(userFacingError(e)),
   });
 }
 
@@ -641,7 +642,7 @@ export function useOpenHireDispute() {
       void qc.invalidateQueries({ queryKey: ["hire-order-by-request"] });
       toast.success("เปิดข้อพิพาทแล้ว — ทีมงานจะตรวจสอบ");
     },
-    onError: (e) => toast.error(getSupabaseErrorMessage(e)),
+    onError: (e) => toast.error(userFacingError(e)),
   });
 }
 
@@ -711,7 +712,7 @@ export function useUploadHireWhtCert() {
           : "อัปโหลด 50 ทวิ แล้ว — รอผู้รับงานยืนยัน",
       );
     },
-    onError: (e) => toast.error(getSupabaseErrorMessage(e)),
+    onError: (e) => toast.error(userFacingError(e)),
   });
 }
 
@@ -751,7 +752,7 @@ export function useConfirmHireWhtReceived() {
       void qc.invalidateQueries({ queryKey: ["hire-order-by-id", vars.orderId] });
       toast.success("ยืนยันรับหนังสือรับรอง 50 ทวิ แล้ว");
     },
-    onError: (e) => toast.error(getSupabaseErrorMessage(e)),
+    onError: (e) => toast.error(userFacingError(e)),
   });
 }
 

@@ -76,7 +76,7 @@ jobs:
         continue-on-error: true
 
       - name: Public smoke (curl)
-        run: BASE_URL=https://aplus1-demo.vercel.app npm run smoke:public
+        run: BASE_URL=https://samecor.com npm run smoke:public
 
   security-e2e:
     runs-on: ubuntu-latest

@@ -57,10 +57,10 @@ const ExploreToolFilterBar = ({ primaryTool, extraTools, onAddTool, onRemoveTool
           <PopoverTrigger asChild>
             <button
               type="button"
-              aria-label="เพิ่มเครื่องมือ"
-              className="inline-flex items-center justify-center w-7 h-7 rounded-full border border-dashed border-primary/40 text-primary hover:bg-primary/10 hover:border-primary/60 transition-colors shrink-0"
+              title="แสดงเฉพาะผลงานที่ใช้ครบทุกเครื่องมือที่เลือก"
+              className="inline-flex h-7 shrink-0 items-center gap-1 rounded-full border border-dashed border-primary/40 px-2.5 text-xs text-primary transition-colors hover:border-primary/60 hover:bg-primary/10"
             >
-              <Plus className="w-3.5 h-3.5" />
+              <Plus className="h-3.5 w-3.5" aria-hidden /> เพิ่มเครื่องมือ
             </button>
           </PopoverTrigger>
           <PopoverContent align="start" className="w-72 p-3 space-y-2">

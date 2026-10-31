@@ -79,7 +79,7 @@ export function ForumLayout({ children, title, subtitle, className }: Props) {
         Desktop: DesktopTopNav is the main site chrome; this bar is forum tools under it.
         Mobile: full forum header (DesktopTopNav is lg-only).
       */}
-      <header className="sticky top-0 z-30 border-b border-border/40 bg-background/40 backdrop-blur-xl supports-[backdrop-filter]:bg-background/30 lg:top-14">
+      <header className="sticky top-0 z-30 border-b border-border/40 bg-background lg:top-14">
         <div className="mx-auto flex h-14 max-w-[1044px] items-center gap-3 px-4 lg:max-w-[1920px] lg:px-[calc(1.5rem+25px)] 2xl:px-[calc(2.5rem+25px)]">
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>

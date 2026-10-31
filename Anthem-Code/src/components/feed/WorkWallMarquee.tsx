@@ -133,7 +133,7 @@ const WorkWallMarquee = ({
       <div
         className={cn(
           embed ? "h-full" : "absolute inset-0",
-          "bg-gradient-to-br from-primary/[0.06] via-muted/30 to-muted/50 animate-pulse",
+          "bg-muted animate-pulse",
           className,
         )}
         aria-hidden
@@ -146,7 +146,7 @@ const WorkWallMarquee = ({
       <div
         className={cn(
           embed ? "h-full" : "absolute inset-0",
-          "bg-gradient-to-br from-primary/[0.08] via-muted/40 to-background",
+          "bg-muted",
           className,
         )}
         aria-hidden

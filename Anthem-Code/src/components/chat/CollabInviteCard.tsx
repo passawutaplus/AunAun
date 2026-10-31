@@ -92,7 +92,7 @@ const CollabInviteCard = ({ content, mine, actions, inviteRef }: Props) => {
               type="button"
               size="sm"
               disabled={actions.busy}
-              className="flex-1 rounded-full bg-[hsl(var(--chat-collab))] text-white hover:opacity-90"
+              className="flex-1 rounded-full bg-[hsl(var(--chat-collab))] text-[hsl(var(--chat-collab-foreground))] hover:opacity-90"
               onClick={actions.onAccept}
             >
               {actions.busy ? (
@@ -145,7 +145,7 @@ const CollabInviteCard = ({ content, mine, actions, inviteRef }: Props) => {
       />
 
       <p className="mt-2 text-[10px] text-muted-foreground">
-        ไม่ใช่การจ้างงาน — ถ้ายอมรับจะได้เอกสารแผนคอลแลปเป็นแนวทางทำงานร่วมกัน
+        ไม่ใช่การจ้างงาน — ถ้าตอบรับ จะได้ทำแผนสั้นๆ และแบ่งงานกันใน Tasks
       </p>
     </ChatCardShell>
   );

@@ -3,7 +3,7 @@ import { format } from "date-fns";
 import { th } from "date-fns/locale";
 import { Download, FileText, Loader2, Search } from "lucide-react";
 import { toast } from "sonner";
-import { DocumentPaper } from "@/components/documents/DocumentPaper";
+import { PrintableDocumentPaper } from "@/components/documents/DocumentPaper";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -54,7 +54,6 @@ function openOrPrintDoc(item: DashboardHireDocItem, onView: (item: DashboardHire
   }
   if (item.snapshot) {
     onView(item);
-    toast.info("กด Ctrl/⌘+P เพื่อบันทึกเป็น PDF");
     return;
   }
   toast.info("ยังไม่มีไฟล์สำหรับเอกสารนี้");
@@ -152,7 +151,7 @@ export default function DashboardHireDocumentsPanel({ userId }: Props) {
         </p>
       ) : filtered.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border/80 bg-muted/20 px-4 py-8 text-center">
-          <FileText className="mx-auto h-8 w-8 text-muted-foreground/50" />
+          <FileText className="mx-auto h-8 w-8 text-muted-foreground" />
           <p className="mt-2 text-sm text-muted-foreground">
             {data && data.length > 0
               ? "ไม่พบเอกสารตามตัวกรอง"
@@ -237,7 +236,7 @@ export default function DashboardHireDocumentsPanel({ userId }: Props) {
               {viewItem?.projectTitle ? ` · ${viewItem.projectTitle}` : ""}
             </DialogDescription>
           </DialogHeader>
-          {viewItem?.snapshot ? <DocumentPaper doc={viewItem.snapshot} /> : null}
+          {viewItem?.snapshot ? <PrintableDocumentPaper doc={viewItem.snapshot} /> : null}
         </DialogContent>
       </Dialog>
     </section>

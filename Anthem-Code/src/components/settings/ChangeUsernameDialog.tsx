@@ -141,7 +141,7 @@ export function ChangeUsernameDialog({
           <WarningBox>{COOLDOWN_WARN}</WarningBox>
 
           {onCooldown && cooldownUntil ? (
-            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-foreground">
+            <div className="rounded-xl border border-warning/30 bg-warning/10 px-4 py-3 text-xs text-foreground">
               ยังเปลี่ยนไม่ได้ — ครั้งถัดไปได้หลัง{" "}
               {cooldownUntil.toLocaleDateString("th-TH", {
                 day: "numeric",
@@ -178,7 +178,7 @@ export function ChangeUsernameDialog({
                     spellCheck={false}
                     autoFocus
                     placeholder="username"
-                    className="flex-1 bg-transparent px-3 py-2.5 text-sm text-foreground placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground/40 focus:outline-none"
+                    className="flex-1 bg-transparent px-3 py-2.5 text-sm text-foreground placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground focus:outline-none"
                   />
                 </div>
                 <Button
@@ -216,9 +216,9 @@ export function ChangeUsernameDialog({
               ) : null}
 
               {verifiedOk ? (
-                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2.5">
+                <div className="rounded-xl border border-warning/30 bg-warning/10 px-3 py-2.5">
                   <p className="text-xs text-foreground flex items-start gap-2">
-                    <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+                    <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-warning dark:text-warning mt-0.5" />
                     <span>
                       ลิงก์จะเปลี่ยนจาก{" "}
                       <span className="font-medium">/@{saved}</span> เป็น{" "}

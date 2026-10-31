@@ -17,7 +17,7 @@ export function SettingsQuickLinksSection() {
         <div>
           <h3 className="text-sm font-semibold">Ecosystem & ลิงก์ด่วน</h3>
           <p className="text-xs text-muted-foreground mt-1">
-            So1o = หลังบ้านงาน · Aplus1 = โชว์เคสผลงานหน้าร้าน
+            So1o = หลังบ้านงาน · SAMECOR = โชว์เคสผลงานหน้าร้าน
           </p>
         </div>
 
@@ -25,14 +25,14 @@ export function SettingsQuickLinksSection() {
           <Button asChild variant="outline" size="sm" className="h-9 justify-start gap-2">
             <a href={aplus1Profile} target="_blank" rel="noopener noreferrer">
               <UserCircle className="h-4 w-4 text-primary shrink-0" />
-              โปรไฟล์ Aplus1
+              โปรไฟล์ SAMECOR
               <ExternalLink className="h-3 w-3 ml-auto opacity-50" />
             </a>
           </Button>
           <Button asChild variant="outline" size="sm" className="h-9 justify-start gap-2">
             <a href={aplus1ShowcaseUrl()} target="_blank" rel="noopener noreferrer">
               <Sparkles className="h-4 w-4 text-primary shrink-0" />
-              เปิด Aplus1 Showcase
+              เปิด SAMECOR Showcase
               <ExternalLink className="h-3 w-3 ml-auto opacity-50" />
             </a>
           </Button>

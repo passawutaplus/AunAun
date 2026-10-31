@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { noteRatingMoment } from "@/lib/ratingPrompt";
 import { sharedDb, supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -421,6 +422,7 @@ export function useCollabPlan(target: PlanTarget, enabled = true) {
       step,
       complete,
     });
+    if (complete) noteRatingMoment("plan_agreed");
     await qc.invalidateQueries({ queryKey });
     await qc.invalidateQueries({ queryKey: ["collab-plan-log", conversationId] });
     return { complete, step, acked: !wasAcked };

@@ -1,5 +1,6 @@
 import { Search, X } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
+import { useEffect, useMemo, useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
+import ColorSearchButton from "@/components/feed/ColorSearchButton";
 import {
   Dialog,
   DialogContent,
@@ -44,9 +45,20 @@ type Props = {
   resultCount?: number;
   recentSearches?: string[];
   onRecentSelect?: (query: string) => void;
+  /** Colour search sits beside the field (applies right away, like on desktop). */
+  colorQuery?: string | null;
+  onColorQueryChange?: (hex: string | null) => void;
+  /** Projects / Designers tabs (the bottom-nav search on phones). Designer filters apply live. */
+  tab?: SearchTab;
+  onTabChange?: (tab: SearchTab) => void;
+  designerSearch?: string;
+  onDesignerSearchChange?: (query: string) => void;
+  designerFilters?: ReactNode;
+  designerResultCount?: number;
 };
 
-const PAPER = '"Iowan Old Style", Palatino, Georgia, serif';
+export type SearchTab = "projects" | "designers";
+
 
 function Chip({
   label,
@@ -64,8 +76,8 @@ function Chip({
       className={cn(
         "rounded-full border px-3 py-1.5 text-xs transition-colors",
         active
-          ? "border-[#2f2e2c] bg-[#2f2e2c] text-[#f5f5f5]"
-          : "border-[#2f2e2c]/15 bg-white text-[#5c5954] hover:border-[#2f2e2c]/40 hover:text-[#2f2e2c]",
+          ? "border-foreground bg-foreground text-background"
+          : "border-foreground/15 bg-white dark:bg-card text-[#5c5954] dark:text-muted-foreground hover:border-foreground/40 hover:text-foreground",
       )}
     >
       {label}
@@ -83,6 +95,7 @@ function FilterBody({
   recentSearches = [],
   onRecentSelect,
   onHideAiChange,
+  colorControl,
 }: {
   draft: ProjectSearchFilterValue;
   setDraft: Dispatch<SetStateAction<ProjectSearchFilterValue>>;
@@ -93,6 +106,7 @@ function FilterBody({
   recentSearches?: string[];
   onRecentSelect?: (query: string) => void;
   onHideAiChange?: (hide: boolean) => void;
+  colorControl?: ReactNode;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const parent = draft.parentId === "All" ? null : getCategoryParent(draft.parentId);
@@ -133,8 +147,9 @@ function FilterBody({
 
   return (
     <div className="flex flex-col min-h-0 flex-1">
-      <div className="relative shrink-0">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6b6862]" />
+      <div className="flex shrink-0 items-center gap-2">
+      <div className="relative min-w-0 flex-1">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
           ref={inputRef}
           type="search"
@@ -144,12 +159,12 @@ function FilterBody({
             if (e.key === "Enter") onApply();
           }}
           placeholder="ค้นหาชื่อผลงาน เครื่องมือ สไตล์…"
-          className="w-full rounded-full border border-[#2f2e2c]/12 bg-white py-3 pl-10 pr-10 text-sm text-[#2f2e2c] placeholder:text-xs placeholder:font-light placeholder:text-[#2f2e2c]/35 focus:outline-none focus:ring-2 focus:ring-[#2f2e2c]/15"
+          className="w-full rounded-full border border-foreground/12 bg-white dark:bg-card py-3 pl-10 pr-10 text-sm text-foreground placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-foreground/15"
         />
         {draft.search ? (
           <button
             type="button"
-            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-[#6b6862] hover:bg-[#2f2e2c]/8"
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-muted-foreground hover:bg-foreground/8"
             aria-label="ล้างคำค้น"
             onClick={() => setDraft((p) => ({ ...p, search: "" }))}
           >
@@ -157,22 +172,25 @@ function FilterBody({
           </button>
         ) : null}
       </div>
+      {/* Phones / tablets only — desktop keeps colour search in the toolbar. */}
+      {colorControl ? <div className="shrink-0 lg:hidden">{colorControl}</div> : null}
+      </div>
 
       {!draft.search.trim() && recentSearches.length > 0 ? (
         <div className="mt-3 shrink-0">
-          <p className="mb-1.5 text-[11px] text-[#6b6862]">ค้นหาล่าสุด</p>
+          <p className="mb-1.5 text-[11px] text-muted-foreground">ค้นหาล่าสุด</p>
           <div className="flex flex-wrap gap-1.5">
             {recentSearches.map((q) => (
               <button
                 key={q}
                 type="button"
-                className="inline-flex items-center gap-1 rounded-full border border-[#2f2e2c]/10 bg-white px-2.5 py-1 text-xs text-[#2f2e2c] hover:border-[#2f2e2c]/30"
+                className="inline-flex items-center gap-1 rounded-full border border-foreground/10 bg-white dark:bg-card px-2.5 py-1 text-xs text-foreground hover:border-foreground/30"
                 onClick={() => {
                   setDraft((p) => ({ ...p, search: q }));
                   onRecentSelect?.(q);
                 }}
               >
-                <Search className="h-3 w-3 text-[#6b6862]" aria-hidden />
+                <Search className="h-3 w-3 text-muted-foreground" aria-hidden />
                 {q}
               </button>
             ))}
@@ -182,7 +200,7 @@ function FilterBody({
 
       <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain mt-4 space-y-5 pb-2">
         <section>
-          <p className="mb-2 text-xs font-medium text-[#6b6862]">หมวดใหญ่</p>
+          <p className="mb-2 text-xs font-medium text-muted-foreground">หมวดใหญ่</p>
           <div className="flex flex-wrap gap-1.5">
             <Chip label="All" active={draft.parentId === "All"} onClick={() => selectParent("All")} />
             {CATEGORY_PARENTS.map((p) => (
@@ -197,7 +215,7 @@ function FilterBody({
         </section>
 
         <section>
-          <p className="mb-2 text-xs font-medium text-[#6b6862]">หมวดย่อย</p>
+          <p className="mb-2 text-xs font-medium text-muted-foreground">หมวดย่อย</p>
           {hasParent && subs.length > 0 ? (
             <div className="flex flex-wrap gap-1.5">
               {subs.map((s) => (
@@ -210,7 +228,7 @@ function FilterBody({
               ))}
             </div>
           ) : (
-            <p className="flex min-h-[2rem] items-center text-[11px] text-[#6b6862]/80">
+            <p className="flex min-h-[2rem] items-center text-[11px] text-muted-foreground/80">
               {hasParent
                 ? "หมวดนี้ยังไม่มีหมวดย่อย"
                 : "เลือกหมวดใหญ่ก่อน เพื่อดูหมวดย่อย"}
@@ -219,22 +237,87 @@ function FilterBody({
         </section>
       </div>
 
-      <div className="mt-auto flex shrink-0 items-center gap-2 border-t border-[#2f2e2c]/10 pt-3">
+      <div className="mt-auto flex shrink-0 items-center gap-2 border-t border-foreground/10 pt-3">
         {activeExtra > 0 || draft.parentId !== "All" ? (
-          <button type="button" className="rounded-full px-3 py-2 text-sm text-[#5c5954] hover:text-[#2f2e2c]" onClick={clearAll}>
+          <button type="button" className="rounded-full px-3 py-2 text-sm text-[#5c5954] dark:text-muted-foreground hover:text-foreground" onClick={clearAll}>
             ล้างทั้งหมด
           </button>
         ) : (
-          <button type="button" className="rounded-full px-3 py-2 text-sm text-[#5c5954] hover:text-[#2f2e2c]" onClick={onClose}>
+          <button type="button" className="rounded-full px-3 py-2 text-sm text-[#5c5954] dark:text-muted-foreground hover:text-foreground" onClick={onClose}>
             ปิด
           </button>
         )}
         <button
           type="button"
-          className="flex-1 rounded-full bg-[#2f2e2c] py-2.5 text-sm text-[#f5f5f5] hover:bg-[#1c1b19]"
+          className="flex-1 rounded-full bg-foreground py-2.5 text-sm text-background hover:bg-foreground/90"
           onClick={onApply}
         >
           {typeof resultCount === "number" ? `ดูผลงาน (${resultCount})` : "ดูผลงาน"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function DesignerBody({
+  search,
+  onSearchChange,
+  filters,
+  resultCount,
+  onClose,
+}: {
+  search: string;
+  onSearchChange: (query: string) => void;
+  filters?: ReactNode;
+  resultCount?: number;
+  onClose: () => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const t = window.setTimeout(() => inputRef.current?.focus(), 50);
+    return () => window.clearTimeout(t);
+  }, []);
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="relative shrink-0">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <input
+          ref={inputRef}
+          type="search"
+          value={search}
+          onChange={(e) => onSearchChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") onClose();
+          }}
+          placeholder="ค้นหาชื่อดีไซเนอร์ ทักษะ เครื่องมือ…"
+          className="w-full rounded-full border border-foreground/12 bg-white dark:bg-card py-3 pl-10 pr-10 text-sm text-foreground placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-foreground/15"
+        />
+        {search ? (
+          <button
+            type="button"
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-muted-foreground hover:bg-foreground/8"
+            aria-label="ล้างคำค้น"
+            onClick={() => onSearchChange("")}
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        ) : null}
+      </div>
+
+      <div className="mt-4 min-h-0 flex-1 overflow-y-auto overscroll-contain pb-2">{filters}</div>
+
+      <div className="mt-auto flex shrink-0 items-center gap-2 border-t border-foreground/10 pt-3">
+        <button type="button" className="rounded-full px-3 py-2 text-sm text-[#5c5954] dark:text-muted-foreground hover:text-foreground" onClick={onClose}>
+          ปิด
+        </button>
+        <button
+          type="button"
+          className="flex-1 rounded-full bg-foreground py-2.5 text-sm text-background hover:bg-foreground/90"
+          onClick={onClose}
+        >
+          {typeof resultCount === "number" ? `ดูดีไซเนอร์ (${resultCount})` : "ดูดีไซเนอร์"}
         </button>
       </div>
     </div>
@@ -250,7 +333,18 @@ const ProjectSearchFilterSheet = ({
   resultCount,
   recentSearches = [],
   onRecentSelect,
+  colorQuery = null,
+  onColorQueryChange,
+  tab = "projects",
+  onTabChange,
+  designerSearch = "",
+  onDesignerSearchChange,
+  designerFilters,
+  designerResultCount,
 }: Props) => {
+  const colorControl = onColorQueryChange ? (
+    <ColorSearchButton value={colorQuery} onChange={onColorQueryChange} className="h-11 w-11" />
+  ) : null;
   const isMobile = useIsMobile();
   const [draft, setDraft] = useState(value);
 
@@ -266,9 +360,10 @@ const ProjectSearchFilterSheet = ({
     onOpenChange(false);
   };
 
-  const title = "Search and filter projects";
+  const designersTab = tab === "designers" && !!onDesignerSearchChange;
+  const title = designersTab ? "Search designers" : "Search and filter projects";
   const paper =
-    "border-[#e4e1db] bg-[#f5f5f5] text-[#2f2e2c] shadow-[0_28px_80px_-36px_rgba(47,46,44,0.55)] [&>button]:text-[#2f2e2c]";
+    "border-border dark:border-border bg-background text-foreground shadow-sm [&>button]:text-foreground";
   const toggleHideAi = () => {
     setDraft((p) => {
       const hideAi = !p.hideAi;
@@ -278,9 +373,43 @@ const ProjectSearchFilterSheet = ({
   };
 
   const titleRow = (
-    <span style={{ fontFamily: PAPER }} className="text-[1.65rem] font-medium leading-none tracking-tight text-[#2f2e2c]">
+    <span className="font-display text-[1.5rem] font-normal leading-none tracking-tight text-foreground">
       {title}
     </span>
+  );
+
+  const tabsRow = onTabChange ? (
+    <div className="mb-3 flex shrink-0 gap-1.5" role="tablist" aria-label="ค้นหา">
+      <Chip label="Projects" active={!designersTab} onClick={() => onTabChange("projects")} />
+      <Chip label="Designers" active={designersTab} onClick={() => onTabChange("designers")} />
+    </div>
+  ) : null;
+
+  const hideAiToggle = designersTab ? null : (
+    <HideAiToggle active={draft.hideAi} onToggle={toggleHideAi} className="mt-0.5 h-10 w-10 !text-foreground hover:!bg-foreground/8 [&_svg]:h-6 [&_svg]:w-6" />
+  );
+
+  const body = designersTab ? (
+    <DesignerBody
+      search={designerSearch}
+      onSearchChange={onDesignerSearchChange!}
+      filters={designerFilters}
+      resultCount={designerResultCount}
+      onClose={() => onOpenChange(false)}
+    />
+  ) : (
+    <FilterBody
+      draft={draft}
+      setDraft={setDraft}
+      onApply={apply}
+      onClose={() => onOpenChange(false)}
+      resultCount={resultCount}
+      autoFocusSearch
+      recentSearches={recentSearches}
+      onRecentSelect={onRecentSelect}
+      onHideAiChange={onHideAiChange}
+      colorControl={colorControl}
+    />
   );
 
   if (isMobile) {
@@ -288,7 +417,7 @@ const ProjectSearchFilterSheet = ({
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent
           side="bottom"
-          overlayClassName="bg-[#2f2e2c]/40"
+          overlayClassName="bg-foreground/40"
           aria-describedby={undefined}
           className={cn(paper, "flex h-[92dvh] flex-col gap-0 rounded-t-[1.75rem] border-0 p-4")}
         >
@@ -297,20 +426,11 @@ const ProjectSearchFilterSheet = ({
               <div className="min-w-0">
                 <SheetTitle className="text-base font-normal">{titleRow}</SheetTitle>
               </div>
-              <HideAiToggle active={draft.hideAi} onToggle={toggleHideAi} className="mt-0.5 h-10 w-10 !text-[#2f2e2c] hover:!bg-[#2f2e2c]/8 [&_svg]:h-6 [&_svg]:w-6" />
+              {hideAiToggle}
             </div>
           </SheetHeader>
-          <FilterBody
-            draft={draft}
-            setDraft={setDraft}
-            onApply={apply}
-            onClose={() => onOpenChange(false)}
-            resultCount={resultCount}
-            autoFocusSearch
-            recentSearches={recentSearches}
-            onRecentSelect={onRecentSelect}
-            onHideAiChange={onHideAiChange}
-          />
+          {tabsRow}
+          {body}
         </SheetContent>
       </Sheet>
     );
@@ -319,7 +439,7 @@ const ProjectSearchFilterSheet = ({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        overlayClassName="bg-[#2f2e2c]/40"
+        overlayClassName="bg-foreground/40"
         aria-describedby={undefined}
         className={cn(paper, "flex max-h-[85vh] flex-col gap-0 p-6 sm:max-w-lg sm:rounded-[1.75rem]")}
       >
@@ -328,20 +448,11 @@ const ProjectSearchFilterSheet = ({
             <div className="min-w-0">
               <DialogTitle className="text-base font-normal">{titleRow}</DialogTitle>
             </div>
-            <HideAiToggle active={draft.hideAi} onToggle={toggleHideAi} className="mt-0.5 h-10 w-10 !text-[#2f2e2c] hover:!bg-[#2f2e2c]/8 [&_svg]:h-6 [&_svg]:w-6" />
+            {hideAiToggle}
           </div>
         </DialogHeader>
-        <FilterBody
-          draft={draft}
-          setDraft={setDraft}
-          onApply={apply}
-          onClose={() => onOpenChange(false)}
-          resultCount={resultCount}
-          autoFocusSearch
-          recentSearches={recentSearches}
-          onRecentSelect={onRecentSelect}
-          onHideAiChange={onHideAiChange}
-        />
+        {tabsRow}
+        {body}
       </DialogContent>
     </Dialog>
   );

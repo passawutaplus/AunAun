@@ -1,6 +1,8 @@
 /**
  * VirusTotal helpers for project asset scanning (Edge Functions only).
- * Set VIRUSTOTAL_API_KEY in Supabase secrets; falls back to basic pass when unset.
+ * Set VIRUSTOTAL_API_KEY in Supabase secrets. Without a key the caller relies on local content checks only.
+ * When a key IS set but VirusTotal errors or times out the result is `unavailable` (never `clean`), so the
+ * attachment stays pending and is retried instead of being waved through.
  */
 
 const API_BASE = "https://www.virustotal.com/api/v3";
@@ -10,7 +12,15 @@ export type VtScanResult = {
   reason: string | null;
   positives?: number;
   total?: number;
+  /** Key configured but the service failed / timed out — treat as pending, not clean. */
+  unavailable?: boolean;
 };
+
+const UNAVAILABLE: VtScanResult = { clean: false, reason: null, unavailable: true };
+
+export function virusTotalConfigured(): boolean {
+  return !!Deno.env.get("VIRUSTOTAL_API_KEY")?.trim();
+}
 
 function apiKey(): string | undefined {
   const k = Deno.env.get("VIRUSTOTAL_API_KEY")?.trim();
@@ -33,7 +43,7 @@ async function pollAnalysis(analysisId: string, maxAttempts = 12): Promise<VtSca
   for (let i = 0; i < maxAttempts; i++) {
     const res = await vtFetch(`/analyses/${analysisId}`);
     if (!res.ok) {
-      return { clean: true, reason: null };
+      return UNAVAILABLE;
     }
     const json = await res.json();
     const status = json?.data?.attributes?.status;
@@ -54,7 +64,7 @@ async function pollAnalysis(analysisId: string, maxAttempts = 12): Promise<VtSca
     }
     await new Promise((r) => setTimeout(r, 2000));
   }
-  return { clean: true, reason: null };
+  return UNAVAILABLE;
 }
 
 export async function virusTotalScanUrl(url: string): Promise<VtScanResult> {
@@ -68,15 +78,15 @@ export async function virusTotalScanUrl(url: string): Promise<VtScanResult> {
       headers: { "content-type": "application/x-www-form-urlencoded" },
       body,
     });
-    if (!submit.ok) return { clean: true, reason: null };
+    if (!submit.ok) return UNAVAILABLE;
 
     const submitted = await submit.json();
     const analysisId = submitted?.data?.id as string | undefined;
-    if (!analysisId) return { clean: true, reason: null };
+    if (!analysisId) return UNAVAILABLE;
 
     return await pollAnalysis(analysisId, 8);
   } catch {
-    return { clean: true, reason: null };
+    return UNAVAILABLE;
   }
 }
 
@@ -87,14 +97,14 @@ export async function virusTotalScanFile(bytes: Uint8Array): Promise<VtScanResul
     const form = new FormData();
     form.append("file", new Blob([bytes]), "asset.bin");
     const submit = await vtFetch("/files", { method: "POST", body: form });
-    if (!submit.ok) return { clean: true, reason: null };
+    if (!submit.ok) return UNAVAILABLE;
 
     const submitted = await submit.json();
     const analysisId = submitted?.data?.id as string | undefined;
-    if (!analysisId) return { clean: true, reason: null };
+    if (!analysisId) return UNAVAILABLE;
 
     return await pollAnalysis(analysisId, 15);
   } catch {
-    return { clean: true, reason: null };
+    return UNAVAILABLE;
   }
 }

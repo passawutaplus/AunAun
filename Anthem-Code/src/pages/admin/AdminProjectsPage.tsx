@@ -11,6 +11,7 @@ import { formatThaiDate } from "@/lib/format";
 import { getLicenseMeta } from "@/lib/licenses";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
+import { userFacingError } from "@/lib/userFacingError";
 
 interface Row {
   id: string;
@@ -87,7 +88,7 @@ export default function AdminProjectsPage() {
                   { id: r.id, status: s },
                   {
                     onSuccess: () => toast.success(`อัปเดตเป็น ${s}`),
-                    onError: (e: Error) => toast.error(e.message),
+                    onError: (e: Error) => toast.error(userFacingError(e)),
                   },
                 ),
             })),
@@ -98,7 +99,7 @@ export default function AdminProjectsPage() {
                 if (!window.confirm(`ลบผลงาน "${r.title}" ถาวร?`)) return;
                 remove.mutate(r.id, {
                   onSuccess: () => toast.success("ลบผลงานแล้ว"),
-                  onError: (e: Error) => toast.error(e.message),
+                  onError: (e: Error) => toast.error(userFacingError(e)),
                 });
               },
             },

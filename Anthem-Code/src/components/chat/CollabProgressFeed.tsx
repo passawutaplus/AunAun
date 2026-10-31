@@ -556,7 +556,7 @@ export function CollabProgressFeed({
                     className={cn(
                       "flex h-6 w-6 items-center justify-center rounded-full border text-[10px] font-semibold tabular-nums bg-background",
                       confirmed
-                        ? "border-[hsl(var(--chat-collab))] bg-[hsl(var(--chat-collab))] text-white"
+                        ? "border-[hsl(var(--chat-collab))] bg-[hsl(var(--chat-collab))] text-[hsl(var(--chat-collab-foreground))]"
                         : "border-border text-muted-foreground",
                     )}
                     aria-hidden
@@ -766,7 +766,7 @@ export function CollabProgressFeed({
                     <Button
                       type="button"
                       size="sm"
-                      className="w-full h-9 rounded-full text-[12px] bg-[hsl(var(--chat-collab))] text-white hover:opacity-90"
+                      className="w-full h-9 rounded-full text-[12px] bg-[hsl(var(--chat-collab))] text-[hsl(var(--chat-collab-foreground))] hover:opacity-90"
                       onClick={() => confirmEntry(entry)}
                     >
                       <Check className="w-3.5 h-3.5 mr-1.5" strokeWidth={2.5} />
@@ -785,7 +785,7 @@ export function CollabProgressFeed({
                         className={cn(
                           "h-8 rounded-full text-[11px]",
                           commentsOpen
-                            ? "bg-[hsl(var(--chat-collab))] text-white hover:opacity-90"
+                            ? "bg-[hsl(var(--chat-collab))] text-[hsl(var(--chat-collab-foreground))] hover:opacity-90"
                             : "border-[hsl(var(--chat-collab)/0.45)] text-[hsl(var(--chat-collab))]",
                         )}
                         onClick={() =>
@@ -937,7 +937,7 @@ export function CollabProgressFeed({
                                   <Button
                                     type="button"
                                     size="sm"
-                                    className="h-8 rounded-full text-[11px] bg-[hsl(var(--chat-collab))] text-white hover:opacity-90"
+                                    className="h-8 rounded-full text-[11px] bg-[hsl(var(--chat-collab))] text-[hsl(var(--chat-collab-foreground))] hover:opacity-90"
                                     onClick={() => addComment(entry.id)}
                                   >
                                     <Send className="w-3.5 h-3.5 mr-1" />

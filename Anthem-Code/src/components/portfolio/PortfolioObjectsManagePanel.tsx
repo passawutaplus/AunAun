@@ -330,13 +330,22 @@ function OrderCards({
               <li key={row.id} className="rounded-lg border bg-card p-3">
                 <div className="flex items-start justify-between gap-3">
                   <p className="font-medium">{row.object_title}</p>
-                  <span className="shrink-0 text-xs font-medium text-orange-600">{orderStatusLabel(row.status)}</span>
+                  <span className="shrink-0 text-xs font-medium text-warning">{orderStatusLabel(row.status)}</span>
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {row.finish ? `${row.finish} · ` : ""}
                   จำนวน {row.qty}
                   {amount ? ` · ${amount}` : ""}
+                  {row.shipping_satang > 0 ? ` (รวมค่าส่ง ${formatBaht(Math.round(row.shipping_satang / 100))})` : ""}
+                  {role === "seller" && row.seller_net_satang > 0
+                    ? ` · รับสุทธิ ${formatBaht(Math.round(row.seller_net_satang / 100))}`
+                    : ""}
                 </p>
+                {role === "buyer" && row.status === "shipped" ? (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    ได้ของแล้วกดรับของ ถ้าไม่กด ระบบยืนยันให้อัตโนมัติ 7 วันหลังส่ง
+                  </p>
+                ) : null}
                 {row.note ? <p className="mt-1 text-xs text-muted-foreground">{row.note}</p> : null}
                 {role === "seller" && row.ship_address ? (
                   <p className="mt-2 text-xs leading-5">
@@ -400,7 +409,7 @@ function OrderCards({
                   ) : null}
                   {role === "buyer" && row.status === "shipped" ? (
                     <Button type="button" size="sm" onClick={() => onUpdate(row.id, "completed", undefined, "รับของแล้ว")}>
-                      ได้รับของแล้ว
+                      ยืนยันรับของ
                     </Button>
                   ) : null}
                 </div>

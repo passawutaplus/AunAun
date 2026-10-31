@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
 import { toast } from "sonner";
+import { userFacingError } from "@/lib/userFacingError";
 
 interface ContractRow {
   id: string;
@@ -47,12 +48,12 @@ const ContractsListInner = () => {
       toast.success("ลบแล้ว");
       qc.invalidateQueries({ queryKey: ["contracts"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(userFacingError(e)),
   });
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="border-b border-border/40 backdrop-blur-md bg-background/60 sticky top-0 z-20">
+      <div className="border-b border-border/40 bg-background sticky top-0 z-20">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <BackButton />
@@ -79,7 +80,7 @@ const ContractsListInner = () => {
           </div>
         ) : rows.length === 0 ? (
           <div className="text-center py-20 border border-dashed border-border/60 rounded-xl">
-            <FileText className="h-10 w-10 mx-auto text-muted-foreground/40 mb-3" />
+            <FileText className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
             <p className="text-sm text-muted-foreground mb-4">ยังไม่มีร่างสัญญา</p>
             <Button asChild className="gap-1.5">
               <Link to="/contracts/new">

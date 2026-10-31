@@ -12,7 +12,7 @@ import {
   OBJECT_KINDS,
   OBJECT_SUBTYPES,
   filterObjects,
-  isEditionSoldOut,
+  isObjectSoldOut,
   sortObjectsByPrice,
   type ObjectFilter,
   type ObjectKind,
@@ -50,7 +50,7 @@ export default function ObjectCatalog({ search, onClearSearch }: Props) {
   const source = (query.data?.length ? query.data : SAMPLE_OBJECTS).filter(
     (item) =>
       (item.kind === "made" || item.kind === "art-toy" || item.kind === "prints") &&
-      !isEditionSoldOut(item.edition, item.edition_label),
+      !isObjectSoldOut(item),
   );
 
   const filter: ObjectFilter = {

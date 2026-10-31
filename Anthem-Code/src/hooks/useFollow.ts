@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { notifyAnthem } from "@/lib/notifyAnthem";
 import { createBatchLoader } from "@/lib/batchLoader";
+import { FOLLOWED_DESIGNERS_KEY } from "@/hooks/useFollowedDesigners";
 
 type FollowSummary = { followers: number; following: number; isFollowing: boolean };
 
@@ -17,6 +18,40 @@ const followSummaryLoader = createBatchLoader<FollowSummary>(async (ids) => {
     ]),
   );
 });
+
+/** "Does <target> follow <viewer>?" for every card on screen in one request. Keys are `viewer|target`. */
+const followsYouLoader = createBatchLoader<boolean>(async (keys) => {
+  const byViewer = new Map<string, string[]>();
+  for (const key of keys) {
+    const [viewer, target] = key.split("|");
+    if (!viewer || !target) continue;
+    byViewer.set(viewer, [...(byViewer.get(viewer) ?? []), target]);
+  }
+  const out = new Map<string, boolean>();
+  for (const [viewer, targets] of byViewer) {
+    const { data, error } = await supabase
+      .from("follows")
+      .select("follower_id")
+      .eq("following_id", viewer)
+      .in("follower_id", targets);
+    if (error) return null;
+    const followers = new Set((data ?? []).map((r) => r.follower_id));
+    for (const target of targets) out.set(`${viewer}|${target}`, followers.has(target));
+  }
+  return out;
+});
+
+/** True when `userId` follows the signed-in user (shown as "ติดตามคุณ" / "ติดตามกลับ"). */
+export const useFollowsYou = (userId: string | undefined) => {
+  const { user } = useAuth();
+  const { data } = useQuery({
+    queryKey: ["follows-you", user?.id, userId],
+    enabled: !!user?.id && !!userId && user.id !== userId,
+    staleTime: 60_000,
+    queryFn: async () => (await followsYouLoader.load(`${user!.id}|${userId}`)) ?? false,
+  });
+  return !!data;
+};
 
 export const useFollowState = (followingId: string | undefined) => {
   const { user } = useAuth();
@@ -77,10 +112,15 @@ export const useFollowState = (followingId: string | undefined) => {
         notifyAnthem({ event: "follow", following_id: followingId! });
       }
       qc.invalidateQueries({ queryKey: ["follow-counts", followingId] });
+      // The viewer's own "following" count changes too (profile header, Portfolio → Designers tab).
+      qc.invalidateQueries({ queryKey: ["follow-counts", user?.id] });
       qc.invalidateQueries({ queryKey: ["is-following", followingId, user?.id] });
       qc.invalidateQueries({ queryKey: ["followers-list"] });
       qc.invalidateQueries({ queryKey: ["following-list"] });
       qc.invalidateQueries({ queryKey: ["followed-user-ids", user?.id] });
+      qc.invalidateQueries({ queryKey: [FOLLOWED_DESIGNERS_KEY, user?.id] });
+      // Following back can make someone taggable as a collaborator.
+      qc.invalidateQueries({ queryKey: ["mutual-follow-candidates", user?.id] });
     },
   });
 

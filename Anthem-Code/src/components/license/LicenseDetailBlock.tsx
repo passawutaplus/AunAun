@@ -54,15 +54,12 @@ const LicenseDetailBlock = ({
           <button
             type="button"
             className={cn(
-              "w-full flex items-center justify-between gap-2 text-left hover:bg-muted/30 transition-colors",
+              "w-full flex items-center gap-2 text-left hover:bg-muted/30 transition-colors",
               embedded ? "py-3" : "px-4 py-3",
             )}
             aria-label={open ? "ย่อรายละเอียดสิทธิ์การใช้งาน" : "ดูรายละเอียดสิทธิ์การใช้งาน"}
           >
-            <span className="text-sm text-muted-foreground shrink-0 whitespace-nowrap">
-              สิทธิ์ของผลงานนี้
-            </span>
-            <span className="flex items-center gap-1.5 shrink-0 ml-auto">
+            <span className="flex items-center gap-1.5 shrink-0">
               <LicenseBadgeInline licenseType={licenseType} />
               {aiLevel ? <AiDisclosureBadge level={aiLevel} tone="inline" interactive={false} /> : null}
               <ChevronDown
@@ -99,7 +96,7 @@ const LicenseDetailBlock = ({
             <div className="flex flex-wrap items-center gap-2">
               {(meta.allowsCommercial || meta.id === "commercial_license") && (allowHire ?? true) && onHire && (
                 <Button size="sm" className="rounded-full" onClick={onHire}>
-                  อยากใช้งานนี้? ติดต่อจ้าง
+                  ติดต่อจ้าง
                 </Button>
               )}
               <Link to="/legal/ip" className="text-xs text-primary hover:underline">

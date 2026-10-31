@@ -22,7 +22,7 @@ export const COMMUNITY_KIND_INFO: Record<
   },
   question: {
     label: "Q&A",
-    desc: "ถามคำถามหรือขอคำแนะนำจากชุมชนนักออกแบบ",
+    desc: "ถามคำถามหรือขอคำแนะนำจากชุมชนครีเอเตอร์",
     titlePlaceholder: "คำถามของคุณ เช่น ควรใช้ฟอนต์แบบไหนกับแบรนด์ lifestyle",
     bodyPlaceholder: "อธิบายบริบทหรือรายละเอียดเพิ่มเติม...",
   },

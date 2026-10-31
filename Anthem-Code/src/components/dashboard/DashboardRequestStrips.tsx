@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Download, ExternalLink, FileText, Link2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { DocumentPaper } from "@/components/documents/DocumentPaper";
+import { PrintableDocumentPaper } from "@/components/documents/DocumentPaper";
 import type { LinkWorkKind } from "@/components/dashboard/LinkWorkDialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -186,7 +186,6 @@ export function DashboardDocumentStrip({ requestId, kind }: DocumentStripProps) 
               }
               if (first.snapshot) {
                 setViewItem(first);
-                toast.info("กด Ctrl/⌘+P เพื่อบันทึกเป็น PDF");
               }
             }}
           >
@@ -204,7 +203,7 @@ export function DashboardDocumentStrip({ requestId, kind }: DocumentStripProps) 
             </DialogTitle>
             <DialogDescription className="tabular-nums">{viewItem?.docNumber}</DialogDescription>
           </DialogHeader>
-          {viewItem?.snapshot ? <DocumentPaper doc={viewItem.snapshot} /> : null}
+          {viewItem?.snapshot ? <PrintableDocumentPaper doc={viewItem.snapshot} /> : null}
         </DialogContent>
       </Dialog>
     </div>

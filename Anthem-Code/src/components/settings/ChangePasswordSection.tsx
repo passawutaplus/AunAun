@@ -9,6 +9,7 @@ import { userHasEmailPassword, verifyUserPassword } from "@/lib/sensitiveActionA
 import { buildEmailConfirmUrl, buildResetPasswordUrl } from "@/lib/oauthRedirect";
 import type { User } from "@supabase/supabase-js";
 import { toast } from "sonner";
+import { userFacingError } from "@/lib/userFacingError";
 
 function PasswordField({
   id,
@@ -49,12 +50,6 @@ function PasswordField({
   );
 }
 
-function authMethodLabel(user: User, hasPassword: boolean): string {
-  const usesGoogle = user.identities?.some((i) => i.provider === "google") ?? false;
-  if (usesGoogle && !hasPassword) return "เข้าสู่ระบบด้วย Google";
-  if (usesGoogle && hasPassword) return "Google และรหัสผ่าน";
-  return "อีเมลและรหัสผ่าน";
-}
 
 export function ChangePasswordSection({ user }: { user: User }) {
   const email = user.email?.trim() ?? "";
@@ -81,7 +76,7 @@ export function ChangePasswordSection({ user }: { user: User }) {
         email,
         options: { emailRedirectTo: buildEmailConfirmUrl() },
       });
-      if (error) toast.error(error.message);
+      if (error) toast.error(userFacingError(error));
       else toast.success("ส่งอีเมลยืนยันตัวตนแล้ว — ตรวจกล่องจดหมายของคุณ");
     } finally {
       setVerifyBusy(false);
@@ -98,7 +93,7 @@ export function ChangePasswordSection({ user }: { user: User }) {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: buildResetPasswordUrl(),
       });
-      if (error) toast.error(error.message);
+      if (error) toast.error(userFacingError(error));
       else {
         toast.success(
           hasPassword ? "ส่งลิงก์เปลี่ยนรหัสผ่านแล้ว" : "ส่งลิงก์ตั้งรหัสผ่านแล้ว",
@@ -127,7 +122,7 @@ export function ChangePasswordSection({ user }: { user: User }) {
     try {
       await verifyUserPassword(email, current);
       const { error } = await supabase.auth.updateUser({ password: next });
-      if (error) toast.error(error.message);
+      if (error) toast.error(userFacingError(error));
       else {
         toast.success("เปลี่ยนรหัสผ่านสำเร็จ");
         setCurrent("");
@@ -142,92 +137,79 @@ export function ChangePasswordSection({ user }: { user: User }) {
     }
   };
 
+  const usesGoogle = user.identities?.some((i) => i.provider === "google") ?? false;
+
   return (
-    <section id="settings-password" className="scroll-mt-24 rounded-2xl glass-panel p-6 space-y-4">
+    <section id="settings-password" className="scroll-mt-24 rounded-2xl glass-panel p-5 sm:p-6 space-y-4">
       <div className="flex items-center gap-2">
-        <KeyRound className="w-5 h-5 text-primary" />
-        <h2 className="font-semibold text-foreground">รหัสผ่านเข้าสู่ระบบ</h2>
+        <KeyRound className="h-5 w-5 text-primary" />
+        <h2 className="font-semibold text-foreground">เข้าสู่ระบบ</h2>
       </div>
-      <p className="text-xs text-muted-foreground">
-        ใช้เข้าแอป — ไม่ใช่ PIN ถอนเงิน
-      </p>
 
-      <div className="rounded-xl border border-border/60 bg-muted/20 px-4 py-3 space-y-2">
-        <p className="text-sm text-foreground">
-          อีเมลบัญชี: <span className="font-medium">{email || "—"}</span>
-        </p>
-        <p className="text-xs text-muted-foreground">{authMethodLabel(user, hasPassword)}</p>
-        <div className="flex items-center gap-2 text-xs">
+      <div className="divide-y divide-border/50 rounded-xl border border-border/60">
+        <Row label="อีเมล" value={email || "—"}>
           {verified ? (
-            <>
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-              <span className="text-emerald-700 dark:text-emerald-300">ยืนยันตัวตนทางอีเมลแล้ว</span>
-            </>
+            <span className="inline-flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-300">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              ยืนยันแล้ว
+            </span>
           ) : (
-            <>
-              <MailCheck className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-              <span className="text-amber-700 dark:text-amber-300">ยังไม่ได้ยืนยันอีเมล</span>
-            </>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="rounded-full"
+              disabled={!email || verifyBusy}
+              onClick={() => void sendVerificationEmail()}
+            >
+              {verifyBusy ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-1.5 h-4 w-4" />}
+              ส่งอีเมลยืนยัน
+            </Button>
           )}
-        </div>
-      </div>
+        </Row>
 
-      <div className="flex flex-wrap gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="rounded-full"
-          disabled={!email || verified || verifyBusy}
-          onClick={() => void sendVerificationEmail()}
-        >
-          {verifyBusy ? (
-            <Loader2 className="h-4 w-4 animate-spin mr-2" />
-          ) : (
-            <ShieldCheck className="h-4 w-4 mr-2" />
-          )}
-          {verified ? "ยืนยันตัวตนแล้ว" : "ส่งอีเมลยืนยันตัวตน"}
-        </Button>
-
-        {hasPassword ? (
-          <Button
-            type="button"
-            variant={showPasswordForm ? "secondary" : "default"}
-            size="sm"
-            className="rounded-full"
-            disabled={!email}
-            onClick={() => setShowPasswordForm((open) => !open)}
-          >
-            <KeyRound className="h-4 w-4 mr-2" />
-            {showPasswordForm ? "ปิดฟอร์ม" : "ขอเปลี่ยนรหัสผ่าน"}
-          </Button>
+        {usesGoogle ? (
+          <Row label="Google" value="เข้าสู่ระบบด้วยบัญชี Google">
+            <span className="inline-flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-300">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              เชื่อมแล้ว
+            </span>
+          </Row>
         ) : null}
 
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="rounded-full"
-          disabled={!email || resetBusy}
-          onClick={() => void sendPasswordResetEmail()}
+        <Row
+          label="รหัสผ่าน"
+          value={hasPassword ? "••••••••" : usesGoogle ? "ยังไม่ได้ตั้ง (ไม่บังคับ)" : "ยังไม่ได้ตั้ง"}
         >
-          {resetBusy ? (
-            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+          {hasPassword ? (
+            <Button
+              type="button"
+              variant={showPasswordForm ? "secondary" : "outline"}
+              size="sm"
+              className="rounded-full"
+              disabled={!email}
+              onClick={() => setShowPasswordForm((open) => !open)}
+            >
+              {showPasswordForm ? "ปิด" : "เปลี่ยนรหัสผ่าน"}
+            </Button>
           ) : (
-            <MailCheck className="h-4 w-4 mr-2" />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="rounded-full"
+              disabled={!email || resetBusy}
+              onClick={() => void sendPasswordResetEmail()}
+            >
+              {resetBusy ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <MailCheck className="mr-1.5 h-4 w-4" />}
+              {usesGoogle ? "ตั้งรหัสผ่านเพิ่ม" : "ตั้งรหัสผ่าน"}
+            </Button>
           )}
-          {hasPassword ? "ลืมรหัสผ่าน" : "ตั้งรหัสผ่านผ่านอีเมล"}
-        </Button>
+        </Row>
       </div>
 
-      {!verified && (
-        <p className="text-xs text-muted-foreground">
-          กด <strong>ส่งอีเมลยืนยันตัวตน</strong> แล้วเปิดลิงก์ในอีเมลเพื่อยืนยันบัญชี
-        </p>
-      )}
-
       {showPasswordForm && hasPassword && (
-        <form onSubmit={submitPasswordChange} className="space-y-3 max-w-md border-t border-border/40 pt-4">
+        <form onSubmit={submitPasswordChange} className="max-w-md space-y-3">
           <PasswordField
             id="settings-current-pass"
             label="รหัสผ่านปัจจุบัน"
@@ -251,21 +233,32 @@ export function ChangePasswordSection({ user }: { user: User }) {
           />
           <div className="flex flex-wrap items-center gap-3 pt-1">
             <Button type="submit" disabled={saveBusy} size="sm" className="rounded-full">
-              {saveBusy && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              {saveBusy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               บันทึกรหัสผ่านใหม่
             </Button>
-            <p className="text-xs text-muted-foreground">
-              จำรหัสเดิมไม่ได้? กด <strong>ลืมรหัสผ่าน</strong> ด้านบน
-            </p>
+            <button
+              type="button"
+              className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline disabled:opacity-50"
+              disabled={resetBusy}
+              onClick={() => void sendPasswordResetEmail()}
+            >
+              จำรหัสเดิมไม่ได้? ส่งลิงก์ทางอีเมล
+            </button>
           </div>
         </form>
       )}
-
-      {!hasPassword && (
-        <p className="text-xs text-muted-foreground">
-          ยังไม่มีรหัสผ่านในระบบ — กด <strong>ตั้งรหัสผ่านผ่านอีเมล</strong> แล้วเปิดลิงก์ที่ส่งไป
-        </p>
-      )}
     </section>
+  );
+}
+
+function Row({ label, value, children }: { label: string; value: string; children?: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-3 px-3.5 py-3">
+      <div className="min-w-0">
+        <p className="text-xs text-muted-foreground">{label}</p>
+        <p className="truncate text-sm font-medium text-foreground">{value}</p>
+      </div>
+      <div className="shrink-0">{children}</div>
+    </div>
   );
 }

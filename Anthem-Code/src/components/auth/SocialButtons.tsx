@@ -3,12 +3,14 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { openOAuthPopup, signInWithOAuth } from "@/integrations/oauth";
+import { isWebViewApp } from "@/lib/appShell";
 import { cn } from "@/lib/utils";
+import { userFacingError } from "@/lib/userFacingError";
 
 async function handleGoogleOAuth(redirectTo?: string, popup?: Window | null) {
   const result = await signInWithOAuth({ redirectTo, popup });
   if (result.error) {
-    toast.error(result.error.message || "เข้าสู่ระบบด้วย Google ไม่สำเร็จ");
+    toast.error(userFacingError(result.error, "เข้าสู่ระบบด้วย Google ไม่สำเร็จ"));
   }
 }
 
@@ -25,12 +27,17 @@ export function SocialButtons({
   className,
   buttonClassName,
   redirectTo,
+  label = "เข้าสู่ระบบด้วย Google",
 }: {
   className?: string;
   buttonClassName?: string;
   redirectTo?: string;
+  label?: string;
 }) {
   const [busy, setBusy] = useState(false);
+
+  // Google rejects OAuth inside embedded WebViews (disallowed_useragent); email sign-in only there.
+  if (isWebViewApp()) return null;
 
   return (
     <div className={cn(className)}>
@@ -52,13 +59,14 @@ export function SocialButtons({
         className={cn("h-11 w-full gap-2 rounded-xl bg-background/60 backdrop-blur", buttonClassName)}
       >
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <GoogleIcon />}
-        <span className="text-sm">เข้าสู่ระบบด้วย Google</span>
+        <span className="text-sm">{label}</span>
       </Button>
     </div>
   );
 }
 
 export function AuthEmailSeparator() {
+  if (isWebViewApp()) return null;
   return (
     <div className="relative my-1">
       <div className="absolute inset-0 flex items-center">

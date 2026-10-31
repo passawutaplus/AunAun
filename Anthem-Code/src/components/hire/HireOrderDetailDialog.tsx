@@ -22,7 +22,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import UserAvatar from "@/components/UserAvatar";
-import { DocumentPaper } from "@/components/documents/DocumentPaper";
+import { PrintableDocumentPaper } from "@/components/documents/DocumentPaper";
 import { ChatOfferTimeline } from "@/components/chat/ChatOfferTimeline";
 import HireWorkSubmitDialog from "@/components/hire/HireWorkSubmitDialog";
 import {
@@ -46,6 +46,7 @@ import type { HireOrderStatus } from "@/lib/payments/types";
 import { SafeHttpLinks } from "@/components/hire/SafeHttpLinks";
 import { docKindLabelTh, displayOrderCode, orderCodeFromMetadata } from "@/lib/documents/numbering";
 import { buildHireAccountingMockup } from "@/lib/documents/hireAccountingMockup";
+import { isCommerceEnabled } from "@/lib/aplus1Launch";
 import { formatOfferAmount, parseChatOffer, type ChatOfferPayload } from "@/lib/chatOffer";
 import { parseHirePaidMessage, parseLegacyHirePaidText } from "@/lib/hirePaymentChat";
 import { satangToThb } from "@/lib/payments/fees";
@@ -134,15 +135,15 @@ function paymentStatusLabel(order: HireOrderRow | null | undefined): {
       };
     case "awaiting_payment":
     case "draft":
-      return { text: "รอชำระเงิน", className: "text-amber-600 dark:text-amber-400" };
+      return { text: "รอชำระเงิน", className: "text-warning dark:text-warning" };
     case "refunded":
       return { text: "คืนเงินแล้ว", className: "text-muted-foreground" };
     case "partially_refunded":
-      return { text: "คืนเงินบางส่วน", className: "text-amber-600 dark:text-amber-400" };
+      return { text: "คืนเงินบางส่วน", className: "text-warning dark:text-warning" };
     case "cancelled":
       return { text: "ยกเลิกแล้ว", className: "text-destructive" };
     case "disputed":
-      return { text: "ข้อพิพาท", className: "text-amber-600 dark:text-amber-400" };
+      return { text: "ข้อพิพาท", className: "text-warning dark:text-warning" };
     case "failed":
       return { text: "ชำระไม่สำเร็จ", className: "text-destructive" };
     default:
@@ -239,7 +240,7 @@ export function HireOrderDetailContent({
   /** When DB order/docs missing, rebuild a full Thai accounting mock from chat offer + paid. */
   const { data: chatAccountingHint } = useQuery({
     queryKey: ["hire-accounting-chat-hint", conversation.id],
-    enabled: !!conversation.id && (!order || documents.length === 0),
+    enabled: isCommerceEnabled() && !!conversation.id && (!order || documents.length === 0),
     staleTime: 15_000,
     queryFn: async () => {
       const { data, error } = await supabase
@@ -273,6 +274,8 @@ export function HireOrderDetailContent({
   });
 
   const accountingMock = useMemo(() => {
+    // Free launch: parties pay each other directly — never invent a "paid" state or platform docs.
+    if (!isCommerceEnabled()) return null;
     if (activeOrder && activeDocs.length > 0) return null;
     const offer = chatAccountingHint?.offer;
     if (!offer) return null;
@@ -420,11 +423,6 @@ export function HireOrderDetailContent({
       window.open(doc.file_url, "_blank", "noopener,noreferrer");
     } else {
       setViewDoc(doc);
-      toast.info(
-        doc.id.startsWith("mock-")
-          ? "เอกสารตัวอย่าง (mock) — กด Ctrl/⌘+P เพื่อบันทึกเป็น PDF"
-          : "กด Ctrl/⌘+P เพื่อบันทึกเป็น PDF",
-      );
     }
   };
 
@@ -451,7 +449,7 @@ export function HireOrderDetailContent({
             icon={Receipt}
             extra={
               accountingMock ? (
-                <Badge variant="outline" className="text-[10px] font-normal text-amber-700 dark:text-amber-400 border-amber-500/40">
+                <Badge variant="outline" className="text-[10px] font-normal text-warning dark:text-warning border-warning/40">
                   เอกสารตัวอย่าง
                 </Badge>
               ) : null
@@ -590,7 +588,7 @@ export function HireOrderDetailContent({
             icon={FileText}
             extra={
               accountingMock && activeDocs.length === 0 ? (
-                <span className="text-[10px] text-amber-700 dark:text-amber-400">
+                <span className="text-[10px] text-warning dark:text-warning">
                   ชุดบัญชีตัวอย่าง
                 </span>
               ) : null
@@ -713,7 +711,7 @@ export function HireOrderDetailContent({
             {canSubmit ? (
               <Button
                 type="button"
-                className="w-full rounded-full bg-[hsl(var(--chat-hire))] text-white hover:opacity-90"
+                className="w-full rounded-full bg-[hsl(var(--chat-hire))] text-[hsl(var(--chat-hire-foreground))] hover:opacity-90"
                 onClick={() => setSubmitOpen(true)}
               >
                 <Package className="w-4 h-4 mr-1.5" />
@@ -764,7 +762,7 @@ export function HireOrderDetailContent({
           </DialogHeader>
           {viewDoc ? (
             <div className="p-4">
-              <DocumentPaper doc={viewDoc.snapshot} />
+              <PrintableDocumentPaper doc={viewDoc.snapshot} />
             </div>
           ) : null}
         </DialogContent>

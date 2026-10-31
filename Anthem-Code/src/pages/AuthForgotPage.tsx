@@ -11,6 +11,7 @@ import { buildResetPasswordUrl } from "@/lib/oauthRedirect";
 import { toast } from "sonner";
 import { readLoginEmailPrefill } from "@/lib/loginEmailPrefill";
 import { SETTINGS_PIN_RECOVER_HREF } from "@/lib/settingsNav";
+import { userFacingError } from "@/lib/userFacingError";
 
 const AuthForgotPage = () => {
   const [email, setEmail] = useState("");
@@ -33,7 +34,7 @@ const AuthForgotPage = () => {
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
         redirectTo: buildResetPasswordUrl(),
       });
-      if (error) toast.error(error.message);
+      if (error) toast.error(userFacingError(error));
       else {
         setSent(true);
         toast.success("ส่งลิงก์รีเซ็ตรหัสผ่านไปทางอีเมลแล้ว");
@@ -44,11 +45,11 @@ const AuthForgotPage = () => {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#f5f5f5] text-[#2f2e2c]">
+    <div className="relative min-h-screen overflow-hidden bg-background text-foreground">
       <BackButton
         to="/auth"
         label="กลับไปเข้าสู่ระบบ"
-        className="absolute top-4 left-4 z-30 border-[#e4e1db] bg-white/90 text-[#2f2e2c] hover:bg-white"
+        className="absolute top-4 left-4 z-30 border-border bg-white/90 text-foreground hover:bg-white"
       />
 
       <div className="relative flex min-h-screen items-center justify-center p-4 sm:p-6">
@@ -57,14 +58,14 @@ const AuthForgotPage = () => {
             <BrandLogo tone="ink" />
           </div>
 
-          <h1 className="mb-2 text-center font-display text-[2.15rem] font-medium leading-tight tracking-tight text-[#2f2e2c]">
+          <h1 className="mb-2 text-center font-display text-[2.15rem] font-medium leading-tight tracking-tight text-foreground">
             ลืมรหัสผ่าน
           </h1>
           <p className="text-sm text-muted-foreground mb-6 thai-body text-center">
             เราจะส่งลิงก์ไปทางอีเมล จากนั้นใส่รหัสผ่านเดิมเพื่อยืนยันว่าเป็นเจ้าของบัญชี
           </p>
 
-          <div className="rounded-[1.75rem] border border-[#e4e1db] bg-white p-6 sm:p-7">
+          <div className="rounded-[1.75rem] border border-border bg-white p-6 sm:p-7">
             {sent ? (
               <div className="space-y-3 text-center">
                 <p className="text-sm thai-body">
@@ -91,7 +92,7 @@ const AuthForgotPage = () => {
                       placeholder="you@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="h-11 rounded-full border-[#e4e1db] bg-[#f5f5f5] pl-9 text-[#2f2e2c] shadow-none"
+                      className="h-11 rounded-full border-border bg-background pl-9 text-foreground shadow-none"
                       required
                     />
                   </div>
@@ -99,14 +100,14 @@ const AuthForgotPage = () => {
                 <Button
                   type="submit"
                   disabled={busy}
-                  className="h-11 w-full rounded-full border-0 bg-[#2f2e2c] text-base font-medium text-[#f5f5f5] shadow-none hover:bg-[#2f2e2c]/90"
+                  className="h-11 w-full rounded-full border-0 bg-foreground text-base font-medium text-background shadow-none hover:bg-foreground/90"
                 >
                   {busy && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                   ส่งลิงก์รีเซ็ตรหัสผ่าน
                 </Button>
                 <p className="text-center text-xs text-muted-foreground">
                   ลืม PIN ถอนเงินใช้คนละทาง —{" "}
-                  <Link to={SETTINGS_PIN_RECOVER_HREF} className="text-[#2f2e2c] underline underline-offset-2">
+                  <Link to={SETTINGS_PIN_RECOVER_HREF} className="text-foreground underline underline-offset-2">
                     เข้าสู่ระบบแล้วกู้ PIN ที่ตั้งค่าบัญชี
                   </Link>
                 </p>

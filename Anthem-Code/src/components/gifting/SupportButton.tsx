@@ -108,7 +108,7 @@ const SupportButtonInner = ({
             aria-label={tooltipText}
             className={cn("inline-flex flex-col items-stretch gap-0.5 w-full", className)}
           >
-            <span className={cn(chipClass, "text-primary hover:shadow-md hover:shadow-primary/20 transition")}>
+            <span className={cn(chipClass, "text-primary hover:shadow-md transition")}>
               {isOwn ? <Eye className="w-4 h-4 shrink-0" /> : <HandHeart className="w-4 h-4 shrink-0" />}
               <span className="truncate">{isOwn ? "พรีวิว" : "สนับสนุน"}</span>
             </span>

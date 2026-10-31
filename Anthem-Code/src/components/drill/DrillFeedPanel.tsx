@@ -56,7 +56,7 @@ export default function DrillFeedPanel() {
           <PageLoader label="กำลังโหลดผลงาน..." />
         ) : projects.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-12 rounded-2xl border border-dashed">
-            ยังไม่มีใครโพสต์ผลงานวันนี้ — เป็นคนแรกที่อวดผลงาน!
+            ยังไม่มีใครโพสต์ผลงานวันนี้ — ลงผลงานเป็นคนแรกได้เลย
           </p>
         ) : (
           <PortfolioGrid projects={projects as Parameters<typeof PortfolioGrid>[0]["projects"]} />

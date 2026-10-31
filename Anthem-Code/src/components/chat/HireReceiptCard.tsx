@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { DocumentPaper } from "@/components/documents/DocumentPaper";
+import { PrintableDocumentPaper } from "@/components/documents/DocumentPaper";
 import {
   ChatCardShell,
   ChatCardOrderMenu,
@@ -135,7 +135,7 @@ export default function HireReceiptCard({ payload, onOpenOrderDetail }: Props) {
                 กำลังโหลดใบเสร็จ…
               </div>
             ) : docRow?.snapshot ? (
-              <DocumentPaper doc={docRow.snapshot} />
+              <PrintableDocumentPaper doc={docRow.snapshot} />
             ) : (
               <p className="text-sm text-muted-foreground text-center py-8">
                 ยังโหลดใบเสร็จไม่ได้ — ลองเปิดจากรายละเอียดออเดอร์

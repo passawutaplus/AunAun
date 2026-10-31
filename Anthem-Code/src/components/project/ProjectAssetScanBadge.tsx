@@ -36,7 +36,7 @@ const ProjectAssetScanBadge = ({ status, variant = "public" }: Props) => {
   }
 
   return (
-    <Badge variant="outline" className="text-[10px] border-amber-500/40 text-amber-600 gap-1 shrink-0">
+    <Badge variant="outline" className="text-[10px] border-warning/40 text-warning gap-1 shrink-0">
       <Clock className="w-3 h-3" aria-hidden />
       กำลังตรวจสอบ
     </Badge>

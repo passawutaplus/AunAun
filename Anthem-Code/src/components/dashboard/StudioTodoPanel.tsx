@@ -256,7 +256,7 @@ export default function StudioTodoPanel({ userId, queue }: Props) {
       <div className="flex items-center justify-between gap-3">
         <h2 className="inline-flex items-center gap-2 text-base font-semibold text-foreground">
           <ListTodo className="h-4 w-4 text-muted-foreground" aria-hidden />
-          To Do List
+          รายการของฉัน
         </h2>
         {list.length > 0 ? (
           <p className="text-xs tabular-nums text-muted-foreground">

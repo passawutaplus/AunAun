@@ -21,7 +21,8 @@ import {
   isCollabContactedNewStatus,
   isCollabDeclinedStatus,
 } from "@/lib/collabInbox";
-import { buildCollabPlanDocumentMessage, emptyCollabPlanState, emptyPlanPayload } from "@/lib/collabToolkit";
+import { emptyCollabPlanState, emptyPlanPayload } from "@/lib/collabToolkit";
+import { COLLAB_WELCOME_PREFIX } from "@/lib/collabAgreement";
 import { useCollabPlanUi } from "@/stores/collabPlanUiStore";
 import { sharedDb } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -112,7 +113,7 @@ export function ChatCollabActions({ conversation }: Props) {
             type="button"
             size="sm"
             disabled={busy}
-            className="w-full rounded-full bg-[hsl(var(--chat-collab))] text-white hover:opacity-90"
+            className="w-full rounded-full bg-[hsl(var(--chat-collab))] text-[hsl(var(--chat-collab-foreground))] hover:opacity-90"
             onClick={() => {
               void (async () => {
                 try {
@@ -144,9 +145,7 @@ export function ChatCollabActions({ conversation }: Props) {
                   try {
                     await sendMessage.mutateAsync({
                       conversationId: conversation.id,
-                      content: buildCollabPlanDocumentMessage({
-                        projectTitle: conversation.project_title,
-                      }),
+                      content: COLLAB_WELCOME_PREFIX,
                     });
                   } catch {
                     /* accept already succeeded */
@@ -155,7 +154,7 @@ export function ChatCollabActions({ conversation }: Props) {
                   void qc.invalidateQueries({ queryKey: ["collab-plan", conversation.id] });
                   void qc.invalidateQueries({ queryKey: ["collab-plan-doc", conversation.id] });
                   collabPlanUi.openFor(conversation.id);
-                  toast.success("ตอบรับแล้ว — เปิดเอกสารแผนคอลแลปให้แล้ว");
+                  toast.success("ตอบรับแล้ว — เริ่มตกลงแผนกันได้เลย");
                 } catch (e: unknown) {
                   toast.error(e instanceof Error ? e.message : "ตอบรับไม่สำเร็จ");
                 }

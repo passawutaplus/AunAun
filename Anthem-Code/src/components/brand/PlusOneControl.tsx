@@ -10,6 +10,8 @@ type Props = {
   className?: string;
   onClick?: (e: React.MouseEvent) => void;
   ariaLabel?: string;
+  /** Hover tooltip for the button form. */
+  title?: string;
 };
 
 /**
@@ -24,6 +26,7 @@ export function PlusOneControl({
   className,
   onClick,
   ariaLabel = "ถูกใจ",
+  title,
 }: Props) {
   const textSize = size === "sm" ? "text-xs" : "text-sm";
   const heartSize = size === "sm" ? "w-4 h-4" : "w-5 h-5";
@@ -51,6 +54,7 @@ export function PlusOneControl({
         type="button"
         disabled={disabled}
         aria-label={ariaLabel}
+        title={title}
         aria-pressed={active}
         onClick={onClick}
         className={cn(

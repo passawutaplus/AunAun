@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { userFacingError } from "@/lib/userFacingError";
 
 export interface Studio {
   id: string;
@@ -131,7 +132,7 @@ export const useSetActiveStudio = () => {
       qc.invalidateQueries({ queryKey: ["profile"] });
       qc.invalidateQueries({ queryKey: ["active-studio"] });
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => toast.error(userFacingError(e)),
   });
 };
 
@@ -168,7 +169,7 @@ export const useTransferStudioOwnership = () => {
       qc.invalidateQueries({ queryKey: ["studio-id"] });
       toast.success("โอนสิทธิ์ผู้ก่อตั้งเรียบร้อย");
     },
-    onError: (e: any) => toast.error(e.message ?? "โอนสิทธิ์ไม่สำเร็จ"),
+    onError: (e: any) => toast.error(userFacingError(e, "โอนสิทธิ์ไม่สำเร็จ")),
   });
 };
 

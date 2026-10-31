@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { FileText, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import {
   formatOfferAmount,
   formatOfferDateShort,
   offerDeclineWithReasonMessage,
+  offerPaymentPlan,
   offerDepositAmount,
   offerDisplayMilestones,
   QUOTE_DECLINE_REASONS,
@@ -30,6 +31,7 @@ import {
 import { HIRE_POLICY_VERSION, PAYMENT_POLICY_VERSION } from "@/lib/legalConfig";
 import { sharedDb } from "@/integrations/supabase/client";
 import { ChatOfferTimeline } from "@/components/chat/ChatOfferTimeline";
+import { PrintButton } from "@/components/documents/PrintButton";
 import { ChatOfferPreview } from "@/components/chat/ChatOfferPreview";
 import {
   ChatCardShell,
@@ -38,6 +40,10 @@ import {
   chatCardAccent,
 } from "@/components/chat/ChatCardShell";
 import HireCheckoutDialog from "@/components/payments/HireCheckoutDialog";
+import { useMarkHireOfferAccepted } from "@/hooks/useHireCancelRequest";
+import { useClientRespondDoc } from "@/hooks/useStudioDocuments";
+import { isCommerceEnabled } from "@/lib/aplus1Launch";
+import { trackProductEvent } from "@/lib/productEvents";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -65,10 +71,16 @@ export function ChatOfferCard({
 }: Props) {
   const { user } = useAuth();
   const send = useSendMessage();
+  const markOfferAccepted = useMarkHireOfferAccepted();
+  const respondDoc = useClientRespondDoc();
+  // Free launch: a proposal is agreed in chat — no checkout, no deposit, payment is settled between the two.
+  const paid = isCommerceEnabled();
+  const plan = offerPaymentPlan(offer);
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [declineMode, setDeclineMode] = useState(false);
   const [busy, setBusy] = useState(false);
+  const paperRef = useRef<HTMLDivElement>(null);
   const [agreedService, setAgreedService] = useState(false);
   const [agreedPayment, setAgreedPayment] = useState(false);
   const [declineReason, setDeclineReason] = useState<QuoteDeclineReasonId>("revise_details");
@@ -147,6 +159,11 @@ export function ChatOfferCard({
           /* RLS — chat message still records intent */
         }
       }
+      if (offer.docId) {
+        await respondDoc
+          .mutateAsync({ docId: offer.docId, action: "decline", note: declineNote.trim() || undefined })
+          .catch(() => undefined);
+      }
       await send.mutateAsync({
         conversationId,
         content: offerDeclineWithReasonMessage(offer, declineReason, declineNote),
@@ -161,6 +178,35 @@ export function ChatOfferCard({
     }
   };
 
+  const handleAcceptFree = async () => {
+    setBusy(true);
+    try {
+      if (offer.quoteId) {
+        await sharedDb
+          .from("hire_quotes")
+          .update({ status: "accepted" } as never)
+          .eq("id", offer.quoteId)
+          .then(() => undefined, () => undefined);
+      }
+      if (offer.docId) {
+        await respondDoc.mutateAsync({ docId: offer.docId, action: "accept" }).catch(() => undefined);
+      }
+      if (hiringRequestId) await markOfferAccepted.mutateAsync(hiringRequestId);
+      await send.mutateAsync({
+        conversationId,
+        content: `ตอบรับข้อเสนอ «${offer.title}» แล้ว (${formatOfferAmount(offer.amount)}) — เริ่มงานได้เลย การชำระเงินตกลงกันเองนอก SAMECOR`,
+        messageType: "text",
+      });
+      toast.success("ตอบรับข้อเสนอแล้ว");
+      void trackProductEvent("proposal_accept", { conversation_id: conversationId }, { debounceMs: 0 });
+      handleQuoteOpenChange(false);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "ตอบรับไม่สำเร็จ");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const canDecline = declineReason !== "other" || declineNote.trim().length > 0;
   const canAcceptPay = agreedService && agreedPayment;
 
@@ -169,7 +215,7 @@ export function ChatOfferCard({
       <ChatCardShell
         tone="hire"
         icon={FileText}
-        title="ข้อเสนอราคา"
+        title={paid ? "ข้อเสนอราคา" : "ข้อเสนอ"}
         meta={offer.number || undefined}
         action={
           onOpenOrderDetail ? (
@@ -179,18 +225,18 @@ export function ChatOfferCard({
         footer={
           settled ? (
             <p className={cn("text-[11px] font-medium", chatCardAccent("success"))}>
-              ชำระตามใบเสนอราคาแล้ว
+              {paid ? "ชำระตามใบเสนอราคาแล้ว" : "ตอบรับข้อเสนอแล้ว"}
             </p>
           ) : canRespond ? (
             <Button
               type="button"
               size="sm"
-              className="w-full rounded-full bg-[hsl(var(--chat-hire))] text-white hover:opacity-90"
+              className="w-full rounded-full bg-[hsl(var(--chat-hire))] text-[hsl(var(--chat-hire-foreground))] hover:opacity-90"
               disabled={send.isPending}
               onClick={() => setQuoteOpen(true)}
             >
               <FileText className="w-3.5 h-3.5 mr-1" />
-              ดูใบเสนอราคา
+              {paid ? "ดูใบเสนอราคา" : "ดูข้อเสนอ"}
             </Button>
           ) : mine ? (
             <ChatCardStatus>รออีกฝ่ายตอบรับ</ChatCardStatus>
@@ -203,7 +249,18 @@ export function ChatOfferCard({
             {formatOfferAmount(offer.amount)}
           </p>
         </div>
-        {deposit != null ? (
+        {!paid ? (
+          plan.length > 1 ? (
+            <p className="text-[11px] text-muted-foreground">
+              แบ่งจ่าย {plan.length} งวด ·{" "}
+              {plan
+                .map((p) => `${p.percent}%`)
+                .join(" / ")}
+            </p>
+          ) : (
+            <p className="text-[11px] text-muted-foreground">จ่ายครั้งเดียว</p>
+          )
+        ) : deposit != null ? (
           <p className="text-[11px] text-muted-foreground">
             มัดจำ {depositPct}% · {formatOfferAmount(deposit)}
             {offer.depositDueDate
@@ -263,7 +320,9 @@ export function ChatOfferCard({
             <DialogDescription>
               {declineMode
                 ? "เลือกเหตุผลให้อีกฝ่ายทราบ — สามารถส่งใบใหม่ได้"
-                : "ตรวจสอบรายละเอียดและเงื่อนไขก่อนยืนยันชำระเงิน"}
+                : paid
+                  ? "ตรวจสอบรายละเอียดและเงื่อนไขก่อนยืนยันชำระเงิน"
+                  : "ตรวจรายละเอียดก่อนตอบรับ — SAMECOR ไม่ได้รับหรือถือเงิน ตกลงการชำระกันเองในแชท"}
             </DialogDescription>
           </DialogHeader>
 
@@ -302,8 +361,14 @@ export function ChatOfferCard({
             </div>
           ) : (
             <div className="space-y-4 py-1">
-              <ChatOfferPreview offer={offer} className="shadow-none" />
+              <div ref={paperRef} className="space-y-2">
+                <div className="flex justify-end">
+                  <PrintButton targetRef={paperRef} docNumber={offer.number} title={offer.title} />
+                </div>
+                <ChatOfferPreview offer={offer} className="shadow-none" />
+              </div>
 
+              {paid ? (
               <div className="space-y-2 rounded-xl border border-border/60 bg-muted/20 p-3">
                 <label className="flex gap-2.5 items-start cursor-pointer select-none">
                   <Checkbox
@@ -342,6 +407,7 @@ export function ChatOfferCard({
                   </span>
                 </label>
               </div>
+              ) : null}
             </div>
           )}
 
@@ -380,15 +446,27 @@ export function ChatOfferCard({
                   <X className="w-3.5 h-3.5 mr-1" />
                   ปฏิเสธ
                 </Button>
-                <Button
-                  type="button"
-                  className="rounded-full w-full sm:flex-1"
-                  disabled={busy || !canAcceptPay || send.isPending}
-                  onClick={() => void handleAcceptAndPay()}
-                >
-                  {busy ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
-                  ยืนยันและชำระเงิน
-                </Button>
+                {paid ? (
+                  <Button
+                    type="button"
+                    className="rounded-full w-full sm:flex-1"
+                    disabled={busy || !canAcceptPay || send.isPending}
+                    onClick={() => void handleAcceptAndPay()}
+                  >
+                    {busy ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+                    ยืนยันและชำระเงิน
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    className="rounded-full w-full sm:flex-1"
+                    disabled={busy || send.isPending}
+                    onClick={() => void handleAcceptFree()}
+                  >
+                    {busy ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+                    ตอบรับข้อเสนอ
+                  </Button>
+                )}
               </>
             )}
           </DialogFooter>
@@ -396,7 +474,7 @@ export function ChatOfferCard({
       </Dialog>
 
       <HireCheckoutDialog
-        open={checkoutOpen && !settled}
+        open={paid && checkoutOpen && !settled}
         onOpenChange={setCheckoutOpen}
         offer={offer}
         conversationId={conversationId}

@@ -57,6 +57,17 @@ export function optimizedFeedImageUrl(
     if (parsed.hostname === "images.unsplash.com") {
       return optimizeUnsplash(parsed, { width, quality, natural });
     }
+    // Supabase Storage image transformations need the Pro plan — switch on with VITE_SUPABASE_IMAGE_TRANSFORM=true.
+    if (
+      import.meta.env.VITE_SUPABASE_IMAGE_TRANSFORM === "true" &&
+      parsed.hostname.endsWith(".supabase.co") &&
+      parsed.pathname.startsWith("/storage/v1/object/public/")
+    ) {
+      parsed.pathname = parsed.pathname.replace("/object/public/", "/render/image/public/");
+      parsed.searchParams.set("width", String(width));
+      parsed.searchParams.set("quality", String(quality));
+      return parsed.toString();
+    }
   } catch {
     /* keep original */
   }

@@ -7,6 +7,7 @@ import { notifyAnthem } from "@/lib/notifyAnthem";
 import { isOptionalQueryError } from "@/lib/supabaseErrors";
 import type { JobRejectReason } from "@/lib/jobApplicationReview";
 import type { PosterEntityType } from "@/components/jobs/jobCardUtils";
+import { userFacingError } from "@/lib/userFacingError";
 
 export type ApplicationStatus =
   | "pending"
@@ -326,7 +327,7 @@ export const useApplyToJob = () => {
     },
     onError: (e: Error) => {
       if (e.message?.includes("duplicate")) toast.error("คุณสมัครงานนี้ไปแล้ว");
-      else toast.error(e.message ?? "ส่งใบสมัครไม่สำเร็จ");
+      else toast.error(userFacingError(e, "ส่งใบสมัครไม่สำเร็จ"));
     },
   });
 };
@@ -385,11 +386,11 @@ export const useRelatedHiringJobs = (job?: JobPost | null) =>
     },
   });
 
-export const useMyApplications = () => {
+export const useMyApplications = (options?: { enabled?: boolean }) => {
   const { user } = useAuth();
   return useQuery({
     queryKey: ["my-applications", user?.id],
-    enabled: !!user,
+    enabled: !!user && options?.enabled !== false,
     queryFn: async (): Promise<JobApplication[]> => {
       await expirePendingJobApplicationsQuietly();
       const { data, error } = await supabase
@@ -445,7 +446,7 @@ export const useUpdateApplicationStatus = () => {
       qc.invalidateQueries({ queryKey: ["my-applications"] });
       toast.success("อัปเดตสถานะแล้ว");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(userFacingError(e)),
   });
 };
 
@@ -489,7 +490,7 @@ export const useToggleApplicationInterest = () => {
       qc.invalidateQueries({ queryKey: ["my-applications"] });
       toast.success(input.interested ? "ปักหมุดสนใจแล้ว" : "เอาหมุดออกแล้ว");
     },
-    onError: (e: Error) => toast.error(e.message || "ปักหมุดไม่สำเร็จ"),
+    onError: (e: Error) => toast.error(userFacingError(e, "ปักหมุดไม่สำเร็จ")),
   });
 };
 
@@ -537,7 +538,7 @@ export const useDecideJobApplication = () => {
       qc.invalidateQueries({ queryKey: ["conversations"] });
       toast.success(input.decision === "accept" ? "ตอบรับแล้ว — ทักแชทไปหาผู้สมัครได้" : "ส่งการปฏิเสธแล้ว");
     },
-    onError: (e: Error) => toast.error(e.message || "อัปเดตใบสมัครไม่สำเร็จ"),
+    onError: (e: Error) => toast.error(userFacingError(e, "อัปเดตใบสมัครไม่สำเร็จ")),
   });
 };
 
@@ -588,15 +589,15 @@ export const useToggleSaveJob = () => {
       qc.invalidateQueries({ queryKey: ["my-saved-jobs"] });
       toast.success(saved ? "ลบออกจากที่บันทึกแล้ว" : "บันทึกประกาศแล้ว");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(userFacingError(e)),
   });
 };
 
-export const useMySavedJobs = () => {
+export const useMySavedJobs = (options?: { enabled?: boolean }) => {
   const { user } = useAuth();
   return useQuery({
     queryKey: ["my-saved-jobs", user?.id],
-    enabled: !!user,
+    enabled: !!user && options?.enabled !== false,
     queryFn: async (): Promise<JobPost[]> => {
       const { data: saved, error } = await supabase
         .from("job_saved")
@@ -645,7 +646,7 @@ export const useUpdateOpenForWork = (userId: string | undefined) => {
       qc.invalidateQueries({ queryKey: ["open-for-work-creators"] });
       toast.success("บันทึกการตั้งค่ารับงานแล้ว");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(userFacingError(e)),
   });
 };
 

@@ -42,7 +42,7 @@ export function EarningsHireBalanceCard({
   return (
     <section
       data-testid="hire-wallet-card"
-      className="overflow-hidden rounded-[1.75rem] border border-primary/15 bg-white shadow-[0_12px_32px_-20px_rgb(16_16_16_/_0.35)]"
+      className="overflow-hidden rounded-[1.75rem] border border-primary/15 bg-white shadow-sm"
     >
       <div className={cn("px-5", compact ? "pb-3 pt-4" : "pb-4 pt-5")}>
         <p
@@ -90,8 +90,8 @@ export function EarningsHireBalanceCard({
               className={cn(
                 "h-9 shrink-0 rounded-full border px-4 shadow-none ring-offset-0",
                 canWithdraw
-                  ? "border-transparent bg-[linear-gradient(180deg,hsl(22_100%_58%)_0%,hsl(18_100%_46%)_100%)] text-white hover:brightness-110 hover:bg-[linear-gradient(180deg,hsl(22_100%_58%)_0%,hsl(18_100%_46%)_100%)]"
-                  : "border-zinc-200 bg-zinc-100 text-zinc-400 hover:bg-zinc-100",
+                  ? "border-transparent bg-primary text-primary-foreground hover:bg-primary/90"
+                  : "border-border bg-secondary text-muted-foreground hover:bg-secondary",
               )}
             >
               <Banknote className="h-4 w-4" />
@@ -99,14 +99,14 @@ export function EarningsHireBalanceCard({
             </Button>
           </div>
           {isPreview ? (
-            <p className="mt-2 text-[11px] text-amber-800">
+            <p className="mt-2 text-[11px] text-warning">
               ข้อมูลตัวอย่าง — กดถอนได้เพื่อทดลอง ไม่โอนเข้าบัญชีจริง
               {onResetPreview ? (
                 <>
                   {" "}
                   <button
                     type="button"
-                    className="underline decoration-amber-800/50 underline-offset-2 hover:text-zinc-950 hover:no-underline"
+                    className="underline decoration-warning/50 underline-offset-2 hover:text-zinc-950 hover:no-underline"
                     onClick={onResetPreview}
                   >
                     รีเซ็ตตัวอย่าง

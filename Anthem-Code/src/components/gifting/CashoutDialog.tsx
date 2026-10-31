@@ -11,6 +11,7 @@ import { usePayoutProfile } from "@/hooks/useKyc";
 import { useSubscription } from "@/core/subscription/useSubscription";
 import { startConnectOnboarding } from "@/lib/stripePaymentsApi";
 import { toast } from "sonner";
+import { userFacingError } from "@/lib/userFacingError";
 
 interface Props {
   open: boolean;
@@ -77,7 +78,7 @@ const CashoutDialog = ({ open, onOpenChange }: Props) => {
           onOpenChange(false);
           setAmount("");
         },
-        onError: (e: Error) => toast.error(e.message),
+        onError: (e: Error) => toast.error(userFacingError(e)),
       },
     );
   };

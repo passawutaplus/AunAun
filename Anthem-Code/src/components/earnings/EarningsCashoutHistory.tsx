@@ -67,7 +67,7 @@ function StatusPill({ status }: { status: string }) {
       : status === "rejected" || status === "failed"
         ? "bg-destructive/10 text-destructive"
         : status === "processing"
-          ? "bg-amber-500/10 text-amber-700 dark:text-amber-300"
+          ? "bg-warning/10 text-warning dark:text-warning"
           : "bg-muted text-muted-foreground";
 
   return (

@@ -1,9 +1,9 @@
 import { Component, useState, type ErrorInfo, type ReactNode } from "react";
-import { createPortal } from "react-dom";
-import { useLocation } from "react-router-dom";
-import { Menu } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
+import { Menu, Plus } from "lucide-react";
+import StudioSearch from "@/components/dashboard/StudioSearch";
 import StudioSidebar from "@/components/dashboard/StudioSidebar";
-import { BackButton } from "@/components/ui/BackButton";
+import { HeaderAccountActions } from "@/components/HeaderAccountActions";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -24,9 +24,11 @@ type Props = {
   className?: string;
   padForBottomNav?: boolean;
   showFooter?: boolean;
+  /** Shown beside the page title, e.g. the tour "?" button. */
+  titleAccessory?: ReactNode;
 };
 
-/** Keeps the My Studio hero/nav if a child page throws. */
+/** Keeps the My Studio shell if a child page throws. */
 class StudioBodyErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
   state = { hasError: false };
 
@@ -50,87 +52,113 @@ class StudioBodyErrorBoundary extends Component<{ children: ReactNode }, { hasEr
   }
 }
 
-/** Shared My Studio shell: grouped sidebar on desktop, sheet menu on mobile. */
+/** Warm ground behind the sidebar; the content sits on it as one rounded panel (flat, no gradient). */
+const STUDIO_SIDEBAR_BG = "bg-[hsl(var(--studio-side))]";
+const STUDIO_PANEL_BG = "bg-[hsl(var(--studio-panel))]";
+
+const COLLAPSE_KEY = "samecor:studio-sidebar-collapsed";
+
+function readCollapsed() {
+  try {
+    return localStorage.getItem(COLLAPSE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * My Studio back-office shell: full-height sidebar on the left (collapsible to icons) and the content as one
+ * rounded panel with search, the publish button and account actions on top. Phones get the same sidebar in a sheet.
+ */
 export default function StudioLayout({
   children,
-  backTo = "/portfolio",
-  backLabel = "กลับโปรไฟล์",
   className,
   padForBottomNav = true,
-  showFooter = true,
+  showFooter = false,
+  titleAccessory,
 }: Props) {
   const { pathname } = useLocation();
   const item = matchStudioItem(pathname);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(readCollapsed);
+  const title = item?.heroTitle ?? "My Studio";
 
-  const overlay = (
-    <div className="pointer-events-none fixed inset-x-0 top-0 z-40 lg:hidden">
-        <div className="pointer-events-auto flex items-center justify-between gap-3 px-4 pb-3 pt-[max(1.25rem,env(safe-area-inset-top))]">
-          <BackButton to={backTo} label={backLabel} />
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="rounded-full bg-background/90 shadow-sm"
-            onClick={() => setMenuOpen(true)}
-          >
-            <Menu className="h-4 w-4" />
-            เมนู
-          </Button>
-        </div>
-    </div>
-  );
+  const toggleCollapsed = () => {
+    setCollapsed((c) => {
+      try {
+        localStorage.setItem(COLLAPSE_KEY, c ? "0" : "1");
+      } catch {
+        /* storage blocked */
+      }
+      return !c;
+    });
+  };
 
   return (
-    <div className={cn("min-h-screen bg-app-ambient", padForBottomNav && MOBILE_PAGE_BOTTOM_CLASS, className)}>
-      {typeof document !== "undefined" ? createPortal(overlay, document.body) : overlay}
+    <div className={cn("min-h-screen lg:bg-[hsl(var(--studio-side))]", STUDIO_PANEL_BG, padForBottomNav && MOBILE_PAGE_BOTTOM_CLASS, className)}>
+      <aside
+        data-tour="studio-nav"
+        className={cn(
+          "fixed inset-y-0 left-0 z-30 hidden transition-[width] duration-200 lg:block",
+          STUDIO_SIDEBAR_BG,
+          collapsed ? "w-[76px]" : "w-[248px]",
+        )}
+      >
+        <StudioSidebar collapsed={collapsed} onToggleCollapsed={toggleCollapsed} />
+      </aside>
 
-      <div className="studio-hero">
-        <div className="relative mx-auto max-w-[100rem] px-4 pb-8 pt-[max(4.75rem,calc(env(safe-area-inset-top)+3.5rem))] lg:px-8 lg:pb-10 lg:pt-8">
-          <div className="hidden lg:block">
-            <BackButton to={backTo} label={backLabel} />
+      <div className={cn("transition-[padding] duration-200 lg:py-3 lg:pr-3", collapsed ? "lg:pl-[76px]" : "lg:pl-[248px]")}>
+        <div className={cn("min-h-screen lg:min-h-[calc(100vh-1.5rem)] lg:rounded-[28px]", STUDIO_PANEL_BG)}>
+        <header className={cn("sticky top-0 z-20 lg:static lg:bg-transparent", STUDIO_PANEL_BG)}>
+          <div className="mx-auto flex min-h-14 max-w-6xl items-center gap-2 px-4 pt-[env(safe-area-inset-top)] lg:gap-3 lg:px-8 lg:pt-5">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="-ml-2 lg:hidden"
+              aria-label="เปิดเมนู My Studio"
+              onClick={() => setMenuOpen(true)}
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+            {/* Phones have no sidebar on screen — keep the Thai page name here */}
+            <p className="min-w-0 flex-1 truncate text-sm font-medium text-foreground lg:hidden">{title}</p>
+            <StudioSearch className="lg:flex-1" />
+            <Link
+              to="/portfolio/new"
+              className="hidden h-11 shrink-0 items-center justify-center gap-1.5 rounded-full bg-brand px-5 text-sm font-medium text-[#111] transition-transform hover:-translate-y-px lg:flex"
+            >
+              <Plus className="h-4 w-4" />
+              ลงผลงานใหม่
+            </Link>
+            <HeaderAccountActions />
           </div>
-          <p className="mt-4 text-xs font-medium text-white/80">My Studio</p>
-          {item ? (
-            <div className="mt-1">
-              <h1 className="text-5xl font-bold tracking-tight text-white sm:text-6xl lg:text-7xl">
-                {item.heroTitle}
+        </header>
+
+        <main className="mx-auto max-w-6xl space-y-6 px-4 py-6 lg:px-8 lg:py-8">
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-4xl font-light tracking-tight text-foreground sm:text-5xl lg:text-6xl">
+                {item?.displayTitle ?? "My Studio"}
               </h1>
-              <p className="mt-2 max-w-xl text-sm text-white/85 sm:text-base">{item.hint}</p>
+              {titleAccessory}
             </div>
-          ) : (
-            <h1 className="mt-1 text-5xl font-bold tracking-tight text-white sm:text-6xl lg:text-7xl">
-              My Studio
-            </h1>
-          )}
-        </div>
-      </div>
-
-      <div className="mx-auto max-w-[100rem] px-4 py-6 pb-6 lg:flex lg:items-start lg:gap-6 lg:px-8 lg:pb-10">
-        <aside className="sticky top-20 hidden w-52 shrink-0 lg:block xl:w-56">
-          <StudioSidebar />
-        </aside>
-        <div className="min-w-0 flex-1 space-y-6">
+            {item?.hint ? <p className="mt-2 text-sm text-muted-foreground">{item.hint}</p> : null}
+          </div>
           <StudioBodyErrorBoundary key={pathname}>{children}</StudioBodyErrorBoundary>
+        </main>
+
+        {showFooter ? <Footer className="mt-0" /> : null}
         </div>
       </div>
-
-      {showFooter ? (
-        <>
-          <div className="h-14 lg:h-6" aria-hidden="true" />
-          <Footer className="mt-0" />
-        </>
-      ) : null}
 
       <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-        <SheetContent side="left" className="w-[min(20rem,90vw)] p-0">
-          <SheetHeader className="border-b border-border/70 px-4 py-4 text-left">
+        <SheetContent side="left" className={cn("w-[min(18rem,86vw)] p-0", STUDIO_SIDEBAR_BG)}>
+          <SheetHeader className="sr-only">
             <SheetTitle>My Studio</SheetTitle>
-            <SheetDescription className="sr-only">เลือกหมวดที่ต้องการจัดการ</SheetDescription>
+            <SheetDescription>เลือกหมวดที่ต้องการจัดการ</SheetDescription>
           </SheetHeader>
-          <div className="p-3">
-            <StudioSidebar variant="plain" onNavigate={() => setMenuOpen(false)} />
-          </div>
+          <StudioSidebar onNavigate={() => setMenuOpen(false)} />
         </SheetContent>
       </Sheet>
     </div>

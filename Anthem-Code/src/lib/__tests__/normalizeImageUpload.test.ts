@@ -13,15 +13,17 @@ describe("isAllowedPortfolioStillImage", () => {
     expect(isAllowedPortfolioStillImage(fakeFile("a.png", "image/png"))).toBe(true);
   });
 
-  it("rejects other image types", () => {
-    expect(isAllowedPortfolioStillImage(fakeFile("a.webp", "image/webp"))).toBe(false);
+  it("accepts webp, avif and heic (converted/decoded before upload) but not GIF or SVG", () => {
+    expect(isAllowedPortfolioStillImage(fakeFile("a.webp", "image/webp"))).toBe(true);
+    expect(isAllowedPortfolioStillImage(fakeFile("a.heic", "image/heic"))).toBe(true);
     expect(isAllowedPortfolioStillImage(fakeFile("a.gif", "image/gif"))).toBe(false);
-    expect(isAllowedPortfolioStillImage(fakeFile("a.heic", "image/heic"))).toBe(false);
+    expect(isAllowedPortfolioStillImage(fakeFile("a.svg", "image/svg+xml"))).toBe(false);
   });
 
   it("falls back to extension when MIME is empty", () => {
     expect(isAllowedPortfolioStillImage(fakeFile("a.jpg", ""))).toBe(true);
     expect(isAllowedPortfolioStillImage(fakeFile("a.png", ""))).toBe(true);
-    expect(isAllowedPortfolioStillImage(fakeFile("a.webp", ""))).toBe(false);
+    expect(isAllowedPortfolioStillImage(fakeFile("a.heic", ""))).toBe(true);
+    expect(isAllowedPortfolioStillImage(fakeFile("a.gif", ""))).toBe(false);
   });
 });

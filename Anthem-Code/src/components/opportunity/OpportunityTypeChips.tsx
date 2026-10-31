@@ -13,10 +13,38 @@ type Props = {
   note?: string | null;
   className?: string;
   size?: "sm" | "md";
+  /** "line" = one status line with a dot (profile header), "chips" = badge per type. */
+  variant?: "chips" | "line";
 };
 
-const OpportunityTypeChips = ({ status, types, className, size = "sm" }: Props) => {
+const OpportunityTypeChips = ({ status, types, className, size = "sm", variant = "chips" }: Props) => {
   const normalized = normalizeOpportunityProfile(status, types);
+
+  if (variant === "line") {
+    const closed = normalized.status === "not_available";
+    const text =
+      closed || normalized.types.length === 0
+        ? OPPORTUNITY_AVAILABILITY[normalized.status].chipLabel
+        : normalized.types.map(labelOpportunityType).join(" · ");
+    return (
+      <p
+        className={cn(
+          "flex items-center gap-2 text-sm",
+          closed ? "text-muted-foreground" : "text-foreground",
+          className,
+        )}
+      >
+        <span
+          aria-hidden
+          className={cn(
+            "relative inline-flex h-2 w-2 shrink-0 rounded-full",
+            closed ? "bg-muted-foreground/60" : normalized.status === "soft_open" ? "bg-warning" : "bg-emerald-500",
+          )}
+        />
+        <span className="min-w-0">{text}</span>
+      </p>
+    );
+  }
   const badgeClass =
     size === "sm"
       ? "rounded-full text-xs font-normal border-0"

@@ -1,4 +1,5 @@
 import LegalLayout from "@/components/LegalLayout";
+import FreeLaunchMoneyNotice from "@/components/legal/FreeLaunchMoneyNotice";
 import { HireMoneyOutcomePanel } from "@/components/payments/HireMoneyOutcomePanel";
 import {
   LEGAL_APP_NAME,
@@ -88,6 +89,7 @@ const CANCEL_REASON_ROWS = [
 
 const PaymentRefundPage = () => (
   <LegalLayout title="นโยบายการชำระเงินและการคืนเงิน" updatedAt="27 กรกฎาคม 2569">
+    <FreeLaunchMoneyNotice scope="payment" />
     <p>
       นโยบายฉบับนี้อธิบายการชำระเงินค่าจ้างงานผ่าน <strong>{LEGAL_APP_NAME}</strong> โดย {LEGAL_COMPANY_NAME}
       {" "}ในฐานะ<strong>ตัวกลางรับชำระเงิน / ตัวแทนเก็บเงิน</strong> ระหว่างผู้จ้าง (ลูกค้า) กับฟรีแลนซ์ / ครีเอเตอร์ (ผู้รับจ้าง)

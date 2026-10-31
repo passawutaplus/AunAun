@@ -73,7 +73,7 @@ export default function ForumTopicPage() {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <h1 className="text-xl font-bold tracking-tight leading-snug inline-flex flex-wrap items-center gap-2">
             {isAnnounce ? (
-              <span className="inline-flex items-center gap-1 rounded-md border border-orange-300/60 bg-orange-50 text-orange-800 dark:bg-orange-950/40 dark:text-orange-200 px-2 py-0.5 text-xs font-medium">
+              <span className="inline-flex items-center gap-1 rounded-md border border-brand/40 bg-brand/10 text-foreground px-2 py-0.5 text-xs font-medium">
                 <Megaphone className="h-3.5 w-3.5" />
                 ประกาศจากทีม
               </span>

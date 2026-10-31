@@ -21,7 +21,7 @@ type Props = {
   categoryChips: (Category | "All")[];
   onClear: () => void;
   hideTools?: boolean;
-  sortLabels?: Record<DesignerSort, string>;
+  sortLabels?: Partial<Record<DesignerSort, string>>;
   feedSources?: DesignerFeedSource[];
 };
 

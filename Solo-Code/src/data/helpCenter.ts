@@ -130,13 +130,13 @@ export const HELP_JOURNEYS: HelpJourney[] = [
   {
     id: "pro",
     title: "อัพเกรด Pro",
-    description: "white-label · AI · LINE · Aplus1",
+    description: "white-label · AI · LINE · SAMECOR",
     icon: Sparkles,
     steps: [
       { to: "/help/plans", label: "เปรียบเทียบแพ็ก" },
       { to: "/help/branding", label: "ตั้งธีมเอกสาร & Portal" },
       { to: "/help/line", label: "เชื่อม LINE แจ้งเตือน" },
-      { to: "/help/plans", hash: "ecosystem", label: "โชว์เคส Aplus1" },
+      { to: "/help/plans", hash: "ecosystem", label: "โชว์เคส SAMECOR" },
     ],
   },
 ];
@@ -176,7 +176,7 @@ export const HELP_QUICK_TOPICS: HelpLink[] = [
   {
     to: "/help/plans",
     hash: "ecosystem",
-    label: "So1o + Aplus1 คืออะไร",
+    label: "So1o + SAMECOR คืออะไร",
     description: "บัญชีเดียว สมัครครั้งเดียว",
   },
 ];
@@ -196,7 +196,7 @@ export const HELP_CATEGORIES: HelpCategory[] = [
       {
         to: "/help/plans",
         hash: "ecosystem",
-        label: "So1o กับ Aplus1",
+        label: "So1o กับ SAMECOR",
         description: "หลังบ้าน + โชว์เคส",
       },
       {
@@ -389,13 +389,13 @@ export const HELP_FAQ: HelpFaqItem[] = [
     category: "account",
     question: "Pro คุ้มเมื่อไหร่?",
     answer:
-      "เมื่อต้องการ Job ไม่จำกัด white-label เอกสาร/Portal Credit AI มากขึ้น LINE แจ้งเตือน และปลดล็อก Aplus1 โชว์เคส",
+      "เมื่อต้องการ Job ไม่จำกัด white-label เอกสาร/Portal Credit AI มากขึ้น LINE แจ้งเตือน และปลดล็อก SAMECOR โชว์เคส",
     link: { to: "/pricing", label: "ตารางเปรียบเทียบ" },
   },
   {
     id: "ecosystem",
     category: "account",
-    question: "So1o กับ Aplus1 ต้องสมัครแยกไหม?",
+    question: "So1o กับ SAMECOR ต้องสมัครแยกไหม?",
     answer: "ไม่ — บัญชีเดียว สมัครครั้งเดียว แพ็ก Pro ขึ้นไปปลดล็อกทั้งหลังบ้านและโชว์เคส",
     link: { to: "/help/plans", hash: "ecosystem", label: "Ecosystem" },
   },
@@ -553,7 +553,7 @@ export const HELP_GLOSSARY: HelpGlossaryTerm[] = [
     link: { to: "/help/tax", label: "ภาษี" },
   },
   {
-    term: "Aplus1",
+    term: "SAMECOR",
     definition: "โชว์เคสผลงาน — ecosystem คู่กับ So1o บัญชีเดียว",
     link: { to: "/help/plans", hash: "ecosystem", label: "Ecosystem" },
   },

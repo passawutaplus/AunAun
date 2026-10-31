@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 
 const DOT_CLASS: Record<DrillDifficulty, string> = {
   easy: "bg-emerald-500",
-  medium: "bg-amber-400",
+  medium: "bg-warning",
   hard: "bg-red-500",
 };
 

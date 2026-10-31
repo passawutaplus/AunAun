@@ -10,7 +10,7 @@ const CommunityHeroShowcase = () => {
   if (!cover || !post) {
     return (
       <div
-        className="absolute inset-0 bg-gradient-to-br from-primary/[0.08] via-muted/40 to-muted/60 animate-pulse"
+        className="absolute inset-0 bg-muted animate-pulse"
         aria-hidden
       />
     );

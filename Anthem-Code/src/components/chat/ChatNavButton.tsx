@@ -30,7 +30,7 @@ const ChatNavButton = ({ className }: Props) => {
     >
       <MessageCircle className="w-5 h-5" />
       {badgeCount > 0 && (
-        <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-white text-[10px] font-semibold flex items-center justify-center leading-none">
+        <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold flex items-center justify-center leading-none">
           {badgeCount > 99 ? "99+" : badgeCount}
         </span>
       )}

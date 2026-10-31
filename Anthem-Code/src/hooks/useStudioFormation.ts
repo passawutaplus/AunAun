@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { assertStudioIdentityAvailable } from "@/hooks/useStudioIdentityAvailability";
 import { toast } from "sonner";
+import { userFacingError } from "@/lib/userFacingError";
 
 export interface FormationRequest {
   id: string;
@@ -200,6 +201,6 @@ export const useRespondFormationInvite = () => {
       qc.invalidateQueries({ queryKey: ["my-studios"] });
       toast.success(vars.accept ? "ตอบรับคำเชิญแล้ว" : "ปฏิเสธคำเชิญแล้ว");
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => toast.error(userFacingError(e)),
   });
 };

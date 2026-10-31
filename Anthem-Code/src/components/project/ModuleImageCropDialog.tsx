@@ -324,8 +324,8 @@ export function ModuleImageCropDialog({
         onOpenChange(next);
       }}
     >
-      <DialogContent className="max-w-md gap-0 overflow-hidden p-0 data-[state=open]:zoom-in-100 data-[state=closed]:zoom-out-100">
-        <DialogHeader className="px-4 pb-2 pt-4">
+      <DialogContent className="max-w-md gap-0 overflow-y-auto overflow-x-hidden p-0 flex max-h-[calc(100dvh-1.5rem)] flex-col data-[state=open]:zoom-in-100 data-[state=closed]:zoom-out-100">
+        <DialogHeader className="shrink-0 px-4 pb-2 pt-4">
           <DialogTitle className="text-base">ครอบภาพ</DialogTitle>
           <p className="text-xs font-normal text-muted-foreground">
             {locked
@@ -348,7 +348,7 @@ export function ModuleImageCropDialog({
 
         <div
           ref={cropHostRef}
-          className="relative mx-auto h-[min(70vh,520px)] w-full max-w-md bg-muted"
+          className="relative mx-auto h-[min(70dvh,520px)] min-h-[180px] w-full max-w-md shrink bg-muted"
           style={
             {
               ["--module-crop-radius" as string]: previewRadius,
@@ -480,7 +480,7 @@ export function ModuleImageCropDialog({
           ) : null}
         </div>
 
-        <DialogFooter className="gap-2 px-4 pb-4 sm:gap-2">
+        <DialogFooter className="shrink-0 gap-2 px-4 pb-4 sm:gap-2">
           <Button type="button" variant="outline" onClick={onCancel} disabled={saving}>
             ยกเลิก
           </Button>

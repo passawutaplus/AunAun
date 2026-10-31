@@ -15,21 +15,122 @@ import type { DesignerCardData } from "@/data/designerTypes";
 
 export type { DesignerCardData };
 
-const DESIGNERS_PAGE = 60;
+export const DESIGNERS_PAGE = 60;
 const PROJECTS_PER_DESIGNER = 6;
 
 function profileUserId(p: { user_id?: string; id?: string }) {
   return p.user_id ?? p.id;
 }
 
+/**
+ * Turn profile rows into designer cards: latest published works, counts and a search haystack.
+ * Shared by the Designers feed and the saved designers list on Portfolio.
+ */
+export async function buildDesignerCards(
+  list: Tables<"profiles">[],
+  opts: { keepWithoutWorks?: boolean } = {},
+): Promise<DesignerCardData[]> {
+  const ids = list.map((p) => profileUserId(p as { user_id?: string; id?: string }));
+  if (!ids.length) return [];
+
+  // Hard cap so one prolific owner cannot pull unbounded rows for this feed.
+  const projectCap = Math.min(ids.length * PROJECTS_PER_DESIGNER, DESIGNERS_PAGE * PROJECTS_PER_DESIGNER);
+  const [projectsRes, countRes, servicesRes, objectsRes] = await Promise.all([
+    supabase
+      .from("projects")
+      .select(PROJECT_FEED_SELECT)
+      .in("owner_id", ids)
+      .eq("status", "Published")
+      .order("created_at", { ascending: false })
+      .limit(projectCap),
+    supabase.from("projects").select("owner_id, likes").in("owner_id", ids).eq("status", "Published"),
+    fromCreatorServices().select("owner_id").in("owner_id", ids).eq("status", "Published"),
+    fromCreatorObjects().select("owner_id").in("owner_id", ids).eq("status", "Published"),
+  ]);
+
+  const grouped = new Map<string, Tables<"projects">[]>();
+  (projectsRes.data ?? []).forEach((p) => {
+    const arr = grouped.get(p.owner_id) ?? [];
+    if (arr.length < PROJECTS_PER_DESIGNER) arr.push(p as Tables<"projects">);
+    grouped.set(p.owner_id, arr);
+  });
+
+  const projectCountByOwner = new Map<string, number>();
+  const likeCountByOwner = new Map<string, number>();
+  for (const row of countRes.data ?? []) {
+    const { owner_id: oid, likes } = row as { owner_id: string; likes?: number | null };
+    projectCountByOwner.set(oid, (projectCountByOwner.get(oid) ?? 0) + 1);
+    likeCountByOwner.set(oid, (likeCountByOwner.get(oid) ?? 0) + (Number(likes) || 0));
+  }
+
+  const packageCountByOwner = new Map<string, number>();
+  if (!isOptionalQueryError(servicesRes.error) && !isSchemaMismatchError(servicesRes.error)) {
+    for (const row of servicesRes.data ?? []) {
+      const oid = (row as { owner_id?: string }).owner_id;
+      if (!oid) continue;
+      packageCountByOwner.set(oid, (packageCountByOwner.get(oid) ?? 0) + 1);
+    }
+  }
+
+  const objectCountByOwner = new Map<string, number>();
+  if (
+    !isOptionalQueryError(objectsRes.error) &&
+    !isSchemaMismatchError(objectsRes.error) &&
+    !isObjectsTableMissing(objectsRes.error)
+  ) {
+    for (const row of objectsRes.data ?? []) {
+      const oid = (row as { owner_id?: string }).owner_id;
+      if (!oid) continue;
+      objectCountByOwner.set(oid, (objectCountByOwner.get(oid) ?? 0) + 1);
+    }
+  }
+
+  return list
+    .map((profile) => {
+      const pid = profileUserId(profile as { user_id?: string; id?: string });
+      const ownerProjects = grouped.get(pid) ?? [];
+      const place = displayProfileAddress(
+        (profile as { profile_address?: unknown }).profile_address,
+        (profile as { location?: string | null }).location,
+        "short",
+      );
+      const parts: string[] = [
+        profile.display_name ?? "",
+        profile.username ?? "",
+        profile.role ?? "",
+        profile.bio ?? "",
+        (profile.skills ?? []).join(" "),
+        place,
+        ownerProjects.map((p) => p.title).join(" "),
+        ownerProjects.map((p) => p.category ?? "").join(" "),
+        ownerProjects.flatMap((p) => p.tools ?? []).join(" "),
+        ownerProjects.flatMap((p) => p.tags ?? []).join(" "),
+      ];
+      return {
+        profile,
+        projects: ownerProjects,
+        searchHaystack: parts.join(" ").toLowerCase(),
+        projectCount: projectCountByOwner.get(pid) ?? ownerProjects.length,
+        packageCount: packageCountByOwner.get(pid) ?? 0,
+        objectCount: objectCountByOwner.get(pid) ?? 0,
+        likeCount:
+          likeCountByOwner.get(pid) ?? ownerProjects.reduce((sum, p) => sum + (p.likes ?? 0), 0),
+        hasService: (packageCountByOwner.get(pid) ?? 0) > 0,
+      };
+    })
+    .filter((d) => opts.keepWithoutWorks || d.projects.length > 0);
+}
+
 export const useDesigners = () =>
   useQuery({
-    queryKey: ["designers-feed", "v12"],
+    queryKey: ["designers-feed", "v13"],
     queryFn: async (): Promise<DesignerCardData[]> => {
-      let { data: profiles, error } = await profilesPublicFrom()
+      const first = await profilesPublicFrom()
         .select(PROFILE_DESIGNER_SELECT)
         .order("created_at", { ascending: false })
         .limit(DESIGNERS_PAGE);
+      let profiles: unknown[] | null = first.data;
+      let error = first.error;
       if (error && (isSchemaMismatchError(error) || isOptionalQueryError(error))) {
         const retry = await profilesPublicFrom()
           .select(PROFILE_DESIGNER_SELECT_NO_ACTIVE)
@@ -39,91 +140,6 @@ export const useDesigners = () =>
         error = retry.error;
       }
       if (error) throw error;
-      const list = profiles ?? [];
-      const ids = list.map((p) => profileUserId(p as { user_id?: string; id?: string }));
-      if (!ids.length) return [];
-
-      // Hard cap so one prolific owner cannot pull unbounded rows for this feed.
-      const projectCap = Math.min(ids.length * PROJECTS_PER_DESIGNER, DESIGNERS_PAGE * PROJECTS_PER_DESIGNER);
-      const [projectsRes, countRes, servicesRes, objectsRes] = await Promise.all([
-        supabase
-          .from("projects")
-          .select(PROJECT_FEED_SELECT)
-          .in("owner_id", ids)
-          .eq("status", "Published")
-          .order("created_at", { ascending: false })
-          .limit(projectCap),
-        supabase.from("projects").select("owner_id").in("owner_id", ids).eq("status", "Published"),
-        fromCreatorServices().select("owner_id").in("owner_id", ids).eq("status", "Published"),
-        fromCreatorObjects().select("owner_id").in("owner_id", ids).eq("status", "Published"),
-      ]);
-
-      const grouped = new Map<string, Tables<"projects">[]>();
-      (projectsRes.data ?? []).forEach((p) => {
-        const arr = grouped.get(p.owner_id) ?? [];
-        if (arr.length < PROJECTS_PER_DESIGNER) arr.push(p as Tables<"projects">);
-        grouped.set(p.owner_id, arr);
-      });
-
-      const projectCountByOwner = new Map<string, number>();
-      for (const row of countRes.data ?? []) {
-        const oid = (row as { owner_id: string }).owner_id;
-        projectCountByOwner.set(oid, (projectCountByOwner.get(oid) ?? 0) + 1);
-      }
-
-      const packageCountByOwner = new Map<string, number>();
-      if (!isOptionalQueryError(servicesRes.error) && !isSchemaMismatchError(servicesRes.error)) {
-        for (const row of servicesRes.data ?? []) {
-          const oid = (row as { owner_id?: string }).owner_id;
-          if (!oid) continue;
-          packageCountByOwner.set(oid, (packageCountByOwner.get(oid) ?? 0) + 1);
-        }
-      }
-
-      const objectCountByOwner = new Map<string, number>();
-      if (
-        !isOptionalQueryError(objectsRes.error) &&
-        !isSchemaMismatchError(objectsRes.error) &&
-        !isObjectsTableMissing(objectsRes.error)
-      ) {
-        for (const row of objectsRes.data ?? []) {
-          const oid = (row as { owner_id?: string }).owner_id;
-          if (!oid) continue;
-          objectCountByOwner.set(oid, (objectCountByOwner.get(oid) ?? 0) + 1);
-        }
-      }
-
-      return list
-        .map((profile) => {
-          const pid = profileUserId(profile as { user_id?: string; id?: string });
-          const ownerProjects = grouped.get(pid) ?? [];
-          const place = displayProfileAddress(
-            (profile as { profile_address?: unknown }).profile_address,
-            (profile as { location?: string | null }).location,
-            "short",
-          );
-          const parts: string[] = [
-            profile.display_name ?? "",
-            profile.username ?? "",
-            profile.role ?? "",
-            profile.bio ?? "",
-            (profile.skills ?? []).join(" "),
-            place,
-            ownerProjects.map((p) => p.title).join(" "),
-            ownerProjects.map((p) => p.category ?? "").join(" "),
-            ownerProjects.flatMap((p) => p.tools ?? []).join(" "),
-            ownerProjects.flatMap((p) => p.tags ?? []).join(" "),
-          ];
-          return {
-            profile: profile as Tables<"profiles">,
-            projects: ownerProjects,
-            searchHaystack: parts.join(" ").toLowerCase(),
-            projectCount: projectCountByOwner.get(pid) ?? ownerProjects.length,
-            packageCount: packageCountByOwner.get(pid) ?? 0,
-            objectCount: objectCountByOwner.get(pid) ?? 0,
-            hasService: (packageCountByOwner.get(pid) ?? 0) > 0,
-          };
-        })
-        .filter((d) => d.projects.length > 0);
+      return buildDesignerCards((profiles ?? []) as Tables<"profiles">[]);
     },
   });

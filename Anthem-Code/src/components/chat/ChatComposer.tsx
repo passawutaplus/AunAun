@@ -7,15 +7,35 @@ import {
   SHARED_MEDIA_BUCKET,
 } from "@/integrations/supabase/sharedStorageClient";
 import { useSendMessage, type Message } from "@/hooks/useChat";
-import { getSupabaseErrorMessage } from "@/lib/supabaseErrors";
 import { replyPreviewText } from "@/lib/chatReply";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import ModerationBanBanner from "@/components/moderation/ModerationBanBanner";
 import { maskProfanity, detectProfanity, PROFANITY_WARNING, COMMUNITY_GUIDELINES_PATH } from "@/lib/profanity";
+import { userFacingError } from "@/lib/userFacingError";
+import { normalizeImageForUpload } from "@/lib/normalizeImageUpload";
+import { IMAGE_UPLOAD_MAX_INPUT_MB } from "@/lib/uploadImage";
 
-const CHAT_IMAGE_MAX_BYTES = 8 * 1024 * 1024;
-const CHAT_IMAGE_ACCEPT = "image/jpeg,image/png,image/webp";
+/** Raw photo straight from a phone camera — it is resized before sending, so this only stops absurd files. */
+const CHAT_IMAGE_MAX_BYTES = IMAGE_UPLOAD_MAX_INPUT_MB * 1024 * 1024;
+/** Photos at or under this go up as-is; larger ones are resized to ≤2560px WebP. */
+const CHAT_IMAGE_SKIP_COMPRESS_BYTES = 1.5 * 1024 * 1024;
+const CHAT_IMAGE_ACCEPT = "image/jpeg,image/png,image/webp,image/heic,image/heif";
+const HEIC_NAME = /\.(heic|heif)$/i;
+
+/** HEIC → JPEG, then big photos down to a chat-friendly size (keeps detail for design work). */
+async function prepareChatImage(file: File): Promise<File> {
+  const normalized = await normalizeImageForUpload(file);
+  if (normalized.size <= CHAT_IMAGE_SKIP_COMPRESS_BYTES) return normalized;
+  const { default: imageCompression } = await import("browser-image-compression");
+  return imageCompression(normalized, {
+    maxSizeMB: 2,
+    maxWidthOrHeight: 2560,
+    useWebWorker: true,
+    fileType: "image/webp",
+    initialQuality: 0.88,
+  });
+}
 const CHAT_FILE_MAX_BYTES = 25 * 1024 * 1024;
 const CHAT_FILE_EXTS = new Set([
   "pdf",
@@ -93,9 +113,9 @@ const ChatComposer = ({
         : "focus-visible:ring-primary";
   const sendBtn =
     kind === "hire"
-      ? "bg-[hsl(var(--chat-hire))] hover:bg-[hsl(var(--chat-hire)/0.9)] text-white"
+      ? "bg-[hsl(var(--chat-hire))] hover:bg-[hsl(var(--chat-hire)/0.9)] text-[hsl(var(--chat-hire-foreground))]"
       : kind === "collab"
-        ? "bg-gradient-to-br from-[hsl(var(--chat-collab))] to-[hsl(var(--chat-collab)/0.85)] hover:opacity-90 text-white"
+        ? "bg-chat-collab hover:opacity-90 text-[hsl(var(--chat-collab-foreground))]"
         : "bg-primary hover:bg-primary/90 text-primary-foreground";
 
   const submit = async () => {
@@ -123,17 +143,17 @@ const ChatComposer = ({
       setText("");
       onClearReply?.();
     } catch (e: unknown) {
-      toast.error(getSupabaseErrorMessage(e, "ส่งไม่สำเร็จ"));
+      toast.error(userFacingError(e, "ส่งไม่สำเร็จ"));
     }
   };
 
   const onAttachImage = async (file: File) => {
-    if (!CHAT_IMAGE_ACCEPT.split(",").includes(file.type)) {
-      toast.error("รองรับเฉพาะ JPG, PNG หรือ WebP");
+    if (!CHAT_IMAGE_ACCEPT.split(",").includes(file.type) && !HEIC_NAME.test(file.name)) {
+      toast.error("รองรับเฉพาะ JPG, PNG, WebP หรือ HEIC");
       return;
     }
     if (file.size > CHAT_IMAGE_MAX_BYTES) {
-      toast.error("รูปใหญ่เกินไป — สูงสุด 8 MB");
+      toast.error(`รูปใหญ่เกินไป — สูงสุด ${IMAGE_UPLOAD_MAX_INPUT_MB} MB`);
       return;
     }
     abortRef.current?.abort();
@@ -141,14 +161,17 @@ const ChatComposer = ({
     abortRef.current = ac;
     setFailedFile(null);
     setUploading("image");
-    setUploadProgress(15);
+    setUploadProgress(10);
     try {
-      const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+      const ready = await prepareChatImage(file);
+      if (ac.signal.aborted) return;
+      setUploadProgress(35);
+      const ext = ready.type === "image/png" ? "png" : ready.type === "image/webp" ? "webp" : "jpg";
       const path = `anthem/chat/${conversationId}/${crypto.randomUUID()}.${ext}`;
       setUploadProgress(45);
       const { error: upErr } = await sharedStorage.storage
         .from(SHARED_MEDIA_BUCKET)
-        .upload(path, file, { upsert: false, contentType: file.type });
+        .upload(path, ready, { upsert: false, contentType: ready.type || "image/jpeg" });
       if (ac.signal.aborted) return;
       if (upErr) throw upErr;
       setUploadProgress(80);
@@ -164,7 +187,7 @@ const ChatComposer = ({
     } catch (e: unknown) {
       if (ac.signal.aborted) return;
       setFailedFile(file);
-      toast.error(getSupabaseErrorMessage(e, "อัปโหลดไม่สำเร็จ"));
+      toast.error(userFacingError(e, "อัปโหลดไม่สำเร็จ"));
     } finally {
       if (!ac.signal.aborted) {
         setUploading(null);
@@ -219,7 +242,7 @@ const ChatComposer = ({
     } catch (e: unknown) {
       if (ac.signal.aborted) return;
       setFailedFile(file);
-      toast.error(getSupabaseErrorMessage(e, "อัปโหลดไฟล์ไม่สำเร็จ"));
+      toast.error(userFacingError(e, "อัปโหลดไฟล์ไม่สำเร็จ"));
     } finally {
       if (!ac.signal.aborted) {
         setUploading(null);
@@ -250,6 +273,7 @@ const ChatComposer = ({
 
   return (
     <div
+      data-tour="chat-composer"
       className={cn(
         "border-t border-border bg-card px-3 py-2.5 pb-[max(env(safe-area-inset-bottom),0.5rem)] shrink-0",
         dragOver && "ring-2 ring-inset ring-primary/50 bg-primary/5",
@@ -334,7 +358,7 @@ const ChatComposer = ({
           onClick={() => imageRef.current?.click()}
           disabled={busy}
           aria-label="แนบรูป"
-          title="แนบรูป JPG/PNG/WebP · สูงสุด 8 MB"
+          title={`แนบรูป JPG/PNG/WebP/HEIC · สูงสุด ${IMAGE_UPLOAD_MAX_INPUT_MB} MB (ย่อให้อัตโนมัติ)`}
         >
           {uploading === "image" ? (
             <Loader2 className="w-4 h-4 animate-spin" />

@@ -280,7 +280,7 @@ const ProjectPreviewDialog = ({
                 className={cn(
                   "w-full max-w-[390px] h-full min-h-[520px] max-h-full",
                   "flex flex-col overflow-hidden",
-                  "rounded-[1.75rem] border-[6px] border-foreground/10 shadow-xl bg-background",
+                  "rounded-[1.75rem] border-[6px] border-foreground/10 shadow-sm bg-background",
                 )}
               >
                 <ProjectMobilePreviewContent

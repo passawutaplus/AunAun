@@ -136,7 +136,7 @@ describe("Recently kept", () => {
   });
   it("hides when empty and shows an origin chip per tile", () => {
     assert.equal(recentMarkup([]), "");
-    assert.match(recentMarkup([{ ...img("a"), _origin: "museum" }]), /Museum/);
+    assert.match(recentMarkup([{ ...img("a"), _origin: "museum" }]), /Design Feed/);
   });
 });
 

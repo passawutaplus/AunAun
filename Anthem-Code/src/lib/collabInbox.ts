@@ -37,6 +37,8 @@ export const COLLAB_TAB_DECLINED = "ปฏิเสธ" as const;
 export const COLLAB_TAB_CANCELLED = "ยกเลิก" as const;
 export const COLLAB_TAB_COMPLETED = "จบงาน" as const;
 export const COLLAB_TAB_ALL = "ทั้งหมด" as const;
+/** Filter chip folding declined / cancelled / completed */
+export const COLLAB_TAB_CLOSED = "ปิดแล้ว" as const;
 
 export type CollabInboxTab =
   | typeof COLLAB_TAB_CONTACTED_NEW
@@ -44,6 +46,7 @@ export type CollabInboxTab =
   | typeof COLLAB_TAB_DECLINED
   | typeof COLLAB_TAB_CANCELLED
   | typeof COLLAB_TAB_COMPLETED
+  | typeof COLLAB_TAB_CLOSED
   | typeof COLLAB_TAB_ALL;
 
 export const COLLAB_TAB_ORDER: CollabInboxTab[] = [
@@ -53,6 +56,14 @@ export const COLLAB_TAB_ORDER: CollabInboxTab[] = [
   COLLAB_TAB_DECLINED,
   COLLAB_TAB_CANCELLED,
   COLLAB_TAB_COMPLETED,
+];
+
+/** Inbox filter chips — status detail stays on each row's pill. */
+export const COLLAB_FILTER_TABS: CollabInboxTab[] = [
+  COLLAB_TAB_ALL,
+  COLLAB_TAB_CONTACTED_NEW,
+  COLLAB_TAB_ACCEPTED,
+  COLLAB_TAB_CLOSED,
 ];
 
 export function getHiddenCollabIds(userId: string): Set<string> {

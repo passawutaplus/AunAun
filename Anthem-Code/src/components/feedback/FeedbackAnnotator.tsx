@@ -286,7 +286,7 @@ export const FeedbackAnnotator = forwardRef<FeedbackAnnotatorHandle, Props>(func
         tool,
         start: p,
         end: p,
-        color: tool === "redact" ? "#111111" : "#f97316",
+        color: tool === "redact" ? "#111111" : "#EE3D29",
         width: 3,
       };
     }
@@ -407,7 +407,7 @@ export const FeedbackAnnotator = forwardRef<FeedbackAnnotatorHandle, Props>(func
                 </button>
                 {open ? (
                   <div
-                    className="absolute left-4 top-[-10px] w-48 rounded-md border border-border bg-background p-2 shadow-lg"
+                    className="absolute left-4 top-[-10px] w-48 rounded-md border border-border bg-background p-2 shadow-sm"
                     onPointerDown={(e) => e.stopPropagation()}
                   >
                     <div className="mb-1 flex items-center justify-between gap-2">

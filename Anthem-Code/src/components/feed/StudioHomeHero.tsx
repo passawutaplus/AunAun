@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent, type RefObject } from "react";
+import { useTheme } from "next-themes";
 import { AnimatePresence, motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
 import { startMonolithHeroWave } from "@/components/feed/monolithHeroWave";
 import FeedModeToggle, { type FeedMode } from "@/components/feed/FeedModeToggle";
@@ -19,14 +20,16 @@ function projectCover(project: DBProject) {
   return project.cover_url?.trim() || project.gallery_urls?.find((url) => url?.trim()) || "";
 }
 
-/** Paper field plus the warm bottom glow, so the Monolith ripple has something to move. */
-function paintPaperStill() {
+/** Page field (Studio White, or Gallery Black in dark mode) plus a faint neutral bottom wash, so the Monolith ripple has something to move. Brand Book: no coloured glow. */
+function paintPaperStill(dark: boolean) {
   const canvas = document.createElement("canvas");
   canvas.width = 1280;
   canvas.height = 1600;
   const ctx = canvas.getContext("2d");
   if (!ctx) return "";
-  ctx.fillStyle = "#f5f5f5";
+  // Same colour as --background, so the canvas meets the page with no seam.
+  const field = dark ? [17, 17, 17] : [248, 247, 242];
+  ctx.fillStyle = `rgb(${field.join(", ")})`;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   const glow = ctx.createRadialGradient(
     canvas.width / 2,
@@ -36,9 +39,10 @@ function paintPaperStill() {
     canvas.height,
     canvas.width * 0.78,
   );
-  glow.addColorStop(0, "rgba(255, 88, 46, 0.62)");
-  glow.addColorStop(0.34, "rgba(255, 132, 86, 0.28)");
-  glow.addColorStop(0.72, "rgba(245, 245, 245, 0)");
+  const ink = dark ? "248, 247, 242" : "17, 17, 17";
+  glow.addColorStop(0, `rgba(${ink}, ${dark ? 0.1 : 0.08})`);
+  glow.addColorStop(0.34, `rgba(${ink}, ${dark ? 0.04 : 0.03})`);
+  glow.addColorStop(0.72, `rgba(${field.join(", ")}, 0)`);
   ctx.fillStyle = glow;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   return canvas.toDataURL("image/png");
@@ -333,7 +337,7 @@ function HeroProfileLine({
   };
 
   return (
-    <span ref={lineRef} className="poster-line" onPointerEnter={show} onPointerLeave={hide}>
+    <span ref={lineRef} data-tour="home-mode" className="poster-line" onPointerEnter={show} onPointerLeave={hide}>
       <span className="sr-only">1 Profile to</span>
       <span className="poster-word" style={{ "--w": 0 } as CSSProperties} aria-hidden>
         1
@@ -412,7 +416,9 @@ const StudioHomeHero = ({
   const frameRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const paperStill = useMemo(() => (typeof document === "undefined" ? "" : paintPaperStill()), []);
+  const { resolvedTheme } = useTheme();
+  const dark = resolvedTheme === "dark";
+  const paperStill = useMemo(() => (typeof document === "undefined" ? "" : paintPaperStill(dark)), [dark]);
   const { data: projects = [] } = useTopProjects();
   const covers = useMemo(() => projects.map(projectCover), [projects]);
   const projectImages = useMemo(() => uniqueThumbs(covers, 240), [covers]);
@@ -470,7 +476,7 @@ const StudioHomeHero = ({
       ref={heroRef}
       data-feed-hero
       aria-label="Introduction"
-      className="sticky top-0 z-0 h-[100dvh] overflow-hidden bg-[#f5f5f5]"
+      className="sticky top-0 z-0 h-[100dvh] overflow-hidden bg-background"
     >
       <div ref={frameRef} className="monolith-hero-frame pointer-events-none absolute inset-[-4%]">
         <img
@@ -500,6 +506,9 @@ const StudioHomeHero = ({
                       className="hero-cover-tile"
                       src={src}
                       alt=""
+                      decoding="async"
+                      // The lower half of each column sits below the fold at first paint — fetch it after the top half.
+                      loading={halfIndex === 0 ? "eager" : "lazy"}
                       style={{ "--d": `${TILE_DELAYS[columnIndex * 4 + halfIndex * 2 + row] ?? 0}s` } as CSSProperties}
                     />
                   ))}
@@ -518,6 +527,7 @@ const StudioHomeHero = ({
             </span>
           </h1>
           <form
+            data-tour="home-search"
             className={cn("hero-looking pointer-events-auto", entered && "is-in")}
             onSubmit={(event: FormEvent) => {
               event.preventDefault();

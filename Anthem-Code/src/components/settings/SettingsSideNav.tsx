@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { SignOutNavItem } from "@/components/SignOutNavItem";
+import { LogOut } from "lucide-react";
+import { GetInTouchLink } from "@/components/settings/GetInTouchLink";
+import { AppVersionRow, CopyrightLine, SettingsLegalNav } from "@/components/settings/SettingsLegalLinks";
 import { cn } from "@/lib/utils";
 import {
   buildSettingsNavGroups,
@@ -17,6 +19,8 @@ type Props = {
   /** Close a mobile sheet after picking a panel. */
   onNavigate?: () => void;
   variant?: "panel" | "plain";
+  /** Shown under the groups so signing out isn't buried in the account panel. */
+  onSignOut?: () => void;
 };
 
 /** Grouped settings nav — click switches the active panel (no page scroll). */
@@ -27,6 +31,7 @@ export default function SettingsSideNav({
   className,
   onNavigate,
   variant = "panel",
+  onSignOut,
 }: Props) {
   const groups = useMemo(() => buildSettingsNavGroups(isAdmin), [isAdmin]);
 
@@ -58,10 +63,26 @@ export default function SettingsSideNav({
             showDivider={index > 0}
           />
         ))}
-        <div className="border-t border-border/70">
-          <SignOutNavItem onSignedOut={onNavigate} />
-        </div>
+        {onSignOut ? (
+          <div className="mx-3.5 mt-1 border-t border-border/60 pb-1 pt-1.5">
+            <AppVersionRow className="pb-1 text-left" />
+            <button
+              type="button"
+              onClick={onSignOut}
+              className="flex w-full items-center gap-2 rounded-lg py-2 text-left text-sm text-destructive transition-colors hover:text-destructive/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            >
+              <LogOut className="h-4 w-4" aria-hidden /> ออกจากระบบ
+            </button>
+          </div>
+        ) : null}
       </div>
+      {variant === "panel" ? (
+        <>
+          <GetInTouchLink className="mt-3" />
+          <SettingsLegalNav className="mt-3" />
+          <CopyrightLine className="mt-3" />
+        </>
+      ) : null}
     </nav>
   );
 }
@@ -154,7 +175,13 @@ export function useSettingsPanelState(isAdmin?: boolean): {
     } catch {
       /* ignore */
     }
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    // Only scroll back up to where the panels start: scrolling to 0 slid the sticky nav down under the
+    // cursor, so the hover highlight jumped onto a neighbouring item.
+    const body = document.getElementById("settings-body");
+    if (body) {
+      const top = body.getBoundingClientRect().top + window.scrollY - 96;
+      if (window.scrollY > top) window.scrollTo({ top, behavior: "smooth" });
+    }
   };
 
   return { panel, setPanel };

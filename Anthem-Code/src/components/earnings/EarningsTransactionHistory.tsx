@@ -18,7 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { DocumentPaper } from "@/components/documents/DocumentPaper";
+import { PrintableDocumentPaper } from "@/components/documents/DocumentPaper";
 import { formatThaiDate } from "@/lib/format";
 import { satangToThb } from "@/lib/payments/fees";
 import { formatMoneyLabel } from "@/lib/payments/fxDisplay";
@@ -65,7 +65,7 @@ function money(satang: number) {
 function bucketPillClass(bucket: HireIncomeItem["walletBucket"]): string {
   switch (bucket) {
     case "pending":
-      return "bg-amber-500/10 text-amber-800 dark:text-amber-300";
+      return "bg-warning/10 text-warning dark:text-warning";
     case "available":
       return "bg-primary/10 text-primary";
     case "transferring":
@@ -476,7 +476,7 @@ export function EarningsTransactionHistory({
                     กลับไปรายละเอียดรายการ
                   </button>
                 ) : null}
-                <DocumentPaper doc={openReceipt.snapshot} />
+                <PrintableDocumentPaper doc={openReceipt.snapshot} />
               </div>
             </>
           ) : detail?.kind === "income" ? (

@@ -42,7 +42,7 @@ const UpgradePageLive = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border/60 bg-background/80 backdrop-blur sticky top-0 z-40">
+      <header className="border-b border-border/60 bg-background sticky top-0 z-40">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 h-14 flex items-center justify-between">
           <BackButton
             onClick={() => navigate(user ? "/settings" : "/")}
@@ -51,11 +51,11 @@ const UpgradePageLive = () => {
           {user && (
             <span className="text-xs text-muted-foreground">
               {tier === "inhouse"
-                ? "🏢 In-House Member"
+                ? "In-House Member"
                 : tier === "pro_plus"
-                  ? "✨ Pro+ Member"
+                  ? "Pro+ Member"
                   : tier === "pro"
-                    ? "✨ Pro Member"
+                    ? "Pro Member"
                     : "แพ็กเกจปัจจุบัน: Free"}
             </span>
           )}

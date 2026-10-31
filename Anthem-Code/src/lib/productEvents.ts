@@ -4,7 +4,9 @@
  */
 
 import { supabase } from "@/integrations/supabase/client";
+import { isAndroidApp, isStandaloneDisplay } from "@/lib/appShell";
 import { isCategoryAllowed } from "@/lib/cookieConsent";
+import { noteRatingMoment } from "@/lib/ratingPrompt";
 
 export type ProductEventName =
   | "page_view"
@@ -23,7 +25,14 @@ export type ProductEventName =
   | "collection_save"
   | "inspire_click"
   | "ad_click"
-  | "ad_impression";
+  | "ad_impression"
+  // Free-launch funnel (Discover → Connect → Hire / Collaborate)
+  | "connect_message"
+  | "proposal_send"
+  | "proposal_accept"
+  | "workspace_open"
+  | "task_create"
+  | "onboarding_step";
 
 const SESSION_KEY = "aplus1_analytics_sid";
 const lastSent = new Map<string, number>();
@@ -43,6 +52,12 @@ export function getAnalyticsSessionId(): string {
   }
 }
 
+/** Screen class by viewport width (phone / tablet / desktop) so traffic can be split in the admin dashboard. */
+function deviceClass(): "mobile" | "tablet" | "desktop" {
+  const w = window.innerWidth;
+  return w < 768 ? "mobile" : w < 1024 ? "tablet" : "desktop";
+}
+
 export async function trackProductEvent(
   eventName: ProductEventName,
   props: Record<string, unknown> = {},
@@ -50,6 +65,8 @@ export async function trackProductEvent(
 ): Promise<void> {
   try {
     if (typeof window === "undefined") return;
+    // Local-only Beta rating moment; independent of analytics consent
+    if (eventName === "hire_submit") noteRatingMoment("first_hire");
     if (!isCategoryAllowed("analytics")) return;
 
     const debounceMs = opts?.debounceMs ?? DEFAULT_DEBOUNCE_MS;
@@ -68,7 +85,8 @@ export async function trackProductEvent(
         _session_id: getAnalyticsSessionId(),
         _path: path.slice(0, 500),
         _referrer: referrer,
-        _props: props,
+        // shell: android app / installed PWA / browser — lets app usage be split from web.
+        _props: { ...props, shell: isAndroidApp() ? "android" : isStandaloneDisplay() ? "pwa" : "web", device: deviceClass() },
         _app: "aplus1",
       } as never,
     );

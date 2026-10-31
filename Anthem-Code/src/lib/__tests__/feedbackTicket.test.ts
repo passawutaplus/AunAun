@@ -14,12 +14,13 @@ import {
 } from "@/lib/feedbackTicket";
 
 describe("feedbackTicket", () => {
-  it("accepts only bug/idea/error", () => {
+  it("accepts known kinds only", () => {
     expect(isFeedbackKind("bug")).toBe(true);
     expect(isFeedbackKind("idea")).toBe(true);
     expect(isFeedbackKind("error")).toBe(true);
     expect(isFeedbackKind("report")).toBe(false);
-    expect(feedbackKindLabel("bug")).toBe("บั๊ก");
+    expect(feedbackKindLabel("bug")).toBe("เจอบั๊ก");
+    expect(isFeedbackKind("praise")).toBe(true);
     expect(feedbackKindLabel(null)).toBe("คะแนน");
   });
 

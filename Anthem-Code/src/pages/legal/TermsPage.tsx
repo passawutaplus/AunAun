@@ -1,4 +1,5 @@
 import LegalLayout from "@/components/LegalLayout";
+import FreeLaunchMoneyNotice from "@/components/legal/FreeLaunchMoneyNotice";
 import {
   ATTESTATION_BULLETS,
   ATTESTATION_TITLE,
@@ -26,10 +27,14 @@ const TermsPage = () => (
       <a href="/legal/packages">นโยบายแพ็กเกจบริการ</a> และ{" "}
       <a href="/legal/ip">นโยบายลิขสิทธิ์</a>
     </p>
+    <FreeLaunchMoneyNotice scope="terms" />
 
     <h2>1. คำนิยาม</h2>
     <ul>
-      <li><strong>แพลตฟอร์ม</strong> — เว็บและบริการ {LEGAL_APP_NAME}</li>
+      <li>
+        <strong>แพลตฟอร์ม</strong> — เว็บ แอป {LEGAL_APP_NAME} บน Android และบริการ {LEGAL_APP_NAME} ทั้งหมด
+        (การดาวน์โหลดแอปจาก Google Play อยู่ภายใต้ข้อกำหนดของ Google Play ด้วย)
+      </li>
       <li><strong>ผู้ใช้</strong> — บุคคลที่สมัครบัญชีหรือเข้าชมแบบไม่ลงทะเบียน</li>
       <li><strong>เนื้อหา</strong> — ผลงาน รูปภาพ ข้อความ วิดีโอ และข้อมูลที่ผู้ใช้อัปโหลด</li>
       <li><strong>แพ็กเกจ</strong> — การโชว์ขอบเขตบริการและราคาโดยประมาณ ตาม <a href="/legal/packages">นโยบายแพ็กเกจบริการ</a></li>

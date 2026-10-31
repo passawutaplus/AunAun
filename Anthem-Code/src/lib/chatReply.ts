@@ -1,3 +1,4 @@
+import { parseStudioDocCard } from "@/lib/documents/studioDocuments";
 import { parseChatOffer, formatOfferAmount } from "@/lib/chatOffer";
 import {
   HIRE_CHAT_LOCKED_LIST_LABEL,
@@ -29,6 +30,16 @@ function extractJsonNumberField(content: string, key: string): number | null {
 
 /** Human-readable preview for chat protocol blobs (offers, hire reject, …). */
 export function chatProtocolPreviewText(content: string): string | null {
+  const studioDoc = parseStudioDocCard(content);
+  if (studioDoc) {
+    const inst =
+      studioDoc.installmentNo && (studioDoc.installmentTotal ?? 1) > 1
+        ? ` งวด ${studioDoc.installmentNo}/${studioDoc.installmentTotal}`
+        : "";
+    return studioDoc.kind === "receipt"
+      ? `ออกใบเสร็จ${inst} · ${formatOfferAmount(studioDoc.net)}`
+      : `ส่งใบแจ้งหนี้${inst} · ${formatOfferAmount(studioDoc.net)}`;
+  }
   if (!content.includes("__APLUS1_")) return null;
 
   if (content.includes("__APLUS1_OFFER__")) {

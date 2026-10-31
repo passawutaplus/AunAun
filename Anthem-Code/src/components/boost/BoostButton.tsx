@@ -49,7 +49,7 @@ const BoostButton = ({
           setOpen(true);
         }}
       >
-        <Zap className="h-3.5 w-3.5 text-amber-500" />
+        <Zap className="h-3.5 w-3.5 text-brand" />
         Boost
       </Button>
       <BoostDialog

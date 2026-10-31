@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { InfoHint } from "@/components/tour/InfoHint";
+import { RequestStatusScene } from "@/components/tour/TourScenes";
+import { isCommerceEnabled } from "@/lib/aplus1Launch";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -41,6 +44,7 @@ import {
   type WorkReviewDialogTarget,
 } from "@/components/reviews/WorkReviewDialog";
 import { useAuth } from "@/hooks/useAuth";
+import { useInboxRequestFocus } from "@/hooks/useInboxRequestFocus";
 import { useSetInboxPriority } from "@/hooks/useInboxPriority";
 import {
   useCompleteHireRequest,
@@ -67,10 +71,12 @@ import {
   HIRE_TAB_ACCEPTED,
   HIRE_TAB_ALL,
   HIRE_TAB_CANCELLED,
+  HIRE_TAB_CLOSED,
   HIRE_TAB_COMPLETED,
   HIRE_TAB_CONTACTED_NEW,
   HIRE_TAB_DECLINED,
   HIRE_TAB_FORWARDED,
+  HIRE_FILTER_TABS,
   HIRE_TAB_ORDER,
   isContactedNewStatus,
   isHireCancelledStatus,
@@ -154,7 +160,7 @@ function friendStatusLabel(status: string | null | undefined): { label: string; 
     default:
       return {
         label: "รอเพื่อนตอบ",
-        tone: "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/25",
+        tone: "bg-warning/15 text-warning dark:text-warning border-warning/25",
       };
   }
 }
@@ -174,6 +180,9 @@ const HIRE_INBOX_COLUMNS = [
   { key: "docs", label: "เอกสาร", width: "minmax(3.25rem,0.6fr)", mdOnly: true, align: "center" as const },
   { key: "priority", label: "ความสำคัญ", width: "minmax(7.75rem,1fr)", mdOnly: true, align: "center" as const },
 ] as const;
+
+/** Budget / order no. / tax docs columns belong to the paid phase. */
+const MONEY_COLUMNS = new Set<string>(["budget", "order", "docs"]);
 
 export function ProfileHiringRequestsSection({
   embed = false,
@@ -402,6 +411,7 @@ export function ProfileHiringRequestsSection({
     const cancelled = originFiltered.filter((r) => isHireCancelledStatus(r.status)).length;
     const completed = originFiltered.filter((r) => isHireCompletedStatus(r.status)).length;
     return {
+      [HIRE_TAB_CLOSED]: declined + forwardedOut.length + cancelled + completed,
       [HIRE_TAB_CONTACTED_NEW]: contactedNew,
       [HIRE_TAB_ACCEPTED]: accepted,
       [HIRE_TAB_DECLINED]: declined,
@@ -422,6 +432,14 @@ export function ProfileHiringRequestsSection({
       rows = originFiltered.filter((r) => isHireCancelledStatus(r.status));
     } else if (hiringTab === HIRE_TAB_COMPLETED) {
       rows = originFiltered.filter((r) => isHireCompletedStatus(r.status));
+    } else if (hiringTab === HIRE_TAB_CLOSED) {
+      rows = originFiltered.filter(
+        (r) =>
+          isForwardedOut(r) ||
+          r.status === HIRE_TAB_DECLINED ||
+          isHireCancelledStatus(r.status) ||
+          isHireCompletedStatus(r.status),
+      );
     } else if (hiringTab !== HIRE_TAB_ALL) {
       rows = originFiltered.filter((r) => r.status === hiringTab);
     }
@@ -451,6 +469,16 @@ export function ProfileHiringRequestsSection({
   useEffect(() => {
     setExpandedHireId(null);
   }, [hiringTab, originFilter, inboxSearch]);
+
+  useInboxRequestFocus(
+    useMemo(() => visibleRequests.map((r) => r.id), [visibleRequests]),
+    () => {
+      setHiringTab(HIRE_TAB_ALL);
+      setOriginFilter("all");
+      setInboxSearch("");
+    },
+    setExpandedHireId,
+  );
 
   const confirmHideFromInbox = () => {
     if (!user?.id || !hideTarget) return;
@@ -518,7 +546,7 @@ export function ProfileHiringRequestsSection({
       await completeHire.mutateAsync(done.id);
       toast.success("บันทึกจบงานแล้ว");
       setCompleteTarget(null);
-      setHiringTab(HIRE_TAB_COMPLETED);
+      setHiringTab(HIRE_TAB_CLOSED);
       openHireReview(done);
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "บันทึกจบงานไม่สำเร็จ");
@@ -575,7 +603,7 @@ export function ProfileHiringRequestsSection({
             <div className="flex items-center gap-2 flex-wrap">
               <h2 className="font-medium text-foreground">คำขอจ้างงาน</h2>
               {pendingCount > 0 && (
-                <Badge className="bg-[hsl(var(--chat-hire))] text-white border-0 text-[10px] px-1.5">
+                <Badge className="bg-[hsl(var(--chat-hire))] text-[hsl(var(--chat-hire-foreground))] border-0 text-[10px] px-1.5">
                   {pendingCount} รอตอบ
                 </Badge>
               )}
@@ -587,6 +615,8 @@ export function ProfileHiringRequestsSection({
         </div>
       ) : null}
 
+      {/* Packages are a money-phase feature — without them the origin split is noise */}
+      {isCommerceEnabled() ? (
       <div className="flex flex-wrap gap-1 rounded-2xl border border-border/60 p-0.5 text-xs w-fit max-w-full">
         {(
           [
@@ -610,6 +640,7 @@ export function ProfileHiringRequestsSection({
           </button>
         ))}
       </div>
+      ) : null}
 
       <div className="relative">
         <label htmlFor="hire-inbox-search" className="sr-only">
@@ -620,7 +651,7 @@ export function ProfileHiringRequestsSection({
           id="hire-inbox-search"
           value={inboxSearch}
           onChange={(e) => setInboxSearch(e.target.value)}
-          placeholder="ค้นหาชื่อ หรือเลขคำสั่งซื้อ"
+          placeholder={isCommerceEnabled() ? "ค้นหาชื่อ หรือเลขคำสั่งซื้อ" : "ค้นหาชื่อลูกค้า หรือชื่องาน"}
           aria-label="ค้นหาชื่อ หรือเลขคำสั่งซื้อ"
           className="h-9 rounded-full bg-muted/60 pl-8 text-sm"
         />
@@ -628,14 +659,14 @@ export function ProfileHiringRequestsSection({
 
       <div className="flex items-center gap-2">
         <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto pb-1 scrollbar-hide">
-        {HIRE_TAB_ORDER.map((s) => (
+        {HIRE_FILTER_TABS.map((s) => (
           <button
             key={s}
             type="button"
             onClick={() => setHiringTab(s)}
             className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
               hiringTab === s
-                ? "bg-primary-bright text-white"
+                ? "bg-primary-bright text-primary-foreground"
                 : "bg-card text-secondary-foreground border border-border hover:bg-secondary"
             }`}
           >
@@ -644,11 +675,14 @@ export function ProfileHiringRequestsSection({
           </button>
         ))}
         </div>
+        <InfoHint title="สถานะของคำขอ" scene={<RequestStatusScene />} align="end">
+          คำขอใหม่อยู่ใน “ติดต่อใหม่” พอคุณตอบรับจะย้ายไป “ตอบรับ” และเมื่อจบงาน ปฏิเสธ ยกเลิก หรือส่งต่อ จะรวมอยู่ใน “ปิดแล้ว” ป้ายสีในแต่ละแถวบอกสถานะจริง
+        </InfoHint>
         <InboxSortMenu value={inboxSort} onChange={setInboxSort} />
       </div>
 
       <InboxExpandTable
-        columns={[...HIRE_INBOX_COLUMNS]}
+        columns={HIRE_INBOX_COLUMNS.filter((c) => isCommerceEnabled() || !MONEY_COLUMNS.has(c.key))}
         expandedId={expandedHireId}
         onExpandedIdChange={setExpandedHireId}
         empty={
@@ -799,7 +833,7 @@ export function ProfileHiringRequestsSection({
                     size="sm"
                     onClick={openChat}
                     disabled={rejectBusy}
-                    className="h-8 rounded-full px-3 text-xs bg-[hsl(var(--chat-hire))] text-white hover:opacity-90"
+                    className="h-8 rounded-full px-3 text-xs bg-[hsl(var(--chat-hire))] text-[hsl(var(--chat-hire-foreground))] hover:opacity-90"
                   >
                     <MessageCircle className="mr-1 h-3.5 w-3.5" />
                     แชท
@@ -1088,7 +1122,7 @@ export function ProfileHiringRequestsSection({
                   : "ส่งต่องานให้เพื่อนแล้ว",
               );
               setRejectTarget(null);
-              setHiringTab("ส่งต่อ");
+              setHiringTab(HIRE_TAB_CLOSED);
               return;
             }
 

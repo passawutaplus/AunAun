@@ -32,6 +32,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import AdCardPreview, { type AdDestinationKind } from "@/components/ads/AdCardPreview";
+import { userFacingError } from "@/lib/userFacingError";
 
 function RequiredMark() {
   return <span className="text-primary" aria-hidden> *</span>;
@@ -102,9 +103,9 @@ const statusMeta: Record<
   AdApplication["status"],
   { label: string; variant: "default" | "secondary" | "destructive" | "outline"; tone: string }
 > = {
-  pending_payment: { label: "รอชำระเงิน", variant: "outline", tone: "text-amber-600" },
+  pending_payment: { label: "รอชำระเงิน", variant: "outline", tone: "text-warning" },
   paid: { label: "ชำระแล้ว · รออนุมัติ", variant: "secondary", tone: "text-blue-600" },
-  pending: { label: "รอทีมติดต่อ", variant: "secondary", tone: "text-amber-600" },
+  pending: { label: "รอทีมติดต่อ", variant: "secondary", tone: "text-warning" },
   approved: { label: "อนุมัติ · กำลังแสดง", variant: "default", tone: "text-emerald-600" },
   rejected: { label: "ปฏิเสธ", variant: "destructive", tone: "text-red-600" },
 };
@@ -353,7 +354,7 @@ const AdvertisePage = () => {
     }
     payMock.mutate(app.id, {
       onSuccess: () => toast.success("ชำระเงินจำลองสำเร็จ · รอแอดมินอนุมัติเพื่อเริ่มแสดงโฆษณา"),
-      onError: (err: Error) => toast.error(err.message),
+      onError: (err: Error) => toast.error(userFacingError(err)),
     });
   };
 
@@ -361,7 +362,7 @@ const AdvertisePage = () => {
     if (app.package === "inquiry") return;
     payStripe.mutate(
       { id: app.id, package: app.package },
-      { onError: (err: Error) => toast.error(err.message) },
+      { onError: (err: Error) => toast.error(userFacingError(err)) },
     );
   };
 
@@ -384,7 +385,7 @@ const AdvertisePage = () => {
                   onClick={() => setPkg(p.id)}
                   className={`rounded-2xl border-2 p-5 text-left transition-all ${
                     active
-                      ? "border-primary bg-primary/5 shadow-lg"
+                      ? "border-primary bg-primary/5 shadow-sm"
                       : "border-border bg-card hover:border-primary/40"
                   }`}
                 >
@@ -426,7 +427,7 @@ const AdvertisePage = () => {
               }}
               className={`cursor-pointer rounded-2xl border-2 p-5 text-left transition-all ${
                 pkg === "custom"
-                  ? "border-primary bg-primary/5 shadow-lg"
+                  ? "border-primary bg-primary/5 shadow-sm"
                   : "border-border bg-card hover:border-primary/40"
               }`}
             >

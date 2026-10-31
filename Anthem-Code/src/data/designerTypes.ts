@@ -10,6 +10,8 @@ export type DesignerCardData = {
   packageCount: number;
   /** Published creator objects (0 if none). */
   objectCount: number;
+  /** Likes summed over every published work (not only the cover thumbnails). */
+  likeCount?: number;
   /** Has at least one published creator package. */
   hasService: boolean;
 };

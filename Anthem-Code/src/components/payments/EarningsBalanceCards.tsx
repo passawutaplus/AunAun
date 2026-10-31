@@ -38,7 +38,7 @@ export default function EarningsBalanceCards({
       hint: "ผู้จ้างจ่ายแล้ว รอรับงาน",
       satang: pendingSatang,
       icon: Clock,
-      iconClass: "text-amber-700 dark:text-amber-400",
+      iconClass: "text-warning dark:text-warning",
     },
     {
       id: "transferring",

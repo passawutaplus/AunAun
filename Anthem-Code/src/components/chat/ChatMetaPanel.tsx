@@ -1,6 +1,6 @@
-import { useMemo } from "react";
+import { isCommerceEnabled } from "@/lib/aplus1Launch";
 import BriefcaseIcon from "../icons/BriefcaseIcon";
-import { Handshake, Calendar, Coins, Paperclip, ExternalLink, Check } from "lucide-react";
+import { Handshake, Calendar, Coins, Paperclip, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -10,31 +10,8 @@ import { ChatQuoteActions } from "@/components/chat/ChatQuoteActions";
 import { ChatCollabActions } from "@/components/chat/ChatCollabActions";
 import { HireOrderFlowPanel } from "@/components/hire/HireOrderFlowPanel";
 import { HireOrderDetailContent } from "@/components/hire/HireOrderDetailDialog";
-import { useCollabPlan } from "@/hooks/useCollabPlan";
-import { useCollabPlanUi } from "@/stores/collabPlanUiStore";
-import {
-  COLLAB_PIPELINE,
-  countCollabPlanProgress,
-  deliverableItemsFromAlign,
-  getAlignOverview,
-  normalizeStepProgressEntries,
-  summarizeProgressEntries,
-} from "@/lib/collabToolkit";
 import { formatHireBudgetLabel, hireInviteDisplay } from "@/lib/hireBrief";
 import InboxRequestBrief from "@/components/inbox/InboxRequestBrief";
-import { cn } from "@/lib/utils";
-
-function formatPlanDate(value: string | null | undefined): string | null {
-  const raw = value?.trim();
-  if (!raw) return null;
-  const d = new Date(raw.length <= 10 ? `${raw}T12:00:00` : raw);
-  if (Number.isNaN(d.getTime())) return raw.slice(0, 10);
-  return d.toLocaleDateString("th-TH", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
 
 const COLLAB_TYPE_LABELS: Record<string, string> = {
   chat: "พูดคุย",
@@ -56,77 +33,6 @@ const ChatMetaPanel = ({
   const navigate = useNavigate();
   const isHire = conversation.kind === "hire";
   const isCollab = conversation.kind === "collab";
-  const openPlan = useCollabPlanUi((s) => s.openFor);
-  const {
-    doc: planDoc,
-    state: planState,
-    isLoading: planLoading,
-  } = useCollabPlan(
-    conversation,
-    isCollab || conversation.group_tag === "collab",
-  );
-  const planProgress = countCollabPlanProgress(planDoc);
-  const planDetails = useMemo(() => {
-    const align = planDoc.payload.align;
-    const overview = getAlignOverview(align).trim();
-    const deliverables = deliverableItemsFromAlign(align)
-      .map((d) => d.trim())
-      .filter(Boolean);
-    const dates = [
-      align.draftAt ? `ร่าง: ${formatPlanDate(align.draftAt)}` : null,
-      align.dueAt ? `ส่ง: ${formatPlanDate(align.dueAt)}` : null,
-      align.releaseAt ? `ลงผลงาน: ${formatPlanDate(align.releaseAt)}` : null,
-    ].filter(Boolean) as string[];
-    const refs = (align.referenceLinks ?? []).map((u) => u.trim()).filter(Boolean);
-    const portfolios = align.portfolioRefs ?? [];
-    const laterNotes = (
-      [
-        ["create", "สร้างงาน", planDoc.payload.create],
-        ["review", "ยืนยันสุดท้าย", planDoc.payload.review],
-        ["publish", "ลงผลงานร่วมกัน", planDoc.payload.publish],
-      ] as const
-    )
-      .map(([id, label, step]): { id: string; label: string; note: string } | null => {
-        if (id === "publish") {
-          const note = step.note.trim();
-          return note ? { id, label, note } : null;
-        }
-        const fromEntries = summarizeProgressEntries(
-          normalizeStepProgressEntries(step as typeof planDoc.payload.create),
-        );
-        const note = fromEntries || step.note.trim();
-        return note ? { id, label, note } : null;
-      })
-      .filter((x): x is { id: string; label: string; note: string } => !!x);
-    const finalLinks = [
-      ...(planDoc.payload.review.finalLinks ?? []),
-      ...(planDoc.payload.publish.finalLinks ?? []),
-    ]
-      .map((u) => u.trim())
-      .filter(Boolean);
-    const hasAny =
-      !!overview ||
-      dates.length > 0 ||
-      !!align.timelineNote?.trim() ||
-      deliverables.length > 0 ||
-      !!align.rights?.trim() ||
-      refs.length > 0 ||
-      portfolios.length > 0 ||
-      laterNotes.length > 0 ||
-      finalLinks.length > 0;
-    return {
-      overview,
-      dates,
-      timelineNote: align.timelineNote?.trim() ?? "",
-      deliverables,
-      rights: align.rights?.trim() ?? "",
-      refs,
-      portfolios,
-      laterNotes,
-      finalLinks,
-      hasAny,
-    };
-  }, [planDoc.payload]);
 
   const { data: meta } = useQuery({
     queryKey: ["chat-meta", conversation.kind, conversation.request_id],
@@ -223,169 +129,6 @@ const ChatMetaPanel = ({
 
         {showCollabPlan ? (
           <div className="space-y-3">
-            <div className="flex items-center justify-between gap-2">
-              <div>
-                <p className="text-xs font-medium text-[hsl(var(--chat-collab))]">แผนงานร่วมกัน</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">
-                  {planLoading
-                    ? "กำลังโหลด…"
-                    : `ความคืบหน้า ${planProgress.done}/${planProgress.total}`}
-                </p>
-              </div>
-              <Button
-                type="button"
-                size="sm"
-                className="h-8 rounded-full text-[11px] bg-[hsl(var(--chat-collab))] text-white hover:opacity-90"
-                onClick={() => openPlan(conversation.id)}
-              >
-                <Handshake className="w-3.5 h-3.5 mr-1" />
-                เปิดแผน
-              </Button>
-            </div>
-
-            <div className="rounded-xl border border-[hsl(var(--chat-collab)/0.3)] bg-[hsl(var(--chat-collab-soft))]/40 p-3 space-y-3">
-              {planLoading ? (
-                <p className="text-[11px] text-muted-foreground">กำลังโหลดรายละเอียดแผน…</p>
-              ) : planDetails.hasAny ? (
-                <>
-                  {planDetails.overview ? (
-                    <DetailBlock label="เป้าหมาย / บรีฟ / บทบาท" value={planDetails.overview} />
-                  ) : null}
-                  {planDetails.dates.length > 0 || planDetails.timelineNote ? (
-                    <div className="space-y-1">
-                      <p className="text-[10px] font-medium text-muted-foreground">ไทม์ไลน์</p>
-                      {planDetails.dates.length > 0 ? (
-                        <p className="text-[12px] text-foreground leading-snug">
-                          {planDetails.dates.join(" · ")}
-                        </p>
-                      ) : null}
-                      {planDetails.timelineNote ? (
-                        <p className="text-[12px] text-foreground/90 whitespace-pre-wrap leading-snug">
-                          {planDetails.timelineNote}
-                        </p>
-                      ) : null}
-                    </div>
-                  ) : null}
-                  {planDetails.deliverables.length > 0 ? (
-                    <div className="space-y-1">
-                      <p className="text-[10px] font-medium text-muted-foreground">ชิ้นงานที่ต้องทำ</p>
-                      <ol className="list-decimal pl-4 space-y-0.5 text-[12px] text-foreground leading-snug">
-                        {planDetails.deliverables.map((item, i) => (
-                          <li key={`${i}-${item}`}>{item}</li>
-                        ))}
-                      </ol>
-                    </div>
-                  ) : null}
-                  {planDetails.rights ? (
-                    <DetailBlock label="สิทธิ์ / เครดิต" value={planDetails.rights} />
-                  ) : null}
-                  {planDetails.refs.length > 0 ? (
-                    <div className="space-y-1">
-                      <p className="text-[10px] font-medium text-muted-foreground">ลิงก์อ้างอิง</p>
-                      <ul className="space-y-0.5">
-                        {planDetails.refs.map((url) => (
-                          <li key={url}>
-                            <a
-                              href={url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-[11px] text-[hsl(var(--chat-collab))] hover:underline break-all"
-                            >
-                              {url}
-                            </a>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ) : null}
-                  {planDetails.portfolios.length > 0 ? (
-                    <div className="space-y-1">
-                      <p className="text-[10px] font-medium text-muted-foreground flex items-center gap-1">
-                        <Paperclip className="w-3 h-3" /> ผลงานในแผน
-                      </p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {planDetails.portfolios.map((ref) => (
-                          <button
-                            key={ref.projectId}
-                            type="button"
-                            onClick={() => navigate(`/project/${ref.projectId}`)}
-                            className="text-[11px] flex items-center gap-1 px-2 py-1 rounded-md bg-background/80 hover:bg-accent border border-border/60"
-                          >
-                            <ExternalLink className="w-3 h-3" />
-                            {ref.title || "ดูผลงาน"}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ) : null}
-                  {planDetails.laterNotes.map((row) => (
-                    <DetailBlock key={row.id} label={row.label} value={row.note} />
-                  ))}
-                  {planDetails.finalLinks.length > 0 ? (
-                    <div className="space-y-1">
-                      <p className="text-[10px] font-medium text-muted-foreground">ลิงก์ผลงานสุดท้าย</p>
-                      <ul className="space-y-0.5">
-                        {planDetails.finalLinks.map((url) => (
-                          <li key={url}>
-                            <a
-                              href={url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-[11px] text-[hsl(var(--chat-collab))] hover:underline break-all"
-                            >
-                              {url}
-                            </a>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ) : null}
-                </>
-              ) : (
-                <p className="text-[11px] text-muted-foreground leading-relaxed">
-                  ยังไม่มีรายละเอียดในแผน — กด「เปิดแผน」เพื่อกรอกเป้าหมาย ชิ้นงาน และสิทธิ์
-                </p>
-              )}
-            </div>
-
-            <ul className="space-y-1 rounded-xl border border-border/70 bg-muted/20 p-2">
-              {COLLAB_PIPELINE.map((stage) => {
-                const done = !!planState.stages[stage.id]?.done;
-                const current = planDoc.currentStep === stage.id;
-                return (
-                  <li key={stage.id} className="text-[11px] leading-snug">
-                    <div className="flex gap-2 items-center">
-                      <span
-                        className={cn(
-                          "flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px]",
-                          done
-                            ? "bg-[hsl(var(--chat-collab))] text-white"
-                            : current
-                              ? "bg-[hsl(var(--chat-collab)/0.2)] text-[hsl(var(--chat-collab))] ring-1 ring-[hsl(var(--chat-collab)/0.45)]"
-                              : "bg-muted text-muted-foreground",
-                        )}
-                      >
-                        {done ? <Check className="w-2.5 h-2.5" strokeWidth={3} /> : stage.step}
-                      </span>
-                      <p
-                        className={cn(
-                          "min-w-0 flex-1 font-medium",
-                          done || current ? "text-foreground" : "text-muted-foreground",
-                        )}
-                      >
-                        {stage.title}
-                        {current && !done ? (
-                          <span className="ml-1.5 text-[10px] font-normal text-[hsl(var(--chat-collab))]">
-                            กำลังทำ
-                          </span>
-                        ) : null}
-                      </p>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-
             {meta?.collab ? (
               <div className="space-y-2 pt-1 border-t border-border">
                 <p className="text-xs text-muted-foreground">จากคำชวนคอลแลป</p>
@@ -435,7 +178,7 @@ const ChatMetaPanel = ({
             <ChatQuoteActions conversation={conversation} />
           </div>
         )}
-        {isHire && conversation.request_id ? (
+        {isHire && conversation.request_id && isCommerceEnabled() ? (
           <>
             <HireOrderFlowPanel
               conversation={conversation}
@@ -466,13 +209,6 @@ const Row = ({ icon, label, value }: { icon: React.ReactNode; label: string; val
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className="text-sm text-foreground">{value}</p>
     </div>
-  </div>
-);
-
-const DetailBlock = ({ label, value }: { label: string; value: string }) => (
-  <div className="space-y-1">
-    <p className="text-[10px] font-medium text-muted-foreground">{label}</p>
-    <p className="text-[12px] text-foreground whitespace-pre-wrap leading-snug">{value}</p>
   </div>
 );
 

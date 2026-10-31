@@ -1,15 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
+  asDownloads,
   CREATOR_OBJECTS_SELECT,
   fromCreatorObjects,
+  fromObjectDownloads,
   fromObjectOrders,
   isObjectsTableMissing,
   mapCreatorObject,
   mapObjectOrder,
   OBJECT_ORDERS_SELECT,
 } from "@/lib/objects/db";
-import type { CreatorObject, ObjectOrder, ObjectOrderStatus, ObjectStatus } from "@/lib/objects/taxonomy";
+import type { CreatorObject, ObjectDownload, ObjectOrder, ObjectOrderStatus, ObjectStatus } from "@/lib/objects/taxonomy";
 
 async function attachMakers(rows: CreatorObject[]): Promise<CreatorObject[]> {
   const ids = [...new Set(rows.map((row) => row.owner_id))];
@@ -116,7 +118,29 @@ export function useMyObjects(ownerId: string | undefined) {
   });
 }
 
-export type ObjectWriteInput = Omit<CreatorObject, "id" | "owner_id" | "created_at" | "updated_at" | "maker_name" | "maker_username" | "sample">;
+/**
+ * File links of a download product. The database only returns them to the owner, admins and buyers
+ * with a paid order (an empty list for everyone else).
+ */
+export function useObjectDownloads(objectId: string | undefined, enabled = true) {
+  return useQuery({
+    queryKey: ["creator-object-downloads", objectId],
+    enabled: !!objectId && enabled,
+    queryFn: async (): Promise<ObjectDownload[]> => {
+      const { data, error } = await fromObjectDownloads().select("files").eq("object_id", objectId!).maybeSingle();
+      if (error) {
+        if (isObjectsTableMissing(error)) return [];
+        throw error;
+      }
+      return asDownloads((data as { files?: unknown } | null)?.files);
+    },
+  });
+}
+
+export type ObjectWriteInput = Omit<
+  CreatorObject,
+  "id" | "owner_id" | "created_at" | "updated_at" | "maker_name" | "maker_username" | "sample" | "sold_count"
+>;
 
 export function useUpsertObject(ownerId: string | undefined) {
   const qc = useQueryClient();
@@ -151,6 +175,8 @@ export function useUpsertObject(ownerId: string | undefined) {
         downloads: args.patch.downloads,
         license_note: args.patch.license_note.trim(),
         reference_project_ids: args.patch.reference_project_ids.filter(Boolean).slice(0, 3),
+        shipping_thb:
+          args.patch.kind === "files" ? 0 : Math.min(5000, Math.max(0, Math.round(args.patch.shipping_thb || 0))),
         status: args.patch.status,
         updated_at: new Date().toISOString(),
       };
@@ -178,6 +204,7 @@ export function useUpsertObject(ownerId: string | undefined) {
     onSuccess: (_data, vars) => {
       void qc.invalidateQueries({ queryKey: ["creator-objects"] });
       if (vars.id) void qc.invalidateQueries({ queryKey: ["creator-object", vars.id] });
+      if (vars.id) void qc.invalidateQueries({ queryKey: ["creator-object-downloads", vars.id] });
     },
   });
 }
@@ -196,11 +223,27 @@ export function useDeleteObject(ownerId: string | undefined) {
   });
 }
 
+// pg_cron is not installed: opening orders completes the ones shipped 7+ days ago (at most every 10 min per tab).
+const FINALIZE_SHIPPED_EVERY_MS = 10 * 60_000;
+let lastFinalizeShippedAt = 0;
+
+async function finalizeShippedOrdersQuietly() {
+  const now = Date.now();
+  if (now - lastFinalizeShippedAt < FINALIZE_SHIPPED_EVERY_MS) return;
+  lastFinalizeShippedAt = now;
+  try {
+    await supabase.rpc("finalize_shipped_object_orders" as never);
+  } catch {
+    /* best effort */
+  }
+}
+
 export function useObjectOrders(userId: string | undefined, role: "buyer" | "seller") {
   return useQuery({
     queryKey: ["object-orders", role, userId],
     enabled: !!userId,
     queryFn: async (): Promise<ObjectOrder[]> => {
+      await finalizeShippedOrdersQuietly();
       const column = role === "buyer" ? "buyer_id" : "seller_id";
       const { data, error } = await fromObjectOrders()
         .select(OBJECT_ORDERS_SELECT)

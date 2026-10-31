@@ -3,13 +3,21 @@ import App from "./App.tsx";
 import "./index.css";
 import { installCspReporter } from "./lib/cspReporter";
 import { initErrorMonitoring } from "./lib/errorMonitoring";
+import { installFeedbackDiagnostics } from "./lib/feedbackDiagnostics";
+import { installReportableErrorToasts } from "./lib/reportableToasts";
 import { loadBrandFonts } from "./lib/loadBrandFonts";
 import { registerPwa } from "./lib/pwa";
+import { installAppShell } from "./lib/appShell";
+import { installBootGate } from "./lib/bootGate";
 
 installCspReporter();
+installFeedbackDiagnostics();
+installReportableErrorToasts();
 void initErrorMonitoring();
 loadBrandFonts();
 registerPwa();
+installAppShell();
+installBootGate();
 
 const initialUrl = `${window.location.origin}${window.location.pathname}`;
 document.head

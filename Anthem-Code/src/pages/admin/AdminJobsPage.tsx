@@ -7,6 +7,7 @@ import AdminRowActions from "@/components/admin/AdminRowActions";
 import { useAdminList } from "@/hooks/admin/useAdminList";
 import { useAdminSetJobStatus } from "@/hooks/admin/useAdminMutations";
 import { formatThaiDate } from "@/lib/format";
+import { userFacingError } from "@/lib/userFacingError";
 
 interface Row {
   id: string;
@@ -43,7 +44,7 @@ export default function AdminJobsPage() {
                     onClick: () =>
                       setStatus.mutate(
                         { id: r.id, status: "closed" },
-                        { onSuccess: () => toast.success("ปิดประกาศแล้ว"), onError: (e: Error) => toast.error(e.message) },
+                        { onSuccess: () => toast.success("ปิดประกาศแล้ว"), onError: (e: Error) => toast.error(userFacingError(e)) },
                       ),
                   },
                 ]
@@ -55,7 +56,7 @@ export default function AdminJobsPage() {
                     onClick: () =>
                       setStatus.mutate(
                         { id: r.id, status: "open" },
-                        { onSuccess: () => toast.success("เปิดประกาศแล้ว"), onError: (e: Error) => toast.error(e.message) },
+                        { onSuccess: () => toast.success("เปิดประกาศแล้ว"), onError: (e: Error) => toast.error(userFacingError(e)) },
                       ),
                   },
                 ]

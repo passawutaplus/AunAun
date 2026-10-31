@@ -1,0 +1,274 @@
+/* NFC card / QR landing (/go). Tokens from SAMECOR Design System 0.2.0 — light only. */
+@font-face {
+  font-family: "Agrandir";
+  src: url("/fonts/Agrandir-Wide-Light.woff2") format("woff2");
+  font-weight: 300;
+  font-display: swap;
+}
+
+:root {
+  --canvas: #f8f7f2;
+  --surface: #ffffff;
+  --ink: #111111;
+  --ink-2: #666666;
+  --line: #e6e6e3;
+  --primary: #111111;
+  --on-primary: #f8f7f2;
+  --radius-md: 10px;
+  --font-display: "Agrandir", "IBM Plex Sans Thai", sans-serif;
+  --font-ui: "IBM Plex Sans", "IBM Plex Sans Thai", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+}
+.wrap {
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.hero {
+  padding: 56px 28px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0;
+  position: relative;
+  overflow: hidden;
+}
+.logo {
+  width: 46px;
+  height: 46px;
+}
+h1 {
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: 38px;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin: 28px 0 0;
+}
+.sub {
+  margin: 16px 0 0;
+  font-size: 15px;
+  line-height: 24px;
+  color: var(--ink-2);
+  max-width: 300px;
+}
+
+/* Pill + liquid neck + round button, one shape (same outline as the app's bottom nav, FloatingNav.tsx). */
+.cta {
+  --cta-h: 56px;
+  position: relative;
+  display: block;
+  width: 268px; /* lines up with the two store badges + gap below */
+  max-width: 100%;
+  height: var(--cta-h);
+  margin-top: 36px;
+  color: var(--on-primary);
+  text-decoration: none;
+  border-radius: 28px;
+  -webkit-tap-highlight-color: transparent;
+}
+.cta-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.cta-bg path {
+  fill: var(--primary);
+}
+.cta-label {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: var(--cta-h);
+  width: calc(100% - var(--cta-h) - 12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 16px;
+}
+.cta-arrow {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: var(--cta-h);
+  height: var(--cta-h);
+  padding: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 0.2s ease;
+}
+.cta:active .cta-arrow {
+  transform: translate(2px, -2px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .cta-arrow {
+    transition: none;
+  }
+}
+a:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.stores {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.store {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.store img {
+  height: 44px;
+  width: auto;
+  display: block;
+}
+/* Not released yet: dimmed, not tappable, out of the tab order. Becomes a plain link once live. */
+.store[aria-disabled="true"] img {
+  opacity: 0.45;
+}
+.store[aria-disabled="true"] {
+  pointer-events: none;
+}
+.soon {
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid var(--ink);
+  background: var(--surface);
+  border-radius: 999px;
+  padding: 2px 10px;
+}
+
+.follow {
+  margin: 44px 0 0;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.soc {
+  margin-top: 14px;
+  display: flex;
+  gap: 12px;
+}
+.soc a {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1.7px solid var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink);
+  background: var(--surface);
+}
+.soc svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.works {
+  padding: 48px 16px 40px;
+}
+
+/* Two columns sliding in opposite directions; each column holds its set twice so -50% loops seamlessly. */
+.mq {
+  height: min(100svh, 760px);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(transparent, #000 12%, #000 88%, transparent);
+  mask-image: linear-gradient(transparent, #000 12%, #000 88%, transparent);
+}
+.col,
+.set {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.set {
+  padding-bottom: 8px;
+}
+.up {
+  animation: mq-up 26s linear infinite;
+}
+.down {
+  animation: mq-down 26s linear infinite;
+}
+/* Fixed ratio: rows keep their height before images load, so the -50% loop never jumps. */
+.col img {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  border-radius: 8px;
+  display: block;
+  background: #eeede9;
+}
+@keyframes mq-up {
+  to {
+    transform: translateY(-50%);
+  }
+}
+@keyframes mq-down {
+  from {
+    transform: translateY(-50%);
+  }
+  to {
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .up,
+  .down {
+    animation: none;
+  }
+}
+
+.foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px calc(24px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--line);
+}
+.foot-logo {
+  height: 20px;
+  width: auto;
+  flex: none;
+}
+.foot-copy {
+  margin: 0;
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--ink-2);
+  text-align: right;
+}

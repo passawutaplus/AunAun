@@ -34,26 +34,27 @@ export function isHeicByHint(file: File): boolean {
  * Cover/crop stills should use {@link isAllowedPortfolioStillImage}.
  */
 export function isAllowedPortfolioImage(file: File): boolean {
-  if (/^image\/(jpeg|png|gif)$/i.test(file.type)) return true;
-  if (!file.type && /\.(jpe?g|png|gif)$/i.test(file.name)) return true;
+  if (/^image\/(jpeg|jpg|png|gif|webp|avif|heic|heif)$/i.test(file.type)) return true;
+  // Empty or generic MIME (common on Windows for .heic) falls back to the extension.
+  if ((!file.type || file.type === "application/octet-stream") && /\.(jpe?g|png|gif|webp|avif|heic|heif|hif)$/i.test(file.name)) return true;
   return false;
 }
 
 /** Still images only (cover crop / poster) — no GIF. */
 export function isAllowedPortfolioStillImage(file: File): boolean {
-  if (/^image\/(jpeg|jpg|png)$/i.test(file.type)) return true;
-  if (!file.type && /\.(jpe?g|png)$/i.test(file.name)) return true;
+  if (/^image\/(jpeg|jpg|png|webp|avif|heic|heif)$/i.test(file.type)) return true;
+  if ((!file.type || file.type === "application/octet-stream") && /\.(jpe?g|png|webp|avif|heic|heif|hif)$/i.test(file.name)) return true;
   return false;
 }
 
 /** `<input accept>` for canvas image modules (includes GIF). */
-export const PORTFOLIO_IMAGE_ACCEPT = "image/jpeg,image/png,image/gif,.jpg,.jpeg,.png,.gif";
+export const PORTFOLIO_IMAGE_ACCEPT = "image/jpeg,image/png,image/gif,image/webp,image/avif,image/heic,image/heif,.jpg,.jpeg,.png,.gif,.webp,.avif,.heic,.heif";
 
 /** Still-image accept (cover / poster). */
-export const PORTFOLIO_STILL_IMAGE_ACCEPT = "image/jpeg,image/png,.jpg,.jpeg,.png";
+export const PORTFOLIO_STILL_IMAGE_ACCEPT = "image/jpeg,image/png,image/webp,image/avif,image/heic,image/heif,.jpg,.jpeg,.png,.webp,.avif,.heic,.heif";
 
 /** Short user-facing format hint for canvas image modules. */
-export const PORTFOLIO_IMAGE_FORMAT_HINT = "JPG, PNG, GIF";
+export const PORTFOLIO_IMAGE_FORMAT_HINT = "JPG, PNG, GIF, WebP, HEIC";
 
 
 function readBytes(file: Blob, n: number): Promise<Uint8Array> {

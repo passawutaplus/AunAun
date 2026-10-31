@@ -22,9 +22,10 @@ import {
   type UserLocale,
 } from "@/lib/lineNotificationKinds";
 import { cn } from "@/lib/utils";
+import { BRAND_LINE_CONTACT_URL, BRAND_LINE_ID } from "@/lib/brandConfig";
 
-const LINE_URL = "https://lin.ee/q3W9Qds";
-const LINE_ID = "@solofreelancer";
+const LINE_URL = BRAND_LINE_CONTACT_URL;
+const LINE_ID = BRAND_LINE_ID;
 
 function LineGlyph({ className }: { className?: string }) {
   return (

@@ -429,7 +429,7 @@ const HireCancelRequestDialog = ({
                     {amountThb > 0 ? formatOfferAmount(refundEstimate) : "—"}
                   </span>
                 </div>
-                <p className="text-[11px] text-amber-700/90 dark:text-amber-400/90 pt-0.5 leading-relaxed">
+                <p className="text-[11px] text-warning/90 dark:text-warning/90 pt-0.5 leading-relaxed">
                   ยอดคืนจริงอาจต่างไปหลังพิจารณาตามนโยบายการคืนเงิน
                 </p>
                 {amountThb <= 0 ? (

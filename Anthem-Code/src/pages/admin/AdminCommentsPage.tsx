@@ -7,6 +7,7 @@ import AdminExportButton from "@/components/admin/AdminExportButton";
 import { useAdminList } from "@/hooks/admin/useAdminList";
 import { useAdminDeleteComment } from "@/hooks/admin/useAdminMutations";
 import { formatThaiDate } from "@/lib/format";
+import { userFacingError } from "@/lib/userFacingError";
 
 interface Row {
   id: string;
@@ -56,7 +57,7 @@ export default function AdminCommentsPage() {
                 if (!window.confirm("ลบคอมเมนต์นี้?")) return;
                 remove.mutate(r.id, {
                   onSuccess: () => toast.success("ลบแล้ว"),
-                  onError: (e: Error) => toast.error(e.message),
+                  onError: (e: Error) => toast.error(userFacingError(e)),
                 });
               },
             },

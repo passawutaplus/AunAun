@@ -169,7 +169,7 @@ const HireForwardInChatDialog = ({
           <Button
             type="button"
             disabled={busy || !selected || (reason === "other" && !otherNote.trim())}
-            className="rounded-full bg-[hsl(var(--chat-hire))] text-white hover:opacity-90"
+            className="rounded-full bg-[hsl(var(--chat-hire))] text-[hsl(var(--chat-hire-foreground))] hover:opacity-90"
             onClick={() =>
               selected &&
               void onConfirm({

@@ -429,7 +429,7 @@ export const LEARN_FAQ = [
   {
     id: "free",
     q: "Is it free?",
-    a: "You can explore, publish, and talk about opportunity on a regular account. If a premium feature exists, the upgrade page says so plainly.",
+    a: "Yes. During the Beta everything that is open — publishing work, your profile, discovery, chat, hire and collab requests — is free. Paid features will be announced on the Changelog before they open.",
   },
   {
     id: "first-work",
@@ -447,6 +447,11 @@ export const LEARN_FAQ = [
     a: "PX is a unit inside the platform. Some welcome and mission PX cannot be cashed out. Earned PX that meets the rules can. See the PX wallet or Help Center for the detail.",
   },
   {
+    id: "beta",
+    q: "What is open during the Beta?",
+    a: "Publishing work, profiles, discovery, chat, and hire and collab requests. Packages, Objects, the job board, payments and tax documents are built and will open step by step — see Coming Next at the bottom of this page.",
+  },
+  {
     id: "hide",
     q: "Can I hide or delete a piece?",
     a: "Yes, from the work manager. Change visibility or remove a piece when you do not want it shown.",
@@ -454,6 +459,6 @@ export const LEARN_FAQ = [
   {
     id: "community",
     q: "How is this page different from the Help Center?",
-    a: "This page is the overview of how SAMECOR works. The Help Center is the step-by-step when you have a question. The Forum is where you talk with the community.",
+    a: "This page is the overview of how SAMECOR works. The Help Center is the step-by-step when you have a question. To talk with the team or other creators, use LINE or the Facebook group under Get in Touch.",
   },
 ] as const;

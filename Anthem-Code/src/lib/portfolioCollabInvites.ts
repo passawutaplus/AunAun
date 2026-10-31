@@ -1,5 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
-import { notifyCommunityEvent } from "@/lib/communityNotify";
+import { fromTable, supabase } from "@/integrations/supabase/client";
 import {
   fetchMutualFollowCandidates,
   type TaggedUserSummary,
@@ -12,7 +11,7 @@ export type ProjectCollabInvite = {
   project_id: string;
   invited_user_id: string;
   invited_by: string;
-  status: "pending" | "accepted" | "declined";
+  status: "pending" | "accepted" | "declined" | "withdrawn";
   created_at: string;
   responded_at: string | null;
 };
@@ -38,6 +37,29 @@ export async function fetchMyPendingCollabInvites(userId: string): Promise<Proje
   return (data ?? []) as ProjectCollabInvite[];
 }
 
+type LooseRpc = (name: string, args?: object) => ReturnType<typeof supabase.rpc>;
+const rpc = (name: string, args?: object) => (supabase.rpc as unknown as LooseRpc)(name, args);
+
+/**
+ * People the signed-in user may tag right now: mutual follows, who allow tags, with no block
+ * either way (the database decides). Null when that check is not deployed yet.
+ */
+async function fetchTaggableIds(): Promise<Set<string> | null> {
+  const { data, error } = await rpc("list_taggable_collaborators");
+  if (error || !Array.isArray(data)) return null;
+  return new Set(
+    (data as unknown[]).map((row) =>
+      typeof row === "string" ? row : String((row as Record<string, unknown>).list_taggable_collaborators ?? ""),
+    ),
+  );
+}
+
+/** Mutual follows the user is allowed to tag on a work. */
+export async function fetchTaggableCollabCandidates(userId: string): Promise<TaggedUserSummary[]> {
+  const [candidates, taggable] = await Promise.all([fetchMutualFollowCandidates(userId), fetchTaggableIds()]);
+  return taggable ? candidates.filter((c) => taggable.has(c.user_id)) : candidates;
+}
+
 export async function resolveCollabUserIds(
   ownerId: string,
   ids: string[] | undefined,
@@ -45,20 +67,23 @@ export async function resolveCollabUserIds(
   const unique = Array.from(new Set(ids ?? [])).filter((id) => id !== ownerId);
   if (!unique.length) return [];
 
-  const candidates = await fetchMutualFollowCandidates(ownerId);
+  const candidates = await fetchTaggableCollabCandidates(ownerId);
   const allowed = new Set(candidates.map((c) => c.user_id));
   const valid = unique.filter((id) => allowed.has(id));
   if (valid.length !== unique.length) {
-    throw new Error("แท็กได้เฉพาะคนที่ติดตามกันและกัน");
+    throw new Error("แท็กได้เฉพาะคนที่ติดตามกันทั้งคู่และเปิดให้แท็ก");
   }
   return valid;
 }
 
+/**
+ * Create invites for newly tagged people. The database tells them (only once the work is
+ * Published) and tells the poster when they accept or decline. A decline is final for that
+ * work, so the poster cannot re-tag the same person over and over.
+ */
 export async function syncProjectCollabInvites(input: {
   projectId: string;
   ownerId: string;
-  ownerName: string;
-  projectTitle: string;
   desiredUserIds: string[];
   acceptedUserIds: string[];
 }): Promise<void> {
@@ -79,68 +104,53 @@ export async function syncProjectCollabInvites(input: {
   if (!target.length) return;
 
   const existing = await fetchProjectCollabInvites(input.projectId);
-  const existingByUser = new Map(existing.map((i) => [i.invited_user_id, i]));
-
-  const toInvite = target.filter((id) => {
-    const row = existingByUser.get(id);
-    return !row || row.status === "declined";
-  });
-
+  const invitedAlready = new Set(existing.map((i) => i.invited_user_id));
+  const toInvite = target.filter((id) => !invitedAlready.has(id));
   if (!toInvite.length) return;
 
-  const inserted: { id: string; invited_user_id: string }[] = [];
-
-  for (const invited_user_id of toInvite) {
-    const prev = existingByUser.get(invited_user_id);
-    if (prev?.status === "declined") {
-      const { data, error: uErr } = await supabase
-        .from("project_collab_invites")
-        .update({ status: "pending", responded_at: null })
-        .eq("id", prev.id)
-        .select("id, invited_user_id")
-        .single();
-      if (uErr) throw uErr;
-      if (data) inserted.push(data);
-      continue;
-    }
-    const { data, error: iErr } = await supabase
-      .from("project_collab_invites")
-      .insert({
-        project_id: input.projectId,
-        invited_user_id,
-        invited_by: input.ownerId,
-        status: "pending",
-      })
-      .select("id, invited_user_id")
-      .single();
-    if (iErr) throw iErr;
-    if (data) inserted.push(data);
-  }
-
-  const link = `/portfolio/${input.projectId}`;
-  await Promise.all(
-    (inserted ?? []).map((inv) =>
-      notifyCommunityEvent({
-        recipientId: inv.invited_user_id,
-        kind: "project_collab_invite",
-        title: "เชิญร่วมงานในผลงาน",
-        body: `${input.ownerName} แท็กคุณในผลงาน "${input.projectTitle}"`,
-        link,
-        metadata: {
-          invite_id: inv.id,
-          project_id: input.projectId,
-          status: "pending",
-        },
-      }),
-    ),
+  const { error } = await supabase.from("project_collab_invites").insert(
+    toInvite.map((invited_user_id) => ({
+      project_id: input.projectId,
+      invited_user_id,
+      invited_by: input.ownerId,
+      status: "pending",
+    })),
   );
+  if (error) throw error;
 }
 
 export async function respondProjectCollabInvite(inviteId: string, accept: boolean): Promise<void> {
-  const { error } = await (supabase.rpc as (name: string, args: object) => ReturnType<typeof supabase.rpc>)(
-    "respond_project_collab_invite",
-    { _invite_id: inviteId, _accept: accept },
-  );
+  const { error } = await rpc("respond_project_collab_invite", { _invite_id: inviteId, _accept: accept });
+  if (error) throw error;
+}
+
+/** Take your own name off a work you were credited on. The poster is told. */
+export async function withdrawProjectCollab(projectId: string): Promise<void> {
+  const { error } = await rpc("withdraw_project_collab", { _project_id: projectId });
+  if (error) throw error;
+}
+
+/** Poster cancels a tag nobody has answered yet (they can tag that person again later). */
+export async function cancelProjectCollabInvite(inviteId: string): Promise<void> {
+  const { error } = await rpc("cancel_project_collab_invite", { _invite_id: inviteId });
+  if (error) throw error;
+}
+
+export type CollabTagPermission = "mutual" | "nobody";
+
+/** "Who can tag me" — private to its owner. Defaults to mutual follows. */
+export async function fetchCollabTagPermission(userId: string): Promise<CollabTagPermission> {
+  const { data, error } = await fromTable("collab_tag_settings")
+    .select("allow")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error || !data) return "mutual";
+  return (data as { allow?: string }).allow === "nobody" ? "nobody" : "mutual";
+}
+
+export async function saveCollabTagPermission(userId: string, allow: CollabTagPermission): Promise<void> {
+  const { error } = await fromTable("collab_tag_settings")
+    .upsert({ user_id: userId, allow, updated_at: new Date().toISOString() } as never, { onConflict: "user_id" });
   if (error) throw error;
 }
 

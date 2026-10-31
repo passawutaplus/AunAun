@@ -140,3 +140,12 @@ export function plainTextToProjectRichHtml(raw: string): string {
     .map((line) => `<p>${escapeText(line) || "<br>"}</p>`)
     .join("");
 }
+
+/** True when rich text has no visible characters (only tags, <br>, &nbsp; or spaces). */
+export function isBlankRichText(html: string | null | undefined): boolean {
+  return !(html ?? "")
+    .replace(/<br\s*\/?>/gi, "")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;|\u00a0/g, "")
+    .trim();
+}

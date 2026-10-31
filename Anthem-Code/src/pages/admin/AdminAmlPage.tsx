@@ -13,6 +13,7 @@ import {
   useResolveAmlFlag, useUnfreezeAccount, useFreezeAccount, type AmlFlag,
 } from "@/hooks/useAmlFlags";
 import { formatThaiDate } from "@/lib/format";
+import { userFacingError } from "@/lib/userFacingError";
 
 const KpiCard = ({ label, value, icon: Icon, accent }: {
   label: string; value: string | number; icon: React.ComponentType<{ className?: string }>; accent?: boolean;
@@ -33,8 +34,8 @@ const Avatar = ({ url, name }: { url?: string | null; name?: string | null }) =>
 
 const SEVERITY_CLASS: Record<string, string> = {
   low: "bg-muted text-muted-foreground",
-  medium: "bg-amber-500/15 text-amber-600",
-  high: "bg-orange-500/15 text-orange-600",
+  medium: "bg-warning/15 text-warning",
+  high: "bg-warning/15 text-warning",
   critical: "bg-destructive/15 text-destructive",
 };
 
@@ -69,7 +70,7 @@ export default function AdminAmlPage() {
         setReviewFlag(null);
         setNote("");
       },
-      onError: (e: Error) => toast.error(e.message),
+      onError: (e: Error) => toast.error(userFacingError(e)),
     });
   };
 
@@ -84,7 +85,7 @@ export default function AdminAmlPage() {
         setFreezeUser(null);
         setFreezeReason("");
       },
-      onError: (e: Error) => toast.error(e.message),
+      onError: (e: Error) => toast.error(userFacingError(e)),
     });
   };
 
@@ -178,7 +179,7 @@ export default function AdminAmlPage() {
                       </Link>
                     </td>
                     <td className="px-3 py-2">
-                      <Badge className={`${u.account_status === "frozen" ? "bg-destructive/15 text-destructive" : "bg-amber-500/15 text-amber-600"} border-0 text-[10px]`}>
+                      <Badge className={`${u.account_status === "frozen" ? "bg-destructive/15 text-destructive" : "bg-warning/15 text-warning"} border-0 text-[10px]`}>
                         {u.account_status}
                       </Badge>
                     </td>
@@ -221,7 +222,7 @@ export default function AdminAmlPage() {
                       </Link>
                     </td>
                     <td className="px-3 py-2 tabular-nums">
-                      <span className={u.risk_score >= 80 ? "text-destructive font-semibold" : u.risk_score >= 60 ? "text-orange-600 font-medium" : "text-amber-600"}>
+                      <span className={u.risk_score >= 80 ? "text-destructive font-semibold" : u.risk_score >= 60 ? "text-warning font-semibold" : "text-warning"}>
                         {u.risk_score}
                       </span>
                     </td>
@@ -261,7 +262,7 @@ export default function AdminAmlPage() {
           )}
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => handleResolve("dismiss")} disabled={resolve.isPending}>ไม่เป็นไร (Dismiss)</Button>
-            <Button variant="outline" className="border-amber-500 text-amber-600" onClick={() => handleResolve("escalate")} disabled={resolve.isPending}>ยกระดับ (Under Review)</Button>
+            <Button variant="outline" className="border-warning/40 text-warning" onClick={() => handleResolve("escalate")} disabled={resolve.isPending}>ยกระดับ (Under Review)</Button>
             <Button variant="destructive" onClick={() => handleResolve("freeze")} disabled={resolve.isPending}>ระงับบัญชี</Button>
           </DialogFooter>
         </DialogContent>
