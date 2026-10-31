@@ -29,8 +29,8 @@ describe("buildShowcase", () => {
   });
 
   it("leaves out member works from other categories", () => {
-    const { all } = buildShowcase([member(FEATURED[0], "Typography")]);
-    expect(all.some((w) => w.id === FEATURED[0])).toBe(false);
+    const { byCategory } = buildShowcase([member(FEATURED[0], "Typography")]);
+    expect(Object.values(byCategory).flat().some((w) => w.id === FEATURED[0])).toBe(false);
   });
 
   it("leaves out member works nobody picked", () => {

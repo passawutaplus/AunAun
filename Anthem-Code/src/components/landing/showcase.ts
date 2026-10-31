@@ -102,11 +102,18 @@ export const SHOWCASE_HERO = ["market", "silk", "poster", "chrome", "ceramic"].m
 export const SHOWCASE_WIDE = ["painting", "house", "motion"].map((id) => `/landing/works/${id}.jpg`);
 
 export const PER_CATEGORY = 10;
-// How many tiles each category gets under All, in SHOWCASE_CATEGORIES order. 15 in total.
-const ALL_SPLIT = [3, 3, 3, 2, 2, 2];
+const ALL_SIZE = 15;
 
 // Hand-picked member works: Tra+veler, light bends and silence glows. New posts stay off this page until added here.
-const FEATURED_MEMBER_WORKS = new Set(["3a08479e-ec0b-40bd-b54c-cb1a2724460a", "acfff42e-8539-4979-a7a3-7ca439e26f68"]);
+const TRAVELER = "3a08479e-ec0b-40bd-b54c-cb1a2724460a";
+const FEATURED_MEMBER_WORKS = new Set([TRAVELER, "acfff42e-8539-4979-a7a3-7ca439e26f68"]);
+
+// The All view, in display order. None repeat the hero, and clips are spread across the columns.
+// The last id is a spare that fills the gap until the member works load.
+const ALL_PICKS = [
+  "wave", "ui-habit", "vid-silk", "tiger", "fisherman", "riso", "vid-shapes", "ui-retro",
+  TRAVELER, "concrete", "gig", "vid-ink", "charcoal", "lowpoly", "tuktuk", "panel",
+];
 
 /** Weaves member works into the examples: one after every third example of the same category. */
 export function buildShowcase(members: LandingWork[]) {
@@ -119,8 +126,7 @@ export function buildShowcase(members: LandingWork[]) {
       return [category, mixed.slice(0, PER_CATEGORY)];
     }),
   );
-  const all = [0, 1, 2].flatMap((round) =>
-    SHOWCASE_CATEGORIES.flatMap((category, i) => (round < ALL_SPLIT[i] ? [byCategory[category][round]] : [])),
-  );
+  const pool = [...SHOWCASE, ...members];
+  const all = ALL_PICKS.flatMap((id) => pool.filter((w) => w.id === id)).slice(0, ALL_SIZE);
   return { all, byCategory };
 }
