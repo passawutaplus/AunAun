@@ -69,7 +69,7 @@ h1 {
   --cta-h: 56px;
   position: relative;
   display: block;
-  width: 320px;
+  width: 268px; /* lines up with the two store badges + gap below */
   max-width: 100%;
   height: var(--cta-h);
   margin-top: 36px;
