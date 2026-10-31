@@ -143,8 +143,8 @@ export function formatMembersBurst(members: MemberInfo[]): string {
 }
 
 /** One message for every sign-up of the last 2-hour window. */
-export function formatMembersBatch(members: MemberInfo[]): string {
-  const lines = [`🆕 สมาชิกใหม่ ${members.length} คน`];
+export function formatMembersBatch(members: MemberInfo[], now: Date = new Date()): string {
+  const lines = [`🆕 สมาชิกใหม่ ${members.length} คน (ช่วง ${batchWindow(now)})`];
   for (const m of members.slice(0, 15)) {
     lines.push(`• ${m.display_name || m.username || "(ไม่มีชื่อ)"} — ${m.email ?? "-"} (${m.provider === "google" ? "Google" : "อีเมล"})`);
   }
@@ -436,19 +436,73 @@ export function flexMembersBurst(members: MemberInfo[]): LineMessage {
   );
 }
 
+/** Bangkok clock fields of a Date. */
+function bkkParts(d: Date): { h: number; m: number } {
+  const parts = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Bangkok", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(d);
+  const get = (t: string) => Number(parts.find((p) => p.type === t)?.value ?? "0") % 24;
+  return { h: get("hour"), m: get("minute") };
+}
+
+const hhmm = (h: number) => `${String(((h % 24) + 24) % 24).padStart(2, "0")}:00`;
+
+/**
+ * Window of the 2-hour batch that fires at `now` (slots 08:00, 10:00 ... 00:00 Bangkok).
+ * The 08:00 batch also carries the night, so it reads 00:00-08:00.
+ */
+export function batchWindow(now: Date): string {
+  const end = bkkParts(now).h - (bkkParts(now).h % 2); // floor to an even hour
+  const start = end === 8 ? 0 : end - 2;
+  return `${hhmm(start)}–${hhmm(end)} น.`;
+}
+
 export function flexMembersBatch(members: MemberInfo[], now: Date = new Date()): LineMessage {
-  const lines = members.slice(0, 15).map(
-    (m) => `• ${m.display_name || m.username || "(ไม่มีชื่อ)"}${m.username ? ` @${m.username}` : ""}
-   ${m.email ?? "-"} · ${m.provider === "google" ? "Google" : "อีเมล"}`,
-  );
-  if (members.length > 15) lines.push(`…และอีก ${members.length - 15} คน`);
-  return flex(
-    formatMembersBatch(members),
-    bubble("สมาชิกใหม่", `อัปเดต ${bkkTime(now.toISOString())}`, [section("user-plus", "ในช่วงที่ผ่านมา", `${members.length} คน`, lines)], {
-      label: "เปิดหน้าแอดมิน",
-      uri: `${ADMIN_SITE}/admin`,
-    }),
-  );
+  const shown = members.slice(0, 15);
+  const rows: Box[] = [];
+  shown.forEach((m, i) => {
+    if (i > 0) rows.push({ type: "separator", margin: "md", color: RULE });
+    const t = bkkParts(new Date(m.joined_at));
+    rows.push({
+      type: "box",
+      layout: "vertical",
+      margin: i > 0 ? "md" : "lg",
+      contents: [
+        {
+          type: "box",
+          layout: "baseline",
+          spacing: "sm",
+          contents: [
+            text(m.display_name || m.username || "(ไม่มีชื่อ)", { size: "md", weight: "bold", flex: 0 }),
+            ...(m.username ? [text(`@${m.username}`, { size: "sm", color: MUTED, flex: 0 })] : []),
+          ],
+        },
+        text(m.email ?? "-", { size: "sm", color: "#444444", margin: "xs" }),
+        text(`${m.provider === "google" ? "Google" : "อีเมล"} · สมัคร ${String(t.h).padStart(2, "0")}:${String(t.m).padStart(2, "0")} น.`, { size: "xs", color: MUTED, margin: "xs" }),
+      ],
+    });
+  });
+  if (members.length > 15) rows.push(text(`…และอีก ${members.length - 15} คน`, { size: "xs", color: MUTED, margin: "md" }));
+  return flex(formatMembersBatch(members), {
+    type: "bubble",
+    size: "kilo",
+    body: {
+      type: "box",
+      layout: "vertical",
+      paddingAll: "20px",
+      contents: [
+        text("สมาชิกใหม่", { size: "lg", weight: "bold" }),
+        text(`ช่วง ${batchWindow(now)}`, { size: "xs", color: MUTED, margin: "xs" }),
+        rule(),
+        { type: "box", layout: "baseline", spacing: "sm", margin: "lg", contents: [icon("user-plus"), text(`${members.length} คน`, { size: "xl", weight: "bold", flex: 0 })] },
+        ...rows,
+      ],
+    },
+    footer: {
+      type: "box",
+      layout: "vertical",
+      paddingAll: "12px",
+      contents: [{ type: "button", style: "link", height: "sm", color: INK, action: { type: "uri", label: "เปิดหน้าแอดมิน", uri: `${ADMIN_SITE}/admin` } }],
+    },
+  });
 }
 
 export function flexFeedback(f: FeedbackInfo): LineMessage {
