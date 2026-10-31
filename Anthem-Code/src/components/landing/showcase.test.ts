@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { PER_CATEGORY, SHOWCASE, SHOWCASE_CATEGORIES, buildShowcase, type LandingWork } from "./showcase";
 
-const FEATURED = ["3a08479e-ec0b-40bd-b54c-cb1a2724460a", "acfff42e-8539-4979-a7a3-7ca439e26f68", "76c70ddf-fa96-4f6a-9191-7d44b38812e3", "ba6a25dd-0cc9-47a5-a77d-3da54cb832b8"];
+const FEATURED = ["3a08479e-ec0b-40bd-b54c-cb1a2724460a", "acfff42e-8539-4979-a7a3-7ca439e26f68"];
 
 const member = (id: string, category: string): LandingWork => ({ id, title: id, category, src: `/${id}.jpg`, href: `/project/${id}` });
 

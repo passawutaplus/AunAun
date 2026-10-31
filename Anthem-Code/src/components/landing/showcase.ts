@@ -82,15 +82,15 @@ export const SHOWCASE: LandingWork[] = [
     ["ui-zen", "แอปสมาธิ Zen", "4/3"],
   ]),
   ...clips("Video / Film", [
-    ["vid-paperbird", "นกกระดาษ", "16/9"],
+    ["vid-silk", "Orange Drift", "9/16"],
     ["vid-ink", "Ink Bloom", "9/16"],
-    ["vid-market", "ตลาดเช้า", "16/9"],
+    ["vid-shadow", "เงาใบมะพร้าว", "16/9"],
     ["vid-bicycle", "Evening Ride", "16/9"],
     ["vid-waves", "Midnight Shore", "1/1"],
     ["vid-claycat", "แมวบนหลังคา", "4/3"],
     ["vid-bauhaus", "Circles in Motion", "1/1"],
     ["vid-cup", "Turning Cup", "3/4"],
-    ["vid-silk", "Orange Drift", "9/16"],
+    ["vid-paint", "Oil Paint Folds", "4/3"],
     ["vid-terraces", "เมฆเหนือนาขั้นบันได", "16/9"],
   ]),
 ];
@@ -105,13 +105,8 @@ export const PER_CATEGORY = 10;
 // How many tiles each category gets under All, in SHOWCASE_CATEGORIES order. 15 in total.
 const ALL_SPLIT = [3, 3, 3, 2, 2, 2];
 
-// Hand-picked member works: Tra+veler, light bends and silence glows, Ignite, photo. New posts stay off this page until added here.
-const FEATURED_MEMBER_WORKS = new Set([
-  "3a08479e-ec0b-40bd-b54c-cb1a2724460a",
-  "acfff42e-8539-4979-a7a3-7ca439e26f68",
-  "76c70ddf-fa96-4f6a-9191-7d44b38812e3",
-  "ba6a25dd-0cc9-47a5-a77d-3da54cb832b8",
-]);
+// Hand-picked member works: Tra+veler, light bends and silence glows. New posts stay off this page until added here.
+const FEATURED_MEMBER_WORKS = new Set(["3a08479e-ec0b-40bd-b54c-cb1a2724460a", "acfff42e-8539-4979-a7a3-7ca439e26f68"]);
 
 /** Weaves member works into the examples: one after every third example of the same category. */
 export function buildShowcase(members: LandingWork[]) {
