@@ -17,4 +17,5 @@
 **/test-results
 **/*.exe
 **/*.mp4
+!Anthem-Code/public/landing/works/*.mp4
 **/*.zip
