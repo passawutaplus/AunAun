@@ -39,6 +39,7 @@ import AvatarPoolBootstrap from "./components/AvatarPoolBootstrap.tsx";
 import { ErrorBoundary } from "./components/ErrorBoundary.tsx";
 import { ReferralAttribution } from "./components/referral/ReferralAttribution.tsx";
 import { ScrollToTop } from "./components/ScrollToTop.tsx";
+import { OAuthErrorGate } from "./components/auth/OAuthErrorGate.tsx";
 import { ProductEventTracker } from "./components/ProductEventTracker.tsx";
 import LaunchMinimalGate from "./components/LaunchMinimalGate.tsx";
 import PageTransition from "./components/motion/PageTransition.tsx";
@@ -222,6 +223,7 @@ const App = () => (
         {/* startTransition: keep the current page on screen while a lazy route chunk loads (no full-screen loader flash). */}
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <ScrollToTop />
+          <OAuthErrorGate />
           <ProductEventTracker />
           <ErrorBoundary>
           <SkipLink />
