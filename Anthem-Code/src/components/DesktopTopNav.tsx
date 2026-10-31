@@ -29,7 +29,6 @@ function shouldShowDesktopTopNav(pathname: string): boolean {
   if (isPortfolioEditorRoute(pathname)) return false;
   return (
     pathname === "/" ||
-    pathname.startsWith("/learn") ||
     pathname.startsWith("/help") ||
     pathname.startsWith("/forum") ||
     // My Studio (/dashboard, /earnings) has its own back-office top bar

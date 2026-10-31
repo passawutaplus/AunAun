@@ -180,7 +180,7 @@ const AdvertisePage = lazy(() => import("./pages/AdvertisePage.tsx"));
 const LearnShell = lazy(() =>
   import("./components/learn/LearnShell.tsx").then((m) => ({ default: m.LearnShell })),
 );
-const LearnHubPage = lazy(() => import("./pages/learn/LearnHubPage.tsx"));
+const PlatformLandingPage = lazy(() => import("./pages/learn/PlatformLandingPage.tsx"));
 const HelpShell = lazy(() =>
   import("./components/help/HelpShell.tsx").then((m) => ({ default: m.HelpShell })),
 );
@@ -235,7 +235,7 @@ const App = () => (
               <Route element={<PageTransition />}>
               <Route path="/" element={<Index />} />
               <Route path="/learn" element={<LearnShell />}>
-                <Route index element={<LearnHubPage />} />
+                <Route index element={<PlatformLandingPage />} />
               </Route>
               <Route path="/search" element={<SearchShortcutRedirect />} />
               <Route path="/learn/who" element={<RedirectTo to="/learn#who" />} />
