@@ -89,8 +89,8 @@ export const SHOWCASE: LandingWork[] = [
     ["vid-waves", "Midnight Shore", "1/1"],
     ["vid-claycat", "แมวบนหลังคา", "4/3"],
     ["vid-bauhaus", "Circles in Motion", "1/1"],
-    ["vid-cup", "Turning Cup", "3/4"],
-    ["vid-paint", "Oil Paint Folds", "4/3"],
+    ["vid-shapes", "จังหวะรูปทรง", "3/4"],
+    ["vid-tiles", "Tile Wave", "4/3"],
     ["vid-terraces", "เมฆเหนือนาขั้นบันได", "16/9"],
   ]),
 ];
