@@ -415,3 +415,9 @@
 .sl .g:hover video { transform: scale(1.04); }
 .sl .g .play { position: absolute; top: 10px; left: 10px; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: rgba(0,0,0,.45); color: #fff; }
 .sl .stack .c:nth-child(n) { transition-delay: var(--dly, 0ms); }
+@media (pointer: coarse) {
+  .sl .tr-ranges button { min-height: 40px; min-width: 44px; }
+  .sl .dots { gap: 2px; margin-top: 8px; }
+  .sl .dots button { box-sizing: content-box; height: 4px; padding: 18px 2px; background-clip: content-box; }
+  .sl .foot a { padding: 11px 0; }
+}

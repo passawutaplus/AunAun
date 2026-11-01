@@ -83,6 +83,21 @@ export function parseOAuthError(): string | null {
   );
 }
 
+/** True when the URL carries a Supabase Auth failure (?error_code=… / #error_description=…). */
+export function hasAuthErrorParams(search: string, hash: string): boolean {
+  const q = new URLSearchParams(search);
+  const h = new URLSearchParams(hash.replace(/^#/, ""));
+  return [q, h].some((p) => p.has("error_code") || (p.has("error") && p.has("error_description")));
+}
+
+/** The same URL without the Supabase error params (keeps other query values). */
+export function stripAuthErrorParams(pathname: string, search: string): string {
+  const q = new URLSearchParams(search);
+  for (const k of ["error", "error_code", "error_description"]) q.delete(k);
+  const rest = q.toString();
+  return rest ? `${pathname}?${rest}` : pathname;
+}
+
 export function currentAppPath(): string {
   if (typeof window === "undefined") return "/";
   return `${window.location.pathname}${window.location.search}`;
