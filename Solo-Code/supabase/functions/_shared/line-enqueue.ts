@@ -1,3 +1,4 @@
+import { supabaseSecretKey } from "./supabase-keys.ts";
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
 import { formatLineNotification } from "./line-message-format.ts";
 
@@ -27,7 +28,7 @@ const QUEUE = "line_messages";
 
 function adminClient(): SupabaseClient {
   const url = Deno.env.get("SUPABASE_URL")!;
-  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const key = supabaseSecretKey();
   return createClient(url, key);
 }
 

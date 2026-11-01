@@ -1,3 +1,4 @@
+import { supabaseSecretKey } from "./supabase-keys.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { estimateThbFromCredits } from "./ai-cost-estimate.ts";
 import { defaultFastModel, defaultModel, getGeminiApiKey } from "./gemini.ts";
@@ -54,7 +55,7 @@ async function probeGemini(): Promise<{ configured: boolean; reachable: boolean;
 export async function fetchAiSummary(): Promise<AiSummarySnapshot> {
   const admin = createClient(
     Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    supabaseSecretKey(),
   );
 
   const now = new Date();

@@ -1,4 +1,5 @@
 // Google Gemini — caption + hashtag generation for Content Planner 2.0
+import { supabasePublishableKey } from "../_shared/supabase-keys.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { checkAiQuota, isProUser } from "../_shared/ai-quota.ts";
 import {
@@ -33,7 +34,7 @@ Deno.serve(async (req) => {
       });
     }
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
-    const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
+    const ANON_KEY = supabasePublishableKey();
     if (!SUPABASE_URL || !ANON_KEY) {
       console.error("planner-ai-assist: missing SUPABASE_URL or SUPABASE_ANON_KEY");
       return new Response(JSON.stringify({ error: "server_misconfiguration" }), {

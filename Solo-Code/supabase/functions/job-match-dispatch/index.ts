@@ -1,5 +1,6 @@
 // Triggered by database (pg_net) when a job_post is created/updated.
 // Validates payload, then computes matches with the service role.
+import { supabaseSecretKey } from "../_shared/supabase-keys.ts";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { z } from "npm:zod@3";
@@ -11,7 +12,7 @@ import {
 import { enqueueLineNotification } from "../_shared/line-enqueue.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const SERVICE_ROLE = supabaseSecretKey();
 const DISPATCH_SECRET =
   Deno.env.get("JOB_MATCH_DISPATCH_SECRET") ?? Deno.env.get("ECOSYSTEM_SYNC_SECRET") ?? "";
 

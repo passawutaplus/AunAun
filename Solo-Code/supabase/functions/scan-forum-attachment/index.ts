@@ -1,3 +1,4 @@
+import { supabaseSecretKey, supabasePublishableKey } from "../_shared/supabase-keys.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { z } from "npm:zod@3";
 import { corsHeadersForRequest } from "../_shared/cors.ts";
@@ -46,8 +47,8 @@ Deno.serve(async (req) => {
   try {
     const auth = req.headers.get("Authorization") ?? "";
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const anon = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const anon = supabasePublishableKey();
+    const service = supabaseSecretKey();
 
     const userClient = createClient(supabaseUrl, anon, {
       global: { headers: { Authorization: auth } },

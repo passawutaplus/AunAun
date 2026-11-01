@@ -1,4 +1,5 @@
 // Processes pgmq queue `line_messages` and sends LINE push notifications.
+import { supabaseSecretKey } from "../_shared/supabase-keys.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const QUEUE = "line_messages";
@@ -56,7 +57,7 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "method not allowed" }, 405);
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const serviceKey = supabaseSecretKey();
   if (!supabaseUrl || !serviceKey) {
     return json({ error: "server misconfiguration" }, 500);
   }

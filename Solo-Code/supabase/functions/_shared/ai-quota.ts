@@ -1,5 +1,6 @@
 // Shared AI credits guard for edge functions.
 // Backed by public.debit_ai_credits(user_id, feature, environment, idempotency_key) RPC.
+import { supabaseSecretKey } from "./supabase-keys.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 export interface QuotaResult {
@@ -35,7 +36,7 @@ export async function getAiUsageSummary(
   userId: string,
 ): Promise<QuotaResult & { total_remaining?: number }> {
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
-  const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const SERVICE_KEY = supabaseSecretKey();
   if (!SUPABASE_URL || !SERVICE_KEY) {
     return { allowed: false, reason: "server_misconfiguration", total_remaining: 0 };
   }
@@ -61,7 +62,7 @@ export async function debitAiQuota(
   idempotencyKey?: string,
 ): Promise<QuotaResult> {
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
-  const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const SERVICE_KEY = supabaseSecretKey();
   if (!SUPABASE_URL || !SERVICE_KEY) {
     return { allowed: false, reason: "server_misconfiguration" };
   }
@@ -96,7 +97,7 @@ export async function checkAiQuota(
 /** Returns true if the user has an active Pro/Inhouse subscription. */
 export async function isProUser(userId: string): Promise<boolean> {
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
-  const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const SERVICE_KEY = supabaseSecretKey();
   if (!SUPABASE_URL || !SERVICE_KEY) return false;
   const admin = createClient(SUPABASE_URL, SERVICE_KEY);
   const { data } = await admin
