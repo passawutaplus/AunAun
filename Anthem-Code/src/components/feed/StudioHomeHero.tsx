@@ -68,8 +68,8 @@ function coverColumns(urls: string[]) {
   return Array.from({ length: 4 }, (_, column) => urls.slice(column * 4, column * 4 + 4));
 }
 
-/** Nouns that rise through the second line, starting on Opportunity. */
-const HERO_RISING_WORDS = ["Opportunity", "Designer", "Artist", "Project", "Collaboration"] as const;
+/** Nouns that rise through the second line, starting on Opportunities. */
+const HERO_RISING_WORDS = ["Opportunities", "Designers", "Artists", "Projects", "Collaborations"] as const;
 const HERO_RISE_MS = 2400;
 const HERO_RISE_EASE = smoothEase;
 
