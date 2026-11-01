@@ -93,10 +93,11 @@ type Props = {
   /** Tab currently shown; the tour puts it back when it ends. */
   currentTab: string;
   onShowTab: (tab: string) => void;
+  intro?: boolean;
 };
 
 /** Look-only walkthrough of the owner's profile page (shared GuideTour engine). */
-export function ProfileTour({ open, onClose, currentTab, onShowTab }: Props) {
+export function ProfileTour({ open, intro, onClose, currentTab, onShowTab }: Props) {
   const startTab = useRef(currentTab);
   useEffect(() => {
     if (open) startTab.current = currentTab;
@@ -113,6 +114,7 @@ export function ProfileTour({ open, onClose, currentTab, onShowTab }: Props) {
       label="ทัวร์แนะนำหน้าโปรไฟล์"
       steps={steps}
       open={open}
+      intro={intro}
       onClose={() => {
         onShowTab(startTab.current);
         onClose();

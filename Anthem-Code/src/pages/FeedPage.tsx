@@ -1089,7 +1089,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
       />
       {/* Desktop only — on phones it sat on top of the feed; Settings → ทัวร์แนะนำ replays it there */}
       <TourHelpButton onClick={homeTour.start} className="fixed bottom-6 left-4 z-30 hidden shadow-sm lg:inline-flex" />
-      <GuideTour tourId="home" label="ทัวร์แนะนำหน้าแรก" steps={HOME_TOUR} open={homeTour.open} onClose={homeTour.close} />
+      <GuideTour tourId="home" label="ทัวร์แนะนำหน้าแรก" steps={HOME_TOUR} open={homeTour.open} intro={homeTour.intro} onClose={homeTour.close} />
     </main>
   );
 };

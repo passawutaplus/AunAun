@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { ChevronLeft, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TourMascot } from "@/components/project/TourMascot";
+import { TourInvite } from "@/components/tour/TourInvite";
 import { Spotlight, findTarget } from "@/components/project/EditorTour";
 import { useAuth } from "@/hooks/useAuth";
 import { markTourDone, turnTourOff, type GuideTourId } from "@/lib/guideTours";
@@ -29,6 +30,8 @@ type Props = {
   label: string;
   steps: GuideTourStep[];
   open: boolean;
+  /** Opened by itself: ask first with TourInvite instead of taking over the page. */
+  intro?: boolean;
   onClose: () => void;
 };
 
@@ -72,9 +75,10 @@ function placeCard(rect: DOMRect | null, wide: boolean, cardH: number): React.CS
  * Look-only page walkthrough: spotlight + card, next / back / keyboard, steps whose target is missing are skipped.
  * Finishing marks the tour done; ✕ / Esc closes for this visit; "ไม่ต้องแสดงอีก" switches it off.
  */
-export function GuideTour({ tourId, label, steps: allSteps, open, onClose }: Props) {
+export function GuideTour({ tourId, label, steps: allSteps, open, intro = false, onClose }: Props) {
   const { user } = useAuth();
   const [index, setIndex] = useState(0);
+  const [accepted, setAccepted] = useState(false);
   const [rect, setRect] = useState<DOMRect | null>(null);
   const [cardH, setCardH] = useState(220);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -87,15 +91,18 @@ export function GuideTour({ tourId, label, steps: allSteps, open, onClose }: Pro
   );
   const step = steps[index];
   const last = index === steps.length - 1;
+  const inviting = open && intro && !accepted;
+  const running = open && !inviting;
 
   useEffect(() => {
     if (open) setIndex(0);
+    else setAccepted(false);
   }, [open]);
 
   useEffect(() => {
-    if (open) step?.onEnter?.();
+    if (running) step?.onEnter?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, step?.id]);
+  }, [running, step?.id]);
 
   const close = useCallback(() => onClose(), [onClose]);
   const finish = useCallback(() => {
@@ -109,9 +116,14 @@ export function GuideTour({ tourId, label, steps: allSteps, open, onClose }: Pro
 
   const next = useCallback(() => (last ? finish() : setIndex((i) => i + 1)), [last, finish]);
   const back = () => setIndex((i) => Math.max(0, i - 1));
+  // The invite already said what an untargeted first step says.
+  const startFromInvite = () => {
+    setAccepted(true);
+    setIndex(steps[0]?.target ? 0 : Math.min(1, steps.length - 1));
+  };
 
   useEffect(() => {
-    if (!open) return;
+    if (!running) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") close();
       if (e.key === "ArrowRight") next();
@@ -119,11 +131,11 @@ export function GuideTour({ tourId, label, steps: allSteps, open, onClose }: Pro
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, close, next]);
+  }, [running, close, next]);
 
   // Follow the target through scroll, resize and re-render.
   useEffect(() => {
-    if (!open || !step?.target) {
+    if (!running || !step?.target) {
       setRect(null);
       return;
     }
@@ -152,18 +164,18 @@ export function GuideTour({ tourId, label, steps: allSteps, open, onClose }: Pro
       window.clearInterval(timer);
       window.removeEventListener("resize", measure);
     };
-  }, [open, step]);
+  }, [running, step]);
 
   useEffect(() => {
-    if (!open || !step?.target) return;
+    if (!running || !step?.target) return;
     const el = findTarget(step.target);
     el?.setAttribute("data-tour-active", "true");
     return () => el?.removeAttribute("data-tour-active");
-  }, [open, step, rect]);
+  }, [running, step, rect]);
 
   useEffect(() => {
-    if (open) cardRef.current?.focus();
-  }, [open, index]);
+    if (running) cardRef.current?.focus();
+  }, [running, index]);
 
   // Real card height, so the phone layout can keep it off the highlight.
   useLayoutEffect(() => {
@@ -172,6 +184,10 @@ export function GuideTour({ tourId, label, steps: allSteps, open, onClose }: Pro
   });
 
   if (!open || !step) return null;
+
+  if (inviting) {
+    return <TourInvite label={label} title={step.title} body={step.body} onStart={startFromInvite} onClose={close} onNeverAgain={neverAgain} />;
+  }
 
   const wide = !!step.scene;
   return (

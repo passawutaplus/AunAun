@@ -404,6 +404,7 @@ const PortfolioProfilePage = () => {
       <OpportunityStatusDialog open={opportunityOpen} onOpenChange={setOpportunityOpen} />
       <ProfileTour
         open={tour.open}
+        intro={tour.intro}
         onClose={tour.close}
         currentTab={activeTab}
         onShowTab={(t) => setTab(t as ProfileTab)}

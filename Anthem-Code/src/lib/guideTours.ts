@@ -1,6 +1,6 @@
 /**
  * Which page tours a person has finished. Rules (owner, 2026-10-17):
- * - A tour opens by itself the first time someone lands on its page.
+ * - A tour offers itself (TourInvite) the first time someone lands on its page.
  * - Finishing the last step marks it done → it never opens by itself again.
  * - Closing early (✕ / Esc) only hides it for this visit; it opens again next time.
  * - "ไม่ต้องแสดงอีก" turns it off for good.

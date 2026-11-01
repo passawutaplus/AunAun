@@ -296,7 +296,7 @@ const ChatInboxPage = () => {
           </>
         )}
       </AnimatePresence>
-      <GuideTour tourId="chat" label="ทัวร์แนะนำแชท" steps={CHAT_TOUR} open={chatTour.open} onClose={chatTour.close} />
+      <GuideTour tourId="chat" label="ทัวร์แนะนำแชท" steps={CHAT_TOUR} open={chatTour.open} intro={chatTour.intro} onClose={chatTour.close} />
     </main>
   );
 };
