@@ -56,25 +56,28 @@ const DeleteAccountPage = () => {
       <ul>
         <li>บัญชีและโปรไฟล์ · Your account and profile</li>
         <li>ผลงาน รูปภาพ และคอลเลกชัน · Your projects, images and collections</li>
-        <li>ข้อความแชท คอมเมนต์ ไลก์ และการติดตาม · Your chat messages, comments, likes and follows</li>
+        <li>คอมเมนต์ ไลก์ การติดตาม และไฟล์ที่คุณส่งในแชท · Your comments, likes, follows and files you sent in chat</li>
+        <li>เอกสารยืนยันตัวตน (KYC) · Your identity-verification (KYC) documents</li>
       </ul>
 
       <h2>4. ข้อมูลที่ต้องเก็บต่อ · What we keep</h2>
       <p>
-        บันทึกธุรกรรมการเงิน เอกสารภาษี และหลักฐานยืนยันตัวตน (KYC) อาจต้องเก็บต่อตามระยะเวลาที่กฎหมายกำหนด
-        แล้วจึงลบ
+        ข้อความแชทที่คุณส่งถึงคนอื่นยังอยู่ในบทสนทนาของเขา แต่แสดงเป็น “ผู้ใช้ที่ลบบัญชี” ไม่มีชื่อหรือรูปของคุณ
+        ส่วนบันทึกธุรกรรมการเงินและเอกสารภาษีต้องเก็บต่อตามระยะเวลาที่กฎหมายกำหนด แล้วจึงลบ
       </p>
       <p className="text-sm text-muted-foreground">
-        Payment records, tax documents and identity-verification (KYC) records may be kept for as long as Thai law
-        requires, then deleted.
+        Chat messages you sent stay in the other person’s conversation, shown as “deleted user” without your name or
+        photo. Payment records and tax documents are kept for as long as Thai law requires, then deleted.
       </p>
 
       <h2>5. ระยะเวลา · How long it takes</h2>
       <p>
-        เราตอบรับคำขอภายใน 7 วันทำการ และลบให้เสร็จภายใน 30 วัน
+        เราตรวจคำขอภายใน 7 วันทำการ เมื่ออนุมัติ โปรไฟล์และผลงานจะถูกซ่อนทันที และลบถาวรหลัง 30 วัน
+        คุณยกเลิกคำขอได้ที่ ตั้งค่า → ข้อมูลของฉัน ก่อนถึงวันนั้น
       </p>
       <p className="text-sm text-muted-foreground">
-        We confirm your request within 7 business days and finish deleting within 30 days.
+        We review your request within 7 business days. Once approved, your profile and work are hidden at once and
+        permanently deleted 30 days later. You can cancel in Settings → My data before then.
       </p>
 
       <p className="text-sm">

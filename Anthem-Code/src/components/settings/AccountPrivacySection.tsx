@@ -29,7 +29,11 @@ import { isSoloEcosystemEnabled } from "@/lib/aplus1Launch";
 import { OWN_PROFILE_SELECT } from "@/lib/dbSelects";
 import { requestOpenCookiePreferences } from "@/lib/cookieConsent";
 import { useEnsureSensitiveAction } from "@/components/legal/SensitiveActionReauthProvider";
-import { useMyPrivacyRequests, useSubmitPrivacyRequest } from "@/hooks/useLegalCompliance";
+import {
+  useCancelAccountDeletion,
+  useMyPrivacyRequests,
+  useSubmitPrivacyRequest,
+} from "@/hooks/useLegalCompliance";
 
 const REQUEST_STATUS: Record<string, string> = {
   new: "รอรับเรื่อง",
@@ -37,7 +41,11 @@ const REQUEST_STATUS: Record<string, string> = {
   approved: "อนุมัติแล้ว",
   rejected: "ไม่ดำเนินการ",
   completed: "เสร็จแล้ว",
+  cancelled: "ยกเลิกแล้ว",
 };
+
+const thaiDate = (iso: string) =>
+  new Date(iso).toLocaleDateString("th-TH", { day: "numeric", month: "long", year: "numeric" });
 
 export function AccountPrivacySection({ embedded = false }: { embedded?: boolean }) {
   const { user } = useAuth();
@@ -45,6 +53,7 @@ export function AccountPrivacySection({ embedded = false }: { embedded?: boolean
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteNote, setDeleteNote] = useState("");
   const submitRequest = useSubmitPrivacyRequest();
+  const cancelDeletion = useCancelAccountDeletion();
   const { data: myRequests = [] } = useMyPrivacyRequests();
   const ensureVerified = useEnsureSensitiveAction();
 
@@ -111,8 +120,12 @@ export function AccountPrivacySection({ embedded = false }: { embedded?: boolean
   }
 
   const pendingDelete = myRequests.find(
-    (r) => r.request_type === "delete" && !["completed", "rejected"].includes(r.status),
+    (r) => r.request_type === "delete" && !["completed", "rejected", "cancelled"].includes(r.status),
   );
+  const purgeDate =
+    pendingDelete?.status === "approved" && pendingDelete.scheduled_purge_at
+      ? thaiDate(pendingDelete.scheduled_purge_at)
+      : null;
 
   const content = (
     <>
@@ -166,13 +179,33 @@ export function AccountPrivacySection({ embedded = false }: { embedded?: boolean
               {pendingDelete ? "คำขอลบรอดำเนินการ" : "ขอลบบัญชี"}
             </p>
             <p className="text-[11px] text-muted-foreground mt-0.5">
-              {pendingDelete
-                ? `สถานะ: ${REQUEST_STATUS[pendingDelete.status] ?? pendingDelete.status}`
-                : "โปรไฟล์จะถูกซ่อน — ทีมตรวจสอบก่อนลบถาวร"}
+              {purgeDate
+                ? `บัญชีถูกซ่อนแล้ว จะลบถาวรวันที่ ${purgeDate}`
+                : pendingDelete
+                  ? `สถานะ: ${REQUEST_STATUS[pendingDelete.status] ?? pendingDelete.status}`
+                  : "ทีมตรวจคำขอ แล้วลบถาวรหลัง 30 วัน"}
             </p>
           </div>
         </button>
       </div>
+
+      {pendingDelete ? (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-destructive/30 bg-destructive/5 p-3">
+          <p className="text-xs text-foreground">
+            {purgeDate ? `เปลี่ยนใจได้จนถึงวันที่ ${purgeDate}` : "ยังยกเลิกคำขอลบบัญชีได้"}
+          </p>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={cancelDeletion.isPending}
+            onClick={() => cancelDeletion.mutate()}
+          >
+            {cancelDeletion.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+            ยกเลิกคำขอลบบัญชี
+          </Button>
+        </div>
+      ) : null}
 
       {myRequests.length > 0 ? (
         <div className="rounded-xl border border-border/40 bg-muted/20 p-3 space-y-2">
@@ -253,8 +286,8 @@ export function AccountPrivacySection({ embedded = false }: { embedded?: boolean
               ขอลบบัญชี
             </DialogTitle>
             <DialogDescription className="text-left">
-              เราจะซ่อนโปรไฟล์และผลงานของคุณ แล้วตรวจสอบคำขอภายใน 30 วัน
-              ข้อมูลบางส่วนอาจเก็บต่อตามกฎหมาย (เช่น บันทึกความปลอดภัย)
+              เมื่อทีมอนุมัติ โปรไฟล์และผลงานจะถูกซ่อนทันที และลบถาวรหลัง 30 วัน ยกเลิกได้ก่อนถึงวันนั้น
+              ข้อความแชตที่ส่งถึงคนอื่นยังอยู่แต่ไม่แสดงชื่อคุณ บันทึกการเงินและภาษีเก็บไว้ตามที่กฎหมายกำหนด
             </DialogDescription>
           </DialogHeader>
           <Textarea
