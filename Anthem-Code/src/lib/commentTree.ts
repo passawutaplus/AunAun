@@ -43,7 +43,7 @@ export function countThread(nodes: CommentNode<unknown>[]): number {
 export function filterCommentTree<T extends { id: string; user_id: string }>(
   nodes: CommentNode<T>[],
   hiddenIds: Set<string>,
-  blockedIds: Set<string>,
+  blockedIds: ReadonlySet<string>,
 ): CommentNode<T>[] {
   return nodes
     .filter((n) => !hiddenIds.has(n.comment.id) && !blockedIds.has(n.comment.user_id))

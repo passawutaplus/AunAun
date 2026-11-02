@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useWithoutBlockedOwners } from "./useBlockedUserIds";
 import { supabase } from "@/integrations/supabase/client";
 import { mediaItemsFromBlocks, parseContentBlocks } from "@/lib/projectContentBlocks";
 import {
@@ -180,8 +181,9 @@ export const useSimilarImages = (
   projectId: string | undefined,
   aspects: SimilarAspect[] = DEFAULT_SIMILAR_ASPECTS,
   imageIndex = 0,
-) =>
-  useQuery({
+) => {
+  const select = useWithoutBlockedOwners();
+  return useQuery({
     queryKey: ["similar-images", projectId, aspects, imageIndex],
     enabled: !!projectId && aspects.length > 0,
     staleTime: 5 * 60_000,
@@ -297,4 +299,6 @@ export const useSimilarImages = (
         }),
       );
     },
+    select,
   });
+};

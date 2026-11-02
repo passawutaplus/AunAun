@@ -12,7 +12,8 @@ import {
   type CommunityCommentTree,
   type CommunityComment,
 } from "@/hooks/useCommunityPosts";
-import { useCommunityCommentLike, useUserBlocks } from "@/hooks/useCommunityPostInteractions";
+import { useCommunityCommentLike } from "@/hooks/useCommunityPostInteractions";
+import { useBlockedUserIds } from "@/hooks/useBlockedUserIds";
 import { commentSchema } from "@/lib/validators";
 import { toast } from "sonner";
 import { formatThaiDate } from "@/lib/format";
@@ -198,7 +199,7 @@ const CommunityCommentSection = ({ postId }: Props) => {
   const { data: tree = [], isLoading } = useCommunityComments(postId);
   const createMut = useCreateCommunityComment();
   const hiddenIds = useHiddenCommentIds();
-  const { data: blockedSet } = useUserBlocks(user?.id);
+  const blockedSet = useBlockedUserIds();
   const sortedTree = useMemo(
     () =>
       filterCommentTree(sortCommunityCommentTree(tree, sort), hiddenIds, blockedSet ?? new Set()),

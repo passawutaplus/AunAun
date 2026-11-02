@@ -9,7 +9,7 @@ import CommunityPostGridCard from "@/components/feed/CommunityPostGridCard";
 import { COMMUNITY_NEW_PATH } from "@/data/createActions";
 import { useCommunityPosts, type CommunityPostsFilter } from "@/hooks/useCommunityPosts";
 import { useCommunityCatalogShowcase } from "@/hooks/useCommunityCatalogShowcase";
-import { useUserBlocks } from "@/hooks/useCommunityPostInteractions";
+import { useBlockedUserIds } from "@/hooks/useBlockedUserIds";
 import { useActiveBoosts, buildBoostedIdSet, buildBoostTargetMaps } from "@/hooks/useBoost";
 import { sortByBoostedIds } from "@/lib/boostFeedSort";
 import { useAuth } from "@/hooks/useAuth";
@@ -42,7 +42,7 @@ const CommunityFeedPanel = ({ search = "", filter, onPostClick, onClearTag, onCl
   const navigate = useNavigate();
   const { user } = useAuth();
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
-  const { data: blockedSet } = useUserBlocks(user?.id);
+  const blockedSet = useBlockedUserIds();
   const blockedIds = useMemo(() => Array.from(blockedSet ?? []), [blockedSet]);
   const postsFeedSource: CommunityPostsFilter["feedSource"] =
     filter.feedSource === "following" ? "following" : "all";

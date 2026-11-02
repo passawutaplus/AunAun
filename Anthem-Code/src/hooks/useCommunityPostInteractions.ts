@@ -4,6 +4,8 @@ import { useAuth } from "./useAuth";
 import { toast } from "sonner";
 import { useAuthDialog } from "@/stores/authDialogStore";
 import { notifyCommunityEvent } from "@/lib/communityNotify";
+import { isBlockedBetween } from "@/lib/blockedUsers";
+import { BLOCKED_USER_IDS_KEY } from "./useBlockedUserIds";
 import { enrichCommunityPosts, type CommunityPost } from "@/hooks/useCommunityPosts";
 
 const promptAuth = () => {
@@ -388,6 +390,7 @@ export const useBlockUser = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["user-blocks", user?.id] });
       qc.invalidateQueries({ queryKey: ["blocked-chat-users", user?.id] });
+      qc.invalidateQueries({ queryKey: [BLOCKED_USER_IDS_KEY, user?.id] });
       qc.invalidateQueries({ queryKey: ["community-posts"] });
       toast.success("บล็อกผู้ใช้แล้ว");
     },
@@ -410,23 +413,17 @@ export const useUnblockUser = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["user-blocks", user?.id] });
       qc.invalidateQueries({ queryKey: ["blocked-chat-users", user?.id] });
+      qc.invalidateQueries({ queryKey: [BLOCKED_USER_IDS_KEY, user?.id] });
       qc.invalidateQueries({ queryKey: ["community-posts"] });
       toast.success("ปลดบล็อกแล้ว");
     },
   });
 };
 
-/** True when `targetUserId` has blocked the current viewer (viewer cannot hire/collab them). */
+/** True when either side has blocked the other (no hire/collab/chat in either direction). */
 export async function isBlockedFromOpportunity(
   actorId: string,
   targetUserId: string,
 ): Promise<boolean> {
-  const { data, error } = await supabase
-    .from("user_blocks")
-    .select("blocker_id")
-    .eq("blocker_id", targetUserId)
-    .eq("blocked_id", actorId)
-    .maybeSingle();
-  if (error) throw error;
-  return !!data;
+  return isBlockedBetween(actorId, targetUserId);
 }

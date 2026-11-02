@@ -33,6 +33,7 @@ import { useOwnerPublishedObjects } from "@/hooks/useCreatorObjects";
 
 import { useFollowState } from "@/hooks/useFollow";
 import { useAuth } from "@/hooks/useAuth";
+import { useBlockedUserIds } from "@/hooks/useBlockedUserIds";
 import {
   useUnblockUser,
   useUserBlocks,
@@ -202,6 +203,8 @@ const PublicProfilePage = () => {
   const { data: blockedSet } = useUserBlocks(user?.id);
   const unblockUser = useUnblockUser();
   const iBlockedThem = !!(resolvedUserId && blockedSet?.has(resolvedUserId));
+  const blockedEitherWay = useBlockedUserIds();
+  const hiddenByBlock = !isSelf && !!resolvedUserId && (iBlockedThem || blockedEitherWay.has(resolvedUserId));
   const { data: publicSeries = [] } = usePublicProjectSeries(resolvedUserId);
   // Collections are the owner's own saves — only they see the tab (not visitors, not "preview as visitor").
   const { data: ownCollections = [] } = useCollections(isSelf && !visitorPreview ? resolvedUserId : undefined);
@@ -407,6 +410,35 @@ const PublicProfilePage = () => {
             <Button onClick={() => navigate("/")} className="rounded-full">
               กลับหน้าหลัก
             </Button>
+          }
+        />
+      </div>
+    );
+  }
+
+  if (hiddenByBlock) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <SeoHead title="โปรไฟล์ไม่พร้อมใช้งาน" path="/u/not-found" noindex />
+        <EmptyState
+          icon={UserX}
+          title="โปรไฟล์นี้ไม่พร้อมใช้งาน"
+          description="คุณไม่สามารถดูโปรไฟล์นี้ได้ในขณะนี้"
+          action={
+            iBlockedThem ? (
+              <Button
+                variant="outline"
+                className="rounded-full"
+                disabled={unblockUser.isPending}
+                onClick={() => void unblockUser.mutateAsync(resolvedUserId!)}
+              >
+                ปลดบล็อก
+              </Button>
+            ) : (
+              <Button onClick={() => navigate("/")} className="rounded-full">
+                กลับหน้าหลัก
+              </Button>
+            )
           }
         />
       </div>

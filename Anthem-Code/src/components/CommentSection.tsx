@@ -32,7 +32,7 @@ import {
 import { renderCommentMentions } from "@/lib/commentMentions";
 import { insertEmojiAtSelection, restoreTextareaCaret } from "@/lib/twemoji";
 import { useHiddenCommentIds } from "@/hooks/useHiddenCommentIds";
-import { useUserBlocks } from "@/hooks/useCommunityPostInteractions";
+import { useBlockedUserIds } from "@/hooks/useBlockedUserIds";
 
 interface Props {
   projectId: string | undefined;
@@ -186,7 +186,7 @@ const CommentSection = ({ projectId }: Props) => {
   const replyInputRef = useRef<HTMLTextAreaElement>(null);
   const { data: tree = [], isLoading } = useProjectComments(projectId);
   const hiddenIds = useHiddenCommentIds();
-  const { data: blockedSet } = useUserBlocks(user?.id);
+  const blockedSet = useBlockedUserIds();
   const visibleTree = useMemo(
     () => filterCommentTree(tree, hiddenIds, blockedSet ?? new Set()),
     [tree, hiddenIds, blockedSet],
