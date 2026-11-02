@@ -1,4 +1,4 @@
--- SAMECOR account deletion (needs 20261102120000_aplus1_legal_compliance.sql).
+-- SAMECOR account deletion (needs 20261102121000_aplus1_legal_compliance.sql).
 -- Owner decisions, 2026-11-02:
 -- * an admin approves each delete request; the profile and works are hidden at once
 -- * 30 days later the account is purged, unless the user cancels first
