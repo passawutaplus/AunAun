@@ -43,6 +43,18 @@ export type ReportInfo = {
   target_owner: string | null;
 };
 
+export type EventInfo = {
+  title: string;
+  category: string | null;
+  starts_on: string | null;
+  ends_on: string | null;
+  location_name: string | null;
+  organizer_name: string | null;
+  owner: string | null;
+  submitted_at: string | null;
+  resubmitted: boolean;
+};
+
 export type DigestInfo = {
   total_members: number;
   new_members: number;
@@ -93,7 +105,22 @@ const TARGET_LABEL: Record<string, string> = {
   forum_topic: "กระทู้",
   forum_reply: "ตอบกระทู้",
   work_review: "รีวิวผลงาน",
+  event: "Exhibition",
 };
+
+const EVENT_CATEGORY_LABEL: Record<string, string> = {
+  exhibition: "Exhibition",
+  workshop: "Workshop",
+  art_fair: "Art Fair",
+  talk_forum: "Talk & Forum",
+  open_call: "Open Call",
+  other: "Other",
+};
+
+function eventDates(e: EventInfo): string {
+  if (!e.starts_on) return "";
+  return e.ends_on && e.ends_on !== e.starts_on ? `${e.starts_on} – ${e.ends_on}` : e.starts_on;
+}
 
 /** Single line, trimmed, with an ellipsis; strips control characters and collapses whitespace. */
 export function clip(text: string | null | undefined, max: number): string {
@@ -178,6 +205,18 @@ export function formatReport(r: ReportInfo): string {
   lines.push([r.reporter ? `รายงานโดย @${r.reporter}` : "", bkkTime(r.created_at)].filter(Boolean).join(" · "));
   lines.push(`${ADMIN_SITE}/admin/reports`);
   return lines.join("\n");
+}
+
+export function formatEvent(e: EventInfo): string {
+  const lines = [
+    `🖼 Exhibition ${e.resubmitted ? "ส่งตรวจใหม่" : "รอตรวจ"} — ${clip(e.title, 80)}`,
+    [EVENT_CATEGORY_LABEL[e.category ?? ""] ?? e.category, eventDates(e), clip(e.location_name, 60)].filter(Boolean).join(" · "),
+    [e.organizer_name ? `ผู้จัด ${clip(e.organizer_name, 60)}` : "", e.owner ? `@${e.owner}` : "", e.submitted_at ? bkkTime(e.submitted_at) : ""]
+      .filter(Boolean)
+      .join(" · "),
+    `${ADMIN_SITE}/admin/events`,
+  ];
+  return lines.filter(Boolean).join("\n");
 }
 
 export function formatDigest(d: DigestInfo, now: Date = new Date()): string {
@@ -533,6 +572,24 @@ export function flexReport(r: ReportInfo): LineMessage {
       null,
       [section("flag", `${target}${r.target_owner ? ` ของ @${r.target_owner}` : ""}`, reason, [...(details ? [`"${details}"`] : []), meta])],
       { label: "เปิดหน้ารายงาน", uri: `${ADMIN_SITE}/admin/reports` },
+    ),
+  );
+}
+
+export function flexEvent(e: EventInfo): LineMessage {
+  const what = [EVENT_CATEGORY_LABEL[e.category ?? ""] ?? e.category, eventDates(e)].filter(Boolean).join(" · ");
+  const meta = [
+    clip(e.location_name, 60),
+    e.organizer_name ? `ผู้จัด ${clip(e.organizer_name, 60)}` : "",
+    [e.owner ? `@${e.owner}` : "", e.submitted_at ? bkkTime(e.submitted_at) : ""].filter(Boolean).join(" · "),
+  ].filter(Boolean);
+  return flex(
+    formatEvent(e),
+    bubble(
+      e.resubmitted ? "Exhibition ส่งตรวจใหม่" : "Exhibition รอตรวจ",
+      null,
+      [section("image", clip(e.title, 60), what || "Exhibition", meta)],
+      { label: "เปิดคิวตรวจ", uri: `${ADMIN_SITE}/admin/events` },
     ),
   );
 }

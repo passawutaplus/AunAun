@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   CalendarDays,
   ExternalLink,
+  Flag,
   Globe,
   Handshake,
   Link2,
@@ -13,6 +14,7 @@ import {
 import { toast } from "sonner";
 import SeoHead from "@/components/SeoHead";
 import ConnectMessageDialog from "@/components/chat/ConnectMessageDialog";
+import ReportDialog from "@/components/report/ReportDialog";
 import {
   CategoryTag,
   EventGallery,
@@ -274,9 +276,18 @@ export default function ExhibitionDetailPage() {
             <h2 id="share-heading" className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
               Share This Event
             </h2>
-            <Button type="button" size="sm" variant="outline" className="mt-2 rounded-full" onClick={() => void share()}>
-              <Link2 className="mr-1.5 h-4 w-4" aria-hidden /> แชร์ / คัดลอกลิงก์
-            </Button>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <Button type="button" size="sm" variant="outline" className="rounded-full" onClick={() => void share()}>
+                <Link2 className="mr-1.5 h-4 w-4" aria-hidden /> แชร์ / คัดลอกลิงก์
+              </Button>
+              {user && !isOwner && event.status === "published" && !isDemoEventId(event.id) ? (
+                <ReportDialog targetType="event" targetId={event.id} targetOwnerId={event.owner_id}>
+                  <Button type="button" size="sm" variant="ghost" className="rounded-full text-muted-foreground">
+                    <Flag className="mr-1.5 h-4 w-4" aria-hidden /> รายงานงานนี้
+                  </Button>
+                </ReportDialog>
+              ) : null}
+            </div>
           </section>
         </aside>
       </div>
