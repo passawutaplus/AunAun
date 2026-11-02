@@ -13,9 +13,7 @@ import {
 } from "@/lib/hireBrief";
 import { collectCollabReferenceLinks, formatCollabBriefChatText } from "@/lib/collabBrief";
 import { profilesPublicFrom } from "@/lib/profileAccess";
-import {
-  SYSTEM_MESSAGE_PREFIX,
-} from "@/lib/chatContext";
+import { postChatSystemEvent, type ChatSystemEventArgs } from "@/lib/chatSystemEvents";
 
 const MESSAGE_SELECT =
   "id, conversation_id, sender_id, content, attachment_url, read_at, created_at, reply_to_id, deleted_at, message_type, project_id, profile_user_id, service_id";
@@ -264,7 +262,8 @@ export type SendMessageArgs = {
   content: string;
   attachmentUrl?: string;
   replyToId?: string;
-  messageType?: MessageType;
+  /** System lines go through usePostChatSystemEvent (server-built). */
+  messageType?: Exclude<MessageType, "system">;
   projectId?: string;
   serviceId?: string;
   profileUserId?: string;
@@ -334,8 +333,7 @@ export const useSendMessage = () => {
       inserted = data as { id: string } | null;
       if (
         error &&
-        (messageType === "system" ||
-          messageType === "profile" ||
+        (messageType === "profile" ||
           messageType === "file" ||
           messageType === "service") &&
         String(error.message).includes("message_type")
@@ -344,14 +342,8 @@ export const useSendMessage = () => {
           ...row,
           message_type: "text",
           content:
-            messageType === "system"
-              ? `${SYSTEM_MESSAGE_PREFIX}${content}`
-              : content ||
-                (messageType === "file"
-                  ? "ไฟล์แนบ"
-                  : messageType === "service"
-                    ? "แพ็กเกจ"
-                    : "โปรไฟล์"),
+            content ||
+            (messageType === "file" ? "ไฟล์แนบ" : messageType === "service" ? "แพ็กเกจ" : "โปรไฟล์"),
         };
         delete fallback.profile_user_id;
         delete fallback.service_id;
@@ -372,14 +364,12 @@ export const useSendMessage = () => {
         throw error;
       }
 
-      if (messageType !== "system") {
-        void supabase.functions.invoke("notify-anthem-chat", {
-          body: {
-            conversation_id: conversationId,
-            ...(inserted?.id ? { message_id: inserted.id } : {}),
-          },
-        });
-      }
+      void supabase.functions.invoke("notify-anthem-chat", {
+        body: {
+          conversation_id: conversationId,
+          ...(inserted?.id ? { message_id: inserted.id } : {}),
+        },
+      });
 
       return inserted;
     },
@@ -389,6 +379,20 @@ export const useSendMessage = () => {
       qc.invalidateQueries({ queryKey: ["chat-last-msgs"] });
       qc.invalidateQueries({ queryKey: ["chat-inbox-badge"] });
       qc.invalidateQueries({ queryKey: ["chat-unread-counts"] });
+    },
+  });
+};
+
+/** Server-built system line (payment cards, withdraw notices, collab plan updates …). */
+export const usePostChatSystemEvent = () => {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (args: ChatSystemEventArgs) => postChatSystemEvent(args),
+    onSuccess: (_d, vars) => {
+      qc.invalidateQueries({ queryKey: ["messages", user?.id, vars.conversationId] });
+      qc.invalidateQueries({ queryKey: ["conversations"] });
+      qc.invalidateQueries({ queryKey: ["chat-last-msgs"] });
     },
   });
 };
@@ -638,7 +642,8 @@ export type OpenHireCollabChatArgs = {
   projectId?: string | null;
   projectTitle?: string;
   serviceId?: string | null;
-  contextMessage: string;
+  /** Not posted any more: the server builds the opening line (event "chat_opened"). */
+  contextMessage?: string;
   /** Legacy inbox: mark hire as ตอบรับ instead of ติดต่อแล้ว */
   legacyAccept?: boolean;
   /** Open chat without changing request status (forwarded hire awaiting friend accept/reject). */
@@ -690,27 +695,9 @@ async function ensureConversation(args: OpenHireCollabChatArgs): Promise<string>
   return data.id as string;
 }
 
-async function insertContextMessage(
-  conversationId: string,
-  senderId: string,
-  content: string,
-): Promise<void> {
-  const row = {
-    conversation_id: conversationId,
-    sender_id: senderId,
-    content,
-    message_type: "system",
-  };
-  let { error } = await supabase.from("messages").insert(row as never);
-  if (error && String(error.message).includes("message_type")) {
-    ({ error } = await supabase.from("messages").insert({
-      conversation_id: conversationId,
-      sender_id: senderId,
-      content: `${SYSTEM_MESSAGE_PREFIX}${content}`,
-      message_type: "text",
-    } as never));
-  }
-  if (error) throw error;
+/** Opening system line of a new hire/collab chat — text is built on the server from the conversation. */
+async function insertContextMessage(conversationId: string): Promise<void> {
+  await postChatSystemEvent({ conversationId, event: "chat_opened" });
 }
 
 async function seedHireBriefIfPresent(conversationId: string, requestId: string): Promise<void> {
@@ -860,7 +847,7 @@ async function seedInstantChatMessages(
   if ((count ?? 0) > 0) return;
 
   if (args.kind === "hire") {
-    await insertContextMessage(conversationId, args.clientId, args.contextMessage);
+    await insertContextMessage(conversationId);
     const safeServiceId = args.serviceId && isUuid(args.serviceId) ? args.serviceId : null;
     if (safeServiceId) {
       const { data: svc } = await supabase
@@ -892,7 +879,7 @@ async function seedInstantChatMessages(
     .select("id", { count: "exact", head: true })
     .eq("conversation_id", conversationId);
   if ((after ?? 0) === 0) {
-    await insertContextMessage(conversationId, args.clientId, args.contextMessage);
+    await insertContextMessage(conversationId);
   }
 }
 

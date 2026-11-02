@@ -400,11 +400,12 @@ const MessageBubble = ({
   const collabEnd = !deleted ? parseCollabEndCardMessage(message.content) : null;
   const collabGroupExpand = !deleted ? parseCollabGroupExpandCardMessage(message.content) : null;
   const hireDelivery = !deleted ? parseHireDeliveryMessage(message.content) : null;
-  const hirePaid = !deleted
+  // Payment cards only from server-written system lines, never from a member's own text.
+  const hirePaid = !deleted && isSystem
     ? parseHirePaidMessage(message.content) || parseLegacyHirePaidText(message.content)
     : null;
-  const hireWorkStart = !deleted ? parseHireWorkStartMessage(message.content) : null;
-  const hireReceipt = !deleted ? parseHireReceiptMessage(message.content) : null;
+  const hireWorkStart = !deleted && isSystem ? parseHireWorkStartMessage(message.content) : null;
+  const hireReceipt = !deleted && isSystem ? parseHireReceiptMessage(message.content) : null;
   /** Work-start card belongs on the hiree (freelancer) side, even if buyer posted it. */
   const alignMine = hireWorkStart ? !viewerIsClient : mine;
   const rawForDisplay =

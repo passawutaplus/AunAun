@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import HireCheckoutSummary from "@/components/payments/HireCheckoutSummary";
 import HirePromptPayView from "@/components/payments/HirePromptPayView";
 import HirePaySuccessView from "@/components/payments/HirePaySuccessView";
-import { useSendMessage } from "@/hooks/useChat";
+import { usePostChatSystemEvent } from "@/hooks/useChat";
 import { useAuth } from "@/hooks/useAuth";
 import { useHireCharge, type HireChargeResult } from "@/hooks/useHireCharge";
 import {
@@ -28,12 +28,6 @@ import {
   offerWhtAmount,
   type ChatOfferPayload,
 } from "@/lib/chatOffer";
-import { encodeHirePaidMessage } from "@/lib/hirePaymentChat";
-import { encodeHireReceiptMessage } from "@/lib/hireReceiptChat";
-import {
-  buildHireWorkStartPayload,
-  encodeHireWorkStartMessage,
-} from "@/lib/hireWorkStartChat";
 import {
   DEFAULT_FEE_CONFIG,
   planInstallmentSatang,
@@ -103,7 +97,7 @@ export default function HireCheckoutDialog({
   const { user } = useAuth();
   const qc = useQueryClient();
   const markOfferAccepted = useMarkHireOfferAccepted();
-  const send = useSendMessage();
+  const postSystemEvent = usePostChatSystemEvent();
   const { createCharge, markTestPaid, fetchChargeStatus, pending } = useHireCharge();
   const announcedRef = useRef<string | null>(null);
   const [method, setMethod] = useState<PaymentMethod>("promptpay");
@@ -192,10 +186,6 @@ export default function HireCheckoutDialog({
     }
 
     let orderId: string | null = null;
-    let receiptDocumentId: string | null = null;
-    let receiptDocNumber: string | null = null;
-    let isDeposit = (offer.depositPercent ?? 100) < 100;
-    let depositPercent = Math.min(100, Math.max(1, Math.round(offer.depositPercent ?? 100)));
     if (user?.id) {
       const persisted = await createHireOrderAfterPayment({
         offer,
@@ -207,12 +197,6 @@ export default function HireCheckoutDialog({
         chargeId: result.chargeId,
       });
       orderId = persisted?.orderId ?? null;
-      receiptDocumentId = persisted?.receiptDocumentId ?? null;
-      receiptDocNumber = persisted?.receiptDocNumber ?? null;
-      if (persisted) {
-        isDeposit = persisted.isDeposit;
-        depositPercent = persisted.depositPercent;
-      }
       if (!orderId) {
         console.warn("[HireCheckoutDialog] hire_orders persist failed after payment");
       }
@@ -231,61 +215,28 @@ export default function HireCheckoutDialog({
 
     void qc.invalidateQueries({ queryKey: ["messages", user?.id, conversationId] });
 
-    // Paid → work-start → deposit/payment receipt — send separately so one failure
-    // does not block the others.
+    // Paid → work-start → deposit/payment receipt. The server builds each card from the paid
+    // order; send separately so one failure does not block the others.
     let paidPosted = false;
-    try {
-      await send.mutateAsync({
-        conversationId,
-        content: encodeHirePaidMessage({
-          v: 1,
-          kind: "hire_paid",
-          offerTitle: offer.title,
-          offerAmountThb: offer.amount || 0,
-          paidAmountThb: satangToThb(result.amountSatang),
-          quoteId: offer.quoteId ?? null,
-          orderId,
-        }),
-        messageType: "system",
-      });
-      paidPosted = true;
-    } catch (e) {
-      console.warn("[HireCheckoutDialog] hire paid card failed", e);
-    }
-    try {
-      await send.mutateAsync({
-        conversationId,
-        content: encodeHireWorkStartMessage(
-          buildHireWorkStartPayload(offer, { orderId }),
-        ),
-        messageType: "system",
-      });
-    } catch (e) {
-      console.warn("[HireCheckoutDialog] work-start card failed", e);
-      /* ChatThreadView backfills work-start when hire is settled */
-    }
-    // Deposit (and full pay) receipt card — especially important for มัดจำ.
-    try {
-      await send.mutateAsync({
-        conversationId,
-        content: encodeHireReceiptMessage({
-          v: 1,
-          kind: "hire_receipt",
-          offerTitle: offer.title,
-          offerAmountThb: offer.amount || 0,
-          paidAmountThb: satangToThb(result.amountSatang),
-          isDeposit,
-          depositPercent: isDeposit ? depositPercent : null,
-          docNumber: receiptDocNumber,
-          documentId: receiptDocumentId,
-          orderId,
-          quoteId: offer.quoteId ?? null,
-          paymentMethod: result.method,
-        }),
-        messageType: "system",
-      });
-    } catch (e) {
-      console.warn("[HireCheckoutDialog] hire receipt card failed", e);
+    if (orderId) {
+      try {
+        await postSystemEvent.mutateAsync({ conversationId, event: "hire_paid", refId: orderId });
+        paidPosted = true;
+      } catch (e) {
+        console.warn("[HireCheckoutDialog] hire paid card failed", e);
+      }
+      try {
+        await postSystemEvent.mutateAsync({ conversationId, event: "hire_work_start", refId: orderId });
+      } catch (e) {
+        console.warn("[HireCheckoutDialog] work-start card failed", e);
+        /* ChatThreadView backfills work-start when hire is settled */
+      }
+      // Deposit (and full pay) receipt card — especially important for มัดจำ.
+      try {
+        await postSystemEvent.mutateAsync({ conversationId, event: "hire_receipt", refId: orderId });
+      } catch (e) {
+        console.warn("[HireCheckoutDialog] hire receipt card failed", e);
+      }
     }
     if (!paidPosted) {
       toast.message("ชำระเงินแล้ว — รีเฟรชแชทถ้ายังไม่เห็นการ์ดอัปเดต");
@@ -480,7 +431,7 @@ export default function HireCheckoutDialog({
               <Button
                 type="button"
                 className="rounded-full"
-                disabled={pending || send.isPending || !acceptedRefundPolicy}
+                disabled={pending || postSystemEvent.isPending || !acceptedRefundPolicy}
                 onClick={() => void startCharge()}
               >
                 {pending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
