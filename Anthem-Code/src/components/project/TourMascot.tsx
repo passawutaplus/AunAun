@@ -1,3 +1,5 @@
+import { useId } from "react";
+
 /**
  * Welcome mascot for the first-run tour: a glowing gradient blob in a soft rounded tile with two oval eyes
  * that blink and glance around. Pure SVG + CSS (no JS timers); prefers-reduced-motion leaves it as a still portrait.
@@ -46,41 +48,44 @@ const Star = ({ x, y, s = 1, className }: { x: number; y: number; s?: number; cl
 
 /** The character on its own (used on the empty artboard too). */
 export function MascotCharacter({ className }: { className?: string }) {
+  // SVG ids are page-wide: two mascots at once (one may be display:none) would share one set of gradients.
+  const uid = useId().replace(/:/g, "");
+  const id = (name: string) => `tm-${name}-${uid}`;
   return (
     <div className={className} aria-hidden>
       <style>{CSS}</style>
       <svg viewBox="0 0 200 170" className="h-full w-full overflow-visible">
         <defs>
-          <linearGradient id="tm-tile" x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id={id("tile")} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0" stopColor={PALETTE.tileTop} />
             <stop offset="1" stopColor={PALETTE.tileBottom} />
           </linearGradient>
-          <radialGradient id="tm-dome" cx="50%" cy="62%" r="62%">
+          <radialGradient id={id("dome")} cx="50%" cy="62%" r="62%">
             <stop offset="0" stopColor={PALETTE.core} />
             <stop offset=".45" stopColor={PALETTE.glow} />
             <stop offset=".8" stopColor={PALETTE.mist} />
             <stop offset="1" stopColor={PALETTE.rim} />
           </radialGradient>
-          <radialGradient id="tm-eye-g" cx="45%" cy="38%" r="70%">
+          <radialGradient id={id("eye-g")} cx="45%" cy="38%" r="70%">
             <stop offset="0" stopColor="#ffffff" />
             <stop offset="1" stopColor={PALETTE.eyeEdge} />
           </radialGradient>
-          <clipPath id="tm-clip">
+          <clipPath id={id("clip")}>
             <rect x="46" y="18" width="108" height="120" rx="34" />
           </clipPath>
         </defs>
 
         <ellipse cx="100" cy="152" rx="36" ry="5" fill="#000" opacity=".22" />
         <g className="tm-float">
-          <rect x="46" y="18" width="108" height="120" rx="34" fill="url(#tm-tile)" />
-          <g clipPath="url(#tm-clip)">
+          <rect x="46" y="18" width="108" height="120" rx="34" fill={`url(#${id("tile")})`} />
+          <g clipPath={`url(#${id("clip")})`}>
             <g className="tm-breathe">
-              <ellipse cx="100" cy="132" rx="84" ry="70" fill="url(#tm-dome)" />
+              <ellipse cx="100" cy="132" rx="84" ry="70" fill={`url(#${id("dome")})`} />
             </g>
           </g>
           <g className="tm-eyes">
-            <ellipse className="tm-eye" cx="83" cy="96" rx="9.5" ry="13" fill="url(#tm-eye-g)" stroke={PALETTE.eyeInk} strokeWidth={2.75} transform="rotate(-6 83 96)" />
-            <ellipse className="tm-eye" cx="114" cy="90" rx="9.5" ry="14" fill="url(#tm-eye-g)" stroke={PALETTE.eyeInk} strokeWidth={2.75} transform="rotate(8 114 90)" />
+            <ellipse className="tm-eye" cx="83" cy="96" rx="9.5" ry="13" fill={`url(#${id("eye-g")})`} stroke={PALETTE.eyeInk} strokeWidth={2.75} transform="rotate(-6 83 96)" />
+            <ellipse className="tm-eye" cx="114" cy="90" rx="9.5" ry="14" fill={`url(#${id("eye-g")})`} stroke={PALETTE.eyeInk} strokeWidth={2.75} transform="rotate(8 114 90)" />
           </g>
         </g>
 

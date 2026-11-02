@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
- * Redeploy Aplus1 production (aplus1.app).
+ * Redeploy production (samecor.com).
+ * aplus1.app and www.samecor.com stay redirects to samecor.com; they are set in the Vercel project and not touched here.
  * OAuth uses window.location.origin when VITE_SITE_URL unset on preview.
  */
 import { spawnSync } from "node:child_process";
@@ -28,10 +29,10 @@ const buildEnvs = [
   "--build-env",
   `VITE_SUPABASE_PUBLISHABLE_KEY=${env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
   "--build-env",
-  "VITE_SITE_URL=https://aplus1.app",
+  "VITE_SITE_URL=https://samecor.com",
 ];
 
-const PROD_HOSTS = ["aplus1.app", "www.aplus1.app"];
+const PROD_HOSTS = ["samecor.com"];
 
 /** Register custom domains on the project (alias alone triggers Vercel SSO on OAuth callback). */
 for (const host of PROD_HOSTS) {
@@ -44,7 +45,7 @@ for (const host of PROD_HOSTS) {
   });
 }
 
-console.log("→ Deploying aplus1-prod (production — aplus1.app)");
+console.log("→ Deploying aplus1-prod (production — samecor.com)");
 const r = spawnSync(
   "npx",
   ["vercel", "deploy", "--prod", "--yes", "--project=aplus1-prod", ...buildEnvs],

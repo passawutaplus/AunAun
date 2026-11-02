@@ -10,14 +10,15 @@ import {
 } from "@/lib/guideTours";
 
 /**
- * Opens the page tour by itself once per visit until it is finished or switched off,
- * or right away when the URL has `?tour=<id>` (Settings → replay).
+ * Offers the page tour by itself once per visit until it is finished or switched off (`intro`),
+ * or opens it right away when the URL has `?tour=<id>` (Settings → replay).
  * `ready` = the page's targets are on screen (data loaded, not a loading skeleton).
  */
 export function usePageTour(id: GuideTourId, ready: boolean, delayMs = 900) {
   const { user, loading } = useAuth();
   const [params, setParams] = useSearchParams();
   const [open, setOpen] = useState(false);
+  const [intro, setIntro] = useState(false);
   const checked = useRef(false);
   const timer = useRef<number>();
   // The auto-open timer survives re-renders (URL changes); it is only dropped when the page unmounts.
@@ -29,6 +30,7 @@ export function usePageTour(id: GuideTourId, ready: boolean, delayMs = 900) {
       // Open now (removing the param re-runs this effect).
       checked.current = true;
       noteShownThisVisit(id);
+      setIntro(false);
       setOpen(true);
       const next = new URLSearchParams(params);
       next.delete(TOUR_QUERY_PARAM);
@@ -43,11 +45,17 @@ export function usePageTour(id: GuideTourId, ready: boolean, delayMs = 900) {
     void synced.then(() => {
       if (!shouldAutoStartTour(userId, id)) return;
       noteShownThisVisit(id);
-      timer.current = window.setTimeout(() => setOpen(true), delayMs);
+      timer.current = window.setTimeout(() => {
+        setIntro(true);
+        setOpen(true);
+      }, delayMs);
     });
   }, [ready, loading, user?.id, id, params, setParams, delayMs]);
 
-  const start = useCallback(() => setOpen(true), []);
+  const start = useCallback(() => {
+    setIntro(false);
+    setOpen(true);
+  }, []);
   const close = useCallback(() => setOpen(false), []);
-  return { open, start, close };
+  return { open, intro, start, close };
 }
