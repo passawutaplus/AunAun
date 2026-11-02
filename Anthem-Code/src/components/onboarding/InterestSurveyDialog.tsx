@@ -5,6 +5,7 @@ import type { LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import { hasConsentBannerPending, COOKIE_CONSENT_CHANGED_EVENT } from "@/lib/cookieConsent";
 import { shouldDeferInterestSurvey } from "@/lib/onboardingRoutes";
+import { takeAfterOnboarding } from "@/lib/afterOnboarding";
 import {
   DialogDescription,
   DialogHeader,
@@ -410,8 +411,9 @@ export function InterestSurveyGate() {
         });
       }
       setDismissed(true);
-      // Land on the home feed; posting a first work stays one tap away in the toast above.
-      navigate("/");
+      // Continue where sign-up interrupted them (e.g. Add work); otherwise the home feed, with
+      // posting a first work one tap away in the toast above.
+      navigate(takeAfterOnboarding() ?? "/");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "บันทึกไม่สำเร็จ");
     }

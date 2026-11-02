@@ -103,7 +103,7 @@ const ChatSidebar = ({
     targetId: string;
     targetOwnerId: string;
   } | null>(null);
-  const { data: conversations = [], isLoading, isError, error } = useConversations(
+  const { data: conversations = [], isLoading, isError, refetch } = useConversations(
     tab === "all" ? undefined : tab,
   );
   const { data: pins = [], togglePin } = useConversationPins();
@@ -328,8 +328,12 @@ const ChatSidebar = ({
       <div className="flex-1 overflow-y-auto px-1.5 py-1">
         {isLoading && <InlineLoader />}
         {isError && (
-          <div className="text-center py-12 text-destructive px-4 text-sm">
-            โหลดรายการแชทไม่สำเร็จ — {(error as Error)?.message ?? "ลองรีเฟรชหน้า"}
+          // No raw error text: it can be English or internal. A retry is enough to recover.
+          <div className="flex flex-col items-center gap-3 px-4 py-12 text-center text-sm">
+            <p className="text-foreground">โหลดรายการแชทไม่สำเร็จ</p>
+            <Button type="button" size="sm" variant="outline" className="rounded-full" onClick={() => void refetch()}>
+              ลองใหม่
+            </Button>
           </div>
         )}
         {!isLoading && !isError && filtered.length === 0 && (
