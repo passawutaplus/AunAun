@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useWithoutBlockedOwners } from "./useBlockedUserIds";
 import { supabase } from "@/integrations/supabase/client";
 import { isOptionalQueryError } from "@/lib/supabaseErrors";
 
@@ -13,8 +14,9 @@ export interface RecommendedProject {
 }
 
 /** Recommendations derived from the user's image-like history (centroid of liked-project embeddings) */
-export const useRecommendedProjects = (userId: string | undefined, limit = 24) =>
-  useQuery({
+export const useRecommendedProjects = (userId: string | undefined, limit = 24) => {
+  const select = useWithoutBlockedOwners();
+  return useQuery({
     queryKey: ["recommended-from-likes", userId, limit],
     enabled: !!userId,
     staleTime: 60_000,
@@ -29,4 +31,6 @@ export const useRecommendedProjects = (userId: string | undefined, limit = 24) =
       }
       return (data ?? []) as RecommendedProject[];
     },
+    select,
   });
+};

@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useWithoutBlockedOwners } from "./useBlockedUserIds";
 import { supabase } from "@/integrations/supabase/client";
 import type { TablesInsert, TablesUpdate, Tables } from "@/integrations/supabase/types";
 import { PROJECT_FEED_CARD_SELECT, PROJECT_FEED_CARD_SELECT_WITH_AI } from "@/lib/dbSelects";
@@ -150,8 +151,9 @@ export const useMyProjects = (userId: string | undefined) =>
     enabled: !!userId,
   });
 
-export const usePublishedProjects = () =>
-  useQuery({
+export const usePublishedProjects = () => {
+  const select = useWithoutBlockedOwners();
+  return useQuery({
     queryKey: ["published-projects"],
     queryFn: async () =>
       (await fetchCachedPublicFeed("recent")) ??
@@ -163,10 +165,13 @@ export const usePublishedProjects = () =>
           .order("created_at", { ascending: false })
           .limit(PUBLISHED_LIST_LIMIT),
       ),
+    select,
   });
+};
 
-export const useTopProjects = () =>
-  useQuery({
+export const useTopProjects = () => {
+  const select = useWithoutBlockedOwners();
+  return useQuery({
     queryKey: ["top-projects"],
     queryFn: async () =>
       (await fetchCachedPublicFeed("top")) ??
@@ -179,10 +184,13 @@ export const useTopProjects = () =>
           .order("views", { ascending: false })
           .limit(TOP_LIST_LIMIT),
       ),
+    select,
   });
+};
 
-export const useFollowingProjects = (userId: string | undefined) =>
-  useQuery({
+export const useFollowingProjects = (userId: string | undefined) => {
+  const select = useWithoutBlockedOwners();
+  return useQuery({
     queryKey: ["following-projects", userId],
     enabled: !!userId,
     queryFn: async () => {
@@ -203,10 +211,13 @@ export const useFollowingProjects = (userId: string | undefined) =>
           .limit(PUBLISHED_LIST_LIMIT),
       );
     },
+    select,
   });
+};
 
-export const useForYouProjects = (userId: string | undefined) =>
-  useQuery({
+export const useForYouProjects = (userId: string | undefined) => {
+  const select = useWithoutBlockedOwners();
+  return useQuery({
     queryKey: ["for-you-projects", userId],
     enabled: !!userId,
     queryFn: async () => {
@@ -397,7 +408,9 @@ export const useForYouProjects = (userId: string | undefined) =>
 
       return mergeExploreFeed(blended, recentPublished, ownPublished);
     },
+    select,
   });
+};
 
 
 

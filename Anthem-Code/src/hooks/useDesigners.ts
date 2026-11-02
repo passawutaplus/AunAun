@@ -1,4 +1,7 @@
+import { useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useBlockedUserIds } from "./useBlockedUserIds";
+import { withoutBlocked } from "@/lib/blockedUsers";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import {
@@ -121,8 +124,13 @@ export async function buildDesignerCards(
     .filter((d) => opts.keepWithoutWorks || d.projects.length > 0);
 }
 
-export const useDesigners = () =>
-  useQuery({
+export const useDesigners = () => {
+  const blocked = useBlockedUserIds();
+  const select = useCallback(
+    (rows: DesignerCardData[]) => withoutBlocked(rows, blocked, (d) => d.profile.user_id),
+    [blocked],
+  );
+  return useQuery({
     queryKey: ["designers-feed", "v13"],
     queryFn: async (): Promise<DesignerCardData[]> => {
       const first = await profilesPublicFrom()
@@ -142,4 +150,6 @@ export const useDesigners = () =>
       if (error) throw error;
       return buildDesignerCards((profiles ?? []) as Tables<"profiles">[]);
     },
+    select,
   });
+};

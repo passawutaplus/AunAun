@@ -8,9 +8,11 @@ import { formatServicePrice } from "@/hooks/useCreatorServices";
 import { thumbFeedCoverUrl } from "@/lib/feedProjectCover";
 import { stripCategorySubTags } from "@/data/categoryTaxonomy";
 import { isCommerceEnabled } from "@/lib/aplus1Launch";
+import { useBlockedUserIds } from "@/hooks/useBlockedUserIds";
+import { withoutBlocked } from "@/lib/blockedUsers";
 
 /** Either a view count (works, shown with an eye like "ผลงานอื่นของ…") or a short price label. */
-type Tile = { id: string; href: string; title: string; image: string; meta?: string; views?: number };
+type Tile = { id: string; href: string; title: string; image: string; meta?: string; views?: number; ownerId?: string };
 
 function TileRow({ title, tiles, moreHref, moreLabel }: { title: string; tiles: Tile[]; moreHref?: string; moreLabel?: string }) {
   if (!tiles.length) return null;
@@ -161,6 +163,7 @@ export function SimilarWorksRow({
   tags?: string[];
   tools?: string[];
 }) {
+  const blocked = useBlockedUserIds();
   const { data = [] } = useQuery({
     queryKey: ["project-similar-works", projectId, category],
     enabled: !!projectId && !!category,
@@ -186,20 +189,21 @@ export function SimilarWorksRow({
           return { r, score: sharedTags * 3 + sharedTools * 2 + Math.log10((r.views ?? 0) + 1) };
         })
         .sort((a, b) => b.score - a.score)
-        .slice(0, 8)
+        .slice(0, 16)
         .map(({ r }) => ({
           id: r.id,
           href: `/project/${r.id}`,
           title: r.title,
           image: r.cover_url || r.gallery_urls?.[0] || "",
           views: r.views ?? 0,
+          ownerId: r.owner_id,
         }));
     },
   });
   return (
     <TileRow
       title="ผลงานใกล้เคียงจากครีเอเตอร์อื่น"
-      tiles={data}
+      tiles={withoutBlocked(data, blocked, (t) => t.ownerId).slice(0, 8)}
       moreHref={projectId ? `/similar/${projectId}` : undefined}
       moreLabel="ดูภาพคล้ายแบบละเอียด"
     />
