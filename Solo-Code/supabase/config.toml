@@ -69,3 +69,9 @@ verify_jwt = false
 
 [functions.line-admin-webhook]
 verify_jwt = false
+
+[functions.account-purge]
+verify_jwt = false
+
+[functions.account-deletion-cancel]
+verify_jwt = true

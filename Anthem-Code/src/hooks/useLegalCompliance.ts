@@ -73,7 +73,7 @@ export function useMyPrivacyRequests() {
       try {
         const { data, error } = await supabase
           .from("privacy_requests" as never)
-          .select("id, request_type, status, requested_at, completed_at")
+          .select("id, request_type, status, requested_at, completed_at, scheduled_purge_at")
           .order("requested_at", { ascending: false })
           .limit(10);
         if (error) return [];
@@ -83,12 +83,50 @@ export function useMyPrivacyRequests() {
           status: string;
           requested_at: string;
           completed_at: string | null;
+          scheduled_purge_at: string | null;
         }>;
       } catch {
         return [];
       }
     },
     enabled: !!user,
+  });
+}
+
+/** Cancels the signed-in user's own pending or approved account deletion (before the purge date). */
+export function useCancelAccountDeletion() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke("account-deletion-cancel", { body: {} });
+      if (error) throw error;
+      return (data as { cancelled?: boolean } | null)?.cancelled === true;
+    },
+    onSuccess: (cancelled) => {
+      qc.invalidateQueries({ queryKey: ["privacy-requests"] });
+      if (cancelled) toast.success("ยกเลิกคำขอลบบัญชีแล้ว — โปรไฟล์และผลงานกลับมาแสดงตามเดิม");
+      else toast.info("ไม่มีคำขอลบบัญชีที่ยกเลิกได้");
+    },
+    onError: () => toast.error("ยกเลิกไม่สำเร็จ ลองใหม่อีกครั้ง"),
+  });
+}
+
+/** Admin: approve a delete request — hides the account now and purges it in 30 days. */
+export function useApproveAccountDeletion() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (requestId: string) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase.rpc as any)("admin_approve_account_deletion", { _request_id: requestId });
+      if (error) throw error;
+      return data as string;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "privacy-requests"] });
+      qc.invalidateQueries({ queryKey: ["admin", "compliance"] });
+      toast.success("อนุมัติแล้ว — ซ่อนบัญชีทันที และลบถาวรใน 30 วัน");
+    },
+    onError: (err: unknown) => toast.error(mapWriteFlowError(err, "อนุมัติไม่สำเร็จ")),
   });
 }
 
