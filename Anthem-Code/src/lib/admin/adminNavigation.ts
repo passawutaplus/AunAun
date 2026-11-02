@@ -12,6 +12,7 @@ import {
   Database,
   FileCheck,
   FileText,
+  Frame,
   Flag,
   FolderKanban,
   Gift,
@@ -164,6 +165,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     tone: "rose",
     items: [
       { to: "/admin/reports", label: "รายงานเนื้อหา", hint: "ผู้ใช้แจ้งเนื้อหา/บัญชีที่ไม่เหมาะสม", icon: Flag, badgeKey: "reports", statKey: "openReports", statLabel: "เปิดอยู่", keywords: ["report", "แจ้ง", "ร้องเรียน"] },
+      { to: "/admin/events", label: "Exhibition (ตรวจงาน)", hint: "อนุมัติ ขอแก้ หรือปฏิเสธงานที่ครีเอเตอร์ส่ง และเลือก SameCor Pick", icon: Frame, keywords: ["exhibition", "event", "อีเวนต์", "นิทรรศการ", "pick"] },
       { to: "/admin/moderation", label: "มาตรการ (Moderation)", hint: "เตือน ระงับ แบน และประวัติ", icon: Shield, keywords: ["ban", "แบน", "ระงับ", "suspend", "moderation"] },
       { to: "/admin/aml", label: "AML / ฟอกเงิน", hint: "ธงความเสี่ยงทางการเงิน อายัดบัญชี", icon: ShieldAlert, badgeKey: "aml", statKey: "openAmlFlags", statLabel: "ธงเปิด", keywords: ["aml", "ฟอกเงิน", "risk"] },
       { to: "/admin/compliance", label: "กฎหมาย (PDPA / ลิขสิทธิ์)", hint: "คำขอข้อมูลส่วนตัวและแจ้งลบงานละเมิด", icon: FileCheck, keywords: ["pdpa", "privacy", "copyright", "ลิขสิทธิ์", "ข้อมูลส่วนตัว", "consent"] },

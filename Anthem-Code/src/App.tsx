@@ -54,6 +54,10 @@ const DashboardInsightsPage = lazy(() => import("./pages/DashboardInsightsPage.t
 const DashboardBillingPage = lazy(() => import("./pages/DashboardBillingPage.tsx"));
 const DashboardPortfolioPage = lazy(() => import("./pages/DashboardPortfolioPage.tsx"));
 const DashboardReviewsPage = lazy(() => import("./pages/DashboardReviewsPage.tsx"));
+const MyExhibitionPage = lazy(() => import("./pages/dashboard/MyExhibitionPage.tsx"));
+const ExhibitionEditorPage = lazy(() => import("./pages/dashboard/ExhibitionEditorPage.tsx"));
+const ExhibitionPage = lazy(() => import("./pages/exhibition/ExhibitionPage.tsx"));
+const ExhibitionDetailPage = lazy(() => import("./pages/exhibition/ExhibitionDetailPage.tsx"));
 const DashboardDocumentsPage = lazy(() => import("./pages/DashboardDocumentsPage.tsx"));
 const DashboardPayoutPage = lazy(() => import("./pages/DashboardPayoutPage.tsx"));
 const ProjectDetailPage = lazy(() => import("./pages/ProjectDetailPage.tsx"));
@@ -171,6 +175,7 @@ const ForumLayoutRoute = lazy(() => import("./components/forum/ForumLayout"));
 const AdminCompliancePage = lazy(() => import("./pages/admin/AdminCompliancePage"));
 const AdminCopyrightReportsPage = lazy(() => import("./pages/admin/AdminCopyrightReportsPage"));
 const AdminPrivacyRequestsPage = lazy(() => import("./pages/admin/AdminPrivacyRequestsPage"));
+const AdminEventsPage = lazy(() => import("./pages/admin/AdminEventsPage"));
 const ExploreProjectsPage = lazy(() => import("./pages/ExploreProjectsPage.tsx"));
 const EarningsPage = lazy(() => import("./pages/EarningsPage.tsx"));
 const WithdrawPage = lazy(() => import("./pages/WithdrawPage.tsx"));
@@ -282,6 +287,9 @@ const App = () => (
               <Route path="/dashboard/insights" element={<RequireAuth><DashboardInsightsPage /></RequireAuth>} />
               <Route path="/dashboard/billing" element={<RequireAuth><DashboardBillingPage /></RequireAuth>} />
               <Route path="/dashboard/reviews" element={<RequireAuth><DashboardReviewsPage /></RequireAuth>} />
+              <Route path="/dashboard/exhibition" element={<RequireAuth><MyExhibitionPage /></RequireAuth>} />
+              <Route path="/dashboard/exhibition/new" element={<RequireAuth><ExhibitionEditorPage /></RequireAuth>} />
+              <Route path="/dashboard/exhibition/:id/edit" element={<RequireAuth><ExhibitionEditorPage /></RequireAuth>} />
               <Route path="/dashboard/documents" element={<RequireAuth><DashboardDocumentsPage /></RequireAuth>} />
               <Route path="/dashboard/payout" element={<RequireAuth><DashboardPayoutPage /></RequireAuth>} />
               <Route path="/portfolio/followers" element={<RequireAuth><FollowConnectionsPage /></RequireAuth>} />
@@ -294,6 +302,8 @@ const App = () => (
               <Route path="/portfolio/new" element={<RequireAuth><ProjectEditorPage /></RequireAuth>} />
               <Route path="/portfolio/:id/edit" element={<RequireAuth><ProjectEditorPage /></RequireAuth>} />
               <Route path="/project/:id" element={<ProjectDetailPage />} />
+              <Route path="/exhibition" element={<ExhibitionPage />} />
+              <Route path="/exhibition/:id" element={<ExhibitionDetailPage />} />
               <Route path="/service/:id" element={<ServiceDetailPage />} />
               <Route path="/object/:id" element={<ObjectDetailPage />} />
               <Route path="/drill" element={<DrillGalleryPage />} />
@@ -397,6 +407,7 @@ const App = () => (
                 <Route path="compliance" element={<AdminCompliancePage />} />
                 <Route path="compliance/copyright" element={<AdminCopyrightReportsPage />} />
                 <Route path="compliance/privacy" element={<AdminPrivacyRequestsPage />} />
+                <Route path="events" element={<AdminEventsPage />} />
                 <Route path="feedback" element={<AdminFeedbackPage />} />
                 <Route path="system" element={<AdminSystemPage />} />
                 <Route path="ai" element={<AdminAiMonitorPage />} />
