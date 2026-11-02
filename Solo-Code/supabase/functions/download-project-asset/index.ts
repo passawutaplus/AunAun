@@ -3,7 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { z } from "npm:zod@3";
 import { corsHeadersForRequest } from "../_shared/cors.ts";
 import { anthemDb } from "../_shared/ecosystem-db.ts";
-import { resolveAssetStorage, type ScanAsset } from "../_shared/project-asset-notify.ts";
+import { assetPathOwnedBy, resolveAssetStorage, type ScanAsset } from "../_shared/project-asset-notify.ts";
 
 const BodySchema = z.object({
   project_id: z.string().uuid(),
@@ -185,6 +185,11 @@ Deno.serve(async (req) => {
 
   if (asset.kind !== "file" || !asset.storage_path) {
     return json(req, { error: "asset_not_available" }, 404);
+  }
+
+  // Never sign a file outside the owner's folder.
+  if (!assetPathOwnedBy(asset.storage_path, project.owner_id)) {
+    return json(req, { error: "blocked", reason: "ที่เก็บไฟล์ไม่ถูกต้อง" }, 403);
   }
 
   // File: re-run basic rules even if previously marked clean.

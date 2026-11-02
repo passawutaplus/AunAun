@@ -53,10 +53,20 @@ Deno.serve(async (req) => {
 
   const { data: conv } = await shared
     .from("conversations")
-    .select("id, client_id, freelancer_id, project_title, conversation_type, kind")
+    .select("id, client_id, freelancer_id, created_by, project_title, conversation_type, kind")
     .eq("id", body.conversation_id)
     .maybeSingle();
   if (!conv) return json(req, { error: "not_found" }, 404);
+
+  const { data: membership } = await shared
+    .from("conversation_members")
+    .select("user_id")
+    .eq("conversation_id", conv.id)
+    .eq("user_id", callerId)
+    .maybeSingle();
+  const isParticipant =
+    !!membership || [conv.client_id, conv.freelancer_id, conv.created_by].includes(callerId);
+  if (!isParticipant) return json(req, { error: "forbidden" }, 403);
 
   const isGroup =
     conv.conversation_type === "group" || conv.kind === "group" || conv.kind === "studio";
@@ -84,11 +94,12 @@ Deno.serve(async (req) => {
         .from("messages")
         .select("id, content, sender_id, message_type")
         .eq("id", body.message_id)
+        .eq("conversation_id", conv.id)
         .maybeSingle()
     : await shared
         .from("messages")
         .select("id, content, sender_id, message_type")
-        .eq("conversation_id", body.conversation_id)
+        .eq("conversation_id", conv.id)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();

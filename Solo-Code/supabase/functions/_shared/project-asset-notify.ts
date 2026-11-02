@@ -34,6 +34,14 @@ export function resolveAssetStorage(storagePath: string): { bucket: string; path
   return { bucket: "project-assets", path: storagePath };
 }
 
+/** Clients write `project_assets`, so a path must be proven to sit in the owner's folder before the service role touches it. */
+export function assetPathOwnedBy(storagePath: string | null | undefined, ownerId: string): boolean {
+  if (!storagePath) return false;
+  const parts = storagePath.split("/");
+  if (parts.includes("..")) return false;
+  return (storagePath.startsWith("anthem/") ? parts[1] : parts[0]) === ownerId;
+}
+
 export async function deleteBlockedAssetFile(
   admin: SupabaseClient,
   asset: ScanAsset,
