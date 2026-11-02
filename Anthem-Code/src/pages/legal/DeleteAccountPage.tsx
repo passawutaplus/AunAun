@@ -28,7 +28,7 @@ const DeleteAccountPage = () => {
       <div className="not-prose my-6 flex flex-wrap gap-2">
         {/* LegalLayout colours every <a> text-primary — reset it so the label stays readable on the button. */}
         <Button asChild size="sm" className="!text-primary-foreground hover:!no-underline">
-          <Link to={user ? "/settings" : "/auth"}>
+          <Link to={user ? "/settings#data" : "/auth"}>
             {user ? "ไปที่ตั้งค่า · Open settings" : "เข้าสู่ระบบ · Sign in"}
           </Link>
         </Button>
@@ -40,7 +40,7 @@ const DeleteAccountPage = () => {
       <h2>1. ลบจากในแอปหรือเว็บ · In the app or on the web</h2>
       <ol>
         <li>เข้าสู่ระบบ · Sign in</li>
-        <li>ไปที่ ตั้งค่า → ความเป็นส่วนตัว · Go to Settings → Privacy</li>
+        <li>ไปที่ ตั้งค่า → ข้อมูลของฉัน · Go to Settings → My data</li>
         <li>กด “ขอลบบัญชี” แล้วยืนยันตัวตน · Tap “Delete account” and confirm it’s you</li>
       </ol>
 

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { hapticPress } from "@/lib/haptics";
 import { AnimatePresence, motion } from "framer-motion";
 import { Bookmark, Eye, Heart } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import type { Project } from "@/data/projectTypes";
 import { useProjectLike } from "@/hooks/useProjectInteractions";
 import { useAuth } from "@/hooks/useAuth";
@@ -201,11 +201,22 @@ const ProjectCard = ({
       whileTap={{ scale: 0.985 }}
       transition={{ duration: 0.22, ease: smoothEase }}
     >
+      {/* The card opens on pointer click; this link is the keyboard and screen-reader way in. */}
+      <Link
+        to={`/project/${project.id}`}
+        className="peer sr-only"
+        onClick={(event) => {
+          event.stopPropagation();
+          if (boostId) void logBoostEvent(boostId, "click");
+        }}
+      >
+        {project.title}
+      </Link>
       <div
         ref={wrapRef}
         className={cn(
           "relative isolate w-full overflow-hidden bg-[#e5e4e2]",
-          "rounded-[6px]",
+          "rounded-[6px] peer-focus-visible:ring-2 peer-focus-visible:ring-foreground peer-focus-visible:ring-offset-2",
           !showNatural && "aspect-[4/3]",
         )}
       >

@@ -3,6 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { z } from "npm:zod@3";
 import { corsHeadersForRequest } from "../_shared/cors.ts";
 import {
+  assetPathOwnedBy,
   deleteBlockedAssetFile,
   notifyProjectAssetScan,
   resolveAssetStorage,
@@ -91,7 +92,13 @@ async function basicFileCheck(asset: ScanAsset): Promise<{ ok: boolean; reason: 
 async function deepScanFile(
   admin: ReturnType<typeof createClient>,
   asset: ScanAsset,
+  ownerId: string,
 ): Promise<ScanAsset> {
+  // Never read or delete a file outside the owner's folder.
+  if (!assetPathOwnedBy(asset.storage_path, ownerId)) {
+    return stamp(asset, "blocked", "ที่เก็บไฟล์ไม่ถูกต้อง");
+  }
+
   const blockFile = async (reason: string | null) => {
     await deleteBlockedAssetFile(admin, asset);
     return stamp(asset, "blocked", reason);
@@ -235,13 +242,14 @@ async function deepScanLink(asset: ScanAsset): Promise<ScanAsset> {
 async function deepScan(
   admin: ReturnType<typeof createClient>,
   asset: ScanAsset,
+  ownerId: string,
 ): Promise<ScanAsset> {
   if (!needsScan(asset)) return asset;
   if (asset.kind === "link" && asset.url) {
     const r = await deepScanLink(asset);
     return r.scan_status === "pending" ? stamp(r, "pending", r.scan_reason ?? null) : stamp(r, r.scan_status, r.scan_reason ?? null);
   }
-  if (asset.kind === "file") return deepScanFile(admin, asset);
+  if (asset.kind === "file") return deepScanFile(admin, asset, ownerId);
   return stamp(asset, "blocked", "ข้อมูลไม่ครบ");
 }
 
@@ -292,7 +300,7 @@ Deno.serve(async (req) => {
 
   const scanned: ScanAsset[] = [];
   for (const item of raw as ScanAsset[]) {
-    const next = await deepScan(admin, item);
+    const next = await deepScan(admin, item, project.owner_id);
     scanned.push(next);
     const prev = previous.get(item.id ?? "") ?? "pending";
     await notifyProjectAssetScan(admin, {

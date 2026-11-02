@@ -174,7 +174,7 @@ const AuthPage = () => {
             </h1>
             {tab === "signup" ? (
               <p className="text-sm text-muted-foreground -mt-4 mb-6 thai-body">
-                เริ่มต้นใช้งานฟรี — ใช้อีเมลเดียวกับ So1o ถ้ามีแพ็ก Pro แล้ว
+                เริ่มต้นใช้งานฟรี
               </p>
             ) : null}
 

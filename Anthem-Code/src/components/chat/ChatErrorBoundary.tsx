@@ -1,5 +1,6 @@
 import * as React from "react";
 import { Button } from "@/components/ui/button";
+import { captureException } from "@/lib/errorMonitoring";
 
 type Props = {
   children: React.ReactNode;
@@ -17,6 +18,7 @@ export class ChatErrorBoundary extends React.Component<Props, State> {
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
     console.error("[ChatErrorBoundary]", error, info.componentStack);
+    captureException(error, { boundary: "chat", componentStack: info.componentStack ?? "" });
   }
 
   render() {

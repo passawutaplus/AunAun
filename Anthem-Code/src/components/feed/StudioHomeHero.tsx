@@ -535,7 +535,7 @@ const StudioHomeHero = ({
             }}
           >
             <label htmlFor="hero-looking" className="hero-looking-label">
-              I looking for
+              I'm looking for
             </label>
             <span className="hero-looking-field">
               <input

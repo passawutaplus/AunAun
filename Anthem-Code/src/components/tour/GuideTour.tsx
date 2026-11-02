@@ -6,6 +6,7 @@ import { TourMascot } from "@/components/project/TourMascot";
 import { TourInvite } from "@/components/tour/TourInvite";
 import { Spotlight, findTarget } from "@/components/project/EditorTour";
 import { useAuth } from "@/hooks/useAuth";
+import { COOKIE_CONSENT_CHANGED_EVENT, hasConsentBannerPending } from "@/lib/cookieConsent";
 import { markTourDone, turnTourOff, type GuideTourId } from "@/lib/guideTours";
 import { cn } from "@/lib/utils";
 
@@ -183,9 +184,18 @@ export function GuideTour({ tourId, label, steps: allSteps, open, intro = false,
     if (h && Math.abs(h - cardH) > 4) setCardH(h);
   });
 
+  // One prompt at a time: the invite waits until the cookie banner is answered.
+  const [cookieBannerPending, setCookieBannerPending] = useState(hasConsentBannerPending);
+  useEffect(() => {
+    const sync = () => setCookieBannerPending(hasConsentBannerPending());
+    window.addEventListener(COOKIE_CONSENT_CHANGED_EVENT, sync);
+    return () => window.removeEventListener(COOKIE_CONSENT_CHANGED_EVENT, sync);
+  }, []);
+
   if (!open || !step) return null;
 
   if (inviting) {
+    if (cookieBannerPending) return null;
     return <TourInvite label={label} title={step.title} body={step.body} onStart={startFromInvite} onClose={close} onNeverAgain={neverAgain} />;
   }
 
