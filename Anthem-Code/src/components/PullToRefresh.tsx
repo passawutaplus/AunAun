@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { isAndroidApp } from "@/lib/appShell";
+import { isNativeApp } from "@/lib/appShell";
 import { BrandLoader } from "@/components/ui/BrandLoader";
 
 /** Pull distance (after resistance) that triggers a refresh, and the most the indicator travels. */
@@ -44,7 +44,7 @@ function overlayOpen(): boolean {
  * Sits on window touch events, so it works on every page without wiring.
  */
 export default function PullToRefresh() {
-  const enabled = isAndroidApp();
+  const enabled = isNativeApp();
   const queryClient = useQueryClient();
   const [pull, setPull] = useState(0);
   const [refreshing, setRefreshing] = useState(false);

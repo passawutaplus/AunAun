@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { isLaunchHiddenPath } from "@/lib/aplus1Launch";
-import { isAndroidApp } from "@/lib/appShell";
+import { isNativeApp } from "@/lib/appShell";
 import AppFooterCta from "@/components/AppFooterCta";
 import {
   BRAND_NAME,
@@ -29,7 +29,7 @@ type Props = {
 
 const Footer = ({ className }: Props) => {
   // The Android app has no website footer: a post-your-work prompt instead; legal links live in Settings.
-  if (isAndroidApp()) return <AppFooterCta />;
+  if (isNativeApp()) return <AppFooterCta />;
   const year = new Date().getFullYear();
   const exploreLinks = EXPLORE_LINKS.filter((item) => !isLaunchHiddenPath(item.to));
 

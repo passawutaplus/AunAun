@@ -7,6 +7,10 @@
     "androidScheme": "https",
     "errorPath": "offline.html"
   },
+  "ios": {
+    "appendUserAgent": "SamecorApp SamecorIos",
+    "contentInset": "never"
+  },
   "android": {
     "appendUserAgent": "SamecorApp",
     "allowMixedContent": false

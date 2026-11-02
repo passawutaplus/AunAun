@@ -3,7 +3,7 @@
 import type { LucideIcon } from "lucide-react";
 import { LayoutDashboard, LifeBuoy, SlidersHorizontal, UserRound } from "lucide-react";
 import { isCommerceEnabled } from "@/lib/aplus1Launch";
-import { isAndroidApp } from "@/lib/appShell";
+import { isNativeApp } from "@/lib/appShell";
 
 export type SettingsPanelId =
   | "profile"
@@ -147,7 +147,7 @@ export function resolveSettingsPanel(
   if (mapped === "admin" && !opts?.isAdmin) return DEFAULT_SETTINGS_PANEL;
   // Billing / tax documents belong to the money phase.
   if (mapped === "billing" && !isCommerceEnabled()) return DEFAULT_SETTINGS_PANEL;
-  if (mapped === "app" && isAndroidApp()) return DEFAULT_SETTINGS_PANEL;
+  if (mapped === "app" && isNativeApp()) return DEFAULT_SETTINGS_PANEL;
   return mapped;
 }
 
@@ -175,7 +175,7 @@ export function buildSettingsNavGroups(isAdmin?: boolean): SettingsNavGroup[] {
   // Billing waits for the money phase; "download the app" is pointless inside the app.
   const hidden = new Set<SettingsPanelId>();
   if (!isCommerceEnabled()) hidden.add("billing");
-  if (isAndroidApp()) hidden.add("app");
+  if (isNativeApp()) hidden.add("app");
   const groups = SETTINGS_NAV_GROUPS.map((g) => ({ ...g, items: g.items.filter((i) => !hidden.has(i.id)) }));
   if (!isAdmin) return groups;
   return [

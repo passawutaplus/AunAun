@@ -71,10 +71,32 @@ export function getNativeAppVersion(): string | null {
   }
 }
 
+/** Second marker the iOS shell appends after `SamecorApp` (capacitor-shell/capacitor.config.json → ios.appendUserAgent). */
+const IOS_APP_UA_MARKER = "SamecorIos";
+
+/** True inside the SAMECOR iOS app (Capacitor WKWebView). */
+export function isIosApp(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return navigator.userAgent.includes(IOS_APP_UA_MARKER);
+}
+
 /** True inside the SAMECOR Android app (TWA or Capacitor WebView). */
 export function isAndroidApp(): boolean {
   if (typeof window === "undefined") return false;
+  if (isIosApp()) return false;
   return isWebViewApp() || readSession(ANDROID_SESSION_KEY) === "1" || launchedFromAndroidApp();
+}
+
+/** True inside either store app: behaviour that is about "the app" (no KYC, no download prompts) uses this. */
+export function isNativeApp(): boolean {
+  return isIosApp() || isAndroidApp();
+}
+
+/** Which shell the page runs in, for analytics tags. */
+export function shellName(): "ios" | "android" | "pwa" | "web" {
+  if (isIosApp()) return "ios";
+  if (isAndroidApp()) return "android";
+  return isStandaloneDisplay() ? "pwa" : "web";
 }
 
 /** Native bridge MainActivity adds in the Capacitor shell (capacitor-shell/android/.../MainActivity.java). */
@@ -105,7 +127,7 @@ function lockPageZoom(): void {
 /** Call once at startup: remembers the Android launch and keeps the status bar colour in step with the theme. */
 export function installAppShell(): void {
   if (typeof window === "undefined") return;
-  if (launchedFromAndroidApp()) writeSession(ANDROID_SESSION_KEY, "1");
+  if (!isIosApp() && launchedFromAndroidApp()) writeSession(ANDROID_SESSION_KEY, "1");
   if (isWebViewApp()) lockPageZoom();
 
   syncThemeColor();

@@ -9,7 +9,7 @@ export async function initErrorMonitoring(): Promise<void> {
   const dsn = import.meta.env.VITE_SENTRY_DSN as string | undefined;
   if (dsn?.trim()) {
     try {
-      const [Sentry, { isAndroidApp, isStandaloneDisplay }] = await Promise.all([
+      const [Sentry, { shellName }] = await Promise.all([
         import("@sentry/react"),
         import("@/lib/appShell"),
       ]);
@@ -21,7 +21,7 @@ export async function initErrorMonitoring(): Promise<void> {
         tracesSampleRate: 0.05,
         ignoreErrors: ["ResizeObserver loop"],
       });
-      Sentry.setTag("shell", isAndroidApp() ? "android" : isStandaloneDisplay() ? "pwa" : "web");
+      Sentry.setTag("shell", shellName());
       sentryReady = true;
     } catch (err) {
       console.warn("[monitoring] Sentry init failed", err);

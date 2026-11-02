@@ -1,4 +1,4 @@
-import { isAndroidApp } from "@/lib/appShell";
+import { isNativeApp } from "@/lib/appShell";
 import type { FeedMode } from "@/components/feed/FeedModeToggle";
 
 /**
@@ -38,7 +38,7 @@ export function isBetaFeedbackEnabled(): boolean {
 
 export function isCommerceEnabled(): boolean {
   // Google Play: digital goods bought inside the Android app must go through Play Billing.
-  if (isAndroidApp()) return false;
+  if (isNativeApp()) return false;
   return import.meta.env.VITE_SAMECOR_COMMERCE_ENABLED === "true";
 }
 
@@ -186,7 +186,7 @@ export function isKycPath(pathname: string): boolean {
 export function isLaunchHiddenPath(pathname: string): boolean {
   if (isRetiredPublicPath(pathname)) return true;
   // Keeps national-ID / bank-account collection out of the app (and its Play Data safety form).
-  if (isAndroidApp() && isKycPath(pathname)) return true;
+  if (isNativeApp() && isKycPath(pathname)) return true;
   if (isCommercePath(pathname)) return true;
   if (isHiringBoardPath(pathname)) return !isAplus1HiringBoardEnabled();
   if (!isAplus1LaunchMinimal()) return false;
@@ -201,7 +201,7 @@ export const LAUNCH_COMING_SOON_TH =
 
 /** Paid tiers (Pro / Pro+ / In-House) — disabled at launch; everyone uses free limits. */
 export function isAplus1SubscriptionsEnabled(): boolean {
-  if (isAplus1LaunchMinimal() || isAndroidApp()) return false;
+  if (isAplus1LaunchMinimal() || isNativeApp()) return false;
   return import.meta.env.VITE_APLUS1_SUBSCRIPTIONS_ENABLED === "true";
 }
 
@@ -269,7 +269,7 @@ export function isLaunchCollabEnabled(): boolean {
  * Re-enable with VITE_APLUS1_PX_ENABLED=true and VITE_APLUS1_FULL_PRODUCT=true.
  */
 export function isAplus1PxEnabled(): boolean {
-  if (isAplus1LaunchMinimal() || isAndroidApp()) return false;
+  if (isAplus1LaunchMinimal() || isNativeApp()) return false;
   return import.meta.env.VITE_APLUS1_PX_ENABLED === "true";
 }
 
@@ -296,7 +296,7 @@ export function isLaunchDesignDrillEnabled(): boolean {
 
 /** Boost (post/project promotion) — disabled at launch until explicitly enabled. */
 export function isLaunchBoostEnabled(): boolean {
-  if (isAplus1LaunchMinimal() || isAndroidApp()) return false;
+  if (isAplus1LaunchMinimal() || isNativeApp()) return false;
   return import.meta.env.VITE_APLUS1_BOOST_ENABLED === "true";
 }
 
