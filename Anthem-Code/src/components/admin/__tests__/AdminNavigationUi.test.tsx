@@ -185,9 +185,9 @@ describe("AdminCommandMenu", () => {
 
 describe("AdminDbGapNotice", () => {
   it("explains what is missing on an affected page", () => {
-    render(<AdminDbGapNotice pathname="/admin/compliance/privacy" />);
+    render(<AdminDbGapNotice pathname="/admin/jobs" />);
     expect(screen.getByRole("status")).toHaveTextContent("ฐานข้อมูลยังไม่มี");
-    expect(screen.getByText("privacy_requests")).toBeInTheDocument();
+    expect(screen.getByText("admin_set_job_status")).toBeInTheDocument();
   });
 
   it("renders nothing on a healthy page", () => {

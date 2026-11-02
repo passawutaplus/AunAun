@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { captureException } from "@/lib/errorMonitoring";
 import {
   LEGAL_COOKIES_VERSION,
   LEGAL_PRIVACY_VERSION,
@@ -28,21 +29,24 @@ export function markPendingSignupConsent(): void {
 export async function flushPendingSignupConsent(): Promise<void> {
   if (typeof window === "undefined") return;
   if (!localStorage.getItem(PENDING_SIGNUP_CONSENT_KEY)) return;
-  await recordSignupConsents();
-  localStorage.removeItem(PENDING_SIGNUP_CONSENT_KEY);
+  // Keep the flag on failure so the next login tries again.
+  if (await recordSignupConsents()) localStorage.removeItem(PENDING_SIGNUP_CONSENT_KEY);
 }
 
-/** บันทึก consent ตอนสมัคร — ไม่ throw ถ้า migration ยังไม่รัน */
-export async function recordSignupConsents(): Promise<void> {
+/** บันทึก consent ตอนสมัคร — ไม่บล็อก signup แต่ส่ง error เข้า Sentry; คืน true เมื่อบันทึกได้ */
+export async function recordSignupConsents(): Promise<boolean> {
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase.rpc as any)("record_signup_consents", {
+    const { error } = await (supabase.rpc as any)("record_signup_consents", {
       _terms_version: LEGAL_TERMS_VERSION,
       _privacy_version: LEGAL_PRIVACY_VERSION,
       _locale: typeof navigator !== "undefined" ? navigator.language.slice(0, 10) : "th",
     });
-  } catch {
-    /* migration อาจยังไม่ deploy — ไม่บล็อก signup */
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    captureException(error, { rpc: "record_signup_consents" });
+    return false;
   }
 }
 
@@ -50,15 +54,17 @@ export async function recordSignupConsents(): Promise<void> {
 export async function logCookieConsentServer(analytics: boolean, functional: boolean): Promise<void> {
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase.rpc as any)("log_cookie_consent", {
+    const { error } = await (supabase.rpc as any)("log_cookie_consent", {
       _analytics: analytics,
       _preferences: functional,
       _marketing: false,
       _anonymous_id: getAnonymousId(),
       _policy_version: LEGAL_COOKIES_VERSION,
     });
-  } catch {
-    /* silent — local consent ยังใช้ได้ */
+    if (error) throw error;
+  } catch (error) {
+    // Local consent still applies; the server log is the PDPA record, so report the gap.
+    captureException(error, { rpc: "log_cookie_consent" });
   }
 }
 
@@ -72,9 +78,10 @@ export async function fetchConsentStatus(): Promise<ConsentStatus | null> {
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (supabase.rpc as any)("user_consent_status");
-    if (error) return null;
+    if (error) throw error;
     return data as ConsentStatus;
-  } catch {
+  } catch (error) {
+    captureException(error, { rpc: "user_consent_status" });
     return null;
   }
 }

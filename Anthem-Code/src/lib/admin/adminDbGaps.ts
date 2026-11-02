@@ -52,18 +52,6 @@ export const ADMIN_DB_GAPS: Record<string, AdminDbGap> = {
     missing: ["ad_applications", "ad_campaigns", "get_active_ads", "admin_approve_ad_application", "admin_reject_ad_application"],
     effect: "ไม่มีตารางแคมเปญ/คำขอโฆษณา",
   },
-  "/admin/compliance/copyright": {
-    missing: ["copyright_reports"],
-    effect: "รับแจ้งลบผลงานละเมิดลิขสิทธิ์ไม่ได้",
-  },
-  "/admin/compliance/privacy": {
-    missing: ["privacy_requests"],
-    effect: "รับคำขอ PDPA (ดู/ลบข้อมูลส่วนตัว) ไม่ได้",
-  },
-  "/admin/compliance": {
-    missing: ["copyright_reports", "privacy_requests"],
-    effect: "คิวลิขสิทธิ์และคำขอ PDPA ว่าง/ใช้ไม่ได้",
-  },
   "/admin/jobs": {
     missing: ["admin_set_job_status"],
     effect: "เปลี่ยนสถานะประกาศงานจากหลังบ้านไม่ได้",

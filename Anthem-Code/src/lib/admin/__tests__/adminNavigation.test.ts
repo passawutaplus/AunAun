@@ -193,9 +193,9 @@ describe("work queue", () => {
 
 describe("pages waiting on the database", () => {
   it("matches the longest prefix", () => {
-    expect(adminDbGapForPath("/admin/compliance/privacy")?.missing).toEqual(["privacy_requests"]);
-    expect(adminDbGapForPath("/admin/compliance/copyright")?.missing).toEqual(["copyright_reports"]);
-    expect(adminDbGapForPath("/admin/compliance")?.missing).toEqual(["copyright_reports", "privacy_requests"]);
+    expect(adminDbGapForPath("/admin/jobs/123")?.missing).toEqual(["admin_set_job_status"]);
+    // Compliance tables ship with 20261102121000_aplus1_legal_compliance.sql.
+    expect(adminDbGapForPath("/admin/compliance/privacy")).toBeNull();
     expect(adminDbGapForPath("/admin/finance?tab=payouts")?.missing).toContain("admin_finance_overview");
   });
 
