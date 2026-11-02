@@ -37,7 +37,7 @@ import {
   type CollabTaskStatus,
 } from "@/hooks/useCollabTasks";
 import { useAuth } from "@/hooks/useAuth";
-import { useSendMessage } from "@/hooks/useChat";
+import { usePostChatSystemEvent } from "@/hooks/useChat";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -113,7 +113,7 @@ export default function CollabTasksSheet({ open, onOpenChange, conversationId, p
   const { user } = useAuth();
   const { data: rawTasks = [], isLoading } = useCollabTasks(open ? conversationId : undefined);
   const tasks = useMemo(() => [...rawTasks].sort((a, b) => a.position - b.position), [rawTasks]);
-  const sendMessage = useSendMessage();
+  const postSystemEvent = usePostChatSystemEvent();
   const [mineOnly, setMineOnly] = useState(false);
   const { data: members = [] } = useTaskMembers(conversationId, participantIds, open);
   const { add, update, remove } = useCollabTaskActions(conversationId);
@@ -174,23 +174,19 @@ export default function CollabTasksSheet({ open, onOpenChange, conversationId, p
     update.mutate({ id: task.id, patch: { status, position } });
   };
 
-  const plainName = (id: string | null | undefined) => memberById.get(id ?? "")?.name.replace(/ \(คุณ\)$/, "");
-
-  // Assigning someone posts a system line in the chat so they actually notice.
+  // Assigning someone posts a system line in the chat so they actually notice (text built on the server).
   const saveTask = (
     task: CollabTask,
     patch: Partial<Pick<CollabTask, "title" | "status" | "assignee_id" | "due_date" | "priority" | "note" | "links">>,
   ) => {
-    update.mutate({ id: task.id, patch });
     const to = patch.assignee_id;
-    if (!to || to === task.assignee_id) return;
-    const me = plainName(user?.id) ?? "มีคน";
-    const title = patch.title ?? task.title;
-    sendMessage.mutate({
-      conversationId,
-      content: to === user?.id ? `${me} รับงาน “${title}”` : `${me} มอบงาน “${title}” ให้ ${plainName(to) ?? "ผู้ร่วมงาน"}`,
-      messageType: "system",
-    });
+    const assigned = !!to && to !== task.assignee_id;
+    update.mutate(
+      { id: task.id, patch },
+      assigned
+        ? { onSuccess: () => postSystemEvent.mutate({ conversationId, event: "collab_task_assigned", refId: task.id }) }
+        : undefined,
+    );
   };
 
   const visible = mineOnly ? tasks.filter((t) => t.assignee_id === user?.id) : tasks;

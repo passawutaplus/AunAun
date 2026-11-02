@@ -50,6 +50,7 @@ import {
   useAcceptRequest,
   useRejectRequest,
   useSendMessage,
+  usePostChatSystemEvent,
   useUnsendMessage,
   type Conversation,
   type Message,
@@ -208,6 +209,7 @@ const ChatThreadView = ({
   const [highlightId, setHighlightId] = useState<string | null>(null);
   const unsend = useUnsendMessage();
   const sendMessage = useSendMessage();
+  const postSystemEvent = usePostChatSystemEvent();
   const acceptHire = useAcceptRequest();
   const rejectHire = useRejectRequest();
   const forwardHire = useForwardHireRequest();
@@ -1220,11 +1222,7 @@ const ChatThreadView = ({
     workStartBackfillStarted.current = workStartBackfillKey;
     void (async () => {
       try {
-        await sendMessage.mutateAsync({
-          conversationId: conv.id,
-          content: encodeHireWorkStartMessage(buildHireWorkStartPayload(workStartOffer)),
-          messageType: "system",
-        });
+        await postSystemEvent.mutateAsync({ conversationId: conv.id, event: "hire_work_start" });
         if (typeof sessionStorage !== "undefined") {
           sessionStorage.setItem(workStartBackfillKey, "1");
         }
@@ -1824,10 +1822,10 @@ const ChatThreadView = ({
                         otherUserId: otherUserId || "",
                         conversationId: conv.id,
                       });
-                      await sendMessage.mutateAsync({
+                      await postSystemEvent.mutateAsync({
                         conversationId: conv.id,
-                        content: "ถอนคำขอยกเลิกงานแล้ว — งานดำเนินต่อ",
-                        messageType: "system",
+                        event: "hire_cancel_withdrawn",
+                        refId: row.id,
                       });
                       toast.success("ถอนคำขอยกเลิกแล้ว");
                     } catch (e: unknown) {
@@ -1851,10 +1849,10 @@ const ChatThreadView = ({
                         userId: user.id,
                         otherUserId: otherUserId || "",
                       });
-                      await sendMessage.mutateAsync({
+                      await postSystemEvent.mutateAsync({
                         conversationId: conv.id,
-                        content: "ถอนคำขอยุติคอลแลปแล้ว — ทำต่อได้ตามเดิม",
-                        messageType: "system",
+                        event: "collab_end_withdrawn",
+                        refId: row.id,
                       });
                       toast.success("ถอนคำขอยุติแล้ว");
                     } catch (e: unknown) {
@@ -1874,10 +1872,10 @@ const ChatThreadView = ({
                         userId: user.id,
                         partnerUserId: otherId,
                       });
-                      await sendMessage.mutateAsync({
+                      await postSystemEvent.mutateAsync({
                         conversationId: conv.id,
-                        content: "ถอนคำขอสร้างกลุ่มแล้ว",
-                        messageType: "system",
+                        event: "collab_group_expand_withdrawn",
+                        refId: row.id,
                       });
                       toast.success("ถอนคำขอสร้างกลุ่มแล้ว");
                     } catch (e: unknown) {
@@ -2282,10 +2280,10 @@ const ChatThreadView = ({
                 otherUserId: otherUserId || "",
                 conversationId: conv.id,
               });
-              await sendMessage.mutateAsync({
+              await postSystemEvent.mutateAsync({
                 conversationId: conv.id,
-                content: `มีการแก้ไขคำขอยกเลิกงาน — เงื่อนไขเงิน: ${moneyTerms} (กำหนดพิจารณาเดิมไม่เปลี่ยน)`,
-                messageType: "system",
+                event: "hire_cancel_edited",
+                refId: hireCancelEditRow.id,
               });
               void updated;
               toast.success("บันทึกการแก้ไขแล้ว");
@@ -2384,10 +2382,10 @@ const ChatThreadView = ({
                 progressCountInitiator: creditFields.progressCount,
                 otherUserId: otherUserId || "",
               });
-              await sendMessage.mutateAsync({
+              await postSystemEvent.mutateAsync({
                 conversationId: conv.id,
-                content: "มีการแก้ไขเหตุผลถอนตัว",
-                messageType: "system",
+                event: "collab_end_edited",
+                refId: collabEndEditRow.id,
               });
               toast.success("บันทึกการแก้ไขแล้ว");
             } else {
@@ -2412,11 +2410,10 @@ const ChatThreadView = ({
                   collabRequestId: conv.request_id,
                 }),
               });
-              await sendMessage.mutateAsync({
+              await postSystemEvent.mutateAsync({
                 conversationId: conv.id,
-                content:
-                  "ถอนตัวแล้ว — สละสิทธิ์และเครดิตทั้งหมด อีกฝ่ายทำต่อได้ (ไม่นับเป็นจบงาน)",
-                messageType: "system",
+                event: "collab_end_left",
+                refId: result.row.id,
               });
               toast.success("ถอนตัวแล้ว — อีกฝ่ายทำต่อได้");
             }

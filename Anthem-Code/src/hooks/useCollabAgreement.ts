@@ -3,7 +3,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { sharedDb, supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCollabPlan } from "@/hooks/useCollabPlan";
-import { useSendMessage } from "@/hooks/useChat";
+import { usePostChatSystemEvent, useSendMessage } from "@/hooks/useChat";
+import type { ChatSystemEvent } from "@/lib/chatSystemEvents";
 import {
   COLLAB_AGREEMENT_PREFIX,
   agreementFromPayload,
@@ -23,6 +24,7 @@ export function useCollabAgreement(conversationId: string | undefined, enabled =
   const qc = useQueryClient();
   const plan = useCollabPlan(conversationId, enabled);
   const sendMessage = useSendMessage();
+  const postSystemEvent = usePostChatSystemEvent();
   const [busy, setBusy] = useState(false);
 
   const { doc, memberIds, planPersisted } = plan;
@@ -92,11 +94,11 @@ export function useCollabAgreement(conversationId: string | undefined, enabled =
   );
 
   const system = useCallback(
-    (content: string) => {
+    (event: ChatSystemEvent, fields?: string[]) => {
       if (!conversationId) return;
-      sendMessage.mutate({ conversationId, content, messageType: "system" });
+      postSystemEvent.mutate({ conversationId, event, fields });
     },
-    [conversationId, sendMessage],
+    [conversationId, postSystemEvent],
   );
 
   /** Save edits. `send` = first "ส่งให้ยืนยัน" (posts the card and seeds tasks from roles). */
@@ -137,11 +139,11 @@ export function useCollabAgreement(conversationId: string | undefined, enabled =
         if (!d.changed.length) return;
         if (d.needsReconfirm) {
           await write({ ...next, sentAt: agreement.sentAt }, me, true);
-          system(`${opts.actorName ?? "มีคน"} แก้${d.labels.join(", ")} — ทุกคนต้องยืนยันแผนใหม่`);
+          if (d.labels.length) system("collab_plan_edited_reconfirm", d.changed as string[]);
           await sendMessage.mutateAsync({ conversationId, content: COLLAB_AGREEMENT_PREFIX });
         } else {
           await write({ ...next, sentAt: agreement.sentAt }, acks, true);
-          system(`${opts.actorName ?? "มีคน"} แก้แผน: ${d.labels.join(", ")}`);
+          if (d.labels.length) system("collab_plan_edited", d.changed as string[]);
         }
       } finally {
         setBusy(false);
@@ -160,8 +162,8 @@ export function useCollabAgreement(conversationId: string | undefined, enabled =
         if (next[user.id]) delete next[user.id];
         else next[user.id] = new Date().toISOString();
         const complete = await write(agreement, next, false);
-        if (complete) system("ทุกคนตกลงแผนคอลแลปแล้ว ✓");
-        else if (!next[user.id]) system(`${actorName ?? "มีคน"} ยกเลิกการตกลงแผน`);
+        if (complete) system("collab_plan_agreed");
+        else if (!next[user.id]) system("collab_plan_unagreed");
       } finally {
         setBusy(false);
         await invalidate();
@@ -201,9 +203,9 @@ export function useCollabAgreement(conversationId: string | undefined, enabled =
           if (requestId) {
             await supabase.from("collab_requests").update({ status: "completed" } as never).eq("id", requestId);
           }
-          system("ปิดคอลแลปแล้ว — งานเสร็จเรียบร้อย ขอบคุณที่ร่วมงานกัน");
+          system("collab_closed");
         } else if (next[user.id]) {
-          system(`${actorName ?? "มีคน"} ขอปิดคอลแลป (งานเสร็จแล้ว) — กดยืนยันในแผนคอลแลป`);
+          system("collab_close_requested");
         }
       } finally {
         setBusy(false);
