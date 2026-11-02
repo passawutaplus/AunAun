@@ -70,27 +70,27 @@ export default function AdminPrivacyRequestsPage() {
     {
       key: "type",
       header: "ประเภท",
-      cell: (r) => (
+      render: (r) => (
         <span className={`text-sm font-medium ${r.request_type === "delete" ? "text-admin-accent" : "text-admin-fg"}`}>
           {TYPE_LABEL[r.request_type] ?? r.request_type}
         </span>
       ),
     },
-    { key: "user", header: "User ID", cell: (r) => <code className="text-[10px]">{r.user_id.slice(0, 8)}…</code> },
+    { key: "user", header: "User ID", render: (r) => <code className="text-[10px]">{r.user_id.slice(0, 8)}…</code> },
     {
       key: "desc",
       header: "รายละเอียด",
-      cell: (r) => <span className="text-xs text-admin-muted line-clamp-2">{r.description ?? "—"}</span>,
+      render: (r) => <span className="text-xs text-admin-muted line-clamp-2">{r.description ?? "—"}</span>,
     },
     {
       key: "status",
       header: "สถานะ",
-      cell: (r) => <StatusPill status={r.status} label={STATUS_LABEL[r.status] ?? r.status} />,
+      render: (r) => <StatusPill status={STATUS_LABEL[r.status] ?? r.status} />,
     },
     {
       key: "when",
       header: "เมื่อ",
-      cell: (r) => (
+      render: (r) => (
         <span className="text-xs text-admin-muted">
           {formatDistanceToNow(new Date(r.requested_at), { addSuffix: true, locale: th })}
         </span>
@@ -99,7 +99,7 @@ export default function AdminPrivacyRequestsPage() {
     {
       key: "act",
       header: "",
-      cell: (r) =>
+      render: (r) =>
         r.status !== "completed" ? (
           <Button type="button" size="sm" variant="outline" disabled={markDone.isPending} onClick={() => markDone.mutate(r.id)}>
             เสร็จแล้ว
@@ -113,13 +113,13 @@ export default function AdminPrivacyRequestsPage() {
       <SectionHeader
         title="คำขอ PDPA"
         description="ลบบัญชี ส่งออกข้อมูล และสิทธิอื่น ๆ จากผู้ใช้"
-        action={
+        actions={
           <Link to="/admin/compliance" className="text-xs text-admin-accent hover:underline">
             ← Compliance
           </Link>
         }
       />
-      <DataTable columns={columns} rows={rows} loading={isLoading} emptyMessage="ยังไม่มีคำขอ" />
+      <DataTable columns={columns} rows={rows} rowKey={(r) => r.id} loading={isLoading} empty="ยังไม่มีคำขอ" />
     </div>
   );
 }

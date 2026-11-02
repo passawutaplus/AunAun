@@ -11,6 +11,10 @@ type SafeDemoImageProps = React.ImgHTMLAttributes<HTMLImageElement> & {
   naturalFallback?: boolean;
 };
 
+/** Shown when an image fails: a creator's work must never be swapped for someone else's art. */
+const FAILED_IMAGE_PLACEHOLDER =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 3'%3E%3Crect width='4' height='3' fill='%23e5e4e2'/%3E%3C/svg%3E";
+
 const SafeDemoImage = ({
   src,
   index = 0,
@@ -54,9 +58,9 @@ const SafeDemoImage = ({
       transition={imageRevealTransition}
       onLoad={() => setLoaded(true)}
       onError={() => {
-        if (current !== fallback) {
+        if (current !== FAILED_IMAGE_PLACEHOLDER) {
           setLoaded(false);
-          setCurrent(fallback);
+          setCurrent(FAILED_IMAGE_PLACEHOLDER);
         }
       }}
     />

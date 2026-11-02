@@ -42,7 +42,7 @@ export default function AdminCopyrightReportsPage() {
     {
       key: "claimant",
       header: "ผู้แจ้ง",
-      cell: (r) => (
+      render: (r) => (
         <div>
           <p className="font-medium text-admin-fg">{r.claimant_name}</p>
           <p className="text-[11px] text-admin-muted">{r.claimant_email}</p>
@@ -52,7 +52,7 @@ export default function AdminCopyrightReportsPage() {
     {
       key: "url",
       header: "ลิงก์ที่แจ้ง",
-      cell: (r) => (
+      render: (r) => (
         <a href={r.infringing_url} target="_blank" rel="noopener noreferrer" className="text-xs text-admin-accent hover:underline truncate block max-w-[200px]">
           {r.infringing_url}
         </a>
@@ -61,12 +61,12 @@ export default function AdminCopyrightReportsPage() {
     {
       key: "status",
       header: "สถานะ",
-      cell: (r) => <StatusPill status={r.status} label={STATUS_LABEL[r.status] ?? r.status} />,
+      render: (r) => <StatusPill status={STATUS_LABEL[r.status] ?? r.status} />,
     },
     {
       key: "when",
       header: "เมื่อ",
-      cell: (r) => (
+      render: (r) => (
         <span className="text-xs text-admin-muted">
           {formatDistanceToNow(new Date(r.created_at), { addSuffix: true, locale: th })}
         </span>
@@ -79,13 +79,13 @@ export default function AdminCopyrightReportsPage() {
       <SectionHeader
         title="คำร้องลิขสิทธิ์"
         description="Notice & takedown — ตรวจจาก /legal/copyright-report"
-        action={
+        actions={
           <Link to="/admin/compliance" className="text-xs text-admin-accent hover:underline">
             ← Compliance
           </Link>
         }
       />
-      <DataTable columns={columns} rows={rows} loading={isLoading} emptyMessage="ยังไม่มีคำร้อง" />
+      <DataTable columns={columns} rows={rows} rowKey={(r) => r.id} loading={isLoading} empty="ยังไม่มีคำร้อง" />
     </div>
   );
 }

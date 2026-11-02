@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { HttpErrorPage } from '@/components/HttpErrorPage'
+import { captureException } from '@/lib/errorMonitoring'
 import { isChunkLoadError } from '@/lib/lazyWithRetry'
 
 type Props = { children: React.ReactNode }
@@ -28,6 +29,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
     console.error('[ErrorBoundary]', error, info.componentStack)
+    captureException(error, { boundary: 'app', componentStack: info.componentStack ?? '' })
   }
 
   render() {

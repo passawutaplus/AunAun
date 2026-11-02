@@ -255,10 +255,14 @@ const App = () => (
                 <Route path=":categoryId" element={<HelpCategoryPage />} />
                 <Route path=":categoryId/:slug" element={<HelpArticlePage />} />
               </Route>
-              <Route path="/dev/review-form" element={<ReviewFormPreviewPage />} />
-              <Route path="/dev/hire-cancel" element={<HireCancelPreviewPage />} />
-              <Route path="/dev/offer-dialog" element={<OfferDialogPreviewPage />} />
-              <Route path="/dev/billing" element={<BillingPreviewPage />} />
+              {import.meta.env.DEV ? (
+                <>
+                  <Route path="/dev/review-form" element={<ReviewFormPreviewPage />} />
+                  <Route path="/dev/hire-cancel" element={<HireCancelPreviewPage />} />
+                  <Route path="/dev/offer-dialog" element={<OfferDialogPreviewPage />} />
+                  <Route path="/dev/billing" element={<BillingPreviewPage />} />
+                </>
+              ) : null}
               <Route path="/research" element={<ResearchPage />} />
               <Route path="/research/feedback" element={<UxResearchFeedbackPage />} />
               <Route path="/auth" element={<AuthPage />} />

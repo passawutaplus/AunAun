@@ -599,12 +599,14 @@ export default function AdminFinancePage() {
           <DataTable
             columns={orderCols}
             rows={orderSearch.filtered}
+            rowKey={(r) => r.id}
             empty="ยังไม่มี hire order"
           />
           <h3 className="text-sm font-medium pt-2">Payments (Omise charges)</h3>
           <DataTable
             columns={paymentCols}
             rows={paymentsQ.data ?? []}
+            rowKey={(r) => r.id}
             empty="ยังไม่มี payment"
           />
         </TabsContent>
@@ -618,6 +620,7 @@ export default function AdminFinancePage() {
           <DataTable
             columns={balanceCols}
             rows={balanceSearch.filtered}
+            rowKey={(r) => r.user_id}
             empty="ยังไม่มี account balance"
           />
           <div className="flex flex-wrap items-center gap-2">
@@ -642,6 +645,7 @@ export default function AdminFinancePage() {
           <DataTable
             columns={ledgerCols}
             rows={ledgerSearch.filtered}
+            rowKey={(r) => r.id}
             empty="ยังไม่มี ledger entry"
           />
 
@@ -726,23 +730,26 @@ export default function AdminFinancePage() {
           <DataTable
             columns={payoutCols}
             rows={payoutSearch.filtered}
+            rowKey={(r) => r.id}
             empty="ยังไม่มีคำขอถอน"
           />
           <h3 className="text-sm font-medium pt-2">บัญชีรับเงิน</h3>
           <DataTable
             columns={recipientCols}
             rows={recipientsQ.data ?? []}
+            rowKey={(r) => r.id}
             empty="ยังไม่มี recipient"
           />
         </TabsContent>
 
         <TabsContent value="refunds" className="space-y-4 mt-4">
           <h3 className="text-sm font-medium">Refunds</h3>
-          <DataTable columns={refundCols} rows={refundsQ.data ?? []} empty="ยังไม่มี refund" />
+          <DataTable columns={refundCols} rows={refundsQ.data ?? []} rowKey={(r) => r.id} empty="ยังไม่มี refund" />
           <h3 className="text-sm font-medium pt-2">Disputes</h3>
           <DataTable
             columns={disputeCols}
             rows={disputesQ.data ?? []}
+            rowKey={(r) => r.id}
             empty="ยังไม่มีข้อพิพาท"
           />
         </TabsContent>
@@ -756,6 +763,7 @@ export default function AdminFinancePage() {
           <DataTable
             columns={webhookCols}
             rows={webhooksQ.data ?? []}
+            rowKey={(r) => r.id}
             empty="ไม่มี webhook ค้าง"
           />
         </TabsContent>
@@ -915,6 +923,7 @@ export default function AdminFinancePage() {
               <DataTable
                 columns={ledgerCols}
                 rows={ledgerQ.data ?? []}
+                rowKey={(r) => r.id}
                 empty="ยังไม่มี entry สำหรับออเดอร์นี้"
               />
             </div>
