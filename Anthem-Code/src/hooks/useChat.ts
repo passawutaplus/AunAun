@@ -697,7 +697,12 @@ async function ensureConversation(args: OpenHireCollabChatArgs): Promise<string>
 
 /** Opening system line of a new hire/collab chat — text is built on the server from the conversation. */
 async function insertContextMessage(conversationId: string): Promise<void> {
-  await postChatSystemEvent({ conversationId, event: "chat_opened" });
+  try {
+    await postChatSystemEvent({ conversationId, event: "chat_opened" });
+  } catch (e) {
+    // The chat itself is open; a missing opening line must not block it.
+    console.warn("[openHireCollabChat] opening line failed", e);
+  }
 }
 
 async function seedHireBriefIfPresent(conversationId: string, requestId: string): Promise<void> {
