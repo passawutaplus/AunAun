@@ -23,8 +23,7 @@ import { useStudioForConversation, useStudioMembers } from "@/hooks/useStudios";
 import { useSubscription } from "@/core/subscription/useSubscription";
 import { canOpenStudioCombinedQuote, canShowStudioQuoteUpsell, openStudioQuotation } from "@/lib/studioQuotationHandoff";
 import { StudioQuoteUpsellDialog } from "@/components/studio/StudioQuoteUpsellDialog";
-import { ChatOfferDialog } from "@/components/chat/ChatOfferDialog";
-import HireForwardInChatDialog from "@/components/chat/HireForwardInChatDialog";
+import { ChatHireDialogs } from "@/components/chat/ChatHireDialogs";
 import CreateGroupDialog from "@/components/chat/CreateGroupDialog";
 import CreateCollabGroupDialog from "@/components/chat/CreateCollabGroupDialog";
 import GroupSettingsDialog from "@/components/chat/GroupSettingsDialog";
@@ -56,6 +55,7 @@ import {
   type Message,
 } from "@/hooks/useChat";
 import { useCancelCollabRequest } from "@/hooks/useCollabRequests";
+import { useChatInviteActions } from "@/hooks/useChatInviteActions";
 import {
   useActiveHireCancelRequest,
   useEditHireCancelRequest,
@@ -63,15 +63,11 @@ import {
   useWithdrawHireCancelRequest,
 } from "@/hooks/useHireCancelRequest";
 import {
-  encodeHireCancelCardMessage,
   isHireCancelOpenStatus,
   type HireCancelInitiatedBy,
   type HireCancelRequestRow,
 } from "@/lib/hireCancelRequest";
-import HireCancelRequestDialog from "@/components/hiring/HireCancelRequestDialog";
-import HireOrderDetailDialog from "@/components/hire/HireOrderDetailDialog";
-import { encodeHireForwardMessage } from "@/lib/hireForwardChat";
-import { hireForwardClientNotice, hireRejectReasonLabel, parseAttachmentUrlsFromMessage, stripAttachmentBlock } from "@/lib/hireBrief";
+import { parseAttachmentUrlsFromMessage, stripAttachmentBlock } from "@/lib/hireBrief";
 import {
   isHireCancelledStatus,
   isHireCompletedStatus,
@@ -82,7 +78,6 @@ import {
   isCollabCancelledStatus,
   isCollabCompletedStatus,
   isCollabContactedNewStatus,
-  isCollabDeclinedStatus,
   labelCollabStatus,
 } from "@/lib/collabInbox";
 import {
@@ -91,11 +86,8 @@ import {
   collectCollabReferenceLinks,
   formatCollabTypesLabel,
 } from "@/lib/collabBrief";
-import { emptyCollabPlanState, emptyPlanPayload } from "@/lib/collabToolkit";
-import { COLLAB_WELCOME_PREFIX } from "@/lib/collabAgreement";
 import { useCollabPlanUi } from "@/stores/collabPlanUiStore";
 import { useCollabPlan } from "@/hooks/useCollabPlan";
-import { sharedDb } from "@/integrations/supabase/client";
 import { requestCancelReasonLabel } from "@/lib/requestOutcome";
 import {
   useActiveCollabEndRequest,
@@ -125,11 +117,6 @@ import {
   type HiringRow,
 } from "@/hooks/useHiringRequests";
 import {
-  encodeHireContinueAskMessage,
-  encodeHireRejectChoiceMessage,
-  HIRE_CLIENT_ACCEPT_REJECT_TEXT,
-  HIRE_FREELANCER_ACCEPT_CONTINUE_TEXT,
-  HIRE_FREELANCER_DECLINE_CONTINUE_TEXT,
   hireChatLockHint,
   hireChatLockedByMessages,
   isHireChatComposerLocked,
@@ -153,7 +140,6 @@ import {
   encodeHireWorkStartMessage,
   isHireWorkStartMessage,
 } from "@/lib/hireWorkStartChat";
-import HireRejectDialog from "@/components/hiring/HireRejectDialog";
 import { useHireQuoteCreateLock } from "@/hooks/useHireQuoteCreateLock";
 import CollabRejectDialog from "@/components/collab/CollabRejectDialog";
 import ReportDialog from "@/components/report/ReportDialog";
@@ -164,10 +150,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { mapWriteFlowError } from "@/lib/writeFlowErrors";
 import BriefcaseIcon from "../icons/BriefcaseIcon";
-import type { HireInviteActions } from "@/components/chat/HireInviteCard";
-import type { CollabInviteActions, CollabInviteRef } from "@/components/chat/CollabInviteCard";
-import type { HireRejectChoiceActions } from "@/components/chat/HireRejectChoiceCard";
-import type { HireContinueAskActions } from "@/components/chat/HireContinueAskCard";
+import type { CollabInviteRef } from "@/components/chat/CollabInviteCard";
 
 const CHAT_PANEL_HINT_KEY = "aplus1-chat-panel-hint-dismissed";
 
@@ -669,364 +652,36 @@ const ChatThreadView = ({
       ? labelCollabStatus(collabStatus)
       : null;
 
-  const hireInviteActions: HireInviteActions | null = useMemo(() => {
-    if (!isHire || !hireRequestRow) return null;
-    if (hirePendingResponse) {
-      return {
-        canRespond: true,
-        busy: hireRespondBusy,
-        onAccept: () => {
-          void (async () => {
-            if (!conv.request_id || !conv.client_id || !conv.freelancer_id) return;
-            try {
-              await acceptHire.mutateAsync({
-                kind: "hire",
-                requestId: conv.request_id,
-                clientId: conv.client_id,
-                freelancerId: conv.freelancer_id,
-                projectId: conv.project_id ?? null,
-                projectTitle: conv.project_title ?? hireRequestRow.project_title,
-              });
-              try {
-                await sendMessage.mutateAsync({
-                  conversationId: conv.id,
-                  content: "ขอบคุณครับ/ค่ะ ยินดีรับงานและคุยรายละเอียดต่อได้เลย",
-                });
-              } catch {
-                /* accept already succeeded */
-              }
-              void qc.invalidateQueries({ queryKey: ["chat-hire-forward-src", conv.request_id] });
-              void qc.invalidateQueries({ queryKey: ["chat-hire-meta", conv.request_id] });
-              toast.success("ตอบรับแล้ว — คุยต่อได้เลย");
-            } catch (e: unknown) {
-              toast.error(e instanceof Error ? e.message : "ตอบรับไม่สำเร็จ");
-            }
-          })();
-        },
-        onDecline: () => setRejectOpen(true),
-      };
-    }
-    if (hirePendingForClient) {
-      const waitingName =
-        other?.username?.trim() ||
-        other?.display_name?.trim() ||
-        "ครีเอเตอร์";
-      return {
-        canRespond: false,
-        statusHint: `รอ ${waitingName} ตอบกลับ / สามารถแชทพูดคุยต่อได้`,
-        onAccept: () => {},
-        onDecline: () => {},
-      };
-    }
-    if (!isFreelancer) return null;
-    if (hireStatus === "ตอบรับ") {
-      return { canRespond: false, statusHint: "ตอบรับแล้ว — คุยรายละเอียดต่อได้", onAccept: () => {}, onDecline: () => {} };
-    }
-    if (hireRejectReason === "busy_but_chat" || effectivePostRejectChat === "open") {
-      return {
-        canRespond: false,
-        statusHint: "ยังไม่พร้อมทำตอนนี้ — คุยรายละเอียดต่อได้",
-        onAccept: () => {},
-        onDecline: () => {},
-      };
-    }
-    // Rejected / forwarded: keep invite card clean (reason lives on reject-choice card).
-    return null;
-  }, [
-    alreadyForwarded,
-    acceptHire,
-    conv.client_id,
-    conv.freelancer_id,
-    conv.id,
-    conv.project_id,
-    conv.project_title,
-    conv.request_id,
-    hirePendingForClient,
-    hirePendingResponse,
-    hireRejectReason,
-    hireRequestRow,
-    hireRespondBusy,
-    hireStatus,
-    isFreelancer,
-    isHire,
-    other?.display_name,
-    other?.username,
-    effectivePostRejectChat,
-    qc,
-    sendMessage,
-  ]);
-
-  const collabInviteActions: CollabInviteActions | null = useMemo(() => {
-    if (!isCollab || !collabRequestRow) return null;
-    if (collabPendingResponse) {
-      return {
-        canRespond: true,
-        busy: collabRespondBusy,
-        onAccept: () => {
-          void (async () => {
-            if (!conv.request_id || !conv.client_id || !conv.freelancer_id) return;
-            try {
-              await acceptHire.mutateAsync({
-                kind: "collab",
-                requestId: conv.request_id,
-                clientId: conv.client_id,
-                freelancerId: conv.freelancer_id,
-                projectId: conv.project_id ?? null,
-                projectTitle: conv.project_title ?? "คอลแลปไอเดียใหม่",
-              });
-              try {
-                await sharedDb.from("collab_plans" as never).upsert(
-                  {
-                    conversation_id: conv.id,
-                    status: "draft",
-                    current_step: "align",
-                    payload: emptyPlanPayload(),
-                    acks: {},
-                    version: 1,
-                    stages: emptyCollabPlanState().stages,
-                    updated_at: new Date().toISOString(),
-                  } as never,
-                  { onConflict: "conversation_id", ignoreDuplicates: true },
-                );
-              } catch {
-                /* plan row optional — sheet can create on first edit */
-              }
-              try {
-                await sendMessage.mutateAsync({
-                  conversationId: conv.id,
-                  content: COLLAB_WELCOME_PREFIX,
-                });
-              } catch {
-                /* accept already succeeded */
-              }
-              void qc.invalidateQueries({ queryKey: ["chat-collab-meta", conv.request_id] });
-              void qc.invalidateQueries({ queryKey: ["collab-plan", conv.id] });
-              collabPlanUi.openFor(conv.id);
-              toast.success("ตอบรับแล้ว — เริ่มตกลงแผนกันได้เลย");
-            } catch (e: unknown) {
-              toast.error(e instanceof Error ? e.message : "ตอบรับไม่สำเร็จ");
-            }
-          })();
-        },
-        onDecline: () => setCollabRejectOpen(true),
-      };
-    }
-    if (collabPendingForClient) {
-      const waitingName =
-        other?.username?.trim() || other?.display_name?.trim() || "ครีเอเตอร์";
-      return {
-        canRespond: false,
-        statusHint: `รอ ${waitingName} ตอบกลับ / สามารถแชทพูดคุยต่อได้`,
-        onAccept: () => {},
-        onDecline: () => {},
-      };
-    }
-    if (!isFreelancer) return null;
-    if (isCollabAcceptedStatus(collabStatus)) {
-      return {
-        canRespond: false,
-        statusHint: "ตอบรับแล้ว — กด「วางแผนงาน」เพื่อตกลงแผนร่วมกัน",
-        onAccept: () => {},
-        onDecline: () => {},
-      };
-    }
-    if (
-      collabRejectReason === "busy_but_chat" ||
-      collabRequestRow.keep_chat
-    ) {
-      return {
-        canRespond: false,
-        statusHint: "ขอบคุณสำหรับคำชวน — คุยไอเดียต่อได้ตามสบาย",
-        onAccept: () => {},
-        onDecline: () => {},
-      };
-    }
-    if (isCollabDeclinedStatus(collabStatus)) {
-      return {
-        canRespond: false,
-        statusHint:
-          collabRequestRow.reject_note?.trim() ||
-          collabRejectReasonLabel(collabRejectReason) ||
-          "ยังไม่พร้อมร่วมงาน",
-        onAccept: () => {},
-        onDecline: () => {},
-      };
-    }
-    return null;
-  }, [
-    acceptHire,
-    collabPendingForClient,
-    collabPendingResponse,
-    collabRejectReason,
-    collabRequestRow,
-    collabRespondBusy,
-    collabStatus,
-    conv.client_id,
-    conv.freelancer_id,
-    conv.id,
-    conv.project_id,
-    conv.project_title,
-    conv.request_id,
-    isCollab,
-    isFreelancer,
-    other?.display_name,
-    other?.username,
-    qc,
-    sendMessage,
-  ]);
-
-  const hireRejectChoiceActions: HireRejectChoiceActions | null = useMemo(() => {
-    if (!isHire || !hireRequestRow) return null;
-    if (effectivePostRejectChat === "awaiting_client" && isClient) {
-      return {
-        canRespond: true,
-        busy: hireRespondBusy,
-        onAcceptClose: () => {
-          void (async () => {
-            try {
-              await sendMessage.mutateAsync({
-                conversationId: conv.id,
-                content: HIRE_CLIENT_ACCEPT_REJECT_TEXT,
-              });
-              await rejectHire.mutateAsync({
-                kind: "hire",
-                requestId: hireRequestRow.id,
-                reason: hireRejectReason,
-                note: (hireRequestRow as { reject_note?: string | null }).reject_note ?? null,
-                status: "ปฏิเสธ",
-                postRejectChat: "locked",
-              });
-              toast.success("ปิดแชทแล้ว — ทั้งสองฝ่ายพิมพ์ต่อไม่ได้");
-            } catch (e: unknown) {
-              toast.error(e instanceof Error ? e.message : "ดำเนินการไม่สำเร็จ");
-            }
-          })();
-        },
-        onAskContinue: () => {
-          void (async () => {
-            try {
-              await rejectHire.mutateAsync({
-                kind: "hire",
-                requestId: hireRequestRow.id,
-                reason: hireRejectReason,
-                note: (hireRequestRow as { reject_note?: string | null }).reject_note ?? null,
-                status: "ปฏิเสธ",
-                postRejectChat: "awaiting_freelancer",
-              });
-              await sendMessage.mutateAsync({
-                conversationId: conv.id,
-                content: encodeHireContinueAskMessage({
-                  v: 1,
-                  kind: "continue_ask",
-                  requestId: hireRequestRow.id,
-                }),
-              });
-              toast.success("ส่งคำขอคุยต่อแล้ว");
-            } catch (e: unknown) {
-              toast.error(e instanceof Error ? e.message : "ส่งไม่สำเร็จ");
-            }
-          })();
-        },
-      };
-    }
-    if (effectivePostRejectChat === "awaiting_client") {
-      // Freelancer already sent the reject card — no status footer on their bubble.
-      return null;
-    }
-    if (effectivePostRejectChat === "awaiting_freelancer") {
-      return { canRespond: false, statusHint: "รอครีเอเตอร์ตอบคำขอคุยต่อ", onAcceptClose: () => {}, onAskContinue: () => {} };
-    }
-    if (effectivePostRejectChat === "locked") {
-      return { canRespond: false, statusHint: "แชทปิดแล้ว", onAcceptClose: () => {}, onAskContinue: () => {} };
-    }
-    if (effectivePostRejectChat === "open") {
-      return { canRespond: false, statusHint: "คุยต่อได้แล้ว", onAcceptClose: () => {}, onAskContinue: () => {} };
-    }
-    return null;
-  }, [
-    conv.id,
-    effectivePostRejectChat,
-    hireRejectReason,
-    hireRequestRow,
-    hireRespondBusy,
-    isClient,
-    isHire,
-    rejectHire,
-    sendMessage,
-  ]);
-
-  const hireContinueAskActions: HireContinueAskActions | null = useMemo(() => {
-    if (!isHire || !hireRequestRow) return null;
-    if (effectivePostRejectChat === "awaiting_freelancer" && isFreelancer) {
-      return {
-        canRespond: true,
-        busy: hireRespondBusy,
-        onAccept: () => {
-          void (async () => {
-            try {
-              await rejectHire.mutateAsync({
-                kind: "hire",
-                requestId: hireRequestRow.id,
-                reason: "busy_but_chat",
-                note: (hireRequestRow as { reject_note?: string | null }).reject_note ?? null,
-                status: "ติดต่อแล้ว",
-                postRejectChat: "open",
-              });
-              await sendMessage.mutateAsync({
-                conversationId: conv.id,
-                content: HIRE_FREELANCER_ACCEPT_CONTINUE_TEXT,
-              });
-              toast.success("เปิดแชทคุยต่อแล้ว — ยังไม่รับงาน");
-            } catch (e: unknown) {
-              toast.error(e instanceof Error ? e.message : "ดำเนินการไม่สำเร็จ");
-            }
-          })();
-        },
-        onDecline: () => {
-          void (async () => {
-            try {
-              await sendMessage.mutateAsync({
-                conversationId: conv.id,
-                content: HIRE_FREELANCER_DECLINE_CONTINUE_TEXT,
-              });
-              await rejectHire.mutateAsync({
-                kind: "hire",
-                requestId: hireRequestRow.id,
-                reason: hireRejectReason,
-                note: (hireRequestRow as { reject_note?: string | null }).reject_note ?? null,
-                status: "ปฏิเสธ",
-                postRejectChat: "locked",
-              });
-              toast.success("ปิดแชทแล้ว — ทั้งสองฝ่ายพิมพ์ต่อไม่ได้");
-            } catch (e: unknown) {
-              toast.error(e instanceof Error ? e.message : "ดำเนินการไม่สำเร็จ");
-            }
-          })();
-        },
-      };
-    }
-    if (effectivePostRejectChat === "awaiting_freelancer") {
-      return { canRespond: false, statusHint: "รอครีเอเตอร์ตอบคำขอคุยต่อ", onAccept: () => {}, onDecline: () => {} };
-    }
-    if (effectivePostRejectChat === "locked") {
-      return { canRespond: false, statusHint: "ปฏิเสธการคุยต่อ · แชทปิดแล้ว", onAccept: () => {}, onDecline: () => {} };
-    }
-    if (effectivePostRejectChat === "open") {
-      return { canRespond: false, statusHint: "ยอมรับแล้ว — คุยต่อได้", onAccept: () => {}, onDecline: () => {} };
-    }
-    return null;
-  }, [
-    conv.id,
-    effectivePostRejectChat,
-    hireRejectReason,
-    hireRequestRow,
-    hireRespondBusy,
-    isFreelancer,
-    isHire,
-    rejectHire,
-    sendMessage,
-  ]);
-
+  const { hireInviteActions, collabInviteActions, hireRejectChoiceActions, hireContinueAskActions } =
+    useChatInviteActions({
+      conv,
+      other,
+      hireRequestRow,
+      collabRequestRow,
+      isHire,
+      isCollab,
+      isClient,
+      isFreelancer,
+      hirePendingResponse,
+      hirePendingForClient,
+      collabPendingResponse,
+      collabPendingForClient,
+      hireRespondBusy,
+      collabRespondBusy,
+      alreadyForwarded,
+      hireStatus,
+      collabStatus,
+      hireRejectReason,
+      collabRejectReason,
+      effectivePostRejectChat,
+      acceptHire,
+      rejectHire,
+      sendMessage,
+      qc,
+      collabPlanUi,
+      setRejectOpen,
+      setCollabRejectOpen,
+    });
   const { data: studioForQuote = null } = useStudioForConversation(
     hasStudioQuoteContext ? conv.id : undefined,
     conv.title || conv.project_title,
@@ -1966,93 +1621,39 @@ const ChatThreadView = ({
         onOpenChange={setUpsellOpen}
         onUpgrade={() => navigate("/upgrade#tier-details")}
       />
-      <ChatOfferDialog
-        open={chatOffersOn && offerOpen}
-        onOpenChange={(v) => {
-          setOfferOpen(v);
-          if (!v) {
-            void qc.invalidateQueries({ queryKey: ["chat-hire-latest-quote", conv.request_id] });
-            void qc.invalidateQueries({ queryKey: ["hire-accounting-chat-hint", conv.id] });
-          }
-        }}
-        conversationId={conv.id}
-        hiringRequestId={conv.request_id ?? null}
-        defaultTitle={hireMeta?.project_title ?? conv.project_title ?? ""}
-        defaultClientName={hireMeta?.client_name ?? ""}
-        defaultClientEmail={hireMeta?.email ?? ""}
-        defaultClientPhone={hireMeta?.phone ?? ""}
+      <ChatHireDialogs
+        conv={conv}
+        userId={user?.id}
+        isClient={isClient}
+        other={other}
+        hireRequestRow={hireRequestRow}
+        hireMeta={hireMeta}
         defaultClientParty={defaultClientParty}
-      />
-      <HireOrderDetailDialog
-        open={orderDetailOpen}
-        onOpenChange={(v) => {
-          setOrderDetailOpen(v);
-          if (!v) setOrderDetailOrderId(null);
-        }}
-        conversation={conv}
-        projectTitle={conv.project_title ?? hireRequestRow?.project_title ?? null}
-        deadline={hireMeta?.deadline ?? null}
-        orderId={orderDetailOrderId}
-        onCancelOrder={() => {
-          setOrderDetailOpen(false);
-          setHireCancelEditRow(null);
-          setHireCancelDialogOpen(true);
-        }}
-        partner={
-          other
-            ? {
-                name: other.display_name || other.username || "ผู้ใช้",
-                avatarUrl: other.avatar_url,
-                role: other.role ?? null,
-              }
-            : null
-        }
-      />
-      <HireForwardInChatDialog
-        open={forwardOpen}
-        onOpenChange={setForwardOpen}
-        busy={forwardHire.isPending || sendMessage.isPending}
-        projectTitle={conv.project_title ?? hireRequestRow?.project_title}
-        onConfirm={async (pick) => {
-          if (!hireRequestRow || !user?.id) return;
-          try {
-            const result = await forwardHire.mutateAsync({
-              request: hireRequestRow,
-              toUserId: pick.userId,
-              note: pick.note || null,
-              rejectReason: pick.reason,
-              rejectNote: pick.clientMessage || null,
-            });
-            if (pick.clientMessage.trim()) {
-              await sendMessage.mutateAsync({
-                conversationId: conv.id,
-                content: pick.clientMessage.trim(),
-              });
-            }
-            await sendMessage.mutateAsync({
-              conversationId: conv.id,
-              content: hireForwardClientNotice(pick.displayName),
-            });
-            await sendMessage.mutateAsync({
-              conversationId: conv.id,
-              content: encodeHireForwardMessage({
-                v: 1,
-                requestId: result.newRequestId,
-                fromRequestId: result.fromRequestId,
-                toUserId: pick.userId,
-                toName: pick.displayName,
-                toUsername: pick.username,
-                toAvatarUrl: pick.avatarUrl,
-              }),
-            });
-            void qc.invalidateQueries({ queryKey: ["chat-hire-forward-src", conv.request_id] });
-            void qc.invalidateQueries({ queryKey: ["chat-hire-meta", conv.request_id] });
-            toast.success("ส่งต่องานแล้ว — แจ้งเพื่อนแล้ว (ส่งต่อคนอื่นได้จากปุ่มส่งต่อ)");
-            setForwardOpen(false);
-          } catch (e: unknown) {
-            toast.error(e instanceof Error ? e.message : "ส่งต่องานไม่สำเร็จ");
-          }
-        }}
+        hireRespondBusy={hireRespondBusy}
+        hireCancelInitiatedBy={hireCancelInitiatedBy}
+        hireCancelOrderAmountThb={hireCancelOrderAmountThb}
+        chatOffersOn={chatOffersOn}
+        offerOpen={offerOpen}
+        setOfferOpen={setOfferOpen}
+        orderDetailOpen={orderDetailOpen}
+        setOrderDetailOpen={setOrderDetailOpen}
+        orderDetailOrderId={orderDetailOrderId}
+        setOrderDetailOrderId={setOrderDetailOrderId}
+        forwardOpen={forwardOpen}
+        setForwardOpen={setForwardOpen}
+        rejectOpen={rejectOpen}
+        setRejectOpen={setRejectOpen}
+        hireCancelDialogOpen={hireCancelDialogOpen}
+        setHireCancelDialogOpen={setHireCancelDialogOpen}
+        hireCancelEditRow={hireCancelEditRow}
+        setHireCancelEditRow={setHireCancelEditRow}
+        forwardHire={forwardHire}
+        rejectHire={rejectHire}
+        sendMessage={sendMessage}
+        submitHireCancel={submitHireCancel}
+        editHireCancel={editHireCancel}
+        postSystemEvent={postSystemEvent}
+        qc={qc}
       />
       {useCollabGroupExpandFlow ? (
         <CreateCollabGroupDialog
@@ -2148,172 +1749,6 @@ const ChatThreadView = ({
             );
           } catch (e: unknown) {
             toast.error(mapWriteFlowError(e, "บันทึกไม่สำเร็จ"));
-          }
-        }}
-      />
-      <HireRejectDialog
-        open={rejectOpen && !!hireRequestRow}
-        onOpenChange={setRejectOpen}
-        request={hireRequestRow}
-        busy={hireRespondBusy}
-        onConfirm={async ({ action, reason, note, friendNote, forwardToUserId, forwardToDisplayName }) => {
-          if (!hireRequestRow) return;
-          try {
-            if (action === "forward" && forwardToUserId) {
-              const result = await forwardHire.mutateAsync({
-                request: hireRequestRow,
-                toUserId: forwardToUserId,
-                note: friendNote || null,
-                rejectReason: reason,
-                rejectNote: note || null,
-              });
-              const friendName = forwardToDisplayName?.trim() || "เพื่อนครีเอเตอร์";
-              if (note.trim()) {
-                await sendMessage.mutateAsync({ conversationId: conv.id, content: note.trim() });
-              }
-              await sendMessage.mutateAsync({
-                conversationId: conv.id,
-                content: hireForwardClientNotice(friendName),
-              });
-              await sendMessage.mutateAsync({
-                conversationId: conv.id,
-                content: encodeHireForwardMessage({
-                  v: 1,
-                  requestId: result.newRequestId,
-                  fromRequestId: result.fromRequestId,
-                  toUserId: forwardToUserId,
-                  toName: friendName,
-                  toUsername: null,
-                  toAvatarUrl: null,
-                }),
-              });
-              void qc.invalidateQueries({ queryKey: ["chat-hire-forward-src", conv.request_id] });
-              void qc.invalidateQueries({ queryKey: ["chat-hire-meta", conv.request_id] });
-              toast.success("ส่งต่องานแล้ว — แจ้งเพื่อนแล้ว");
-              setRejectOpen(false);
-              return;
-            }
-
-            if (action === "busy_chat") {
-              await rejectHire.mutateAsync({
-                kind: "hire",
-                requestId: hireRequestRow.id,
-                reason,
-                note: note || null,
-                status: "ติดต่อแล้ว",
-                postRejectChat: "open",
-              });
-              await sendMessage.mutateAsync({
-                conversationId: conv.id,
-                content:
-                  note ||
-                  "สวัสดีครับ/ค่ะ — ตอนนี้ยังไม่พร้อมรับงานจากเวลาและงบที่แจ้งมา แต่อยากคุยรายละเอียดก่อนได้ครับ/ค่ะ",
-              });
-              void qc.invalidateQueries({ queryKey: ["chat-hire-forward-src", conv.request_id] });
-              toast.success("บันทึกแล้ว — คุยต่อได้เลย");
-              setRejectOpen(false);
-              return;
-            }
-
-            const reasonText = note.trim() || hireRejectReasonLabel(reason);
-            await rejectHire.mutateAsync({
-              kind: "hire",
-              requestId: hireRequestRow.id,
-              reason,
-              note: note || null,
-              status: "ปฏิเสธ",
-              postRejectChat: "awaiting_client",
-            });
-            await sendMessage.mutateAsync({
-              conversationId: conv.id,
-              content: encodeHireRejectChoiceMessage({
-                v: 1,
-                kind: "reject_choice",
-                requestId: hireRequestRow.id,
-                reasonId: reason,
-                reasonLabel: reasonText || hireRejectReasonLabel(reason) || "ปฏิเสธคำขอจ้าง",
-                note: null,
-              }),
-            });
-            void qc.invalidateQueries({ queryKey: ["chat-hire-forward-src", conv.request_id] });
-            void qc.invalidateQueries({ queryKey: ["chat-hire-meta", conv.request_id] });
-            toast.success("ปฏิเสธคำขอแล้ว — รอผู้จ้างเลือก");
-            setRejectOpen(false);
-          } catch (e: unknown) {
-            toast.error(e instanceof Error ? e.message : "ดำเนินการไม่สำเร็จ");
-          }
-        }}
-      />
-      <HireCancelRequestDialog
-        open={hireCancelDialogOpen}
-        onOpenChange={(open) => {
-          setHireCancelDialogOpen(open);
-          if (!open) setHireCancelEditRow(null);
-        }}
-        mode={hireCancelEditRow ? "edit" : "create"}
-        initiatedBy={hireCancelEditRow?.initiated_by ?? hireCancelInitiatedBy}
-        existing={hireCancelEditRow}
-        busy={submitHireCancel.isPending || editHireCancel.isPending}
-        orderAmountThb={hireCancelOrderAmountThb}
-        defaultContactPhone={
-          hireCancelInitiatedBy === "client"
-            ? defaultClientParty?.phone || hireMeta?.phone || null
-            : null
-        }
-        defaultContactEmail={
-          hireCancelInitiatedBy === "client"
-            ? defaultClientParty?.email || hireMeta?.email || null
-            : null
-        }
-        onSubmit={async ({ reasonId, reasonNote, moneyTerms, evidenceUrls }) => {
-          if (!conv.request_id || !user?.id) return;
-          const otherUserId = isClient ? conv.freelancer_id : conv.client_id;
-          try {
-            if (hireCancelEditRow) {
-              const updated = await editHireCancel.mutateAsync({
-                row: hireCancelEditRow,
-                userId: user.id,
-                reasonId,
-                reasonNote,
-                moneyTerms,
-                evidenceUrls,
-                otherUserId: otherUserId || "",
-                conversationId: conv.id,
-              });
-              await postSystemEvent.mutateAsync({
-                conversationId: conv.id,
-                event: "hire_cancel_edited",
-                refId: hireCancelEditRow.id,
-              });
-              void updated;
-              toast.success("บันทึกการแก้ไขแล้ว");
-            } else {
-              const row = await submitHireCancel.mutateAsync({
-                hiringRequestId: conv.request_id,
-                conversationId: conv.id,
-                initiatedBy: hireCancelInitiatedBy,
-                initiatorId: user.id,
-                otherUserId: otherUserId || "",
-                reasonId,
-                reasonNote,
-                moneyTerms,
-                evidenceUrls,
-              });
-              await sendMessage.mutateAsync({
-                conversationId: conv.id,
-                content: encodeHireCancelCardMessage({
-                  v: 1,
-                  kind: "hire_cancel",
-                  cancelRequestId: row.id,
-                  hiringRequestId: conv.request_id,
-                }),
-              });
-              toast.success("ส่งคำขอยกเลิกแล้ว — รออีกฝ่ายตอบภายใน 48 ชม.");
-            }
-            setHireCancelDialogOpen(false);
-            setHireCancelEditRow(null);
-          } catch (e: unknown) {
-            toast.error(e instanceof Error ? e.message : "ส่งคำขอไม่สำเร็จ");
           }
         }}
       />
