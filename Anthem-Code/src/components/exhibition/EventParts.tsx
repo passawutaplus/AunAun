@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, CalendarDays, ChevronLeft, ChevronRight, MapPin, Star } from "lucide-react";
+import { ArrowRight, ArrowUpRight, CalendarDays, ChevronLeft, ChevronRight, ImageOff, MapPin, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
+  EVENT_ORIGIN_LABEL,
   EVENT_STATUS_LABEL,
   categoryLabel,
   eventDisplayStatus,
@@ -49,6 +50,55 @@ export function PickTag({ className }: { className?: string }) {
   );
 }
 
+export function OriginTag({ origin, className }: { origin: ExhibitionEvent["origin"]; className?: string }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium",
+        origin === "community" ? "bg-muted text-muted-foreground" : "bg-foreground text-background",
+        className,
+      )}
+    >
+      {EVENT_ORIGIN_LABEL[origin]}
+    </span>
+  );
+}
+
+/** "Event information sourced from X · Last checked … · View original" — shown on every event with a source. */
+export function EventSourceNote({
+  event,
+  className,
+}: {
+  event: Pick<ExhibitionEvent, "source_name" | "source_url" | "source_checked_at">;
+  className?: string;
+}) {
+  let host: string;
+  try {
+    const u = new URL(event.source_url ?? "");
+    if (u.protocol !== "https:" && u.protocol !== "http:") return null;
+    host = u.hostname;
+  } catch {
+    return null;
+  }
+  const checked = event.source_checked_at
+    ? new Date(event.source_checked_at).toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "numeric" })
+    : null;
+  return (
+    <p className={cn("text-xs leading-relaxed text-muted-foreground", className)}>
+      Event information sourced from <span className="font-medium text-foreground">{event.source_name || host}</span>
+      {checked ? <> · Last checked {checked}</> : null} ·{" "}
+      <a
+        href={event.source_url ?? undefined}
+        target="_blank"
+        rel="noopener noreferrer nofollow"
+        className="inline-flex items-center gap-0.5 font-medium text-foreground underline-offset-2 hover:underline"
+      >
+        View original <ArrowUpRight className="h-3 w-3" aria-hidden />
+      </a>
+    </p>
+  );
+}
+
 export function EventMeta({ event, className }: { event: ExhibitionEvent; className?: string }) {
   return (
     <div className={cn("flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground", className)}>
@@ -83,7 +133,21 @@ export function EventGallery({
   const list = images.filter(Boolean);
   const [index, setIndex] = useState(0);
   if (!list.length) {
-    return <div className={cn("rounded-lg bg-muted", aspect, className)} aria-hidden />;
+    // Curated events carry no copied images until the organiser allows one; show the title instead.
+    return (
+      <div
+        className={cn(
+          "flex flex-col justify-end gap-1 rounded-lg border border-border bg-muted p-5 text-foreground",
+          aspect,
+          className,
+        )}
+        aria-hidden
+      >
+        <ImageOff className="mb-auto h-5 w-5 text-muted-foreground" />
+        <span className="line-clamp-3 font-display text-xl font-semibold leading-tight">{title}</span>
+        <span className="text-xs text-muted-foreground">ยังไม่มีรูปจากผู้จัด</span>
+      </div>
+    );
   }
   const i = Math.min(index, list.length - 1);
   const go = (delta: number) => setIndex((i + delta + list.length) % list.length);
@@ -139,6 +203,7 @@ export function EventListCard({ event }: { event: ExhibitionEvent }) {
         <div className="flex flex-wrap items-center gap-2">
           {event.is_pick ? <PickTag /> : null}
           <CategoryTag category={event.category} />
+          {event.origin !== "community" ? <OriginTag origin={event.origin} /> : null}
         </div>
         <h2 className="font-display text-2xl font-semibold leading-tight text-foreground">
           <Link to={href} className="hover:underline focus-visible:underline focus-visible:outline-none">

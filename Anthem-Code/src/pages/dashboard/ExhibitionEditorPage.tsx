@@ -3,7 +3,15 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Camera, CheckCircle2, Clock, Eye, ImagePlus, Loader2, Plus, Send, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import SeoHead from "@/components/SeoHead";
-import { CategoryTag, EventGallery, EventMeta, PickTag, eventImages } from "@/components/exhibition/EventParts";
+import {
+  CategoryTag,
+  EventGallery,
+  EventMeta,
+  EventSourceNote,
+  OriginTag,
+  PickTag,
+  eventImages,
+} from "@/components/exhibition/EventParts";
 import QueryStatusPanel from "@/components/ui/QueryStatusPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,11 +19,14 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
+import TeamEventPanel, { type TeamFields } from "@/components/exhibition/TeamEventPanel";
 import {
   useEvent,
   useMyPublishedProjects,
   useSaveEvent,
+  useSaveTeamEvent,
   useSubmitEvent,
+  type ExtractedEvent,
 } from "@/hooks/useExhibitionEvents";
 import {
   EVENT_CATEGORIES,
@@ -136,13 +147,16 @@ function PickImage({
   );
 }
 
-export default function ExhibitionEditorPage() {
+/** `team`: the admin editor for SameCor's own events (original / curated), published by the team directly. */
+export default function ExhibitionEditorPage({ team = false }: { team?: boolean }) {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: existing, isLoading, isError, refetch } = useEvent(id);
   const { data: myWorks = [] } = useMyPublishedProjects();
   const save = useSaveEvent();
+  const saveTeam = useSaveTeamEvent();
   const submit = useSubmitEvent();
+  const [teamFields, setTeamFields] = useState<TeamFields>({ origin: "curated", source_name: null, source_url: null });
   const cover = useImageUpload();
   const gallery = useImageUpload();
   const logo = useImageUpload();
@@ -156,12 +170,49 @@ export default function ExhibitionEditorPage() {
     if (!existing) return;
     setDraft(toDraft(existing));
     setHasSponsor(existing.sponsors.length > 0);
+    if (existing.origin !== "community") {
+      setTeamFields({ origin: existing.origin, source_name: existing.source_name, source_url: existing.source_url });
+    }
   }, [existing]);
 
   const set = <K extends keyof EventDraft>(key: K, value: EventDraft[K]) => setDraft((d) => ({ ...d, [key]: value }));
-  const locked = existing?.status === "pending";
-  const wasPublished = existing?.status === "published";
-  const busy = save.isPending || submit.isPending;
+  const locked = !team && existing?.status === "pending";
+  const wasPublished = !team && existing?.status === "published";
+  const busy = save.isPending || submit.isPending || saveTeam.isPending;
+  const backTo = team ? "/admin/events" : "/dashboard/exhibition";
+
+  /** AI draft → form. Only fields the page stated; everything else stays empty ("not specified"). */
+  const applyExtracted = (x: ExtractedEvent["draft"]) => {
+    setDraft((d) => ({
+      ...d,
+      ...Object.fromEntries(Object.entries(x).filter(([k]) => k in d && k !== "sponsors")),
+      sponsors: (x.sponsors ?? []).map((s) => ({ name: s.name, ...(s.note ? { note: s.note } : {}) })),
+      registration_open: !!x.registration_url,
+    }));
+    setHasSponsor((x.sponsors ?? []).length > 0);
+  };
+
+  const saveTeamEvent = async (publish: boolean) => {
+    if (teamFields.origin === "curated" && (!teamFields.source_name?.trim() || !teamFields.source_url?.trim())) {
+      toast.error("งาน Curated ต้องมีแหล่งที่มาและลิงก์ต้นทาง");
+      return;
+    }
+    if (publish) {
+      const missing = missingForSubmit({ ...draft, cover_url: draft.cover_url ?? "optional-for-team" });
+      if (missing.length) {
+        toast.error(`กรอกให้ครบก่อนเผยแพร่: ${missing.join(", ")}`);
+        return;
+      }
+    }
+    try {
+      const saved = await saveTeam.mutateAsync({ id: eventId, draft: { ...payload(), ...teamFields }, publish });
+      setEventId(saved);
+      if (!id) navigate(`/admin/events/${saved}/edit`, { replace: true });
+      if (publish) navigate(`/exhibition/${saved}`);
+    } catch {
+      /* toast from the hook */
+    }
+  };
 
   const payload = (): EventDraft => ({ ...draft, sponsors: hasSponsor ? draft.sponsors.filter((s) => s.name.trim()) : [] });
 
@@ -233,17 +284,31 @@ export default function ExhibitionEditorPage() {
 
   return (
     <div className="container mx-auto max-w-6xl px-4 pb-32 pt-6">
-      <SeoHead title={id ? "แก้ไข Exhibition" : "Add New Event"} path="/dashboard/exhibition" noindex />
-      <Link
-        to="/dashboard/exhibition"
-        className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="h-4 w-4" aria-hidden /> Back to My Exhibition
+      <SeoHead title={id ? "แก้ไข Exhibition" : "Add New Event"} path={backTo} noindex />
+      <Link to={backTo} className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+        <ArrowLeft className="h-4 w-4" aria-hidden /> {team ? "Back to Events (Admin)" : "Back to My Exhibition"}
       </Link>
       <h1 className="font-display text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
-        {id ? "Edit Event" : "Add New Event"}
+        {id ? "Edit Event" : team ? "Add Team Event" : "Add New Event"}
       </h1>
-      <p className="mt-2 text-sm text-muted-foreground">แชร์นิทรรศการ อีเวนต์ หรือกิจกรรมสร้างสรรค์ของคุณกับชุมชน SAMECOR</p>
+      <p className="mt-2 text-sm text-muted-foreground">
+        {team
+          ? "งานที่ทีม SameCor จัดเอง หรือคัดมาจากผู้จัดภายนอก — เผยแพร่ได้ทันทีหลังตรวจ"
+          : "แชร์นิทรรศการ อีเวนต์ หรือกิจกรรมสร้างสรรค์ของคุณกับชุมชน SAMECOR"}
+      </p>
+
+      {team ? (
+        <div className="mt-6">
+          <TeamEventPanel
+            eventId={eventId}
+            team={teamFields}
+            onTeamChange={setTeamFields}
+            title={draft.title}
+            startsOn={draft.starts_on}
+            onApply={applyExtracted}
+          />
+        </div>
+      ) : null}
 
       {locked ? (
         <p className="mt-4 rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm text-foreground">
@@ -441,7 +506,7 @@ export default function ExhibitionEditorPage() {
               <div className="space-y-2" role="radiogroup" aria-label="ค่าเข้างาน">
                 <p className="text-sm font-medium text-foreground">Fee</p>
                 <div className="flex gap-4">
-                  {(["free", "paid"] as const).map((v) => (
+                  {(team ? (["free", "paid", "unspecified"] as const) : (["free", "paid"] as const)).map((v) => (
                     <label key={v} className="flex items-center gap-2 text-sm text-foreground">
                       <input
                         type="radio"
@@ -450,18 +515,28 @@ export default function ExhibitionEditorPage() {
                         onChange={() => set("fee_type", v)}
                         className="h-4 w-4 accent-[hsl(var(--brand))]"
                       />
-                      {v === "free" ? "Free" : "Paid Entry"}
+                      {v === "free" ? "Free" : v === "paid" ? "Paid Entry" : "ไม่ระบุ"}
                     </label>
                   ))}
                 </div>
                 {draft.fee_type === "paid" ? (
-                  <Input
-                    aria-label="ค่าเข้างาน"
-                    placeholder="เช่น ฿200 หรือ ฿1,500 รวมวัสดุ"
-                    maxLength={60}
-                    value={draft.fee_note ?? ""}
-                    onChange={(e) => set("fee_note", e.target.value || null)}
-                  />
+                  <>
+                    <Input
+                      aria-label="ค่าเข้างาน"
+                      placeholder="เช่น ฿200 หรือ ฿1,500 รวมวัสดุ"
+                      maxLength={60}
+                      value={draft.fee_note ?? ""}
+                      onChange={(e) => set("fee_note", e.target.value || null)}
+                    />
+                    <Input
+                      aria-label="ลิงก์ซื้อบัตร"
+                      type="url"
+                      inputMode="url"
+                      placeholder="ลิงก์ซื้อบัตร (ถ้าแยกจากหน้าลงทะเบียน) https://"
+                      value={draft.ticket_url ?? ""}
+                      onChange={(e) => set("ticket_url", e.target.value || null)}
+                    />
+                  </>
                 ) : null}
                 <p className="text-xs text-muted-foreground">แสดงข้อมูลเท่านั้น — SAMECOR ไม่ได้รับชำระเงิน</p>
               </div>
@@ -551,7 +626,7 @@ export default function ExhibitionEditorPage() {
               ) : null}
             </div>
 
-            <div className="space-y-2">
+            <div className={cn("space-y-2", team && "hidden")}>
               <p className="text-sm font-medium text-foreground">
                 ผลงานที่จะแสดงในงาน <span className="text-muted-foreground">(ไม่บังคับ, สูงสุด {EVENT_LIMITS.projects} ชิ้น)</span>
               </p>
@@ -597,6 +672,7 @@ export default function ExhibitionEditorPage() {
             <div className="mt-3 flex flex-wrap gap-2">
               {previewEvent.is_pick ? <PickTag /> : null}
               <CategoryTag category={previewEvent.category} />
+              {team ? <OriginTag origin={teamFields.origin} /> : null}
             </div>
             <p className="mt-2 font-display text-2xl font-semibold leading-tight text-foreground">
               {previewEvent.title || "ชื่องานของคุณ"}
@@ -606,15 +682,33 @@ export default function ExhibitionEditorPage() {
             {previewEvent.sponsors.length ? (
               <p className="mt-3 text-xs text-muted-foreground">Sponsored by {previewEvent.sponsors.map((s) => s.name).join(", ")}</p>
             ) : null}
-            <p className="mt-4 flex items-start gap-2 rounded-md bg-muted/60 p-3 text-xs text-muted-foreground">
-              <Clock className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
-              งานจะแสดงบน SAMECOR หลังทีมอนุมัติ · ใช้เวลาตรวจ 1–3 วันทำการ
-            </p>
+            {team ? (
+              <EventSourceNote event={{ ...teamFields, source_checked_at: null }} className="mt-4" />
+            ) : (
+              <p className="mt-4 flex items-start gap-2 rounded-md bg-muted/60 p-3 text-xs text-muted-foreground">
+                <Clock className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
+                งานจะแสดงบน SAMECOR หลังทีมอนุมัติ · ใช้เวลาตรวจ 1–3 วันทำการ
+              </p>
+            )}
           </div>
         </aside>
       </div>
 
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 backdrop-blur supports-[padding:max(0px)]:pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        {team ? (
+          <div className="container mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
+            <Button type="button" variant="outline" className="rounded-full" disabled={busy} onClick={() => void saveTeamEvent(false)}>
+              {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden /> : null}
+              Save Draft
+            </Button>
+            <div className="flex items-center gap-3">
+              <p className="hidden text-xs text-muted-foreground sm:block">ตรวจข้อมูลกับต้นทางแล้วจึงเผยแพร่</p>
+              <Button type="button" className="rounded-full" disabled={busy} onClick={() => void saveTeamEvent(true)}>
+                <Send className="mr-2 h-4 w-4" aria-hidden /> Publish
+              </Button>
+            </div>
+          </div>
+        ) : (
         <div className="container mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
           <Button type="button" variant="outline" className="rounded-full" disabled={locked || busy} onClick={() => void saveDraft()}>
             {save.isPending && !submit.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden /> : null}
@@ -628,6 +722,7 @@ export default function ExhibitionEditorPage() {
             </Button>
           </div>
         </div>
+        )}
       </div>
     </div>
   );

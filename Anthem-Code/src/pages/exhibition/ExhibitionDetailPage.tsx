@@ -18,7 +18,9 @@ import ReportDialog from "@/components/report/ReportDialog";
 import {
   CategoryTag,
   EventGallery,
+  EventSourceNote,
   EventStatusBadge,
+  OriginTag,
   PickTag,
   eventImages,
 } from "@/components/exhibition/EventParts";
@@ -29,6 +31,9 @@ import { useEvent, useEventProjects } from "@/hooks/useExhibitionEvents";
 import { useAuth } from "@/hooks/useAuth";
 import { navigateToAuth } from "@/lib/authRedirect";
 import {
+  NOT_SPECIFIED,
+  eventPrimaryAction,
+  feeLabel,
   formatEventDates,
   isDemoEventId,
   isEventEnded,
@@ -46,27 +51,33 @@ function InfoRow({ icon: Icon, children }: { icon: typeof CalendarDays; children
   );
 }
 
+/** Main button sends people to register / buy / apply; the secondary one opens the source page to double-check. */
 function RegistrationCta({ event }: { event: ExhibitionEvent }) {
   const ended = isEventEnded(event);
-  if (!ended && event.registration_open && isHttpUrl(event.registration_url)) {
-    return (
-      <Button asChild size="lg" className="w-full rounded-full bg-brand text-neutral-950 hover:bg-brand/90">
-        <a href={event.registration_url} target="_blank" rel="noopener noreferrer nofollow">
-          Go to Registration <ExternalLink className="ml-2 h-4 w-4" aria-hidden />
-        </a>
-      </Button>
-    );
-  }
-  if (isHttpUrl(event.website_url)) {
-    return (
-      <Button asChild size="lg" variant="outline" className="w-full rounded-full">
-        <a href={event.website_url} target="_blank" rel="noopener noreferrer nofollow">
-          Visit Website <ExternalLink className="ml-2 h-4 w-4" aria-hidden />
-        </a>
-      </Button>
-    );
-  }
-  return null;
+  const action = ended ? null : eventPrimaryAction(event);
+  const sourcePage = [event.source_url, event.website_url].find(isHttpUrl) ?? null;
+  return (
+    <div className="space-y-2">
+      {action && isHttpUrl(action.url) ? (
+        <Button asChild size="lg" className="w-full rounded-full bg-brand text-neutral-950 hover:bg-brand/90">
+          <a href={action.url} target="_blank" rel="noopener noreferrer nofollow">
+            {action.label} <ExternalLink className="ml-2 h-4 w-4" aria-hidden />
+          </a>
+        </Button>
+      ) : !ended && event.origin === "curated" ? (
+        <p className="rounded-lg border border-dashed border-border px-4 py-3 text-sm text-muted-foreground">
+          ลิงก์ลงทะเบียน: {NOT_SPECIFIED} — ดูรายละเอียดที่เว็บไซต์ต้นทาง
+        </p>
+      ) : null}
+      {sourcePage ? (
+        <Button asChild size="lg" variant="outline" className="w-full rounded-full">
+          <a href={sourcePage} target="_blank" rel="noopener noreferrer nofollow">
+            {event.source_url ? "ดูเว็บไซต์ต้นทาง" : "Visit Website"} <ExternalLink className="ml-2 h-4 w-4" aria-hidden />
+          </a>
+        </Button>
+      ) : null}
+    </div>
+  );
 }
 
 export default function ExhibitionDetailPage() {
@@ -158,6 +169,7 @@ export default function ExhibitionDetailPage() {
           <div className="flex flex-wrap items-center gap-2">
             {event.is_pick ? <PickTag /> : null}
             <CategoryTag category={event.category} />
+            <OriginTag origin={event.origin} />
           </div>
           <h1 className="font-display text-4xl font-semibold leading-[1.05] tracking-tight text-foreground sm:text-5xl">
             {event.title}
@@ -165,24 +177,20 @@ export default function ExhibitionDetailPage() {
           <p className="text-base text-foreground/80">{lead}</p>
 
           <div className="space-y-3 border-t border-border pt-5">
-            {event.starts_on ? (
-              <InfoRow icon={CalendarDays}>
-                {formatEventDates(event.starts_on, event.ends_on)}
-                {event.time_note ? <span className="block text-muted-foreground">{event.time_note}</span> : null}
-              </InfoRow>
-            ) : null}
-            {event.location_name ? (
-              <InfoRow icon={MapPin}>
-                {event.location_name}
-                {event.location_note ? <span className="block text-muted-foreground">{event.location_note}</span> : null}
-              </InfoRow>
-            ) : null}
-            <InfoRow icon={Ticket}>
-              {event.fee_type === "paid" ? `มีค่าเข้างาน${event.fee_note ? ` · ${event.fee_note}` : ""}` : "เข้าชมฟรี"}
+            <InfoRow icon={CalendarDays}>
+              {event.starts_on ? formatEventDates(event.starts_on, event.ends_on) : NOT_SPECIFIED}
+              <span className="block text-muted-foreground">
+                เวลา: {event.time_note ?? NOT_SPECIFIED}
+              </span>
             </InfoRow>
+            <InfoRow icon={MapPin}>
+              {event.location_name ?? NOT_SPECIFIED}
+              {event.location_note ? <span className="block text-muted-foreground">{event.location_note}</span> : null}
+            </InfoRow>
+            <InfoRow icon={Ticket}>{feeLabel(event)}</InfoRow>
             {isEventEnded(event) ? (
               <p className="text-sm font-medium text-muted-foreground">งานนี้จบแล้ว</p>
-            ) : event.registration_open ? (
+            ) : event.registration_open && event.registration_url ? (
               <p className="inline-flex items-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-400">
                 <span className="h-2 w-2 rounded-full bg-emerald-500" aria-hidden /> Open for Registration
               </p>
@@ -190,6 +198,7 @@ export default function ExhibitionDetailPage() {
           </div>
 
           <RegistrationCta event={event} />
+          <EventSourceNote event={event} />
 
           {event.open_for_sponsors && !isEventEnded(event) ? (
             <div className="flex items-start gap-3 rounded-lg bg-muted/50 p-4">
@@ -230,9 +239,12 @@ export default function ExhibitionDetailPage() {
             <h2 id="organizer-heading" className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
               Organizer
             </h2>
-            <p className="mt-2 text-base font-medium text-foreground">{event.organizer_name ?? "ผู้จัดงาน"}</p>
+            <p className="mt-2 text-base font-medium text-foreground">
+              {event.organizer_name ?? (event.origin === "community" ? "ผู้จัดงาน" : NOT_SPECIFIED)}
+            </p>
             <div className="mt-2 flex flex-wrap gap-2">
-              {!isDemoEventId(event.id) ? (
+              {/* Team events are owned by an admin account; that profile is not the organiser. */}
+              {!isDemoEventId(event.id) && event.origin === "community" ? (
                 <Button asChild size="sm" variant="outline" className="rounded-full">
                   <Link to={`/u/${event.owner_id}`}>View Profile</Link>
                 </Button>
@@ -269,6 +281,13 @@ export default function ExhibitionDetailPage() {
                   </li>
                 ))}
               </ul>
+            </section>
+          ) : event.origin === "curated" ? (
+            <section aria-labelledby="sponsors-heading">
+              <h2 id="sponsors-heading" className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                Sponsored by
+              </h2>
+              <p className="mt-2 text-sm text-muted-foreground">{NOT_SPECIFIED}</p>
             </section>
           ) : null}
 

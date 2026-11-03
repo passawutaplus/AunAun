@@ -5,6 +5,10 @@
 -- * entry fee is display-only text; registration is an external link
 -- * sponsors belong to the event (the organiser's own sponsors), up to 5, plus an "open for sponsors" switch
 -- * an event can show up to 6 of the organiser's own published works
+-- Owner decisions, 2026-11-03 (curated events, phase 1):
+-- * three origins: SameCor Original (team-run), Community (submitted), Curated (found elsewhere, checked by the team)
+-- * curated events always keep their source (name, URL, last checked); nothing found is "not specified", never guessed
+-- * no images are copied from other sites; a curated event without a cover shows a SameCor placeholder
 -- Clients only read. Every write goes through the functions below, so the review lock, the image
 -- ownership rules and the limits are enforced here, not in the browser.
 
@@ -24,13 +28,19 @@ CREATE TABLE IF NOT EXISTS anthem.events (
   cover_url text,
   gallery_urls text[] NOT NULL DEFAULT '{}' CHECK (cardinality(gallery_urls) <= 8),
   website_url text,
-  registration_url text,
+  registration_url text,  -- register / RSVP / apply (open call)
+  ticket_url text,        -- buy tickets, when that is a separate page
   registration_open boolean NOT NULL DEFAULT false,
-  fee_type text NOT NULL DEFAULT 'free' CHECK (fee_type IN ('free', 'paid')),
+  -- 'unspecified' is only set by the team for curated events whose source does not say.
+  fee_type text NOT NULL DEFAULT 'free' CHECK (fee_type IN ('free', 'paid', 'unspecified')),
   fee_note text CHECK (char_length(fee_note) <= 60),
   sponsors jsonb NOT NULL DEFAULT '[]'::jsonb CHECK (jsonb_typeof(sponsors) = 'array' AND jsonb_array_length(sponsors) <= 5),
   open_for_sponsors boolean NOT NULL DEFAULT false,
   project_ids uuid[] NOT NULL DEFAULT '{}' CHECK (cardinality(project_ids) <= 6),
+  origin text NOT NULL DEFAULT 'community' CHECK (origin IN ('original', 'community', 'curated')),
+  source_name text CHECK (char_length(source_name) <= 120),
+  source_url text,
+  source_checked_at timestamptz,
   status text NOT NULL DEFAULT 'draft'
     CHECK (status IN ('draft', 'pending', 'published', 'needs_revision', 'rejected')),
   review_note text CHECK (char_length(review_note) <= 1000),
@@ -150,7 +160,8 @@ BEGIN
     RAISE EXCEPTION 'รูปต้องอัปโหลดผ่านหน้านี้ (JPG, PNG หรือ WebP)';
   END IF;
   IF NOT anthem.event_link_ok(nullif(btrim(_data ->> 'website_url'), ''))
-     OR NOT anthem.event_link_ok(nullif(btrim(_data ->> 'registration_url'), '')) THEN
+     OR NOT anthem.event_link_ok(nullif(btrim(_data ->> 'registration_url'), ''))
+     OR NOT anthem.event_link_ok(nullif(btrim(_data ->> 'ticket_url'), '')) THEN
     RAISE EXCEPTION 'ลิงก์ต้องขึ้นต้นด้วย https:// และห้ามใช้ลิงก์ย่อ';
   END IF;
 
@@ -199,8 +210,10 @@ BEGIN
     gallery_urls = v_gallery,
     website_url = nullif(btrim(coalesce(_data ->> 'website_url', '')), ''),
     registration_url = nullif(btrim(coalesce(_data ->> 'registration_url', '')), ''),
+    ticket_url = nullif(btrim(coalesce(_data ->> 'ticket_url', '')), ''),
     registration_open = coalesce((_data ->> 'registration_open')::boolean, false),
-    fee_type = coalesce(nullif(_data ->> 'fee_type', ''), 'free'),
+    -- Creators choose free or paid; only admin_event_save may store 'unspecified'.
+    fee_type = CASE WHEN _data ->> 'fee_type' = 'paid' THEN 'paid' ELSE 'free' END,
     fee_note = CASE WHEN _data ->> 'fee_type' = 'paid' THEN nullif(btrim(coalesce(_data ->> 'fee_note', '')), '') END,
     sponsors = v_sponsors,
     open_for_sponsors = coalesce((_data ->> 'open_for_sponsors')::boolean, false),
@@ -367,3 +380,92 @@ REVOKE ALL ON FUNCTION public.event_save(uuid, jsonb), public.event_submit(uuid)
 GRANT EXECUTE ON FUNCTION public.event_save(uuid, jsonb), public.event_submit(uuid), public.event_withdraw(uuid),
   public.event_delete(uuid), public.event_set_switches(uuid, boolean, boolean),
   public.admin_review_event(uuid, text, text), public.admin_set_event_pick(uuid, boolean) TO authenticated;
+
+-- ── Team events: SameCor Original and Curated ────────────────────────────────
+-- The team writes through event_save (same validation as creators: own-folder images, safe links,
+-- limits), then this sets the origin, the source and the status. No review queue: the team is the reviewer.
+CREATE OR REPLACE FUNCTION public.admin_event_save(_id uuid, _data jsonb, _publish boolean DEFAULT false)
+RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = anthem, shared, public
+AS $$
+DECLARE
+  v_origin text := coalesce(nullif(_data ->> 'origin', ''), 'curated');
+  v_source_url text := nullif(btrim(coalesce(_data ->> 'source_url', '')), '');
+  v_source_name text := nullif(btrim(coalesce(_data ->> 'source_name', '')), '');
+  v_id uuid;
+  v_pick boolean;
+  ev anthem.events;
+BEGIN
+  IF auth.uid() IS NULL OR NOT public.has_role(auth.uid(), 'admin') THEN RAISE EXCEPTION 'ไม่มีสิทธิ์'; END IF;
+  IF v_origin NOT IN ('original', 'curated') THEN RAISE EXCEPTION 'ประเภทงานไม่ถูกต้อง'; END IF;
+  -- event_save drops the Pick when a published event changes; a team edit keeps it.
+  SELECT is_pick INTO v_pick FROM anthem.events WHERE id = _id;
+  IF _id IS NOT NULL AND NOT EXISTS (
+    SELECT 1 FROM anthem.events WHERE id = _id AND owner_id = auth.uid() AND origin IN ('original', 'curated')
+  ) THEN
+    RAISE EXCEPTION 'แก้ได้เฉพาะงานที่ทีมลงเอง';
+  END IF;
+  IF NOT anthem.event_link_ok(v_source_url) OR char_length(coalesce(v_source_name, '')) > 120 THEN
+    RAISE EXCEPTION 'ลิงก์แหล่งที่มาไม่ถูกต้อง';
+  END IF;
+  IF v_origin = 'curated' AND (v_source_url IS NULL OR v_source_name IS NULL) THEN
+    RAISE EXCEPTION 'งาน Curated ต้องระบุแหล่งที่มาและลิงก์ต้นทาง';
+  END IF;
+
+  v_id := public.event_save(_id, _data);
+
+  UPDATE anthem.events SET
+    origin = v_origin,
+    source_name = v_source_name,
+    source_url = v_source_url,
+    source_checked_at = CASE WHEN v_source_url IS NULL THEN NULL
+                             ELSE coalesce(nullif(_data ->> 'source_checked_at', '')::timestamptz, now()) END,
+    fee_type = CASE WHEN _data ->> 'fee_type' = 'unspecified' THEN 'unspecified' ELSE fee_type END,
+    status = CASE WHEN _publish THEN 'published' ELSE 'draft' END,
+    published_at = CASE WHEN _publish THEN coalesce(published_at, now()) ELSE NULL END,
+    is_pick = _publish AND coalesce(v_pick, false),
+    reviewed_by = auth.uid(),
+    reviewed_at = now(),
+    updated_at = now()
+  WHERE id = v_id
+  RETURNING * INTO ev;
+
+  IF _publish AND (char_length(ev.title) = 0 OR ev.starts_on IS NULL OR ev.ends_on IS NULL
+                   OR ev.location_name IS NULL OR char_length(ev.description) = 0) THEN
+    RAISE EXCEPTION 'กรอกชื่องาน วันที่ สถานที่ และรายละเอียดให้ครบก่อนเผยแพร่';
+  END IF;
+
+  INSERT INTO shared.admin_audit_log (actor_id, action, target_type, target_id, metadata)
+  VALUES (auth.uid(), CASE WHEN _publish THEN 'event_publish_team' ELSE 'event_draft_team' END, 'event', v_id::text,
+          jsonb_build_object('origin', v_origin, 'source_url', v_source_url));
+  RETURN v_id;
+END;
+$$;
+
+-- Possible duplicates before the team adds an event: same source link, or a similar title within two weeks.
+CREATE OR REPLACE FUNCTION public.admin_event_similar(_title text, _starts_on date DEFAULT NULL, _source_url text DEFAULT NULL)
+RETURNS TABLE (id uuid, title text, starts_on date, ends_on date, status text, origin text, score real)
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = anthem, public
+AS $$
+BEGIN
+  IF auth.uid() IS NULL OR NOT public.has_role(auth.uid(), 'admin') THEN RAISE EXCEPTION 'ไม่มีสิทธิ์'; END IF;
+  RETURN QUERY
+  SELECT e.id, e.title, e.starts_on, e.ends_on, e.status, e.origin,
+         greatest(similarity(lower(e.title), lower(coalesce(_title, ''))),
+                  CASE WHEN _source_url IS NOT NULL AND e.source_url = _source_url THEN 1 ELSE 0 END)::real
+    FROM anthem.events e
+   WHERE (_source_url IS NOT NULL AND e.source_url = _source_url)
+      OR (similarity(lower(e.title), lower(coalesce(_title, ''))) > 0.35
+          AND (_starts_on IS NULL OR e.starts_on IS NULL OR abs(e.starts_on - _starts_on) <= 14))
+   ORDER BY 7 DESC
+   LIMIT 5;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.admin_event_save(uuid, jsonb, boolean), public.admin_event_similar(text, date, text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.admin_event_save(uuid, jsonb, boolean), public.admin_event_similar(text, date, text) TO authenticated;

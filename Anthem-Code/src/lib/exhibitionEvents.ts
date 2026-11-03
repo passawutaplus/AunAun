@@ -17,6 +17,21 @@ export type EventDisplayStatus = EventStatus | "ended";
 
 export type EventSponsor = { name: string; logo_url?: string; note?: string };
 
+/** "unspecified" is only set by the team for curated events whose source does not say. */
+export type EventFeeType = "free" | "paid" | "unspecified";
+
+/** Who put the event on SameCor: our own event, a member's submission, or one the team found elsewhere. */
+export type EventOrigin = "original" | "community" | "curated";
+
+export const EVENT_ORIGIN_LABEL: Record<EventOrigin, string> = {
+  original: "Organized by SameCor",
+  community: "Submitted by Community",
+  curated: "Curated by SameCor",
+};
+
+/** Shown wherever a curated source did not state a value. We never guess. */
+export const NOT_SPECIFIED = "ไม่ระบุ";
+
 export type ExhibitionEvent = {
   id: string;
   owner_id: string;
@@ -33,12 +48,17 @@ export type ExhibitionEvent = {
   gallery_urls: string[];
   website_url: string | null;
   registration_url: string | null;
+  ticket_url: string | null;
   registration_open: boolean;
-  fee_type: "free" | "paid";
+  fee_type: EventFeeType;
   fee_note: string | null;
   sponsors: EventSponsor[];
   open_for_sponsors: boolean;
   project_ids: string[];
+  origin: EventOrigin;
+  source_name: string | null;
+  source_url: string | null;
+  source_checked_at: string | null;
   status: EventStatus;
   review_note: string | null;
   submitted_at: string | null;
@@ -50,11 +70,29 @@ export type ExhibitionEvent = {
 /** Fields the owner edits; sent as the `_data` JSON of event_save. */
 export type EventDraft = Omit<
   ExhibitionEvent,
-  "id" | "owner_id" | "status" | "review_note" | "submitted_at" | "published_at" | "is_pick" | "updated_at"
+  | "id"
+  | "owner_id"
+  | "status"
+  | "review_note"
+  | "submitted_at"
+  | "published_at"
+  | "is_pick"
+  | "updated_at"
+  | "origin"
+  | "source_name"
+  | "source_url"
+  | "source_checked_at"
 >;
 
+/** What the team edits for its own (original / curated) events; sent to admin_event_save. */
+export type TeamEventDraft = EventDraft & {
+  origin: Exclude<EventOrigin, "community">;
+  source_name: string | null;
+  source_url: string | null;
+};
+
 export const EVENT_SELECT =
-  "id, owner_id, title, category, starts_on, ends_on, time_note, location_name, location_note, description, organizer_name, cover_url, gallery_urls, website_url, registration_url, registration_open, fee_type, fee_note, sponsors, open_for_sponsors, project_ids, status, review_note, submitted_at, published_at, is_pick, updated_at";
+  "id, owner_id, title, category, starts_on, ends_on, time_note, location_name, location_note, description, organizer_name, cover_url, gallery_urls, website_url, registration_url, ticket_url, registration_open, fee_type, fee_note, sponsors, open_for_sponsors, project_ids, origin, source_name, source_url, source_checked_at, status, review_note, submitted_at, published_at, is_pick, updated_at";
 
 export const EVENT_LIMITS = {
   title: 100,
@@ -82,6 +120,7 @@ export function emptyEventDraft(): EventDraft {
     gallery_urls: [],
     website_url: null,
     registration_url: null,
+    ticket_url: null,
     registration_open: false,
     fee_type: "free",
     fee_note: null,
@@ -89,6 +128,31 @@ export function emptyEventDraft(): EventDraft {
     open_for_sponsors: false,
     project_ids: [],
   };
+}
+
+export type EventAction = { label: string; url: string };
+
+/**
+ * The main button on an event page: buy tickets for paid events with a ticket page, Apply for open calls,
+ * otherwise register. Null when there is no link to send people to (the page then says "not specified").
+ */
+export function eventPrimaryAction(
+  e: Pick<ExhibitionEvent, "category" | "fee_type" | "registration_url" | "ticket_url" | "registration_open">,
+): EventAction | null {
+  if (e.ticket_url && e.fee_type !== "free") return { label: "ซื้อบัตร / Get Tickets", url: e.ticket_url };
+  if (e.registration_url && e.registration_open) {
+    if (e.category === "open_call") return { label: "Apply Now", url: e.registration_url };
+    if (e.category === "workshop") return { label: "ลงทะเบียน Workshop", url: e.registration_url };
+    return { label: "ลงทะเบียนเข้าร่วม", url: e.registration_url };
+  }
+  if (e.ticket_url) return { label: "ซื้อบัตร / Get Tickets", url: e.ticket_url };
+  return null;
+}
+
+export function feeLabel(e: Pick<ExhibitionEvent, "fee_type" | "fee_note">): string {
+  if (e.fee_type === "free") return "เข้าชมฟรี";
+  if (e.fee_type === "paid") return e.fee_note ? `มีค่าใช้จ่าย · ${e.fee_note}` : "มีค่าใช้จ่าย";
+  return `ค่าเข้าชม: ${NOT_SPECIFIED}`;
 }
 
 export function categoryLabel(id: string): string {
@@ -171,6 +235,10 @@ function demo(partial: Partial<ExhibitionEvent> & Pick<ExhibitionEvent, "id" | "
     published_at: "2026-11-02T09:00:00Z",
     is_pick: false,
     updated_at: "2026-11-02T09:00:00Z",
+    origin: "community",
+    source_name: null,
+    source_url: null,
+    source_checked_at: null,
     ...partial,
   };
 }
@@ -230,11 +298,14 @@ export const DEMO_EVENTS: ExhibitionEvent[] = [
     description:
       "ทอล์กชวนคุยเรื่องการออกแบบที่ใช้ได้จริงในชีวิตประจำวัน จากนักออกแบบผลิตภัณฑ์ UX และกราฟิก 3 คน ตามด้วยช่วงถาม-ตอบ",
     organizer_name: "Common Ground Design Club",
-    cover_url: demoImageUrl(8),
-    gallery_urls: [demoImageUrl(8), demoImageUrl(2)],
     website_url: "https://example.com/design-talk",
-    registration_open: false,
-    fee_type: "free",
+    registration_url: "https://www.eventbrite.com/e/design-for-real-life",
+    registration_open: true,
+    fee_type: "unspecified",
+    origin: "curated",
+    source_name: "Common Ground Design Club",
+    source_url: "https://example.com/design-talk",
+    source_checked_at: "2026-11-03T06:00:00Z",
   }),
 ];
 

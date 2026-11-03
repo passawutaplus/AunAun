@@ -408,6 +408,8 @@ const App = () => (
                 <Route path="compliance/copyright" element={<AdminCopyrightReportsPage />} />
                 <Route path="compliance/privacy" element={<AdminPrivacyRequestsPage />} />
                 <Route path="events" element={<AdminEventsPage />} />
+                <Route path="events/new" element={<ExhibitionEditorPage team />} />
+                <Route path="events/:id/edit" element={<ExhibitionEditorPage team />} />
                 <Route path="feedback" element={<AdminFeedbackPage />} />
                 <Route path="system" element={<AdminSystemPage />} />
                 <Route path="ai" element={<AdminAiMonitorPage />} />

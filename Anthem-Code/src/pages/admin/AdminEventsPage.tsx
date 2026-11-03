@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { th } from "date-fns/locale";
-import { ExternalLink, Star } from "lucide-react";
+import { ExternalLink, Plus, Star } from "lucide-react";
 import SectionHeader from "@/components/admin/SectionHeader";
 import DataTable, { type Column } from "@/components/admin/DataTable";
 import StatusPill from "@/components/admin/StatusPill";
@@ -31,8 +31,8 @@ const CHECKS = [
   "ไม่มีข้อมูลชวนเข้าใจผิด",
 ] as const;
 
-type Tab = "pending" | "published" | "needs_revision" | "rejected" | "ended";
-const TABS: Tab[] = ["pending", "published", "needs_revision", "rejected", "ended"];
+type Tab = "pending" | "published" | "draft" | "needs_revision" | "rejected" | "ended";
+const TABS: Tab[] = ["pending", "published", "draft", "needs_revision", "rejected", "ended"];
 
 function ReviewDialog({ event, onClose }: { event: ExhibitionEvent | null; onClose: () => void }) {
   const review = useReviewEvent();
@@ -166,6 +166,15 @@ export default function AdminEventsPage() {
     },
     { key: "organizer", header: "Organizer", render: (e) => <span className="text-xs">{e.organizer_name ?? "—"}</span> },
     {
+      key: "origin",
+      header: "Origin",
+      render: (e) => (
+        <span className={cn("text-xs", e.origin === "community" ? "text-admin-muted" : "font-medium text-admin-fg")}>
+          {e.origin === "community" ? "Community" : e.origin === "curated" ? "Curated" : "Original"}
+        </span>
+      ),
+    },
+    {
       key: "submitted",
       header: "Submitted",
       render: (e) => (
@@ -204,16 +213,34 @@ export default function AdminEventsPage() {
             Review
           </Button>
         ) : (
-          <Button asChild size="sm" variant="outline">
-            <Link to={`/exhibition/${e.id}`}>View</Link>
-          </Button>
+          <div className="flex gap-1.5">
+            {e.origin !== "community" && !isDemoEventId(e.id) ? (
+              <Button asChild size="sm" variant="outline">
+                <Link to={`/admin/events/${e.id}/edit`}>Edit</Link>
+              </Button>
+            ) : null}
+            <Button asChild size="sm" variant="outline">
+              <Link to={`/exhibition/${e.id}`}>View</Link>
+            </Button>
+          </div>
         ),
     },
   ];
 
   return (
     <div>
-      <SectionHeader eyebrow="exhibition" title="Exhibition & Events" description="ตรวจงานที่ครีเอเตอร์ส่งมา และเลือก SameCor Pick" />
+      <SectionHeader
+        eyebrow="exhibition"
+        title="Exhibition & Events"
+        description="ตรวจงานที่ครีเอเตอร์ส่งมา เพิ่มงานของทีม และเลือก SameCor Pick"
+        actions={
+          <Button asChild size="sm">
+            <Link to="/admin/events/new">
+              <Plus className="mr-1.5 h-4 w-4" aria-hidden /> เพิ่มงาน Curated / Original
+            </Link>
+          </Button>
+        }
+      />
       <div className="mb-4 flex flex-wrap gap-2" role="tablist" aria-label="สถานะ">
         {TABS.map((t) => (
           <button

@@ -10,6 +10,7 @@ import {
   sortPublicEvents,
   type EventDraft,
   type ExhibitionEvent,
+  type TeamEventDraft,
 } from "@/lib/exhibitionEvents";
 
 /** Preview data only while developing, and only when the real table has nothing to show. */
@@ -83,7 +84,8 @@ export function useAdminEvents() {
     queryFn: async () => {
       const { data, error } = await eventsTable()
         .select(EVENT_SELECT)
-        .neq("status", "draft")
+        // Creators' private drafts stay hidden; the team's own drafts are listed.
+        .or("status.neq.draft,origin.neq.community")
         .order("submitted_at", { ascending: false, nullsFirst: false })
         .limit(200);
       if (error && !useDevDemo) throw error;
@@ -214,6 +216,68 @@ export function useReviewEvent() {
       toast.success(v.decision === "approve" ? "เผยแพร่แล้ว" : v.decision === "revise" ? "ส่งกลับให้แก้ไขแล้ว" : "ปฏิเสธแล้ว");
     },
     onError: (err: unknown) => toast.error(mapWriteFlowError(err, "บันทึกผลตรวจไม่สำเร็จ")),
+  });
+}
+
+export function useSaveTeamEvent() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (v: { id: string | null; draft: TeamEventDraft; publish: boolean }) => {
+      const { data, error } = await rpc("admin_event_save", { _id: v.id, _data: v.draft, _publish: v.publish });
+      if (error) throw error;
+      return data as string;
+    },
+    onSuccess: (_d, v) => {
+      invalidateEvents(qc);
+      toast.success(v.publish ? "เผยแพร่แล้ว" : "บันทึกฉบับร่างแล้ว");
+    },
+    onError: (err: unknown) => toast.error(mapWriteFlowError(err, "บันทึกไม่สำเร็จ")),
+  });
+}
+
+export type ExtractedEvent = {
+  draft: Partial<TeamEventDraft> & { source_name: string; source_url: string };
+  confidence: number;
+  notes: string[];
+  structured: boolean;
+};
+
+/** Admin only: the event-extract function reads one public page and returns a draft to check. */
+export function useExtractEvent() {
+  return useMutation({
+    mutationFn: async (url: string) => {
+      const { data, error } = await supabase.functions.invoke("event-extract", { body: { url } });
+      if (error) {
+        // Non-2xx: the function's own message (Thai) is in the response body.
+        const body = await (error as { context?: Response }).context?.json?.().catch(() => null);
+        throw new Error(body?.error ?? "อ่านหน้านี้ไม่สำเร็จ");
+      }
+      return data as ExtractedEvent;
+    },
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : "อ่านหน้านี้ไม่สำเร็จ"),
+  });
+}
+
+export type SimilarEvent = Pick<ExhibitionEvent, "id" | "title" | "starts_on" | "ends_on" | "status" | "origin"> & {
+  score: number;
+};
+
+/** Admin only: events that look like the one being added (same source link, or a close title near the same dates). */
+export function useSimilarEvents(title: string, startsOn: string | null, sourceUrl: string | null, excludeId: string | null) {
+  const t = title.trim();
+  return useQuery({
+    queryKey: ["admin", "events", "similar", t, startsOn, sourceUrl],
+    enabled: t.length >= 4 || !!sourceUrl,
+    staleTime: 30_000,
+    queryFn: async () => {
+      const { data, error } = await rpc("admin_event_similar", {
+        _title: t,
+        _starts_on: startsOn,
+        _source_url: sourceUrl,
+      });
+      if (error) throw error;
+      return ((data ?? []) as SimilarEvent[]).filter((e) => e.id !== excludeId);
+    },
   });
 }
 

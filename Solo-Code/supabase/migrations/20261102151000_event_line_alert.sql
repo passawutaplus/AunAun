@@ -32,7 +32,8 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-  IF NEW.status = 'pending' AND OLD.status IS DISTINCT FROM 'pending' THEN
+  -- Only community submissions need the team's attention; team edits pass through 'pending' briefly.
+  IF NEW.status = 'pending' AND OLD.status IS DISTINCT FROM 'pending' AND NEW.origin = 'community' THEN
     PERFORM public.admin_line_enqueue('event', NEW.id);
   END IF;
   RETURN NEW;
