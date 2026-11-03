@@ -138,7 +138,7 @@ const DesignerCard = ({ data, search = "", newWorkCount = 0 }: Props) => {
                 <li key={p.id} className="relative">
                   <Link
                     to={`/showcase/${p.id}`}
-                    className="block aspect-[4/3] overflow-hidden rounded-md bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground"
+                    className="block aspect-[4/3] overflow-hidden rounded bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground"
                     aria-label={p.title}
                   >
                     {coverSrc(p) ? (
