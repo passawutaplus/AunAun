@@ -159,16 +159,17 @@ export default function ExhibitionPage() {
           <div className="ml-auto min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{toggle}</div>
         </div>
 
-        <div className={cn("hidden min-w-0 items-center justify-center gap-3 pb-6 pt-3 lg:flex", scrolled && "invisible")}>
+        <div className={cn("hidden min-w-0 items-center justify-center gap-3 pb-4 pt-3 lg:flex", scrolled && "invisible")}>
           <div className="shrink-0">{searchBar()}</div>
           <div className="flex min-w-0 max-w-[min(36rem,calc(100vw-2rem))] shrink items-center overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {toggle}
           </div>
         </div>
 
-        <ExhibitionHero events={heroEvents} className="mt-4 lg:mt-0" />
+        {/* Type tabs sit right under the mode pill, as on Showcase / Creators. */}
+        <div className={cn("pb-4 pt-4 lg:pt-0", scrolled && "lg:invisible")}>{filters}</div>
 
-        <div className="border-b border-border py-5 lg:py-6">{filters}</div>
+        <ExhibitionHero events={heroEvents} className="mb-6" />
 
         <div>
       {isLoading || isError ? (
