@@ -519,11 +519,14 @@ const PublicProfilePage = () => {
   const headerRoleLine = [headerRole, ...(vis.skills ? (profile.skills ?? []).slice(0, 3) : [])]
     .filter(Boolean)
     .join(" / ");
-  const headerPlace = displayProfileAddress(
-    (profile as { profile_address?: unknown }).profile_address,
-    (profile as { location?: string | null }).location,
-    "short",
-  );
+  // Only when the creator shows their location publicly (profile visibility toggle).
+  const headerPlace = vis.location
+    ? displayProfileAddress(
+        (profile as { profile_address?: unknown }).profile_address,
+        (profile as { location?: string | null }).location,
+        "short",
+      )
+    : "";
   const headerStatus = creatorStatus((profile as { opportunity_status?: string | null }).opportunity_status);
 
   const showUsernameLine =

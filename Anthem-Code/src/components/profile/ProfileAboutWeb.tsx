@@ -120,7 +120,8 @@ export default function ProfileAboutWeb({ profile, experience, skills }: Props) 
   if (show.contactPhone && cv.contactPhone) {
     contacts.push({ key: "phone", node: <ContactPill href={`tel:${cv.contactPhone.replace(/\s/g, "")}`} icon={Phone} label={cv.contactPhone} /> });
   }
-  const line = (show.contactLine && cv.contactLine) || profile.line_id;
+  // Same rule as the CV sheet: LINE only when the creator turned it on (aboutCvModel).
+  const line = show.contactLine ? cv.contactLine.trim() || profile.line_id?.trim() || "" : "";
   if (line) contacts.push({ key: "line", node: <ContactPill icon={MessageSquare} label={line} /> });
   if (show.socials && profile.instagram) {
     contacts.push({
