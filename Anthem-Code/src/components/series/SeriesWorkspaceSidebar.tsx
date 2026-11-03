@@ -119,7 +119,7 @@ function SeriesFolderRow({
               return (
                 <li key={item.project_id}>
                   <Link
-                    to={`/project/${p.id}`}
+                    to={`/showcase/${p.id}`}
                     className="flex items-center gap-2 rounded-md px-1.5 py-1 text-xs text-muted-foreground hover:bg-accent/40 hover:text-foreground transition-colors"
                     title={label}
                   >
@@ -303,7 +303,7 @@ export function SeriesWorkspaceSidebar({
                     return (
                       <li key={p.id}>
                         <Link
-                          to={`/project/${p.id}`}
+                          to={`/showcase/${p.id}`}
                           className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-foreground hover:bg-accent/40 transition-colors"
                         >
                           <span className="h-8 w-8 shrink-0 overflow-hidden rounded-md bg-muted">

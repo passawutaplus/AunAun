@@ -18,7 +18,7 @@ import { useFollowedDesigners, type FollowedDesigner } from "@/hooks/useFollowed
 import { fuzzyMatchAll } from "@/lib/fuzzyMatch";
 import { cn } from "@/lib/utils";
 
-const DESIGNERS_FEED_PATH = "/?mode=designers";
+const DESIGNERS_FEED_PATH = "/?mode=creators";
 
 type FollowBackFilter = "all" | "mutual" | "not_back";
 

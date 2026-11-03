@@ -39,7 +39,7 @@ const STATUSES = ["open", "reviewing", "resolved", "dismissed"] as const;
 const targetLink = (r: ReportRow) => {
   switch (r.target_type) {
     case "project":
-      return `/project/${r.target_id}`;
+      return `/showcase/${r.target_id}`;
     case "user":
       return `/u/${r.target_id}`;
     case "job":

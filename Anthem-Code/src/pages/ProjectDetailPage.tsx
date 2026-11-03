@@ -320,7 +320,7 @@ const ProjectDetailPage = () => {
     );
   }
 
-  const shareUrl = typeof window !== "undefined" ? window.location.href : `/project/${id}`;
+  const shareUrl = typeof window !== "undefined" ? window.location.href : `/showcase/${id}`;
   const isOwner = !!user?.id && user.id === dbProject?.owner_id;
   const ownerUsername =
     (ownerProfile as { username?: string | null } | null | undefined)?.username ?? null;
@@ -334,7 +334,7 @@ const ProjectDetailPage = () => {
     project.gallery.find((url) => !isVideoUrl(url)) ??
     "";
 
-  const projectPath = `/project/${project.id}`;
+  const projectPath = `/showcase/${project.id}`;
   const crumbs = [
     { name: "หน้าแรก", path: "/" },
     { name: "ผลงาน", path: "/" },

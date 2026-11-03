@@ -42,7 +42,7 @@ export function CommunityMentionedProjectsBar({ projects, linkable = false, clas
 
           if (linkable) {
             return (
-              <Link key={p.id} to={`/project/${p.id}`} className={cn(chipClass, "hover:border-primary/40")}>
+              <Link key={p.id} to={`/showcase/${p.id}`} className={cn(chipClass, "hover:border-primary/40")}>
                 {inner}
               </Link>
             );

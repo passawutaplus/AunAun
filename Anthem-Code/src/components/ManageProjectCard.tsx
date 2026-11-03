@@ -145,7 +145,7 @@ const ManageProjectCard = ({
       {project.status === "Published" && (
         <button
           type="button"
-          onClick={() => navigate(`/project/${project.id}`)}
+          onClick={() => navigate(`/showcase/${project.id}`)}
           className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
           aria-label="ดูผลงาน"
           title="ดูผลงาน"

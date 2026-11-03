@@ -54,8 +54,8 @@ describe("sitemap-lib", () => {
 
   it("includes expanded seed catalog by default", () => {
     const paths = buildSitemapUrls().map((u) => u.loc);
-    expect(paths.filter((p) => p.startsWith("/project/"))).toHaveLength(CATALOG_PROJECT_COUNT);
-    expect(paths).toContain(`/project/${catalogProjectId(0x45)}`);
+    expect(paths.filter((p) => p.startsWith("/showcase/"))).toHaveLength(CATALOG_PROJECT_COUNT);
+    expect(paths).toContain(`/showcase/${catalogProjectId(0x45)}`);
   });
 
   it("adds hiring board routes when enabled", () => {
@@ -86,7 +86,7 @@ describe("sitemap-lib", () => {
     expect(paths).toContain("/@phatsawut");
     expect(paths).toContain("/@demo.user");
     expect(paths).toContain("/series/3b43c6a6-9530-4598-a7ce-44c61b7b14bb");
-    expect(paths).toContain("/project/abc");
+    expect(paths).toContain("/showcase/abc");
     expect(paths).toContain("/u/uid-1");
   });
 
@@ -118,7 +118,7 @@ describe("sitemap-lib", () => {
     expect(files["sitemap.xml"]).toContain("<urlset");
     expect(files["sitemap-index.xml"]).toContain("<sitemapindex");
     expect(indexEntries).toContain("sitemap-static.xml");
-    expect(files["sitemap-projects.xml"]).toContain("/project/p1");
+    expect(files["sitemap-projects.xml"]).toContain("/showcase/p1");
     expect(files["sitemap-profiles.xml"]).toContain("/u/u1");
   });
 });

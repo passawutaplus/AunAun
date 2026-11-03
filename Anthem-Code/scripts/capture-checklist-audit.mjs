@@ -217,7 +217,7 @@ async function captureViewport(browser, tag, size) {
   // project detail
   await page.goto(`${BASE}/`, { waitUntil: "domcontentloaded" });
   await waitSettled(page);
-  const project = page.locator('a[href*="/p/"], a[href*="/project/"]').first();
+  const project = page.locator('a[href*="/p/"], a[href*="/showcase/"], a[href*="/project/"]').first();
   if (await project.count()) {
     await project.click({ force: true });
     await waitSettled(page);

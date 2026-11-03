@@ -99,7 +99,7 @@ function PortfolioRow({
       )}
       <div className="flex-1 min-w-0">
         <Link
-          to={`/project/${project.id}`}
+          to={`/showcase/${project.id}`}
           className="block text-sm font-medium truncate hover:underline hover:text-primary"
         >
           {project.title}
@@ -180,7 +180,7 @@ function PortfolioGridCard({
 }) {
   return (
     <div className="flex flex-col rounded-xl border border-border bg-card overflow-hidden">
-      <Link to={`/project/${project.id}`} className="block aspect-square bg-muted overflow-hidden relative group">
+      <Link to={`/showcase/${project.id}`} className="block aspect-square bg-muted overflow-hidden relative group">
         {project.cover_url ? (
           <img loading="lazy" decoding="async"
             src={project.cover_url}
@@ -196,7 +196,7 @@ function PortfolioGridCard({
       <div className="p-2.5 space-y-2 flex-1 flex flex-col">
         <div className="min-h-0 flex-1">
           <Link
-            to={`/project/${project.id}`}
+            to={`/showcase/${project.id}`}
             className="text-sm font-medium line-clamp-2 leading-snug hover:underline hover:text-primary"
           >
             {project.title}
@@ -211,7 +211,7 @@ function PortfolioGridCard({
             className="flex-1 h-8 text-xs rounded-lg px-2"
             asChild
           >
-            <Link to={`/project/${project.id}`} target="_blank" rel="noopener noreferrer">
+            <Link to={`/showcase/${project.id}`} target="_blank" rel="noopener noreferrer">
               <ExternalLink className="w-3 h-3 mr-1 shrink-0" />
               ดูผลงาน
             </Link>

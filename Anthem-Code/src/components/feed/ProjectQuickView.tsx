@@ -144,7 +144,7 @@ function QuickViewInfo({
           type="button"
           onClick={() => {
             onClose();
-            navigate(`/project/${project.id}`);
+            navigate(`/showcase/${project.id}`);
           }}
           className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-full border border-white/25 px-4 text-sm font-medium text-white transition-colors hover:bg-white/10"
         >
@@ -249,7 +249,7 @@ export function ProjectQuickViewHost() {
                       return;
                     }
                     close();
-                    navigate(`/project/${project.id}`);
+                    navigate(`/showcase/${project.id}`);
                   }}
                   aria-label={`เปิดผลงาน ${project.title} · ปัดซ้ายขวาเพื่อดูผลงานถัดไป`}
                 >

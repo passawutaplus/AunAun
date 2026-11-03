@@ -60,7 +60,7 @@ function MarqueeRow({
               tabIndex={isClone ? -1 : 0}
               aria-hidden={isClone || undefined}
               aria-label={isClone ? undefined : `ดูผลงาน: ${project.title}`}
-              onClick={() => navigate(`/project/${project.id}`)}
+              onClick={() => navigate(`/showcase/${project.id}`)}
               className={cn(
                 "group relative shrink-0 overflow-hidden rounded-xl sm:rounded-2xl",
                 fillHeight

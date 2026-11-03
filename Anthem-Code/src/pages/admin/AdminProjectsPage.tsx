@@ -80,7 +80,7 @@ export default function AdminProjectsPage() {
       render: (r) => (
         <AdminRowActions
           actions={[
-            { label: "ดูผลงาน", href: `/project/${r.id}` },
+            { label: "ดูผลงาน", href: `/showcase/${r.id}` },
             ...STATUSES.filter((s) => s !== r.status).map((s) => ({
               label: `ตั้งเป็น ${s}`,
               onClick: () =>

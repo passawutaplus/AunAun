@@ -204,22 +204,22 @@ describe("aplus1Launch flags (fail-closed)", () => {
 
   it("restricts feed modes even when full product", () => {
     vi.stubEnv("VITE_APLUS1_FULL_PRODUCT", "true");
-    expect(isLaunchFeedMode("projects")).toBe(true);
+    expect(isLaunchFeedMode("showcase")).toBe(true);
     expect(isLaunchFeedMode("objects")).toBe(true);
     expect(isLaunchFeedMode("community")).toBe(false);
     expect(isLaunchFeedMode("studios")).toBe(false);
-    expect(coerceLaunchFeedMode("community")).toBe("projects");
-    expect(coerceLaunchFeedMode("studios")).toBe("projects");
+    expect(coerceLaunchFeedMode("community")).toBe("showcase");
+    expect(coerceLaunchFeedMode("studios")).toBe("showcase");
   });
 
   it("restricts feed modes when launch minimal", () => {
     vi.stubEnv("VITE_APLUS1_FULL_PRODUCT", "");
-    expect(isLaunchFeedMode("projects")).toBe(true);
-    expect(isLaunchFeedMode("designers")).toBe(true);
+    expect(isLaunchFeedMode("showcase")).toBe(true);
+    expect(isLaunchFeedMode("creators")).toBe(true);
     expect(isLaunchFeedMode("packages")).toBe(true);
     expect(isLaunchFeedMode("objects")).toBe(true);
     expect(isLaunchFeedMode("community")).toBe(false);
-    expect(coerceLaunchFeedMode("studios")).toBe("projects");
+    expect(coerceLaunchFeedMode("studios")).toBe("showcase");
   });
 });
 
@@ -239,6 +239,7 @@ describe("launch route allowlist", () => {
     "/portfolio",
     "/portfolio/new",
     "/portfolio/saved",
+    "/showcase/abc-123",
     "/project/abc-123",
     "/service/svc-123",
     "/object/sample-print",

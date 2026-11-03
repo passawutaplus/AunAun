@@ -301,7 +301,7 @@ export function SeriesWorkspaceDetail({
                 )}
               >
                 <Link
-                  to={`/project/${p.id}`}
+                  to={`/showcase/${p.id}`}
                   className={cn(isList ? "flex min-w-0 flex-1 items-center gap-3" : "block")}
                 >
                   <div
@@ -357,7 +357,7 @@ export function SeriesWorkspaceDetail({
                 {!isList ? (
                   <div className={cn("space-y-1.5 p-2", compact && "p-1.5 space-y-1")}>
                     <Link
-                      to={`/project/${p.id}`}
+                      to={`/showcase/${p.id}`}
                       className={cn(
                         "block font-medium text-foreground hover:underline line-clamp-1",
                         compact ? "text-[11px]" : "text-sm",

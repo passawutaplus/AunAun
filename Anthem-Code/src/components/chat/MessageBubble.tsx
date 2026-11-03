@@ -767,7 +767,7 @@ const MessageBubble = ({
               >
                 {replyQuote}
                 <Link
-                  to={`/project/${project.id}`}
+                  to={`/showcase/${project.id}`}
                   className={cn(
                     "block overflow-hidden border hover:opacity-95 transition-opacity rounded-xl",
                     mine ? "border-white/20" : "border-border",

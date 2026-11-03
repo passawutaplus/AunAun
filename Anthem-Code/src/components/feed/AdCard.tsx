@@ -39,7 +39,7 @@ const AdCard = ({ ad, placement = "feed" }: Props) => {
   const openAd = () => {
     logAdEvent(ad.id, "click", placement);
     if (ad.linked_project_id) {
-      navigate(`/project/${ad.linked_project_id}?sponsor=${ad.id}`);
+      navigate(`/showcase/${ad.linked_project_id}?sponsor=${ad.id}`);
       return;
     }
     if (ad.target_url) {

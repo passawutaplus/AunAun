@@ -83,7 +83,7 @@ export default function LinkWorkDialog({
       toast.success("เชื่อมผลงานแล้ว");
       onLinked?.();
       onOpenChange(false);
-      if (projectId) navigate(`/project/${projectId}`);
+      if (projectId) navigate(`/showcase/${projectId}`);
     },
     onError: (e: Error) => toast.error(userFacingError(e, "เชื่อมผลงานไม่สำเร็จ")),
     onSettled: () => setPickingId(null),

@@ -49,10 +49,10 @@ describe("free launch: commerce gate", () => {
   );
 
   it("drops Packages and Objects from the feed while off", () => {
-    expect(isFeedModeVisible("projects")).toBe(true);
-    expect(isFeedModeVisible("designers")).toBe(true);
+    expect(isFeedModeVisible("showcase")).toBe(true);
+    expect(isFeedModeVisible("creators")).toBe(true);
     expect(isFeedModeVisible("packages")).toBe(false);
-    expect(coerceLaunchFeedMode("objects")).toBe("projects");
+    expect(coerceLaunchFeedMode("objects")).toBe("showcase");
     vi.stubEnv("VITE_SAMECOR_COMMERCE_ENABLED", "true");
     expect(isFeedModeVisible("packages")).toBe(true);
   });

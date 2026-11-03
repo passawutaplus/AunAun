@@ -429,7 +429,7 @@ const CollabRequestsSection = ({
             .map((id) => {
               const proj = projectMap[id];
               if (!proj) return null;
-              return { id, title: proj.title, cover: proj.cover, href: `/project/${id}` };
+              return { id, title: proj.title, cover: proj.cover, href: `/showcase/${id}` };
             })
             .filter((t): t is { id: string; title: string; cover: string; href: string } => !!t);
           const brief = collabInviteDisplay({
@@ -563,7 +563,7 @@ const CollabRequestsSection = ({
                       title={origin.title}
                       coverUrl={origin.cover || null}
                       label="อ้างอิงผลงาน"
-                      to={req.project_id && isUuidLike(req.project_id) ? `/project/${req.project_id}` : null}
+                      to={req.project_id && isUuidLike(req.project_id) ? `/showcase/${req.project_id}` : null}
                     />
                   ) : null
                 }
@@ -605,7 +605,7 @@ const CollabRequestsSection = ({
                               return (
                                 <Link
                                   key={thumb.id}
-                                  to={`/project/${thumb.id}`}
+                                  to={`/showcase/${thumb.id}`}
                                   title={`ดู ${thumb.title}`}
                                   className={className}
                                 >

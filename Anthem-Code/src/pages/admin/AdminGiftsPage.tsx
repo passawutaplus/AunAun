@@ -278,7 +278,7 @@ export default function AdminGiftsPage() {
     {
       key: "project", header: "ผลงาน",
       render: (r) => r.project_id ? (
-        <Link to={`/project/${r.project_id}`} target="_blank" className="inline-flex items-center gap-1 text-admin-accent hover:underline truncate max-w-[160px]">
+        <Link to={`/showcase/${r.project_id}`} target="_blank" className="inline-flex items-center gap-1 text-admin-accent hover:underline truncate max-w-[160px]">
           <span className="truncate">{r.project_title ?? r.project_id.slice(0, 8)}</span>
           <ExternalLink className="w-3 h-3 shrink-0" />
         </Link>
@@ -312,7 +312,7 @@ export default function AdminGiftsPage() {
     {
       key: "project", header: "ผลงาน",
       render: (r) => (
-        <Link to={`/project/${r.project_id}`} target="_blank" className="flex items-center gap-2 hover:text-admin-accent">
+        <Link to={`/showcase/${r.project_id}`} target="_blank" className="flex items-center gap-2 hover:text-admin-accent">
           {r.cover_url
             ? <img loading="lazy" decoding="async" src={r.cover_url} alt="" className="w-10 h-10 rounded-sm object-cover" />
             : <div className="w-10 h-10 rounded-sm bg-admin-hover" />}

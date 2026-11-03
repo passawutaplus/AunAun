@@ -25,7 +25,7 @@ const STATUS_LABEL: Record<string, string> = {
 const targetLink = (t: string, id: string) => {
   switch (t) {
     case "project":
-      return `/project/${id}`;
+      return `/showcase/${id}`;
     case "user":
       return `/u/${id}`;
     case "job":

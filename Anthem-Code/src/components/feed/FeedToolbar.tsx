@@ -184,8 +184,8 @@ const FeedToolbar = ({
   // Bottom-nav search from another page lands here with `openProjectSearch` in the route state.
   const routeLocation = useLocation();
   const openSearchAt = (routeLocation.state as { openProjectSearch?: number } | null)?.openProjectSearch;
-  const isProjects = mode === "projects";
-  const isDesigners = mode === "designers";
+  const isProjects = mode === "showcase";
+  const isDesigners = mode === "creators";
   const isPackages = mode === "packages";
   const isObjects = mode === "objects";
   const isStudios = mode === "studios";
@@ -388,7 +388,7 @@ const FeedToolbar = ({
       onFilterClick,
       onCreateClick,
       onFeedModeChange: (m) => {
-        if (!isProjects) onModeChange("projects");
+        if (!isProjects) onModeChange("showcase");
         onFeedModeChange(m);
       },
       showCreate: showCreate && !isCommunity,
@@ -925,7 +925,7 @@ const FeedToolbar = ({
           onColorQueryChange={onColorQueryChange}
           // Designers tab switches the feed mode; its search and filters apply live.
           tab={isDesigners ? "designers" : "projects"}
-          onTabChange={(t) => onModeChange(t)}
+          onTabChange={(t) => onModeChange(t === "designers" ? "creators" : "showcase")}
           designerSearch={search}
           onDesignerSearchChange={onSearchChange}
           designerFilters={isDesigners ? filterContent : null}

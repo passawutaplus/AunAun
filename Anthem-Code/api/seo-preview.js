@@ -2,7 +2,7 @@
  * Bot-friendly HTML shell with correct meta for public deep links.
  * Used by middleware when User-Agent looks like a crawler / social preview bot.
  *
- * GET /api/seo-preview?path=/project/...|/jobs/...|/@user|/u/...|/
+ * GET /api/seo-preview?path=/showcase/...|/jobs/...|/@user|/u/...|/
  */
 const BOT_CACHE_SECONDS = 300;
 
@@ -79,7 +79,7 @@ function isKnownPublicPath(pathname) {
     return true;
   }
   if (/^\/legal(\/|$)/i.test(pathname)) return true;
-  if (/^\/project\/[0-9a-f-]{36}$/i.test(pathname)) return true;
+  if (/^\/(?:showcase|project)\/[0-9a-f-]{36}$/i.test(pathname)) return true;
   if (/^\/jobs\/[0-9a-f-]{36}$/i.test(pathname)) return true;
   if (/^\/@[a-z0-9_.]{2,}$/i.test(pathname)) return true;
   if (/^\/u\/[0-9a-f-]{36}$/i.test(pathname)) return true;
@@ -154,7 +154,7 @@ async function resolveMeta(pathname, base) {
   };
   const rest = `${supabaseUrl.replace(/\/$/, "")}/rest/v1`;
 
-  const projectMatch = pathname.match(/^\/project\/([0-9a-f-]{36})$/i);
+  const projectMatch = pathname.match(/^\/(?:showcase|project)\/([0-9a-f-]{36})$/i);
   if (projectMatch) {
     const id = projectMatch[1];
     const rows = await fetchJson(
@@ -178,7 +178,7 @@ async function resolveMeta(pathname, base) {
     return {
       title: `${p.title} | SAMECOR`,
       description: (p.description || p.title || "").slice(0, 160),
-      url: `${base}/project/${p.id}`,
+      url: `${base}/showcase/${p.id}`,
       image: cover,
       noindex: false,
       type: "article",
@@ -187,7 +187,7 @@ async function resolveMeta(pathname, base) {
         "@context": "https://schema.org",
         "@type": "CreativeWork",
         name: p.title,
-        url: `${base}/project/${p.id}`,
+        url: `${base}/showcase/${p.id}`,
         image: cover,
       },
     };

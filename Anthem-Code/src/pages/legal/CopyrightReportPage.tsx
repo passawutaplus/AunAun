@@ -153,7 +153,7 @@ const CopyrightReportPage = () => {
               id="cr-bad"
               value={infringeUrl}
               onChange={(e) => setInfringeUrl(e.target.value)}
-              placeholder="https://samecor.com/project/..."
+              placeholder="https://samecor.com/showcase/..."
               required
             />
             <p className="text-[11px] text-muted-foreground">คัดลอก URL จากแถบที่อยู่เบราว์เซอร์</p>

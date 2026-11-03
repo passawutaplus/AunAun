@@ -8,6 +8,11 @@
   ],
   "redirects": [
     {
+      "source": "/project/:id",
+      "destination": "/showcase/:id",
+      "permanent": true
+    },
+    {
       "source": "/jobs/new",
       "destination": "/hiring/new",
       "permanent": true

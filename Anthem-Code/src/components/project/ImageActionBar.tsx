@@ -129,7 +129,7 @@ const ImageActionBar = ({
         open={shareOpen}
         onOpenChange={setShareOpen}
         title={projectTitle}
-        url={`${window.location.origin}/project/${projectId}`}
+        url={`${window.location.origin}/showcase/${projectId}`}
         imageUrl={imageUrl}
         projectId={projectId}
       >

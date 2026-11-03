@@ -282,7 +282,7 @@ async function main() {
   sectionTitle(doc, 2, "ผลงาน (Portfolio)");
   twoCards(doc,
     { title: "ดู & จัดการ", items: [
-      "รายละเอียด /project/:id",
+      "รายละเอียด /showcase/:id",
       "ลง/แก้ /portfolio/new",
       "จัดการ /portfolio/manage",
       "พอร์ตตัวเอง /portfolio",

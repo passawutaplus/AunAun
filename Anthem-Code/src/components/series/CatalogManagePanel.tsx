@@ -523,7 +523,7 @@ export default function CatalogManagePanel({ userId, embedded }: Props) {
           statsProjectId
             ? () => {
                 setStatsProjectId(null);
-                navigate(`/project/${statsProjectId}`);
+                navigate(`/showcase/${statsProjectId}`);
               }
             : undefined
         }

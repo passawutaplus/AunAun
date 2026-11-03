@@ -218,7 +218,7 @@ export default function StudioHomePanel({ userId }: Props) {
                 </p>
                 <div className="flex flex-wrap gap-2">
                   <Button asChild size="sm" className="rounded-full bg-[#F8F7F2] text-[#111] hover:bg-[#F8F7F2]/90">
-                    <Link to={`/project/${latest.id}`}>ดูผลงาน</Link>
+                    <Link to={`/showcase/${latest.id}`}>ดูผลงาน</Link>
                   </Button>
                   <Button asChild size="sm" variant="ghost" className="rounded-full border border-white/30 bg-white/10 text-white backdrop-blur hover:bg-white/20 hover:text-white">
                     <Link to={publicHref}>

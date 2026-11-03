@@ -53,11 +53,11 @@ function extractActorId(n: Notification): string | null {
 
 const UUID_RE = "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}";
 
-/** The work the notification is about (metadata.project_id, or a /project/<id> link). */
+/** The work the notification is about (metadata.project_id, or a /showcase/<id> or legacy /project/<id> link). */
 function extractProjectId(n: Notification): string | null {
   const md = n.metadata ?? {};
   if (typeof md.project_id === "string" && md.project_id) return md.project_id;
-  const m = (n.link ?? "").match(new RegExp(`/project/(${UUID_RE})`));
+  const m = (n.link ?? "").match(new RegExp(`/(?:showcase|project)/(${UUID_RE})`));
   return m ? m[1] : null;
 }
 

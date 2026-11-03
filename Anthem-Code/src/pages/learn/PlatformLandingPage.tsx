@@ -59,7 +59,7 @@ const toWork = (p: DBProject): LandingWork | null => {
     category: p.category ?? "",
     src: optimizedFeedImageUrl(cover, { width: 640, quality: 75, natural: false }),
     full: cover,
-    href: `/project/${p.id}`,
+    href: `/showcase/${p.id}`,
   };
 };
 

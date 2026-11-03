@@ -588,7 +588,7 @@ export function ProfileHiringRequestsSection({
       title,
       coverUrl: packageRef?.coverUrl || projectRef?.coverUrl || null,
       label: serviceId ? "อ้างอิง Packages" : "อ้างอิงผลงาน",
-      to: serviceId ? `/service/${serviceId}` : req.project_id ? `/project/${req.project_id}` : null,
+      to: serviceId ? `/service/${serviceId}` : req.project_id ? `/showcase/${req.project_id}` : null,
     };
   };
 

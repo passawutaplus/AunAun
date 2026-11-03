@@ -57,7 +57,7 @@ function ProjectTable({ rows, showRising }: { rows: ContentInsightRow[]; showRis
           {rows.map((r) => (
             <tr key={r.id} className="border-b border-admin-border/50 last:border-0">
               <td className="px-3 py-2">
-                <Link to={`/project/${r.id}`} className="text-admin-accent hover:underline font-medium line-clamp-1">
+                <Link to={`/showcase/${r.id}`} className="text-admin-accent hover:underline font-medium line-clamp-1">
                   {r.title || r.id.slice(0, 8)}
                 </Link>
                 <p className="text-[10px] text-admin-muted font-mono mt-0.5">

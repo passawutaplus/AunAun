@@ -382,7 +382,7 @@ function mapPlatformEventRow(r: {
       : null) ||
     r.event_type;
   let link: string | undefined;
-  if (r.target_type === "project" && r.target_id) link = `/project/${r.target_id}`;
+  if (r.target_type === "project" && r.target_id) link = `/showcase/${r.target_id}`;
   else if (r.target_type === "job" && r.target_id) link = `/hiring/${r.target_id}`;
   else if (r.target_type === "user" && r.target_id) link = `/u/${r.target_id}`;
   else if (r.event_type === "report.created") link = "/admin/reports";
@@ -438,7 +438,7 @@ async function fetchPlatformActivityPolling(limit: number): Promise<ActivityEven
         })),
         ...pick(projects.data, (r) => ({
           id: `p-${r.id}`, type: "project" as const, title: "ผลงานใหม่",
-          subtitle: r.title, at: r.created_at, targetId: r.id, link: `/project/${r.id}`,
+          subtitle: r.title, at: r.created_at, targetId: r.id, link: `/showcase/${r.id}`,
         })),
         ...pick(jobs.data, (r) => ({
           id: `j-${r.id}`, type: "job" as const, title: "ประกาศงานใหม่",
@@ -459,12 +459,12 @@ async function fetchPlatformActivityPolling(limit: number): Promise<ActivityEven
         ...pick(likes.data, (r) => ({
           id: `lk-${r.user_id}-${r.project_id}`, type: "like" as const, title: "ให้ +1 ผลงาน",
           subtitle: r.project_id.slice(0, 8) + "…", at: r.created_at,
-          actorId: r.user_id, targetId: r.project_id, link: `/project/${r.project_id}`,
+          actorId: r.user_id, targetId: r.project_id, link: `/showcase/${r.project_id}`,
         })),
         ...pick(comments.data, (r) => ({
           id: `cm-${r.id}`, type: "comment" as const, title: "คอมเมนต์ใหม่",
           subtitle: r.content?.slice(0, 80) ?? "", at: r.created_at,
-          actorId: r.user_id, targetId: r.project_id, link: `/project/${r.project_id}`,
+          actorId: r.user_id, targetId: r.project_id, link: `/showcase/${r.project_id}`,
         })),
         ...pick(follows.data, (r) => ({
           id: `fl-${r.follower_id}-${r.following_id}`, type: "follow" as const, title: "ติดตามใหม่",

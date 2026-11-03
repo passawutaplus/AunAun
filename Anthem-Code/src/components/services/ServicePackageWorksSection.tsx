@@ -53,7 +53,7 @@ function PackageWorkTile({ project: p, serviceId }: { project: PackageWorkCard; 
   const { likes, isLiked, toggle } = useProjectLike(p.id);
   const cover = coverOf(p);
   const href =
-    serviceId && serviceId !== "preview" ? `/project/${p.id}?fromPackage=${encodeURIComponent(serviceId)}` : `/project/${p.id}`;
+    serviceId && serviceId !== "preview" ? `/showcase/${p.id}?fromPackage=${encodeURIComponent(serviceId)}` : `/showcase/${p.id}`;
   return (
     <div className="group min-w-0">
       <Link to={href} className="block">

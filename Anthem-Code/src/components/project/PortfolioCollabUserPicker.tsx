@@ -137,7 +137,7 @@ export function PortfolioCollabUserPicker({
                     (คนที่ปิดรับการแท็กจะไม่ขึ้นในรายชื่อ)
                   </p>
                   <Link
-                    to="/?mode=designers"
+                    to="/?mode=creators"
                     className="mt-3 inline-flex text-xs font-medium text-primary underline-offset-4 hover:underline"
                   >
                     ไปหน้า Designers

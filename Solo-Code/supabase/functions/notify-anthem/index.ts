@@ -108,7 +108,7 @@ Deno.serve(async (req) => {
       const senderName = sender?.display_name ?? "ครีเอเตอร์";
       const giftName = gift?.name_th ?? "ของขวัญ";
       const actionUrl = tx.project_id
-        ? `${siteUrl}/project/${tx.project_id}`
+        ? `${siteUrl}/showcase/${tx.project_id}`
         : `${siteUrl}/earnings`;
 
       const result = await dispatchAnthemNotification(admin, {
@@ -130,7 +130,7 @@ Deno.serve(async (req) => {
           kind: "anthem_gift",
           body: `${senderName} ส่ง ${giftName} (${tx.price_px} px)`,
           idempotencyKey: `line-gift-${tx.id}`,
-          link: tx.project_id ? `/project/${tx.project_id}` : "/earnings",
+          link: tx.project_id ? `/showcase/${tx.project_id}` : "/earnings",
         },
       });
       return json(req, result);

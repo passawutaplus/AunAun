@@ -34,7 +34,7 @@ export function ReviewOriginBadges({ review, className, showProject = true }: Pr
       ) : null}
       {projectId ? (
         <Link
-          to={`/project/${projectId}`}
+          to={`/showcase/${projectId}`}
           className="inline-flex max-w-full items-center gap-1 rounded-full border border-border/70 bg-muted/50 px-2 py-0.5 text-[10px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted"
         >
           <ImageIcon className="h-3 w-3 shrink-0" />

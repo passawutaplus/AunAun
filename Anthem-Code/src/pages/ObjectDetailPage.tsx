@@ -365,7 +365,7 @@ function ObjectProjectRefs({ ids }: { ids: string[] }) {
       <ul className="mt-3 grid gap-2">
         {data.map((project) => (
           <li key={project.id}>
-            <Link to={`/project/${project.id}`} className="flex items-center gap-3 text-sm underline-offset-2 hover:underline">
+            <Link to={`/showcase/${project.id}`} className="flex items-center gap-3 text-sm underline-offset-2 hover:underline">
               {project.cover_url ? (
                 <img src={project.cover_url} alt="" className="h-12 w-12 rounded object-cover" />
               ) : null}

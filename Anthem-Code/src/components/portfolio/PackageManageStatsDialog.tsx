@@ -349,7 +349,7 @@ export default function PackageManageStatsDialog({
                 {rangeStats.referrers.map((r) => (
                   <li key={r.projectId}>
                     <Link
-                      to={`/project/${r.projectId}`}
+                      to={`/showcase/${r.projectId}`}
                       className="flex items-center gap-3 rounded-xl border border-border/60 bg-card/50 p-2.5 hover:bg-accent/40 transition-colors"
                     >
                       {r.coverUrl ? (

@@ -1556,9 +1556,9 @@ const ProjectEditorPage = () => {
           navigate("/?drill=1", { replace: true });
         } else if (targetStatus === "Published") {
           // Replace editor in history so Back from the project page skips the editor.
-          navigate(`/project/${savedId}`, { replace: true });
+          navigate(`/showcase/${savedId}`, { replace: true });
         } else {
-          navigate(`/project/${savedId}`);
+          navigate(`/showcase/${savedId}`);
         }
       } else {
         const created = await create.mutateAsync({ ...payload, owner_id: user.id });
@@ -1574,9 +1574,9 @@ const ProjectEditorPage = () => {
         ) {
           navigate("/?drill=1", { replace: true });
         } else if (targetStatus === "Published") {
-          navigate(`/project/${created.id}`, { replace: true });
+          navigate(`/showcase/${created.id}`, { replace: true });
         } else {
-          navigate(`/project/${created.id}`);
+          navigate(`/showcase/${created.id}`);
         }
       }
     } catch (e) {

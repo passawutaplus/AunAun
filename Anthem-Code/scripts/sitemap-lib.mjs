@@ -130,7 +130,7 @@ export function buildSitemapUrls(opts = {}) {
   const urls = [
     ...staticPaths,
     ...projectIds.map((id) => ({
-      loc: `/project/${id}`,
+      loc: `/showcase/${id}`,
       priority: "0.8",
       changefreq: "weekly",
       group: "projects",

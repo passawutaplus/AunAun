@@ -406,7 +406,7 @@ const CommunityFeedSidebar = ({ filter, onFilterChange, className }: Props) => {
           ) : (
             <p className="text-xs text-muted-foreground thai-body">กำลังหาครีเอเตอร์ให้…</p>
           )}
-          <ViewAllLink to="/?mode=designers" label="ดูครีเอเตอร์เพิ่ม" />
+          <ViewAllLink to="/?mode=creators" label="ดูครีเอเตอร์เพิ่ม" />
         </SidebarSection>
       </div>
     </aside>

@@ -3,7 +3,7 @@ import { PER_CATEGORY, SHOWCASE, SHOWCASE_CATEGORIES, buildShowcase, type Landin
 
 const FEATURED = ["3a08479e-ec0b-40bd-b54c-cb1a2724460a", "acfff42e-8539-4979-a7a3-7ca439e26f68"];
 
-const member = (id: string, category: string): LandingWork => ({ id, title: id, category, src: `/${id}.jpg`, href: `/project/${id}` });
+const member = (id: string, category: string): LandingWork => ({ id, title: id, category, src: `/${id}.jpg`, href: `/showcase/${id}` });
 
 describe("buildShowcase", () => {
   it("has the same number of examples in every category", () => {

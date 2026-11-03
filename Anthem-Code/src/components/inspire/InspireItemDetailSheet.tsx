@@ -198,7 +198,7 @@ export function InspireItemDetailSheet({
                         className="shrink-0 h-8 rounded-full px-3 text-xs text-primary border-primary/50 hover:bg-primary/10 hover:text-primary"
                       >
                         <Link
-                          to={`/project/${item.project_id}`}
+                          to={`/showcase/${item.project_id}`}
                           onClick={() => onOpenChange(false)}
                         >
                           <ExternalLink className="w-3.5 h-3.5 mr-1" />

@@ -159,7 +159,7 @@ const ChatMetaPanel = ({
                         <button
                           key={pid}
                           type="button"
-                          onClick={() => navigate(`/project/${pid}`)}
+                          onClick={() => navigate(`/showcase/${pid}`)}
                           className="text-xs flex items-center gap-1 px-2 py-1 rounded-md bg-muted hover:bg-accent"
                         >
                           <ExternalLink className="w-3 h-3" /> ดูผลงาน

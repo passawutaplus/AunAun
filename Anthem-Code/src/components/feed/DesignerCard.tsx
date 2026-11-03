@@ -101,7 +101,7 @@ const DesignerCard = ({ data, search = "", followedBy = [], newWorkCount = 0 }: 
   const previewProjects = projects.slice(0, PREVIEW);
   const previewFill = previewProjects.length < PREVIEW;
 
-  const goto = (id: string) => navigate(`/project/${id}`);
+  const goto = (id: string) => navigate(`/showcase/${id}`);
   const profilePath = `/u/${profileUserId}`;
   const gotoProfile = (tab?: "works" | "services" | "objects") => {
     const qs = new URLSearchParams();

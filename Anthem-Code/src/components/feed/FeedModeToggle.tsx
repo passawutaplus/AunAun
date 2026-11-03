@@ -6,7 +6,18 @@ import { cn } from "@/lib/utils";
 import PackagesIcon from "@/components/icons/PackagesIcon";
 import { isFeedModeVisible, isLaunchDesignDrillEnabled } from "@/lib/aplus1Launch";
 
-export type FeedMode = "projects" | "designers" | "packages" | "objects" | "studios" | "community";
+export type FeedMode = "showcase" | "creators" | "packages" | "objects" | "studios" | "community";
+
+const FEED_MODES: readonly FeedMode[] = ["showcase", "creators", "packages", "objects", "studios", "community"];
+/** Pre-rename ids still arriving via old links (`?mode=designers`) and stored `feed-mode` values. */
+const LEGACY_FEED_MODES: Record<string, FeedMode> = { projects: "showcase", designers: "creators" };
+
+/** Read a feed mode from a URL param or storage, mapping the old ids; null when unknown. */
+export function parseFeedMode(raw: string | null | undefined): FeedMode | null {
+  if (!raw) return null;
+  if ((FEED_MODES as readonly string[]).includes(raw)) return raw as FeedMode;
+  return LEGACY_FEED_MODES[raw] ?? null;
+}
 
 type ToggleItem = {
   id: FeedMode | "drill";
@@ -27,9 +38,9 @@ interface Props {
 }
 
 const items: ToggleItem[] = [
-  { id: "projects", label: "Showcase", icon: LayoutGrid },
+  { id: "showcase", label: "Showcase", icon: LayoutGrid },
   { id: "drill", label: "Design Drill", icon: Target, mobileOnly: true },
-  { id: "designers", label: "Creators", icon: Users },
+  { id: "creators", label: "Creators", icon: Users },
   { id: "packages", label: "Packages", icon: PackagesIcon },
   { id: "objects", label: "Objects", icon: Box },
 ];

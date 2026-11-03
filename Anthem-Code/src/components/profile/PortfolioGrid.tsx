@@ -31,7 +31,7 @@ function ProjectThumb({
   if (list) {
     return (
       <Link
-        to={`/project/${project.id}`}
+        to={`/showcase/${project.id}`}
         className="group flex items-center gap-3 rounded-xl border border-border/60 bg-card/40 p-2 hover:bg-card/80 transition-colors"
       >
         <div className="h-16 w-20 shrink-0 overflow-hidden rounded-lg bg-muted">
@@ -57,7 +57,7 @@ function ProjectThumb({
   }
 
   return (
-    <Link to={`/project/${project.id}`} className="group block">
+    <Link to={`/showcase/${project.id}`} className="group block">
       <div className="relative w-full overflow-hidden rounded-[6px] bg-muted">
         {project.cover_url ? (
           <img

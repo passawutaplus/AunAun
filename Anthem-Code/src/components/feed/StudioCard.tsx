@@ -61,7 +61,7 @@ const StudioCard = ({ data }: Props) => {
         {tiles.map((t, i) => (
           <button
             key={t.id + i}
-            onClick={() => t.cover && navigate(`/project/${t.id}`)}
+            onClick={() => t.cover && navigate(`/showcase/${t.id}`)}
             disabled={!t.cover}
             className="relative aspect-[4/3] rounded-xl overflow-hidden bg-muted group"
           >

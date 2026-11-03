@@ -29,7 +29,7 @@ export function useDesignerHeroSlides() {
         backgroundCover: cover,
         avatarUrl: profile.avatar_url ?? null,
         profileHref: `/u/${pid}`,
-        projectHref: `/project/${pick.id}`,
+        projectHref: `/showcase/${pick.id}`,
         projectTitle: pick.title,
       });
     }
@@ -83,7 +83,7 @@ export function useStudioHeroSlides() {
           backgroundCover: cover,
           avatarUrl: studio.avatar_url ?? null,
           profileHref: `/s/${studio.slug}`,
-          projectHref: `/project/${pick.id}`,
+          projectHref: `/showcase/${pick.id}`,
           projectTitle: pick.title,
         });
       }
