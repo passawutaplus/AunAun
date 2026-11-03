@@ -66,7 +66,9 @@ AS $$
   WHERE id = _event_id AND status = 'published';
 $$;
 
+-- Supabase grants anon EXECUTE on new public functions by default; likes are signed-in only.
 REVOKE ALL ON FUNCTION public.toggle_event_like(uuid), public.increment_event_view(uuid) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.toggle_event_like(uuid) FROM anon;
 GRANT EXECUTE ON FUNCTION public.toggle_event_like(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.increment_event_view(uuid) TO anon, authenticated;
 
@@ -101,6 +103,7 @@ AS $$
 $$;
 
 REVOKE ALL ON FUNCTION public.record_event_registration(uuid) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.record_event_registration(uuid) FROM anon;
 GRANT EXECUTE ON FUNCTION public.record_event_registration(uuid) TO authenticated;
 
 -- Rollback:
