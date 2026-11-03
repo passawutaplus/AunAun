@@ -1,0 +1,39 @@
+name: Apply event drafts
+
+# The weekly "SAMECOR event scout" routine opens a PR adding
+# Solo-Code/supabase/event-drafts/<date>.sql. Once that PR is merged, this applies the new
+# file(s) to production as DRAFT events through the event_scout role (see
+# Solo-Code/supabase/migrations/20261104100000_event_scout.sql). Already-merged files are
+# not re-run: only files added or changed by the merge commit are applied.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "Solo-Code/supabase/event-drafts/*.sql"
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Install psql
+        run: sudo apt-get update -q && sudo apt-get install -y -q postgresql-client
+
+      - name: Apply new draft files
+        env:
+          EVENT_SCOUT_DB_URL: ${{ secrets.EVENT_SCOUT_DB_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "$EVENT_SCOUT_DB_URL" ]; then
+            echo "EVENT_SCOUT_DB_URL secret is not set" >&2; exit 1
+          fi
+          files=$(git diff --name-only --diff-filter=AM HEAD^ HEAD -- 'Solo-Code/supabase/event-drafts/*.sql')
+          if [ -z "$files" ]; then echo "no new draft files"; exit 0; fi
+          for f in $files; do
+            echo "== $f"
+            psql "$EVENT_SCOUT_DB_URL" -v ON_ERROR_STOP=1 -q -f "$f"
+          done
