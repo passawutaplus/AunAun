@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { addDays, addMonths, format, isSameDay, startOfWeek } from "date-fns";
+import { addDays, addMonths, format, startOfWeek } from "date-fns";
 import { ArrowRight, CalendarDays, ChevronLeft, ChevronRight, Clock, ExternalLink, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -14,8 +14,6 @@ type Props = {
   events: ExhibitionEvent[];
   className?: string;
 };
-
-const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 /** Google Calendar glyph (four-colour frame, "31" tile) drawn inline so it needs no asset. */
 function GoogleCalendarIcon({ className }: { className?: string }) {
@@ -142,7 +140,7 @@ function AddToGoogle({ events }: { events: ExhibitionEvent[] }) {
 }
 
 /**
- * "This week" strip with a dot on days that have events, and a Full Calendar dialog
+ * "This week" heading (date range + event count) and a Full Calendar dialog
  * (month grid → the picked day's events → add to Google Calendar).
  */
 export function ExhibitionCalendar({ events, className }: Props) {
@@ -187,7 +185,7 @@ export function ExhibitionCalendar({ events, className }: Props) {
 
   return (
     <section className={cn("py-1", className)} aria-labelledby="week-events-heading">
-      <div className="mb-4 flex items-start justify-between gap-3">
+      <div className="flex items-center justify-between gap-3">
         <div>
           <h2 id="week-events-heading" className="whitespace-nowrap text-lg font-semibold tracking-tight text-foreground sm:text-2xl">
             This Week's Events
@@ -200,30 +198,6 @@ export function ExhibitionCalendar({ events, className }: Props) {
           <CalendarDays className="mr-1.5 h-4 w-4" aria-hidden /> Full Calendar
           <ChevronRight className="ml-1.5 h-4 w-4" aria-hidden />
         </Button>
-      </div>
-
-      <div className="grid grid-cols-7 gap-1.5 sm:gap-2.5" role="list" aria-label="สัปดาห์นี้">
-        {week.map((d, i) => {
-          const has = eventsOn(events, d).length > 0;
-          const isToday = isSameDay(d, today);
-          return (
-            <button
-              key={isoDay(d)}
-              type="button"
-              role="listitem"
-              onClick={() => openOn(d)}
-              aria-label={`${format(d, "d MMM")}${has ? " มีงาน" : ""}`}
-              className={cn(
-                "flex flex-col items-center gap-1.5 rounded-2xl border px-1 py-3 text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground sm:py-4",
-                isToday ? "border-brand bg-brand/5" : "border-transparent bg-card",
-              )}
-            >
-              <span className="text-[11px] font-medium text-muted-foreground">{DAY_LABELS[i]}</span>
-              <span className={cn("text-xl font-semibold leading-none sm:text-2xl", isToday && "text-brand")}>{format(d, "d")}</span>
-              <span className={cn("h-1.5 w-1.5 rounded-full", has ? "bg-brand" : "bg-transparent")} aria-hidden />
-            </button>
-          );
-        })}
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
