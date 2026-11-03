@@ -1,5 +1,6 @@
 // Google Gemini — caption + hashtag generation for Content Planner 2.0
 import { supabasePublishableKey } from "../_shared/supabase-keys.ts";
+import { serveWithCorsOrigin } from "../_shared/cors.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { checkAiQuota, isProUser } from "../_shared/ai-quota.ts";
 import {
@@ -9,8 +10,8 @@ import {
   GeminiError,
 } from "../_shared/gemini.ts";
 
+// Allow-Origin is stamped per request by serveWithCorsOrigin (origin allow-list in _shared/cors.ts).
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
@@ -22,7 +23,7 @@ interface Body {
   language?: "th" | "en";
 }
 
-Deno.serve(async (req) => {
+async function handle(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
@@ -114,4 +115,6 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-});
+}
+
+Deno.serve((req) => serveWithCorsOrigin(req, handle));

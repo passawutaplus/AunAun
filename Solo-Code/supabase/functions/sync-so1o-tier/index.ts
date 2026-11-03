@@ -1,9 +1,10 @@
 import { supabaseSecretKey } from "../_shared/supabase-keys.ts";
+import { serveWithCorsOrigin } from "../_shared/cors.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { z } from "npm:zod@3";
 
+// Allow-Origin is stamped per request by serveWithCorsOrigin (origin allow-list in _shared/cors.ts).
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-ecosystem-secret",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -28,7 +29,7 @@ function timingSafeEqual(a: string, b: string): boolean {
   return mismatch === 0;
 }
 
-Deno.serve(async (req) => {
+async function handle(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ ok: false, reason: "method_not_allowed" }, 405);
 
@@ -75,4 +76,6 @@ Deno.serve(async (req) => {
   }
 
   return json({ ok: true, profile_id: profile.id });
-});
+}
+
+Deno.serve((req) => serveWithCorsOrigin(req, handle));

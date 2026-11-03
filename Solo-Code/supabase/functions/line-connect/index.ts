@@ -1,11 +1,12 @@
 import { supabaseSecretKey, supabasePublishableKey } from "../_shared/supabase-keys.ts";
+import { serveWithCorsOrigin } from "../_shared/cors.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { z } from "npm:zod@3";
 import { exchangeLineAuthCode, verifyLineIdToken } from "../_shared/line-oauth.ts";
 import { sendLineTestSamples } from "../_shared/line-test-samples.ts";
 
+// Allow-Origin is stamped per request by serveWithCorsOrigin (origin allow-list in _shared/cors.ts).
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, DELETE, OPTIONS",
 };
@@ -47,7 +48,7 @@ async function authUserId(
   return claims.claims.sub as string;
 }
 
-Deno.serve(async (req) => {
+async function handle(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -152,4 +153,6 @@ Deno.serve(async (req) => {
     console.error("[line-connect]", e);
     return json({ error: e instanceof Error ? e.message : "connect_failed" }, 400);
   }
-});
+}
+
+Deno.serve((req) => serveWithCorsOrigin(req, handle));
