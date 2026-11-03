@@ -26,7 +26,7 @@ export default function AppFooterCta({ className }: { className?: string }) {
       aria-labelledby="app-cta-title"
       className={cn("mx-auto mt-14 w-full max-w-xl px-4 pb-6", className)}
     >
-      <div className="relative overflow-hidden rounded-[2rem] border border-border bg-card px-6 pb-7 pt-8 text-center">
+      <div className="relative overflow-hidden px-6 pb-7 pt-8 text-center">
         {/* Brand symbol as a quiet watermark, cropped off the corner. */}
         <img
           src="/brand/symbol-black.svg"
