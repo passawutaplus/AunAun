@@ -9,18 +9,20 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import {
   type DigestInfo,
+  type EventInfo,
   type FeedbackInfo,
   type MemberInfo,
   type ReportInfo,
   type LineMessage,
   flexDigest,
+  flexEvent,
   flexFeedback,
   flexMembersBatch,
   flexReport,
   isIgnoredEmail,
 } from "../_shared/line-admin-format.ts";
 
-type OutboxRow = { id: number; kind: "member" | "feedback" | "report" | "digest"; ref_id: string | null; attempts: number };
+type OutboxRow = { id: number; kind: "member" | "feedback" | "report" | "digest" | "event"; ref_id: string | null; attempts: number };
 
 const MEMBER_BURST_AT = 4; // this many sign-ups in one run -> one summary message
 
@@ -106,6 +108,13 @@ Deno.serve(async (req) => {
       const rep = ((data ?? []) as ReportInfo[])[0];
       if (rep) {
         texts.push(flexReport(rep));
+        sentIds.push(r.id);
+      } else skippedIds.push(r.id);
+    } else if (r.kind === "event" && r.ref_id) {
+      const { data } = await admin.rpc("admin_line_event_info", { _id: r.ref_id });
+      const ev = ((data ?? []) as EventInfo[])[0];
+      if (ev) {
+        texts.push(flexEvent(ev));
         sentIds.push(r.id);
       } else skippedIds.push(r.id);
     } else if (r.kind === "digest") {

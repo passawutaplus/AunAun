@@ -26,6 +26,7 @@ import type { ExperienceItem } from "@/lib/validators";
 import { normalizeExperienceItem } from "@/lib/validators";
 import ProfileAboutPanel from "@/components/profile/ProfileAboutPanel";
 import PageLoader from "@/components/ui/PageLoader";
+import QueryStatusPanel from "@/components/ui/QueryStatusPanel";
 import ProfileCoverHeader from "@/components/profile/ProfileCoverHeader";
 import ProfileOwnerActions from "@/components/profile/ProfileOwnerActions";
 import OnboardingChecklist from "@/components/onboarding/OnboardingChecklist";
@@ -74,7 +75,7 @@ const PortfolioProfilePage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const { user, loading: authLoading } = useAuth();
-  const { data: profile, isLoading } = useProfile(user?.id);
+  const { data: profile, isLoading, isError, refetch: refetchProfile } = useProfile(user?.id);
   const designDrillEnabled = isLaunchDesignDrillEnabled();
   const hiringBoardEnabled = isAplus1HiringBoardEnabled();
   const { data: myProjects = [], isLoading: projectsLoading } = useMyProjects(user?.id);
@@ -211,8 +212,22 @@ const PortfolioProfilePage = () => {
     { id: "about", label: "About Me" },
   ];
 
-  if (authLoading || isLoading || !profile) {
+  if (authLoading || isLoading) {
     return <PageLoader />;
+  }
+  if (isError || !profile) {
+    // Was an endless loader: a failed or empty profile read now offers a retry.
+    return (
+      <div className="container mx-auto max-w-xl px-4 py-16">
+        <QueryStatusPanel
+          isLoading={false}
+          isError
+          onRetry={() => void refetchProfile()}
+          errorTitle="โหลดโปรไฟล์ไม่สำเร็จ"
+          errorDescription="ลองใหม่อีกครั้ง ถ้ายังไม่ได้ ติดต่อเราผ่านหน้าช่วยเหลือ"
+        />
+      </div>
+    );
   }
 
   const isVerified = !!(profile as { is_verified?: boolean }).is_verified;

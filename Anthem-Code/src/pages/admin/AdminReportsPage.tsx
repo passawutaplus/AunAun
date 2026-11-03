@@ -40,6 +40,8 @@ const targetLink = (r: ReportRow) => {
   switch (r.target_type) {
     case "project":
       return `/showcase/${r.target_id}`;
+    case "event":
+      return `/exhibition/${r.target_id}`;
     case "user":
       return `/u/${r.target_id}`;
     case "job":

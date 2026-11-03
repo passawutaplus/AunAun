@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useWithoutBlockedOwners } from "./useBlockedUserIds";
+import { useFeedProjectSelect } from "./useFeedProjectSelect";
 import { supabase } from "@/integrations/supabase/client";
 import type { TablesInsert, TablesUpdate, Tables } from "@/integrations/supabase/types";
 import { PROJECT_FEED_CARD_SELECT, PROJECT_FEED_CARD_SELECT_WITH_AI } from "@/lib/dbSelects";
@@ -152,7 +152,7 @@ export const useMyProjects = (userId: string | undefined) =>
   });
 
 export const usePublishedProjects = () => {
-  const select = useWithoutBlockedOwners();
+  const select = useFeedProjectSelect();
   return useQuery({
     queryKey: ["published-projects"],
     queryFn: async () =>
@@ -170,7 +170,7 @@ export const usePublishedProjects = () => {
 };
 
 export const useTopProjects = () => {
-  const select = useWithoutBlockedOwners();
+  const select = useFeedProjectSelect();
   return useQuery({
     queryKey: ["top-projects"],
     queryFn: async () =>
@@ -189,7 +189,7 @@ export const useTopProjects = () => {
 };
 
 export const useFollowingProjects = (userId: string | undefined) => {
-  const select = useWithoutBlockedOwners();
+  const select = useFeedProjectSelect();
   return useQuery({
     queryKey: ["following-projects", userId],
     enabled: !!userId,
@@ -216,7 +216,7 @@ export const useFollowingProjects = (userId: string | undefined) => {
 };
 
 export const useForYouProjects = (userId: string | undefined) => {
-  const select = useWithoutBlockedOwners();
+  const select = useFeedProjectSelect();
   return useQuery({
     queryKey: ["for-you-projects", userId],
     enabled: !!userId,

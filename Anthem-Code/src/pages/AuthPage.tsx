@@ -31,6 +31,7 @@ import {
 } from "@/lib/brandConfig";
 import SeoHead from "@/components/SeoHead";
 import { hasCompletedProfileOnboarding } from "@/hooks/useFeedInterests";
+import { rememberAfterOnboarding } from "@/lib/afterOnboarding";
 import { PasswordField } from "@/components/ui/PasswordField";
 import { FieldError } from "@/components/ui/FieldError";
 import {
@@ -105,6 +106,7 @@ const AuthPage = () => {
         .maybeSingle();
       if (cancelled) return;
       const needsInterestSurvey = !hasCompletedProfileOnboarding(data);
+      if (needsInterestSurvey) rememberAfterOnboarding(redirect);
       const dest = needsInterestSurvey ? "/" : redirect;
       // No fade-out + delay: the form keeps its spinner until we leave, so there is no blank page in between.
       navigate(dest, { replace: true });

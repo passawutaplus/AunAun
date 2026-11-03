@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import type { LucideIcon } from "lucide-react";
-import { Box, LayoutGrid, Target, Users } from "lucide-react";
+import { Box, Frame, LayoutGrid, Target, Users } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import PackagesIcon from "@/components/icons/PackagesIcon";
@@ -20,7 +21,8 @@ export function parseFeedMode(raw: string | null | undefined): FeedMode | null {
 }
 
 type ToggleItem = {
-  id: FeedMode | "drill";
+  /** "drill" and "exhibition" are buttons that leave the feed instead of switching its mode. */
+  id: FeedMode | "drill" | "exhibition";
   label: string;
   icon: LucideIcon;
   mobileOnly?: boolean;
@@ -30,6 +32,8 @@ type ToggleItem = {
 interface Props {
   value: FeedMode;
   drillActive?: boolean;
+  /** True on /exhibition, where the pill sits on Exhibition. */
+  exhibitionActive?: boolean;
   onChange: (v: FeedMode) => void;
   onDrillSelect?: () => void;
   className?: string;
@@ -41,6 +45,7 @@ const items: ToggleItem[] = [
   { id: "showcase", label: "Showcase", icon: LayoutGrid },
   { id: "drill", label: "Design Drill", icon: Target, mobileOnly: true },
   { id: "creators", label: "Creators", icon: Users },
+  { id: "exhibition", label: "Exhibition", icon: Frame },
   { id: "packages", label: "Packages", icon: PackagesIcon },
   { id: "objects", label: "Objects", icon: Box },
 ];
@@ -58,26 +63,29 @@ type IndicatorBox = { x: number; width: number };
 const FeedModeToggle = ({
   value,
   drillActive = false,
+  exhibitionActive = false,
   onChange,
   onDrillSelect,
   className,
   compact = false,
 }: Props) => {
   const reduced = useReducedMotion();
+  const navigate = useNavigate();
   const trackRef = useRef<HTMLDivElement>(null);
   const btnRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
   const [indicator, setIndicator] = useState<IndicatorBox | null>(null);
 
-  const visible = items.filter(
-    (item) =>
-      item.id === "drill" ? isLaunchDesignDrillEnabled() : isFeedModeVisible(item.id as FeedMode),
+  const visible = items.filter((item) =>
+    item.id === "drill"
+      ? isLaunchDesignDrillEnabled()
+      : item.id === "exhibition" || isFeedModeVisible(item.id as FeedMode),
   );
 
   /** Equal-width segments → pill mostly translates X (feels like a clean L/R slide). */
   const equalSplit = visible.every((item) => !item.mobileOnly && !item.desktopOnly);
   const packed = equalSplit && !compact && visible.length <= 3;
 
-  const activeId = drillActive ? "drill" : value;
+  const activeId = drillActive ? "drill" : exhibitionActive ? "exhibition" : value;
   const visibleKey = visible.map((v) => v.id).join("|");
 
   useLayoutEffect(() => {
@@ -174,7 +182,11 @@ const FeedModeToggle = ({
             }}
             aria-label={`${label} view`}
             aria-pressed={active}
-            onClick={() => (id === "drill" ? onDrillSelect?.() : onChange(id))}
+            onClick={() => {
+              if (id === "drill") onDrillSelect?.();
+              else if (id === "exhibition") navigate("/exhibition");
+              else onChange(id);
+            }}
             className={cn(
               "relative z-10 items-center justify-center rounded-full text-xs font-medium transition-[padding,gap,colors] duration-200",
               compact ? "gap-0 px-2.5 py-1.5" : "gap-1.5 px-3 py-1.5",
