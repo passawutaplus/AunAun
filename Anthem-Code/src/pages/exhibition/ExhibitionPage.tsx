@@ -291,7 +291,7 @@ export default function ExhibitionPage() {
           className="py-16"
         />
       ) : (
-        <div>
+        <div data-event-list>
           {rows.map((e) => (
             <EventListCard key={e.id} event={e} stats={stats?.[e.id]} liked={myLikes?.has(e.id)} interested={myInterests?.has(e.id)} />
           ))}
