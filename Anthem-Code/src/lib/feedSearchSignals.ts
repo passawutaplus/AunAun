@@ -38,6 +38,13 @@ export function recordFeedSearch(userId: string, query: string) {
   write(userId, { queries });
 }
 
+/** Drop one query from the history (case-insensitive), e.g. the X on a recent search. */
+export function removeFeedSearch(userId: string, query: string) {
+  const target = query.trim().toLowerCase();
+  const state = read(userId);
+  write(userId, { queries: state.queries.filter((q) => q.toLowerCase() !== target) });
+}
+
 export function getFeedSearchQueries(userId: string): string[] {
   return read(userId).queries;
 }

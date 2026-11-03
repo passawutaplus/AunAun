@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   getFeedSearchQueries,
   recordFeedSearch,
+  removeFeedSearch,
 } from "@/lib/feedSearchSignals";
 
 const ANON_KEY = "anon";
@@ -36,5 +37,13 @@ export function useSearchHistory(userId?: string | null, scope?: SearchHistorySc
     [key, refresh],
   );
 
-  return { queries, record, refresh };
+  const remove = useCallback(
+    (query: string) => {
+      removeFeedSearch(key, query);
+      refresh();
+    },
+    [key, refresh],
+  );
+
+  return { queries, record, remove, refresh };
 }

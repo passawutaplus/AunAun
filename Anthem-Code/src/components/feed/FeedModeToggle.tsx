@@ -39,6 +39,8 @@ interface Props {
   onDrillSelect?: () => void;
   /** Replaces the default "go to /exhibition" (e.g. the search screen just switches scope). */
   onExhibitionSelect?: () => void;
+  /** Labels at every width, full-width equal segments (search screen, where there is room). */
+  showLabels?: boolean;
   className?: string;
   /** Icon-only (e.g. mobile while search is expanded) */
   compact?: boolean;
@@ -77,6 +79,7 @@ const FeedModeToggle = ({
   onChange,
   onDrillSelect,
   onExhibitionSelect,
+  showLabels = false,
   className,
   compact = false,
 }: Props) => {
@@ -166,8 +169,9 @@ const FeedModeToggle = ({
       className={cn(
         "relative shrink-0 flex items-center rounded-full border border-border bg-white p-0.5 shadow-none transition-[width] duration-200 dark:bg-card",
         // Phones: icon-only segments at their natural width; tablets and up get labels and fixed equal widths.
-        packed && visible.length === 2 && "md:w-[14.5rem]",
-        packed && visible.length === 3 && "md:w-[21.75rem]",
+        packed && !showLabels && visible.length === 2 && "md:w-[14.5rem]",
+        packed && !showLabels && visible.length === 3 && "md:w-[21.75rem]",
+        showLabels && "w-full",
         !compact && visible.length >= 4 && "w-max",
         className,
       )}
@@ -218,9 +222,13 @@ const FeedModeToggle = ({
             }}
             className={cn(
               "relative z-10 items-center justify-center rounded-full text-xs font-medium transition-[padding,gap,colors] duration-200",
-              compact ? "gap-0 px-2.5 py-1.5" : "gap-0 px-3.5 py-1.5 md:gap-1.5 md:px-3",
+              compact
+                ? "gap-0 px-2.5 py-1.5"
+                : showLabels
+                  ? "gap-1.5 px-3 py-2"
+                  : "gap-0 px-3.5 py-1.5 md:gap-1.5 md:px-3",
               visibility,
-              packed && "md:flex-1",
+              packed && (showLabels ? "flex-1" : "md:flex-1"),
               active
                 ? "text-white dark:text-primary-foreground"
                 : "text-foreground/75 hover:text-foreground",
@@ -234,7 +242,11 @@ const FeedModeToggle = ({
               className={cn(
                 "overflow-hidden whitespace-nowrap transition-[max-width,opacity,margin] duration-200",
                 // Labels from md (tablet) up; below that the icon carries the segment (aria-label names it).
-                compact ? "max-w-0 opacity-0" : "max-w-0 opacity-0 md:max-w-[6rem] md:opacity-100",
+                compact
+                  ? "max-w-0 opacity-0"
+                  : showLabels
+                    ? "max-w-[6rem] opacity-100"
+                    : "max-w-0 opacity-0 md:max-w-[6rem] md:opacity-100",
               )}
               aria-hidden={compact}
             >
