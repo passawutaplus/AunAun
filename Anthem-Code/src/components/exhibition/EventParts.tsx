@@ -193,7 +193,17 @@ export function eventImages(e: Pick<ExhibitionEvent, "cover_url" | "gallery_urls
 }
 
 /** Row on the public list: gallery left, details right. */
-export function EventListCard({ event, stats, liked }: { event: ExhibitionEvent; stats?: EventStats; liked?: boolean }) {
+export function EventListCard({
+  event,
+  stats,
+  liked,
+  interested,
+}: {
+  event: ExhibitionEvent;
+  stats?: EventStats;
+  liked?: boolean;
+  interested?: boolean;
+}) {
   const href = `/exhibition/${event.id}`;
   return (
     <article className="grid gap-4 border-b border-border py-6 last:border-0 md:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] md:gap-8">
@@ -203,7 +213,7 @@ export function EventListCard({ event, stats, liked }: { event: ExhibitionEvent;
           {event.is_pick ? <PickTag /> : null}
           <CategoryTag category={event.category} />
           {event.origin !== "community" ? <OriginTag origin={event.origin} /> : null}
-          <EventActions event={event} stats={stats} liked={liked} className="ml-auto" />
+          <EventActions event={event} stats={stats} liked={liked} interested={interested} className="ml-auto" />
         </div>
         <h2 className="font-display text-2xl font-semibold leading-tight text-foreground">
           <Link to={href} className="hover:underline focus-visible:underline focus-visible:outline-none">

@@ -16,6 +16,7 @@ import { BackButton } from "@/components/ui/BackButton";
 import { HeaderAccountActions } from "@/components/HeaderAccountActions";
 import ConnectMessageDialog from "@/components/chat/ConnectMessageDialog";
 import SponsorOfferDialog from "@/components/exhibition/SponsorOfferDialog";
+import { googleCalendarLink } from "@/lib/googleCalendarLink";
 import ReportDialog from "@/components/report/ReportDialog";
 import {
   CategoryTag,
@@ -29,7 +30,7 @@ import {
 import EmptyState from "@/components/ui/EmptyState";
 import QueryStatusPanel from "@/components/ui/QueryStatusPanel";
 import { Button } from "@/components/ui/button";
-import { recordEventRegistration, useEvent, useEventProjects, useEventStats, useMyEventLikes, useRecordEventView } from "@/hooks/useExhibitionEvents";
+import { recordEventRegistration, useEvent, useEventProjects, useEventStats, useMyEventInterests, useMyEventLikes, useRecordEventView } from "@/hooks/useExhibitionEvents";
 import { EventActions } from "@/components/exhibition/EventActions";
 import { useAuth } from "@/hooks/useAuth";
 import { navigateToAuth } from "@/lib/authRedirect";
@@ -93,6 +94,7 @@ export default function ExhibitionDetailPage() {
   const statIds = useMemo(() => (id ? [id] : []), [id]);
   const { data: stats } = useEventStats(statIds);
   const { data: myLikes } = useMyEventLikes(statIds);
+  const { data: myInterests } = useMyEventInterests(statIds);
   useRecordEventView(event?.id, event?.status === "published");
   const { data: works = [] } = useEventProjects(event?.project_ids);
   const [contactOpen, setContactOpen] = useState(false);
@@ -129,6 +131,7 @@ export default function ExhibitionDetailPage() {
   const openForSponsors = event.open_for_sponsors && !isEventEnded(event);
   const canSponsor = reachable && openForSponsors;
   const path = `/exhibition/${event.id}`;
+  const gcalHref = googleCalendarLink({ ...event, url: typeof window !== "undefined" ? window.location.origin + path : null });
   const sourcePage = [event.source_url, event.website_url].find(isHttpUrl) ?? null;
   const [lead, ...rest] = event.description.split(/\n\s*\n/);
 
@@ -203,6 +206,16 @@ export default function ExhibitionDetailPage() {
               <span className="block text-muted-foreground">
                 เวลา: {event.time_note ?? NOT_SPECIFIED}
               </span>
+              {gcalHref ? (
+                <a
+                  href={gcalHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground underline decoration-foreground/30 underline-offset-4 hover:text-foreground hover:decoration-foreground"
+                >
+                  เพิ่มลง Google Calendar <ExternalLink className="h-3 w-3" aria-hidden />
+                </a>
+              ) : null}
             </InfoRow>
             <InfoRow icon={MapPin}>
               {event.location_name ? (
@@ -247,7 +260,7 @@ export default function ExhibitionDetailPage() {
                 onRegister={user && event.status === "published" ? () => recordEventRegistration(event.id) : undefined}
               />
             </div>
-            <EventActions event={event} stats={stats?.[event.id]} liked={myLikes?.has(event.id)} showViews />
+            <EventActions event={event} stats={stats?.[event.id]} liked={myLikes?.has(event.id)} interested={myInterests?.has(event.id)} showViews />
           </div>
           <EventSourceNote event={event} />
         </div>

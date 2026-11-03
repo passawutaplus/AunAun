@@ -1,8 +1,8 @@
-import { Eye, Heart, Share2 } from "lucide-react";
+import { Bookmark, Eye, Heart, Share2 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import SharePopover from "@/components/SharePopover";
 import { useAuth } from "@/hooks/useAuth";
-import { useToggleEventLike, type EventStats } from "@/hooks/useExhibitionEvents";
+import { useToggleEventInterest, useToggleEventLike, type EventStats } from "@/hooks/useExhibitionEvents";
 import { isDemoEventId, type ExhibitionEvent } from "@/lib/exhibitionEvents";
 import { cn } from "@/lib/utils";
 
@@ -15,26 +15,33 @@ type Props = {
   event: Pick<ExhibitionEvent, "id" | "title" | "cover_url" | "status">;
   stats?: EventStats;
   liked?: boolean;
+  /** "สนใจ" — saved + reminders before the event starts. */
+  interested?: boolean;
   /** Detail page: also show the view count. */
   showViews?: boolean;
   className?: string;
 };
 
 /** Like · share (· views) for an event — list cards and the event page. */
-export function EventActions({ event, stats, liked = false, showViews = false, className }: Props) {
+export function EventActions({ event, stats, liked = false, interested = false, showViews = false, className }: Props) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const toggle = useToggleEventLike();
+  const toggleInterest = useToggleEventInterest();
   const canLike = event.status === "published" && !isDemoEventId(event.id);
   const url = typeof window !== "undefined" ? `${window.location.origin}/exhibition/${event.id}` : `/exhibition/${event.id}`;
 
+  const requireUser = () => {
+    if (user) return true;
+    navigate(`/auth?redirect=${encodeURIComponent(location.pathname + location.search)}`);
+    return false;
+  };
   const onLike = () => {
-    if (!user) {
-      navigate(`/auth?redirect=${encodeURIComponent(location.pathname + location.search)}`);
-      return;
-    }
-    toggle.mutate(event.id);
+    if (requireUser()) toggle.mutate(event.id);
+  };
+  const onInterest = () => {
+    if (requireUser()) toggleInterest.mutate(event.id);
   };
 
   return (
@@ -56,6 +63,18 @@ export function EventActions({ event, stats, liked = false, showViews = false, c
       >
         <Heart className={cn("h-4 w-4", liked && "fill-current")} aria-hidden />
         {stats ? <span className="tabular-nums">{compact.format(stats.like_count)}</span> : null}
+      </button>
+      <button
+        type="button"
+        onClick={onInterest}
+        disabled={!canLike || toggleInterest.isPending}
+        aria-pressed={interested}
+        aria-label={interested ? "เลิกสนใจงานนี้" : "สนใจงานนี้ (เตือนก่อนงานเริ่ม)"}
+        title={interested ? "สนใจแล้ว — จะเตือนก่อนงานเริ่ม" : "สนใจ — เตือนก่อนงานเริ่ม 3 วันและ 1 วัน"}
+        className={cn(iconBtn, interested && "text-brand hover:text-brand")}
+      >
+        <Bookmark className={cn("h-4 w-4", interested && "fill-current")} aria-hidden />
+        {stats ? <span className="tabular-nums">{compact.format(stats.interest_count)}</span> : null}
       </button>
       <SharePopover url={url} title={event.title} label="แชร์งานนี้" imageUrl={event.cover_url ?? undefined}>
         <button type="button" aria-label="แชร์" className={iconBtn}>
