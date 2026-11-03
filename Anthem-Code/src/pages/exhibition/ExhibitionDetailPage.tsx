@@ -21,7 +21,6 @@ import ReportDialog from "@/components/report/ReportDialog";
 import {
   CategoryTag,
   EventGallery,
-  EventSourceNote,
   EventStatusBadge,
   OriginTag,
   PickTag,
@@ -262,7 +261,6 @@ export default function ExhibitionDetailPage() {
             // Signed-in clicks land in Portfolio → Exhibition → ลงทะเบียน.
             onRegister={user && event.status === "published" ? () => recordEventRegistration(event.id) : undefined}
           />
-          <EventSourceNote event={event} />
         </div>
       </div>
 
