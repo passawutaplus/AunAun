@@ -29,6 +29,7 @@ function shouldShowDesktopTopNav(pathname: string): boolean {
   if (isPortfolioEditorRoute(pathname)) return false;
   return (
     pathname === "/" ||
+    pathname === "/exhibition" ||
     pathname.startsWith("/help") ||
     pathname.startsWith("/forum") ||
     // My Studio (/dashboard, /earnings) has its own back-office top bar
@@ -75,7 +76,8 @@ const DesktopTopNav = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const openSignup = useAuthDialog((s) => s.openSignup);
-  const isHome = pathname === "/";
+  // /exhibition is a feed mode too: same top chrome and scroll hand-off to the page's own bar.
+  const isHome = pathname === "/" || pathname === "/exhibition";
   const isLearn = pathname.startsWith("/learn");
   const feedNav = useFeedHomeNavStore();
   const scrolled = isHome && feedNav.scrolled;
@@ -205,7 +207,7 @@ const DesktopTopNav = () => {
       window.removeEventListener("scroll", schedule);
       window.removeEventListener("resize", schedule);
     };
-  }, [isHome]);
+  }, [isHome, pathname]);
 
   if (!shouldShowDesktopTopNav(pathname) || isLearn) return null;
   // On home after the hero, the feed bar slides down over this chrome.

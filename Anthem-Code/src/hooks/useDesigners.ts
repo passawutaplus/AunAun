@@ -131,7 +131,7 @@ export const useDesigners = () => {
     [blocked],
   );
   return useQuery({
-    queryKey: ["designers-feed", "v13"],
+    queryKey: ["designers-feed", "v14"],
     queryFn: async (): Promise<DesignerCardData[]> => {
       const first = await profilesPublicFrom()
         .select(PROFILE_DESIGNER_SELECT)

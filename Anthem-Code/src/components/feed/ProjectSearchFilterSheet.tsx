@@ -1,5 +1,6 @@
 import { Search, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
+import { useNavigate } from "react-router-dom";
 import ColorSearchButton from "@/components/feed/ColorSearchButton";
 import {
   Dialog,
@@ -346,6 +347,7 @@ const ProjectSearchFilterSheet = ({
     <ColorSearchButton value={colorQuery} onChange={onColorQueryChange} className="h-11 w-11" />
   ) : null;
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
   const [draft, setDraft] = useState(value);
 
   useEffect(() => {
@@ -361,7 +363,7 @@ const ProjectSearchFilterSheet = ({
   };
 
   const designersTab = tab === "designers" && !!onDesignerSearchChange;
-  const title = designersTab ? "Search designers" : "Search and filter projects";
+  const title = designersTab ? "Search creators" : "Search showcase";
   const paper =
     "border-border dark:border-border bg-background text-foreground shadow-sm [&>button]:text-foreground";
   const toggleHideAi = () => {
@@ -382,6 +384,15 @@ const ProjectSearchFilterSheet = ({
     <div className="mb-3 flex shrink-0 gap-1.5" role="tablist" aria-label="ค้นหา">
       <Chip label="Showcase" active={!designersTab} onClick={() => onTabChange("projects")} />
       <Chip label="Creators" active={designersTab} onClick={() => onTabChange("designers")} />
+      {/* Exhibition is its own page with its own filters; this chip just goes there. */}
+      <Chip
+        label="Exhibition"
+        active={false}
+        onClick={() => {
+          onOpenChange(false);
+          navigate("/exhibition");
+        }}
+      />
     </div>
   ) : null;
 

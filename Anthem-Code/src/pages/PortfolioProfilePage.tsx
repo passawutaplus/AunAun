@@ -20,6 +20,7 @@ import InspireManagePanel from "@/components/inspire/InspireManagePanel";
 import PortfolioBookingPanel from "@/components/portfolio/PortfolioBookingPanel";
 import PortfolioHiringPanel from "@/components/portfolio/PortfolioHiringPanel";
 import PortfolioFollowedDesignersPanel from "@/components/portfolio/PortfolioFollowedDesignersPanel";
+import PortfolioExhibitionPanel from "@/components/portfolio/PortfolioExhibitionPanel";
 import { useMyApplications, useMySavedJobs } from "@/hooks/useJobs";
 import { useSavedCreatorServiceIds } from "@/hooks/useCreatorServiceBookmarks";
 import type { ExperienceItem } from "@/lib/validators";
@@ -58,9 +59,9 @@ const parseExperience = (raw: unknown): ExperienceItem[] =>
 const parseSkills = (raw: unknown): string[] =>
   Array.isArray(raw) ? raw.filter((s): s is string => typeof s === "string") : [];
 
-type ProfileTab = "overall" | "about" | "collections" | "designers" | "booking" | "hiring" | "inspire";
+type ProfileTab = "overall" | "about" | "collections" | "designers" | "exhibition" | "booking" | "hiring" | "inspire";
 
-const TAB_IDS: ProfileTab[] = ["overall", "collections", "designers", "booking", "hiring", "inspire", "about"];
+const TAB_IDS: ProfileTab[] = ["overall", "collections", "designers", "exhibition", "booking", "hiring", "inspire", "about"];
 
 function resolveTab(raw: string | null, hiringEnabled: boolean): ProfileTab {
   if (raw === "hiring" && !hiringEnabled) return "overall";
@@ -200,6 +201,7 @@ const PortfolioProfilePage = () => {
     { id: "overall", label: "My Showcase", count: published.length },
     { id: "collections", label: "Collections", count: collections.length },
     { id: "designers", label: "Creators", count: following },
+    { id: "exhibition", label: "Exhibition" },
     ...(isCommerceEnabled()
       ? [{ id: "booking" as const, label: "Packages Saved", count: savedPackageIds?.size ?? 0 }]
       : []),
@@ -259,6 +261,7 @@ const PortfolioProfilePage = () => {
           <ProfileOwnerActions
             compact
             onPost={() => navigate("/portfolio/new")}
+            onAddEvent={() => navigate("/dashboard/exhibition/new")}
             onBecomeCreator={commerce && !isVerified ? () => navigate("/verify") : undefined}
             onStudio={() => navigate("/dashboard")}
             onPreview={() =>
@@ -287,6 +290,7 @@ const PortfolioProfilePage = () => {
           disciplines={disciplines}
           onOpportunityEdit={() => setOpportunityOpen(true)}
           onPost={() => navigate("/portfolio/new")}
+          onAddEvent={() => navigate("/dashboard/exhibition/new")}
           onBecomeCreator={commerce && !isVerified ? () => navigate("/verify") : undefined}
           onStudio={() => navigate("/dashboard")}
           onPreview={() =>
@@ -403,6 +407,7 @@ const PortfolioProfilePage = () => {
           ) : null}
 
           {activeTab === "designers" ? <PortfolioFollowedDesignersPanel /> : null}
+          {activeTab === "exhibition" ? <PortfolioExhibitionPanel /> : null}
 
           {activeTab === "booking" ? (
             <PortfolioBookingPanel userId={user!.id} />

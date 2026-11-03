@@ -448,7 +448,7 @@ const ProjectDetailPage = () => {
                 </Button>
               ) : project.ownerId ? (
                 <Button size="sm" className="h-8 rounded-full" onClick={openChat}>
-                  ทักแชท
+                  Message
                 </Button>
               ) : null}
             </div>

@@ -38,6 +38,7 @@ type Props = {
   onShareInteract?: () => void;
   onPreview?: () => void;
   onPost?: () => void;
+  onAddEvent?: () => void;
   onBecomeCreator?: () => void;
   onStudio?: () => void;
   onSettings?: () => void;
@@ -79,6 +80,7 @@ export default function ProfileCoverHeader({
   onShareInteract,
   onPreview,
   onPost,
+  onAddEvent,
   onBecomeCreator,
   onStudio,
   onSettings,
@@ -383,6 +385,7 @@ export default function ProfileCoverHeader({
               onBecomeCreator={onBecomeCreator}
               onStudio={onStudio}
               onPost={onPost}
+              onAddEvent={onAddEvent}
               onPreview={onPreview}
               onSettings={onSettings}
               onWallet={onWallet}

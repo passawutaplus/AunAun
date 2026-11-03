@@ -237,7 +237,7 @@ const ProjectSidePanel = (p: Props) => {
             className="w-full rounded-full bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
           >
             <MessageCircle className="mr-1.5 h-4 w-4" aria-hidden />
-            ทักแชท
+            Message
           </Button>
         ) : null}
 

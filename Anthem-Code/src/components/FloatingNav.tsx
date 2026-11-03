@@ -15,6 +15,7 @@ import { useAuthDialog } from "@/stores/authDialogStore";
 
 import { useAppLayout } from "@/hooks/useAppLayout";
 import { useFeedHomeNavStore } from "@/stores/feedHomeNavStore";
+import { OPEN_PHONE_SEARCH_EVENT } from "@/lib/phoneSearch";
 
 import { ProfileMenuDropdown } from "@/components/ProfileMenuDropdown";
 import UserAvatar from "@/components/UserAvatar";
@@ -158,6 +159,11 @@ const FloatingNav = () => {
   /** Phones / tablets: the round button opens project search (with colour search inside). */
   const openSearch = () => {
     const homeNav = useFeedHomeNavStore.getState();
+    // Exhibition has the same phone search screen; it listens for this instead of leaving the page.
+    if (pathname === "/exhibition") {
+      window.dispatchEvent(new Event(OPEN_PHONE_SEARCH_EVENT));
+      return;
+    }
     if (pathname === "/" && homeNav.active && homeNav.onFilterClick) {
       homeNav.onFilterClick();
       return;

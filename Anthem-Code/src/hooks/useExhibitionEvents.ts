@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -293,5 +294,115 @@ export function useSetEventPick() {
       toast.success(v.pick ? "ติด SameCor Pick แล้ว" : "เอา SameCor Pick ออกแล้ว");
     },
     onError: (err: unknown) => toast.error(mapWriteFlowError(err, "อัปเดตไม่สำเร็จ")),
+  });
+}
+
+export type EventStats = { view_count: number; like_count: number };
+
+/**
+ * View/like totals, fetched apart from EVENT_SELECT so lists still load if the counters
+ * migration hasn't reached this database yet (the counts then just don't show).
+ */
+export function useEventStats(ids: string[]) {
+  const realIds = ids.filter((id) => !isDemoEventId(id));
+  return useQuery({
+    queryKey: ["events", "stats", [...realIds].sort().join(",")],
+    enabled: realIds.length > 0,
+    staleTime: 30_000,
+    retry: false,
+    queryFn: async () => {
+      const { data, error } = await eventsTable().select("id, view_count, like_count").in("id", realIds);
+      if (error) return {} as Record<string, EventStats>;
+      const rows = (data ?? []) as Array<EventStats & { id: string }>;
+      return Object.fromEntries(rows.map((r) => [r.id, { view_count: r.view_count, like_count: r.like_count }]));
+    },
+  });
+}
+
+/** Which of these events the signed-in user has liked. */
+export function useMyEventLikes(ids: string[]) {
+  const { user } = useAuth();
+  const realIds = ids.filter((id) => !isDemoEventId(id));
+  return useQuery({
+    queryKey: ["events", "my-likes", user?.id, [...realIds].sort().join(",")],
+    enabled: !!user && realIds.length > 0,
+    retry: false,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("event_likes" as never)
+        .select("event_id")
+        .eq("user_id", user!.id)
+        .in("event_id", realIds);
+      if (error) return new Set<string>();
+      return new Set(((data ?? []) as Array<{ event_id: string }>).map((r) => r.event_id));
+    },
+  });
+}
+
+export function useToggleEventLike() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data, error } = await rpc("toggle_event_like", { _event_id: id });
+      if (error) throw error;
+      const row = (Array.isArray(data) ? data[0] : data) as { liked: boolean; like_count: number } | null;
+      return row ?? { liked: false, like_count: 0 };
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["events", "stats"] });
+      void qc.invalidateQueries({ queryKey: ["events", "my-likes"] });
+    },
+    onError: () => toast.error("กดถูกใจไม่สำเร็จ ลองอีกครั้ง"),
+  });
+}
+
+/** Count one view per event per browser session. */
+export function useRecordEventView(id: string | undefined, published: boolean) {
+  const qc = useQueryClient();
+  useEffect(() => {
+    if (!id || !published || isDemoEventId(id)) return;
+    const key = `event-viewed:${id}`;
+    try {
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, "1");
+    } catch {
+      /* storage blocked: still count */
+    }
+    void rpc("increment_event_view", { _event_id: id }).then(() =>
+      qc.invalidateQueries({ queryKey: ["events", "stats"] }),
+    );
+  }, [id, published, qc]);
+}
+
+/** Remember that the signed-in user pressed an event's register button (Portfolio → Exhibition). */
+export function recordEventRegistration(id: string) {
+  if (isDemoEventId(id)) return;
+  void rpc("record_event_registration", { _event_id: id });
+}
+
+/**
+ * Events the user liked or registered for, newest action first. Empty (not an error) when the
+ * counters migration is not on this database yet.
+ */
+export function useMyEventList(kind: "liked" | "registered") {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["events", "my-list", kind, user?.id],
+    enabled: !!user,
+    retry: false,
+    queryFn: async (): Promise<ExhibitionEvent[]> => {
+      const { data: links, error } = await supabase
+        .from((kind === "liked" ? "event_likes" : "event_registrations") as never)
+        .select("event_id, created_at")
+        .eq("user_id", user!.id)
+        .order("created_at", { ascending: false })
+        .limit(60);
+      if (error || !links?.length) return [];
+      const ids = (links as Array<{ event_id: string }>).map((l) => l.event_id);
+      const { data: rows, error: eventsError } = await eventsTable().select(EVENT_SELECT).in("id", ids);
+      if (eventsError || !rows) return [];
+      const byId = new Map((rows as ExhibitionEvent[]).map((e) => [e.id, e]));
+      return ids.map((id) => byId.get(id)).filter((e): e is ExhibitionEvent => !!e);
+    },
   });
 }

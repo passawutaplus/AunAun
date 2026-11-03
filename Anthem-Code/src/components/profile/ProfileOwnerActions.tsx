@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Eye, MoreHorizontal, Plus, Rocket, Settings, Share2, Wallet } from "lucide-react";
+import { CalendarPlus, Eye, ImagePlus, MoreHorizontal, Plus, Rocket, Settings, Share2, Wallet } from "lucide-react";
 import ManageWorkIcon from "@/components/icons/ManageWorkIcon";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,6 +20,8 @@ type Props = {
   onShareInteract?: () => void;
   onPreview?: () => void;
   onPost?: () => void;
+  /** Adds "ลงงาน Exhibition" to the + menu (the Exhibition page has no add button of its own). */
+  onAddEvent?: () => void;
   onBecomeCreator?: () => void;
   onStudio?: () => void;
   onSettings?: () => void;
@@ -39,6 +41,7 @@ export default function ProfileOwnerActions({
   onShareInteract,
   onPreview,
   onPost,
+  onAddEvent,
   onBecomeCreator,
   onStudio,
   onSettings,
@@ -78,7 +81,25 @@ export default function ProfileOwnerActions({
           My Studio
         </Button>
       ) : null}
-      {onPost ? (
+      {onPost && onAddEvent ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button size="icon" variant="gradient" className={iconBtn} title="สร้างใหม่" aria-label="สร้างใหม่">
+              <Plus className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="min-w-[13rem] rounded-xl p-1.5">
+            <DropdownMenuItem className="cursor-pointer gap-2 rounded-lg" onSelect={onPost}>
+              <ImagePlus className="h-3.5 w-3.5" />
+              ลงผลงานใหม่
+            </DropdownMenuItem>
+            <DropdownMenuItem className="cursor-pointer gap-2 rounded-lg" onSelect={onAddEvent}>
+              <CalendarPlus className="h-3.5 w-3.5" />
+              ลงงาน Exhibition
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : onPost ? (
         <Button
           onClick={onPost}
           size="icon"

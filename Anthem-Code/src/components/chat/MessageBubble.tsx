@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { ChatEventCard } from "@/components/chat/ChatEventCard";
+import { SPONSOR_OFFER_HEADER, parseEventLink, stripEventLinkLine } from "@/lib/chat/eventLink";
 import { StudioDocCard } from "@/components/chat/StudioDocCard";
 import { parseStudioDocCard } from "@/lib/documents/studioDocuments";
 import { useQuery } from "@tanstack/react-query";
@@ -432,6 +434,9 @@ const MessageBubble = ({
     !!objectCard
       ? ""
       : rawForDisplay;
+  // A text that links to an event page gets an event card; the link line itself is dropped from the bubble.
+  const eventLinkId = !deleted && message.message_type === "text" ? parseEventLink(displayContent) : null;
+  const bubbleText = eventLinkId ? stripEventLinkLine(displayContent) : displayContent;
 
   const hireBrief =
     !deleted &&
@@ -1086,7 +1091,7 @@ const MessageBubble = ({
                 <CollabToolkitCard kind={collabToolKind} content={rawForDisplay} />
               </div>
             )}
-            {displayContent &&
+            {bubbleText &&
               !offer &&
               !studioDoc &&
     !studioDoc &&
@@ -1117,9 +1122,16 @@ const MessageBubble = ({
                 )}
               >
                 {replyQuote}
-                {displayContent}
+                {bubbleText}
               </div>
             )}
+            {eventLinkId ? (
+              <ChatEventCard
+                eventId={eventLinkId}
+                mine={mine}
+                sponsor={displayContent.startsWith(SPONSOR_OFFER_HEADER)}
+              />
+            ) : null}
             {!displayContent &&
               !offer &&
               !studioDoc &&

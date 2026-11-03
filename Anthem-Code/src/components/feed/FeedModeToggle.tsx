@@ -1,7 +1,8 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { LucideIcon } from "lucide-react";
-import { Box, Frame, LayoutGrid, Target, Users } from "lucide-react";
+import ExhibitionIcon from "@/components/icons/ExhibitionIcon";
+import { Box, LayoutGrid, Target, Users } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import PackagesIcon from "@/components/icons/PackagesIcon";
@@ -36,6 +37,10 @@ interface Props {
   exhibitionActive?: boolean;
   onChange: (v: FeedMode) => void;
   onDrillSelect?: () => void;
+  /** Replaces the default "go to /exhibition" (e.g. the search screen just switches scope). */
+  onExhibitionSelect?: () => void;
+  /** Labels at every width, full-width equal segments (search screen, where there is room). */
+  showLabels?: boolean;
   className?: string;
   /** Icon-only (e.g. mobile while search is expanded) */
   compact?: boolean;
@@ -45,7 +50,7 @@ const items: ToggleItem[] = [
   { id: "showcase", label: "Showcase", icon: LayoutGrid },
   { id: "drill", label: "Design Drill", icon: Target, mobileOnly: true },
   { id: "creators", label: "Creators", icon: Users },
-  { id: "exhibition", label: "Exhibition", icon: Frame },
+  { id: "exhibition", label: "Exhibition", icon: ExhibitionIcon },
   { id: "packages", label: "Packages", icon: PackagesIcon },
   { id: "objects", label: "Objects", icon: Box },
 ];
@@ -60,12 +65,21 @@ const slideTransition = {
 
 type IndicatorBox = { x: number; width: number };
 
+/**
+ * Segment that was active when the user last clicked the toggle. Exhibition is its own route, so switching to or from it
+ * remounts the toggle; the new one starts the pill on the old segment and slides it over.
+ */
+let lastActive: { id: string; at: number } | null = null;
+const HANDOFF_MS = 1500;
+
 const FeedModeToggle = ({
   value,
   drillActive = false,
   exhibitionActive = false,
   onChange,
   onDrillSelect,
+  onExhibitionSelect,
+  showLabels = false,
   className,
   compact = false,
 }: Props) => {
@@ -74,6 +88,8 @@ const FeedModeToggle = ({
   const trackRef = useRef<HTMLDivElement>(null);
   const btnRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
   const [indicator, setIndicator] = useState<IndicatorBox | null>(null);
+  const indicatorRef = useRef(indicator);
+  indicatorRef.current = indicator;
 
   const visible = items.filter((item) =>
     item.id === "drill"
@@ -92,6 +108,8 @@ const FeedModeToggle = ({
     const track = trackRef.current;
     if (!track) return;
 
+    let firstMeasured = indicatorRef.current !== null;
+    let slideRaf = 0;
     const measure = () => {
       const btn = btnRefs.current.get(activeId);
       if (!btn) {
@@ -108,6 +126,17 @@ const FeedModeToggle = ({
         x: btnRect.left - trackRect.left,
         width: btnRect.width,
       };
+      const handoff = lastActive;
+      if (!firstMeasured && handoff && handoff.id !== activeId && Date.now() - handoff.at < HANDOFF_MS) {
+        const fromRect = btnRefs.current.get(handoff.id)?.getBoundingClientRect();
+        if (fromRect && fromRect.width >= 1) {
+          firstMeasured = true;
+          setIndicator({ x: fromRect.left - trackRect.left, width: fromRect.width });
+          slideRaf = window.requestAnimationFrame(() => setIndicator(next));
+          return;
+        }
+      }
+      firstMeasured = true;
       setIndicator((prev) =>
         prev &&
         Math.abs(prev.x - next.x) < 0.5 &&
@@ -128,6 +157,7 @@ const FeedModeToggle = ({
     return () => {
       live = false;
       window.cancelAnimationFrame(raf);
+      window.cancelAnimationFrame(slideRaf);
       ro?.disconnect();
       window.removeEventListener("resize", measure);
     };
@@ -138,8 +168,10 @@ const FeedModeToggle = ({
       ref={trackRef}
       className={cn(
         "relative shrink-0 flex items-center rounded-full border border-border bg-white p-0.5 shadow-none transition-[width] duration-200 dark:bg-card",
-        packed && visible.length === 2 && "w-[14.5rem]",
-        packed && visible.length === 3 && "w-[21.75rem]",
+        // Phones: icon-only segments at their natural width; tablets and up get labels and fixed equal widths.
+        packed && !showLabels && visible.length === 2 && "md:w-[14.5rem]",
+        packed && !showLabels && visible.length === 3 && "md:w-[21.75rem]",
+        showLabels && "w-full",
         !compact && visible.length >= 4 && "w-max",
         className,
       )}
@@ -183,15 +215,20 @@ const FeedModeToggle = ({
             aria-label={`${label} view`}
             aria-pressed={active}
             onClick={() => {
+              lastActive = { id: activeId, at: Date.now() };
               if (id === "drill") onDrillSelect?.();
-              else if (id === "exhibition") navigate("/exhibition");
+              else if (id === "exhibition") (onExhibitionSelect ?? (() => navigate("/exhibition")))();
               else onChange(id);
             }}
             className={cn(
               "relative z-10 items-center justify-center rounded-full text-xs font-medium transition-[padding,gap,colors] duration-200",
-              compact ? "gap-0 px-2.5 py-1.5" : "gap-1.5 px-3 py-1.5",
+              compact
+                ? "gap-0 px-2.5 py-1.5"
+                : showLabels
+                  ? "gap-1.5 px-3 py-2"
+                  : "gap-0 px-3.5 py-1.5 md:gap-1.5 md:px-3",
               visibility,
-              packed && "flex-1",
+              packed && (showLabels ? "flex-1" : "md:flex-1"),
               active
                 ? "text-white dark:text-primary-foreground"
                 : "text-foreground/75 hover:text-foreground",
@@ -200,11 +237,16 @@ const FeedModeToggle = ({
               active && !indicator && "bg-primary",
             )}
           >
-            <Icon className="w-3.5 h-3.5 shrink-0" aria-hidden />
+            <Icon className="w-4 h-4 shrink-0 md:w-3.5 md:h-3.5" aria-hidden />
             <span
               className={cn(
                 "overflow-hidden whitespace-nowrap transition-[max-width,opacity,margin] duration-200",
-                compact ? "max-w-0 opacity-0" : "max-w-[6rem] opacity-100",
+                // Labels from md (tablet) up; below that the icon carries the segment (aria-label names it).
+                compact
+                  ? "max-w-0 opacity-0"
+                  : showLabels
+                    ? "max-w-[6rem] opacity-100"
+                    : "max-w-0 opacity-0 md:max-w-[6rem] md:opacity-100",
               )}
               aria-hidden={compact}
             >

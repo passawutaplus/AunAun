@@ -48,7 +48,7 @@ export const OWN_PROFILE_SELECT =
 
 /** Designer directory list. */
 export const PROFILE_DESIGNER_SELECT =
-  "user_id, display_name, username, avatar_url, bio, role, skills, created_at, updated_at, opportunity_status, opportunity_types, location, profile_address, last_active_at, is_verified";
+  "user_id, display_name, username, avatar_url, cover_url, bio, role, skills, created_at, updated_at, opportunity_status, opportunity_types, location, profile_address, last_active_at, is_verified";
 
 export const PROFILE_DESIGNER_SELECT_NO_ACTIVE =
-  "user_id, display_name, username, avatar_url, bio, role, skills, created_at, updated_at, opportunity_status, opportunity_types, location, profile_address, is_verified";
+  "user_id, display_name, username, avatar_url, cover_url, bio, role, skills, created_at, updated_at, opportunity_status, opportunity_types, location, profile_address, is_verified";

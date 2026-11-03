@@ -16,12 +16,24 @@ type Props = {
   recipientName: string;
   /** Chat from one work: the first message names it and is followed by the work card. */
   about?: { id: string; title: string; coverUrl?: string | null };
+  /** Added on its own line after the typed text, e.g. an event link that the chat shows as a card. */
+  appendText?: string;
+  /** Replaces the default intro under the title. */
+  description?: string;
 };
 
 /**
  * Chat-first contact: type a message and send. Hire / Collaborate have their own buttons and briefs.
  */
-export default function ConnectMessageDialog({ open, onOpenChange, recipientId, recipientName, about }: Props) {
+export default function ConnectMessageDialog({
+  open,
+  onOpenChange,
+  recipientId,
+  recipientName,
+  about,
+  appendText,
+  description,
+}: Props) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [text, setText] = useState("");
@@ -38,7 +50,7 @@ export default function ConnectMessageDialog({ open, onOpenChange, recipientId, 
     try {
       const body = about ? `${text.trim()}
 
-From : ${about.title}` : text;
+From : ${about.title}` : appendText ? `${text.trim()}\n\n${appendText}` : text;
       const conversationId = await openConnectChat(user.id, recipientId, body, about ? { id: about.id, title: about.title } : undefined);
       void trackProductEvent(
         "connect_message",
@@ -63,9 +75,10 @@ From : ${about.title}` : text;
             {about ? "ทักแชทเรื่องผลงานนี้" : `ทักแชทหา ${recipientName}`}
           </DialogTitle>
           <DialogDescription>
-            {about
+            {description ??
+              (about
               ? `ถาม ${recipientName} เรื่องผลงานชิ้นนี้ได้เลย — ลิงก์ผลงานจะแนบไปกับข้อความให้อัตโนมัติ`
-              : "ทักทาย ถามเรื่องผลงาน หรือชวนคุยได้เลย — ถ้าจะจ้างหรือคอลแลป ใช้ปุ่มบนโปรไฟล์จะได้ส่งบรีฟไปพร้อมกัน"}
+              : "ทักทาย ถามเรื่องผลงาน หรือชวนคุยได้เลย — ถ้าจะจ้างหรือคอลแลป ใช้ปุ่มบนโปรไฟล์จะได้ส่งบรีฟไปพร้อมกัน")}
           </DialogDescription>
         </DialogHeader>
 

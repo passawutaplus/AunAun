@@ -99,6 +99,13 @@ const requiresAuth = (m: FeedMode2) => m === "Following";
 /** Feed bar chip: parent taxonomy id, All, or Design Drill. */
 type FeedCategoryChip = "All" | typeof DESIGN_DRILL_CHIP | CategoryParentId;
 
+const MOBILE_MODE_TITLE: Partial<Record<FeedMode, string>> = {
+  showcase: "Showcase",
+  creators: "Creators",
+  packages: "Packages",
+  objects: "Objects",
+};
+
 const FEED_MODE_VISIT: Partial<Record<FeedMode, OnboardingVisitId>> = {
   showcase: "explore_feed",
   community: "explore_community",
@@ -114,7 +121,6 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   const { columns } = useFeedGridDensity();
   const houseColumnOffset = useRef(Math.floor(Math.random() * 12));
   const { user, loading: authLoading } = useAuth();
-  const { queries: recentSearches, record: recordSearch } = useSearchHistory(user?.id);
   const showFirstPostLabel = useShowFirstPostLabel(user?.id);
   const [search, setSearch] = useState("");
   const [colorQuery, setColorQuery] = useState<string | null>(() =>
@@ -138,6 +144,11 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
     if (stored && stored !== rawStored) localStorage.setItem("feed-mode", stored);
     return stored ? coerceLaunchFeedMode(stored) : "showcase";
   });
+  // Creators keep their own search history; Showcase uses the original list.
+  const { queries: recentSearches, record: recordSearch } = useSearchHistory(
+    user?.id,
+    mode === "creators" ? "creators" : undefined,
+  );
   const [hireOpen, setHireOpen] = useState(false);
   const [hireProject, setHireProject] = useState("");
   const [hireProjectId, setHireProjectId] = useState<string | undefined>();
@@ -921,6 +932,13 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
           drillActive={isDrillView}
           onDrillSelect={openDrill}
         />
+
+        {/* Phones / tablets: the mode name as a page title under the bar (desktop shows its own big title). */}
+        {catalogMode && !isDrillView ? (
+          <h1 className="pb-5 pt-4 text-[3.25rem] font-semibold leading-[0.9] tracking-tight text-foreground sm:text-7xl lg:hidden">
+            {MOBILE_MODE_TITLE[mode] ?? "Showcase"}
+          </h1>
+        ) : null}
 
         <FeedModeTransition
           modeKey={feedPanelKey}

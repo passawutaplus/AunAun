@@ -133,7 +133,7 @@ const DesignerGrid = ({
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-3 md:gap-x-4 gap-y-[22px] md:gap-y-[26px]">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-3 md:gap-x-4 gap-y-[22px] md:gap-y-[26px]">
         {Array.from({ length: 6 }).map((_, i) => (
           <div key={i} className="h-[22rem] rounded-none glass-panel !shadow-none animate-pulse" />
         ))}
@@ -194,7 +194,7 @@ const DesignerGrid = ({
           พบ {filtered.length.toLocaleString("th-TH")} คน
         </p>
       ) : null}
-      <StaggerGrid feedResults className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-3 md:gap-x-4 gap-y-[22px] md:gap-y-[26px]">
+      <StaggerGrid feedResults className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-3 md:gap-x-4 gap-y-[22px] md:gap-y-[26px]">
         {filtered.map((d) => (
           <DesignerCard
             key={designerUserId(d)}

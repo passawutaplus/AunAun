@@ -1,108 +1,276 @@
-import { useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { CalendarX2, Plus } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { CalendarX2 } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 import SeoHead from "@/components/SeoHead";
+import SearchBar from "@/components/SearchBar";
+import FilterChips from "@/components/FilterChips";
+import { BrandLogo } from "@/components/brand/BrandLogo";
+import ProfileButton from "@/components/ProfileButton";
 import FeedModeToggle from "@/components/feed/FeedModeToggle";
 import { EventListCard } from "@/components/exhibition/EventParts";
+import { ExhibitionHero } from "@/components/exhibition/ExhibitionHero";
 import EmptyState from "@/components/ui/EmptyState";
 import QueryStatusPanel from "@/components/ui/QueryStatusPanel";
-import { Button } from "@/components/ui/button";
-import { usePublishedEvents } from "@/hooks/useExhibitionEvents";
+import { useEventStats, useMyEventLikes, usePublishedEvents } from "@/hooks/useExhibitionEvents";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useHideOnScroll } from "@/hooks/useHideOnScroll";
 import { useAuth } from "@/hooks/useAuth";
-import { EVENT_CATEGORIES, isEventEnded, type EventCategory } from "@/lib/exhibitionEvents";
+import FeedbackHeaderPill from "@/components/feedback/FeedbackHeaderPill";
+import MobileFilterButton from "@/components/feed/MobileFilterButton";
+import MobileSearchScreen from "@/components/feed/MobileSearchScreen";
+import { OPEN_PHONE_SEARCH_EVENT } from "@/lib/phoneSearch";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { isBetaFeedbackEnabled } from "@/lib/aplus1Launch";
+import { EVENT_CATEGORIES, eventTiming, type EventCategory } from "@/lib/exhibitionEvents";
+import { BRAND_NAME } from "@/lib/brandConfig";
+import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
+import { smoothEase } from "@/lib/motion";
 import { cn } from "@/lib/utils";
+import { useFeedHomeNavStore } from "@/stores/feedHomeNavStore";
 
-type When = "upcoming" | "ended";
+function matchesSearch(e: { title: string; location_name: string | null; organizer_name: string | null }, q: string) {
+  const needle = q.trim().toLowerCase();
+  if (!needle) return true;
+  return [e.title, e.location_name, e.organizer_name].some((v) => v?.toLowerCase().includes(needle));
+}
 
 export default function ExhibitionPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const isMobile = useIsMobile();
   const { data = [], isLoading, isError, refetch } = usePublishedEvents();
   const [category, setCategory] = useState<EventCategory | "all">("all");
-  const [when, setWhen] = useState<When>("upcoming");
+  const [when, setWhen] = useState<"now" | "done">("now");
+  const [searchParams] = useSearchParams();
+  const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
+  const [searchScreenOpen, setSearchScreenOpen] = useState(false);
+  useEffect(() => {
+    const q = searchParams.get("q");
+    if (q != null) setSearch(q);
+  }, [searchParams]);
+  useEffect(() => {
+    const open = () => setSearchScreenOpen(true);
+    window.addEventListener(OPEN_PHONE_SEARCH_EVENT, open);
+    return () => window.removeEventListener(OPEN_PHONE_SEARCH_EVENT, open);
+  }, []);
 
   const rows = useMemo(
     () =>
       data.filter(
-        (e) => (category === "all" || e.category === category) && (when === "ended") === isEventEnded(e),
+        (e) =>
+          (category === "all" || e.category === category) &&
+          (eventTiming(e) === "done") === (when === "done") &&
+          matchesSearch(e, search),
       ),
-    [data, category, when],
+    [data, category, when, search],
   );
 
-  const addHref = "/dashboard/exhibition/new";
+  const heroEvents = useMemo(
+    () => [...data].filter((e) => eventTiming(e) !== "done").sort((x, y) => Number(y.is_pick) - Number(x.is_pick)),
+    [data],
+  );
+
+  const rowIds = useMemo(() => rows.map((e) => e.id), [rows]);
+  const { data: stats } = useEventStats(rowIds);
+  const { data: myLikes } = useMyEventLikes(rowIds);
+
+  const scrolled = useFeedHomeNavStore((st) => st.scrolled);
+  const { user } = useAuth();
+  const showBetaFeedback = Boolean(user) && isBetaFeedbackEnabled();
+  const mobileBarRef = useRef<HTMLDivElement>(null);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const { hidden: mobileBarHidden, scrolled: mobileBarScrolled } = useHideOnScroll(mobileBarRef);
+  const reduceMotion = useReducedMotion();
+
+  const toggle = <FeedModeToggle value="showcase" exhibitionActive onChange={(m) => navigate(`/?mode=${m}`)} />;
+  const searchBar = (compact?: boolean) => (
+    <SearchBar
+      value={search}
+      onChange={setSearch}
+      placeholder="ค้นหางาน สถานที่ ผู้จัด"
+      expandable
+      expandAnchor="end"
+      compact={compact}
+    />
+  );
+  const timingSwitch = (
+    <div className="flex shrink-0 rounded-full bg-muted/60 p-0.5" role="group" aria-label="ช่วงเวลา">
+      {(
+        [
+          ["now", "Now"],
+          ["done", "Done"],
+        ] as const
+      ).map(([id, label]) => (
+        <button
+          key={id}
+          type="button"
+          aria-pressed={when === id}
+          onClick={() => setWhen(id)}
+          className={cn(
+            "min-h-8 rounded-full px-3 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground",
+            when === id ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+  const filters = (
+    <div className="flex min-w-0 items-center gap-3 lg:justify-center lg:gap-6">
+      {timingSwitch}
+      <div className="min-w-0 flex-1 lg:flex-none">
+        <FilterChips
+          align={isMobile ? "start" : "center"}
+          options={[{ id: "all", label: "All" }, ...EVENT_CATEGORIES]}
+          selected={category}
+          onSelect={(id) => setCategory(id as EventCategory | "all")}
+        />
+      </div>
+    </div>
+  );
 
   return (
-    <div className="container mx-auto max-w-6xl px-4 pb-24 pt-6">
+    <main id="main-content" className={cn("relative min-h-screen bg-app-ambient", MOBILE_PAGE_BOTTOM_CLASS)}>
       <SeoHead
         title="Exhibition & Events"
         description="นิทรรศการ เวิร์กช็อป และอีเวนต์สร้างสรรค์จากครีเอเตอร์บน SAMECOR — ทีมงานตรวจทุกงานก่อนเผยแพร่"
         path="/exhibition"
       />
 
-      <div className="mb-6 flex justify-center">
-        <FeedModeToggle value="showcase" exhibitionActive onChange={(m) => navigate(`/?mode=${m}`)} />
-      </div>
-
-      <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <span className="mb-4 block h-0.5 w-10 bg-brand" aria-hidden />
-          <h1 className="font-display text-4xl font-semibold leading-none tracking-tight text-foreground sm:text-5xl">
-            Exhibition &amp; Events
-          </h1>
-          <p className="mt-3 max-w-md text-sm text-muted-foreground">
-            นิทรรศการ เวิร์กช็อป และโอกาสสร้างสรรค์รอบตัวคุณ — ทุกงานผ่านการตรวจจากทีม SAMECOR
-          </p>
+      {/* Desktop: the same bar the Showcase / Creators feed slides in once its title scrolls away. */}
+      <motion.div
+        className="fixed inset-x-0 top-0 z-40 hidden lg:block"
+        initial={false}
+        animate={{ y: scrolled ? "0%" : "-100%" }}
+        transition={reduceMotion ? { duration: 0 } : { duration: 0.32, ease: smoothEase }}
+        aria-hidden={!scrolled || undefined}
+        inert={!scrolled ? "" : undefined}
+        style={{ pointerEvents: scrolled ? "auto" : "none" }}
+      >
+        <div className="border-b border-border bg-background">
+          <div className="mx-auto flex max-w-[1920px] flex-col px-[calc(1.5rem+25px)] 2xl:px-[calc(2.5rem+25px)]">
+            <div className="relative flex h-14 items-center gap-3 border-b border-border/80">
+              <Link
+                to="/"
+                className="relative z-10 shrink-0 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label={`${BRAND_NAME} หน้าแรก`}
+              >
+                <BrandLogo beta size="sm" tone="theme" />
+              </Link>
+              <div className="pointer-events-none absolute inset-x-0 top-0 flex h-14 items-center justify-center">
+                <div className="pointer-events-auto flex items-center gap-3">
+                  {searchBar(true)}
+                  <div className="flex min-w-0 max-w-[min(36rem,calc(100vw-28rem))] shrink items-center overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    {toggle}
+                  </div>
+                </div>
+              </div>
+              <div className="relative z-10 ml-auto">
+                <ProfileButton accountOnly />
+              </div>
+            </div>
+            <div className="flex min-h-11 w-full items-center justify-center py-2">{filters}</div>
+          </div>
         </div>
-        <Button asChild className="self-start rounded-full sm:self-auto">
-          <Link to={user ? addHref : `/auth?redirect=${encodeURIComponent(addHref)}`}>
-            <Plus className="mr-1.5 h-4 w-4" aria-hidden />
-            Add Event
+      </motion.div>
+
+      <div className="relative z-[1] mx-auto max-w-[1920px] px-3 pb-4 pt-0 sm:px-[calc(1rem+25px)] lg:px-[calc(1.5rem+25px)] lg:pt-4 2xl:px-[calc(2.5rem+25px)]">
+        {/* Phones / tablets: the feed's bar — brand mark + mode pill with the type tabs under it;
+            it slides away while scrolling down and comes back on the way up. */}
+        <div
+          ref={mobileBarRef}
+          className={cn(
+            "sticky top-0 z-40 -mx-3 px-3 py-3 transition-transform duration-300 ease-out motion-reduce:transition-none sm:-mx-[calc(1rem+25px)] sm:px-[calc(1rem+25px)] lg:hidden",
+            mobileBarHidden && "-translate-y-full",
+            mobileBarScrolled && "border-b border-border bg-background",
+          )}
+        >
+          <div className="flex items-center gap-2">
+          <Link
+            to="/"
+            aria-label={`${BRAND_NAME} หน้าแรก`}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <BrandLogo showWordmark={false} size="md" />
           </Link>
-        </Button>
-      </header>
-
-      <div className="mb-2 flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
-        <div className="flex flex-wrap gap-2" role="group" aria-label="หมวดหมู่">
-          {[{ id: "all" as const, label: "All Events" }, ...EVENT_CATEGORIES].map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              aria-pressed={category === c.id}
-              onClick={() => setCategory(c.id)}
-              className={cn(
-                "min-h-9 rounded-full border px-4 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2",
-                category === c.id
-                  ? "border-foreground bg-foreground text-background"
-                  : "border-border text-foreground hover:border-foreground/50",
-              )}
-            >
-              {c.label}
-            </button>
-          ))}
+          {showBetaFeedback ? <FeedbackHeaderPill className="ml-auto" /> : null}
+          <MobileFilterButton
+            count={(when === "done" ? 1 : 0) + (category !== "all" ? 1 : 0)}
+            onClick={() => setFilterOpen(true)}
+            className={cn(!showBetaFeedback && "ml-auto")}
+          />
+          <div className="min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{toggle}</div>
+          </div>
         </div>
-        <div className="flex rounded-full border border-border p-0.5" role="group" aria-label="ช่วงเวลา">
-          {(
-            [
-              ["upcoming", "กำลังจัด & เร็ว ๆ นี้"],
-              ["ended", "จบแล้ว"],
-            ] as const
-          ).map(([id, label]) => (
-            <button
-              key={id}
-              type="button"
-              aria-pressed={when === id}
-              onClick={() => setWhen(id)}
-              className={cn(
-                "min-h-8 rounded-full px-3 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground",
-                when === id ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
 
+        <MobileSearchScreen
+          open={searchScreenOpen}
+          onClose={() => setSearchScreenOpen(false)}
+          initialScope="exhibition"
+          initialValue={search}
+          userId={user?.id}
+          onSubmit={(scope, q) => {
+            if (scope === "exhibition") setSearch(q);
+            else navigate(`/?${new URLSearchParams({ ...(scope === "creators" ? { mode: "creators" } : {}), q }).toString()}`);
+          }}
+        />
+
+        <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
+          <SheetContent side="bottom" className="rounded-t-3xl pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+            <SheetTitle className="text-base">ตัวกรอง Exhibition</SheetTitle>
+            <div className="mt-4 space-y-5">
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-muted-foreground">ช่วงเวลา</p>
+                <div className="flex">{timingSwitch}</div>
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-muted-foreground">ประเภทงาน</p>
+                <div className="flex flex-wrap gap-2">
+                  {[{ id: "all" as const, label: "All" }, ...EVENT_CATEGORIES].map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      aria-pressed={category === c.id}
+                      onClick={() => setCategory(c.id)}
+                      className={cn(
+                        "min-h-9 rounded-full border px-4 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground",
+                        category === c.id
+                          ? "border-foreground bg-foreground text-background"
+                          : "border-border text-foreground hover:border-foreground/50",
+                      )}
+                    >
+                      {c.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <Button type="button" className="w-full rounded-full" onClick={() => setFilterOpen(false)}>
+                ดู {rows.length} งาน
+              </Button>
+            </div>
+          </SheetContent>
+        </Sheet>
+
+        {/* Phones: a plain title instead of the hero slideshow, like the other modes. */}
+        <h1 className="pb-5 pt-4 text-[3.25rem] font-semibold leading-[0.9] tracking-tight text-foreground sm:text-7xl lg:hidden">
+          Exhibition <span className="block text-muted-foreground">&amp; Events</span>
+        </h1>
+
+        <div className={cn("hidden min-w-0 items-center justify-center gap-3 pb-4 pt-3 lg:flex", scrolled && "invisible")}>
+          <div className="shrink-0">{searchBar()}</div>
+          <div className="flex min-w-0 max-w-[min(36rem,calc(100vw-2rem))] shrink items-center overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {toggle}
+          </div>
+        </div>
+
+        {/* Type tabs sit right under the mode pill, as on Showcase / Creators. */}
+        <div className={cn("hidden pb-4 lg:block", scrolled && "lg:invisible")}>{filters}</div>
+
+        <ExhibitionHero events={heroEvents} className="mb-6 hidden lg:grid" />
+
+        <div>
       {isLoading || isError ? (
         <QueryStatusPanel
           isLoading={isLoading}
@@ -113,22 +281,19 @@ export default function ExhibitionPage() {
       ) : rows.length === 0 ? (
         <EmptyState
           icon={CalendarX2}
-          title={when === "ended" ? "ยังไม่มีงานที่จบแล้วในหมวดนี้" : "ยังไม่มีงานในหมวดนี้"}
-          description="ลงงานของคุณเป็นคนแรก — ทีมงานตรวจภายใน 1–3 วันทำการ"
-          action={
-            <Button asChild variant="outline" className="rounded-full">
-              <Link to={user ? addHref : `/auth?redirect=${encodeURIComponent(addHref)}`}>Add Event</Link>
-            </Button>
-          }
+          title={when === "done" ? "ยังไม่มีงานที่จบแล้วในหมวดนี้" : "ยังไม่มีงานที่กำลังจัดหรือกำลังจะมาในหมวดนี้"}
+          description="ลงงานของคุณได้จากปุ่ม + บนหน้าโปรไฟล์ — ทีมงานตรวจภายใน 1–3 วันทำการ"
           className="py-16"
         />
       ) : (
         <div>
           {rows.map((e) => (
-            <EventListCard key={e.id} event={e} />
+            <EventListCard key={e.id} event={e} stats={stats?.[e.id]} liked={myLikes?.has(e.id)} />
           ))}
         </div>
       )}
-    </div>
+        </div>
+      </div>
+    </main>
   );
 }

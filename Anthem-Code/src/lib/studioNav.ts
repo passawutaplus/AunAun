@@ -2,7 +2,6 @@ import {
   BarChart3,
   Briefcase,
   FileText,
-  Frame,
   Handshake,
   Landmark,
   LayoutDashboard,
@@ -16,6 +15,7 @@ import {
   WalletCards,
   type LucideIcon,
 } from "lucide-react";
+import ExhibitionIcon from "@/components/icons/ExhibitionIcon";
 import { isCommerceEnabled } from "@/lib/aplus1Launch";
 
 /** Live counts shown as a pill next to a menu item. */
@@ -164,7 +164,7 @@ export const STUDIO_NAV_GROUPS: StudioNavGroup[] = [
         label: "Exhibition ของฉัน",
         heroTitle: "Exhibition ของฉัน",
         hint: "ลงนิทรรศการและอีเวนต์ ทีมงานตรวจก่อนเผยแพร่",
-        icon: Frame,
+        icon: ExhibitionIcon,
         end: false,
       },
       {
