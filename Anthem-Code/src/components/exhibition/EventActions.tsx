@@ -29,6 +29,8 @@ type Props = {
   interested?: boolean;
   /** Detail page: also show the view count. */
   showViews?: boolean;
+  /** Event page: สนใจ as an outlined pill with its label, not just the icon. */
+  labeled?: boolean;
   className?: string;
 };
 
@@ -38,6 +40,7 @@ export function EventActions({
   stats,
   interested = false,
   showViews = false,
+  labeled = false,
   className,
 }: Props) {
   const { user } = useAuth();
@@ -85,12 +88,19 @@ export function EventActions({
             aria-label={
               interested ? "เลิกสนใจงานนี้" : "สนใจงานนี้ (เตือนก่อนงานเริ่ม)"
             }
-            className={cn(iconBtn, interested && "text-brand hover:text-brand")}
+            className={cn(
+              iconBtn,
+              labeled &&
+                "mr-1 border border-foreground/25 bg-transparent px-4 text-foreground hover:border-foreground hover:bg-transparent",
+              interested && "text-brand hover:text-brand",
+              labeled && interested && "border-brand hover:border-brand",
+            )}
           >
             <Bookmark
               className={cn("h-4 w-4", interested && "fill-current")}
               aria-hidden
             />
+            {labeled ? <span>{interested ? "สนใจแล้ว" : "สนใจ"}</span> : null}
             {stats ? (
               <span className="tabular-nums">
                 {compact.format(stats.interest_count)}

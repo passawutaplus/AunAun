@@ -202,8 +202,8 @@ export default function ExhibitionDetailPage() {
             event={event}
             stats={stats?.[event.id]}
             interested={myInterests?.has(event.id)}
-            showViews
-            className="-my-2 -ml-2.5"
+            labeled
+            className="-my-1"
           />
 
           <div className="space-y-3 border-t border-border pt-5">
