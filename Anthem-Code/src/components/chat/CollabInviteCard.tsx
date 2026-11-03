@@ -113,7 +113,7 @@ const CollabInviteCard = ({ content, mine, actions, inviteRef }: Props) => {
           title={title}
           coverUrl={cover}
           label="อ้างอิงผลงานของฉัน"
-          to={projectId ? `/project/${projectId}` : null}
+          to={projectId ? `/showcase/${projectId}` : null}
         />
       ) : (
         <p className="text-sm">
@@ -130,7 +130,7 @@ const CollabInviteCard = ({ content, mine, actions, inviteRef }: Props) => {
               title={p.title}
               coverUrl={p.coverUrl}
               label="ผลงานของฉัน"
-              to={`/project/${p.id}`}
+              to={`/showcase/${p.id}`}
             />
           ))}
         </div>

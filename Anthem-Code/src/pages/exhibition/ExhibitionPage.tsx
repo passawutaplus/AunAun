@@ -40,7 +40,7 @@ export default function ExhibitionPage() {
       />
 
       <div className="mb-6 flex justify-center">
-        <FeedModeToggle value="projects" exhibitionActive onChange={(m) => navigate(`/?mode=${m}`)} />
+        <FeedModeToggle value="showcase" exhibitionActive onChange={(m) => navigate(`/?mode=${m}`)} />
       </div>
 
       <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">

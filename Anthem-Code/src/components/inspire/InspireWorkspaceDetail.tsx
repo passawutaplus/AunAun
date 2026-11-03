@@ -254,7 +254,7 @@ export function InspireWorkspaceDetail({ boardId, focusItemId, onDeleted }: Prop
                     </Link>
                   )}
                   <Button asChild variant="outline" className="w-full">
-                    <Link to={`/project/${sourceProject.id}`}>
+                    <Link to={`/showcase/${sourceProject.id}`}>
                       <ExternalLink className="w-4 h-4 mr-1" /> ดูผลงานทั้งหมด
                     </Link>
                   </Button>

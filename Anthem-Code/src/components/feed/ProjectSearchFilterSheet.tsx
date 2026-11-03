@@ -291,7 +291,7 @@ function DesignerBody({
           onKeyDown={(e) => {
             if (e.key === "Enter") onClose();
           }}
-          placeholder="ค้นหาชื่อดีไซเนอร์ ทักษะ เครื่องมือ…"
+          placeholder="ค้นหาชื่อครีเอเตอร์ ทักษะ เครื่องมือ…"
           className="w-full rounded-full border border-foreground/12 bg-white dark:bg-card py-3 pl-10 pr-10 text-sm text-foreground placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-foreground/15"
         />
         {search ? (
@@ -317,7 +317,7 @@ function DesignerBody({
           className="flex-1 rounded-full bg-foreground py-2.5 text-sm text-background hover:bg-foreground/90"
           onClick={onClose}
         >
-          {typeof resultCount === "number" ? `ดูดีไซเนอร์ (${resultCount})` : "ดูดีไซเนอร์"}
+          {typeof resultCount === "number" ? `ดูครีเอเตอร์ (${resultCount})` : "ดูดีไซเนอร์"}
         </button>
       </div>
     </div>
@@ -380,8 +380,8 @@ const ProjectSearchFilterSheet = ({
 
   const tabsRow = onTabChange ? (
     <div className="mb-3 flex shrink-0 gap-1.5" role="tablist" aria-label="ค้นหา">
-      <Chip label="Projects" active={!designersTab} onClick={() => onTabChange("projects")} />
-      <Chip label="Designers" active={designersTab} onClick={() => onTabChange("designers")} />
+      <Chip label="Showcase" active={!designersTab} onClick={() => onTabChange("projects")} />
+      <Chip label="Creators" active={designersTab} onClick={() => onTabChange("designers")} />
     </div>
   ) : null;
 

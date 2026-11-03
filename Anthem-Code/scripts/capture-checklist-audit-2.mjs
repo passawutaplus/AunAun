@@ -173,7 +173,7 @@ const browser = await chromium.launch({ headless: true });
     }
     await page.goto(`${DEMO}/`, { waitUntil: "domcontentloaded" });
     await settle(page);
-    const proj = page.locator('a[href*="/p/"], a[href*="/project/"]').first();
+    const proj = page.locator('a[href*="/p/"], a[href*="/showcase/"], a[href*="/project/"]').first();
     if (await proj.count()) {
       await proj.click({ force: true });
       await settle(page);

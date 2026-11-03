@@ -13,7 +13,7 @@ export function JobBoardTopBar() {
   const { user } = useAuth();
 
   const goHome = () => {
-    localStorage.setItem("feed-mode", "projects");
+    localStorage.setItem("feed-mode", "showcase");
     navigate("/", { state: { feedHomeReset: Date.now() } });
   };
 

@@ -62,7 +62,7 @@ function DraggableWorkCard({
       {isList ? (
         <>
           <Link
-            to={`/project/${project.id}`}
+            to={`/showcase/${project.id}`}
             className="h-14 w-20 shrink-0 overflow-hidden rounded-lg bg-muted"
           >
             {cover ? (
@@ -71,7 +71,7 @@ function DraggableWorkCard({
           </Link>
           <div className="min-w-0 flex-1 pr-9 space-y-1">
             <Link
-              to={`/project/${project.id}`}
+              to={`/showcase/${project.id}`}
               className="block truncate text-sm font-medium text-foreground hover:underline"
             >
               {project.title}
@@ -104,7 +104,7 @@ function DraggableWorkCard({
       ) : (
         <>
           <Link
-            to={`/project/${project.id}`}
+            to={`/showcase/${project.id}`}
             className={cn("relative block w-full bg-muted", compact ? "aspect-[4/3]" : "aspect-[4/3]")}
           >
             {cover ? (
@@ -122,7 +122,7 @@ function DraggableWorkCard({
           </Link>
           <div className={cn("space-y-1.5 p-2", compact && "p-1.5 space-y-1")}>
             <Link
-              to={`/project/${project.id}`}
+              to={`/showcase/${project.id}`}
               className={cn(
                 "block font-medium text-foreground hover:underline line-clamp-1",
                 compact ? "text-[11px]" : "text-xs sm:text-sm",

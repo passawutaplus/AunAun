@@ -17,7 +17,7 @@ export const FEED_PAGE_GUTTER_X =
   "px-3 sm:px-[calc(1rem+25px)] lg:px-[calc(1.5rem+25px)] 2xl:px-[calc(2.5rem+25px)]";
 
 const HERO_COPY: Record<FeedMode, { badge: string; title: ReactNode }> = {
-  projects: {
+  showcase: {
     badge: BRAND_CONCEPT,
     title: (
       <>
@@ -29,7 +29,7 @@ const HERO_COPY: Record<FeedMode, { badge: string; title: ReactNode }> = {
       </>
     ),
   },
-  designers: {
+  creators: {
     badge: isAplus1LaunchMinimal() ? "ค้นหาจากสไตล์" : "ครีเอเตอร์อิสระ",
     title: (
       <>
@@ -92,12 +92,12 @@ type Props = {
 };
 
 /** Projects, designers, and packages: editorial paper hero. Other modes: spotlight. */
-const FeedHero = ({ mode = "projects", onModeChange, className, search, onSearchChange }: Props) => {
+const FeedHero = ({ mode = "showcase", onModeChange, className, search, onSearchChange }: Props) => {
   const reduced = useReducedMotion();
   const heroRef = useRef<HTMLElement>(null);
   const { data: studioSlides = [] } = useStudioHeroSlides();
   const copy = HERO_COPY[mode];
-  const useHomeHero = mode === "projects" || mode === "designers" || mode === "packages" || mode === "objects";
+  const useHomeHero = mode === "showcase" || mode === "creators" || mode === "packages" || mode === "objects";
 
   if (useHomeHero) {
     return (

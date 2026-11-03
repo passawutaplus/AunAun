@@ -22,7 +22,7 @@ interface Props {
   unfollowLabel?: string;
   /** Keep the text once following ("กำลังติดตาม" / "ติดตามกันแล้ว") instead of shrinking to an icon. */
   showFollowingLabel?: boolean;
-  /** Name for the confirmation toast (with a link to Portfolio → Designers). No toast when left out. */
+  /** Name for the confirmation toast (with a link to Portfolio → Creators). No toast when left out. */
   announceName?: string;
 }
 
@@ -73,7 +73,7 @@ const FollowButton = ({
     }
     toast.success(followsYou ? `ติดตามกันแล้วกับ ${announceName}` : `ติดตาม ${announceName} แล้ว`, {
       description: followsYou
-        ? "แท็กเป็นผู้ร่วมงานในผลงานได้แล้ว · ดูรวมได้ที่ Portfolio → Designers"
+        ? "แท็กเป็นผู้ร่วมงานในผลงานได้แล้ว · ดูรวมได้ที่ Portfolio → Creators"
         : `${announceName} จะได้รับแจ้งเตือน · ถ้าติดตามกลับ จะแท็กกันในผลงานได้`,
       action: { label: "ดูทั้งหมด", onClick: () => navigate(FOLLOWED_DESIGNERS_PATH) },
     });

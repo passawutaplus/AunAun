@@ -18,7 +18,7 @@ import { useFollowedDesigners, type FollowedDesigner } from "@/hooks/useFollowed
 import { fuzzyMatchAll } from "@/lib/fuzzyMatch";
 import { cn } from "@/lib/utils";
 
-const DESIGNERS_FEED_PATH = "/?mode=designers";
+const DESIGNERS_FEED_PATH = "/?mode=creators";
 
 type FollowBackFilter = "all" | "mutual" | "not_back";
 
@@ -146,7 +146,7 @@ export default function PortfolioFollowedDesignersPanel() {
   return (
     <div className="space-y-4">
       <ProfileTabHeading
-        title="Designers"
+        title="Creators"
         count={designers.length}
         description="ครีเอเตอร์ที่คุณติดตาม — คนที่ติดตามกันทั้งคู่แท็กเป็นผู้ร่วมงานในผลงานได้"
         actions={designers.length > 0 ? findMore : undefined}

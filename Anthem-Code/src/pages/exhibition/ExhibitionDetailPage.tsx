@@ -318,7 +318,7 @@ export default function ExhibitionDetailPage() {
           </h2>
           <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
             {works.map((w) => (
-              <Link key={w.id} to={`/project/${w.id}`} className="group block focus-visible:outline-none">
+              <Link key={w.id} to={`/showcase/${w.id}`} className="group block focus-visible:outline-none">
                 <div className="aspect-[4/3] overflow-hidden rounded-md bg-muted group-focus-visible:ring-2 group-focus-visible:ring-foreground">
                   {w.cover_url ? (
                     <img src={w.cover_url} alt="" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" loading="lazy" />
@@ -332,7 +332,7 @@ export default function ExhibitionDetailPage() {
       ) : null}
 
       {canContact ? (
-        // No `about`: that sends a work card linking to /project/<id>, which an event id would break.
+        // No `about`: that sends a work card linking to /showcase/<id>, which an event id would break.
         <ConnectMessageDialog
           open={contactOpen}
           onOpenChange={setContactOpen}

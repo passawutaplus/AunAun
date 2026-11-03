@@ -38,7 +38,7 @@ import { ProjectQuickViewHost } from "@/components/feed/ProjectQuickView";
 import { useQuickView } from "@/stores/quickViewStore";
 import { FeedModeTransition } from "@/components/feed/FeedModeTransition";
 import ObjectCatalog from "@/components/objects/ObjectCatalog";
-import { type FeedMode } from "@/components/feed/FeedModeToggle";
+import { type FeedMode, parseFeedMode } from "@/components/feed/FeedModeToggle";
 import DesignerGrid from "@/components/feed/DesignerGrid";
 import PackageGrid from "@/components/feed/PackageGrid";
 import { type DesignerSort } from "@/components/feed/DesignerToolbar";
@@ -100,9 +100,9 @@ const requiresAuth = (m: FeedMode2) => m === "Following";
 type FeedCategoryChip = "All" | typeof DESIGN_DRILL_CHIP | CategoryParentId;
 
 const FEED_MODE_VISIT: Partial<Record<FeedMode, OnboardingVisitId>> = {
-  projects: "explore_feed",
+  showcase: "explore_feed",
   community: "explore_community",
-  designers: "explore_designers",
+  creators: "explore_designers",
   studios: "explore_studios",
 };
 
@@ -128,14 +128,15 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   const [projectStyles, setProjectStyles] = useState<string[]>([]);
   const [hideAi, setHideAi] = useState(false);
   const [mode, setMode] = useState<FeedMode>(() => {
-    if (typeof window === "undefined") return "projects";
-    if (!isCategoryAllowed("functional")) return "projects";
-    const urlMode = new URLSearchParams(window.location.search).get("mode");
-    if (urlMode === "designers" || urlMode === "packages" || urlMode === "objects" || urlMode === "studios" || urlMode === "projects" || urlMode === "community") {
-      return coerceLaunchFeedMode(urlMode);
-    }
-    const stored = localStorage.getItem("feed-mode") as FeedMode | null;
-    return stored ? coerceLaunchFeedMode(stored) : "projects";
+    if (typeof window === "undefined") return "showcase";
+    if (!isCategoryAllowed("functional")) return "showcase";
+    const urlMode = parseFeedMode(new URLSearchParams(window.location.search).get("mode"));
+    if (urlMode) return coerceLaunchFeedMode(urlMode);
+    const rawStored = localStorage.getItem("feed-mode");
+    const stored = parseFeedMode(rawStored);
+    // One-time migration of the pre-rename stored ids (projects/designers).
+    if (stored && stored !== rawStored) localStorage.setItem("feed-mode", stored);
+    return stored ? coerceLaunchFeedMode(stored) : "showcase";
   });
   const [hireOpen, setHireOpen] = useState(false);
   const [hireProject, setHireProject] = useState("");
@@ -156,7 +157,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   const [designerTools, setDesignerTools] = useState<string[]>([]);
   const [studioFeedSource, setStudioFeedSource] = useState<StudioFeedSource>("all");
   const { filter: communityFilter, setFilter: setCommunityFilter, clearTag } = useCommunityFeedFilter();
-  const catalogMode = mode === "projects" || mode === "designers" || mode === "packages" || mode === "objects";
+  const catalogMode = mode === "showcase" || mode === "creators" || mode === "packages" || mode === "objects";
   // The home hero (and the sheet that slides over it) is for guests only: members land straight on the feed,
   // so a refresh never parks them on the hero again.
   const showHero = authLoading ? !hasStoredSession() : !user;
@@ -361,11 +362,11 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
     const next = coerceLaunchFeedMode(m);
     setMode(next);
     trackFeedModeVisit(next);
-    if (next === "projects") setCategory("All");
+    if (next === "showcase") setCategory("All");
     if (isCategoryAllowed("functional")) localStorage.setItem("feed-mode", next);
     const params = new URLSearchParams(searchParams);
     params.delete("drill");
-    if (next === "projects") params.delete("mode");
+    if (next === "showcase") params.delete("mode");
     else params.set("mode", next);
     const q = params.toString();
     navigate(q ? `/?${q}` : "/", { replace: true });
@@ -392,7 +393,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
       params.delete("mode");
       params.delete("drill");
       params.delete("feed");
-      setMode("projects");
+      setMode("showcase");
       setCategory((current) => (current === DESIGN_DRILL_CHIP ? "All" : current));
       setHeroProjectSearch(false);
     }
@@ -406,12 +407,12 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
     const query = value.trim();
     setHeroProjectSearch(query.length > 0);
     if (!query) return;
-    setMode("projects");
+    setMode("showcase");
     setCategory("All");
     setProjectLeaves([]);
     setProjectStyles([]);
     setFeedModeRaw("Explore");
-    if (isCategoryAllowed("functional")) localStorage.setItem("feed-mode", "projects");
+    if (isCategoryAllowed("functional")) localStorage.setItem("feed-mode", "showcase");
     setHideAi(false);
     if (searchParams.get("mode") || searchParams.get("drill") || searchParams.get("feed")) {
       navigate("/", { replace: true });
@@ -420,12 +421,12 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
 
   const openDrill = () => {
     if (!isLaunchDesignDrillEnabled()) return;
-    setMode("projects");
+    setMode("showcase");
     setCategory(DESIGN_DRILL_CHIP);
     setProjectLeaves([]);
     setProjectStyles([]);
     setHideAi(false);
-    if (isCategoryAllowed("functional")) localStorage.setItem("feed-mode", "projects");
+    if (isCategoryAllowed("functional")) localStorage.setItem("feed-mode", "showcase");
     navigate("/?drill=1", { replace: true });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -435,7 +436,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
     const parent = getFeedCategoryParent(searchParams.get("cat"));
     if (!parent) return;
     const subId = searchParams.get("sub");
-    setMode("projects");
+    setMode("showcase");
     setCategory(parent.id);
     setProjectLeaves([]);
     setProjectStyles(subId && getFeedCategorySub(parent, subId) ? [subId] : []);
@@ -456,24 +457,25 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   useEffect(() => {
     const view = searchParams.get("mode");
     const feed = searchParams.get("feed");
-    if (view === "designers" || view === "packages" || view === "objects" || view === "studios" || view === "projects" || view === "community") {
-      const coerced = coerceLaunchFeedMode(view);
+    const parsedView = parseFeedMode(view);
+    if (parsedView) {
+      const coerced = coerceLaunchFeedMode(parsedView);
       setMode(coerced);
       if (isCategoryAllowed("functional")) localStorage.setItem("feed-mode", coerced);
       if (view !== coerced) {
         const params = new URLSearchParams(searchParams);
-        if (coerced === "projects") params.delete("mode");
+        if (coerced === "showcase") params.delete("mode");
         else params.set("mode", coerced);
         params.delete("tag");
         const q = params.toString();
         navigate(q ? `/?${q}` : "/", { replace: true });
       }
     } else if (isLaunchDesignDrillEnabled() && (feed === "drill" || searchParams.get("drill") === "1")) {
-      setMode("projects");
+      setMode("showcase");
       setCategory(DESIGN_DRILL_CHIP);
-      if (isCategoryAllowed("functional")) localStorage.setItem("feed-mode", "projects");
+      if (isCategoryAllowed("functional")) localStorage.setItem("feed-mode", "showcase");
     } else if (feed === "drill" || searchParams.get("drill") === "1") {
-      setMode("projects");
+      setMode("showcase");
       setCategory("All");
       const params = new URLSearchParams(searchParams);
       params.delete("drill");
@@ -481,7 +483,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
       const q = params.toString();
       navigate(q ? `/?${q}` : "/", { replace: true });
     } else if (!searchParams.toString()) {
-      setMode("projects");
+      setMode("showcase");
       setCategory("All");
     }
   }, [searchParams]);
@@ -515,7 +517,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   useEffect(() => {
     const resetAt = (location.state as { feedHomeReset?: number } | null)?.feedHomeReset;
     if (!resetAt) return;
-    setMode("projects");
+    setMode("showcase");
     setCategory("All");
     setProjectLeaves([]);
     setProjectStyles([]);
@@ -528,7 +530,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
     setDesignerCategory("All");
     setDesignerTools([]);
     setStudioFeedSource("all");
-    if (isCategoryAllowed("functional")) localStorage.setItem("feed-mode", "projects");
+    if (isCategoryAllowed("functional")) localStorage.setItem("feed-mode", "showcase");
     window.scrollTo({ top: 0, behavior: "smooth" });
     navigate("/", { replace: true, state: null });
   }, [location.state, navigate]);
@@ -553,8 +555,8 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
     if (q == null) return;
     setSearch(q);
     const view = searchParams.get("mode");
-    if (!view || view === "projects") {
-      setMode("projects");
+    if (!view || view === "showcase") {
+      setMode("showcase");
     }
   }, [searchParams]);
 
@@ -563,7 +565,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
     setColorQuery(next);
     if (!next) return;
     const view = searchParams.get("mode");
-    if (!view || view === "projects") setMode("projects");
+    if (!view || view === "showcase") setMode("showcase");
   }, [searchParams]);
 
   useEffect(() => {
@@ -705,7 +707,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
     return mapped;
   }, [sourceData, creatorsMap, feedMode]);
 
-  const isDrillView = isLaunchDesignDrillEnabled() && mode === "projects" && category === DESIGN_DRILL_CHIP;
+  const isDrillView = isLaunchDesignDrillEnabled() && mode === "showcase" && category === DESIGN_DRILL_CHIP;
 
   const activeParent =
     category !== "All" && category !== DESIGN_DRILL_CHIP ? getCategoryParent(category) : null;
@@ -739,14 +741,14 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
       });
 
   const colorMatch = useCoverColorScores(
-    mode === "projects" && colorQuery
+    mode === "showcase" && colorQuery
       ? textMatched.map((p) => ({ id: p.id, image: p.image || "" }))
       : [],
-    mode === "projects" ? colorQuery : null,
+    mode === "showcase" ? colorQuery : null,
   );
 
   const filtered =
-    mode === "projects" && colorQuery
+    mode === "showcase" && colorQuery
       ? textMatched
           .flatMap((project) => {
             const score = colorMatch.scores.get(project.id);
@@ -762,7 +764,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   const boostMaps = useMemo(() => buildBoostTargetMaps(activeBoosts), [activeBoosts]);
   const sortedFiltered = useMemo(
     () =>
-      colorQuery && mode === "projects"
+      colorQuery && mode === "showcase"
         ? filtered
         : sortByBoostedIds(filtered, boostedSets.projects),
     [filtered, boostedSets.projects, colorQuery, mode],
@@ -833,7 +835,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
       {(shouldNoindexSearchParams(searchParams) || search.trim().length > 0 || Boolean(colorQuery)) && (
         <SeoHead path="/" noindex title="ค้นหาผลงาน" description="ผลการค้นหาบน SAMECOR" />
       )}
-      {studioHome && <HomeHeroWash hideBottomBlur={mode === "projects"} />}
+      {studioHome && <HomeHeroWash hideBottomBlur={mode === "showcase"} />}
       <div
         className={cn(
           "relative z-[1] max-w-[1920px] mx-auto px-3 sm:px-[calc(1rem+25px)] lg:px-[calc(1.5rem+25px)] 2xl:px-[calc(2.5rem+25px)] py-4",
@@ -869,12 +871,12 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
           onHideAiChange={setHideAi}
           includeDesignDrillChip={isLaunchDesignDrillEnabled()}
           projectResultCount={filtered.length}
-          resultCount={mode === "projects" ? filtered.length : undefined}
+          resultCount={mode === "showcase" ? filtered.length : undefined}
           recentSearches={recentSearches}
           onRecentSearchSelect={applyToolbarSearch}
-          colorQuery={mode === "projects" ? colorQuery : null}
+          colorQuery={mode === "showcase" ? colorQuery : null}
           onColorQueryChange={applyColorQuery}
-          colorSearchPending={mode === "projects" && Boolean(colorQuery) && colorMatch.pending}
+          colorSearchPending={mode === "showcase" && Boolean(colorQuery) && colorMatch.pending}
           designerFeedSource={designerFeedSource}
           onDesignerFeedSourceChange={setDesignerFeedSource}
           designerSort={designerSort}
@@ -934,7 +936,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
                 <LogIn className="w-4 h-4 mr-1.5" /> เข้าสู่ระบบ
               </Button>
             </div>
-          ) : mode === "designers" ? (
+          ) : mode === "creators" ? (
             <DesignerGrid
               search={search}
               onClearSearch={() => setSearch("")}
@@ -1028,7 +1030,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
                   title={colorQuery && !search.trim() ? "ไม่พบผลงานที่สีใกล้เคียง" : "ไม่พบผลงานที่ตรงกับตัวกรอง"}
                   description={
                     feedMode === "Following"
-                      ? "ติดตามดีไซเนอร์ที่ชอบ แล้วกลับมาดูผลงานล่าสุดของพวกเขาที่นี่"
+                      ? "ติดตามครีเอเตอร์ที่ชอบ แล้วกลับมาดูผลงานล่าสุดของพวกเขาที่นี่"
                       : colorQuery &&
                           colorMatch.measured > 0 &&
                           colorMatch.unreadable === colorMatch.measured

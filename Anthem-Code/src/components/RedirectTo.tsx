@@ -27,12 +27,18 @@ export const JobsToHiringRedirect = () => {
   return <RedirectTo to={`/hiring/${id ?? ""}`} />;
 };
 
+/** Legacy `/project/:id` links (shared URLs, old notifications) → `/showcase/:id`. */
+export const ProjectToShowcaseRedirect = () => {
+  const { id } = useParams<{ id: string }>();
+  return <RedirectTo to={`/showcase/${id ?? ""}`} />;
+};
+
 /** `/search` — app-icon shortcut: land on the projects feed with search open (same as the bottom-nav search). */
 export const SearchShortcutRedirect = () => {
   const navigate = useNavigate();
   useEffect(() => {
     try {
-      localStorage.setItem("feed-mode", "projects");
+      localStorage.setItem("feed-mode", "showcase");
     } catch {
       /* storage blocked */
     }

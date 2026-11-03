@@ -69,7 +69,7 @@ export function OwnerOtherWorks({
           return (
             <Link
               key={p.id}
-              to={`/project/${p.id}`}
+              to={`/showcase/${p.id}`}
               className="group min-w-0 rounded-xl overflow-hidden glass-panel hover:shadow-md transition-shadow"
             >
               <div className="relative aspect-[4/3] bg-muted overflow-hidden">

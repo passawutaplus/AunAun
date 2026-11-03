@@ -197,9 +197,9 @@ const PortfolioProfilePage = () => {
   );
 
   const tabs: { id: ProfileTab; label: string; count?: number }[] = [
-    { id: "overall", label: "My Projects", count: published.length },
+    { id: "overall", label: "My Showcase", count: published.length },
     { id: "collections", label: "Collections", count: collections.length },
-    { id: "designers", label: "Designers", count: following },
+    { id: "designers", label: "Creators", count: following },
     ...(isCommerceEnabled()
       ? [{ id: "booking" as const, label: "Packages Saved", count: savedPackageIds?.size ?? 0 }]
       : []),

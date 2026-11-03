@@ -11,7 +11,7 @@ const DISMISS_KEY = "samecor:android-banner-dismissed-at";
 const DISMISS_DAYS = 30;
 const SHOW_DELAY_MS = 4000;
 /** Pages where a small card above the bottom nav doesn't cover anything important. */
-const SHOW_ON = [/^\/$/, /^\/project\/[^/]+$/, /^\/u\/[^/]+$/];
+const SHOW_ON = [/^\/$/, /^\/showcase\/[^/]+$/, /^\/u\/[^/]+$/];
 
 /** Off until the app is live on Google Play — fail-closed. */
 export function isPlayStoreLive(): boolean {

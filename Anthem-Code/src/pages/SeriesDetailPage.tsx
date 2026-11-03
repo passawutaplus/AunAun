@@ -322,7 +322,7 @@ const SeriesDetailPage = () => {
                         key={item.project_id}
                         className="group relative flex items-center gap-3 rounded-xl glass-panel px-3 py-2.5"
                       >
-                        <Link to={`/project/${p.id}`} className="flex min-w-0 flex-1 items-center gap-3">
+                        <Link to={`/showcase/${p.id}`} className="flex min-w-0 flex-1 items-center gap-3">
                           <div className="relative h-14 w-20 shrink-0 overflow-hidden rounded-md bg-muted">
                             {thumb ? (
                               <img
@@ -363,7 +363,7 @@ const SeriesDetailPage = () => {
 
                   return (
                     <div key={item.project_id} className="group relative">
-                      <Link to={`/project/${p.id}`} className="block">
+                      <Link to={`/showcase/${p.id}`} className="block">
                         <div
                           className={cn(
                             "relative w-full overflow-hidden rounded-md bg-muted",

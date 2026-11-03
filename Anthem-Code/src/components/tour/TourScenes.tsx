@@ -56,11 +56,11 @@ export function SwitchModeScene() {
     <div className="gt-line" style={{ position: "absolute", left: x, top: y, width: w, height: h, borderRadius: 6 }} />
   );
   return (
-    <Scene label="สลับระหว่าง Projects กับ Designers แล้วฟีดเปลี่ยนตาม">
+    <Scene label="สลับระหว่าง Showcase กับ Creators แล้วฟีดเปลี่ยนตาม">
       <div className="gt-pill" style={{ left: 16, top: 12, width: 132, height: 26, border: "1px solid hsl(var(--border))" }} />
       <div className="gt-pill gt-ink gt-anim" style={{ left: 18, top: 14, width: 62, height: 22, ...anim("gt-slide") }} />
-      <span className="gt-label" style={{ left: 28, top: 21, color: "hsl(var(--muted-foreground))" }}>Projects</span>
-      <span className="gt-label" style={{ left: 88, top: 21 }}>Designers</span>
+      <span className="gt-label" style={{ left: 28, top: 21, color: "hsl(var(--muted-foreground))" }}>Showcase</span>
+      <span className="gt-label" style={{ left: 88, top: 21 }}>Creators</span>
       <div className="gt-anim" style={{ position: "absolute", inset: 0, ...anim("gt-gridA") }}>
         {tile(16, 50, 70, 70)}
         {tile(92, 50, 70, 34)}

@@ -398,7 +398,7 @@ const NotificationsPanel = ({
             return (
               <button
                 key={n.id}
-                onClick={() => go(`/project/${n.projectId}`)}
+                onClick={() => go(`/showcase/${n.projectId}`)}
                 className="w-full flex items-start gap-3 p-3 rounded-2xl hover:bg-secondary/50 transition-colors text-left"
               >
                 <div className="relative shrink-0">

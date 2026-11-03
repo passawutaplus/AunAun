@@ -36,7 +36,7 @@ export default function AdminCommentsPage() {
       key: "project",
       header: "ผลงาน",
       render: (r) => (
-        <a href={`/project/${r.project_id}`} className="font-mono text-xs text-admin-accent hover:underline">
+        <a href={`/showcase/${r.project_id}`} className="font-mono text-xs text-admin-accent hover:underline">
           {r.project_id.slice(0, 8)}…
         </a>
       ),

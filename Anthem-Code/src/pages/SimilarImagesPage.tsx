@@ -36,7 +36,7 @@ const RESULTS_GRID = "columns-2 gap-4 sm:gap-5 md:columns-3 xl:columns-4 2xl:col
 function ResultCard({ item, ownerName, ownerAvatar }: { item: SimilarImage; ownerName?: string | null; ownerAvatar?: string | null }) {
   return (
     <div className="group relative mb-4 break-inside-avoid sm:mb-5">
-      <Link to={`/project/${item.project_id}`} className="block overflow-hidden rounded-[6px] bg-muted">
+      <Link to={`/showcase/${item.project_id}`} className="block overflow-hidden rounded-[6px] bg-muted">
         <img src={item.image_url} alt={item.title} className="w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" loading="lazy" />
       </Link>
       <div className="absolute right-2 top-2 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
@@ -266,7 +266,7 @@ const SimilarImagesPage = () => {
                   </Link>
                 ) : null}
                 <Button asChild variant="outline" size="sm" className="w-full rounded-full">
-                  <Link to={`/project/${project.id}`}>
+                  <Link to={`/showcase/${project.id}`}>
                     <ExternalLink className="mr-1 h-4 w-4" /> ดูผลงานเต็ม
                   </Link>
                 </Button>

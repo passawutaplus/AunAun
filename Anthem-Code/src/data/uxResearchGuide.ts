@@ -165,7 +165,7 @@ export const FEATURE_SECTIONS: FeatureSection[] = [
   {
     id: "A",
     title: "Discovery & Feed",
-    paths: "/, /?mode=community, /?mode=designers, /?mode=studios, /drill, /explore/:kind/:value",
+    paths: "/, /?mode=community, /?mode=creators, /?mode=studios, /drill, /explore/:kind/:value",
     account: "Guest หรือทุก persona",
     steps: [
       "เปิดหน้าแรก สังเกต hero และตัวเลขชุมชน",
@@ -206,12 +206,12 @@ export const FEATURE_SECTIONS: FeatureSection[] = [
   {
     id: "B",
     title: "โปรไฟล์ & ผลงาน public",
-    paths: "/u/:id, /@username, /project/:id, /similar/:id, /?preview=1",
+    paths: "/u/:id, /@username, /showcase/:id, /similar/:id, /?preview=1",
     account: "บัญชีที่มีผลงาน หรือ guest",
     steps: [
       "เปิดโปรไฟล์ public จากฟีด",
       "สลับแท็บ ผลงาน / Area / Design Drill / คอลเลกชัน / เกี่ยวกับ",
-      "เปิดรายละเอียดผลงาน /project/:id",
+      "เปิดรายละเอียดผลงาน /showcase/:id",
       "ลอง visitor preview (?preview=1) บนโปรไฟล์ตัวเอง",
     ],
     uxCriteria: [
@@ -976,7 +976,7 @@ export const PAGE_MAP: PageMapGroup[] = [
       { path: "/research", label: "คู่มือ UX (หน้านี้)" },
       { path: "/research/feedback", label: "ส่งผลการทดสอบ" },
       { path: "/s/doi-studio", label: "สตูดิโอตัวอย่าง" },
-      { path: "/project/:id", label: "รายละเอียดผลงาน" },
+      { path: "/showcase/:id", label: "รายละเอียดผลงาน" },
       { path: "/u/:id", label: "โปรไฟล์ public" },
     ],
   },

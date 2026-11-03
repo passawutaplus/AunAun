@@ -179,7 +179,7 @@ const ProjectCard = ({
         }
         const open = () => {
           if (boostId) void logBoostEvent(boostId, "click");
-          navigate(`/project/${project.id}`);
+          navigate(`/showcase/${project.id}`);
         };
         if (!gallery || lastPointer.current !== "touch") {
           open();
@@ -203,7 +203,7 @@ const ProjectCard = ({
     >
       {/* The card opens on pointer click; this link is the keyboard and screen-reader way in. */}
       <Link
-        to={`/project/${project.id}`}
+        to={`/showcase/${project.id}`}
         className="peer sr-only"
         onClick={(event) => {
           event.stopPropagation();

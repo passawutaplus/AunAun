@@ -20,7 +20,7 @@ export const HOME_TOUR: GuideTourStep[] = [
   },
   {
     id: "mode",
-    title: "Projects or Designers",
+    title: "Showcase or Creators",
     body: "ชี้หรือแตะที่คำนี้เพื่อสลับว่าจะดูผลงาน หรือดูครีเอเตอร์ ฟีดด้านล่างจะเปลี่ยนตาม",
     target: "home-mode",
     optional: true,

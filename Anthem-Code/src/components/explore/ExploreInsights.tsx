@@ -204,7 +204,7 @@ export function ExplorePalette({ rows }: { rows: DBProject[] }) {
       {hexes.map((hex) => (
         <Link
           key={hex}
-          to={`/?mode=projects&color=${encodeURIComponent(hex)}`}
+          to={`/?mode=showcase&color=${encodeURIComponent(hex)}`}
           aria-label={`ค้นหาผลงานโทน ${hex.toUpperCase()}`}
           title={`ค้นหาผลงานโทน ${hex.toUpperCase()}`}
           className="h-6 w-6 rounded-full border border-border shadow-sm transition-transform hover:scale-110"

@@ -64,7 +64,7 @@ export function isFeedModeVisible(mode: FeedMode): boolean {
   return isCommerceEnabled() || !COMMERCE_FEED_MODES.includes(mode);
 }
 
-export const LAUNCH_FEED_MODES = ["projects", "designers", "packages", "objects"] as const;
+export const LAUNCH_FEED_MODES = ["showcase", "creators", "packages", "objects"] as const;
 export type LaunchFeedMode = (typeof LAUNCH_FEED_MODES)[number];
 
 export function isLaunchFeedMode(mode: FeedMode): mode is LaunchFeedMode {
@@ -73,7 +73,7 @@ export function isLaunchFeedMode(mode: FeedMode): mode is LaunchFeedMode {
 
 export function coerceLaunchFeedMode(mode: FeedMode): LaunchFeedMode {
   if (isLaunchFeedMode(mode)) return mode;
-  return "projects";
+  return "showcase";
 }
 
 /**
@@ -95,6 +95,7 @@ export const LAUNCH_ALLOWED_ROUTE_PATTERNS: readonly RegExp[] = [
   /^\/dashboard(\/|$)/,
   /^\/hire-requests$/,
   /^\/collab-requests$/,
+  /^\/showcase\/[^/]+$/,
   /^\/project\/[^/]+$/,
   /^\/exhibition(\/[^/]+)?$/,
   /^\/service\/[^/]+$/,

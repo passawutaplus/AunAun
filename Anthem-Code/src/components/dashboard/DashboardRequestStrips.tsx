@@ -51,7 +51,7 @@ export function DashboardLinkedWorkStrip({
               size="sm"
               variant="outline"
               className="rounded-full h-7 text-[11px] gap-1"
-              onClick={() => navigate(`/project/${linkedProjectId}`)}
+              onClick={() => navigate(`/showcase/${linkedProjectId}`)}
             >
               <ExternalLink className="w-3 h-3" />
               เปิด

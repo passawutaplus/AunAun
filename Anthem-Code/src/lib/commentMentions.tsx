@@ -8,9 +8,9 @@ const HANDLE = /@([a-zA-Z0-9_]{2,32})/g;
 /** Last @… token still being typed (Thai/English). Stops at space or `[`. */
 const AT_QUERY = /@([^\s[\]]*)$/u;
 const PROJECT_TOKEN =
-  /@\[([^\]]{1,80})\]\(\/project\/([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\)/gi;
+  /@\[([^\]]{1,80})\]\(\/(?:showcase|project)\/([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\)/gi;
 const MENTION_SPLIT =
-  /(@\[[^\]]{1,80}\]\(\/project\/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\)|@[a-zA-Z0-9_]{2,32})/gi;
+  /(@\[[^\]]{1,80}\]\(\/(?:showcase|project)\/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\)|@[a-zA-Z0-9_]{2,32})/gi;
 
 export const MENTION_PREVIEW_ROWS = 3;
 export const MENTION_SEARCH_ROWS = 8;
@@ -32,7 +32,7 @@ export function sanitizeProjectMentionTitle(title: string): string {
 }
 
 export function formatProjectMention(title: string, projectId: string): string {
-  return `@[${sanitizeProjectMentionTitle(title)}](/project/${projectId})`;
+  return `@[${sanitizeProjectMentionTitle(title)}](/showcase/${projectId})`;
 }
 
 export function insertMentionProject(text: string, title: string, projectId: string): string {
@@ -99,13 +99,13 @@ export function renderCommentMentions(text: string): ReactNode {
   const parts = text.split(MENTION_SPLIT);
   return parts.map((part, i) => {
     const project = part.match(
-      /^@\[([^\]]{1,80})\]\(\/project\/([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\)$/i,
+      /^@\[([^\]]{1,80})\]\(\/(?:showcase|project)\/([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\)$/i,
     );
     if (project && isUuid(project[2])) {
       return (
         <Link
           key={i}
-          to={`/project/${project[2]}`}
+          to={`/showcase/${project[2]}`}
           className="text-primary font-medium hover:underline"
         >
           @{project[1]}

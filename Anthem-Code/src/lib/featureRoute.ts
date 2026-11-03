@@ -3,7 +3,7 @@ export function featureFromRoute(pathname: string): string {
   if (pathname === "/") return "feed";
   if (pathname.startsWith("/admin")) return "admin";
   if (pathname.startsWith("/auth")) return "auth";
-  if (pathname.startsWith("/project/")) return "project_detail";
+  if (pathname.startsWith("/showcase/") || pathname.startsWith("/project/")) return "project_detail";
   if (pathname.startsWith("/portfolio/new") || pathname.includes("/edit")) return "project_editor";
   if (pathname.startsWith("/portfolio")) return "portfolio";
   if (pathname.startsWith("/u/")) return "public_profile";

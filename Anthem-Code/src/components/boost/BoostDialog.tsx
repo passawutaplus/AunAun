@@ -63,9 +63,9 @@ const BoostDialog = ({ open, onOpenChange, targetType, targetId, targetTitle }: 
     try {
       const base =
         targetType === "project"
-          ? `/project/${targetId}?boost=success`
+          ? `/showcase/${targetId}?boost=success`
           : `/community/${targetId}?boost=success`;
-      const cancel = targetType === "project" ? `/project/${targetId}` : `/community/${targetId}`;
+      const cancel = targetType === "project" ? `/showcase/${targetId}` : `/community/${targetId}`;
 
       if (mode === "preset") {
         await pay.mutateAsync({

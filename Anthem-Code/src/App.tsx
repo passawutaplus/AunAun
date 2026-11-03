@@ -31,7 +31,7 @@ import CloudPrefsSync from "./components/settings/CloudPrefsSync.tsx";
 import { InterestSurveyGate } from "./components/onboarding/InterestSurveyDialog.tsx";
 import { SkipLink } from "./components/a11y/SkipLink.tsx";
 import { OfflineBanner } from "./components/OfflineBanner.tsx";
-import RedirectTo, { JobsToHiringRedirect, SearchShortcutRedirect } from "./components/RedirectTo.tsx";
+import RedirectTo, { JobsToHiringRedirect, ProjectToShowcaseRedirect, SearchShortcutRedirect } from "./components/RedirectTo.tsx";
 import VanityProfileRoute from "./components/profile/VanityProfileRoute.tsx";
 import RouteFallback from "./components/RouteFallback.tsx";
 import DemoModeBanner from "./components/DemoModeBanner.tsx";
@@ -301,7 +301,8 @@ const App = () => (
               <Route path="/portfolio/packages/:id/edit" element={<RequireAuth><PackageEditorPage /></RequireAuth>} />
               <Route path="/portfolio/new" element={<RequireAuth><ProjectEditorPage /></RequireAuth>} />
               <Route path="/portfolio/:id/edit" element={<RequireAuth><ProjectEditorPage /></RequireAuth>} />
-              <Route path="/project/:id" element={<ProjectDetailPage />} />
+              <Route path="/showcase/:id" element={<ProjectDetailPage />} />
+              <Route path="/project/:id" element={<ProjectToShowcaseRedirect />} />
               <Route path="/exhibition" element={<ExhibitionPage />} />
               <Route path="/exhibition/:id" element={<ExhibitionDetailPage />} />
               <Route path="/service/:id" element={<ServiceDetailPage />} />

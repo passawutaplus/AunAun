@@ -97,7 +97,7 @@ async function fetchLiveCatalog(supabaseUrl, anonKey) {
   const images = projects
     .filter((p) => p.cover_url && p.id)
     .map((p) => ({
-      loc: `/project/${p.id}`,
+      loc: `/showcase/${p.id}`,
       imageLoc: p.cover_url,
       title: p.title || undefined,
     }));

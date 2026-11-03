@@ -138,7 +138,7 @@ function Swatch({
         <button
           type="button"
           className={menuItem}
-          onClick={() => navigate(`/?mode=projects&color=${encodeURIComponent(hex)}`)}
+          onClick={() => navigate(`/?mode=showcase&color=${encodeURIComponent(hex)}`)}
         >
           <Search className="h-3.5 w-3.5" aria-hidden /> ค้นหาผลงานโทนนี้
         </button>

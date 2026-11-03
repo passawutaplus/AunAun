@@ -67,8 +67,8 @@ export function ProfileOverallWorkMenu({ project, allProjects }: Props) {
   const title = project.title?.trim() || "ผลงานนี้";
   const shareUrl =
     typeof window !== "undefined"
-      ? `${window.location.origin}/project/${project.id}`
-      : `/project/${project.id}`;
+      ? `${window.location.origin}/showcase/${project.id}`
+      : `/showcase/${project.id}`;
 
   const handlePin = () => {
     if (pinned) {

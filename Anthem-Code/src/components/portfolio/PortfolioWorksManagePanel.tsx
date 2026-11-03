@@ -320,7 +320,7 @@ export default function PortfolioWorksManagePanel({
           statsProjectId
             ? () => {
                 setStatsProjectId(null);
-                navigate(`/project/${statsProjectId}`);
+                navigate(`/showcase/${statsProjectId}`);
               }
             : undefined
         }

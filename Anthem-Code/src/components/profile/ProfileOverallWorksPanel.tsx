@@ -77,7 +77,7 @@ function OverallWorkCard({
   const title = project.title?.trim() || "ไม่มีชื่อ";
   const published = status === "Published";
   // Drafts and private works have no public page: the card opens the editor instead.
-  const href = published ? `/project/${project.id}` : `/portfolio/${project.id}/edit`;
+  const href = published ? `/showcase/${project.id}` : `/portfolio/${project.id}/edit`;
   const views = (project.views ?? 0).toLocaleString("th-TH");
   const likes = (project.likes ?? 0).toLocaleString("th-TH");
 
@@ -160,7 +160,7 @@ function StatsStrip({ published }: { published: DBProject[] }) {
       <div className={tile}>
         <p className="text-[11px] text-muted-foreground">ผลงานยอดนิยม</p>
         {top && (top.views ?? 0) > 0 ? (
-          <Link to={`/project/${top.id}`} className="block truncate text-sm font-medium text-foreground hover:underline">
+          <Link to={`/showcase/${top.id}`} className="block truncate text-sm font-medium text-foreground hover:underline">
             {top.title?.trim() || "ไม่มีชื่อ"}
           </Link>
         ) : (
@@ -262,7 +262,7 @@ export default function ProfileOverallWorksPanel({ projects, isLoading, afterHea
   return (
     <div className="space-y-4">
       <ProfileTabHeading
-        title="My Projects"
+        title="My Showcase"
         count={published.length}
         actions={
           total > 0 ? (

@@ -68,7 +68,7 @@ export function ProjectSeriesBlock({ projectId, className, compact = false }: Pr
               return (
                 <Link
                   key={item.project_id}
-                  to={`/project/${p.id}`}
+                  to={`/showcase/${p.id}`}
                   className={cn("group", compact ? "min-w-0" : "shrink-0 w-24")}
                 >
                   <div className="aspect-square rounded-xl overflow-hidden bg-muted border border-border/50 group-hover:border-primary/50 transition-colors">

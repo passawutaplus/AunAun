@@ -192,7 +192,7 @@ export function SimilarWorksRow({
         .slice(0, 16)
         .map(({ r }) => ({
           id: r.id,
-          href: `/project/${r.id}`,
+          href: `/showcase/${r.id}`,
           title: r.title,
           image: r.cover_url || r.gallery_urls?.[0] || "",
           views: r.views ?? 0,

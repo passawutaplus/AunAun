@@ -162,14 +162,14 @@ const FloatingNav = () => {
       homeNav.onFilterClick();
       return;
     }
-    localStorage.setItem("feed-mode", "projects");
+    localStorage.setItem("feed-mode", "showcase");
     navigate("/", { state: { feedHomeReset: Date.now(), openProjectSearch: Date.now() } });
   };
 
   /** Mobile/tablet: always land on default projects feed (even when re-tapping Home). */
   const goHome = (e: React.MouseEvent) => {
     e.preventDefault();
-    localStorage.setItem("feed-mode", "projects");
+    localStorage.setItem("feed-mode", "showcase");
     navigate("/", { replace: true, state: { feedHomeReset: Date.now() } });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };

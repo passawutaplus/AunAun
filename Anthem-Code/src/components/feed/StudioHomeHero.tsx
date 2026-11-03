@@ -367,7 +367,7 @@ function HeroProfileLine({
 /** Same poster as the home hero: words slide in, the noun rises, hover opens the photo and the mode. */
 export function HeroPosterTitle({
   images,
-  mode = "projects",
+  mode = "showcase",
   onModeChange,
   active,
   arrive = false,
@@ -407,7 +407,7 @@ const StudioHomeHero = ({
   className,
   search = "",
   onSearchChange,
-  mode = "projects",
+  mode = "showcase",
   onModeChange,
 }: Props) => {
   const reduced = useReducedMotion();
