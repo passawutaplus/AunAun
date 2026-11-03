@@ -99,6 +99,13 @@ const requiresAuth = (m: FeedMode2) => m === "Following";
 /** Feed bar chip: parent taxonomy id, All, or Design Drill. */
 type FeedCategoryChip = "All" | typeof DESIGN_DRILL_CHIP | CategoryParentId;
 
+const MOBILE_MODE_TITLE: Partial<Record<FeedMode, string>> = {
+  showcase: "Showcase",
+  creators: "Creators",
+  packages: "Packages",
+  objects: "Objects",
+};
+
 const FEED_MODE_VISIT: Partial<Record<FeedMode, OnboardingVisitId>> = {
   showcase: "explore_feed",
   community: "explore_community",
@@ -921,6 +928,13 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
           drillActive={isDrillView}
           onDrillSelect={openDrill}
         />
+
+        {/* Phones / tablets: the mode name as a page title under the bar (desktop shows its own big title). */}
+        {catalogMode && !isDrillView ? (
+          <h1 className="pb-4 pt-3 text-4xl font-semibold leading-[0.95] tracking-tight text-foreground lg:hidden">
+            {MOBILE_MODE_TITLE[mode] ?? "Showcase"}
+          </h1>
+        ) : null}
 
         <FeedModeTransition
           modeKey={feedPanelKey}

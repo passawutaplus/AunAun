@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { CalendarX2 } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
@@ -14,6 +14,10 @@ import EmptyState from "@/components/ui/EmptyState";
 import QueryStatusPanel from "@/components/ui/QueryStatusPanel";
 import { useEventStats, useMyEventLikes, usePublishedEvents } from "@/hooks/useExhibitionEvents";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useHideOnScroll } from "@/hooks/useHideOnScroll";
+import { useAuth } from "@/hooks/useAuth";
+import FeedbackHeaderPill from "@/components/feedback/FeedbackHeaderPill";
+import { isBetaFeedbackEnabled } from "@/lib/aplus1Launch";
 import { EVENT_CATEGORIES, eventTiming, type EventCategory } from "@/lib/exhibitionEvents";
 import { BRAND_NAME } from "@/lib/brandConfig";
 import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
@@ -56,6 +60,10 @@ export default function ExhibitionPage() {
   const { data: myLikes } = useMyEventLikes(rowIds);
 
   const scrolled = useFeedHomeNavStore((st) => st.scrolled);
+  const { user } = useAuth();
+  const showBetaFeedback = Boolean(user) && isBetaFeedbackEnabled();
+  const mobileBarRef = useRef<HTMLDivElement>(null);
+  const { hidden: mobileBarHidden, scrolled: mobileBarScrolled } = useHideOnScroll(mobileBarRef);
   const reduceMotion = useReducedMotion();
 
   const toggle = <FeedModeToggle value="showcase" exhibitionActive onChange={(m) => navigate(`/?mode=${m}`)} />;
@@ -149,8 +157,17 @@ export default function ExhibitionPage() {
       </motion.div>
 
       <div className="relative z-[1] mx-auto max-w-[1920px] px-3 pb-4 pt-0 sm:px-[calc(1rem+25px)] lg:px-[calc(1.5rem+25px)] lg:pt-4 2xl:px-[calc(2.5rem+25px)]">
-        {/* Mobile: brand mark + mode pill, pinned like the feed bar. */}
-        <div className="sticky top-0 z-30 -mx-3 flex items-center gap-2 border-b border-border bg-background px-3 py-2 sm:-mx-[calc(1rem+25px)] sm:px-[calc(1rem+25px)] lg:hidden">
+        {/* Phones / tablets: the feed's bar — brand mark + mode pill with the type tabs under it;
+            it slides away while scrolling down and comes back on the way up. */}
+        <div
+          ref={mobileBarRef}
+          className={cn(
+            "sticky top-0 z-40 -mx-3 px-3 py-3 transition-transform duration-300 ease-out motion-reduce:transition-none sm:-mx-[calc(1rem+25px)] sm:px-[calc(1rem+25px)] lg:hidden",
+            mobileBarHidden && "-translate-y-full",
+            mobileBarScrolled && "border-b border-border bg-background",
+          )}
+        >
+          <div className="flex items-center gap-2">
           <Link
             to="/"
             aria-label={`${BRAND_NAME} หน้าแรก`}
@@ -158,8 +175,23 @@ export default function ExhibitionPage() {
           >
             <BrandLogo showWordmark={false} size="md" />
           </Link>
-          <div className="ml-auto min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{toggle}</div>
+          {showBetaFeedback ? <FeedbackHeaderPill className="ml-auto" /> : null}
+          <div
+            className={cn(
+              "min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+              !showBetaFeedback && "ml-auto",
+            )}
+          >
+            {toggle}
+          </div>
+          </div>
+          <div className="mt-3">{filters}</div>
         </div>
+
+        {/* Phones: a plain title instead of the hero slideshow, like the other modes. */}
+        <h1 className="pb-5 pt-3 text-4xl font-semibold leading-[0.95] tracking-tight text-foreground lg:hidden">
+          Exhibition <span className="text-muted-foreground">&amp; Events</span>
+        </h1>
 
         <div className={cn("hidden min-w-0 items-center justify-center gap-3 pb-4 pt-3 lg:flex", scrolled && "invisible")}>
           <div className="shrink-0">{searchBar()}</div>
@@ -169,9 +201,9 @@ export default function ExhibitionPage() {
         </div>
 
         {/* Type tabs sit right under the mode pill, as on Showcase / Creators. */}
-        <div className={cn("pb-4 pt-4 lg:pt-0", scrolled && "lg:invisible")}>{filters}</div>
+        <div className={cn("hidden pb-4 lg:block", scrolled && "lg:invisible")}>{filters}</div>
 
-        <ExhibitionHero events={heroEvents} className="mb-6" />
+        <ExhibitionHero events={heroEvents} className="mb-6 hidden lg:grid" />
 
         <div>
       {isLoading || isError ? (
