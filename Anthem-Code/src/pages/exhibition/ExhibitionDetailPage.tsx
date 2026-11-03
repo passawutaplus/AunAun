@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
-  ArrowLeft,
   CalendarDays,
   ExternalLink,
   Flag,
@@ -12,6 +11,9 @@ import {
   Ticket,
 } from "lucide-react";
 import SeoHead from "@/components/SeoHead";
+import SeoBreadcrumb from "@/components/seo/SeoBreadcrumb";
+import { BackButton } from "@/components/ui/BackButton";
+import { HeaderAccountActions } from "@/components/HeaderAccountActions";
 import ConnectMessageDialog from "@/components/chat/ConnectMessageDialog";
 import SponsorOfferDialog from "@/components/exhibition/SponsorOfferDialog";
 import ReportDialog from "@/components/report/ReportDialog";
@@ -141,8 +143,14 @@ export default function ExhibitionDetailPage() {
     if (!needsAuth()) setSponsorOpen(true);
   };
 
+  const crumbs = [
+    { name: "หน้าแรก", path: "/" },
+    { name: "Exhibition", path: "/exhibition" },
+    { name: event.title, path },
+  ];
+
   return (
-    <div className="container mx-auto max-w-6xl px-4 pb-24 pt-6">
+    <div className="pb-24">
       <SeoHead
         title={event.title}
         description={lead.slice(0, 160)}
@@ -151,12 +159,20 @@ export default function ExhibitionDetailPage() {
         noindex={event.status !== "published"}
       />
 
-      <Link
-        to="/exhibition"
-        className="mb-5 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="h-4 w-4" aria-hidden /> Back to Exhibition
-      </Link>
+      {/* Same top bar as a work page: back, breadcrumb, account. */}
+      <div className="sticky top-0 z-20 border-b border-border bg-background">
+        <div className="mx-auto flex max-w-[1920px] items-center justify-between gap-3 px-3 py-3 sm:px-[calc(1rem+25px)] lg:px-[calc(1.5rem+25px)] 2xl:px-[calc(2.5rem+25px)]">
+          <div className="flex min-w-0 items-center gap-3">
+            <BackButton fallbackTo="/exhibition" />
+            <SeoBreadcrumb items={crumbs} className="mb-0 hidden min-w-0 md:flex" />
+          </div>
+          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+            <HeaderAccountActions />
+          </div>
+        </div>
+      </div>
+
+      <div className="container mx-auto max-w-6xl px-4 pt-6">
 
       {event.status !== "published" ? (
         <div className="mb-5 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm">
@@ -353,6 +369,7 @@ export default function ExhibitionDetailPage() {
         />
       ) : null}
       {canSponsor ? <SponsorOfferDialog open={sponsorOpen} onOpenChange={setSponsorOpen} event={event} /> : null}
+      </div>
     </div>
   );
 }
