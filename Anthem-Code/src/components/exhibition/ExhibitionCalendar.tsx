@@ -186,7 +186,7 @@ export function ExhibitionCalendar({ events, className }: Props) {
   };
 
   return (
-    <section className={cn("rounded-2xl border border-border bg-card p-4 sm:p-5", className)} aria-labelledby="week-events-heading">
+    <section className={cn("py-1", className)} aria-labelledby="week-events-heading">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
           <h2 id="week-events-heading" className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
@@ -215,7 +215,7 @@ export function ExhibitionCalendar({ events, className }: Props) {
               aria-label={`${format(d, "d MMM")}${has ? " มีงาน" : ""}`}
               className={cn(
                 "flex flex-col items-center gap-1.5 rounded-2xl border px-1 py-3 text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground sm:py-4",
-                isToday ? "border-brand bg-brand/5" : "border-transparent bg-muted/60",
+                isToday ? "border-brand bg-brand/5" : "border-transparent bg-card",
               )}
             >
               <span className="text-[11px] font-medium text-muted-foreground">{DAY_LABELS[i]}</span>
