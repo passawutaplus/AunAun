@@ -1,4 +1,5 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { Suspense, useState, useMemo, useEffect, useRef } from "react";
+import { lazyWithRetry as lazy } from "@/lib/lazyWithRetry";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { releaseBoot } from "@/lib/bootGate";
@@ -20,7 +21,6 @@ import { shouldNoindexSearchParams } from "@/lib/seo";
 import { COLOR_MATCH_MIN, normalizeColorList } from "@/lib/colorSearch";
 import { similarSearchSuggestions } from "@/lib/searchSuggestions";
 import { useCoverColorScores } from "@/hooks/useCoverColorScores";
-import DrillFeedPanel from "@/components/drill/DrillFeedPanel";
 import ProjectCard from "@/components/ProjectCard";
 import AdCard from "@/components/feed/AdCard";
 import HouseAdCard from "@/components/feed/HouseAdCard";
@@ -31,19 +31,13 @@ import { interleaveAds } from "@/lib/interleaveAds";
 import { insertHouseAd } from "@/lib/insertHouseAd";
 import { useFeedGridDensity } from "@/hooks/useFeedGridDensity";
 import { useFeedHomeNavStore } from "@/stores/feedHomeNavStore";
-import HireDialog from "@/components/HireDialog";
-import CollabDialog from "@/components/CollabDialog";
 import { FeedProjectGrid } from "@/components/feed/FeedProjectGrid";
 import { ProjectQuickViewHost } from "@/components/feed/ProjectQuickView";
 import { useQuickView } from "@/stores/quickViewStore";
 import { FeedModeTransition } from "@/components/feed/FeedModeTransition";
-import ObjectCatalog from "@/components/objects/ObjectCatalog";
 import { type FeedMode, parseFeedMode } from "@/components/feed/FeedModeToggle";
-import DesignerGrid from "@/components/feed/DesignerGrid";
-import PackageGrid from "@/components/feed/PackageGrid";
 import { type DesignerSort } from "@/components/feed/DesignerToolbar";
 import type { DesignerFeedSource } from "@/components/feed/DesignerFeedDropdown";
-import StudioGrid from "@/components/feed/StudioGrid";
 import type { StudioFeedSource } from "@/components/studio/StudioFilterPanel";
 import { useDesigners } from "@/hooks/useDesigners";
 
@@ -74,7 +68,6 @@ import {
   isLaunchDesignDrillEnabled,
 } from "@/lib/aplus1Launch";
 import { useAuthDialog } from "@/stores/authDialogStore";
-import CommunityFeedPanel from "@/components/community/CommunityFeedPanel";
 import CommunityFeedSidebar, {
   CommunityFeedMobileDiscovery,
 } from "@/components/community/CommunityFeedSidebar";
@@ -88,10 +81,20 @@ import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
 import { DESIGN_DRILL_CHIP } from "@/lib/drillProject";
 import { markOnboardingVisit, type OnboardingVisitId } from "@/lib/onboardingStorage";
 import { rankProjectsForSearch } from "@/lib/projectSearchRank";
-import { GuideTour } from "@/components/tour/GuideTour";
 import { TourHelpButton } from "@/components/tour/TourHelpButton";
 import { HOME_TOUR } from "@/components/tour/tours";
 import { usePageTour } from "@/hooks/usePageTour";
+
+// Mode-specific grids, dialogs and the tour are not needed for first paint — load on demand.
+const DesignerGrid = lazy(() => import("@/components/feed/DesignerGrid"));
+const ObjectCatalog = lazy(() => import("@/components/objects/ObjectCatalog"));
+const PackageGrid = lazy(() => import("@/components/feed/PackageGrid"));
+const StudioGrid = lazy(() => import("@/components/feed/StudioGrid"));
+const CommunityFeedPanel = lazy(() => import("@/components/community/CommunityFeedPanel"));
+const DrillFeedPanel = lazy(() => import("@/components/drill/DrillFeedPanel"));
+const HireDialog = lazy(() => import("@/components/HireDialog"));
+const CollabDialog = lazy(() => import("@/components/CollabDialog"));
+const GuideTour = lazy(() => import("@/components/tour/GuideTour").then((m) => ({ default: m.GuideTour })));
 
 type FeedMode2 = "Explore" | SpecialFilter;
 const requiresAuth = (m: FeedMode2) => m === "Following";
@@ -955,26 +958,34 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
               </Button>
             </div>
           ) : mode === "creators" ? (
-            <DesignerGrid
-              search={search}
-              onClearSearch={() => setSearch("")}
-              sort={designerSort}
-              feedSource={designerFeedSource}
-              categories={designerCategory !== "All" ? [designerCategory] : []}
-              tools={designerTools}
-            />
+            <Suspense fallback={null}>
+              <DesignerGrid
+                search={search}
+                onClearSearch={() => setSearch("")}
+                sort={designerSort}
+                feedSource={designerFeedSource}
+                categories={designerCategory !== "All" ? [designerCategory] : []}
+                tools={designerTools}
+              />
+            </Suspense>
           ) : mode === "objects" ? (
-            <ObjectCatalog search={search} onClearSearch={() => setSearch("")} />
+            <Suspense fallback={null}>
+              <ObjectCatalog search={search} onClearSearch={() => setSearch("")} />
+            </Suspense>
           ) : mode === "packages" ? (
-            <PackageGrid
-              search={search}
-              onClearSearch={() => setSearch("")}
-              sort={designerSort}
-              feedSource={designerFeedSource}
-              categories={designerCategory !== "All" ? [designerCategory] : []}
-            />
+            <Suspense fallback={null}>
+              <PackageGrid
+                search={search}
+                onClearSearch={() => setSearch("")}
+                sort={designerSort}
+                feedSource={designerFeedSource}
+                categories={designerCategory !== "All" ? [designerCategory] : []}
+              />
+            </Suspense>
           ) : mode === "studios" ? (
-            <StudioGrid search={search} onClearSearch={() => setSearch("")} feedSource={studioFeedSource} />
+            <Suspense fallback={null}>
+              <StudioGrid search={search} onClearSearch={() => setSearch("")} feedSource={studioFeedSource} />
+            </Suspense>
           ) : mode === "community" ? (
             <div className="xl:grid xl:grid-cols-[280px_minmax(0,1fr)] xl:gap-5 xl:items-start">
               <CommunityFeedSidebar
@@ -986,17 +997,21 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
                   filter={communityFilter}
                   onFilterChange={setCommunityFilter}
                 />
-                <CommunityFeedPanel
-                  search={search}
-                  filter={communityFilter}
-                  onClearTag={clearTag}
-                  onClearSearch={() => setSearch("")}
-                  onPostClick={openNewCommunityPost}
-                />
+                <Suspense fallback={null}>
+                  <CommunityFeedPanel
+                    search={search}
+                    filter={communityFilter}
+                    onClearTag={clearTag}
+                    onClearSearch={() => setSearch("")}
+                    onPostClick={openNewCommunityPost}
+                  />
+                </Suspense>
               </div>
             </div>
           ) : isDrillView ? (
-            <DrillFeedPanel />
+            <Suspense fallback={null}>
+              <DrillFeedPanel />
+            </Suspense>
           ) : projectsError || projectsLoading ? (
             <QueryStatusPanel
               isLoading={projectsLoading}
@@ -1090,26 +1105,32 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
 
       <Footer />
 
-      <HireDialog
-        open={hireOpen}
-        onOpenChange={setHireOpen}
-        projectTitle={hireProject}
-        projectId={hireProjectId}
-        projectCoverUrl={hireProjectCover}
-        freelancerId={hireFreelancerId}
-      />
-      <CollabDialog
-        open={collabOpen}
-        onOpenChange={setCollabOpen}
-        recipientId={collabTarget.recipientId}
-        recipientName={collabTarget.recipientName}
-        projectId={collabTarget.projectId}
-        projectTitle={collabTarget.projectTitle}
-        projectCoverUrl={collabTarget.projectCoverUrl}
-      />
+      <Suspense fallback={null}>
+        <HireDialog
+          open={hireOpen}
+          onOpenChange={setHireOpen}
+          projectTitle={hireProject}
+          projectId={hireProjectId}
+          projectCoverUrl={hireProjectCover}
+          freelancerId={hireFreelancerId}
+        />
+      </Suspense>
+      <Suspense fallback={null}>
+        <CollabDialog
+          open={collabOpen}
+          onOpenChange={setCollabOpen}
+          recipientId={collabTarget.recipientId}
+          recipientName={collabTarget.recipientName}
+          projectId={collabTarget.projectId}
+          projectTitle={collabTarget.projectTitle}
+          projectCoverUrl={collabTarget.projectCoverUrl}
+        />
+      </Suspense>
       {/* Desktop only — on phones it sat on top of the feed; Settings → ทัวร์แนะนำ replays it there */}
       <TourHelpButton onClick={homeTour.start} className="fixed bottom-6 left-4 z-30 hidden shadow-sm lg:inline-flex" />
-      <GuideTour tourId="home" label="ทัวร์แนะนำหน้าแรก" steps={HOME_TOUR} open={homeTour.open} intro={homeTour.intro} onClose={homeTour.close} />
+      <Suspense fallback={null}>
+        <GuideTour tourId="home" label="ทัวร์แนะนำหน้าแรก" steps={HOME_TOUR} open={homeTour.open} intro={homeTour.intro} onClose={homeTour.close} />
+      </Suspense>
     </main>
   );
 };
