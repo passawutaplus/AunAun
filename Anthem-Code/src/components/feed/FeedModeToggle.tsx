@@ -161,8 +161,9 @@ const FeedModeToggle = ({
       ref={trackRef}
       className={cn(
         "relative shrink-0 flex items-center rounded-full border border-border bg-white p-0.5 shadow-none transition-[width] duration-200 dark:bg-card",
-        packed && visible.length === 2 && "w-[14.5rem]",
-        packed && visible.length === 3 && "w-[21.75rem]",
+        // Fixed widths, but never wider than the bar on a phone: segments shrink instead of overflowing.
+        packed && visible.length === 2 && "w-[14.5rem] max-w-full",
+        packed && visible.length === 3 && "w-[21.75rem] max-w-full",
         !compact && visible.length >= 4 && "w-max",
         className,
       )}
@@ -215,7 +216,7 @@ const FeedModeToggle = ({
               "relative z-10 items-center justify-center rounded-full text-xs font-medium transition-[padding,gap,colors] duration-200",
               compact ? "gap-0 px-2.5 py-1.5" : "gap-1.5 px-3 py-1.5",
               visibility,
-              packed && "flex-1",
+              packed && "min-w-0 flex-1",
               active
                 ? "text-white dark:text-primary-foreground"
                 : "text-foreground/75 hover:text-foreground",
@@ -224,7 +225,8 @@ const FeedModeToggle = ({
               active && !indicator && "bg-primary",
             )}
           >
-            <Icon className="w-3.5 h-3.5 shrink-0" aria-hidden />
+            {/* Narrow phones: label only, so three segments fit beside the logo. */}
+            <Icon className={cn("w-3.5 h-3.5 shrink-0", packed && "max-[400px]:hidden")} aria-hidden />
             <span
               className={cn(
                 "overflow-hidden whitespace-nowrap transition-[max-width,opacity,margin] duration-200",

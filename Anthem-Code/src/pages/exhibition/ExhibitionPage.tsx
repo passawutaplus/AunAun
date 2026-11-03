@@ -70,8 +70,8 @@ export default function ExhibitionPage() {
     />
   );
   const filters = (
-    <div className="flex min-w-0 flex-col items-stretch gap-3 lg:flex-row lg:items-center lg:justify-center lg:gap-6">
-      <div className="flex self-start rounded-full bg-muted/60 p-0.5 lg:self-auto" role="group" aria-label="ช่วงเวลา">
+    <div className="flex min-w-0 items-center gap-3 lg:justify-center lg:gap-6">
+      <div className="flex shrink-0 rounded-full bg-muted/60 p-0.5" role="group" aria-label="ช่วงเวลา">
         {(
           [
             ["now", "Now"],
@@ -92,12 +92,14 @@ export default function ExhibitionPage() {
           </button>
         ))}
       </div>
-      <FilterChips
-        align={isMobile ? "start" : "center"}
-        options={[{ id: "all", label: "All" }, ...EVENT_CATEGORIES]}
-        selected={category}
-        onSelect={(id) => setCategory(id as EventCategory | "all")}
-      />
+      <div className="min-w-0 flex-1 lg:flex-none">
+        <FilterChips
+          align={isMobile ? "start" : "center"}
+          options={[{ id: "all", label: "All" }, ...EVENT_CATEGORIES]}
+          selected={category}
+          onSelect={(id) => setCategory(id as EventCategory | "all")}
+        />
+      </div>
     </div>
   );
 
