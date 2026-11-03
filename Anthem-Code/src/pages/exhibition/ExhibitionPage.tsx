@@ -13,12 +13,11 @@ import { Button } from "@/components/ui/button";
 import { useEventStats, useMyEventLikes, usePublishedEvents } from "@/hooks/useExhibitionEvents";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { EVENT_CATEGORIES, isEventEnded, type EventCategory } from "@/lib/exhibitionEvents";
+import { EVENT_CATEGORIES, eventTiming, type EventCategory, type EventTiming } from "@/lib/exhibitionEvents";
 import { BRAND_NAME } from "@/lib/brandConfig";
 import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
 import { cn } from "@/lib/utils";
 
-type When = "upcoming" | "ended";
 
 function matchesSearch(e: { title: string; location_name: string | null; organizer_name: string | null }, q: string) {
   const needle = q.trim().toLowerCase();
@@ -32,7 +31,7 @@ export default function ExhibitionPage() {
   const isMobile = useIsMobile();
   const { data = [], isLoading, isError, refetch } = usePublishedEvents();
   const [category, setCategory] = useState<EventCategory | "all">("all");
-  const [when, setWhen] = useState<When>("upcoming");
+  const [when, setWhen] = useState<EventTiming>("now");
   const [search, setSearch] = useState("");
 
   const rows = useMemo(
@@ -40,7 +39,7 @@ export default function ExhibitionPage() {
       data.filter(
         (e) =>
           (category === "all" || e.category === category) &&
-          (when === "ended") === isEventEnded(e) &&
+          eventTiming(e) === when &&
           matchesSearch(e, search),
       ),
     [data, category, when, search],
@@ -107,8 +106,9 @@ export default function ExhibitionPage() {
             <div className="flex self-start rounded-full bg-muted/60 p-0.5 lg:self-auto" role="group" aria-label="ช่วงเวลา">
               {(
                 [
-                  ["upcoming", "กำลังจัด & เร็ว ๆ นี้"],
-                  ["ended", "จบแล้ว"],
+                  ["now", "Now"],
+                  ["soon", "Soon"],
+                  ["done", "Done"],
                 ] as const
               ).map(([id, label]) => (
                 <button
@@ -145,7 +145,7 @@ export default function ExhibitionPage() {
       ) : rows.length === 0 ? (
         <EmptyState
           icon={CalendarX2}
-          title={when === "ended" ? "ยังไม่มีงานที่จบแล้วในหมวดนี้" : "ยังไม่มีงานในหมวดนี้"}
+          title={when === "done" ? "ยังไม่มีงานที่จบแล้วในหมวดนี้" : when === "soon" ? "ยังไม่มีงานที่กำลังจะมาในหมวดนี้" : "ยังไม่มีงานที่กำลังจัดในหมวดนี้"}
           description="ลงงานของคุณเป็นคนแรก — ทีมงานตรวจภายใน 1–3 วันทำการ"
           action={
             <Button asChild variant="outline" className="rounded-full">

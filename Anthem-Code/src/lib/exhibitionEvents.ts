@@ -167,6 +167,14 @@ export function isEventEnded(e: Pick<ExhibitionEvent, "ends_on">): boolean {
   return !!e.ends_on && e.ends_on < todayIso();
 }
 
+export type EventTiming = "now" | "soon" | "done";
+
+/** Now = running today, Soon = not started yet (or no start date), Done = ended. */
+export function eventTiming(e: Pick<ExhibitionEvent, "starts_on" | "ends_on">): EventTiming {
+  if (isEventEnded(e)) return "done";
+  return e.starts_on && e.starts_on <= todayIso() ? "now" : "soon";
+}
+
 export function eventDisplayStatus(e: Pick<ExhibitionEvent, "status" | "ends_on">): EventDisplayStatus {
   return e.status === "published" && isEventEnded(e) ? "ended" : e.status;
 }
