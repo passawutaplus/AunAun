@@ -126,7 +126,8 @@ export default function ExhibitionDetailPage() {
   const reachable = !isOwner && !isDemoEventId(event.id);
   // Team-run events are owned by an admin account, so only community events get a direct chat.
   const canChat = reachable && event.origin === "community";
-  const canSponsor = reachable && event.open_for_sponsors && !isEventEnded(event);
+  const openForSponsors = event.open_for_sponsors && !isEventEnded(event);
+  const canSponsor = reachable && openForSponsors;
   const path = `/exhibition/${event.id}`;
   const sourcePage = [event.source_url, event.website_url].find(isHttpUrl) ?? null;
   const [lead, ...rest] = event.description.split(/\n\s*\n/);
@@ -204,16 +205,24 @@ export default function ExhibitionDetailPage() {
               </span>
             </InfoRow>
             <InfoRow icon={MapPin}>
-              {event.location_name ?? NOT_SPECIFIED}
+              {event.location_name ? (
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location_name)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline decoration-foreground/30 underline-offset-4 hover:decoration-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground"
+                  title="เปิดใน Google Maps"
+                >
+                  {event.location_name}
+                </a>
+              ) : (
+                NOT_SPECIFIED
+              )}
               {event.location_note ? <span className="block text-muted-foreground">{event.location_note}</span> : null}
             </InfoRow>
             <InfoRow icon={Ticket}>{feeLabel(event)}</InfoRow>
             {isEventEnded(event) ? (
               <p className="text-sm font-medium text-muted-foreground">งานนี้จบแล้ว</p>
-            ) : event.registration_open && event.registration_url ? (
-              <p className="inline-flex items-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-400">
-                <span className="h-2 w-2 rounded-full bg-emerald-500" aria-hidden /> Open for Registration
-              </p>
             ) : null}
             {sourcePage ? (
               <InfoRow icon={Globe}>
@@ -237,21 +246,6 @@ export default function ExhibitionDetailPage() {
             <EventActions event={event} stats={stats?.[event.id]} liked={myLikes?.has(event.id)} showViews />
           </div>
           <EventSourceNote event={event} />
-
-          {event.open_for_sponsors && !isEventEnded(event) ? (
-            <div className="flex items-start gap-3 rounded-lg bg-muted/50 p-4">
-              <Handshake className="mt-0.5 h-5 w-5 shrink-0 text-foreground" aria-hidden />
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-foreground">Open for Sponsorship</p>
-                <p className="text-xs text-muted-foreground">งานนี้กำลังหาผู้สนับสนุน — คุยกับผู้จัดได้โดยตรง</p>
-                {canSponsor ? (
-                  <Button type="button" size="sm" className="mt-3 rounded-full" onClick={offerSponsorship}>
-                    <Handshake className="mr-1.5 h-4 w-4" aria-hidden /> เสนอเป็นผู้สนับสนุน
-                  </Button>
-                ) : null}
-              </div>
-            </div>
-          ) : null}
         </div>
       </div>
 
@@ -268,7 +262,8 @@ export default function ExhibitionDetailPage() {
           </div>
         </section>
 
-        <aside className="space-y-8">
+        {/* Thin rules between the side sections; on phones the first one also separates them from About. */}
+        <aside className="divide-y divide-border border-t border-border lg:border-t-0 [&>*]:py-6 lg:[&>*:first-child]:pt-0">
           <section aria-labelledby="organizer-heading">
             <h2 id="organizer-heading" className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
               Organizer
@@ -298,35 +293,49 @@ export default function ExhibitionDetailPage() {
             </div>
           </section>
 
-          {event.sponsors.length ? (
+          {event.sponsors.length || openForSponsors || event.origin === "curated" ? (
             <section aria-labelledby="sponsors-heading">
               <h2 id="sponsors-heading" className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                 Sponsored by
               </h2>
-              <ul className="mt-3 space-y-3">
-                {event.sponsors.map((s, i) => (
-                  <li key={`${s.name}-${i}`} className="flex items-center gap-3">
-                    {s.logo_url ? (
-                      <img src={s.logo_url} alt={`โลโก้ ${s.name}`} className="h-10 w-10 rounded-md border border-border bg-background object-contain" loading="lazy" />
-                    ) : (
-                      <span className="flex h-10 w-10 items-center justify-center rounded-md border border-border bg-muted text-sm font-semibold text-foreground" aria-hidden>
-                        {s.name.slice(0, 1).toUpperCase()}
-                      </span>
-                    )}
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-foreground">{s.name}</p>
-                      {s.note ? <p className="text-xs text-muted-foreground">{s.note}</p> : null}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : event.origin === "curated" ? (
-            <section aria-labelledby="sponsors-heading">
-              <h2 id="sponsors-heading" className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                Sponsored by
-              </h2>
-              <p className="mt-2 text-sm text-muted-foreground">{NOT_SPECIFIED}</p>
+              {event.sponsors.length ? (
+                <ul className="mt-3 space-y-3">
+                  {event.sponsors.map((s, i) => (
+                    <li key={`${s.name}-${i}`} className="flex items-center gap-3">
+                      {s.logo_url ? (
+                        <img src={s.logo_url} alt={`โลโก้ ${s.name}`} className="h-10 w-10 rounded-md border border-border bg-background object-contain" loading="lazy" />
+                      ) : (
+                        <span className="flex h-10 w-10 items-center justify-center rounded-md border border-border bg-muted text-sm font-semibold text-foreground" aria-hidden>
+                          {s.name.slice(0, 1).toUpperCase()}
+                        </span>
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground">{s.name}</p>
+                        {s.note ? <p className="text-xs text-muted-foreground">{s.note}</p> : null}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : !openForSponsors ? (
+                <p className="mt-2 text-sm text-muted-foreground">{NOT_SPECIFIED}</p>
+              ) : null}
+              {/* Last in the list: there is still room for one more sponsor. */}
+              {openForSponsors ? (
+                <div className="mt-4 flex items-start gap-3 rounded-lg bg-muted/50 p-4">
+                  <Handshake className="mt-0.5 h-5 w-5 shrink-0 text-foreground" aria-hidden />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-foreground">Open for Sponsorship</p>
+                    <p className="text-xs text-muted-foreground">
+                      {event.sponsors.length ? "ยังรับผู้สนับสนุนเพิ่ม" : "งานนี้กำลังหาผู้สนับสนุน"} — คุยกับผู้จัดได้โดยตรง
+                    </p>
+                    {canSponsor ? (
+                      <Button type="button" size="sm" className="mt-3 rounded-full" onClick={offerSponsorship}>
+                        <Handshake className="mr-1.5 h-4 w-4" aria-hidden /> เสนอเป็นผู้สนับสนุน
+                      </Button>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
             </section>
           ) : null}
 

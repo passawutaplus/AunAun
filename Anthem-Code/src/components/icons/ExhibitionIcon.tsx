@@ -18,9 +18,10 @@ const ExhibitionIconBase = forwardRef<SVGSVGElement, SVGProps<SVGSVGElement>>(
       stroke="currentColor"
       strokeWidth={2.5}
     >
-      <rect x="6" y="14" width="10" height="20" rx="2" />
-      <rect x="19" y="9" width="10" height="30" rx="2" />
-      <rect x="32" y="14" width="10" height="20" rx="2" />
+      {/* Frames slightly narrower than the brand file with wider gaps, so they stay apart at 14-16px. */}
+      <rect x="5.5" y="14" width="9" height="20" rx="2" />
+      <rect x="19.5" y="9" width="9" height="30" rx="2" />
+      <rect x="33.5" y="14" width="9" height="20" rx="2" />
     </svg>
   ),
 );
