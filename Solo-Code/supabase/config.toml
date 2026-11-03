@@ -75,3 +75,6 @@ verify_jwt = false
 
 [functions.account-deletion-cancel]
 verify_jwt = true
+
+[functions.event-extract]
+verify_jwt = true

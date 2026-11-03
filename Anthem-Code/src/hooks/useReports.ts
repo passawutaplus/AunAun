@@ -15,7 +15,8 @@ export type ReportTargetType =
   | "community_comment"
   | "forum_topic"
   | "forum_reply"
-  | "work_review";
+  | "work_review"
+  | "event";
 export type ReportReason =
   | "spam"
   | "harassment"

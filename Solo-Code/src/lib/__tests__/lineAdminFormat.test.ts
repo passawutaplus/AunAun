@@ -12,8 +12,43 @@ import {
   formatMember,
   formatMembersBurst,
   formatReport,
+  formatEvent,
+  flexEvent,
   isIgnoredEmail,
 } from "../../../supabase/functions/_shared/line-admin-format";
+
+describe("exhibition event alerts", () => {
+  const ev = {
+    title: "Creative Visions 2026",
+    category: "exhibition",
+    starts_on: "2026-11-15",
+    ends_on: "2026-12-28",
+    location_name: "Riverside Art Space",
+    organizer_name: "Riverside Art Collective",
+    owner: "artist",
+    submitted_at: "2026-11-02T08:00:00Z",
+    resubmitted: false,
+  };
+
+  it("names the event, its dates and the review queue", () => {
+    const t = formatEvent(ev);
+    expect(t).toContain("Exhibition รอตรวจ — Creative Visions 2026");
+    expect(t).toContain("Exhibition · 2026-11-15 – 2026-12-28 · Riverside Art Space");
+    expect(t).toContain("@artist");
+    expect(t).toContain("/admin/events");
+  });
+
+  it("says when an event comes back after a review", () => {
+    expect(formatEvent({ ...ev, resubmitted: true })).toContain("ส่งตรวจใหม่");
+    expect(JSON.stringify(flexEvent({ ...ev, resubmitted: true }))).toContain("Exhibition ส่งตรวจใหม่");
+  });
+
+  it("copes with a one-day event and missing details", () => {
+    const t = formatEvent({ ...ev, ends_on: ev.starts_on, location_name: null, organizer_name: null, owner: null });
+    expect(t).toContain("Exhibition · 2026-11-15");
+    expect(t).not.toContain("–");
+  });
+});
 
 const member = {
   id: "1",
