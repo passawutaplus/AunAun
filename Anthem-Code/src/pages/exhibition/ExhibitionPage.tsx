@@ -229,8 +229,8 @@ export default function ExhibitionPage() {
         </Sheet>
 
         {/* Phones: a plain title instead of the hero slideshow, like the other modes. */}
-        <h1 className="pb-5 pt-3 text-4xl font-semibold leading-[0.95] tracking-tight text-foreground lg:hidden">
-          Exhibition <span className="text-muted-foreground">&amp; Events</span>
+        <h1 className="pb-5 pt-4 text-[3.25rem] font-semibold leading-[0.9] tracking-tight text-foreground sm:text-7xl lg:hidden">
+          Exhibition <span className="block text-muted-foreground">&amp; Events</span>
         </h1>
 
         <div className={cn("hidden min-w-0 items-center justify-center gap-3 pb-4 pt-3 lg:flex", scrolled && "invisible")}>

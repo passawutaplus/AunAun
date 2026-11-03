@@ -931,7 +931,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
 
         {/* Phones / tablets: the mode name as a page title under the bar (desktop shows its own big title). */}
         {catalogMode && !isDrillView ? (
-          <h1 className="pb-4 pt-3 text-4xl font-semibold leading-[0.95] tracking-tight text-foreground lg:hidden">
+          <h1 className="pb-5 pt-4 text-[3.25rem] font-semibold leading-[0.9] tracking-tight text-foreground sm:text-7xl lg:hidden">
             {MOBILE_MODE_TITLE[mode] ?? "Showcase"}
           </h1>
         ) : null}
