@@ -186,4 +186,4 @@ both go through the service key and must still work.
   on the start URL and every redirect hop (max 4).
 - Flex-grid text module sanitises stored HTML before it reaches `innerHTML`; collab-plan PDF window opens
   with `opener = null`.
-- CI: lint is blocking; `npm audit` left non-blocking (fails today).
+- CI: Anthem-Code lint is blocking; Solo-Code lint blocks on files changed in the push/PR (the package still has pre-existing prettier debt); `npm audit` left non-blocking (fails today).
