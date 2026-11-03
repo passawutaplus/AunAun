@@ -60,6 +60,13 @@ const slideTransition = {
 
 type IndicatorBox = { x: number; width: number };
 
+/**
+ * Segment that was active when the user last clicked the toggle. Exhibition is its own route, so switching to or from it
+ * remounts the toggle; the new one starts the pill on the old segment and slides it over.
+ */
+let lastActive: { id: string; at: number } | null = null;
+const HANDOFF_MS = 1500;
+
 const FeedModeToggle = ({
   value,
   drillActive = false,
@@ -74,6 +81,8 @@ const FeedModeToggle = ({
   const trackRef = useRef<HTMLDivElement>(null);
   const btnRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
   const [indicator, setIndicator] = useState<IndicatorBox | null>(null);
+  const indicatorRef = useRef(indicator);
+  indicatorRef.current = indicator;
 
   const visible = items.filter((item) =>
     item.id === "drill"
@@ -92,6 +101,8 @@ const FeedModeToggle = ({
     const track = trackRef.current;
     if (!track) return;
 
+    let firstMeasured = indicatorRef.current !== null;
+    let slideRaf = 0;
     const measure = () => {
       const btn = btnRefs.current.get(activeId);
       if (!btn) {
@@ -108,6 +119,17 @@ const FeedModeToggle = ({
         x: btnRect.left - trackRect.left,
         width: btnRect.width,
       };
+      const handoff = lastActive;
+      if (!firstMeasured && handoff && handoff.id !== activeId && Date.now() - handoff.at < HANDOFF_MS) {
+        const fromRect = btnRefs.current.get(handoff.id)?.getBoundingClientRect();
+        if (fromRect && fromRect.width >= 1) {
+          firstMeasured = true;
+          setIndicator({ x: fromRect.left - trackRect.left, width: fromRect.width });
+          slideRaf = window.requestAnimationFrame(() => setIndicator(next));
+          return;
+        }
+      }
+      firstMeasured = true;
       setIndicator((prev) =>
         prev &&
         Math.abs(prev.x - next.x) < 0.5 &&
@@ -128,6 +150,7 @@ const FeedModeToggle = ({
     return () => {
       live = false;
       window.cancelAnimationFrame(raf);
+      window.cancelAnimationFrame(slideRaf);
       ro?.disconnect();
       window.removeEventListener("resize", measure);
     };
@@ -183,6 +206,7 @@ const FeedModeToggle = ({
             aria-label={`${label} view`}
             aria-pressed={active}
             onClick={() => {
+              lastActive = { id: activeId, at: Date.now() };
               if (id === "drill") onDrillSelect?.();
               else if (id === "exhibition") navigate("/exhibition");
               else onChange(id);
