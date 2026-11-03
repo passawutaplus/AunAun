@@ -1,23 +1,25 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { CalendarX2, Plus } from "lucide-react";
+import { CalendarX2 } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 import SeoHead from "@/components/SeoHead";
 import SearchBar from "@/components/SearchBar";
 import FilterChips from "@/components/FilterChips";
 import { BrandLogo } from "@/components/brand/BrandLogo";
+import ProfileButton from "@/components/ProfileButton";
 import FeedModeToggle from "@/components/feed/FeedModeToggle";
 import { EventListCard } from "@/components/exhibition/EventParts";
+import { ExhibitionHero } from "@/components/exhibition/ExhibitionHero";
 import EmptyState from "@/components/ui/EmptyState";
 import QueryStatusPanel from "@/components/ui/QueryStatusPanel";
-import { Button } from "@/components/ui/button";
 import { useEventStats, useMyEventLikes, usePublishedEvents } from "@/hooks/useExhibitionEvents";
-import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { EVENT_CATEGORIES, eventTiming, type EventCategory, type EventTiming } from "@/lib/exhibitionEvents";
+import { EVENT_CATEGORIES, eventTiming, type EventCategory } from "@/lib/exhibitionEvents";
 import { BRAND_NAME } from "@/lib/brandConfig";
 import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
+import { smoothEase } from "@/lib/motion";
 import { cn } from "@/lib/utils";
-
+import { useFeedHomeNavStore } from "@/stores/feedHomeNavStore";
 
 function matchesSearch(e: { title: string; location_name: string | null; organizer_name: string | null }, q: string) {
   const needle = q.trim().toLowerCase();
@@ -27,11 +29,10 @@ function matchesSearch(e: { title: string; location_name: string | null; organiz
 
 export default function ExhibitionPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const isMobile = useIsMobile();
   const { data = [], isLoading, isError, refetch } = usePublishedEvents();
   const [category, setCategory] = useState<EventCategory | "all">("all");
-  const [when, setWhen] = useState<EventTiming>("now");
+  const [when, setWhen] = useState<"now" | "done">("now");
   const [search, setSearch] = useState("");
 
   const rows = useMemo(
@@ -39,20 +40,66 @@ export default function ExhibitionPage() {
       data.filter(
         (e) =>
           (category === "all" || e.category === category) &&
-          eventTiming(e) === when &&
+          (eventTiming(e) === "done") === (when === "done") &&
           matchesSearch(e, search),
       ),
     [data, category, when, search],
+  );
+
+  const heroEvents = useMemo(
+    () => [...data].filter((e) => eventTiming(e) !== "done").sort((x, y) => Number(y.is_pick) - Number(x.is_pick)),
+    [data],
   );
 
   const rowIds = useMemo(() => rows.map((e) => e.id), [rows]);
   const { data: stats } = useEventStats(rowIds);
   const { data: myLikes } = useMyEventLikes(rowIds);
 
-  const addHref = "/dashboard/exhibition/new";
+  const scrolled = useFeedHomeNavStore((st) => st.scrolled);
+  const reduceMotion = useReducedMotion();
 
-  const addLink = user ? addHref : `/auth?redirect=${encodeURIComponent(addHref)}`;
   const toggle = <FeedModeToggle value="showcase" exhibitionActive onChange={(m) => navigate(`/?mode=${m}`)} />;
+  const searchBar = (compact?: boolean) => (
+    <SearchBar
+      value={search}
+      onChange={setSearch}
+      placeholder="ค้นหางาน สถานที่ ผู้จัด"
+      expandable
+      expandAnchor="end"
+      compact={compact}
+    />
+  );
+  const filters = (
+    <div className="flex min-w-0 flex-col items-stretch gap-3 lg:flex-row lg:items-center lg:justify-center lg:gap-6">
+      <div className="flex self-start rounded-full bg-muted/60 p-0.5 lg:self-auto" role="group" aria-label="ช่วงเวลา">
+        {(
+          [
+            ["now", "Now"],
+            ["done", "Done"],
+          ] as const
+        ).map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            aria-pressed={when === id}
+            onClick={() => setWhen(id)}
+            className={cn(
+              "min-h-8 rounded-full px-3 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground",
+              when === id ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      <FilterChips
+        align={isMobile ? "start" : "center"}
+        options={[{ id: "all", label: "All" }, ...EVENT_CATEGORIES]}
+        selected={category}
+        onSelect={(id) => setCategory(id as EventCategory | "all")}
+      />
+    </div>
+  );
 
   return (
     <main id="main-content" className={cn("relative min-h-screen bg-app-ambient", MOBILE_PAGE_BOTTOM_CLASS)}>
@@ -61,9 +108,47 @@ export default function ExhibitionPage() {
         description="นิทรรศการ เวิร์กช็อป และอีเวนต์สร้างสรรค์จากครีเอเตอร์บน SAMECOR — ทีมงานตรวจทุกงานก่อนเผยแพร่"
         path="/exhibition"
       />
-      <div className="relative z-[1] mx-auto max-w-[1920px] px-3 pb-4 pt-4 sm:px-[calc(1rem+25px)] lg:px-[calc(1.5rem+25px)] 2xl:px-[calc(2.5rem+25px)]">
-        {/* Same head as the Showcase / Creators catalog: search · mode pill · add, chips, big title. */}
-        <div className="flex items-center gap-2 py-3 lg:hidden">
+
+      {/* Desktop: the same bar the Showcase / Creators feed slides in once its title scrolls away. */}
+      <motion.div
+        className="fixed inset-x-0 top-0 z-40 hidden lg:block"
+        initial={false}
+        animate={{ y: scrolled ? "0%" : "-100%" }}
+        transition={reduceMotion ? { duration: 0 } : { duration: 0.32, ease: smoothEase }}
+        aria-hidden={!scrolled || undefined}
+        inert={!scrolled ? "" : undefined}
+        style={{ pointerEvents: scrolled ? "auto" : "none" }}
+      >
+        <div className="border-b border-border bg-background">
+          <div className="mx-auto flex max-w-[1920px] flex-col px-[calc(1.5rem+25px)] 2xl:px-[calc(2.5rem+25px)]">
+            <div className="relative flex h-14 items-center gap-3 border-b border-border/80">
+              <Link
+                to="/"
+                className="relative z-10 shrink-0 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label={`${BRAND_NAME} หน้าแรก`}
+              >
+                <BrandLogo beta size="sm" tone="theme" />
+              </Link>
+              <div className="pointer-events-none absolute inset-x-0 top-0 flex h-14 items-center justify-center">
+                <div className="pointer-events-auto flex items-center gap-3">
+                  {searchBar(true)}
+                  <div className="flex min-w-0 max-w-[min(36rem,calc(100vw-28rem))] shrink items-center overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    {toggle}
+                  </div>
+                </div>
+              </div>
+              <div className="relative z-10 ml-auto">
+                <ProfileButton accountOnly />
+              </div>
+            </div>
+            <div className="flex min-h-11 w-full items-center justify-center py-2">{filters}</div>
+          </div>
+        </div>
+      </motion.div>
+
+      <div className="relative z-[1] mx-auto max-w-[1920px] px-3 pb-4 pt-0 sm:px-[calc(1rem+25px)] lg:px-[calc(1.5rem+25px)] lg:pt-4 2xl:px-[calc(2.5rem+25px)]">
+        {/* Mobile: brand mark + mode pill, pinned like the feed bar. */}
+        <div className="sticky top-0 z-30 -mx-3 flex items-center gap-2 border-b border-border bg-background px-3 py-2 sm:-mx-[calc(1rem+25px)] sm:px-[calc(1rem+25px)] lg:hidden">
           <Link
             to="/"
             aria-label={`${BRAND_NAME} หน้าแรก`}
@@ -74,65 +159,16 @@ export default function ExhibitionPage() {
           <div className="ml-auto min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{toggle}</div>
         </div>
 
-        <div className="flex flex-col gap-y-1 pb-6 lg:pb-8 lg:pt-3">
-          <h1 className="order-last mt-6 pb-2 text-5xl font-semibold leading-[0.8] tracking-tight text-foreground lg:mt-14 lg:pb-4 lg:text-[5.25rem] xl:text-[6.5rem]">
-            Exhibition
-          </h1>
-          <div className="hidden min-w-0 items-center justify-center gap-3 lg:flex">
-            <div className="shrink-0">
-              <SearchBar
-                value={search}
-                onChange={setSearch}
-                placeholder="ค้นหางาน สถานที่ ผู้จัด"
-                expandable
-                expandAnchor="end"
-              />
-            </div>
-            <div className="flex min-w-0 max-w-[min(36rem,calc(100vw-2rem))] shrink items-center overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {toggle}
-            </div>
-            <Link
-              to={addLink}
-              aria-label="ลงงานใหม่"
-              className="group inline-flex h-9 shrink-0 items-center overflow-hidden rounded-full bg-foreground px-[0.6rem] text-sm font-medium text-background transition-[padding] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:px-4 focus-visible:px-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none"
-            >
-              <Plus className="h-4 w-4 shrink-0" strokeWidth={2.5} aria-hidden />
-              <span className="ml-0 max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:ml-1.5 group-hover:max-w-[9rem] group-hover:opacity-100 group-focus-visible:ml-1.5 group-focus-visible:max-w-[9rem] group-focus-visible:opacity-100 motion-reduce:transition-none">
-                ลงงานใหม่
-              </span>
-            </Link>
-          </div>
-          <div className="flex min-w-0 flex-col items-stretch gap-3 lg:mt-3 lg:flex-row lg:items-center lg:justify-center lg:gap-6">
-            <div className="flex self-start rounded-full bg-muted/60 p-0.5 lg:self-auto" role="group" aria-label="ช่วงเวลา">
-              {(
-                [
-                  ["now", "Now"],
-                  ["soon", "Soon"],
-                  ["done", "Done"],
-                ] as const
-              ).map(([id, label]) => (
-                <button
-                  key={id}
-                  type="button"
-                  aria-pressed={when === id}
-                  onClick={() => setWhen(id)}
-                  className={cn(
-                    "min-h-8 rounded-full px-3 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground",
-                    when === id ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-            <FilterChips
-              align={isMobile ? "start" : "center"}
-              options={[{ id: "all", label: "All" }, ...EVENT_CATEGORIES]}
-              selected={category}
-              onSelect={(id) => setCategory(id as EventCategory | "all")}
-            />
+        <div className={cn("hidden min-w-0 items-center justify-center gap-3 pb-6 pt-3 lg:flex", scrolled && "invisible")}>
+          <div className="shrink-0">{searchBar()}</div>
+          <div className="flex min-w-0 max-w-[min(36rem,calc(100vw-2rem))] shrink items-center overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {toggle}
           </div>
         </div>
+
+        <ExhibitionHero events={heroEvents} className="mt-4 lg:mt-0" />
+
+        <div className="border-b border-border py-5 lg:py-6">{filters}</div>
 
         <div>
       {isLoading || isError ? (
@@ -145,13 +181,8 @@ export default function ExhibitionPage() {
       ) : rows.length === 0 ? (
         <EmptyState
           icon={CalendarX2}
-          title={when === "done" ? "ยังไม่มีงานที่จบแล้วในหมวดนี้" : when === "soon" ? "ยังไม่มีงานที่กำลังจะมาในหมวดนี้" : "ยังไม่มีงานที่กำลังจัดในหมวดนี้"}
-          description="ลงงานของคุณเป็นคนแรก — ทีมงานตรวจภายใน 1–3 วันทำการ"
-          action={
-            <Button asChild variant="outline" className="rounded-full">
-              <Link to={addLink}>ลงงานใหม่</Link>
-            </Button>
-          }
+          title={when === "done" ? "ยังไม่มีงานที่จบแล้วในหมวดนี้" : "ยังไม่มีงานที่กำลังจัดหรือกำลังจะมาในหมวดนี้"}
+          description="ลงงานของคุณได้จากปุ่ม + บนหน้าโปรไฟล์ — ทีมงานตรวจภายใน 1–3 วันทำการ"
           className="py-16"
         />
       ) : (

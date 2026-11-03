@@ -259,6 +259,7 @@ const PortfolioProfilePage = () => {
           <ProfileOwnerActions
             compact
             onPost={() => navigate("/portfolio/new")}
+            onAddEvent={() => navigate("/dashboard/exhibition/new")}
             onBecomeCreator={commerce && !isVerified ? () => navigate("/verify") : undefined}
             onStudio={() => navigate("/dashboard")}
             onPreview={() =>
@@ -287,6 +288,7 @@ const PortfolioProfilePage = () => {
           disciplines={disciplines}
           onOpportunityEdit={() => setOpportunityOpen(true)}
           onPost={() => navigate("/portfolio/new")}
+          onAddEvent={() => navigate("/dashboard/exhibition/new")}
           onBecomeCreator={commerce && !isVerified ? () => navigate("/verify") : undefined}
           onStudio={() => navigate("/dashboard")}
           onPreview={() =>
