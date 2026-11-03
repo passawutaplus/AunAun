@@ -1,3 +1,4 @@
+import ExhibitionIcon from "@/components/icons/ExhibitionIcon";
 import SavedBookmarkIcon from "@/components/icons/SavedBookmarkIcon";
 import { Box, Briefcase, LayoutGrid, Layers3, Library, Lightbulb, Package, Star, UserRound, Users, type LucideIcon } from "lucide-react";
 
@@ -5,6 +6,11 @@ import { Box, Briefcase, LayoutGrid, Layers3, Library, Lightbulb, Package, Star,
 const PROFILE_TAB_ICONS: Record<string, LucideIcon> = {
   "my projects": LayoutGrid,
   projects: LayoutGrid,
+  // Same mark as the Showcase feed mode.
+  showcase: LayoutGrid,
+  "my showcase": LayoutGrid,
+  creators: Users,
+  exhibition: ExhibitionIcon,
   collections: Layers3,
   designers: Users,
   packages: Package,
