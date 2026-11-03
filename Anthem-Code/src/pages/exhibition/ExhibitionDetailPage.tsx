@@ -172,7 +172,7 @@ export default function ExhibitionDetailPage() {
         </div>
       </div>
 
-      <div className="container mx-auto max-w-6xl px-4 pt-6">
+      <div className="mx-auto max-w-[calc(84rem+3rem)] px-3 pt-6 sm:px-6 lg:pt-10">
 
       {event.status !== "published" ? (
         <div className="mb-5 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm">
@@ -181,7 +181,8 @@ export default function ExhibitionDetailPage() {
         </div>
       ) : null}
 
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+      {/* Same columns as a work page: wide media, narrow info rail. */}
+      <div className="mx-auto grid w-full max-w-[84rem] grid-cols-1 lg:grid-cols-[minmax(0,56rem)_22.5rem] lg:justify-center lg:gap-x-10 xl:grid-cols-[minmax(0,56rem)_24rem] xl:gap-x-12 gap-8">
         <EventGallery images={eventImages(event)} title={event.title} aspect="aspect-[4/3]" />
 
         <div className="flex flex-col gap-5">
@@ -189,7 +190,6 @@ export default function ExhibitionDetailPage() {
             {event.is_pick ? <PickTag /> : null}
             <CategoryTag category={event.category} />
             <OriginTag origin={event.origin} />
-            <EventActions event={event} stats={stats?.[event.id]} liked={myLikes?.has(event.id)} showViews className="ml-auto" />
           </div>
           <h1 className="font-display text-4xl font-semibold leading-[1.05] tracking-tight text-foreground sm:text-5xl">
             {event.title}
@@ -230,7 +230,12 @@ export default function ExhibitionDetailPage() {
             ) : null}
           </div>
 
-          <RegistrationCta event={event} />
+          <div className="flex items-center gap-2">
+            <div className="min-w-0 flex-1">
+              <RegistrationCta event={event} />
+            </div>
+            <EventActions event={event} stats={stats?.[event.id]} liked={myLikes?.has(event.id)} showViews />
+          </div>
           <EventSourceNote event={event} />
 
           {event.open_for_sponsors && !isEventEnded(event) ? (
@@ -250,7 +255,7 @@ export default function ExhibitionDetailPage() {
         </div>
       </div>
 
-      <div className="mt-12 grid gap-10 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+      <div className="mt-12 mx-auto grid w-full max-w-[84rem] grid-cols-1 lg:grid-cols-[minmax(0,56rem)_22.5rem] lg:justify-center lg:gap-x-10 xl:grid-cols-[minmax(0,56rem)_24rem] xl:gap-x-12 gap-y-10">
         <section aria-labelledby="about-heading">
           <h2 id="about-heading" className="font-display text-2xl font-semibold text-foreground">
             About This Event
