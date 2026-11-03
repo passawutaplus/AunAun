@@ -1,7 +1,9 @@
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState, useEffect, useCallback, type ComponentType } from "react";
-import { Globe, Instagram, Facebook, MessageSquare, UserX, Handshake, Eye, X, Share2, MessageCircle } from "lucide-react";
+import { useMemo, useState, useEffect, useCallback } from "react";
+import { Globe, Instagram, Facebook, MessageSquare, UserX, Eye, X, Share2, MessageCircle, MapPin } from "lucide-react";
+import { displayProfileAddress } from "@/lib/profileAddress";
+import { creatorStatus } from "@/lib/creatorStatus";
 import { BackButton } from "@/components/ui/BackButton";
 import { BrandLogo } from "@/components/brand/BrandLogo";
 import { DESKTOP_TOP_NAV_GLASS } from "@/components/DesktopTopNav";
@@ -10,19 +12,13 @@ import QueryStatusPanel from "@/components/ui/QueryStatusPanel";
 import { Button } from "@/components/ui/button";
 import { useSlowLoadFallback } from "@/hooks/useSlowLoadFallback";
 import { trackProductEvent } from "@/lib/productEvents";
-import { Badge } from "@/components/ui/badge";
 import { ProfileSectionTabs } from "@/components/profile/ProfileSectionTabs";
 import { supabase } from "@/integrations/supabase/client";
 import FollowButton from "@/components/FollowButton";
 import SupportButton from "@/components/gifting/SupportButton";
 import ReportTrigger from "@/components/report/ReportTrigger";
 import HireDialog from "@/components/HireDialog";
-import OpportunityTypeChips from "@/components/opportunity/OpportunityTypeChips";
-import { normalizeOpportunityProfile } from "@/lib/opportunity";
-import DisciplineChips from "@/components/profile/DisciplineChips";
-import ProfileSkillChips from "@/components/profile/ProfileSkillChips";
 import CollabDialog from "@/components/CollabDialog";
-import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
 import CatalogIcon from "@/components/icons/CatalogIcon";
 import UserAvatar from "@/components/UserAvatar";
 import VerifiedBadge from "@/components/profile/VerifiedBadge";
@@ -77,7 +73,6 @@ import { cn } from "@/lib/utils";
 import { navigateToAuth, stripSearchParams } from "@/lib/authRedirect";
 import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
 import { toast } from "sonner";
-import { formatThaiDate } from "@/lib/format";
 import { isCommerceEnabled, isLaunchCreatorSupportEnabled } from "@/lib/aplus1Launch";
 import { isLocalDevSelfHirePreview } from "@/lib/localDevSelfHire";
 import ConnectMessageDialog from "@/components/chat/ConnectMessageDialog";
@@ -451,7 +446,6 @@ const PublicProfilePage = () => {
       ? loadProfileVisibility(user?.id)
       : (profile as { public_visibility?: unknown }).public_visibility,
   );
-  const joinedAt = (profile as { created_at?: string }).created_at;
   const coverUrl = (profile.cover_url ?? "").trim();
   const hasCover = !!coverUrl && coverUrl.startsWith("http");
   const publicShareProfile = {
@@ -514,33 +508,31 @@ const PublicProfilePage = () => {
     { name: displayName, path: profilePath },
   ];
 
-  const totalViews = projects.reduce((s: number, p: { views?: number }) => s + (p.views ?? 0), 0);
   const statItems = [
-    { key: "works", label: "ผลงาน", value: projects.length },
-    { key: "views", label: "ยอดดู", value: totalViews },
-    { key: "followers", label: "ผู้ติดตาม", value: followers, href: `/u/${resolvedUserId}/followers` },
+    { key: "works", label: "Projects", value: projects.length },
+    { key: "followers", label: "Followers", value: followers, href: `/u/${resolvedUserId}/followers` },
   ];
+
+  // Header lines: role, place and availability (cards use the same status labels).
+  const headerRole = (profile.role ?? "").trim();
+  // Role first, then up to three skills: "Brand Communication / Package Design / Branding".
+  const headerRoleLine = [headerRole, ...(vis.skills ? (profile.skills ?? []).slice(0, 3) : [])]
+    .filter(Boolean)
+    .join(" / ");
+  // Only when the creator shows their location publicly (profile visibility toggle).
+  const headerPlace = vis.location
+    ? displayProfileAddress(
+        (profile as { profile_address?: unknown }).profile_address,
+        (profile as { location?: string | null }).location,
+        "short",
+      )
+    : "";
+  const headerStatus = creatorStatus((profile as { opportunity_status?: string | null }).opportunity_status);
 
   const showUsernameLine =
     !!profile.username &&
     profile.username.trim().toLowerCase() !== (profile.display_name ?? "").trim().replace(/^@/, "").toLowerCase();
 
-  const opportunityStatus = (profile as { opportunity_status?: string }).opportunity_status;
-  const opportunityTypes = (profile as { opportunity_types?: string[] }).opportunity_types;
-  // Lead with what the creator says they're looking for; message is the fallback.
-  const opportunity = normalizeOpportunityProfile(opportunityStatus, opportunityTypes);
-  const contactClosed = opportunity.status === "not_available";
-  const anyType = opportunity.types.length === 0;
-  const wantsHire =
-    !contactClosed && (anyType || opportunity.types.some((t) => ["paid_work", "join_team", "internship"].includes(t)));
-  const wantsCollab =
-    !contactClosed && (anyType || opportunity.types.some((t) => ["network_collab", "collaboration"].includes(t)));
-  const ctas = [
-    wantsHire && { key: "hire", label: "สนใจจ้างงาน", short: "จ้างงาน", icon: BriefcaseIcon, onClick: openHire },
-    wantsCollab && { key: "collab", label: "สนใจคอลแลป", short: "คอลแลป", icon: Handshake, onClick: openCollab },
-    { key: "message", label: "Message", short: "Message", icon: MessageCircle, onClick: openMessage },
-  ].filter(Boolean) as { key: string; label: string; short: string; icon: ComponentType<{ className?: string }>; onClick: () => void }[];
-  const [primaryCta, ...secondaryCtas] = ctas;
 
   return (
     <div className={cn("min-h-screen bg-app-ambient thai-body font-normal", MOBILE_PAGE_BOTTOM_CLASS)}>
@@ -620,271 +612,200 @@ const PublicProfilePage = () => {
         </div>
       ) : null}
 
-      {/* Header */}
+      {/* Header — cover, avatar over its edge, who they are on the left, numbers + Follow / Message on the right. */}
       <div className="max-w-5xl mx-auto px-3 sm:px-4 pt-4 sm:pt-6">
-        <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl glass-panel">
-          <div className="relative aspect-[32/9] w-full bg-muted">
-            {hasCover ? (
-              <img loading="lazy" decoding="async" src={coverUrl} alt="" className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full bg-gradient-brand opacity-75" />
-            )}
-
-            <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10 flex flex-col items-end gap-2">
-              {showAsVisitor && (
-                <>
-                  <div className="flex items-center gap-2">
-                    <ProfileSharePopover
-                      url={publicShareUrl}
-                      title={publicShareTitle}
-                      message={publicShareMessage}
-                      pathLabel={publicSharePath}
-                      imageUrl={hasCover ? coverUrl : profile.avatar_url ?? undefined}
-                      align="end"
-                    >
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        className="rounded-full shrink-0 bg-background/90 hover:bg-background border-0 shadow-sm"
-                        title="แชร์โปรไฟล์"
-                        aria-label="แชร์โปรไฟล์"
-                      >
-                        <Share2 className="w-4 h-4 text-primary" />
-                      </Button>
-                    </ProfileSharePopover>
-                  </div>
-                  <div className="hidden md:block">
-                    <SupportButton
-                      recipientId={resolvedUserId}
-                      recipientName={profile.display_name ?? "ครีเอเตอร์"}
-                      recipientAvatar={profile.avatar_url ?? undefined}
-                      variant="compact"
-                      visitorPreview={visitorPreview}
-                    />
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-
-          <div className="relative px-4 sm:px-6 md:px-10 pb-4 sm:pb-6 md:pb-10 -mt-10 sm:-mt-12 md:-mt-14">
-            <div
-              className={cn(
-                "relative flex flex-row items-start gap-3.5 sm:gap-6 pr-0",
-                showAsVisitor && isLaunchCreatorSupportEnabled() ? "md:pr-36" : "md:pr-28",
-              )}
-            >
-              <div className="shrink-0">
-                <UserAvatar
-                  src={profile.avatar_url}
-                  name={profile.display_name}
-                  username={profile.username}
-                  className="w-[4.5rem] h-[4.5rem] sm:w-24 sm:h-24 md:w-28 md:h-28 border-[3px] sm:border-4 border-white/70 ring-4 ring-background shadow-sm"
-                  fallbackClassName="text-2xl sm:text-3xl"
+        <div className="relative aspect-[3/1] w-full overflow-hidden rounded-2xl bg-muted sm:aspect-[32/7]">
+          {hasCover ? (
+            <img loading="lazy" decoding="async" src={coverUrl} alt="" className="h-full w-full object-cover" />
+          ) : (
+            <div className="h-full w-full bg-gradient-brand opacity-75" />
+          )}
+          {showAsVisitor ? (
+            <div className="absolute right-3 top-3 flex items-center gap-2">
+              <ProfileSharePopover
+                url={publicShareUrl}
+                title={publicShareTitle}
+                message={publicShareMessage}
+                pathLabel={publicSharePath}
+                imageUrl={hasCover ? coverUrl : profile.avatar_url ?? undefined}
+                align="end"
+              >
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="h-9 w-9 shrink-0 rounded-full border-0 bg-background/80 shadow-sm backdrop-blur-sm hover:bg-background"
+                  title="แชร์โปรไฟล์"
+                  aria-label="แชร์โปรไฟล์"
+                >
+                  <Share2 className="h-4 w-4" />
+                </Button>
+              </ProfileSharePopover>
+              {!isSelf ? (
+                <ReportTrigger
+                  targetType="user"
+                  targetId={resolvedUserId!}
+                  targetOwnerId={resolvedUserId!}
+                  variant="icon"
+                  className="flex h-9 min-h-0 w-9 min-w-0 items-center justify-center rounded-full bg-background/80 p-0 text-foreground shadow-sm backdrop-blur-sm hover:bg-background"
                 />
-              </div>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
 
-              <div className="flex-1 min-w-0 pt-10 sm:pt-12 md:pt-14">
-                <div className="flex items-start justify-between gap-3">
-                  <h1 className="text-lg sm:text-2xl md:text-3xl font-semibold text-foreground leading-snug tracking-normal min-w-0 flex items-center gap-1.5">
-                    <span className="min-w-0 truncate">{highlight(profile.display_name, q)}</span>
-                    <VerifiedBadge verified={!!(profile as { is_verified?: boolean }).is_verified} />
-                  </h1>
-                  {!isSelf ? (
-                    <div className="shrink-0 flex flex-wrap items-center justify-end gap-1.5 pt-0.5 sm:pt-1">
-                      <ReportTrigger
-                        targetType="user"
-                        targetId={resolvedUserId!}
-                        targetOwnerId={resolvedUserId!}
-                        variant="text"
-                      />
-                      {iBlockedThem ? (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="rounded-full h-8 text-xs"
-                          disabled={unblockUser.isPending}
-                          onClick={() => void unblockUser.mutateAsync(resolvedUserId!)}
-                        >
-                          <UserX className="w-3.5 h-3.5 mr-1" />
-                          ปลดบล็อก
-                        </Button>
-                      ) : null}
-                    </div>
-                  ) : null}
-                </div>
-              {showUsernameLine && (
-                <p className="text-sm text-muted-foreground mt-0.5">@{profile.username}</p>
-              )}
-              <DisciplineChips
-                variant="text"
-                className="mt-1"
-                disciplines={parseSkills(
-                  (profile as { preferred_categories?: unknown }).preferred_categories,
-                )}
+        <div className="relative px-1 sm:px-4">
+          <div className="-mt-10 flex flex-col gap-5 sm:-mt-12 md:flex-row md:items-start md:justify-between">
+            <div className="min-w-0 flex-1">
+              <UserAvatar
+                src={profile.avatar_url}
+                name={profile.display_name}
+                username={profile.username}
+                className="h-20 w-20 ring-4 ring-background sm:h-24 sm:w-24"
+                fallbackClassName="text-2xl sm:text-3xl"
               />
-              <OpportunityTypeChips
-                variant="line"
-                className="mt-2"
-                status={opportunityStatus}
-                types={opportunityTypes}
-              />
-              {(profile as { open_for_work?: boolean; open_for_work_badge?: string }).open_for_work && (
-                <Badge className="mt-2 ml-1 rounded-full bg-primary/15 text-primary border-0 text-xs font-normal">
-                  {(profile as { open_for_work_badge?: string }).open_for_work_badge || "Open for Work"}
-                </Badge>
-              )}
+              <h1 className="mt-3 flex min-w-0 items-center gap-2 text-2xl font-semibold leading-tight tracking-tight text-foreground sm:text-3xl">
+                <span className="min-w-0 truncate">{highlight(profile.display_name, q)}</span>
+                <VerifiedBadge verified={!!(profile as { is_verified?: boolean }).is_verified} />
+              </h1>
+              {showUsernameLine ? <p className="text-sm text-muted-foreground">@{profile.username}</p> : null}
+              {headerRoleLine ? <p className="mt-1 text-sm text-muted-foreground">{headerRoleLine}</p> : null}
+
               {(isSelf && !visitorPreview) || vis.bio ? (
                 <ProfileIntroLine
                   userId={resolvedUserId}
                   bio={profile.bio}
                   canEdit={isSelf && !visitorPreview}
                   highlightQuery={q}
-                  className="mt-2 sm:mt-3"
+                  className="mt-2"
                 />
               ) : null}
-              {vis.joined && joinedAt ? (
-                <p className="text-xs text-muted-foreground mt-2">
-                  เข้าร่วม {formatThaiDate(joinedAt)}
-                </p>
+
+              {headerPlace || headerStatus ? (
+                <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
+                  {headerPlace ? (
+                    <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+                      <MapPin className="h-4 w-4" aria-hidden /> {headerPlace}
+                    </span>
+                  ) : null}
+                  {headerStatus ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-xs text-foreground/90">
+                      <span className={cn("h-1.5 w-1.5 rounded-full", headerStatus.dot)} aria-hidden />
+                      {headerStatus.label}
+                    </span>
+                  ) : null}
+                </div>
               ) : null}
 
-              {vis.skills && (profile.skills?.length ?? 0) > 0 && (
-                <ProfileSkillChips
-                  className="mt-2 sm:mt-3"
-                  skills={profile.skills!}
-                  renderLabel={(s) => highlight(s, q)}
-                />
-              )}
 
-              <div className="mt-3 flex items-stretch sm:mt-4">
+              {vis.socials && (profile.website || profile.instagram || profile.facebook || profile.line_id) ? (
+                <div className="mt-3 flex flex-wrap items-center gap-3 text-muted-foreground">
+                  {safeHttpUrl(profile.website) && (
+                    <a href={safeHttpUrl(profile.website)} target="_blank" rel="noopener noreferrer" className="hover:text-foreground" aria-label="Website"><Globe className="h-4 w-4" /></a>
+                  )}
+                  {profile.instagram && (
+                    <a href={`https://instagram.com/${encodeURIComponent(profile.instagram)}`} target="_blank" rel="noopener noreferrer" className="hover:text-foreground" aria-label="Instagram"><Instagram className="h-4 w-4" /></a>
+                  )}
+                  {safeHttpUrl(profile.facebook) && (
+                    <a href={safeHttpUrl(profile.facebook)} target="_blank" rel="noopener noreferrer" className="hover:text-foreground" aria-label="Facebook"><Facebook className="h-4 w-4" /></a>
+                  )}
+                  {profile.line_id && (
+                    <span className="flex items-center gap-1 text-xs"><MessageSquare className="h-4 w-4" /> {profile.line_id}</span>
+                  )}
+                </div>
+              ) : null}
+
+            </div>
+
+            {/* Right: Projects | Followers, then Follow + Message side by side. */}
+            <div className="flex w-full shrink-0 flex-col gap-4 md:mt-14 md:w-72 lg:mt-16">
+              <div className="flex items-stretch justify-center md:justify-end">
                 {statItems.map((s, i) => {
                   const body = (
                     <>
-                      <span className="text-base font-semibold tabular-nums leading-tight text-foreground">
-                        {s.value}
-                      </span>
-                      <span className="text-center text-[11px] leading-tight text-muted-foreground sm:text-xs">
-                        {s.label}
-                      </span>
+                      <span className="text-lg font-semibold leading-tight text-foreground tabular-nums">{s.value}</span>
+                      <span className="text-xs text-muted-foreground">{s.label}</span>
                     </>
                   );
                   const itemClass = cn(
-                    "flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-1.5 py-1 sm:px-3",
-                    i > 0 && "border-l border-border/70",
+                    "flex min-w-0 flex-1 flex-col items-center gap-0.5 px-4 md:flex-none",
+                    i > 0 && "border-l border-border",
                   );
-                  if (s.href) {
-                    return (
-                      <button
-                        key={s.key}
-                        type="button"
-                        onClick={() => navigate(s.href)}
-                        className={cn(itemClass, "hover:text-primary transition-colors")}
-                        aria-label={`${s.label} ${s.value}`}
-                      >
-                        {body}
-                      </button>
-                    );
-                  }
-                  return (
-                    <div key={s.key} className={itemClass} title={s.label} aria-label={`${s.label} ${s.value}`}>
+                  return s.href ? (
+                    <button key={s.key} type="button" onClick={() => navigate(s.href!)} className={cn(itemClass, "hover:text-foreground")} aria-label={`${s.label} ${s.value}`}>
+                      {body}
+                    </button>
+                  ) : (
+                    <div key={s.key} className={itemClass} aria-label={`${s.label} ${s.value}`}>
                       {body}
                     </div>
                   );
                 })}
               </div>
 
-              {showAsVisitor && (
-                <div className="flex flex-col gap-2 mt-3 sm:mt-4">
-                  {(() => {
-                    const PrimaryIcon = primaryCta.icon;
-                    return (
-                      <Button
-                        type="button"
-                        onClick={primaryCta.onClick}
-                        className="w-full rounded-full bg-gradient-brand text-white hover:opacity-90 h-10 text-sm font-medium gap-1.5"
-                      >
-                        <PrimaryIcon className="w-4 h-4 shrink-0" />
-                        {primaryCta.label}
-                      </Button>
-                    );
-                  })()}
-                  <div className={cn("grid gap-2", secondaryCtas.length >= 2 ? "grid-cols-3" : "grid-cols-2")}>
+              {showAsVisitor ? (
+                <>
+                  <div className="grid grid-cols-2 gap-2">
                     <FollowButton
                       freelancerId={resolvedUserId}
                       visitorPreview={visitorPreview}
                       showFollowerCount={false}
                       showFollowingLabel
-                      className="w-full min-w-0 px-2 h-10 text-sm font-medium glass-panel border border-input bg-transparent text-foreground hover:bg-accent/40"
+                      className="h-10 w-full min-w-0 rounded-full bg-foreground px-3 text-sm font-medium text-background hover:bg-foreground/90"
                     />
-                    {secondaryCtas.map((cta) => (
-                      <Button
-                        key={cta.key}
-                        type="button"
-                        variant="outline"
-                        onClick={cta.onClick}
-                        className="w-full min-w-0 rounded-full glass-panel h-10 text-sm font-medium gap-1.5 px-2"
-                      >
-                        <cta.icon className="hidden sm:block w-4 h-4 shrink-0" />
-                        <span className="truncate sm:hidden">{cta.short}</span>
-                        <span className="truncate hidden sm:inline">{cta.label}</span>
-                      </Button>
-                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={openMessage}
+                      className="h-10 w-full gap-1.5 rounded-full border-border bg-transparent text-sm font-medium"
+                    >
+                      <MessageCircle className="h-4 w-4" /> Message
+                    </Button>
                   </div>
                   {isLaunchCreatorSupportEnabled() ? (
-                    <div className="md:hidden">
+                    <div className="flex justify-center md:justify-end">
                       <SupportButton
                         recipientId={resolvedUserId}
                         recipientName={profile.display_name ?? "ครีเอเตอร์"}
                         recipientAvatar={profile.avatar_url ?? undefined}
                         variant="compact"
                         hideSubtext
-                        className="w-full items-center"
                         visitorPreview={visitorPreview}
                       />
                     </div>
                   ) : null}
-                </div>
-              )}
-
-              {isSelf && !visitorPreview && (
-                <div className="mt-3 sm:mt-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="rounded-full"
-                    onClick={() => {
-                      const next = new URLSearchParams(params);
-                      next.set("preview", "1");
-                      setSearchParams(next, { replace: true });
-                    }}
-                  >
-                    <Eye className="w-4 h-4 mr-1.5" /> พรีวิวก่อนแชร์
-                  </Button>
-                </div>
-              )}
-
-              {vis.socials && (profile.website || profile.instagram || profile.facebook || profile.line_id) && (
-                <div className="flex items-center gap-3 mt-3 sm:mt-4 text-muted-foreground flex-wrap">
-                  {safeHttpUrl(profile.website) && (
-                    <a href={safeHttpUrl(profile.website)} target="_blank" rel="noopener noreferrer" className="hover:text-primary"><Globe className="w-4 h-4" /></a>
-                  )}
-                  {profile.instagram && (
-                    <a href={`https://instagram.com/${encodeURIComponent(profile.instagram)}`} target="_blank" rel="noopener noreferrer" className="hover:text-primary"><Instagram className="w-4 h-4" /></a>
-                  )}
-                  {safeHttpUrl(profile.facebook) && (
-                    <a href={safeHttpUrl(profile.facebook)} target="_blank" rel="noopener noreferrer" className="hover:text-primary"><Facebook className="w-4 h-4" /></a>
-                  )}
-                  {profile.line_id && (
-                    <span className="flex items-center gap-1 text-xs"><MessageSquare className="w-4 h-4" /> {profile.line_id}</span>
-                  )}
-                </div>
-              )}
-
+                  {!isSelf && iBlockedThem ? (
+                    <div className="flex flex-wrap items-center justify-center gap-2 md:justify-end">
+                      {iBlockedThem ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-8 rounded-full text-xs"
+                          disabled={unblockUser.isPending}
+                          onClick={() => void unblockUser.mutateAsync(resolvedUserId!)}
+                        >
+                          <UserX className="mr-1 h-3.5 w-3.5" /> ปลดบล็อก
+                        </Button>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </>
+              ) : isSelf && !visitorPreview ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-full"
+                  onClick={() => {
+                    const next = new URLSearchParams(params);
+                    next.set("preview", "1");
+                    setSearchParams(next, { replace: true });
+                  }}
+                >
+                  <Eye className="mr-1.5 h-4 w-4" /> พรีวิวก่อนแชร์
+                </Button>
+              ) : null}
             </div>
-          </div>
           </div>
         </div>
       </div>

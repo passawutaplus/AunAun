@@ -122,7 +122,7 @@ export function ProfileSectionTabs({
 
   return (
     <div className={className}>
-      <div className="flex justify-center px-3 sm:px-4">
+      <div className="flex justify-start">
         <LayoutGroup id="profile-section-tabs">
           <div
             ref={listRef}

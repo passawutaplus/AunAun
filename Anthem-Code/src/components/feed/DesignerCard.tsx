@@ -9,6 +9,7 @@ import { highlight } from "@/lib/highlight";
 import { naturalFeedCoverUrl, thumbFeedCoverUrl } from "@/lib/feedProjectCover";
 import { displayProfileAddress } from "@/lib/profileAddress";
 import { cn } from "@/lib/utils";
+import { creatorStatus } from "@/lib/creatorStatus";
 
 interface Props {
   data: DesignerCardData;
@@ -21,12 +22,6 @@ interface Props {
 
 const THUMBS = 4;
 
-/** Availability dot + label from the profile's opportunity status. */
-const STATUS: Record<string, { label: string; dot: string }> = {
-  open_to_opportunities: { label: "Available for Work", dot: "bg-emerald-500" },
-  soft_open: { label: "Open to Talk", dot: "bg-amber-500" },
-  not_available: { label: "Not Available", dot: "bg-muted-foreground/60" },
-};
 
 type Project = DesignerCardData["projects"][number];
 
@@ -44,7 +39,7 @@ const DesignerCard = ({ data, search = "", newWorkCount = 0 }: Props) => {
   const name = profile.display_name || profile.username || "Creator";
   const role = (profile.role || "Designer").trim();
   const bio = ((profile as { bio?: string | null }).bio ?? "").trim();
-  const status = STATUS[(profile as { opportunity_status?: string | null }).opportunity_status ?? ""];
+  const status = creatorStatus((profile as { opportunity_status?: string | null }).opportunity_status);
   const place = displayProfileAddress(
     (profile as { profile_address?: unknown }).profile_address,
     (profile as { location?: string | null }).location,
