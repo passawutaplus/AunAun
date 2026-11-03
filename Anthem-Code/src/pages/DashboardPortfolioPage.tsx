@@ -16,7 +16,7 @@ import {
 export type DashboardPortfolioMode = "projects" | "packages" | "objects" | "catalogs";
 
 const META: Record<DashboardPortfolioMode, { title: string; path: string }> = {
-  projects: { title: "Projects", path: STUDIO_PROJECTS_PATH },
+  projects: { title: "Showcase", path: STUDIO_PROJECTS_PATH },
   packages: { title: "Packages", path: STUDIO_PACKAGES_PATH },
   objects: { title: "Objects", path: STUDIO_OBJECTS_PATH },
   catalogs: { title: "Catalogs", path: STUDIO_CATALOGS_PATH },

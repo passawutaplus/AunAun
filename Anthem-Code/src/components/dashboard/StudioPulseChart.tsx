@@ -40,7 +40,7 @@ const chartConfig = {
 };
 
 const SCOPE_TABS = [
-  { id: "projects" as const, label: "Projects", icon: LayoutGrid },
+  { id: "projects" as const, label: "Showcase", icon: LayoutGrid },
   { id: "packages" as const, label: "Packages", icon: PackagesIcon },
 ];
 
@@ -276,7 +276,7 @@ export default function StudioPulseChart({
                 content={
                   <ChartTooltipContent
                     labelFormatter={(_, payload) => payload?.[0]?.payload?.label ?? ""}
-                    formatter={(value) => [`${value} วิว`, isPackages ? "Packages" : "Projects"]}
+                    formatter={(value) => [`${value} วิว`, isPackages ? "Packages" : "Showcase"]}
                   />
                 }
               />

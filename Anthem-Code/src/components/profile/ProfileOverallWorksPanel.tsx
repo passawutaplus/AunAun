@@ -262,7 +262,7 @@ export default function ProfileOverallWorksPanel({ projects, isLoading, afterHea
   return (
     <div className="space-y-4">
       <ProfileTabHeading
-        title="My Projects"
+        title="My Showcase"
         count={published.length}
         actions={
           total > 0 ? (

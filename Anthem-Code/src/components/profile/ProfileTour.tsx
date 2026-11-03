@@ -58,7 +58,7 @@ const STEPS: Omit<GuideTourStep, "onEnter">[] = [
   },
   {
     id: "overall",
-    title: "My Projects",
+    title: "My Showcase",
     body: "ผลงานทั้งหมดของคุณ เรียงตามลำดับที่ผู้เข้าชมเห็น ปักหมุดงานเด่นได้ และกด “จัดลำดับ” เพื่อลากเรียงใหม่",
     target: "profile-tab-overall",
   },
@@ -70,7 +70,7 @@ const STEPS: Omit<GuideTourStep, "onEnter">[] = [
   },
   {
     id: "designers",
-    title: "Designers",
+    title: "Creators",
     body: "ครีเอเตอร์ที่คุณติดตาม พร้อมสถานะว่าใครติดตามคุณกลับ คนที่ติดตามกันทั้งคู่แท็กเป็นผู้ร่วมงานในผลงานได้",
     target: "profile-tab-designers",
   },

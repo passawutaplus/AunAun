@@ -27,9 +27,9 @@ interface Props {
 }
 
 const items: ToggleItem[] = [
-  { id: "projects", label: "Projects", icon: LayoutGrid },
+  { id: "projects", label: "Showcase", icon: LayoutGrid },
   { id: "drill", label: "Design Drill", icon: Target, mobileOnly: true },
-  { id: "designers", label: "Designers", icon: Users },
+  { id: "designers", label: "Creators", icon: Users },
   { id: "packages", label: "Packages", icon: PackagesIcon },
   { id: "objects", label: "Objects", icon: Box },
 ];

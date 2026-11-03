@@ -191,7 +191,7 @@ const FeedToolbar = ({
   const isStudios = mode === "studios";
   const isCommunity = mode === "community";
   const isCatalog = isProjects || isDesigners || isPackages || isObjects;
-  const catalogTitle = isDesigners ? "Designers" : isPackages ? "Packages" : isObjects ? "Objects" : "Projects";
+  const catalogTitle = isDesigners ? "Creators" : isPackages ? "Packages" : isObjects ? "Objects" : "Showcase";
   const reducedMotion = useReducedMotion();
   const barSlide = {
     duration: reducedMotion ? 0 : 0.46,

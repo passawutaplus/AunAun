@@ -1028,7 +1028,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
                   title={colorQuery && !search.trim() ? "ไม่พบผลงานที่สีใกล้เคียง" : "ไม่พบผลงานที่ตรงกับตัวกรอง"}
                   description={
                     feedMode === "Following"
-                      ? "ติดตามดีไซเนอร์ที่ชอบ แล้วกลับมาดูผลงานล่าสุดของพวกเขาที่นี่"
+                      ? "ติดตามครีเอเตอร์ที่ชอบ แล้วกลับมาดูผลงานล่าสุดของพวกเขาที่นี่"
                       : colorQuery &&
                           colorMatch.measured > 0 &&
                           colorMatch.unreadable === colorMatch.measured

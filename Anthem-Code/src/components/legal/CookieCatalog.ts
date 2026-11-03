@@ -35,7 +35,7 @@ export const COOKIE_CATALOG: CookieCatalogRow[] = [
   {
     name: "feed-mode",
     provider: BRAND_NAME,
-    purpose: "จดจำมุมมองฟีด (ผลงาน/ดีไซเนอร์/สตูดิโอ)",
+    purpose: "จดจำมุมมองฟีด (ผลงาน/ครีเอเตอร์/สตูดิโอ)",
     duration: "ถาวร (localStorage) — จนกว่าจะลบด้วยตนเอง",
     category: "functional",
   },

@@ -896,7 +896,7 @@ const PublicProfilePage = () => {
           value={activeTab}
           onValueChange={setProfileTab}
           tabs={[
-            { value: "works", label: "Projects", count: portfolioProjects.length },
+            { value: "works", label: "Showcase", count: portfolioProjects.length },
             { value: "series", label: "Catalog", count: seriesList.length },
             ...(isCommerceEnabled()
               ? [

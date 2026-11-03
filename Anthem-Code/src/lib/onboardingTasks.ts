@@ -50,7 +50,7 @@ export const ONBOARDING_TASKS: OnboardingTaskDef[] = [
   {
     id: "explore_feed",
     title: "สำรวจฟีดผลงาน",
-    description: "เปิดแท็บ Projects ในหน้าแรก",
+    description: "เปิดแท็บ Showcase ในหน้าแรก",
     href: "/",
     icon: Compass,
     rewardPx: 6,
@@ -69,8 +69,8 @@ export const ONBOARDING_TASKS: OnboardingTaskDef[] = [
   },
   {
     id: "explore_designers",
-    title: "สำรวจ Designers",
-    description: "เปิดแท็บ Designers ค้นหาครีเอเตอร์",
+    title: "สำรวจ Creators",
+    description: "เปิดแท็บ Creators ค้นหาครีเอเตอร์",
     href: "/?mode=designers",
     icon: Users,
     rewardPx: 6,
@@ -90,7 +90,7 @@ export const ONBOARDING_TASKS: OnboardingTaskDef[] = [
   {
     id: "like",
     title: "กดหัวใจผลงานและโพสต์",
-    description: "กดหัวใจอย่างน้อย 1 ผลงานในฟีด Projects และ 1 โพสต์ใน Area",
+    description: "กดหัวใจอย่างน้อย 1 ผลงานในฟีด Showcase และ 1 โพสต์ใน Area",
     href: "/?mode=community",
     icon: Heart,
     rewardPx: 6,
@@ -99,7 +99,7 @@ export const ONBOARDING_TASKS: OnboardingTaskDef[] = [
   {
     id: "follow",
     title: "ติดตามครีเอเตอร์",
-    description: "ติดตามครีเอเตอร์ที่ชอบจากฟีดหรือแท็บ Designers",
+    description: "ติดตามครีเอเตอร์ที่ชอบจากฟีดหรือแท็บ Creators",
     href: "/?mode=designers",
     icon: Sparkles,
     rewardPx: 8,
@@ -178,15 +178,15 @@ const LAUNCH_TASK_COPY: Partial<Record<OnboardingTaskId, Pick<OnboardingTaskDef,
   },
   explore_feed: {
     title: "สำรวจฟีดผลงาน",
-    description: "เปิดหน้าแรก ดูผลงานใน Projects",
+    description: "เปิดหน้าแรก ดูผลงานใน Showcase",
   },
   explore_designers: {
     title: "สำรวจครีเอเตอร์",
-    description: "เปิดแท็บ Designers ดูครีเอเตอร์",
+    description: "เปิดแท็บ Creators ดูครีเอเตอร์",
   },
   follow: {
     title: "ติดตามครีเอเตอร์",
-    description: "ติดตามคนที่ชอบจาก Designers",
+    description: "ติดตามคนที่ชอบจาก Creators",
   },
   skills: {
     title: "ใส่ทักษะ",

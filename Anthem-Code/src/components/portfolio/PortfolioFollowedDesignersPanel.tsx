@@ -146,7 +146,7 @@ export default function PortfolioFollowedDesignersPanel() {
   return (
     <div className="space-y-4">
       <ProfileTabHeading
-        title="Designers"
+        title="Creators"
         count={designers.length}
         description="ครีเอเตอร์ที่คุณติดตาม — คนที่ติดตามกันทั้งคู่แท็กเป็นผู้ร่วมงานในผลงานได้"
         actions={designers.length > 0 ? findMore : undefined}

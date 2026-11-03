@@ -26,7 +26,7 @@ export function ProjectFeedPreviewToolbar({ className }: { className?: string })
         <div className="shrink-0 flex items-center rounded-full bg-muted/50 p-0.5">
           <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-medium bg-gradient-brand text-white">
             <LayoutGrid className="w-2.5 h-2.5" />
-            <span className="hidden min-[380px]:inline">Projects</span>
+            <span className="hidden min-[380px]:inline">Showcase</span>
           </span>
           {!isAplus1LaunchMinimal() ? (
           <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-medium text-muted-foreground">
