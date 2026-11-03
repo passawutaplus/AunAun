@@ -6,7 +6,6 @@ import { SensitiveActionReauthProvider } from "@/components/legal/SensitiveActio
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { isInspireEnabled } from "@/lib/aplus1Launch";
 import { Toaster as Sonner } from "@/components/ui/sonner";
-import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import Index from "./pages/Index.tsx";
@@ -225,7 +224,6 @@ const App = () => (
     <SensitiveActionReauthProvider>
     <ThemeProvider>
       <TooltipProvider>
-        <Toaster />
         <Sonner />
         {/* startTransition: keep the current page on screen while a lazy route chunk loads (no full-screen loader flash). */}
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
