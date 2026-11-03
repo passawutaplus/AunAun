@@ -126,7 +126,7 @@ export default function SavedPackagesCompareDialog({ open, onOpenChange, cards, 
                         onClick={() => void start(c.service, c.profile.display_name || c.profile.username)}
                       >
                         <MessageCircle className="mr-1.5 h-4 w-4" aria-hidden />
-                        {busyId === c.service.id ? "กำลังเปิดแชท..." : "ทักแชท"}
+                        {busyId === c.service.id ? "กำลังเปิดแชท..." : "Message"}
                       </Button>
                     )}
                   </td>

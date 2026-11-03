@@ -248,7 +248,7 @@ export default function ExhibitionDetailPage() {
               ) : null}
               {canChat ? (
                 <Button type="button" size="sm" className="rounded-full" onClick={contactOrganizer}>
-                  <MessageCircle className="mr-1.5 h-4 w-4" aria-hidden /> ทักแชทผู้จัด
+                  <MessageCircle className="mr-1.5 h-4 w-4" aria-hidden /> Message
                 </Button>
               ) : null}
               {isHttpUrl(event.website_url) ? (

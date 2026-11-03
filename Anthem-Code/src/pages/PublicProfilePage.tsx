@@ -538,7 +538,7 @@ const PublicProfilePage = () => {
   const ctas = [
     wantsHire && { key: "hire", label: "สนใจจ้างงาน", short: "จ้างงาน", icon: BriefcaseIcon, onClick: openHire },
     wantsCollab && { key: "collab", label: "สนใจคอลแลป", short: "คอลแลป", icon: Handshake, onClick: openCollab },
-    { key: "message", label: "ทักแชท", short: "ทักแชท", icon: MessageCircle, onClick: openMessage },
+    { key: "message", label: "Message", short: "Message", icon: MessageCircle, onClick: openMessage },
   ].filter(Boolean) as { key: string; label: string; short: string; icon: ComponentType<{ className?: string }>; onClick: () => void }[];
   const [primaryCta, ...secondaryCtas] = ctas;
 

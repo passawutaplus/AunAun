@@ -525,14 +525,14 @@ const ImageLightbox = ({
                         onClose();
                         onContact();
                       }}
-                      aria-label="ทักแชทจากภาพนี้"
-                      title="ทักแชทจากภาพนี้"
+                      aria-label="Message — ทักแชทจากภาพนี้"
+                      title="Message — ทักแชทจากภาพนี้"
                       className="group/chat inline-flex shrink-0 items-center whitespace-nowrap rounded-full border border-white/10 bg-black/25 px-3 py-2 text-xs font-medium text-white shadow-sm backdrop-blur-md transition-all hover:bg-black/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
                     >
                       <MessageCircle className="h-3.5 w-3.5 shrink-0" aria-hidden />
                       {/* Icon only; the label slides out on hover / keyboard focus (desktop) */}
                       <span className="max-w-0 overflow-hidden opacity-0 transition-all duration-200 group-hover/chat:ml-1.5 group-hover/chat:max-w-[9rem] group-hover/chat:opacity-100 group-focus-visible/chat:ml-1.5 group-focus-visible/chat:max-w-[9rem] group-focus-visible/chat:opacity-100 motion-reduce:transition-none">
-                        ทักแชทจากภาพนี้
+                        Message
                       </span>
                     </button>
                   ) : null}

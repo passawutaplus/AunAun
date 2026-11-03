@@ -240,7 +240,7 @@ const DesignerCard = ({ data, search = "", followedBy = [], newWorkCount = 0 }: 
             className="inline-flex h-9 w-[6.25rem] shrink-0 items-center justify-center gap-1.5 rounded-full bg-gradient-brand px-3 text-xs font-medium text-white transition hover:opacity-90"
           >
             <MessageCircle className="h-3.5 w-3.5 shrink-0" />
-            <span className="truncate">ทักแชท</span>
+            <span className="truncate">Message</span>
           </button>
         </div>
         {followedBy.length > 0 ? (

@@ -124,7 +124,7 @@ function QuickViewInfo({
             className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full bg-white px-4 text-sm font-medium text-neutral-900 transition-opacity hover:opacity-90"
           >
             <MessageCircle className="h-4 w-4" aria-hidden />
-            ทักแชท
+            Message
           </button>
         ) : null}
         {isDb(project.id) ? (
