@@ -18,7 +18,6 @@ import FollowButton from "@/components/FollowButton";
 import SupportButton from "@/components/gifting/SupportButton";
 import ReportTrigger from "@/components/report/ReportTrigger";
 import HireDialog from "@/components/HireDialog";
-import ProfileSkillChips from "@/components/profile/ProfileSkillChips";
 import CollabDialog from "@/components/CollabDialog";
 import CatalogIcon from "@/components/icons/CatalogIcon";
 import UserAvatar from "@/components/UserAvatar";
@@ -516,6 +515,10 @@ const PublicProfilePage = () => {
 
   // Header lines: role, place and availability (cards use the same status labels).
   const headerRole = (profile.role ?? "").trim();
+  // Role first, then up to three skills: "Brand Communication / Package Design / Branding".
+  const headerRoleLine = [headerRole, ...(vis.skills ? (profile.skills ?? []).slice(0, 3) : [])]
+    .filter(Boolean)
+    .join(" / ");
   const headerPlace = displayProfileAddress(
     (profile as { profile_address?: unknown }).profile_address,
     (profile as { location?: string | null }).location,
@@ -663,7 +666,7 @@ const PublicProfilePage = () => {
                 <VerifiedBadge verified={!!(profile as { is_verified?: boolean }).is_verified} />
               </h1>
               {showUsernameLine ? <p className="text-sm text-muted-foreground">@{profile.username}</p> : null}
-              {headerRole ? <p className="mt-1 text-sm text-muted-foreground">{headerRole}</p> : null}
+              {headerRoleLine ? <p className="mt-1 text-sm text-muted-foreground">{headerRoleLine}</p> : null}
 
               {(isSelf && !visitorPreview) || vis.bio ? (
                 <ProfileIntroLine
@@ -675,24 +678,22 @@ const PublicProfilePage = () => {
                 />
               ) : null}
 
-              {headerPlace ? (
-                <p className="mt-2 inline-flex items-center gap-1.5 text-sm text-muted-foreground">
-                  <MapPin className="h-4 w-4" aria-hidden /> {headerPlace}
-                </p>
-              ) : null}
-
-              {headerStatus ? (
-                <div className="mt-2">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-xs text-foreground/90">
-                    <span className={cn("h-1.5 w-1.5 rounded-full", headerStatus.dot)} aria-hidden />
-                    {headerStatus.label}
-                  </span>
+              {headerPlace || headerStatus ? (
+                <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
+                  {headerPlace ? (
+                    <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+                      <MapPin className="h-4 w-4" aria-hidden /> {headerPlace}
+                    </span>
+                  ) : null}
+                  {headerStatus ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-xs text-foreground/90">
+                      <span className={cn("h-1.5 w-1.5 rounded-full", headerStatus.dot)} aria-hidden />
+                      {headerStatus.label}
+                    </span>
+                  ) : null}
                 </div>
               ) : null}
 
-              {vis.skills && (profile.skills?.length ?? 0) > 0 ? (
-                <ProfileSkillChips className="mt-3" skills={profile.skills!} renderLabel={(s) => highlight(s, q)} />
-              ) : null}
 
               {vis.socials && (profile.website || profile.instagram || profile.facebook || profile.line_id) ? (
                 <div className="mt-3 flex flex-wrap items-center gap-3 text-muted-foreground">

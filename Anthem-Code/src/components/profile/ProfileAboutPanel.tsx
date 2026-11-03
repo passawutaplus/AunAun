@@ -7,6 +7,7 @@ import { aboutCvPdfFilename } from "@/lib/aboutCvPdf";
 import { downloadAboutCvDocument } from "@/lib/aboutCvDownload";
 import { parseProfileCv } from "@/lib/profileCv";
 import { ProfileAboutToolbar } from "@/components/profile/ProfileAboutReadOnly";
+import ProfileAboutWeb from "@/components/profile/ProfileAboutWeb";
 import ProfileTabHeading from "@/components/profile/ProfileTabHeading";
 import ProfileAboutEditor from "@/components/profile/ProfileAboutEditor";
 import CvSheetScaler from "@/components/profile/CvSheetScaler";
@@ -179,13 +180,18 @@ export default function ProfileAboutPanel({
               เนื้อหายาวเกิน 1 หน้า A4 — ลดข้อความ ปิดบางหัวข้อ หรือเลือกคอลัมน์เดียวในหน้าแก้ไข
             </p>
           ) : null}
-          <div className="flex justify-center">
-            <div className="about-cv-a4-frame about-cv-a4-frame--page">
-              <CvSheetScaler>
-                <AboutDocumentSheet {...sheetProps} theme={liveTheme} />
-              </CvSheetScaler>
+          {mode === "public" ? (
+            // Visitors get a web layout; the A4 sheet below stays for Print / PDF.
+            <ProfileAboutWeb profile={profile} experience={experience} skills={skills} />
+          ) : (
+            <div className="flex justify-center">
+              <div className="about-cv-a4-frame about-cv-a4-frame--page">
+                <CvSheetScaler>
+                  <AboutDocumentSheet {...sheetProps} theme={liveTheme} />
+                </CvSheetScaler>
+              </div>
             </div>
-          </div>
+          )}
         </>
       )}
       {canEdit ? (
