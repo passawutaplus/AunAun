@@ -10,7 +10,8 @@ const ExhibitionIconBase = forwardRef<SVGSVGElement, SVGProps<SVGSVGElement>>(
     <svg
       ref={ref}
       xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 48 48"
+      // Cropped from the brand file's 0 0 48 48 so the mark fills the box like the Lucide icons beside it.
+      viewBox="4 4 40 40"
       className={className}
       {...props}
       fill="none"
