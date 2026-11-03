@@ -17,6 +17,9 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useHideOnScroll } from "@/hooks/useHideOnScroll";
 import { useAuth } from "@/hooks/useAuth";
 import FeedbackHeaderPill from "@/components/feedback/FeedbackHeaderPill";
+import MobileFilterButton from "@/components/feed/MobileFilterButton";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { isBetaFeedbackEnabled } from "@/lib/aplus1Launch";
 import { EVENT_CATEGORIES, eventTiming, type EventCategory } from "@/lib/exhibitionEvents";
 import { BRAND_NAME } from "@/lib/brandConfig";
@@ -63,6 +66,7 @@ export default function ExhibitionPage() {
   const { user } = useAuth();
   const showBetaFeedback = Boolean(user) && isBetaFeedbackEnabled();
   const mobileBarRef = useRef<HTMLDivElement>(null);
+  const [filterOpen, setFilterOpen] = useState(false);
   const { hidden: mobileBarHidden, scrolled: mobileBarScrolled } = useHideOnScroll(mobileBarRef);
   const reduceMotion = useReducedMotion();
 
@@ -77,29 +81,32 @@ export default function ExhibitionPage() {
       compact={compact}
     />
   );
+  const timingSwitch = (
+    <div className="flex shrink-0 rounded-full bg-muted/60 p-0.5" role="group" aria-label="ช่วงเวลา">
+      {(
+        [
+          ["now", "Now"],
+          ["done", "Done"],
+        ] as const
+      ).map(([id, label]) => (
+        <button
+          key={id}
+          type="button"
+          aria-pressed={when === id}
+          onClick={() => setWhen(id)}
+          className={cn(
+            "min-h-8 rounded-full px-3 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground",
+            when === id ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
   const filters = (
     <div className="flex min-w-0 items-center gap-3 lg:justify-center lg:gap-6">
-      <div className="flex shrink-0 rounded-full bg-muted/60 p-0.5" role="group" aria-label="ช่วงเวลา">
-        {(
-          [
-            ["now", "Now"],
-            ["done", "Done"],
-          ] as const
-        ).map(([id, label]) => (
-          <button
-            key={id}
-            type="button"
-            aria-pressed={when === id}
-            onClick={() => setWhen(id)}
-            className={cn(
-              "min-h-8 rounded-full px-3 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground",
-              when === id ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      {timingSwitch}
       <div className="min-w-0 flex-1 lg:flex-none">
         <FilterChips
           align={isMobile ? "start" : "center"}
@@ -176,17 +183,50 @@ export default function ExhibitionPage() {
             <BrandLogo showWordmark={false} size="md" />
           </Link>
           {showBetaFeedback ? <FeedbackHeaderPill className="ml-auto" /> : null}
-          <div
-            className={cn(
-              "min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-              !showBetaFeedback && "ml-auto",
-            )}
-          >
-            {toggle}
+          <MobileFilterButton
+            count={(when === "done" ? 1 : 0) + (category !== "all" ? 1 : 0)}
+            onClick={() => setFilterOpen(true)}
+            className={cn(!showBetaFeedback && "ml-auto")}
+          />
+          <div className="min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{toggle}</div>
           </div>
-          </div>
-          <div className="mt-3">{filters}</div>
         </div>
+
+        <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
+          <SheetContent side="bottom" className="rounded-t-3xl pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+            <SheetTitle className="text-base">ตัวกรอง Exhibition</SheetTitle>
+            <div className="mt-4 space-y-5">
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-muted-foreground">ช่วงเวลา</p>
+                <div className="flex">{timingSwitch}</div>
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-muted-foreground">ประเภทงาน</p>
+                <div className="flex flex-wrap gap-2">
+                  {[{ id: "all" as const, label: "All" }, ...EVENT_CATEGORIES].map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      aria-pressed={category === c.id}
+                      onClick={() => setCategory(c.id)}
+                      className={cn(
+                        "min-h-9 rounded-full border px-4 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground",
+                        category === c.id
+                          ? "border-foreground bg-foreground text-background"
+                          : "border-border text-foreground hover:border-foreground/50",
+                      )}
+                    >
+                      {c.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <Button type="button" className="w-full rounded-full" onClick={() => setFilterOpen(false)}>
+                ดู {rows.length} งาน
+              </Button>
+            </div>
+          </SheetContent>
+        </Sheet>
 
         {/* Phones: a plain title instead of the hero slideshow, like the other modes. */}
         <h1 className="pb-5 pt-3 text-4xl font-semibold leading-[0.95] tracking-tight text-foreground lg:hidden">

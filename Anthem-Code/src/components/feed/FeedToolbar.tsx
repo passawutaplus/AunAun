@@ -7,6 +7,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { parseColorList } from "@/lib/colorSearch";
 import { ArrowRight, Plus, X } from "lucide-react";
+import MobileFilterButton from "@/components/feed/MobileFilterButton";
 import { BrandLogo } from "@/components/brand/BrandLogo";
 import { ScrollBlur } from "@/components/ScrollBlur";
 import SearchBar from "@/components/SearchBar";
@@ -487,10 +488,18 @@ const FeedToolbar = ({
         </div>
         )}
         {showBetaFeedback ? <FeedbackHeaderPill className="ml-auto" /> : null}
+        {isProjects || isDesigners ? (
+          // One-row phone bar: categories and the rest live in this mode's filter sheet.
+          <MobileFilterButton
+            count={filterCount}
+            onClick={openProjectSheet}
+            className={cn(!showBetaFeedback && "ml-auto")}
+          />
+        ) : null}
         <div
           className={cn(
             "min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-            !showBetaFeedback && "ml-auto",
+            !showBetaFeedback && !(isProjects || isDesigners) && "ml-auto",
           )}
         >
           <FeedModeToggle
@@ -822,34 +831,6 @@ const FeedToolbar = ({
           </>
         )}
       </div>
-
-      {/* Mobile parent chips under toolbar */}
-      {isDesigners || isPackages ? (
-        <div className="lg:hidden mt-3">
-          <DesignerCategoryChips
-            selected={designerCategory}
-            onSelect={onDesignerCategoryChange}
-            chips={designerCategoryChips}
-          />
-        </div>
-      ) : isProjects ? (
-        <div className="lg:hidden mt-3 space-y-2">
-          <FilterChips
-            options={parentChips}
-            selected={String(category)}
-            onSelect={(id) => {
-              if (id === DESIGN_DRILL_CHIP) {
-                onDrillSelect?.();
-                onCategoryChange(DESIGN_DRILL_CHIP);
-              } else {
-                onCategoryChange(id as CategoryParentId | "All");
-              }
-              onProjectLeavesChange?.([]);
-              onProjectStylesChange?.([]);
-            }}
-          />
-        </div>
-      ) : null}
 
       {isProjects && activeSubLabels.length > 0 ? (
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
