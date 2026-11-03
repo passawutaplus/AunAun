@@ -8,6 +8,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { parseColorList } from "@/lib/colorSearch";
 import { ArrowRight, Plus, X } from "lucide-react";
 import MobileFilterButton from "@/components/feed/MobileFilterButton";
+import MobileSearchScreen from "@/components/feed/MobileSearchScreen";
 import { BrandLogo } from "@/components/brand/BrandLogo";
 import { ScrollBlur } from "@/components/ScrollBlur";
 import SearchBar from "@/components/SearchBar";
@@ -182,6 +183,8 @@ const FeedToolbar = ({
   const navigate = useNavigate();
   const [mobileSearchOpen, setMobileSearchOpen] = useState(search.length > 0);
   const [projectSheetOpen, setProjectSheetOpen] = useState(false);
+  // Phones: the bottom-nav search opens a text-only search screen; filters stay on the bar's filter button.
+  const [searchScreenOpen, setSearchScreenOpen] = useState(false);
   // Bottom-nav search from another page lands here with `openProjectSearch` in the route state.
   const routeLocation = useLocation();
   const openSearchAt = (routeLocation.state as { openProjectSearch?: number } | null)?.openProjectSearch;
@@ -367,8 +370,8 @@ const FeedToolbar = ({
       };
 
   useEffect(() => {
-    if (openSearchAt && isProjects) setProjectSheetOpen(true);
-  }, [openSearchAt, isProjects]);
+    if (openSearchAt && (isProjects || isDesigners)) setSearchScreenOpen(true);
+  }, [openSearchAt, isProjects, isDesigners]);
 
   const homeScrolled = useFeedHomeNavStore((s) => s.scrolled);
   const { user } = useAuth();
@@ -379,7 +382,8 @@ const FeedToolbar = ({
   const { hidden: barHidden, scrolled: barScrolled } = useHideOnScroll(barRef);
 
   useEffect(() => {
-    const onFilterClick = isProjects || isDesigners ? () => setProjectSheetOpen(true) : undefined;
+    // FloatingNav's search button calls this on the feed: open the phone search screen.
+    const onFilterClick = isProjects || isDesigners ? () => setSearchScreenOpen(true) : undefined;
     useFeedHomeNavStore.getState().register({
       search,
       searchPlaceholder,
@@ -893,6 +897,16 @@ const FeedToolbar = ({
       ) : null}
 
       {isProjects || isDesigners ? (
+        <>
+        <MobileSearchScreen
+          open={searchScreenOpen}
+          onClose={() => setSearchScreenOpen(false)}
+          scopeLabel={catalogTitle}
+          placeholder={searchPlaceholder}
+          initialValue={search}
+          recentSearches={recentSearches}
+          onSubmit={onSearchChange}
+        />
         <ProjectSearchFilterSheet
           open={projectSheetOpen}
           onOpenChange={setProjectSheetOpen}
@@ -912,6 +926,7 @@ const FeedToolbar = ({
           designerFilters={isDesigners ? filterContent : null}
           designerResultCount={isDesigners ? resultCount : undefined}
         />
+        </>
       ) : null}
     </div>
   );
