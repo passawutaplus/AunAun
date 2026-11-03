@@ -30,7 +30,7 @@ import {
 import EmptyState from "@/components/ui/EmptyState";
 import QueryStatusPanel from "@/components/ui/QueryStatusPanel";
 import { Button } from "@/components/ui/button";
-import { recordEventRegistration, useEvent, useEventProjects, useEventStats, useMyEventInterests, useMyEventLikes, useRecordEventView } from "@/hooks/useExhibitionEvents";
+import { recordEventRegistration, useEvent, useEventProjects, useEventStats, useMyEventInterests, useRecordEventView } from "@/hooks/useExhibitionEvents";
 import { EventActions } from "@/components/exhibition/EventActions";
 import { useAuth } from "@/hooks/useAuth";
 import { navigateToAuth } from "@/lib/authRedirect";
@@ -93,7 +93,6 @@ export default function ExhibitionDetailPage() {
   const { data: event, isLoading, isError, refetch } = useEvent(id);
   const statIds = useMemo(() => (id ? [id] : []), [id]);
   const { data: stats } = useEventStats(statIds);
-  const { data: myLikes } = useMyEventLikes(statIds);
   const { data: myInterests } = useMyEventInterests(statIds);
   useRecordEventView(event?.id, event?.status === "published");
   const { data: works = [] } = useEventProjects(event?.project_ids);
@@ -260,7 +259,7 @@ export default function ExhibitionDetailPage() {
                 onRegister={user && event.status === "published" ? () => recordEventRegistration(event.id) : undefined}
               />
             </div>
-            <EventActions event={event} stats={stats?.[event.id]} liked={myLikes?.has(event.id)} interested={myInterests?.has(event.id)} showViews />
+            <EventActions event={event} stats={stats?.[event.id]} interested={myInterests?.has(event.id)} showViews />
           </div>
           <EventSourceNote event={event} />
         </div>

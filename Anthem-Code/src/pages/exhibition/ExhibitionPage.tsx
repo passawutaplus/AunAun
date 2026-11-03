@@ -13,7 +13,7 @@ import { ExhibitionHero } from "@/components/exhibition/ExhibitionHero";
 import { ExhibitionCalendar } from "@/components/exhibition/ExhibitionCalendar";
 import EmptyState from "@/components/ui/EmptyState";
 import QueryStatusPanel from "@/components/ui/QueryStatusPanel";
-import { useEventStats, useMyEventInterests, useMyEventLikes, usePublishedEvents } from "@/hooks/useExhibitionEvents";
+import { useEventStats, useMyEventInterests, usePublishedEvents } from "@/hooks/useExhibitionEvents";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useHideOnScroll } from "@/hooks/useHideOnScroll";
 import { useAuth } from "@/hooks/useAuth";
@@ -74,7 +74,6 @@ export default function ExhibitionPage() {
 
   const rowIds = useMemo(() => rows.map((e) => e.id), [rows]);
   const { data: stats } = useEventStats(rowIds);
-  const { data: myLikes } = useMyEventLikes(rowIds);
   const { data: myInterests } = useMyEventInterests(rowIds);
 
   const scrolled = useFeedHomeNavStore((st) => st.scrolled);
@@ -293,7 +292,7 @@ export default function ExhibitionPage() {
       ) : (
         <div data-event-list>
           {rows.map((e) => (
-            <EventListCard key={e.id} event={e} stats={stats?.[e.id]} liked={myLikes?.has(e.id)} interested={myInterests?.has(e.id)} />
+            <EventListCard key={e.id} event={e} stats={stats?.[e.id]} interested={myInterests?.has(e.id)} />
           ))}
         </div>
       )}

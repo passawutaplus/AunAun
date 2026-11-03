@@ -324,26 +324,6 @@ export function useEventStats(ids: string[]) {
   });
 }
 
-/** Which of these events the signed-in user has liked. */
-export function useMyEventLikes(ids: string[]) {
-  const { user } = useAuth();
-  const realIds = ids.filter((id) => !isDemoEventId(id));
-  return useQuery({
-    queryKey: ["events", "my-likes", user?.id, [...realIds].sort().join(",")],
-    enabled: !!user && realIds.length > 0,
-    retry: false,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("event_likes" as never)
-        .select("event_id")
-        .eq("user_id", user!.id)
-        .in("event_id", realIds);
-      if (error) return new Set<string>();
-      return new Set(((data ?? []) as Array<{ event_id: string }>).map((r) => r.event_id));
-    },
-  });
-}
-
 /** Which of these events the signed-in user marked "สนใจ" (interested). */
 export function useMyEventInterests(ids: string[]) {
   const { user } = useAuth();
@@ -384,23 +364,6 @@ export function useToggleEventInterest() {
   });
 }
 
-export function useToggleEventLike() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const { data, error } = await rpc("toggle_event_like", { _event_id: id });
-      if (error) throw error;
-      const row = (Array.isArray(data) ? data[0] : data) as { liked: boolean; like_count: number } | null;
-      return row ?? { liked: false, like_count: 0 };
-    },
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ["events", "stats"] });
-      void qc.invalidateQueries({ queryKey: ["events", "my-likes"] });
-    },
-    onError: () => toast.error("กดถูกใจไม่สำเร็จ ลองอีกครั้ง"),
-  });
-}
-
 /** Count one view per event per browser session. */
 export function useRecordEventView(id: string | undefined, published: boolean) {
   const qc = useQueryClient();
@@ -426,10 +389,10 @@ export function recordEventRegistration(id: string) {
 }
 
 /**
- * Events the user liked or registered for, newest action first. Empty (not an error) when the
+ * Events the user marked สนใจ or registered for, newest action first. Empty (not an error) when the
  * counters migration is not on this database yet.
  */
-export function useMyEventList(kind: "liked" | "registered" | "interested") {
+export function useMyEventList(kind: "registered" | "interested") {
   const { user } = useAuth();
   return useQuery({
     queryKey: ["events", "my-list", kind, user?.id],
@@ -437,7 +400,7 @@ export function useMyEventList(kind: "liked" | "registered" | "interested") {
     retry: false,
     queryFn: async (): Promise<ExhibitionEvent[]> => {
       const { data: links, error } = await supabase
-        .from((kind === "liked" ? "event_likes" : kind === "interested" ? "event_interests" : "event_registrations") as never)
+        .from((kind === "interested" ? "event_interests" : "event_registrations") as never)
         .select("event_id, created_at")
         .eq("user_id", user!.id)
         .order("created_at", { ascending: false })

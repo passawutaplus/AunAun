@@ -199,12 +199,10 @@ export function eventImages(e: Pick<ExhibitionEvent, "cover_url" | "gallery_urls
 export function EventListCard({
   event,
   stats,
-  liked,
   interested,
 }: {
   event: ExhibitionEvent;
   stats?: EventStats;
-  liked?: boolean;
   interested?: boolean;
 }) {
   const href = `/exhibition/${event.id}`;
@@ -222,7 +220,7 @@ export function EventListCard({
           {event.is_pick ? <PickTag /> : null}
           <CategoryTag category={event.category} />
           {event.origin !== "community" ? <OriginTag origin={event.origin} /> : null}
-          <EventActions event={event} stats={stats} liked={liked} interested={interested} className="ml-auto hidden md:flex" />
+          <EventActions event={event} stats={stats} interested={interested} className="ml-auto hidden md:flex" />
         </div>
         <h2 className="font-display text-xl font-semibold leading-snug text-foreground md:text-2xl md:leading-tight">
           <Link to={href} className="hover:underline focus-visible:underline focus-visible:outline-none">
@@ -238,7 +236,7 @@ export function EventListCard({
           >
             View Event <ArrowRight className="h-4 w-4" aria-hidden />
           </Link>
-          <EventActions event={event} stats={stats} liked={liked} interested={interested} className="md:hidden" />
+          <EventActions event={event} stats={stats} interested={interested} className="md:hidden" />
         </div>
       </div>
     </article>
