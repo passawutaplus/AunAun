@@ -7,13 +7,13 @@ import {
   Flag,
   Globe,
   Handshake,
-  Link2,
+  MessageCircle,
   MapPin,
   Ticket,
 } from "lucide-react";
-import { toast } from "sonner";
 import SeoHead from "@/components/SeoHead";
 import ConnectMessageDialog from "@/components/chat/ConnectMessageDialog";
+import SponsorOfferDialog from "@/components/exhibition/SponsorOfferDialog";
 import ReportDialog from "@/components/report/ReportDialog";
 import {
   CategoryTag,
@@ -92,6 +92,7 @@ export default function ExhibitionDetailPage() {
   useRecordEventView(event?.id, event?.status === "published");
   const { data: works = [] } = useEventProjects(event?.project_ids);
   const [contactOpen, setContactOpen] = useState(false);
+  const [sponsorOpen, setSponsorOpen] = useState(false);
 
   if (isLoading || isError) {
     return (
@@ -118,29 +119,23 @@ export default function ExhibitionDetailPage() {
   }
 
   const isOwner = user?.id === event.owner_id;
-  const canContact = event.open_for_sponsors && !isOwner && !isDemoEventId(event.id) && !isEventEnded(event);
+  const reachable = !isOwner && !isDemoEventId(event.id);
+  // Team-run events are owned by an admin account, so only community events get a direct chat.
+  const canChat = reachable && event.origin === "community";
+  const canSponsor = reachable && event.open_for_sponsors && !isEventEnded(event);
   const path = `/exhibition/${event.id}`;
   const [lead, ...rest] = event.description.split(/\n\s*\n/);
 
-  const contactOrganizer = () => {
-    if (!user) {
-      navigateToAuth(navigate);
-      return;
-    }
-    setContactOpen(true);
+  const needsAuth = () => {
+    if (user) return false;
+    navigateToAuth(navigate);
+    return true;
   };
-
-  const share = async () => {
-    const url = window.location.origin + path;
-    try {
-      if (navigator.share) await navigator.share({ title: event.title, url });
-      else {
-        await navigator.clipboard.writeText(url);
-        toast.success("คัดลอกลิงก์แล้ว");
-      }
-    } catch {
-      /* share sheet closed */
-    }
+  const contactOrganizer = () => {
+    if (!needsAuth()) setContactOpen(true);
+  };
+  const offerSponsorship = () => {
+    if (!needsAuth()) setSponsorOpen(true);
   };
 
   return (
@@ -212,14 +207,10 @@ export default function ExhibitionDetailPage() {
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-foreground">Open for Sponsorship</p>
                 <p className="text-xs text-muted-foreground">งานนี้กำลังหาผู้สนับสนุน — คุยกับผู้จัดได้โดยตรง</p>
-                {canContact ? (
-                  <button
-                    type="button"
-                    onClick={contactOrganizer}
-                    className="mt-2 text-sm font-medium text-foreground underline underline-offset-4 hover:no-underline"
-                  >
-                    Contact Organizer
-                  </button>
+                {canSponsor ? (
+                  <Button type="button" size="sm" className="mt-3 rounded-full" onClick={offerSponsorship}>
+                    <Handshake className="mr-1.5 h-4 w-4" aria-hidden /> เสนอเป็นผู้สนับสนุน
+                  </Button>
                 ) : null}
               </div>
             </div>
@@ -253,6 +244,11 @@ export default function ExhibitionDetailPage() {
               {!isDemoEventId(event.id) && event.origin === "community" ? (
                 <Button asChild size="sm" variant="outline" className="rounded-full">
                   <Link to={`/u/${event.owner_id}`}>View Profile</Link>
+                </Button>
+              ) : null}
+              {canChat ? (
+                <Button type="button" size="sm" className="rounded-full" onClick={contactOrganizer}>
+                  <MessageCircle className="mr-1.5 h-4 w-4" aria-hidden /> ทักแชทผู้จัด
                 </Button>
               ) : null}
               {isHttpUrl(event.website_url) ? (
@@ -297,23 +293,15 @@ export default function ExhibitionDetailPage() {
             </section>
           ) : null}
 
-          <section aria-labelledby="share-heading">
-            <h2 id="share-heading" className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              Share This Event
-            </h2>
-            <div className="mt-2 flex flex-wrap gap-2">
-              <Button type="button" size="sm" variant="outline" className="rounded-full" onClick={() => void share()}>
-                <Link2 className="mr-1.5 h-4 w-4" aria-hidden /> แชร์ / คัดลอกลิงก์
-              </Button>
-              {user && !isOwner && event.status === "published" && !isDemoEventId(event.id) ? (
-                <ReportDialog targetType="event" targetId={event.id} targetOwnerId={event.owner_id}>
-                  <Button type="button" size="sm" variant="ghost" className="rounded-full text-muted-foreground">
-                    <Flag className="mr-1.5 h-4 w-4" aria-hidden /> รายงานงานนี้
-                  </Button>
-                </ReportDialog>
-              ) : null}
+          {user && !isOwner && event.status === "published" && !isDemoEventId(event.id) ? (
+            <div>
+              <ReportDialog targetType="event" targetId={event.id} targetOwnerId={event.owner_id}>
+                <Button type="button" size="sm" variant="ghost" className="-ml-3 rounded-full text-muted-foreground">
+                  <Flag className="mr-1.5 h-4 w-4" aria-hidden /> รายงานงานนี้
+                </Button>
+              </ReportDialog>
             </div>
-          </section>
+          ) : null}
         </aside>
       </div>
 
@@ -337,15 +325,18 @@ export default function ExhibitionDetailPage() {
         </section>
       ) : null}
 
-      {canContact ? (
-        // No `about`: that sends a work card linking to /showcase/<id>, which an event id would break.
+      {canChat ? (
+        // No `about`: that sends a work card linking to /showcase/<id>; the event link below becomes an event card instead.
         <ConnectMessageDialog
           open={contactOpen}
           onOpenChange={setContactOpen}
           recipientId={event.owner_id}
           recipientName={event.organizer_name ?? "ผู้จัดงาน"}
+          appendText={`${window.location.origin}${path}`}
+          description="ถามรายละเอียดงาน การเข้าร่วม หรือชวนคุยกับผู้จัดได้เลย — การ์ดงานนี้จะแนบไปกับข้อความ"
         />
       ) : null}
+      {canSponsor ? <SponsorOfferDialog open={sponsorOpen} onOpenChange={setSponsorOpen} event={event} /> : null}
     </div>
   );
 }

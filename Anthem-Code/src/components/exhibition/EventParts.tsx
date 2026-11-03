@@ -121,6 +121,9 @@ export function EventMeta({ event, className }: { event: ExhibitionEvent; classN
 }
 
 /** Horizontal image slider: one frame, counter, previous/next. Artwork is never cropped away entirely. */
+const GALLERY_BTN =
+  "flex h-9 w-9 items-center justify-center rounded-full border border-white/45 bg-black/10 text-white backdrop-blur-sm transition-colors hover:border-white/80 hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white";
+
 export function EventGallery({
   images,
   title,
@@ -164,27 +167,21 @@ export function EventGallery({
         decoding="async"
       />
       {list.length > 1 ? (
-        <div className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-full bg-foreground/70 px-2 py-1 text-xs font-medium text-background">
-          <span aria-live="polite">
-            {i + 1} / {list.length}
-          </span>
-          <button
-            type="button"
-            onClick={() => go(-1)}
-            className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-background/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-background"
-            aria-label="รูปก่อนหน้า"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => go(1)}
-            className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-background/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-background"
-            aria-label="รูปถัดไป"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        </div>
+        <>
+          {/* Over the photo, so fixed white (not theme colours) with a soft shade underneath. */}
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/45 to-transparent" aria-hidden />
+          <div className="absolute bottom-3 left-4 flex items-center gap-2.5 text-white">
+            <span aria-live="polite" className="mr-1 text-sm font-medium tabular-nums [text-shadow:0_1px_2px_rgb(0_0_0/0.4)]">
+              {i + 1} / {list.length}
+            </span>
+            <button type="button" onClick={() => go(-1)} className={GALLERY_BTN} aria-label="รูปก่อนหน้า">
+              <ChevronLeft className="h-4 w-4" strokeWidth={1.75} />
+            </button>
+            <button type="button" onClick={() => go(1)} className={GALLERY_BTN} aria-label="รูปถัดไป">
+              <ChevronRight className="h-4 w-4" strokeWidth={1.75} />
+            </button>
+          </div>
+        </>
       ) : null}
     </div>
   );
