@@ -29,7 +29,7 @@ import {
 import EmptyState from "@/components/ui/EmptyState";
 import QueryStatusPanel from "@/components/ui/QueryStatusPanel";
 import { Button } from "@/components/ui/button";
-import { useEvent, useEventProjects, useEventStats, useMyEventLikes, useRecordEventView } from "@/hooks/useExhibitionEvents";
+import { recordEventRegistration, useEvent, useEventProjects, useEventStats, useMyEventLikes, useRecordEventView } from "@/hooks/useExhibitionEvents";
 import { EventActions } from "@/components/exhibition/EventActions";
 import { useAuth } from "@/hooks/useAuth";
 import { navigateToAuth } from "@/lib/authRedirect";
@@ -65,14 +65,14 @@ function displayUrl(url: string): string {
 }
 
 /** Main button sends people to register / buy / apply. The event's own site is a text link in the info list. */
-function RegistrationCta({ event }: { event: ExhibitionEvent }) {
+function RegistrationCta({ event, onRegister }: { event: ExhibitionEvent; onRegister?: () => void }) {
   const ended = isEventEnded(event);
   const action = ended ? null : eventPrimaryAction(event);
   return (
     <div className="space-y-2">
       {action && isHttpUrl(action.url) ? (
         <Button asChild size="lg" className="w-full rounded-full bg-brand text-neutral-950 hover:bg-brand/90">
-          <a href={action.url} target="_blank" rel="noopener noreferrer nofollow">
+          <a href={action.url} target="_blank" rel="noopener noreferrer nofollow" onClick={onRegister}>
             {action.label} <ExternalLink className="ml-2 h-4 w-4" aria-hidden />
           </a>
         </Button>
@@ -241,7 +241,11 @@ export default function ExhibitionDetailPage() {
 
           <div className="flex items-center gap-2">
             <div className="min-w-0 flex-1">
-              <RegistrationCta event={event} />
+              <RegistrationCta
+                event={event}
+                // Signed-in clicks land in Portfolio → Exhibition → ลงทะเบียน.
+                onRegister={user && event.status === "published" ? () => recordEventRegistration(event.id) : undefined}
+              />
             </div>
             <EventActions event={event} stats={stats?.[event.id]} liked={myLikes?.has(event.id)} showViews />
           </div>

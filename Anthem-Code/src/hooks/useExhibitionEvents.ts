@@ -373,3 +373,36 @@ export function useRecordEventView(id: string | undefined, published: boolean) {
     );
   }, [id, published, qc]);
 }
+
+/** Remember that the signed-in user pressed an event's register button (Portfolio → Exhibition). */
+export function recordEventRegistration(id: string) {
+  if (isDemoEventId(id)) return;
+  void rpc("record_event_registration", { _event_id: id });
+}
+
+/**
+ * Events the user liked or registered for, newest action first. Empty (not an error) when the
+ * counters migration is not on this database yet.
+ */
+export function useMyEventList(kind: "liked" | "registered") {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["events", "my-list", kind, user?.id],
+    enabled: !!user,
+    retry: false,
+    queryFn: async (): Promise<ExhibitionEvent[]> => {
+      const { data: links, error } = await supabase
+        .from((kind === "liked" ? "event_likes" : "event_registrations") as never)
+        .select("event_id, created_at")
+        .eq("user_id", user!.id)
+        .order("created_at", { ascending: false })
+        .limit(60);
+      if (error || !links?.length) return [];
+      const ids = (links as Array<{ event_id: string }>).map((l) => l.event_id);
+      const { data: rows, error: eventsError } = await eventsTable().select(EVENT_SELECT).in("id", ids);
+      if (eventsError || !rows) return [];
+      const byId = new Map((rows as ExhibitionEvent[]).map((e) => [e.id, e]));
+      return ids.map((id) => byId.get(id)).filter((e): e is ExhibitionEvent => !!e);
+    },
+  });
+}

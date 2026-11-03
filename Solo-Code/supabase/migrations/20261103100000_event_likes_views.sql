@@ -70,7 +70,42 @@ REVOKE ALL ON FUNCTION public.toggle_event_like(uuid), public.increment_event_vi
 GRANT EXECUTE ON FUNCTION public.toggle_event_like(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.increment_event_view(uuid) TO anon, authenticated;
 
+-- "Registered": the signed-in user pressed the event's register / ticket button. Registration itself
+-- happens on the organiser's site, so this is the closest the app can know; it powers Portfolio → Exhibition.
+CREATE TABLE IF NOT EXISTS anthem.event_registrations (
+  event_id uuid NOT NULL REFERENCES anthem.events(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (event_id, user_id)
+);
+CREATE INDEX IF NOT EXISTS event_registrations_user_idx ON anthem.event_registrations (user_id, created_at DESC);
+
+ALTER TABLE anthem.event_registrations ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON anthem.event_registrations FROM anon, authenticated;
+GRANT SELECT ON anthem.event_registrations TO authenticated;
+
+DROP POLICY IF EXISTS event_registrations_own_read ON anthem.event_registrations;
+CREATE POLICY event_registrations_own_read ON anthem.event_registrations
+  FOR SELECT TO authenticated USING (user_id = (SELECT auth.uid()));
+
+CREATE OR REPLACE FUNCTION public.record_event_registration(_event_id uuid)
+RETURNS void
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path TO 'anthem', 'public'
+AS $$
+  INSERT INTO anthem.event_registrations (event_id, user_id)
+  SELECT e.id, auth.uid() FROM anthem.events e
+  WHERE e.id = _event_id AND e.status = 'published' AND auth.uid() IS NOT NULL
+  ON CONFLICT (event_id, user_id) DO NOTHING;
+$$;
+
+REVOKE ALL ON FUNCTION public.record_event_registration(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.record_event_registration(uuid) TO authenticated;
+
 -- Rollback:
+-- DROP FUNCTION IF EXISTS public.record_event_registration(uuid);
+-- DROP TABLE IF EXISTS anthem.event_registrations;
 -- DROP FUNCTION IF EXISTS public.toggle_event_like(uuid);
 -- DROP FUNCTION IF EXISTS public.increment_event_view(uuid);
 -- DROP TABLE IF EXISTS anthem.event_likes;
