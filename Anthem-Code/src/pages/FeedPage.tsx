@@ -121,7 +121,6 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   const { columns } = useFeedGridDensity();
   const houseColumnOffset = useRef(Math.floor(Math.random() * 12));
   const { user, loading: authLoading } = useAuth();
-  const { queries: recentSearches, record: recordSearch } = useSearchHistory(user?.id);
   const showFirstPostLabel = useShowFirstPostLabel(user?.id);
   const [search, setSearch] = useState("");
   const [colorQuery, setColorQuery] = useState<string | null>(() =>
@@ -145,6 +144,11 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
     if (stored && stored !== rawStored) localStorage.setItem("feed-mode", stored);
     return stored ? coerceLaunchFeedMode(stored) : "showcase";
   });
+  // Creators keep their own search history; Showcase uses the original list.
+  const { queries: recentSearches, record: recordSearch } = useSearchHistory(
+    user?.id,
+    mode === "creators" ? "creators" : undefined,
+  );
   const [hireOpen, setHireOpen] = useState(false);
   const [hireProject, setHireProject] = useState("");
   const [hireProjectId, setHireProjectId] = useState<string | undefined>();

@@ -37,6 +37,8 @@ interface Props {
   exhibitionActive?: boolean;
   onChange: (v: FeedMode) => void;
   onDrillSelect?: () => void;
+  /** Replaces the default "go to /exhibition" (e.g. the search screen just switches scope). */
+  onExhibitionSelect?: () => void;
   className?: string;
   /** Icon-only (e.g. mobile while search is expanded) */
   compact?: boolean;
@@ -74,6 +76,7 @@ const FeedModeToggle = ({
   exhibitionActive = false,
   onChange,
   onDrillSelect,
+  onExhibitionSelect,
   className,
   compact = false,
 }: Props) => {
@@ -210,7 +213,7 @@ const FeedModeToggle = ({
             onClick={() => {
               lastActive = { id: activeId, at: Date.now() };
               if (id === "drill") onDrillSelect?.();
-              else if (id === "exhibition") navigate("/exhibition");
+              else if (id === "exhibition") (onExhibitionSelect ?? (() => navigate("/exhibition")))();
               else onChange(id);
             }}
             className={cn(

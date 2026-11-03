@@ -1,5 +1,5 @@
-import { useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { CalendarX2 } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import SeoHead from "@/components/SeoHead";
@@ -18,6 +18,8 @@ import { useHideOnScroll } from "@/hooks/useHideOnScroll";
 import { useAuth } from "@/hooks/useAuth";
 import FeedbackHeaderPill from "@/components/feedback/FeedbackHeaderPill";
 import MobileFilterButton from "@/components/feed/MobileFilterButton";
+import MobileSearchScreen from "@/components/feed/MobileSearchScreen";
+import { OPEN_PHONE_SEARCH_EVENT } from "@/lib/phoneSearch";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { isBetaFeedbackEnabled } from "@/lib/aplus1Launch";
@@ -40,7 +42,18 @@ export default function ExhibitionPage() {
   const { data = [], isLoading, isError, refetch } = usePublishedEvents();
   const [category, setCategory] = useState<EventCategory | "all">("all");
   const [when, setWhen] = useState<"now" | "done">("now");
-  const [search, setSearch] = useState("");
+  const [searchParams] = useSearchParams();
+  const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
+  const [searchScreenOpen, setSearchScreenOpen] = useState(false);
+  useEffect(() => {
+    const q = searchParams.get("q");
+    if (q != null) setSearch(q);
+  }, [searchParams]);
+  useEffect(() => {
+    const open = () => setSearchScreenOpen(true);
+    window.addEventListener(OPEN_PHONE_SEARCH_EVENT, open);
+    return () => window.removeEventListener(OPEN_PHONE_SEARCH_EVENT, open);
+  }, []);
 
   const rows = useMemo(
     () =>
@@ -191,6 +204,18 @@ export default function ExhibitionPage() {
           <div className="min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{toggle}</div>
           </div>
         </div>
+
+        <MobileSearchScreen
+          open={searchScreenOpen}
+          onClose={() => setSearchScreenOpen(false)}
+          initialScope="exhibition"
+          initialValue={search}
+          userId={user?.id}
+          onSubmit={(scope, q) => {
+            if (scope === "exhibition") setSearch(q);
+            else navigate(`/?${new URLSearchParams({ ...(scope === "creators" ? { mode: "creators" } : {}), q }).toString()}`);
+          }}
+        />
 
         <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
           <SheetContent side="bottom" className="rounded-t-3xl pb-[calc(1.5rem+env(safe-area-inset-bottom))]">

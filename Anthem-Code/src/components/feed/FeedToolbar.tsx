@@ -901,11 +901,18 @@ const FeedToolbar = ({
         <MobileSearchScreen
           open={searchScreenOpen}
           onClose={() => setSearchScreenOpen(false)}
-          scopeLabel={catalogTitle}
-          placeholder={searchPlaceholder}
+          initialScope={isDesigners ? "creators" : "showcase"}
           initialValue={search}
-          recentSearches={recentSearches}
-          onSubmit={onSearchChange}
+          userId={user?.id}
+          onSubmit={(scope, q) => {
+            if (scope === "exhibition") {
+              navigate(q ? `/exhibition?q=${encodeURIComponent(q)}` : "/exhibition");
+              return;
+            }
+            const target = scope === "creators" ? "creators" : "showcase";
+            if (target !== mode) onModeChange(target);
+            onSearchChange(q);
+          }}
         />
         <ProjectSearchFilterSheet
           open={projectSheetOpen}
