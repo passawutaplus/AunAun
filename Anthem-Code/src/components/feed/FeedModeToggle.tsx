@@ -162,9 +162,9 @@ const FeedModeToggle = ({
       ref={trackRef}
       className={cn(
         "relative shrink-0 flex items-center rounded-full border border-border bg-white p-0.5 shadow-none transition-[width] duration-200 dark:bg-card",
-        // Phones / app: icon-only segments at their natural width; fixed equal widths from lg up.
-        packed && visible.length === 2 && "lg:w-[14.5rem]",
-        packed && visible.length === 3 && "lg:w-[21.75rem]",
+        // Phones: icon-only segments at their natural width; tablets and up get labels and fixed equal widths.
+        packed && visible.length === 2 && "md:w-[14.5rem]",
+        packed && visible.length === 3 && "md:w-[21.75rem]",
         !compact && visible.length >= 4 && "w-max",
         className,
       )}
@@ -215,9 +215,9 @@ const FeedModeToggle = ({
             }}
             className={cn(
               "relative z-10 items-center justify-center rounded-full text-xs font-medium transition-[padding,gap,colors] duration-200",
-              compact ? "gap-0 px-2.5 py-1.5" : "gap-0 px-3.5 py-1.5 lg:gap-1.5 lg:px-3",
+              compact ? "gap-0 px-2.5 py-1.5" : "gap-0 px-3.5 py-1.5 md:gap-1.5 md:px-3",
               visibility,
-              packed && "lg:flex-1",
+              packed && "md:flex-1",
               active
                 ? "text-white dark:text-primary-foreground"
                 : "text-foreground/75 hover:text-foreground",
@@ -226,12 +226,12 @@ const FeedModeToggle = ({
               active && !indicator && "bg-primary",
             )}
           >
-            <Icon className="w-4 h-4 shrink-0 lg:w-3.5 lg:h-3.5" aria-hidden />
+            <Icon className="w-4 h-4 shrink-0 md:w-3.5 md:h-3.5" aria-hidden />
             <span
               className={cn(
                 "overflow-hidden whitespace-nowrap transition-[max-width,opacity,margin] duration-200",
-                // Labels from lg up only; below that the icon carries the segment (aria-label names it).
-                compact ? "max-w-0 opacity-0" : "max-w-0 opacity-0 lg:max-w-[6rem] lg:opacity-100",
+                // Labels from md (tablet) up; below that the icon carries the segment (aria-label names it).
+                compact ? "max-w-0 opacity-0" : "max-w-0 opacity-0 md:max-w-[6rem] md:opacity-100",
               )}
               aria-hidden={compact}
             >
