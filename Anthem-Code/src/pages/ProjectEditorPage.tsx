@@ -32,7 +32,7 @@ import { isVideoFile } from "@/lib/videoAccept";
 import { isModel3dFile } from "@/lib/model3dAccept";
 import { useUploadStageReporter } from "@/hooks/useUploadStageReporter";
 import { MEDIA_STILL_UPLOADING_MESSAGE } from "@/lib/uploadProgress";
-import { normalizeImageForUpload, isAllowedPortfolioImage, isAllowedPortfolioStillImage, PORTFOLIO_STILL_IMAGE_ACCEPT } from "@/lib/normalizeImageUpload";
+import { normalizeImageForUpload, isAllowedPortfolioImage, isAllowedPortfolioStillImage } from "@/lib/normalizeImageUpload";
 import { sizeModuleToAspect } from "@/lib/flexGridCropAspect";
 import type { FlexGridInlineCropResult } from "@/components/project/FlexGridInlineCrop";
 import { useSubscription } from "@/core/subscription";
@@ -129,6 +129,15 @@ import {
 } from "@/components/ui/dialog";
 import type { CanvasToolPayload } from "@/lib/canvasToolDrag";
 import { useCanvasTemplates, type UserCanvasTemplate } from "@/hooks/useCanvasTemplates";
+import { CoverDrop } from "@/components/project/editor/CoverDrop";
+import {
+  ProjectEditorLeaveDialog,
+  ProjectEditorPublishConfirmDialog,
+} from "@/components/project/editor/ProjectEditorConfirmDialogs";
+import {
+  ProjectEditorTemplateDialogs,
+  type TemplateNameDialogState,
+} from "@/components/project/editor/ProjectEditorTemplateDialogs";
 import { CANVAS_TEMPLATE_SEEDS } from "@/lib/projectCanvasTemplates";
 import {
   contentHasLocalPreview,
@@ -175,6 +184,7 @@ import {
   type ProjectEditorMode,
 } from "@/lib/flexGridLayout";
 import { useFlexGridHistory } from "@/hooks/useFlexGridHistory";
+import { useProjectEditorCrops } from "@/hooks/useProjectEditorCrops";
 import { mergeDrillTags } from "@/lib/drillProject";
 import { DrillPostNotice } from "@/components/drill/DrillPostNotice";
 import {
@@ -384,25 +394,6 @@ const ProjectEditorPage = () => {
   const [uploadingCover, setUploadingCover] = useState(false);
   const [coverCropFile, setCoverCropFile] = useState<File | null>(null);
   const [coverCropOpen, setCoverCropOpen] = useState(false);
-  const [moduleCropFile, setModuleCropFile] = useState<File | null>(null);
-  const [moduleCropOpen, setModuleCropOpen] = useState(false);
-  const [moduleCropTarget, setModuleCropTarget] = useState<{
-    editor: "casual";
-    blockId: string;
-    slotIndex?: number;
-    sourceUrl: string;
-    gallerySlide?: boolean;
-    lockedCrop?: { ratio: number; exportW: number; exportH: number; label: string };
-  } | null>(null);
-  /** Full Grid inline crop session (no popup). */
-  const [flexInlineCrop, setFlexInlineCrop] = useState<{
-    boardId: string;
-    moduleId: string;
-    sourceUrl: string;
-    prevW: number;
-    prevH: number;
-  } | null>(null);
-  const [inlineCropSaving, setInlineCropSaving] = useState(false);
   const [uploadingGallery, setUploadingGallery] = useState(false);
   const [uploadingBlockId, setUploadingBlockId] = useState<string | null>(null);
   const [toolsExpanded, setToolsExpanded] = useState(false);
@@ -445,9 +436,7 @@ const ProjectEditorPage = () => {
   const [projectAssets, setProjectAssets] = useState<ProjectAsset[]>([]);
   const [contextEnabled, setContextEnabled] = useState(false);
   const [previewTemplateId, setPreviewTemplateId] = useState<string | null>(null);
-  const [templateNameDialog, setTemplateNameDialog] = useState<
-    null | { mode: "save" } | { mode: "rename"; template: UserCanvasTemplate }
-  >(null);
+  const [templateNameDialog, setTemplateNameDialog] = useState<TemplateNameDialogState>(null);
   const [templateNameDraft, setTemplateNameDraft] = useState("");
   const [pendingUpdateTemplate, setPendingUpdateTemplate] = useState<UserCanvasTemplate | null>(null);
   const [pendingDeleteTemplate, setPendingDeleteTemplate] = useState<UserCanvasTemplate | null>(null);
@@ -2403,289 +2392,39 @@ const ProjectEditorPage = () => {
     [user, contentBlocks, cover, tier, uploadReporter, resetUploadStage, uploadRasterOrGif],
   );
 
-  const handleCropImage = useCallback(async (blockId: string, imageUrl: string, slotIndex?: number) => {
-    try {
-      const block = contentBlocks.find((b) => b.id === blockId);
-      const gallerySlide =
-        block?.type === "image" &&
-        block.mediaLayout === "gallery" &&
-        blockImageUrls(block).map((u) => u.trim()).filter(Boolean).length >= 2;
-      const lockedCrop =
-        block?.type === "image" &&
-        block.mediaLayout === "grid" &&
-        isThreeSplitGridLayout(block.gridLayout)
-          ? (() => {
-              const slot = typeof slotIndex === "number" && slotIndex >= 0 ? slotIndex : 0;
-              const spec = threeSplitSlotCropSpec(slot);
-              return {
-                ratio: spec.ratio,
-                exportW: spec.exportW,
-                exportH: spec.exportH,
-                label: slot === 0 ? "1:2" : "1:1",
-              };
-            })()
-          : undefined;
-      const file = await urlToImageFile(imageUrl);
-      setModuleCropTarget({
-        editor: "casual",
-        blockId,
-        slotIndex,
-        sourceUrl: imageUrl,
-        gallerySlide,
-        lockedCrop,
-      });
-      setModuleCropFile(file);
-      setModuleCropOpen(true);
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "โหลดรูปเพื่อครอบไม่สำเร็จ");
-    }
-  }, [contentBlocks]);
 
-  const handleBeginFlexCrop = useCallback(
-    (boardId: string, moduleId: string, imageUrl: string) => {
-      const board = flexGridLayout.boards.find((b) => b.id === boardId);
-      const mod = board?.modules.find((m) => m.id === moduleId);
-      if (!mod || mod.type !== "image" || !mod.url) {
-        toast.error("ไม่พบโมดูลภาพ");
-        return;
-      }
-      setFlexInlineCrop({
-        boardId,
-        moduleId,
-        sourceUrl: imageUrl,
-        prevW: mod.w,
-        prevH: mod.h,
-      });
-    },
-    [flexGridLayout],
-  );
-
-  const handleCancelFlexCrop = useCallback(() => {
-    setFlexInlineCrop((session) => {
-      if (!session) return null;
-      setFlexGridLayout((prev) => ({
-        ...prev,
-        boards: prev.boards.map((b) => {
-          if (b.id !== session.boardId) return b;
-          return {
-            ...b,
-            modules: b.modules.map((m) =>
-              m.id === session.moduleId && m.type === "image"
-                ? { ...m, w: session.prevW, h: session.prevH }
-                : m,
-            ),
-          };
-        }),
-      }));
-      return null;
-    });
-    setInlineCropSaving(false);
-  }, []);
-
-  const handleConfirmFlexCrop = useCallback(
-    async (boardId: string, moduleId: string, result: FlexGridInlineCropResult) => {
-      if (!user) return;
-      setInlineCropSaving(true);
-      setUploadingFlexModuleId(moduleId);
-      setUploadingGallery(true);
-      try {
-        const url = await uploadProjectImage(result.file, user.id, folderRef.current, tier, {
-          skipCompression: true,
-          reporter: uploadReporter,
-        });
-        const frameAspect = result.frameAspectRatio;
-        setFlexGridLayout((prev) => ({
-          ...prev,
-          boards: prev.boards.map((b) => {
-            if (b.id !== boardId) return b;
-            return {
-              ...b,
-              modules: b.modules.map((m) => {
-                if (m.id !== moduleId || m.type !== "image") return m;
-                // Keep first-upload URL so restore can go back to pre-crop.
-                const originalUrl = m.originalUrl?.trim() || m.url?.trim() || url;
-                if (typeof frameAspect === "number" && frameAspect > 0) {
-                  const next = sizeModuleToAspect(m, frameAspect, prev.canvasWidth, b.height);
-                  return { ...m, url, originalUrl, w: next.w, h: next.h };
-                }
-                return { ...m, url, originalUrl };
-              }),
-            };
-          }),
-        }));
-        if (!cover) setCover(url);
-        clearPublishFieldError("canvasImage");
-        toast.success("ครอบภาพสำเร็จ");
-        setFlexInlineCrop(null);
-      } catch (e) {
-        toast.error(e instanceof Error ? e.message : "บันทึกภาพที่ครอบไม่สำเร็จ");
-      } finally {
-        setUploadingFlexModuleId(null);
-        setUploadingGallery(false);
-        setInlineCropSaving(false);
-        resetUploadStage();
-      }
-    },
-    [user, tier, cover, clearPublishFieldError, uploadReporter, resetUploadStage],
-  );
-
-  /** Restore module to the first uploaded image + its natural aspect (no re-upload). */
-  const handleRestoreFlexOriginal = useCallback(async (boardId: string, moduleId: string) => {
-    const board = flexGridLayoutRef.current.boards.find((b) => b.id === boardId);
-    const mod = board?.modules.find((m) => m.id === moduleId);
-    if (!mod || mod.type !== "image") return;
-    const src = (mod.originalUrl || mod.url || "").trim();
-    if (!src) {
-      toast.error("ไม่พบภาพต้นฉบับ");
-      return;
-    }
-    setInlineCropSaving(true);
-    try {
-      const { w, h } = await new Promise<{ w: number; h: number }>((resolve, reject) => {
-        const img = new Image();
-        img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
-        img.onerror = () => reject(new Error("โหลดภาพต้นฉบับไม่สำเร็จ"));
-        img.src = src;
-      });
-      const ratio = w / Math.max(1, h);
-      setFlexGridLayout((prev) => ({
-        ...prev,
-        boards: prev.boards.map((b) => {
-          if (b.id !== boardId) return b;
-          return {
-            ...b,
-            modules: b.modules.map((m) => {
-              if (m.id !== moduleId || m.type !== "image") return m;
-              const next = sizeModuleToAspect(m, ratio, prev.canvasWidth, b.height);
-              return {
-                ...m,
-                url: src,
-                originalUrl: m.originalUrl?.trim() || src,
-                w: next.w,
-                h: next.h,
-              };
-            }),
-          };
-        }),
-      }));
-      setFlexInlineCrop(null);
-      toast.success("คืนภาพต้นฉบับแล้ว");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "คืนภาพต้นฉบับไม่สำเร็จ");
-    } finally {
-      setInlineCropSaving(false);
-    }
-  }, []);
-
-  const handleModuleCropConfirm = useCallback(
-    async (result: ModuleImageCropConfirmResult) => {
-      if (!user || !moduleCropTarget) return;
-      const { file, applyToAll, aspect, cornerRadiusPercent } = result;
-      const { blockId, slotIndex, sourceUrl, gallerySlide } = moduleCropTarget;
-      setUploadingBlockId(blockId);
-      setUploadingGallery(true);
-      try {
-        if (applyToAll && gallerySlide) {
-          const block = contentBlocks.find((b) => b.id === blockId);
-          if (!block || block.type !== "image") throw new Error("ไม่พบโมดูลสไลด์");
-          const urls = blockImageUrls(block).map((u) => u.trim()).filter(Boolean);
-          if (urls.length < 2) throw new Error("ต้องมีอย่างน้อย 2 ภาพในสไลด์");
-
-          const meta = communityMediaAspectMeta(normalizeCommunityMediaAspect(aspect));
-          const primaryIndex =
-            typeof slotIndex === "number" && slotIndex >= 0 && slotIndex < urls.length
-              ? slotIndex
-              : Math.max(0, urls.findIndex((u) => u === sourceUrl));
-
-          const next: string[] = [];
-          for (let i = 0; i < urls.length; i++) {
-            let uploadFile = file;
-            if (i !== primaryIndex) {
-              const sourceFile = await urlToImageFile(urls[i]);
-              const objectUrl = URL.createObjectURL(sourceFile);
-              try {
-                uploadFile = await cropImageUrlToAspectFile(
-                  objectUrl,
-                  meta.ratio,
-                  `slide-${i + 1}.png`,
-                  "image/png",
-                  {
-                    width: meta.exportW,
-                    height: meta.exportH,
-                    cornerRadiusPercent,
-                  },
-                );
-              } finally {
-                URL.revokeObjectURL(objectUrl);
-              }
-            }
-            const url = await uploadProjectImage(uploadFile, user.id, folderRef.current, tier, {
-              skipCompression: true,
-              reporter: uploadReporter,
-            });
-            next.push(url);
-          }
-
-          setContentBlocks((prev) =>
-            prev.map((b) =>
-              b.id === blockId && b.type === "image"
-                ? { ...b, mediaLayout: "gallery", urls: next, url: next[0] ?? "" }
-                : b,
-            ),
-          );
-          if (!cover && next[0]) setCover(next[0]);
-          toast.success(`ครอบภาพทั้งสไลด์สำเร็จ (${next.length} ภาพ)`);
-          return;
-        }
-
-        const url = await uploadProjectImage(file, user.id, folderRef.current, tier, {
-          skipCompression: true,
-          reporter: uploadReporter,
-        });
-        setContentBlocks((prev) =>
-          prev.map((b) => {
-            if (b.id !== blockId) return b;
-            if (b.type === "image_text") {
-              return { ...b, url };
-            }
-            if (b.type !== "image") return b;
-            const urls = blockImageUrls(b).map((u) => u.trim());
-            if (
-              b.mediaLayout === "single" ||
-              (!b.mediaLayout && urls.filter(Boolean).length <= 1 && typeof slotIndex !== "number")
-            ) {
-              return { ...b, type: "image", url, mediaLayout: b.mediaLayout ?? "single" };
-            }
-            const next = urls.length ? [...urls] : [sourceUrl];
-            if (typeof slotIndex === "number" && slotIndex >= 0) {
-              while (next.length <= slotIndex) next.push("");
-              next[slotIndex] = url;
-            } else {
-              const idx = next.findIndex((u) => u === sourceUrl);
-              if (idx >= 0) next[idx] = url;
-              else next.push(url);
-            }
-            return {
-              ...b,
-              urls: next,
-              url: next.find((u) => u.trim()) ?? url,
-            };
-          }),
-        );
-        toast.success("ครอบภาพสำเร็จ");
-      } catch (e) {
-        toast.error(e instanceof Error ? e.message : "บันทึกภาพที่ครอบไม่สำเร็จ");
-      } finally {
-        setUploadingBlockId(null);
-        setUploadingGallery(false);
-        setModuleCropFile(null);
-        setModuleCropTarget(null);
-        setModuleCropOpen(false);
-        resetUploadStage();
-      }
-    },
-    [user, moduleCropTarget, tier, contentBlocks, cover, clearPublishFieldError],
-  );
+  const {
+    moduleCropFile,
+    moduleCropOpen,
+    setModuleCropOpen,
+    moduleCropTarget,
+    closeModuleCrop,
+    flexInlineCrop,
+    inlineCropSaving,
+    handleCropImage,
+    handleBeginFlexCrop,
+    handleCancelFlexCrop,
+    handleConfirmFlexCrop,
+    handleRestoreFlexOriginal,
+    handleModuleCropConfirm,
+  } = useProjectEditorCrops({
+    user,
+    tier,
+    cover,
+    setCover,
+    contentBlocks,
+    setContentBlocks,
+    flexGridLayout,
+    setFlexGridLayout,
+    flexGridLayoutRef,
+    folderRef,
+    uploadReporter,
+    resetUploadStage,
+    clearPublishFieldError,
+    setUploadingBlockId,
+    setUploadingGallery,
+    setUploadingFlexModuleId,
+  });
 
   const mediaItems = useMemo(() => {
     if (editorMode === "flex_grid") return flexGridMediaItems(flexGridLayout);
@@ -4081,83 +3820,31 @@ const ProjectEditorPage = () => {
         publishDisabled={editorLocked}
       />
 
-      <Dialog
+      <ProjectEditorLeaveDialog
         open={leaveConfirmOpen}
-        onOpenChange={(open) => {
-          if (leavingBusy) return;
-          setLeaveConfirmOpen(open);
-          if (!open) setPendingLeaveTo(null);
+        busy={leavingBusy}
+        onStay={() => {
+          setPendingLeaveTo(null);
+          setLeaveConfirmOpen(false);
         }}
-      >
-        <DialogContent className="max-w-md rounded-2xl">
-          <DialogHeader>
-            <DialogTitle>บันทึกฉบับร่างนี้ไหม?</DialogTitle>
-            <DialogDescription>
-              คุณกำลังจะออกจากหน้าแก้ไข — บันทึกฉบับร่างไว้ก่อนไหม เพื่อไม่ให้งานหาย
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2 sm:justify-end flex-col-reverse sm:flex-row">
-            <Button
-              type="button"
-              variant="ghost"
-              disabled={leavingBusy}
-              onClick={() => {
-                setPendingLeaveTo(null);
-                setLeaveConfirmOpen(false);
-              }}
-            >
-              อยู่ต่อ
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={leavingBusy}
-              className="rounded-full"
-              onClick={() => {
-                const dest = pendingLeaveTo;
-                setLeaveConfirmOpen(false);
-                setPendingLeaveTo(null);
-                leaveEditor(dest);
-              }}
-            >
-              ออกโดยไม่บันทึก
-            </Button>
-            <Button
-              type="button"
-              disabled={leavingBusy}
-              className="rounded-full"
-              onClick={() => void handleLeaveSaveDraft()}
-            >
-              {leavingBusy ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : null}
-              บันทึกฉบับร่างแล้วออก
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        onLeaveWithoutSave={() => {
+          const dest = pendingLeaveTo;
+          setLeaveConfirmOpen(false);
+          setPendingLeaveTo(null);
+          leaveEditor(dest);
+        }}
+        onSaveAndLeave={() => void handleLeaveSaveDraft()}
+      />
 
-      <Dialog open={publishConfirmOpen} onOpenChange={(open) => !publishing && setPublishConfirmOpen(open)}>
-        <DialogContent className="max-w-md rounded-2xl">
-          <DialogHeader>
-            <DialogTitle>ยืนยันก่อนเผยแพร่</DialogTitle>
-            <DialogDescription>ติ๊กยืนยันสิทธิ์ในผลงาน แล้วกดเผยแพร่</DialogDescription>
-          </DialogHeader>
-          <OriginalWorkAttestation checked={publishAttestChecked} onCheckedChange={setPublishAttestChecked} />
-          <DialogFooter className="gap-2 sm:justify-end flex-col-reverse sm:flex-row">
-            <Button type="button" variant="ghost" disabled={publishing} onClick={() => setPublishConfirmOpen(false)}>
-              ยกเลิก
-            </Button>
-            <Button
-              type="button"
-              className="rounded-full"
-              disabled={!publishAttestChecked || publishing || editorLocked}
-              onClick={() => void handleAttestAndPublish()}
-            >
-              {publishing ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : null}
-              เผยแพร่
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ProjectEditorPublishConfirmDialog
+        open={publishConfirmOpen}
+        onOpenChange={setPublishConfirmOpen}
+        publishing={publishing}
+        attestChecked={publishAttestChecked}
+        onAttestChange={setPublishAttestChecked}
+        disabled={editorLocked}
+        onPublish={() => void handleAttestAndPublish()}
+      />
 
       <PortfolioCoverCropDialog
         file={coverCropFile}
@@ -4186,11 +3873,7 @@ const ProjectEditorPage = () => {
         }
         lockedRatioLabel={moduleCropTarget?.lockedCrop?.label}
         onConfirm={(result) => void handleModuleCropConfirm(result)}
-        onCancel={() => {
-          setModuleCropFile(null);
-          setModuleCropTarget(null);
-          setModuleCropOpen(false);
-        }}
+        onCancel={closeModuleCrop}
       />
 
       <CanvasTemplatePreviewDialog
@@ -4214,245 +3897,25 @@ const ProjectEditorPage = () => {
         onCreated={(created) => setSeriesId(created.id)}
       />
 
-      <Dialog
-        open={templateNameDialog !== null}
-        onOpenChange={(open) => {
-          if (!open) setTemplateNameDialog(null);
-        }}
-      >
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>
-              {templateNameDialog?.mode === "rename" ? "เปลี่ยนชื่อเทมเพลต" : "บันทึกเป็นเทมเพลต"}
-            </DialogTitle>
-            <DialogDescription>
-              {templateNameDialog?.mode === "rename"
-                ? "ตั้งชื่อใหม่ให้เทมเพลตนี้"
-                : "เก็บเฉพาะโครงโมดูล (ไม่เก็บรูป/ข้อความจริง) — สูงสุด 5 อัน"}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2">
-            <Label htmlFor="template-name-input">ชื่อเทมเพลต</Label>
-            <Input
-              id="template-name-input"
-              value={templateNameDraft}
-              onChange={(e) => setTemplateNameDraft(e.target.value)}
-              placeholder="เช่น เคสแบรนด์สั้น"
-              maxLength={80}
-              autoFocus
-              onKeyDown={(e) => {
-                if (e.key !== "Enter") return;
-                e.preventDefault();
-                (e.currentTarget.form as HTMLFormElement | null)?.requestSubmit?.();
-              }}
-            />
-          </div>
-          <DialogFooter className="gap-2 sm:justify-end">
-            <Button type="button" variant="ghost" onClick={() => setTemplateNameDialog(null)}>
-              ยกเลิก
-            </Button>
-            <Button
-              type="button"
-              disabled={!templateNameDraft.trim() || createFromBlocks.isPending || renameTemplate.isPending}
-              onClick={() => {
-                const name = templateNameDraft.trim();
-                if (!name || !templateNameDialog) return;
-                if (templateNameDialog.mode === "save") {
-                  createFromBlocks.mutate(
-                    { name, blocks: contentBlocks, openContext: contextEnabled },
-                    { onSuccess: () => setTemplateNameDialog(null) },
-                  );
-                  return;
-                }
-                renameTemplate.mutate(
-                  { id: templateNameDialog.template.id, name },
-                  { onSuccess: () => setTemplateNameDialog(null) },
-                );
-              }}
-            >
-              {templateNameDialog?.mode === "rename" ? "บันทึกชื่อ" : "บันทึกเทมเพลต"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={pendingUpdateTemplate !== null}
-        onOpenChange={(open) => {
-          if (!open) setPendingUpdateTemplate(null);
-        }}
-      >
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>อัปเดตเทมเพลต</DialogTitle>
-            <DialogDescription>
-              แทนที่โครงของ「{pendingUpdateTemplate?.name ?? ""}」ด้วยโมดูลบนแคนวาสปัจจุบัน
-              (ไม่เก็บรูป/ข้อความจริง)
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2 sm:justify-end">
-            <Button type="button" variant="ghost" onClick={() => setPendingUpdateTemplate(null)}>
-              ยกเลิก
-            </Button>
-            <Button
-              type="button"
-              disabled={updateModulesFromBlocks.isPending || contentBlocks.length === 0}
-              onClick={() => {
-                if (!pendingUpdateTemplate) return;
-                updateModulesFromBlocks.mutate(
-                  {
-                    id: pendingUpdateTemplate.id,
-                    blocks: contentBlocks,
-                    openContext: contextEnabled,
-                  },
-                  { onSuccess: () => setPendingUpdateTemplate(null) },
-                );
-              }}
-            >
-              อัปเดตโครง
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={pendingDeleteTemplate !== null}
-        onOpenChange={(open) => {
-          if (!open) setPendingDeleteTemplate(null);
-        }}
-      >
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>ลบเทมเพลต</DialogTitle>
-            <DialogDescription>
-              ลบ「{pendingDeleteTemplate?.name ?? ""}」ออกจากรายการของคุณ? กู้คืนไม่ได้
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2 sm:justify-end">
-            <Button type="button" variant="ghost" onClick={() => setPendingDeleteTemplate(null)}>
-              ยกเลิก
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              disabled={removeTemplate.isPending}
-              onClick={() => {
-                if (!pendingDeleteTemplate) return;
-                removeTemplate.mutate(pendingDeleteTemplate.id, {
-                  onSuccess: () => setPendingDeleteTemplate(null),
-                });
-              }}
-            >
-              ลบ
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ProjectEditorTemplateDialogs
+        templateNameDialog={templateNameDialog}
+        setTemplateNameDialog={setTemplateNameDialog}
+        templateNameDraft={templateNameDraft}
+        setTemplateNameDraft={setTemplateNameDraft}
+        pendingUpdateTemplate={pendingUpdateTemplate}
+        setPendingUpdateTemplate={setPendingUpdateTemplate}
+        pendingDeleteTemplate={pendingDeleteTemplate}
+        setPendingDeleteTemplate={setPendingDeleteTemplate}
+        contentBlocks={contentBlocks}
+        contextEnabled={contextEnabled}
+        createFromBlocks={createFromBlocks}
+        renameTemplate={renameTemplate}
+        updateModulesFromBlocks={updateModulesFromBlocks}
+        removeTemplate={removeTemplate}
+      />
 
     </div>
   );
 };
-
-/* ---------- subcomponents ---------- */
-
-const CoverDrop = ({
-  url,
-  loading,
-  onPick,
-  onClear,
-  compact = false,
-  invalid = false,
-}: {
-  url: string;
-  loading: boolean;
-  onPick: (f: File) => void;
-  onClear: () => void;
-  compact?: boolean;
-  invalid?: boolean;
-}) => {
-  const ref = useRef<HTMLInputElement>(null);
-  const [drag, setDrag] = useState(false);
-
-  const pickFile = (file: File | undefined) => {
-    if (file) onPick(file);
-  };
-
-  if (url) {
-    return (
-      <div
-        className={cn(
-          "group relative w-full overflow-hidden rounded-xl border border-border bg-muted transition-[border-color,box-shadow] duration-500 ease-out",
-          compact ? "aspect-[4/3]" : "aspect-[4/3] rounded-2xl",
-          invalid && "border-destructive ring-1 ring-destructive/40",
-        )}
-      >
-        <img loading="lazy" decoding="async" src={url} alt="cover" className="absolute inset-0 h-full w-full object-cover" />
-        <div
-          className={cn(
-            "absolute right-2 top-2 flex gap-1.5 opacity-100 transition sm:opacity-0 sm:group-hover:opacity-100",
-            compact && "flex-col sm:flex-row",
-          )}
-        >
-          <Button
-            type="button"
-            size="sm"
-            variant="secondary"
-            className={cn("rounded-full", compact && "h-8 px-2 text-xs")}
-            disabled={loading}
-            onClick={() => ref.current?.click()}
-          >
-            {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImagePlus className="w-3.5 h-3.5 mr-1" />}
-            เปลี่ยน
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="destructive"
-            className={cn("rounded-full", compact && "h-8 px-2 text-xs")}
-            onClick={onClear}
-          >
-            <X className="w-3.5 h-3.5 mr-1" /> ลบ
-          </Button>
-        </div>
-        <input ref={ref} type="file" accept={PORTFOLIO_STILL_IMAGE_ACCEPT} hidden onChange={(e) => pickFile(e.target.files?.[0])} />
-      </div>
-    );
-  }
-  return (
-    <div
-      onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
-      onDragLeave={() => setDrag(false)}
-      onDrop={(e) => {
-        e.preventDefault(); setDrag(false);
-        pickFile(e.dataTransfer.files?.[0]);
-      }}
-      onClick={() => ref.current?.click()}
-      aria-label="ภาพปก"
-      className={cn(
-        "flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed transition-[border-color,background-color,box-shadow] duration-500 ease-out glass-panel",
-        compact ? "aspect-[4/3] px-3 py-4" : "min-h-[200px] gap-3 rounded-2xl",
-        drag
-          ? "border-primary bg-primary/10 shadow-sm"
-          : invalid
-            ? "border-destructive bg-destructive/5"
-            : "border-border/80 hover:border-primary/40 hover:bg-muted/20",
-      )}
-    >
-      {loading ? (
-        <Loader2 className={cn("animate-spin text-primary", compact ? "h-5 w-5" : "h-6 w-6")} />
-      ) : (
-        <ImagePlus className={cn("text-muted-foreground", compact ? "h-6 w-6" : "h-8 w-8")} />
-      )}
-      <p className={cn("text-center font-medium text-foreground", compact ? "text-xs leading-snug" : "text-sm")}>
-        อัปโหลดภาพหน้าปก <span className="text-primary">*</span>
-      </p>
-      {!compact ? (
-        <p className="text-xs text-muted-foreground">JPG / PNG — สูงสุด 30MB · ครอปเป็น 4:3 แนวนอน</p>
-      ) : null}
-      <input ref={ref} type="file" accept={PORTFOLIO_STILL_IMAGE_ACCEPT} hidden onChange={(e) => pickFile(e.target.files?.[0])} />
-    </div>
-  );
-};
-
 
 export default ProjectEditorPage;
