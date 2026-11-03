@@ -52,11 +52,20 @@ function InfoRow({ icon: Icon, children }: { icon: typeof CalendarDays; children
   );
 }
 
-/** Main button sends people to register / buy / apply; the secondary one opens the source page to double-check. */
+/** Website shown as readable text: host + path, no scheme or trailing slash. */
+function displayUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    return (u.host.replace(/^www\./, "") + u.pathname).replace(/\/$/, "");
+  } catch {
+    return url;
+  }
+}
+
+/** Main button sends people to register / buy / apply. The event's own site is a text link in the info list. */
 function RegistrationCta({ event }: { event: ExhibitionEvent }) {
   const ended = isEventEnded(event);
   const action = ended ? null : eventPrimaryAction(event);
-  const sourcePage = [event.source_url, event.website_url].find(isHttpUrl) ?? null;
   return (
     <div className="space-y-2">
       {action && isHttpUrl(action.url) ? (
@@ -69,13 +78,6 @@ function RegistrationCta({ event }: { event: ExhibitionEvent }) {
         <p className="rounded-lg border border-dashed border-border px-4 py-3 text-sm text-muted-foreground">
           ลิงก์ลงทะเบียน: {NOT_SPECIFIED} — ดูรายละเอียดที่เว็บไซต์ต้นทาง
         </p>
-      ) : null}
-      {sourcePage ? (
-        <Button asChild size="lg" variant="outline" className="w-full rounded-full">
-          <a href={sourcePage} target="_blank" rel="noopener noreferrer nofollow">
-            {event.source_url ? "ดูเว็บไซต์ต้นทาง" : "Visit Website"} <ExternalLink className="ml-2 h-4 w-4" aria-hidden />
-          </a>
-        </Button>
       ) : null}
     </div>
   );
@@ -124,6 +126,7 @@ export default function ExhibitionDetailPage() {
   const canChat = reachable && event.origin === "community";
   const canSponsor = reachable && event.open_for_sponsors && !isEventEnded(event);
   const path = `/exhibition/${event.id}`;
+  const sourcePage = [event.source_url, event.website_url].find(isHttpUrl) ?? null;
   const [lead, ...rest] = event.description.split(/\n\s*\n/);
 
   const needsAuth = () => {
@@ -195,6 +198,19 @@ export default function ExhibitionDetailPage() {
               <p className="inline-flex items-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-400">
                 <span className="h-2 w-2 rounded-full bg-emerald-500" aria-hidden /> Open for Registration
               </p>
+            ) : null}
+            {sourcePage ? (
+              <InfoRow icon={Globe}>
+                <a
+                  href={sourcePage}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  className="break-all underline decoration-foreground/30 underline-offset-4 hover:decoration-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground"
+                >
+                  {displayUrl(sourcePage)}
+                </a>
+                {event.source_url ? <span className="block text-muted-foreground">เว็บไซต์ต้นทาง</span> : null}
+              </InfoRow>
             ) : null}
           </div>
 
