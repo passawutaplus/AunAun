@@ -1,10 +1,11 @@
 import { supabaseSecretKey, supabasePublishableKey } from "../_shared/supabase-keys.ts";
+import { serveWithCorsOrigin } from "../_shared/cors.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { z } from "npm:zod@3";
 import { geminiEmbedText, getGeminiApiKey } from "../_shared/gemini.ts";
 
+// Allow-Origin is stamped per request by serveWithCorsOrigin (origin allow-list in _shared/cors.ts).
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
@@ -25,7 +26,7 @@ async function embed(text: string): Promise<number[]> {
   return geminiEmbedText(getGeminiApiKey(), text);
 }
 
-Deno.serve(async (req) => {
+async function handle(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "method not allowed" }, 405);
 
@@ -85,4 +86,6 @@ Deno.serve(async (req) => {
   } catch {
     return json({ error: "internal error" }, 500);
   }
-});
+}
+
+Deno.serve((req) => serveWithCorsOrigin(req, handle));

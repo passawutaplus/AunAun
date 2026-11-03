@@ -18,6 +18,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history: "Lint (changed files)" diffs against main
 
       - uses: actions/setup-node@v4
         with:
@@ -26,9 +28,20 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Lint
+      # Advisory: the whole package still has pre-existing prettier errors in untouched files.
+      - name: Lint (all, advisory)
         run: npm run lint
         continue-on-error: true
+
+      # Blocking: every lint-able file this push/PR touches must be clean, so the debt cannot grow.
+      - name: Lint (changed files, blocking)
+        run: |
+          git fetch --no-tags origin main
+          base=$(git merge-base FETCH_HEAD HEAD)
+          files=$(git diff --name-only --relative --diff-filter=ACMR "$base" HEAD -- . | grep -E '\.(js|mjs|cjs|ts|tsx)$' || true)
+          if [ -z "$files" ]; then echo "no lint-able files changed since $base"; exit 0; fi
+          echo "$files"
+          echo "$files" | xargs npx eslint --no-error-on-unmatched-pattern
 
       - name: Typecheck
         run: npm run typecheck
@@ -44,6 +57,8 @@ jobs:
             exit 1
           fi
 
+      # Still advisory: as of 2026-11-03 the audit reports high/critical advisories in transitive
+      # (mostly dev) dependencies. Make it blocking once `npm audit --audit-level=high` passes locally.
       - name: npm audit (high+)
         run: npm audit --audit-level=high
         continue-on-error: true

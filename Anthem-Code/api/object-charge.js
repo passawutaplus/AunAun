@@ -9,6 +9,7 @@
 import {
   json,
   makeHireReference,
+  omiseModeFromKey,
   parseJsonBody,
   readEnv,
   requireSupabaseUser,
@@ -105,7 +106,10 @@ export default async function handler(req, res) {
     const secretKey = readEnv("OMISE_SECRET_KEY");
     if (!secretKey) return json(res, 503, { error: "omise_not_configured" });
 
-    const mode = readEnv("OMISE_MODE") === "live" ? "live" : "test";
+    // SEC-12: the mode comes from the secret key itself; OMISE_MODE only has to agree with it.
+    const modeInfo = omiseModeFromKey(secretKey, readEnv("OMISE_MODE"));
+    if (modeInfo.error) return json(res, 503, { error: modeInfo.error });
+    const mode = modeInfo.mode;
     if (mode === "live" && readEnv("OMISE_MARKETPLACE_APPROVED") !== "true") {
       return json(res, 503, { error: "live_blocked_until_marketplace_approved" });
     }
@@ -124,16 +128,22 @@ export default async function handler(req, res) {
         return json(res, 403, { error: "mark_paid_test_only" });
       }
       const chargeId = String(body.chargeId || "");
-      if (!chargeId.startsWith("chrg_")) return json(res, 400, { error: "invalid_charge_id" });
+      if (!/^chrg_[A-Za-z0-9_]+$/.test(chargeId)) return json(res, 400, { error: "invalid_charge_id" });
+      // SEC-13: ownership first (same rule as hire-charge) — read the charge, check the buyer,
+      // and only then mark it paid or sync it. A charge without our buyer metadata is not ours.
+      const current = await omiseRequest(secretKey, `/charges/${encodeURIComponent(chargeId)}`, {
+        method: "GET",
+      });
+      if (String(current?.metadata?.buyer_user_id || "") !== String(user.id)) {
+        return json(res, 403, { error: "not_order_buyer" });
+      }
       const charge =
         body.action === "mark_paid"
           ? await omiseRequest(secretKey, `/charges/${encodeURIComponent(chargeId)}/mark_as_paid`, {
               body: new URLSearchParams(),
               idempotencyKey: `obj-paid-${chargeId}`.slice(0, 64),
             })
-          : await omiseRequest(secretKey, `/charges/${encodeURIComponent(chargeId)}`, { method: "GET" });
-      const buyerId = charge?.metadata?.buyer_user_id;
-      if (buyerId && String(buyerId) !== String(user.id)) return json(res, 403, { error: "not_order_buyer" });
+          : current;
       const marked = await markObjectOrderPaidFromCharge(cfg, charge);
       return json(res, 200, { ...chargePayload(charge), marked });
     }

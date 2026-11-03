@@ -898,6 +898,8 @@ export function openCollabPlanPdfWindow(
     URL.revokeObjectURL(url);
     return false;
   }
+  // Same effect as the `noopener` feature, but keeps the handle we need for the load/print hooks.
+  win.opener = null;
   win.addEventListener("load", () => URL.revokeObjectURL(url), { once: true });
   if (opts?.autoPrint !== false && !meta.preview) {
     win.addEventListener(

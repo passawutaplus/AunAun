@@ -7,8 +7,14 @@
  *
  * Only Published projects are read, with the publishable key (RLS applies as for any visitor).
  * The result is CDN-cached for a week: the same ids always produce the same image.
+ *
+ * SEC-14: cover URLs come from the database, but a project owner can store any https URL there and
+ * this endpoint is unauthenticated (Android fetches it to show the picture). So covers are only loaded
+ * from known image hosts (the project's Supabase Storage, Unsplash, plus PUSH_COLLAGE_COVER_HOSTS),
+ * never from IP literals, and redirects are refused — the server never follows a link to a private host.
  */
 import sharp from "sharp";
+import { coverHostAllowlist, isAllowedCoverUrl } from "./_cover-hosts.js";
 
 const WIDTH = 1024;
 const HEIGHT = 512;
@@ -17,7 +23,7 @@ const BACKGROUND = { r: 29, g: 30, b: 33, alpha: 1 };
 const MAX_SOURCE_BYTES = 12 * 1024 * 1024;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-async function fetchCovers(baseUrl, key, ids) {
+async function fetchCovers(baseUrl, key, ids, allowedHosts) {
   const params = new URLSearchParams({
     select: "id,cover_url",
     status: "eq.Published",
@@ -30,11 +36,12 @@ async function fetchCovers(baseUrl, key, ids) {
   const rows = await res.json();
   const byId = new Map(rows.map((r) => [r.id, r.cover_url]));
   // Keep the caller's order (the first id is the top pick).
-  return ids.map((id) => byId.get(id)).filter((url) => typeof url === "string" && url.startsWith("https://"));
+  return ids.map((id) => byId.get(id)).filter((url) => isAllowedCoverUrl(url, allowedHosts));
 }
 
 async function loadImage(url) {
-  const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+  // No redirects: a 3xx from an allowed host could otherwise send us anywhere, including private ranges.
+  const res = await fetch(url, { signal: AbortSignal.timeout(8000), redirect: "error" });
   if (!res.ok) throw new Error(`cover ${res.status}`);
   const length = Number(res.headers.get("content-length") || 0);
   if (length > MAX_SOURCE_BYTES) throw new Error("cover too large");
@@ -61,7 +68,7 @@ export default async function handler(req, res) {
   if (!baseUrl || !key) return res.status(503).json({ error: "not_configured" });
 
   try {
-    const urls = await fetchCovers(baseUrl, key, ids);
+    const urls = await fetchCovers(baseUrl, key, ids, coverHostAllowlist(baseUrl));
     if (!urls.length) return res.status(404).json({ error: "not_found" });
 
     const sources = await Promise.all(urls.map((u) => loadImage(u).catch(() => null)));

@@ -119,13 +119,16 @@ export const TextModuleBody = forwardRef<
   const seeded = useRef(false);
   useEffect(() => {
     if (!editorRef.current) return;
+    // Stored module text is sanitised on commit, but never trust it on the way back in:
+    // only the allow-listed formatting subset reaches the DOM.
+    const safeHtml = sanitizeProjectRichText(initialHtml);
     if (!seeded.current) {
-      editorRef.current.innerHTML = initialHtml;
+      editorRef.current.innerHTML = safeHtml;
       seeded.current = true;
       return;
     }
     if (document.activeElement !== editorRef.current) {
-      editorRef.current.innerHTML = initialHtml;
+      editorRef.current.innerHTML = safeHtml;
     }
   }, [initialHtml]);
 

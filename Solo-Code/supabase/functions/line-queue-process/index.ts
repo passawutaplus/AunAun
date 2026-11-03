@@ -1,5 +1,6 @@
 // Processes pgmq queue `line_messages` and sends LINE push notifications.
 import { supabaseSecretKey } from "../_shared/supabase-keys.ts";
+import { serveWithCorsOrigin } from "../_shared/cors.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const QUEUE = "line_messages";
@@ -9,8 +10,8 @@ const DEFAULT_BATCH = 10;
 const DEFAULT_DELAY_MS = 200;
 const VT_SECONDS = 120;
 
+// Allow-Origin is stamped per request by serveWithCorsOrigin (origin allow-list in _shared/cors.ts).
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
@@ -52,7 +53,7 @@ async function pushLineText(lineUserId: string, text: string) {
   };
 }
 
-Deno.serve(async (req) => {
+async function handle(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "method not allowed" }, 405);
 
@@ -174,4 +175,6 @@ Deno.serve(async (req) => {
   }
 
   return json({ processed: messages.length, sent, failed });
-});
+}
+
+Deno.serve((req) => serveWithCorsOrigin(req, handle));

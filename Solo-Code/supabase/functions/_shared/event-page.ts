@@ -30,6 +30,131 @@ export function assertPublicUrl(raw: string): URL {
   return u;
 }
 
+/** Max redirect hops event-extract follows; every hop is re-checked with assertPublicUrl + assertPublicAddress. */
+export const MAX_REDIRECTS = 4;
+
+function ipv4ToInt(ip: string): number | null {
+  const m = ip.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (!m) return null;
+  const parts = m.slice(1).map(Number);
+  if (parts.some((n) => n > 255)) return null;
+  return ((parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8) | parts[3]) >>> 0;
+}
+
+/** Expand an IPv6 literal to 8 groups (lower-case hex), or null when malformed. */
+function ipv6Groups(ip: string): string[] | null {
+  let s = ip
+    .toLowerCase()
+    .replace(/^\[|\]$/g, "")
+    .replace(/%.*$/, "");
+  // Embedded IPv4 tail (::ffff:1.2.3.4) → two hex groups.
+  const v4 = s.match(/(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/);
+  if (v4) {
+    const n = ipv4ToInt(v4[1]);
+    if (n === null) return null;
+    s = s.slice(0, -v4[1].length) + (n >>> 16).toString(16) + ":" + (n & 0xffff).toString(16);
+  }
+  const halves = s.split("::");
+  if (halves.length > 2) return null;
+  const head = halves[0] ? halves[0].split(":") : [];
+  const tail = halves.length === 2 && halves[1] ? halves[1].split(":") : [];
+  const fill = halves.length === 2 ? 8 - head.length - tail.length : 0;
+  if (fill < 0 || (halves.length === 1 && head.length !== 8)) return null;
+  const groups = [...head, ...Array(fill).fill("0"), ...tail];
+  if (groups.length !== 8 || groups.some((g) => !/^[0-9a-f]{1,4}$/.test(g))) return null;
+  return groups.map((g) => g.padStart(4, "0"));
+}
+
+/**
+ * True for any address a public web page must never resolve to: loopback, RFC1918, link-local
+ * (incl. the 169.254.169.254 cloud metadata service), CGNAT, multicast, unspecified, IPv6 ULA and
+ * IPv4-mapped/6to4/Teredo forms of the same ranges. Unparseable input counts as private.
+ */
+export function isPrivateIp(ip: string): boolean {
+  const v4 = ipv4ToInt(ip);
+  if (v4 !== null) {
+    const a = v4 >>> 24;
+    const b = (v4 >>> 16) & 0xff;
+    return (
+      a === 0 || // 0.0.0.0/8 "this network"
+      a === 10 ||
+      a === 127 ||
+      (a === 100 && b >= 64 && b <= 127) || // CGNAT 100.64.0.0/10
+      (a === 169 && b === 254) || // link-local + cloud metadata
+      (a === 172 && b >= 16 && b <= 31) ||
+      (a === 192 && b === 168) ||
+      (a === 192 && b === 0 && ((v4 >>> 8) & 0xff) === 0) || // 192.0.0.0/24 IETF protocol assignments
+      (a === 198 && (b === 18 || b === 19)) || // benchmarking
+      a >= 224 // multicast + reserved + broadcast
+    );
+  }
+  const g = ipv6Groups(ip);
+  if (!g) return true;
+  const n0 = parseInt(g[0], 16);
+  const joined = g.join(":");
+  if (joined === "0000:0000:0000:0000:0000:0000:0000:0000") return true; // ::
+  if (joined === "0000:0000:0000:0000:0000:0000:0000:0001") return true; // ::1
+  if (g.slice(0, 5).every((x) => x === "0000") && (g[5] === "ffff" || g[5] === "0000")) {
+    // ::ffff:a.b.c.d (IPv4-mapped) and ::a.b.c.d (IPv4-compatible): judge the embedded IPv4.
+    const embedded = (parseInt(g[6], 16) << 16) | parseInt(g[7], 16);
+    return isPrivateIp(
+      [embedded >>> 24, (embedded >>> 16) & 0xff, (embedded >>> 8) & 0xff, embedded & 0xff].join(
+        ".",
+      ),
+    );
+  }
+  if (g[0] === "0064" && g[1] === "ff9b") return true; // 64:ff9b::/96 NAT64 — never a public web host
+  if (g[0] === "2002") {
+    // 6to4: 2002:AABB:CCDD:: embeds IPv4 AA.BB.CC.DD
+    const a = parseInt(g[1], 16);
+    const b = parseInt(g[2], 16);
+    return isPrivateIp([a >>> 8, a & 0xff, b >>> 8, b & 0xff].join("."));
+  }
+  if (g[0] === "2001" && g[1] === "0000") return true; // Teredo
+  if ((n0 & 0xfe00) === 0xfc00) return true; // fc00::/7 ULA
+  if ((n0 & 0xffc0) === 0xfe80) return true; // fe80::/10 link-local
+  if ((n0 & 0xff00) === 0xff00) return true; // ff00::/8 multicast
+  return false;
+}
+
+export type HostResolver = (hostname: string) => Promise<string[]>;
+
+/** Deno.resolveDns for A and AAAA; a missing/empty answer is treated as "cannot verify" → reject. */
+export const denoResolver: HostResolver = async (hostname) => {
+  const dns = (
+    globalThis as { Deno?: { resolveDns?: (h: string, t: "A" | "AAAA") => Promise<string[]> } }
+  ).Deno?.resolveDns;
+  if (!dns) throw new Error("dns_unavailable");
+  const settle = (t: "A" | "AAAA") => dns(hostname, t).catch(() => [] as string[]);
+  const [a, aaaa] = await Promise.all([settle("A"), settle("AAAA")]);
+  return [...a, ...aaaa];
+};
+
+/**
+ * SSRF guard, second half: resolve the hostname and refuse when *any* answer is a private,
+ * loopback, link-local or metadata address (a hostname with mixed answers is treated as hostile).
+ * Rejects names that do not resolve at all. Use after assertPublicUrl on the start URL and on every redirect.
+ */
+export async function assertPublicAddress(
+  u: URL,
+  resolve: HostResolver = denoResolver,
+): Promise<URL> {
+  const host = u.hostname.toLowerCase().replace(/^\[|\]$/g, "");
+  if (isPrivateIp(host) && (ipv4ToInt(host) !== null || host.includes(":"))) {
+    throw new Error("ลิงก์นี้ใช้ไม่ได้");
+  }
+  if (ipv4ToInt(host) !== null) return u; // public IPv4 literal: nothing to resolve
+  let addrs: string[];
+  try {
+    addrs = await resolve(host);
+  } catch {
+    throw new Error("เปิดหน้านี้ไม่ได้");
+  }
+  if (!addrs.length) throw new Error("เปิดหน้านี้ไม่ได้");
+  if (addrs.some((ip) => isPrivateIp(ip))) throw new Error("ลิงก์นี้ใช้ไม่ได้");
+  return u;
+}
+
 export function metaContent(html: string, key: string): string | null {
   const re = new RegExp(
     `<meta[^>]+(?:property|name)=["']${key}["'][^>]*content=["']([^"']*)["']`,

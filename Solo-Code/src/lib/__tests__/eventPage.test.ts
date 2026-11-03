@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  assertPublicAddress,
   assertPublicUrl,
   eventJsonLd,
+  isPrivateIp,
   metaContent,
   pageLinks,
   pageText,
@@ -62,6 +64,100 @@ describe("assertPublicUrl", () => {
     "https://example.com:8443/",
   ])("refuses %s", (url) => {
     expect(() => assertPublicUrl(url)).toThrow();
+  });
+});
+
+describe("isPrivateIp", () => {
+  it("flags loopback, RFC1918, link-local/metadata, CGNAT, multicast and unspecified", () => {
+    for (const ip of [
+      "127.0.0.1",
+      "127.255.255.254",
+      "10.0.0.1",
+      "172.16.0.1",
+      "172.31.255.255",
+      "192.168.1.1",
+      "169.254.169.254",
+      "100.64.0.1",
+      "0.0.0.0",
+      "224.0.0.1",
+      "255.255.255.255",
+      "::1",
+      "::",
+      "fc00::1",
+      "fd12:3456::1",
+      "fe80::1",
+      "ff02::1",
+      "::ffff:127.0.0.1",
+      "::ffff:10.0.0.5",
+      "::ffff:7f00:1",
+      "2002:7f00:0001::", // 6to4 of 127.0.0.1
+      "64:ff9b::a00:1",
+      "2001:0:abcd::1", // Teredo
+      "[::1]",
+      "garbage",
+    ]) {
+      expect(isPrivateIp(ip), ip).toBe(true);
+    }
+  });
+
+  it("accepts public addresses", () => {
+    for (const ip of [
+      "8.8.8.8",
+      "1.1.1.1",
+      "172.32.0.1",
+      "100.128.0.1",
+      "2606:4700::1111",
+      "::ffff:8.8.8.8",
+    ]) {
+      expect(isPrivateIp(ip), ip).toBe(false);
+    }
+  });
+});
+
+describe("assertPublicAddress", () => {
+  const u = (s: string) => new URL(s);
+
+  it("passes a hostname whose every answer is public", async () => {
+    const url = await assertPublicAddress(u("https://www.bacc.or.th/x"), async () => [
+      "203.0.113.5",
+      "2606:4700::1",
+    ]);
+    expect(url.hostname).toBe("www.bacc.or.th");
+  });
+
+  it("rejects when any answer is private (rebinding / split answers) or nothing resolves", async () => {
+    await expect(
+      assertPublicAddress(u("https://evil.example.com/"), async () => ["203.0.113.5", "127.0.0.1"]),
+    ).rejects.toThrow();
+    await expect(
+      assertPublicAddress(u("https://meta.example.com/"), async () => ["169.254.169.254"]),
+    ).rejects.toThrow();
+    await expect(
+      assertPublicAddress(u("https://nx.example.com/"), async () => []),
+    ).rejects.toThrow();
+    await expect(
+      assertPublicAddress(u("https://down.example.com/"), async () => {
+        throw new Error("dns");
+      }),
+    ).rejects.toThrow();
+  });
+
+  it("lets a public IPv4 literal through without a DNS lookup", async () => {
+    const url = await assertPublicAddress(u("http://203.0.113.5/x"), async () => {
+      throw new Error("must not resolve");
+    });
+    expect(url.hostname).toBe("203.0.113.5");
+  });
+
+  it("rejects private IP literals before resolving", async () => {
+    let resolved = false;
+    await expect(
+      assertPublicAddress(u("http://10.1.2.3/"), async () => {
+        resolved = true;
+        return [];
+      }),
+    ).rejects.toThrow();
+    expect(resolved).toBe(false);
   });
 });
 

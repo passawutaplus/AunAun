@@ -32,7 +32,8 @@ const LOVABLE_PREVIEW_ORIGIN_RE = /^https:\/\/([a-z0-9-]+\.)*lovable\.app$/i;
 const VERCEL_OPS_HUB_ORIGIN_RE = /^https:\/\/so1o-ops[-a-z0-9.]*\.vercel\.app$/i;
 
 /** Vercel preview deployments for SAMECOR (aplus1-demo / an1hem / aplus1-prod). */
-const VERCEL_ANTHEM_ORIGIN_RE = /^https:\/\/(aplus1-demo|an1hem|aplus1-prod)[a-z0-9-]*\.vercel\.app$/i;
+const VERCEL_ANTHEM_ORIGIN_RE =
+  /^https:\/\/(aplus1-demo|an1hem|aplus1-prod)[a-z0-9-]*\.vercel\.app$/i;
 
 function extraOriginsFromEnv(): string[] {
   const raw = Deno.env.get("CORS_ALLOWED_ORIGINS_EXTRA")?.trim();
@@ -49,6 +50,35 @@ export function isAllowedCorsOrigin(origin: string): boolean {
   if (VERCEL_OPS_HUB_ORIGIN_RE.test(origin)) return true;
   if (VERCEL_ANTHEM_ORIGIN_RE.test(origin)) return true;
   return extraOriginsFromEnv().includes(origin);
+}
+
+/** Only the origin part of the allow-list: for functions that keep their own Allow-Headers/Methods. */
+export function corsOriginHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get("Origin") ?? "";
+  const allowed = origin && isAllowedCorsOrigin(origin) ? origin : STATIC_ORIGINS[0];
+  return { "Access-Control-Allow-Origin": allowed, Vary: "Origin" };
+}
+
+/**
+ * Run a handler and stamp the allow-listed origin on whatever Response it returns.
+ * Lets a function keep a static corsHeaders object (without Allow-Origin) and still answer
+ * each browser with its own origin instead of "*".
+ */
+export async function serveWithCorsOrigin(
+  req: Request,
+  handler: (req: Request) => Response | Promise<Response>,
+): Promise<Response> {
+  const res = await handler(req);
+  const origin = corsOriginHeaders(req);
+  try {
+    for (const [k, v] of Object.entries(origin)) res.headers.set(k, v);
+    return res;
+  } catch {
+    // Immutable headers (a Response passed straight through from fetch): copy it.
+    const headers = new Headers(res.headers);
+    for (const [k, v] of Object.entries(origin)) headers.set(k, v);
+    return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
+  }
 }
 
 export function corsHeadersForRequest(req: Request): Record<string, string> {

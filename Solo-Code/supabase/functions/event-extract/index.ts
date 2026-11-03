@@ -6,8 +6,10 @@ import {
   getGeminiApiKey,
 } from "../_shared/gemini.ts";
 import {
+  assertPublicAddress,
   assertPublicUrl,
   eventJsonLd,
+  MAX_REDIRECTS,
   metaContent,
   pageLinks,
   pageText,
@@ -40,7 +42,10 @@ const json = (req: Request, body: unknown, status = 200) =>
 
 async function fetchPage(start: URL): Promise<{ html: string; finalUrl: string }> {
   let url = start;
-  for (let hop = 0; hop < 4; hop++) {
+  for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+    // SSRF guard: the hostname passed the string check; now its DNS answers must be public too
+    // (blocks names that point at 127.0.0.1, 10.x, 169.254.169.254, ::1 ... on the start URL and each hop).
+    await assertPublicAddress(url);
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
     try {
