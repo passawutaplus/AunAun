@@ -1,7 +1,8 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { LucideIcon } from "lucide-react";
-import { Box, Frame, LayoutGrid, Target, Users } from "lucide-react";
+import ExhibitionIcon from "@/components/icons/ExhibitionIcon";
+import { Box, LayoutGrid, Target, Users } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import PackagesIcon from "@/components/icons/PackagesIcon";
@@ -45,7 +46,7 @@ const items: ToggleItem[] = [
   { id: "showcase", label: "Showcase", icon: LayoutGrid },
   { id: "drill", label: "Design Drill", icon: Target, mobileOnly: true },
   { id: "creators", label: "Creators", icon: Users },
-  { id: "exhibition", label: "Exhibition", icon: Frame },
+  { id: "exhibition", label: "Exhibition", icon: ExhibitionIcon },
   { id: "packages", label: "Packages", icon: PackagesIcon },
   { id: "objects", label: "Objects", icon: Box },
 ];
@@ -161,9 +162,9 @@ const FeedModeToggle = ({
       ref={trackRef}
       className={cn(
         "relative shrink-0 flex items-center rounded-full border border-border bg-white p-0.5 shadow-none transition-[width] duration-200 dark:bg-card",
-        // Fixed widths, but never wider than the bar on a phone: segments shrink instead of overflowing.
-        packed && visible.length === 2 && "w-[14.5rem] max-w-full",
-        packed && visible.length === 3 && "w-[21.75rem] max-w-full",
+        // Phones / app: icon-only segments at their natural width; fixed equal widths from lg up.
+        packed && visible.length === 2 && "lg:w-[14.5rem]",
+        packed && visible.length === 3 && "lg:w-[21.75rem]",
         !compact && visible.length >= 4 && "w-max",
         className,
       )}
@@ -214,9 +215,9 @@ const FeedModeToggle = ({
             }}
             className={cn(
               "relative z-10 items-center justify-center rounded-full text-xs font-medium transition-[padding,gap,colors] duration-200",
-              compact ? "gap-0 px-2.5 py-1.5" : "gap-1.5 px-3 py-1.5",
+              compact ? "gap-0 px-2.5 py-1.5" : "gap-0 px-3.5 py-1.5 lg:gap-1.5 lg:px-3",
               visibility,
-              packed && "min-w-0 flex-1",
+              packed && "lg:flex-1",
               active
                 ? "text-white dark:text-primary-foreground"
                 : "text-foreground/75 hover:text-foreground",
@@ -225,12 +226,12 @@ const FeedModeToggle = ({
               active && !indicator && "bg-primary",
             )}
           >
-            {/* Narrow phones: label only, so three segments fit beside the logo. */}
-            <Icon className={cn("w-3.5 h-3.5 shrink-0", packed && "max-[400px]:hidden")} aria-hidden />
+            <Icon className="w-4 h-4 shrink-0 lg:w-3.5 lg:h-3.5" aria-hidden />
             <span
               className={cn(
                 "overflow-hidden whitespace-nowrap transition-[max-width,opacity,margin] duration-200",
-                compact ? "max-w-0 opacity-0" : "max-w-[6rem] opacity-100",
+                // Labels from lg up only; below that the icon carries the segment (aria-label names it).
+                compact ? "max-w-0 opacity-0" : "max-w-0 opacity-0 lg:max-w-[6rem] lg:opacity-100",
               )}
               aria-hidden={compact}
             >
