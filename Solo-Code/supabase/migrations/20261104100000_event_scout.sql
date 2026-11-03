@@ -58,9 +58,10 @@ BEGIN
 
   v_id := public.admin_event_save(
     NULL,
-    _data || jsonb_build_object('origin', 'curated', 'gallery_urls', '[]'::jsonb, 'cover_url', '',
-                                'sponsors', coalesce(_data -> 'sponsors', '[]'::jsonb),
-                                'project_ids', '[]'::jsonb),
+    -- No cover_url key at all: event_save treats any value (even "") as an upload to validate.
+    (_data - 'cover_url') || jsonb_build_object('origin', 'curated', 'gallery_urls', '[]'::jsonb,
+                                                'sponsors', coalesce(_data -> 'sponsors', '[]'::jsonb),
+                                                'project_ids', '[]'::jsonb),
     false  -- never publish
   );
 
