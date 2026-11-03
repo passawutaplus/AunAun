@@ -16,6 +16,7 @@ import { BackButton } from "@/components/ui/BackButton";
 import { HeaderAccountActions } from "@/components/HeaderAccountActions";
 import ConnectMessageDialog from "@/components/chat/ConnectMessageDialog";
 import SponsorOfferDialog from "@/components/exhibition/SponsorOfferDialog";
+import { googleCalendarLink } from "@/lib/googleCalendarLink";
 import ReportDialog from "@/components/report/ReportDialog";
 import {
   CategoryTag,
@@ -29,7 +30,7 @@ import {
 import EmptyState from "@/components/ui/EmptyState";
 import QueryStatusPanel from "@/components/ui/QueryStatusPanel";
 import { Button } from "@/components/ui/button";
-import { recordEventRegistration, useEvent, useEventProjects, useEventStats, useMyEventLikes, useRecordEventView } from "@/hooks/useExhibitionEvents";
+import { recordEventRegistration, useEvent, useEventProjects, useEventStats, useMyEventInterests, useRecordEventView } from "@/hooks/useExhibitionEvents";
 import { EventActions } from "@/components/exhibition/EventActions";
 import { useAuth } from "@/hooks/useAuth";
 import { navigateToAuth } from "@/lib/authRedirect";
@@ -58,7 +59,13 @@ function InfoRow({ icon: Icon, children }: { icon: typeof CalendarDays; children
 function displayUrl(url: string): string {
   try {
     const u = new URL(url);
-    return (u.host.replace(/^www\./, "") + u.pathname).replace(/\/$/, "");
+    let path = u.pathname;
+    try {
+      path = decodeURIComponent(path); // %E2%80%98 → ‘ so Thai / curly quotes read as text
+    } catch {
+      /* malformed escape: keep as is */
+    }
+    return (u.host.replace(/^www\./, "") + path).replace(/\/$/, "");
   } catch {
     return url;
   }
@@ -68,20 +75,14 @@ function displayUrl(url: string): string {
 function RegistrationCta({ event, onRegister }: { event: ExhibitionEvent; onRegister?: () => void }) {
   const ended = isEventEnded(event);
   const action = ended ? null : eventPrimaryAction(event);
+  // No registration link → show nothing at all.
+  if (!action || !isHttpUrl(action.url)) return null;
   return (
-    <div className="space-y-2">
-      {action && isHttpUrl(action.url) ? (
-        <Button asChild size="lg" className="w-full rounded-full bg-brand text-neutral-950 hover:bg-brand/90">
-          <a href={action.url} target="_blank" rel="noopener noreferrer nofollow" onClick={onRegister}>
-            {action.label} <ExternalLink className="ml-2 h-4 w-4" aria-hidden />
-          </a>
-        </Button>
-      ) : !ended && event.origin === "curated" ? (
-        <p className="rounded-lg border border-dashed border-border px-4 py-3 text-sm text-muted-foreground">
-          ลิงก์ลงทะเบียน: {NOT_SPECIFIED} — ดูรายละเอียดที่เว็บไซต์ต้นทาง
-        </p>
-      ) : null}
-    </div>
+    <Button asChild size="lg" className="w-full rounded-full bg-brand text-neutral-950 hover:bg-brand/90">
+      <a href={action.url} target="_blank" rel="noopener noreferrer nofollow" onClick={onRegister}>
+        {action.label} <ExternalLink className="ml-2 h-4 w-4" aria-hidden />
+      </a>
+    </Button>
   );
 }
 
@@ -92,7 +93,7 @@ export default function ExhibitionDetailPage() {
   const { data: event, isLoading, isError, refetch } = useEvent(id);
   const statIds = useMemo(() => (id ? [id] : []), [id]);
   const { data: stats } = useEventStats(statIds);
-  const { data: myLikes } = useMyEventLikes(statIds);
+  const { data: myInterests } = useMyEventInterests(statIds);
   useRecordEventView(event?.id, event?.status === "published");
   const { data: works = [] } = useEventProjects(event?.project_ids);
   const [contactOpen, setContactOpen] = useState(false);
@@ -129,6 +130,7 @@ export default function ExhibitionDetailPage() {
   const openForSponsors = event.open_for_sponsors && !isEventEnded(event);
   const canSponsor = reachable && openForSponsors;
   const path = `/exhibition/${event.id}`;
+  const gcalHref = googleCalendarLink({ ...event, url: typeof window !== "undefined" ? window.location.origin + path : null });
   const sourcePage = [event.source_url, event.website_url].find(isHttpUrl) ?? null;
   const [lead, ...rest] = event.description.split(/\n\s*\n/);
 
@@ -196,6 +198,13 @@ export default function ExhibitionDetailPage() {
             {event.title}
           </h1>
           <p className="text-base text-foreground/80">{lead}</p>
+          <EventActions
+            event={event}
+            stats={stats?.[event.id]}
+            interested={myInterests?.has(event.id)}
+            labeled
+            className="-my-1"
+          />
 
           <div className="space-y-3 border-t border-border pt-5">
             <InfoRow icon={CalendarDays}>
@@ -203,6 +212,16 @@ export default function ExhibitionDetailPage() {
               <span className="block text-muted-foreground">
                 เวลา: {event.time_note ?? NOT_SPECIFIED}
               </span>
+              {gcalHref ? (
+                <a
+                  href={gcalHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground underline decoration-foreground/30 underline-offset-4 hover:text-foreground hover:decoration-foreground"
+                >
+                  เพิ่มลง Google Calendar <ExternalLink className="h-3 w-3" aria-hidden />
+                </a>
+              ) : null}
             </InfoRow>
             <InfoRow icon={MapPin}>
               {event.location_name ? (
@@ -234,21 +253,15 @@ export default function ExhibitionDetailPage() {
                 >
                   {displayUrl(sourcePage)}
                 </a>
-                {event.source_url ? <span className="block text-muted-foreground">เว็บไซต์ต้นทาง</span> : null}
               </InfoRow>
             ) : null}
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="min-w-0 flex-1">
-              <RegistrationCta
-                event={event}
-                // Signed-in clicks land in Portfolio → Exhibition → ลงทะเบียน.
-                onRegister={user && event.status === "published" ? () => recordEventRegistration(event.id) : undefined}
-              />
-            </div>
-            <EventActions event={event} stats={stats?.[event.id]} liked={myLikes?.has(event.id)} showViews />
-          </div>
+          <RegistrationCta
+            event={event}
+            // Signed-in clicks land in Portfolio → Exhibition → ลงทะเบียน.
+            onRegister={user && event.status === "published" ? () => recordEventRegistration(event.id) : undefined}
+          />
           <EventSourceNote event={event} />
         </div>
       </div>

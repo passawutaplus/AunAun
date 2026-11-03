@@ -10,9 +10,10 @@ import ProfileButton from "@/components/ProfileButton";
 import FeedModeToggle from "@/components/feed/FeedModeToggle";
 import { EventListCard } from "@/components/exhibition/EventParts";
 import { ExhibitionHero } from "@/components/exhibition/ExhibitionHero";
+import { ExhibitionCalendar } from "@/components/exhibition/ExhibitionCalendar";
 import EmptyState from "@/components/ui/EmptyState";
 import QueryStatusPanel from "@/components/ui/QueryStatusPanel";
-import { useEventStats, useMyEventLikes, usePublishedEvents } from "@/hooks/useExhibitionEvents";
+import { useEventStats, useMyEventInterests, usePublishedEvents } from "@/hooks/useExhibitionEvents";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useHideOnScroll } from "@/hooks/useHideOnScroll";
 import { useAuth } from "@/hooks/useAuth";
@@ -73,7 +74,7 @@ export default function ExhibitionPage() {
 
   const rowIds = useMemo(() => rows.map((e) => e.id), [rows]);
   const { data: stats } = useEventStats(rowIds);
-  const { data: myLikes } = useMyEventLikes(rowIds);
+  const { data: myInterests } = useMyEventInterests(rowIds);
 
   const scrolled = useFeedHomeNavStore((st) => st.scrolled);
   const { user } = useAuth();
@@ -270,6 +271,9 @@ export default function ExhibitionPage() {
 
         <ExhibitionHero events={heroEvents} className="mb-6 hidden lg:grid" />
 
+        {/* This week + full calendar; uses every published event, not just the filtered list. */}
+        <ExhibitionCalendar events={data} className="mb-8" />
+
         <div>
       {isLoading || isError ? (
         <QueryStatusPanel
@@ -286,9 +290,9 @@ export default function ExhibitionPage() {
           className="py-16"
         />
       ) : (
-        <div>
+        <div data-event-list>
           {rows.map((e) => (
-            <EventListCard key={e.id} event={e} stats={stats?.[e.id]} liked={myLikes?.has(e.id)} />
+            <EventListCard key={e.id} event={e} stats={stats?.[e.id]} interested={myInterests?.has(e.id)} />
           ))}
         </div>
       )}

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { CalendarDays, Heart, Ticket } from "lucide-react";
+import { Bookmark, CalendarDays, Ticket } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useMyEventList } from "@/hooks/useExhibitionEvents";
 import { formatEventDates, isEventEnded, type ExhibitionEvent } from "@/lib/exhibitionEvents";
@@ -47,7 +47,7 @@ function Section({
   icon: Icon,
   empty,
 }: {
-  kind: "registered" | "liked";
+  kind: "registered" | "interested";
   title: string;
   icon: LucideIcon;
   empty: string;
@@ -84,12 +84,12 @@ function Section({
   );
 }
 
-/** Portfolio → Exhibition: events you pressed register on, and events you liked. Only you see this tab. */
+/** Portfolio → Exhibition: events you pressed register on, and events you marked สนใจ. Only you see this tab. */
 export default function PortfolioExhibitionPanel() {
   return (
     <div className="space-y-10">
       <Section kind="registered" title="ลงทะเบียน" icon={Ticket} empty="งานที่คุณกดลงทะเบียนจะมาอยู่ตรงนี้" />
-      <Section kind="liked" title="ถูกใจ" icon={Heart} empty="กด ♡ บนงานที่สนใจ แล้วจะเก็บไว้ตรงนี้" />
+      <Section kind="interested" title="สนใจ" icon={Bookmark} empty="กดสนใจบนงานที่อยากไป แล้วเราจะเตือนก่อนงานเริ่ม" />
     </div>
   );
 }

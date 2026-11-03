@@ -129,11 +129,14 @@ export function EventGallery({
   title,
   className,
   aspect = "aspect-[16/10]",
+  emptyTitleClassName,
 }: {
   images: string[];
   title: string;
   className?: string;
   aspect?: string;
+  /** Extra classes for the title shown when there is no image (e.g. hide it where the title sits right below). */
+  emptyTitleClassName?: string;
 }) {
   const list = images.filter(Boolean);
   const [index, setIndex] = useState(0);
@@ -149,7 +152,7 @@ export function EventGallery({
         aria-hidden
       >
         <ImageOff className="mb-auto h-5 w-5 text-muted-foreground" />
-        <span className="line-clamp-3 font-display text-xl font-semibold leading-tight">{title}</span>
+        <span className={cn("line-clamp-3 font-display text-xl font-semibold leading-tight", emptyTitleClassName)}>{title}</span>
         <span className="text-xs text-muted-foreground">ยังไม่มีรูปจากผู้จัด</span>
       </div>
     );
@@ -193,32 +196,47 @@ export function eventImages(e: Pick<ExhibitionEvent, "cover_url" | "gallery_urls
 }
 
 /** Row on the public list: gallery left, details right. */
-export function EventListCard({ event, stats, liked }: { event: ExhibitionEvent; stats?: EventStats; liked?: boolean }) {
+export function EventListCard({
+  event,
+  stats,
+  interested,
+}: {
+  event: ExhibitionEvent;
+  stats?: EventStats;
+  interested?: boolean;
+}) {
   const href = `/exhibition/${event.id}`;
   return (
     <article className="grid gap-4 border-b border-border py-6 last:border-0 md:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] md:gap-8">
-      <EventGallery images={eventImages(event)} title={event.title} />
-      <div className="flex min-w-0 flex-col justify-center gap-3">
+      {/* Phone: shorter frame, and no repeated title when there is no image (it sits right below). */}
+      <EventGallery
+        images={eventImages(event)}
+        title={event.title}
+        aspect="aspect-[16/9] md:aspect-[16/10]"
+        emptyTitleClassName="hidden md:block"
+      />
+      <div className="flex min-w-0 flex-col justify-center gap-2.5 md:gap-3">
         <div className="flex flex-wrap items-center gap-2">
           {event.is_pick ? <PickTag /> : null}
           <CategoryTag category={event.category} />
           {event.origin !== "community" ? <OriginTag origin={event.origin} /> : null}
-          <EventActions event={event} stats={stats} liked={liked} className="ml-auto" />
+          <EventActions event={event} stats={stats} interested={interested} className="ml-auto hidden md:flex" />
         </div>
-        <h2 className="font-display text-2xl font-semibold leading-tight text-foreground">
+        <h2 className="font-display text-xl font-semibold leading-snug text-foreground md:text-2xl md:leading-tight">
           <Link to={href} className="hover:underline focus-visible:underline focus-visible:outline-none">
             {event.title}
           </Link>
         </h2>
         <EventMeta event={event} />
         <p className="line-clamp-2 text-sm text-foreground/80">{event.description}</p>
-        <div>
+        <div className="mt-1 flex items-center justify-between gap-3">
           <Link
             to={href}
             className="inline-flex items-center gap-1.5 rounded-full border border-foreground/20 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-foreground hover:bg-foreground hover:text-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground"
           >
             View Event <ArrowRight className="h-4 w-4" aria-hidden />
           </Link>
+          <EventActions event={event} stats={stats} interested={interested} className="md:hidden" />
         </div>
       </div>
     </article>

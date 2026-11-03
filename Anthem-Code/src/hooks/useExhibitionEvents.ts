@@ -297,7 +297,7 @@ export function useSetEventPick() {
   });
 }
 
-export type EventStats = { view_count: number; like_count: number };
+export type EventStats = { view_count: number; like_count: number; interest_count: number };
 
 /**
  * View/like totals, fetched apart from EVENT_SELECT so lists still load if the counters
@@ -311,25 +311,30 @@ export function useEventStats(ids: string[]) {
     staleTime: 30_000,
     retry: false,
     queryFn: async () => {
-      const { data, error } = await eventsTable().select("id, view_count, like_count").in("id", realIds);
+      const { data, error } = await eventsTable().select("id, view_count, like_count, interest_count").in("id", realIds);
       if (error) return {} as Record<string, EventStats>;
-      const rows = (data ?? []) as Array<EventStats & { id: string }>;
-      return Object.fromEntries(rows.map((r) => [r.id, { view_count: r.view_count, like_count: r.like_count }]));
+      const rows = (data ?? []) as Array<Partial<EventStats> & { id: string }>;
+      return Object.fromEntries(
+        rows.map((r) => [
+          r.id,
+          { view_count: r.view_count ?? 0, like_count: r.like_count ?? 0, interest_count: r.interest_count ?? 0 },
+        ]),
+      );
     },
   });
 }
 
-/** Which of these events the signed-in user has liked. */
-export function useMyEventLikes(ids: string[]) {
+/** Which of these events the signed-in user marked "สนใจ" (interested). */
+export function useMyEventInterests(ids: string[]) {
   const { user } = useAuth();
   const realIds = ids.filter((id) => !isDemoEventId(id));
   return useQuery({
-    queryKey: ["events", "my-likes", user?.id, [...realIds].sort().join(",")],
+    queryKey: ["events", "my-interests", user?.id, [...realIds].sort().join(",")],
     enabled: !!user && realIds.length > 0,
     retry: false,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("event_likes" as never)
+        .from("event_interests" as never)
         .select("event_id")
         .eq("user_id", user!.id)
         .in("event_id", realIds);
@@ -339,20 +344,23 @@ export function useMyEventLikes(ids: string[]) {
   });
 }
 
-export function useToggleEventLike() {
+/** "สนใจ": like-style toggle that also opts the user in to reminders before the event starts. */
+export function useToggleEventInterest() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { data, error } = await rpc("toggle_event_like", { _event_id: id });
+      const { data, error } = await rpc("toggle_event_interest", { _event_id: id });
       if (error) throw error;
-      const row = (Array.isArray(data) ? data[0] : data) as { liked: boolean; like_count: number } | null;
-      return row ?? { liked: false, like_count: 0 };
+      const row = (Array.isArray(data) ? data[0] : data) as { interested: boolean; interest_count: number } | null;
+      return row ?? { interested: false, interest_count: 0 };
     },
-    onSuccess: () => {
+    onSuccess: (row) => {
       void qc.invalidateQueries({ queryKey: ["events", "stats"] });
-      void qc.invalidateQueries({ queryKey: ["events", "my-likes"] });
+      void qc.invalidateQueries({ queryKey: ["events", "my-interests"] });
+      void qc.invalidateQueries({ queryKey: ["events", "my-list"] });
+      if (row.interested) toast.success("บันทึกแล้ว — จะเตือนก่อนงานเริ่ม 3 วันและ 1 วัน");
     },
-    onError: () => toast.error("กดถูกใจไม่สำเร็จ ลองอีกครั้ง"),
+    onError: () => toast.error("บันทึกไม่สำเร็จ ลองอีกครั้ง"),
   });
 }
 
@@ -381,10 +389,10 @@ export function recordEventRegistration(id: string) {
 }
 
 /**
- * Events the user liked or registered for, newest action first. Empty (not an error) when the
+ * Events the user marked สนใจ or registered for, newest action first. Empty (not an error) when the
  * counters migration is not on this database yet.
  */
-export function useMyEventList(kind: "liked" | "registered") {
+export function useMyEventList(kind: "registered" | "interested") {
   const { user } = useAuth();
   return useQuery({
     queryKey: ["events", "my-list", kind, user?.id],
@@ -392,7 +400,7 @@ export function useMyEventList(kind: "liked" | "registered") {
     retry: false,
     queryFn: async (): Promise<ExhibitionEvent[]> => {
       const { data: links, error } = await supabase
-        .from((kind === "liked" ? "event_likes" : "event_registrations") as never)
+        .from((kind === "interested" ? "event_interests" : "event_registrations") as never)
         .select("event_id, created_at")
         .eq("user_id", user!.id)
         .order("created_at", { ascending: false })
