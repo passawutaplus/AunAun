@@ -32,6 +32,21 @@ const ActorAvatar = ({ name, avatar }: { name: string; avatar: string }) => (
   <UserAvatar src={avatar} name={name} className="w-11 h-11 shrink-0" />
 );
 
+/** A failed load must not look like "nothing yet". */
+const LoadFailed = ({ en, onRetry }: { en: boolean; onRetry: () => void }) => (
+  <EmptyState
+    icon={Bell}
+    title={en ? "Couldn't load notifications" : "โหลดการแจ้งเตือนไม่สำเร็จ"}
+    description={en ? "Check your connection and try again." : "ตรวจสอบการเชื่อมต่อแล้วลองใหม่"}
+    action={
+      <Button variant="outline" className="rounded-full" onClick={onRetry}>
+        {en ? "Try again" : "ลองใหม่"}
+      </Button>
+    }
+    className="border-0 shadow-none bg-transparent py-12"
+  />
+);
+
 const Empty = ({
   icon: Icon,
   text,
@@ -154,9 +169,9 @@ const NotificationsPanel = ({
   const [slideDir, setSlideDir] = useState<1 | -1>(1);
   const [slideGen, setSlideGen] = useState(0);
   const inbox = useInbox(user?.id);
-  const { data: activityRaw = [], isLoading: la } = useActivityNotifications();
-  const { data: hires = [], isLoading: lh } = useHireNotifications();
-  const { data: collabs = [], isLoading: lc } = useCollabNotifications();
+  const { data: activityRaw = [], isLoading: la, isError: ea, refetch: ra } = useActivityNotifications();
+  const { data: hires = [], isLoading: lh, isError: eh, refetch: rh } = useHireNotifications();
+  const { data: collabs = [], isLoading: lc, isError: ec, refetch: rc } = useCollabNotifications();
   const { data: followNotifs = [] } = useFollowNotifications();
   const [prefsTick, setPrefsTick] = useState(0);
   const en = embedded;
@@ -356,6 +371,8 @@ const NotificationsPanel = ({
       <TabsContent value="activity" className={panelClass("space-y-2")}>
         {la ? (
           <InlineLoader />
+        ) : ea ? (
+          <LoadFailed en={en} onRetry={() => void ra()} />
         ) : activity.length === 0 ? (
           <Empty
             icon={Bookmark}
@@ -417,6 +434,8 @@ const NotificationsPanel = ({
       <TabsContent value="hire" className={panelClass("space-y-2")}>
         {lh ? (
           <InlineLoader />
+        ) : eh ? (
+          <LoadFailed en={en} onRetry={() => void rh()} />
         ) : hires.length === 0 ? (
           <Empty
             icon={BriefcaseIcon}
@@ -493,6 +512,8 @@ const NotificationsPanel = ({
       <TabsContent value="collab" className={panelClass("space-y-2")}>
         {lc ? (
           <InlineLoader />
+        ) : ec ? (
+          <LoadFailed en={en} onRetry={() => void rc()} />
         ) : collabs.length === 0 ? (
           <Empty
             icon={Handshake}

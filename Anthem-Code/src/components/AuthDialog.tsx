@@ -23,6 +23,7 @@ import { ReferralSignupHint } from "@/components/referral/ReferralSignupHint";
 import LegalSignupConsents from "@/components/legal/LegalSignupConsents";
 import { recordSignupConsents, markPendingSignupConsent } from "@/lib/legalCompliance";
 import { isAuthRoute } from "@/lib/onboardingRoutes";
+import { rememberAfterOnboarding } from "@/lib/afterOnboarding";
 import { hasCompletedProfileOnboarding } from "@/hooks/useFeedInterests";
 import { buildEmailConfirmUrl } from "@/lib/oauthRedirect";
 import { isDemoMode } from "@/lib/demoMode";
@@ -59,6 +60,7 @@ const AuthDialog = () => {
         .maybeSingle();
       const needsInterestSurvey = !hasCompletedProfileOnboarding(data);
       if (needsInterestSurvey) {
+        rememberAfterOnboarding(dest);
         navigate("/", { replace: true });
         return;
       }
