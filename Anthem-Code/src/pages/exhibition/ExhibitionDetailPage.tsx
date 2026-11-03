@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -27,7 +27,8 @@ import {
 import EmptyState from "@/components/ui/EmptyState";
 import QueryStatusPanel from "@/components/ui/QueryStatusPanel";
 import { Button } from "@/components/ui/button";
-import { useEvent, useEventProjects } from "@/hooks/useExhibitionEvents";
+import { useEvent, useEventProjects, useEventStats, useMyEventLikes, useRecordEventView } from "@/hooks/useExhibitionEvents";
+import { EventActions } from "@/components/exhibition/EventActions";
 import { useAuth } from "@/hooks/useAuth";
 import { navigateToAuth } from "@/lib/authRedirect";
 import {
@@ -85,6 +86,10 @@ export default function ExhibitionDetailPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: event, isLoading, isError, refetch } = useEvent(id);
+  const statIds = useMemo(() => (id ? [id] : []), [id]);
+  const { data: stats } = useEventStats(statIds);
+  const { data: myLikes } = useMyEventLikes(statIds);
+  useRecordEventView(event?.id, event?.status === "published");
   const { data: works = [] } = useEventProjects(event?.project_ids);
   const [contactOpen, setContactOpen] = useState(false);
 
@@ -170,6 +175,7 @@ export default function ExhibitionDetailPage() {
             {event.is_pick ? <PickTag /> : null}
             <CategoryTag category={event.category} />
             <OriginTag origin={event.origin} />
+            <EventActions event={event} stats={stats?.[event.id]} liked={myLikes?.has(event.id)} showViews className="ml-auto" />
           </div>
           <h1 className="font-display text-4xl font-semibold leading-[1.05] tracking-tight text-foreground sm:text-5xl">
             {event.title}
