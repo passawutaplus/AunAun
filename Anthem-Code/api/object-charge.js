@@ -14,7 +14,7 @@ import {
   requireSupabaseUser,
   supabaseServiceConfig,
 } from "./_helpers.js";
-import { markObjectOrderPaidFromCharge } from "./object-order-paid.js";
+import { markObjectOrderPaidFromCharge } from "./_object-order-paid.js";
 
 function basicAuth(secretKey) {
   return `Basic ${Buffer.from(`${secretKey}:`).toString("base64")}`;

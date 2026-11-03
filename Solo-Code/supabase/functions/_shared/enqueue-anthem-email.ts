@@ -26,7 +26,7 @@ export async function enqueueAnthemNotificationEmail(
   if (existing) return { ok: true, duplicate: true };
 
   const { html, text, subject } = renderAnthemEmail(opts.template, opts.templateData);
-  const messageId = crypto.randomUUID();
+  const messageId = opts.idempotencyKey;
   const { from, senderDomain } = anthemEmailFrom();
 
   if (Deno.env.get("RESEND_API_KEY")) {
