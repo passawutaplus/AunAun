@@ -1,3 +1,4 @@
+import type { Json } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 
 export type AdminAuditInput = {
@@ -13,7 +14,7 @@ export async function logAdminAudit(input: AdminAuditInput): Promise<void> {
     _action: input.action,
     _target_type: input.targetType,
     _target_id: input.targetId,
-    _metadata: input.metadata ?? {},
+    _metadata: (input.metadata ?? {}) as Json,
   });
   if (error) console.warn("[admin-audit]", error.message);
 }
@@ -26,7 +27,7 @@ export async function logKycAdminAccess(
   const { error } = await supabase.rpc("admin_log_kyc_access", {
     _request_id: requestId,
     _event: event,
-    _metadata: metadata ?? {},
+    _metadata: (metadata ?? {}) as Json,
   });
   if (error) console.warn("[kyc-audit]", error.message);
 }

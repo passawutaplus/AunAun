@@ -351,7 +351,7 @@ export function createEmptyProgressEntry(opts: {
 function asProgressComments(v: unknown): CollabProgressComment[] {
   if (!Array.isArray(v)) return [];
   return v
-    .map((item) => {
+    .map((item): CollabProgressComment | null => {
       if (!item || typeof item !== "object") return null;
       const o = item as Record<string, unknown>;
       const text = asString(o.text).trim();
@@ -416,7 +416,7 @@ export function countProgressComments(comments: CollabProgressComment[]): number
 function asProgressEntries(v: unknown): CollabProgressEntry[] {
   if (!Array.isArray(v)) return [];
   return v
-    .map((item) => {
+    .map((item): CollabProgressEntry | null => {
       if (!item || typeof item !== "object") return null;
       const o = item as Record<string, unknown>;
       const confirmedRaw = o.confirmedAt;
@@ -549,7 +549,7 @@ function asPortfolioRefs(v: unknown): CollabPortfolioRef[] {
 function asAttachments(v: unknown): CollabAttachment[] {
   if (!Array.isArray(v)) return [];
   return v
-    .map((item) => {
+    .map((item): CollabAttachment | null => {
       if (!item || typeof item !== "object") return null;
       const o = item as Record<string, unknown>;
       if (typeof o.path !== "string" || !o.path) return null;

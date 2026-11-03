@@ -29,10 +29,11 @@ export function detectTimezones(): string[] {
     "America/Los_Angeles",
     "America/New_York",
   ];
-  const supported =
-    typeof Intl !== "undefined" && "supportedValuesOf" in Intl
-      ? (Intl.supportedValuesOf("timeZone") as string[])
-      : common;
+  // Intl.supportedValuesOf is ES2022; not in every runtime (or in our TS lib target).
+  const intl = (typeof Intl !== "undefined" ? Intl : undefined) as
+    | { supportedValuesOf?: (key: "timeZone") => string[] }
+    | undefined;
+  const supported = intl?.supportedValuesOf?.("timeZone") ?? common;
   const set = new Set([...common, ...supported]);
   return Array.from(set);
 }

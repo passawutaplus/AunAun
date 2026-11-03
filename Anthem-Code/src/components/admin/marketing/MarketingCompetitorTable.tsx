@@ -3,7 +3,7 @@ import { ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { useMarketingBusinesses } from "@/hooks/admin/useMarketingBusinesses";
 import { useMarketingCompetitors } from "@/hooks/admin/useMarketingCompetitors";
-import { MARKETING_PLATFORMS } from "@/lib/marketing/types";
+import { MARKETING_PLATFORMS, type MarketingPlatform } from "@/lib/marketing/types";
 import { MarketingCard } from "./MarketingShell";
 
 export default function MarketingCompetitorTable() {
@@ -57,7 +57,7 @@ export default function MarketingCompetitorTable() {
           <select
             className="rounded-lg border border-admin-border px-3 py-2 text-sm"
             value={form.platform}
-            onChange={(e) => setForm((f) => ({ ...f, platform: e.target.value }))}
+            onChange={(e) => setForm((f) => ({ ...f, platform: e.target.value as MarketingPlatform }))}
           >
             {MARKETING_PLATFORMS.map((p) => (
               <option key={p} value={p}>

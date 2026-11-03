@@ -295,7 +295,7 @@ export function ProjectRichTextField({
           }
           emit();
         }}
-        onBlur={emit}
+        onBlur={() => emit()}
         onKeyDown={(e) => e.stopPropagation()}
       />
     </div>

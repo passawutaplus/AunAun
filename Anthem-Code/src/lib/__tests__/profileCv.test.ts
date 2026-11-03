@@ -288,7 +288,18 @@ describe("cvReadiness", () => {
       role: "Graphic designer",
       skills: ["Branding", "Packaging", "Figma"],
       experience: [{}],
-      education: [{ school: "Silpakorn" }],
+      education: [
+        {
+          school: "Silpakorn",
+          degree: "bachelor",
+          faculty: "",
+          field: "",
+          period: "",
+          periodStart: "",
+          periodEnd: "",
+          isCurrent: false,
+        },
+      ],
       hasContact: true,
     });
     expect(r.ready).toBe(true);

@@ -48,7 +48,7 @@ async function fetchHires(serviceIds: string[], fromIso: string, toIso: string):
     .gte("created_at", fromIso)
     .lte("created_at", toIso)
     .order("created_at", { ascending: true });
-  return pickTimestamps(swallowRows(res));
+  return pickTimestamps(swallowRows<{ created_at?: string }[]>(res));
 }
 
 async function fetchPublishedPackages(
@@ -63,7 +63,7 @@ async function fetchPublishedPackages(
     .gte("created_at", fromIso)
     .lte("created_at", toIso)
     .order("created_at", { ascending: true });
-  return pickTimestamps(swallowRows(res));
+  return pickTimestamps(swallowRows<{ created_at?: string }[]>(res));
 }
 
 async function fetchPackageOverviewPayload(

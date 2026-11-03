@@ -1,3 +1,4 @@
+import type { Json } from "@/integrations/supabase/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -107,7 +108,7 @@ export const useSubmitKycVerification = () => {
         _nationality: input.nationality ?? "TH",
         _pep_declaration: input.pepDeclaration,
         _sanctions_declaration: input.sanctionsDeclaration,
-        _submission_meta: input.submissionMeta ?? {},
+        _submission_meta: (input.submissionMeta ?? {}) as Json,
       });
       if (error) throw error;
       return data as KycRequest;

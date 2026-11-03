@@ -47,7 +47,7 @@ export const useProjectComments = (projectId: string | undefined) => {
           .select(basicSelect)
           .eq("project_id", projectId!)
           .order("created_at", { ascending: true });
-        data = retry.data;
+        data = retry.data as typeof data;
         error = retry.error;
       }
 

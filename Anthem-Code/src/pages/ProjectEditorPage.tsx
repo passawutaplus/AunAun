@@ -806,8 +806,8 @@ const ProjectEditorPage = () => {
       setAllowCollab((existing as any).allow_collab ?? true);
       setStudioId((existing as any).studio_id ?? null);
       setCreditedIds(((existing as any).credited_user_ids as string[]) ?? []);
-      const lt = (existing as { license_type?: string }).license_type;
-      setLicenseType(isLicenseType(lt ?? "") ? lt : "all_rights");
+      const lt = (existing as { license_type?: string }).license_type ?? "";
+      setLicenseType(isLicenseType(lt) ? lt : "all_rights");
       setLicenseNote((existing as { license_note?: string }).license_note ?? "");
       setCopyrightHolder((existing as { copyright_holder?: string }).copyright_holder ?? "");
       setAiAssisted((existing as { ai_assisted?: boolean }).ai_assisted ?? false);

@@ -60,7 +60,7 @@ export async function fetchProjectRow(id: string): Promise<Tables<"projects"> | 
 }
 
 export async function fetchProjectRows(
-  buildQuery: (select: string) => ReturnType<typeof supabase.from>,
+  buildQuery: (select: string) => PromiseLike<{ data: unknown; error: { message?: string; code?: string } | null }>,
 ): Promise<Tables<"projects">[]> {
   let lastError: { message?: string; code?: string } | null = null;
 

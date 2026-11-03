@@ -42,7 +42,7 @@ export async function resolveProjectAssetForOpen(
   asset: ProjectAsset,
 ): Promise<ProjectAssetResolveResult> {
   const gate = assertProjectAssetSafeToOpen(asset);
-  if (!gate.ok) return gate;
+  if (!gate.ok) return { ok: false, reason: gate.reason };
 
   const { data, error } = await supabase.functions.invoke("download-project-asset", {
     body: { project_id: projectId, asset_id: asset.id },

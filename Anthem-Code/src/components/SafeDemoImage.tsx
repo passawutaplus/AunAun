@@ -3,7 +3,11 @@ import { motion, useReducedMotion } from "framer-motion";
 import { demoImageUrl, demoImageUrlNatural } from "@/lib/demoImages";
 import { imageRevealTransition } from "@/lib/motion";
 
-type SafeDemoImageProps = React.ImgHTMLAttributes<HTMLImageElement> & {
+// framer-motion's <motion.img> redefines the drag/animation handlers, so they are not forwarded.
+type SafeDemoImageProps = Omit<
+  React.ImgHTMLAttributes<HTMLImageElement>,
+  "onDrag" | "onDragStart" | "onDragEnd" | "onAnimationStart" | "onAnimationEnd"
+> & {
   index?: number;
   /** Smooth fade-in when image loads (default on). */
   reveal?: boolean;

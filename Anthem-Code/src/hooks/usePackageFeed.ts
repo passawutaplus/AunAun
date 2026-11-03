@@ -85,14 +85,14 @@ export async function fetchProfilesByOwnerIds(ownerIds: string[]): Promise<Table
     const retry = await profilesPublicFrom()
       .select(PROFILE_DESIGNER_SELECT_NO_ACTIVE)
       .in("user_id", ownerIds);
-    profiles = retry.data;
+    profiles = retry.data as typeof profiles;
     error = retry.error;
   }
   if (error) {
     const fallback = await profilesPublicFrom()
       .select(PROFILE_DESIGNER_SELECT_NO_ACTIVE)
       .in("id", ownerIds);
-    profiles = fallback.data;
+    profiles = fallback.data as typeof profiles;
     error = fallback.error;
   }
   if (error) throw error;

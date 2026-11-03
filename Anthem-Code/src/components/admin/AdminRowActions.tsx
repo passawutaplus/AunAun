@@ -10,7 +10,8 @@ import {
 
 export type AdminAction = {
   label: string;
-  onClick: () => void;
+  /** Optional when `href` is set (link-only action). */
+  onClick?: () => void;
   destructive?: boolean;
   href?: string;
 };
@@ -49,7 +50,7 @@ export default function AdminRowActions({ actions }: Props) {
               className={a.destructive ? "text-destructive focus:text-destructive" : ""}
               onClick={(e) => {
                 e.stopPropagation();
-                a.onClick();
+                a.onClick?.();
               }}
             >
               {a.destructive && <Trash2 className="w-3.5 h-3.5 mr-2" />}

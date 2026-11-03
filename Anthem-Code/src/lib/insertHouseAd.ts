@@ -1,14 +1,13 @@
-export type HouseFeedItem<T> =
-  | { kind: "project"; data: T; key: string }
-  | { kind: "ad"; data: unknown; key: string }
-  | { kind: "house"; key: string };
+import type { FeedItem } from "@/lib/interleaveAds";
+
+export type HouseFeedItem<T> = FeedItem<T> | { kind: "house"; key: string };
 
 /**
  * Insert one house ad after ~`afterRows` of feed cards, then a random
  * column on the next row. Skips short feeds so the grid does not fill up.
  */
 export function insertHouseAd<T>(
-  items: Array<Exclude<HouseFeedItem<T>, { kind: "house" }>>,
+  items: FeedItem<T>[],
   opts: { columns: number; afterRows?: number; columnOffset: number },
 ): HouseFeedItem<T>[] {
   const cols = Math.max(1, opts.columns);

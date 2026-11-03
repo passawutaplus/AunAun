@@ -3,10 +3,28 @@ import { toast } from "sonner";
 import { useMarketingContext } from "@/hooks/admin/MarketingContext";
 import { useMarketingBusinesses } from "@/hooks/admin/useMarketingBusinesses";
 import { MARKETING_APLUS1_DEFAULT_BUSINESS } from "@/lib/marketing/aplus1";
-import { MARKETING_BUSINESS_PRESETS, MARKETING_PLATFORMS, type MarketingLanguage } from "@/lib/marketing/types";
+import {
+  MARKETING_BUSINESS_PRESETS,
+  MARKETING_PLATFORMS,
+  type MarketingLanguage,
+  type MarketingPlatform,
+} from "@/lib/marketing/types";
 import { MarketingCard } from "./MarketingShell";
 
-const defaultForm = () => ({
+type BusinessForm = {
+  business_name: string;
+  category: string;
+  product_service: string;
+  target_customer: string;
+  location: string;
+  language: MarketingLanguage;
+  main_keyword: string;
+  pain_points: string;
+  goals: string;
+  preferred_platforms: MarketingPlatform[];
+};
+
+const defaultForm = (): BusinessForm => ({
   business_name: MARKETING_APLUS1_DEFAULT_BUSINESS.business_name,
   category: MARKETING_BUSINESS_PRESETS[0],
   product_service: MARKETING_APLUS1_DEFAULT_BUSINESS.product_service,
@@ -39,7 +57,9 @@ export default function MarketingBusinessSetup() {
       main_keyword: activeBusiness.main_keyword ?? "",
       pain_points: (activeBusiness.pain_points ?? []).join(", "),
       goals: (activeBusiness.goals ?? []).join(", "),
-      preferred_platforms: activeBusiness.preferred_platforms ?? [],
+      preferred_platforms: (activeBusiness.preferred_platforms ?? []).filter((p): p is MarketingPlatform =>
+        (MARKETING_PLATFORMS as string[]).includes(p),
+      ),
     });
     setLanguagePref(activeBusiness.language);
   }, [activeBusiness, setLanguagePref]);
@@ -52,7 +72,7 @@ export default function MarketingBusinessSetup() {
     setForm((f) => ({ ...f, category, business_name: category }));
   };
 
-  const togglePlatform = (p: string) => {
+  const togglePlatform = (p: MarketingPlatform) => {
     setForm((f) => ({
       ...f,
       preferred_platforms: f.preferred_platforms.includes(p)
