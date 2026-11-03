@@ -83,7 +83,7 @@ jobs:
         run: BASE_URL=https://samecor.com npm run smoke:public
 
   security-e2e:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
@@ -112,7 +112,7 @@ jobs:
           VITE_DEMO_SUPABASE_PUBLISHABLE_KEY: ci_demo_publishable_key
 
   seo-e2e:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
