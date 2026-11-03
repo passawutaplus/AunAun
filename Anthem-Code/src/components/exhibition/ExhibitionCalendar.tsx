@@ -189,7 +189,7 @@ export function ExhibitionCalendar({ events, className }: Props) {
     <section className={cn("py-1", className)} aria-labelledby="week-events-heading">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <h2 id="week-events-heading" className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+          <h2 id="week-events-heading" className="whitespace-nowrap text-lg font-semibold tracking-tight text-foreground sm:text-2xl">
             This Week's Events
           </h2>
           <p className="mt-0.5 text-sm text-muted-foreground">
