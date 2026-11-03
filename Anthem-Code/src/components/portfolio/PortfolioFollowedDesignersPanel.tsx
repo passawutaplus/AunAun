@@ -222,7 +222,7 @@ export default function PortfolioFollowedDesignersPanel() {
               clearLabel="ล้างตัวกรอง"
             />
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-3 md:gap-x-4 gap-y-[22px] md:gap-y-[26px]">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-3 md:gap-x-4 gap-y-[22px] md:gap-y-[26px]">
               {filtered.map((d) => (
                 <DesignerCard
                   key={designerUserId(d)}
