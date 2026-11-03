@@ -78,3 +78,6 @@ verify_jwt = true
 
 [functions.event-extract]
 verify_jwt = true
+
+[functions.trend-report]
+verify_jwt = false

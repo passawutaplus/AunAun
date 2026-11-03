@@ -14,8 +14,33 @@ import {
   formatReport,
   formatEvent,
   flexEvent,
+  flexTrend,
   isIgnoredEmail,
 } from "../../../supabase/functions/_shared/line-admin-format";
+
+describe("weekly trend report", () => {
+  const t = {
+    title: "SAMECOR Trend Report",
+    week_of: "2026-11-02",
+    summary: ["งานสาย Illustration มาแรง", "ลูกค้าหาคนทำ short video มากขึ้น", "คู่แข่งเปิดฟีเจอร์ AI ใหม่"],
+    doc_url: "https://docs.google.com/document/d/abc123/edit",
+  };
+
+  it("lists every summary line and links the button to the Doc", () => {
+    const s = JSON.stringify(flexTrend(t));
+    for (const line of t.summary) expect(s).toContain(line);
+    expect(s).toContain('"uri":"https://docs.google.com/document/d/abc123/edit"');
+    expect(s).toContain("อ่านรายงานเต็ม");
+  });
+
+  it("shows the week in Thai and keeps at most seven lines", () => {
+    const many = { ...t, summary: Array.from({ length: 9 }, (_, i) => `ข้อ ${i + 1}`) };
+    const s = JSON.stringify(flexTrend(many));
+    expect(s).toContain("สัปดาห์ของ");
+    expect(s).toContain("ข้อ 7");
+    expect(s).not.toContain('"text":"ข้อ 8"');
+  });
+});
 
 describe("exhibition event alerts", () => {
   const ev = {

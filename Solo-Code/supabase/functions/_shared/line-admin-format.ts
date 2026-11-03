@@ -55,6 +55,13 @@ export type EventInfo = {
   resubmitted: boolean;
 };
 
+export type TrendInfo = {
+  title: string;
+  week_of: string;
+  summary: string[];
+  doc_url: string;
+};
+
 export type DigestInfo = {
   total_members: number;
   new_members: number;
@@ -591,5 +598,25 @@ export function flexEvent(e: EventInfo): LineMessage {
       [section("image", clip(e.title, 60), what || "Exhibition", meta)],
       { label: "เปิดคิวตรวจ", uri: `${ADMIN_SITE}/admin/events` },
     ),
+  );
+}
+
+/** Weekly trend report: 3–7 short lines, button to the full Google Doc. */
+export function flexTrend(t: TrendInfo): LineMessage {
+  const day = new Date(`${t.week_of}T00:00:00+07:00`);
+  const week = Number.isNaN(day.getTime())
+    ? t.week_of
+    : `สัปดาห์ของ ${new Intl.DateTimeFormat("th-TH", { timeZone: "Asia/Bangkok", day: "numeric", month: "short", year: "numeric" }).format(day)}`;
+  const shown = t.summary.slice(0, 7);
+  const lines: Box[] = shown.map((line, i) => ({
+    type: "box",
+    layout: "baseline",
+    spacing: "sm",
+    margin: i === 0 ? "lg" : "md",
+    contents: [text("•", { size: "sm", color: BRAND, flex: 0 }), text(clip(line, 160), { size: "sm", color: "#333333" })],
+  }));
+  return flex(
+    [`Trend Report · ${week}`, ...shown.map((l) => `• ${l}`)].join("\n"),
+    bubble(clip(t.title, 60), week, lines, { label: "อ่านรายงานเต็ม (Google Docs)", uri: t.doc_url }),
   );
 }

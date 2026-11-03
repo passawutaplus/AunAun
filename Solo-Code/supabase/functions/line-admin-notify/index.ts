@@ -13,16 +13,18 @@ import {
   type FeedbackInfo,
   type MemberInfo,
   type ReportInfo,
+  type TrendInfo,
   type LineMessage,
   flexDigest,
   flexEvent,
   flexFeedback,
   flexMembersBatch,
   flexReport,
+  flexTrend,
   isIgnoredEmail,
 } from "../_shared/line-admin-format.ts";
 
-type OutboxRow = { id: number; kind: "member" | "feedback" | "report" | "digest" | "event"; ref_id: string | null; attempts: number };
+type OutboxRow = { id: number; kind: "member" | "feedback" | "report" | "digest" | "event" | "trend"; ref_id: string | null; attempts: number };
 
 const MEMBER_BURST_AT = 4; // this many sign-ups in one run -> one summary message
 
@@ -115,6 +117,12 @@ Deno.serve(async (req) => {
       const ev = ((data ?? []) as EventInfo[])[0];
       if (ev) {
         texts.push(flexEvent(ev));
+        sentIds.push(r.id);
+      } else skippedIds.push(r.id);
+    } else if (r.kind === "trend" && r.ref_id) {
+      const { data } = await admin.from("trend_reports").select("title, week_of, summary, doc_url").eq("id", r.ref_id).maybeSingle();
+      if (data) {
+        texts.push(flexTrend(data as TrendInfo));
         sentIds.push(r.id);
       } else skippedIds.push(r.id);
     } else if (r.kind === "digest") {
