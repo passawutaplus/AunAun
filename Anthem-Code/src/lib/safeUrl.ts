@@ -7,15 +7,6 @@
  * Returns the URL only if it is an http(s) absolute URL.
  * Otherwise returns undefined to prevent javascript:, data:, etc. XSS via href.
  */
-/** C0 control characters and DEL — browsers strip some of these from URLs. */
-function hasControlChar(s: string): boolean {
-  for (let i = 0; i < s.length; i++) {
-    const c = s.charCodeAt(i);
-    if (c <= 0x1f || c === 0x7f) return true;
-  }
-  return false;
-}
-
 export const safeHttpUrl = (raw?: string | null): string | undefined => {
   if (!raw) return undefined;
   const v = raw.trim();
@@ -28,6 +19,15 @@ export const safeHttpUrl = (raw?: string | null): string | undefined => {
   }
   return undefined;
 };
+
+/** C0 control characters and DEL — browsers strip some of these from URLs. */
+function hasControlChar(s: string): boolean {
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i);
+    if (c <= 0x1f || c === 0x7f) return true;
+  }
+  return false;
+}
 
 /** Validate a post-login redirect path (shared Solo ↔ an1hem). */
 export function safeRelativePath(raw?: string | null, fallback = "/"): string {

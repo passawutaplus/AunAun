@@ -1,3 +1,12 @@
+/** C0 control characters and DEL — browsers strip some of these from URLs. */
+function hasControlChar(s: string): boolean {
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i);
+    if (c <= 0x1f || c === 0x7f) return true;
+  }
+  return false;
+}
+
 /** Validate a post-login redirect path (shared Solo ↔ an1hem). */
 export function safeRelativePath(raw?: string | null, fallback = "/"): string {
   if (!raw || typeof raw !== "string") return fallback;
@@ -5,7 +14,7 @@ export function safeRelativePath(raw?: string | null, fallback = "/"): string {
   if (!s) return fallback;
   if (!s.startsWith("/")) return fallback;
   // Browsers drop tabs/newlines from URLs, so "/<tab>/evil.com" would become "//evil.com".
-  if (/[\u0000-\u001f\u007f]/.test(s)) return fallback;
+  if (hasControlChar(s)) return fallback;
   const head = s.slice(0, 4).toLowerCase();
   if (head.startsWith("//") || head.startsWith("/\\") || head.startsWith("/%2f") || head.startsWith("/%5c"))
     return fallback;
