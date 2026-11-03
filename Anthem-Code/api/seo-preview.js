@@ -72,7 +72,7 @@ async function fetchJson(url, headers) {
 function isKnownPublicPath(pathname) {
   if (pathname === "/") return true;
   if (
-    /^\/(jobs|advertise|research|upgrade|learn|auth|forum|help|explore|collections|inspire|series|s|error)(\/|$)/i.test(
+    /^\/(jobs|advertise|research|upgrade|learn|auth|forum|help|explore|collections|inspire|series|s|error|exhibition|hiring)(\/|$)/i.test(
       pathname,
     )
   ) {
@@ -193,6 +193,100 @@ async function resolveMeta(pathname, base) {
     };
   }
 
+  if (/^\/exhibition\/?$/i.test(pathname)) {
+    return {
+      ...defaultMeta,
+      title: "Exhibition & Events | SAMECOR",
+      description: "นิทรรศการ เวิร์กช็อป และโอกาสสร้างสรรค์รอบตัวคุณ — คัดมาให้ครีเอเตอร์โดยทีม SAMECOR",
+    };
+  }
+
+  const eventMatch = pathname.match(/^\/exhibition\/([0-9a-f-]{36})$/i);
+  if (eventMatch) {
+    const id = eventMatch[1];
+    const rows = await fetchJson(
+      `${rest}/events?select=id,title,description,cover_url,gallery_urls,starts_on,ends_on,location_name&id=eq.${id}&status=eq.published&limit=1`,
+      anthemHeaders,
+    );
+    const e = rows?.[0];
+    if (!e) {
+      return { ...defaultMeta, noindex: true, title: "ไม่พบงาน | SAMECOR", status: 404 };
+    }
+    const raw = e.cover_url || (Array.isArray(e.gallery_urls) ? e.gallery_urls[0] : null);
+    const image = raw ? (raw.startsWith("http") ? raw : `${base}${raw.startsWith("/") ? "" : "/"}${raw}`) : defaultMeta.image;
+    const when = e.starts_on ? (e.ends_on && e.ends_on !== e.starts_on ? `${e.starts_on} – ${e.ends_on}` : e.starts_on) : "";
+    const lead = [when, e.location_name].filter(Boolean).join(" · ");
+    const url = `${base}/exhibition/${e.id}`;
+    return {
+      title: `${e.title} | SAMECOR`,
+      description: [lead, e.description || ""].filter(Boolean).join(" — ").slice(0, 160),
+      url,
+      image,
+      noindex: false,
+      type: "article",
+      status: 200,
+      jsonLd: {
+        "@context": "https://schema.org",
+        "@type": "Event",
+        name: e.title,
+        startDate: e.starts_on || undefined,
+        endDate: e.ends_on || undefined,
+        location: e.location_name ? { "@type": "Place", name: e.location_name } : undefined,
+        image,
+        url,
+      },
+    };
+  }
+
+  // Social previews need a full image URL; stored covers are sometimes site-relative.
+  const abs = (raw) => (raw ? (raw.startsWith("http") ? raw : `${base}${raw.startsWith("/") ? "" : "/"}${raw}`) : null);
+
+  const seriesMatch = pathname.match(/^\/series\/([0-9a-f-]{36})$/i);
+  if (seriesMatch) {
+    const id = seriesMatch[1];
+    const rows = await fetchJson(
+      `${rest}/project_series?select=id,title,summary,cover_url,cover_project_id&id=eq.${id}&is_public=eq.true&limit=1`,
+      anthemHeaders,
+    );
+    const s = rows?.[0];
+    if (!s) return { ...defaultMeta, noindex: true, title: "ไม่พบซีรีส์ | SAMECOR", status: 404 };
+    let cover = s.cover_url;
+    if (!cover && s.cover_project_id) {
+      const p = await fetchJson(
+        `${rest}/projects?select=cover_url&id=eq.${s.cover_project_id}&status=eq.Published&limit=1`,
+        anthemHeaders,
+      );
+      cover = p?.[0]?.cover_url || null;
+    }
+    return {
+      title: `${s.title} · ซีรีส์ | SAMECOR`,
+      description: (s.summary || s.title || "").slice(0, 160),
+      url: `${base}/series/${s.id}`,
+      image: abs(cover) || defaultMeta.image,
+      noindex: false,
+      type: "article",
+      status: 200,
+    };
+  }
+
+  const topicMatch = pathname.match(/^\/forum\/t\/([0-9a-f-]{36})$/i);
+  if (topicMatch) {
+    const id = topicMatch[1];
+    const rows = await fetchJson(
+      `${rest}/forum_topics?select=id,title,body&id=eq.${id}&moderation_state=eq.published&limit=1`,
+      anthemHeaders,
+    );
+    const t = rows?.[0];
+    if (!t) return { ...defaultMeta, noindex: true, title: "ไม่พบกระทู้ | SAMECOR", status: 404 };
+    return {
+      ...defaultMeta,
+      title: `${t.title} · Forum | SAMECOR`,
+      description: String(t.body || t.title || "").replace(/\s+/g, " ").slice(0, 160),
+      url: `${base}/forum/t/${t.id}`,
+      type: "article",
+    };
+  }
+
   const jobMatch = pathname.match(/^\/jobs\/([0-9a-f-]{36})$/i);
   if (jobMatch) {
     const id = jobMatch[1];
@@ -214,7 +308,7 @@ async function resolveMeta(pathname, base) {
       title: `${j.title} | SAMECOR`,
       description: (j.description || j.title || "").slice(0, 160),
       url: `${base}/jobs/${j.id}`,
-      image: j.cover_image_url || defaultMeta.image,
+      image: abs(j.cover_image_url) || defaultMeta.image,
       noindex: !open,
       status: open ? 200 : 404,
       jsonLd: open
