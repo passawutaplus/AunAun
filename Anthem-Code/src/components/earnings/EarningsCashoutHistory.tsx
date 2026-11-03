@@ -1,6 +1,6 @@
 import { Banknote } from "lucide-react";
 import { formatThaiDate } from "@/lib/format";
-import { cashoutStatusLabel } from "@/hooks/useCashout";
+import { cashoutStatusLabel, type CashoutStatus } from "@/hooks/useCashout";
 
 type CashoutRow = {
   id: string;
@@ -72,7 +72,7 @@ function StatusPill({ status }: { status: string }) {
 
   return (
     <span className={`text-[11px] px-2 py-0.5 rounded-full ${cls}`}>
-      {cashoutStatusLabel(status)}
+      {cashoutStatusLabel(status as CashoutStatus)}
     </span>
   );
 }

@@ -84,7 +84,7 @@ export function hasConsentBannerPending(): boolean {
 export function isCategoryAllowed(category: CookieCategory): boolean {
   if (category === "essential") return true;
   const c = readCookieConsent();
-  if (!c) return category === "essential";
+  if (!c) return false;
   if (category === "functional") return c.functional;
   return c.analytics;
 }

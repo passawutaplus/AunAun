@@ -8,7 +8,7 @@ import {
   restRpc,
   supabaseServiceConfig,
 } from "./_helpers.js";
-import { markObjectOrderPaidFromCharge } from "./object-order-paid.js";
+import { markObjectOrderPaidFromCharge } from "./_object-order-paid.js";
 
 /** Keep the exact bytes Omise signed — HMAC breaks if we re-serialize parsed JSON. */
 export const config = { api: { bodyParser: false } };

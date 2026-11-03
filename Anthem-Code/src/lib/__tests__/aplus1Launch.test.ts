@@ -58,7 +58,7 @@ describe("aplus1Launch flags (fail-closed)", () => {
   it("does not enable payments without explicit flag even in production", () => {
     vi.stubEnv("VITE_APLUS1_FULL_PRODUCT", "true");
     vi.stubEnv("VITE_APLUS1_PAYMENTS_ENABLED", "");
-    vi.stubEnv("PROD", "true");
+    vi.stubEnv("PROD", true);
     expect(isAplus1PaymentsEnabled()).toBe(false);
   });
 

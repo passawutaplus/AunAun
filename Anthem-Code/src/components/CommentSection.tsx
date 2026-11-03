@@ -311,7 +311,7 @@ const CommentSection = ({ projectId }: Props) => {
       {!user ? (
         <div className="rounded-2xl glass-panel p-6 text-center space-y-3">
           <p className="text-sm text-muted-foreground">เข้าสู่ระบบเพื่อร่วมแสดงความคิดเห็น</p>
-          <Button onClick={openAuth} className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90">
+          <Button onClick={() => openAuth()} className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90">
             เข้าสู่ระบบ
           </Button>
         </div>

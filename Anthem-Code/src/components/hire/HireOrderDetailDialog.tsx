@@ -401,7 +401,11 @@ export function HireOrderDetailContent({
       startDate: p.startDate ?? null,
       endDate: p.endDate ?? null,
       dueDate: p.dueDate ?? null,
-      milestones: p.milestones ?? [],
+      milestones: (p.milestones ?? []).map((m, i) => ({
+        id: m.id ?? `m-${i + 1}`,
+        label: m.label ?? "",
+        date: m.date ?? null,
+      })),
       showFullTimeline: p.showFullTimeline,
       depositPercent: p.depositPercent ?? activeQuote?.deposit_percent ?? undefined,
       depositDueDate: p.depositDueDate ?? null,

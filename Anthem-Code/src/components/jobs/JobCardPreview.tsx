@@ -49,7 +49,9 @@ const JobCardPreview = ({ data }: Props) => {
     attached_cv_url: null,
     attached_portfolio_ids: [],
     cover_image_url: data.cover_image_url,
-    studio: data.studio,
+    studio: data.studio
+      ? { slug: "", ...data.studio, verified: data.studio.verified ?? false }
+      : undefined,
     poster: data.studio
       ? undefined
       : {

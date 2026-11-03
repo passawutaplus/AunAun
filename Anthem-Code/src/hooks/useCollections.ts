@@ -1,3 +1,4 @@
+import { PROJECT_FEED_CARD_SELECT_WITH_AI } from "@/lib/dbSelects";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -126,7 +127,7 @@ export const useCollectionItems = (collectionId: string | undefined) =>
       if (!projectIds.length) return [];
       const { data: projects, error: pErr } = await supabase
         .from("projects")
-        .select("*")
+        .select(PROJECT_FEED_CARD_SELECT_WITH_AI)
         .in("id", projectIds);
       if (pErr) throw pErr;
       const byId = new Map((projects ?? []).map((p: { id: string }) => [p.id, p]));

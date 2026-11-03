@@ -38,7 +38,7 @@ export const SOCIAL_KIND_LABEL: Record<JobSocialKind, string> = {
 export function parseSocialLinks(raw: unknown): JobSocialLink[] {
   if (!Array.isArray(raw)) return [];
   return raw
-    .map((item) => {
+    .map((item): JobSocialLink | null => {
       if (!item || typeof item !== "object") return null;
       const row = item as Record<string, unknown>;
       const kind = typeof row.kind === "string" ? row.kind : "other";

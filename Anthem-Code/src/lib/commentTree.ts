@@ -35,8 +35,10 @@ export function buildCommentTree<T extends { id: string; parent_id?: string | nu
   return roots;
 }
 
-export function countThread(nodes: CommentNode<unknown>[]): number {
-  return nodes.reduce((acc, n) => acc + 1 + countThread(n.replies as CommentNode<unknown>[]), 0);
+export function countThread<T extends { id: string; parent_id?: string | null; depth?: number }>(
+  nodes: CommentNode<T>[],
+): number {
+  return nodes.reduce((acc, n) => acc + 1 + countThread(n.replies), 0);
 }
 
 /** Drop hidden comments and posts from blocked authors (and their replies). */

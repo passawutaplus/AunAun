@@ -1,3 +1,4 @@
+import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { FeedInterestId } from "@/data/feedInterestOptions";
@@ -23,7 +24,7 @@ async function ensureProfileRow(userId: string): Promise<void> {
     username: `${base}_${userId.slice(0, 6)}`,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
-  } as Record<string, unknown>);
+  } as TablesInsert<"profiles">);
   if (error && !/duplicate|unique/i.test(error.message)) throw error;
 }
 
@@ -101,7 +102,7 @@ export function useFeedInterestSurvey(userId: string | undefined) {
           feed_interests: interests,
           feed_interests_at: interests.length > 0 ? completedAt : null,
           profile_onboarding_at: completedAt,
-        } as Record<string, unknown>)
+        } as TablesUpdate<"profiles">)
         .eq("user_id", userId)
         .select("feed_interests, feed_interests_at, profile_onboarding_at")
         .maybeSingle();
@@ -157,7 +158,7 @@ export function useFeedInterestSurvey(userId: string | undefined) {
 
       const { data, error } = await supabase
         .from("profiles")
-        .update(payload)
+        .update(payload as TablesUpdate<"profiles">)
         .eq("user_id", userId)
         .select(
           "feed_interests, feed_interests_at, display_name, username, avatar_url, cover_url, opportunity_types, preferred_categories, skills, profile_onboarding_at",

@@ -6,7 +6,6 @@ import { SensitiveActionReauthProvider } from "@/components/legal/SensitiveActio
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { isInspireEnabled } from "@/lib/aplus1Launch";
 import { Toaster as Sonner } from "@/components/ui/sonner";
-import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import Index from "./pages/Index.tsx";
@@ -23,7 +22,6 @@ import FloatingNav from "./components/FloatingNav.tsx";
 import DesktopTopNav from "./components/DesktopTopNav.tsx";
 import RequireAuth from "./components/RequireAuth.tsx";
 import AdminGuard from "./components/admin/AdminGuard.tsx";
-import AuthDialog from "./components/AuthDialog.tsx";
 import FeedbackTicketHost from "./components/feedback/FeedbackTicketHost.tsx";
 import PullToRefresh from "./components/PullToRefresh.tsx";
 import RatingPrompt from "./components/feedback/RatingPrompt.tsx";
@@ -43,6 +41,9 @@ import { OAuthErrorGate } from "./components/auth/OAuthErrorGate.tsx";
 import { ProductEventTracker } from "./components/ProductEventTracker.tsx";
 import LaunchMinimalGate from "./components/LaunchMinimalGate.tsx";
 import PageTransition from "./components/motion/PageTransition.tsx";
+
+// Only mounted content is the sign-in sheet; keep it out of the first-paint bundle.
+const AuthDialog = lazy(() => import("./components/AuthDialog.tsx"));
 
 // Code-split routes — only the home feed stays in the main chunk.
 const AuthPage = lazy(() => import("./pages/AuthPage.tsx"));
@@ -223,7 +224,6 @@ const App = () => (
     <SensitiveActionReauthProvider>
     <ThemeProvider>
       <TooltipProvider>
-        <Toaster />
         <Sonner />
         {/* startTransition: keep the current page on screen while a lazy route chunk loads (no full-screen loader flash). */}
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
@@ -469,7 +469,9 @@ const App = () => (
           <PolicyReconsentGate />
           <FloatingNav />
           <AndroidAppBanner />
-          <AuthDialog />
+          <Suspense fallback={null}>
+            <AuthDialog />
+          </Suspense>
           <FeedbackTicketHost />
           <PullToRefresh />
           <RatingPrompt />

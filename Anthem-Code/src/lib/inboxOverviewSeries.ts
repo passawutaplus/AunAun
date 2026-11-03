@@ -220,14 +220,14 @@ export function collabInboxMetricConfig(metric: CollabInboxMetric) {
   return COLLAB_INBOX_METRICS.find((item) => item.id === metric) ?? COLLAB_INBOX_METRICS[0];
 }
 
-export function sumInboxMetric<T extends Record<string, number>>(
+export function sumInboxMetric<T extends object>(
   points: T[],
   metric: keyof T,
 ): number {
   return points.reduce((sum, point) => sum + (Number(point[metric]) || 0), 0);
 }
 
-export function averageInboxMetric<T extends Record<string, number>>(
+export function averageInboxMetric<T extends object>(
   points: T[],
   metric: keyof T,
 ): number {

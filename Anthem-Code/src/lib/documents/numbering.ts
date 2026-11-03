@@ -83,8 +83,9 @@ export async function allocateDocNumber(kind: DocNumberKind): Promise<string> {
       p_kind: kind,
     } as never,
   );
-  if (!error && typeof data === "string" && isSequentialDocNumber(data)) {
-    return data.trim();
+  const value: unknown = data;
+  if (!error && typeof value === "string" && isSequentialDocNumber(value)) {
+    return value.trim();
   }
   return makeProvisionalDocNumber(kind);
 }

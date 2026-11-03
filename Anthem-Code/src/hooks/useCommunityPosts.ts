@@ -1,3 +1,4 @@
+import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import { useEffect } from "react";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -417,7 +418,7 @@ async function updateCommunityPostRow(
   const attempt = async (payload: Record<string, unknown>) => {
     const { data, error } = await supabase
       .from("community_posts")
-      .update(payload)
+      .update(payload as TablesUpdate<"community_posts">)
       .eq("id", id)
       .eq("author_id", authorId)
       .select("id")
@@ -457,7 +458,7 @@ async function upsertCommunityPostRow(
   const insertRow = async (payload: Record<string, unknown>) => {
     const { data, error } = await supabase
       .from("community_posts")
-      .insert(payload)
+      .insert(payload as TablesInsert<"community_posts">)
       .select("id")
       .single();
     if (error) throw error;
