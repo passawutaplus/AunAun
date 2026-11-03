@@ -59,7 +59,13 @@ function InfoRow({ icon: Icon, children }: { icon: typeof CalendarDays; children
 function displayUrl(url: string): string {
   try {
     const u = new URL(url);
-    return (u.host.replace(/^www\./, "") + u.pathname).replace(/\/$/, "");
+    let path = u.pathname;
+    try {
+      path = decodeURIComponent(path); // %E2%80%98 → ‘ so Thai / curly quotes read as text
+    } catch {
+      /* malformed escape: keep as is */
+    }
+    return (u.host.replace(/^www\./, "") + path).replace(/\/$/, "");
   } catch {
     return url;
   }
@@ -69,20 +75,14 @@ function displayUrl(url: string): string {
 function RegistrationCta({ event, onRegister }: { event: ExhibitionEvent; onRegister?: () => void }) {
   const ended = isEventEnded(event);
   const action = ended ? null : eventPrimaryAction(event);
+  // No registration link → show nothing at all.
+  if (!action || !isHttpUrl(action.url)) return null;
   return (
-    <div className="space-y-2">
-      {action && isHttpUrl(action.url) ? (
-        <Button asChild size="lg" className="w-full rounded-full bg-brand text-neutral-950 hover:bg-brand/90">
-          <a href={action.url} target="_blank" rel="noopener noreferrer nofollow" onClick={onRegister}>
-            {action.label} <ExternalLink className="ml-2 h-4 w-4" aria-hidden />
-          </a>
-        </Button>
-      ) : !ended && event.origin === "curated" ? (
-        <p className="rounded-lg border border-dashed border-border px-4 py-3 text-sm text-muted-foreground">
-          ลิงก์ลงทะเบียน: {NOT_SPECIFIED} — ดูรายละเอียดที่เว็บไซต์ต้นทาง
-        </p>
-      ) : null}
-    </div>
+    <Button asChild size="lg" className="w-full rounded-full bg-brand text-neutral-950 hover:bg-brand/90">
+      <a href={action.url} target="_blank" rel="noopener noreferrer nofollow" onClick={onRegister}>
+        {action.label} <ExternalLink className="ml-2 h-4 w-4" aria-hidden />
+      </a>
+    </Button>
   );
 }
 
@@ -198,6 +198,13 @@ export default function ExhibitionDetailPage() {
             {event.title}
           </h1>
           <p className="text-base text-foreground/80">{lead}</p>
+          <EventActions
+            event={event}
+            stats={stats?.[event.id]}
+            interested={myInterests?.has(event.id)}
+            showViews
+            className="-my-2 -ml-2.5"
+          />
 
           <div className="space-y-3 border-t border-border pt-5">
             <InfoRow icon={CalendarDays}>
@@ -246,21 +253,15 @@ export default function ExhibitionDetailPage() {
                 >
                   {displayUrl(sourcePage)}
                 </a>
-                {event.source_url ? <span className="block text-muted-foreground">เว็บไซต์ต้นทาง</span> : null}
               </InfoRow>
             ) : null}
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="min-w-0 flex-1">
-              <RegistrationCta
-                event={event}
-                // Signed-in clicks land in Portfolio → Exhibition → ลงทะเบียน.
-                onRegister={user && event.status === "published" ? () => recordEventRegistration(event.id) : undefined}
-              />
-            </div>
-            <EventActions event={event} stats={stats?.[event.id]} interested={myInterests?.has(event.id)} showViews />
-          </div>
+          <RegistrationCta
+            event={event}
+            // Signed-in clicks land in Portfolio → Exhibition → ลงทะเบียน.
+            onRegister={user && event.status === "published" ? () => recordEventRegistration(event.id) : undefined}
+          />
           <EventSourceNote event={event} />
         </div>
       </div>

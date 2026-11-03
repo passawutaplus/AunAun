@@ -1,12 +1,23 @@
 import { Bookmark, Eye, Share2 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import SharePopover from "@/components/SharePopover";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
-import { useToggleEventInterest, type EventStats } from "@/hooks/useExhibitionEvents";
+import {
+  useToggleEventInterest,
+  type EventStats,
+} from "@/hooks/useExhibitionEvents";
 import { isDemoEventId, type ExhibitionEvent } from "@/lib/exhibitionEvents";
 import { cn } from "@/lib/utils";
 
-const compact = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 });
+const compact = new Intl.NumberFormat("en", {
+  notation: "compact",
+  maximumFractionDigits: 1,
+});
 
 const iconBtn =
   "inline-flex h-9 items-center gap-1.5 rounded-full px-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground disabled:opacity-50";
@@ -22,17 +33,28 @@ type Props = {
 };
 
 /** สนใจ · share (· views) for an event — list cards and the event page. */
-export function EventActions({ event, stats, interested = false, showViews = false, className }: Props) {
+export function EventActions({
+  event,
+  stats,
+  interested = false,
+  showViews = false,
+  className,
+}: Props) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const toggleInterest = useToggleEventInterest();
   const canInterest = event.status === "published" && !isDemoEventId(event.id);
-  const url = typeof window !== "undefined" ? `${window.location.origin}/exhibition/${event.id}` : `/exhibition/${event.id}`;
+  const url =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/exhibition/${event.id}`
+      : `/exhibition/${event.id}`;
 
   const requireUser = () => {
     if (user) return true;
-    navigate(`/auth?redirect=${encodeURIComponent(location.pathname + location.search)}`);
+    navigate(
+      `/auth?redirect=${encodeURIComponent(location.pathname + location.search)}`,
+    );
     return false;
   };
   const onInterest = () => {
@@ -42,25 +64,52 @@ export function EventActions({ event, stats, interested = false, showViews = fal
   return (
     <div className={cn("flex items-center gap-0.5", className)}>
       {showViews && stats ? (
-        <span className="inline-flex h-9 items-center gap-1.5 px-2.5 text-sm text-muted-foreground" title="จำนวนครั้งที่เปิดดู">
+        <span
+          className="inline-flex h-9 items-center gap-1.5 px-2.5 text-sm text-muted-foreground"
+          title="จำนวนครั้งที่เปิดดู"
+        >
           <Eye className="h-4 w-4" aria-hidden />
-          <span className="tabular-nums">{compact.format(stats.view_count)}</span>
+          <span className="tabular-nums">
+            {compact.format(stats.view_count)}
+          </span>
           <span className="sr-only">ครั้งที่เปิดดู</span>
         </span>
       ) : null}
-      <button
-        type="button"
-        onClick={onInterest}
-        disabled={!canInterest || toggleInterest.isPending}
-        aria-pressed={interested}
-        aria-label={interested ? "เลิกสนใจงานนี้" : "สนใจงานนี้ (เตือนก่อนงานเริ่ม)"}
-        title={interested ? "สนใจแล้ว — จะเตือนก่อนงานเริ่ม" : "สนใจ — เตือนก่อนงานเริ่ม 3 วันและ 1 วัน"}
-        className={cn(iconBtn, interested && "text-brand hover:text-brand")}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            onClick={onInterest}
+            disabled={!canInterest || toggleInterest.isPending}
+            aria-pressed={interested}
+            aria-label={
+              interested ? "เลิกสนใจงานนี้" : "สนใจงานนี้ (เตือนก่อนงานเริ่ม)"
+            }
+            className={cn(iconBtn, interested && "text-brand hover:text-brand")}
+          >
+            <Bookmark
+              className={cn("h-4 w-4", interested && "fill-current")}
+              aria-hidden
+            />
+            {stats ? (
+              <span className="tabular-nums">
+                {compact.format(stats.interest_count)}
+              </span>
+            ) : null}
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="max-w-[16rem] text-center">
+          {interested
+            ? "สนใจแล้ว — เราจะเตือนก่อนงานเริ่ม 3 วันและ 1 วัน (กดอีกครั้งเพื่อยกเลิก)"
+            : "สนใจงานนี้ — เราจะเตือนก่อนงานเริ่ม 3 วันและ 1 วัน"}
+        </TooltipContent>
+      </Tooltip>
+      <SharePopover
+        url={url}
+        title={event.title}
+        label="แชร์งานนี้"
+        imageUrl={event.cover_url ?? undefined}
       >
-        <Bookmark className={cn("h-4 w-4", interested && "fill-current")} aria-hidden />
-        {stats ? <span className="tabular-nums">{compact.format(stats.interest_count)}</span> : null}
-      </button>
-      <SharePopover url={url} title={event.title} label="แชร์งานนี้" imageUrl={event.cover_url ?? undefined}>
         <button type="button" aria-label="แชร์" className={iconBtn}>
           <Share2 className="h-4 w-4" aria-hidden />
         </button>
