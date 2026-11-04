@@ -2,7 +2,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { exploreProjectsUrl } from "@/lib/exploreRoutes";
 import {
   Eye,
-  MessageSquareText,
   Sparkles,
   Calendar,
   Hash,
@@ -207,6 +206,9 @@ const ProjectSidePanel = (p: Props) => {
               <Calendar className="w-3 h-3" aria-hidden />{" "}
               {formatThaiDate(p.publishedDate)}
             </span>
+            <span className="flex items-center gap-1 text-xs">
+              <Eye className="w-3 h-3" aria-hidden /> {formatCompact(p.views)} วิว
+            </span>
           </div>
         </div>
 
@@ -242,16 +244,6 @@ const ProjectSidePanel = (p: Props) => {
           </p>
         ) : null}
 
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1">
-            <Eye className="w-3.5 h-3.5" aria-hidden /> {formatCompact(p.views)}{" "}
-            วิว
-          </span>
-          <span className="flex items-center gap-1">
-            <MessageSquareText className="w-3.5 h-3.5" aria-hidden />{" "}
-            {formatCompact(p.commentsCount)} คอมเมนต์
-          </span>
-        </div>
 
         {/* Prices return with the commerce phase. */}
         {isCommerceEnabled() &&

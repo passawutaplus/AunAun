@@ -305,7 +305,7 @@ const CommentSection = ({ projectId }: Props) => {
     <section className="space-y-4">
       <h2 className="text-xl font-medium text-foreground flex items-center gap-2">
         <MessageSquareText className="w-5 h-5 text-primary" />
-        ความคิดเห็น {totalCount > 0 && <span className="text-muted-foreground text-sm font-normal">({totalCount})</span>}
+        ความคิดเห็น <span className="text-muted-foreground text-sm font-normal">({totalCount})</span>
       </h2>
 
       {!user ? (
