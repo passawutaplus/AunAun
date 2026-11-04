@@ -1,23 +1,32 @@
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, FileText, Info, LifeBuoy, Lock, Mail, ShieldAlert, type LucideIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { BRAND_LINE_CONTACT_URL, BRAND_LINE_ID, BRAND_NAME, BRAND_SUPPORT_EMAIL } from "@/lib/brandConfig";
 import { getNativeAppVersion } from "@/lib/appShell";
 import { cn } from "@/lib/utils";
 
-type LegalLink = { label: string; to: string } | { label: string; href: string };
+type LegalLink = ({ label: string; to: string } | { label: string; href: string }) & { icon: LucideIcon };
 
 /** Moved here from the site footer, which the Android app does not show. */
 const SETTINGS_LEGAL_LINKS: LegalLink[] = [
-  { label: "ข้อกำหนดการใช้งาน", to: "/legal/terms" },
-  { label: "นโยบายความเป็นส่วนตัว", to: "/legal/privacy" },
-  { label: "ศูนย์ช่วยเหลือ", to: "/help" },
-  { label: "แจ้งละเมิดลิขสิทธิ์", to: "/legal/copyright-report" },
-  { label: "เกี่ยวกับ SAMECOR", to: "/learn" },
-  { label: `ติดต่อ ${BRAND_SUPPORT_EMAIL}`, href: `mailto:${BRAND_SUPPORT_EMAIL}` },
+  { label: "ข้อกำหนดการใช้งาน", to: "/legal/terms", icon: FileText },
+  { label: "นโยบายความเป็นส่วนตัว", to: "/legal/privacy", icon: Lock },
+  { label: "ศูนย์ช่วยเหลือ", to: "/help", icon: LifeBuoy },
+  { label: "แจ้งละเมิดลิขสิทธิ์", to: "/legal/copyright-report", icon: ShieldAlert },
+  { label: "เกี่ยวกับ SAMECOR", to: "/learn", icon: Info },
+  { label: `ติดต่อ ${BRAND_SUPPORT_EMAIL}`, href: `mailto:${BRAND_SUPPORT_EMAIL}`, icon: Mail },
 ];
 
-const rowClass =
-  "flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left text-sm text-foreground active:bg-accent";
+const rowClass = "flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-foreground active:bg-accent";
+
+function RowBody({ item }: { item: LegalLink }) {
+  return (
+    <>
+      <item.icon className="h-[18px] w-[18px] shrink-0 text-muted-foreground" strokeWidth={1.8} aria-hidden />
+      <span className="min-w-0 flex-1">{item.label}</span>
+      <ChevronRight className="h-4 w-4 text-muted-foreground" aria-hidden />
+    </>
+  );
+}
 
 /** Legal + help links as a card list (phone settings list), plus the LINE@ button. */
 export function SettingsLegalList({ className }: { className?: string }) {
@@ -29,13 +38,11 @@ export function SettingsLegalList({ className }: { className?: string }) {
           <li key={item.label}>
             {"to" in item ? (
               <Link to={item.to} className={rowClass}>
-                {item.label}
-                <ChevronRight className="h-4 w-4 text-muted-foreground" aria-hidden />
+                <RowBody item={item} />
               </Link>
             ) : (
               <a href={item.href} className={rowClass}>
-                {item.label}
-                <ChevronRight className="h-4 w-4 text-muted-foreground" aria-hidden />
+                <RowBody item={item} />
               </a>
             )}
           </li>
