@@ -12,6 +12,9 @@ export const NAV_HIDDEN_PREFIXES = [
   "/settings",
   "/verify",
   "/earnings/withdraw",
+  // Creator invitations: private one-off pages, the bottom nav returns on the rest of the site
+  "/invite/",
+  "/account/set-password",
 ];
 
 export const isPortfolioEditorRoute = (pathname: string) =>
