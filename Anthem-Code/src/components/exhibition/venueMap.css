@@ -1,51 +1,106 @@
-/* Venue map (Leaflet + OpenStreetMap tiles). Dark theme: tone the light OSM tiles down instead of a second tile host. */
-.venue-map .leaflet-container {
+/* Venue map (MapLibre + OpenFreeMap vector tiles). */
+.venue-map .maplibregl-map {
   background: hsl(var(--muted));
   font-family: inherit;
 }
-.dark .venue-map .venue-map-tiles {
-  filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.85) saturate(0.35);
-}
-.venue-map .leaflet-control-attribution {
+.venue-map .maplibregl-ctrl-attrib {
   background: hsl(var(--background) / 0.75);
   color: hsl(var(--muted-foreground));
   font-size: 10px;
 }
-.venue-map .leaflet-control-attribution a {
+.venue-map .maplibregl-ctrl-attrib a {
   color: inherit;
 }
-.venue-map .leaflet-bar a {
+.venue-map .maplibregl-ctrl-group {
   background: hsl(var(--background));
-  color: hsl(var(--foreground));
-  border-color: hsl(var(--border));
+  border: 1px solid hsl(var(--border));
+  box-shadow: none;
+}
+.dark .venue-map .maplibregl-ctrl-group button .maplibregl-ctrl-icon {
+  filter: invert(1);
 }
 
+/* Pin marker: teardrop with the number inside. */
 .venue-pin {
-  display: flex;
-  height: 28px;
+  position: relative;
+  display: block;
   width: 28px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 9999px;
-  border: 2px solid hsl(var(--background));
-  background: hsl(var(--muted-foreground));
-  color: hsl(var(--background));
-  font-size: 12px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  box-shadow: 0 1px 4px rgb(0 0 0 / 0.35);
+  height: 36px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  transform-origin: 50% 100%;
   transition: transform 150ms ease;
 }
-.venue-pin--on {
-  background: hsl(var(--brand));
+.venue-pin svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.45));
+}
+.venue-pin svg path {
+  fill: hsl(var(--foreground) / 0.8);
+  stroke: hsl(var(--background));
+  stroke-width: 1.5;
+}
+.venue-pin span {
+  position: absolute;
+  top: 6px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 14px;
+  font-variant-numeric: tabular-nums;
+  color: hsl(var(--background));
+}
+.venue-pin--on svg path {
+  fill: hsl(var(--brand));
+}
+.venue-pin--on span {
   color: #fff;
 }
 .venue-pin--active {
   transform: scale(1.25);
-  border-color: hsl(var(--foreground));
+}
+.venue-pin--active svg path {
+  stroke: hsl(var(--foreground));
+}
+.venue-pin--picked svg path {
+  stroke: #fff;
+  stroke-width: 2.5;
+}
+.venue-pin--faded {
+  opacity: 0.4;
+}
+.venue-pin:focus-visible {
+  outline: 2px solid hsl(var(--foreground));
+  outline-offset: 2px;
+  border-radius: 6px;
 }
 @media (prefers-reduced-motion: reduce) {
   .venue-pin {
     transition: none;
   }
+}
+
+/* Viewer's start point (home / work / here): white disc with a small icon. */
+.venue-start {
+  display: flex;
+  height: 30px;
+  width: 30px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: #fff;
+  border: 3px solid hsl(var(--brand));
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.45);
+}
+.venue-start svg {
+  height: 16px;
+  width: 16px;
+  fill: hsl(var(--brand));
 }

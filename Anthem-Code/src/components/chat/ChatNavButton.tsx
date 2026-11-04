@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useChatInboxBadgeCount } from "@/hooks/useChat";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n";
+import { NAV } from "@/lib/i18n/nav";
 
 type Props = {
   className?: string;
@@ -10,19 +12,20 @@ type Props = {
 
 const ChatNavButton = ({ className }: Props) => {
   const navigate = useNavigate();
+  const t = useT(NAV);
   const { user } = useAuth();
   const { data: badgeCount = 0 } = useChatInboxBadgeCount();
 
   if (!user) return null;
 
-  const label = `แชท${badgeCount > 0 ? ` (${badgeCount} รายการใหม่)` : ""}`;
+  const label = badgeCount > 0 ? t("withNew", { label: t("chat"), n: badgeCount }) : t("chat");
 
   return (
     <button
       type="button"
       onClick={() => navigate("/chat")}
       aria-label={label}
-      title="แชท"
+      title={t("chat")}
       className={cn(
         "relative inline-flex items-center justify-center w-9 h-9 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-colors",
         className,

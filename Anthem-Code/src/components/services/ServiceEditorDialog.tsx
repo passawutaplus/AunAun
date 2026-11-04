@@ -1146,7 +1146,7 @@ export default function ServiceEditorDialog({
           <DialogHeader>
             <DialogTitle>ยืนยันก่อนเผยแพร่แพ็กเกจ</DialogTitle>
             <DialogDescription>
-              ติ๊กยอมรับนโยบาย แล้วกดยืนยันเผยแพร่
+              เลือกยอมรับนโยบาย แล้วกดยืนยันเผยแพร่
             </DialogDescription>
           </DialogHeader>
           <PackagePublishAttestation

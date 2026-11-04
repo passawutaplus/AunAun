@@ -54,7 +54,7 @@ export default function UxResearchFeedbackPage() {
                 <Link to="/research" className="text-primary hover:underline">
                   คู่มือ /research
                 </Link>{" "}
-                — ติ๊กสิ่งที่ทำแล้วและให้คะแนน ส่งครั้งเดียวตอนจบ (ไม่ต้อง login)
+                — เลือกสิ่งที่ทำแล้วและให้คะแนน ส่งครั้งเดียวตอนจบ (ไม่ต้อง login)
               </p>
             </section>
 
@@ -65,7 +65,7 @@ export default function UxResearchFeedbackPage() {
               </p>
               <ul className="text-muted-foreground list-disc pl-5 space-y-1">
                 <li>ใส่ชื่อที่ทีมรู้จัก — ไม่เก็บอีเมลหรือข้อมูลส่วนตัว</li>
-                <li>ติ๊ก T1–T11 และ section A–W ที่ไล่แล้ว</li>
+                <li>เลือก T1–T11 และ section A–W ที่ไล่แล้ว</li>
                 <li>ให้คะแนน 1–5 ครบ 8 ข้อ</li>
               </ul>
             </section>

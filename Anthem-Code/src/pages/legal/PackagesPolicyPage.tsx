@@ -63,7 +63,7 @@ const PackagesPolicyPage = () => (
 
     <h2 id={PACKAGE_POLICY_ATTESTATION_ANCHOR}>3. {PACKAGE_ATTESTATION_TITLE}</h2>
     <p>
-      ก่อนกด<strong>เผยแพร่</strong> คุณต้องติ๊กยืนยันคำแถลงด้านล่าง
+      ก่อนกด<strong>เผยแพร่</strong> คุณต้องเลือกยืนยันคำแถลงด้านล่าง
       (รุ่นข้อความ: {PACKAGE_ATTESTATION_VERSION})
     </p>
     <div className="not-prose rounded-xl border-2 border-primary/30 bg-primary/5 p-4 space-y-2 my-4">

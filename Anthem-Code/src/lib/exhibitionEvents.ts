@@ -1,4 +1,6 @@
 import { demoImageUrl } from "@/lib/demoImages";
+import { COMMON, formatDateRange, getLang, tr, type Entry, type Lang } from "@/lib/i18n";
+import { EXHIBITION_SHARED as S } from "@/lib/i18n/exhibition/shared";
 
 /** Exhibition & events (anthem.events). Writes go through the event_* RPCs; see the migration for the rules. */
 export const EVENT_CATEGORIES = [
@@ -23,14 +25,31 @@ export type EventFeeType = "free" | "paid" | "unspecified";
 /** Who put the event on SameCor: our own event, a member's submission, or one the team found elsewhere. */
 export type EventOrigin = "original" | "community" | "curated";
 
+/** Team panel text (Thai UI shows these English names). Public UI: use originLabel(). */
 export const EVENT_ORIGIN_LABEL: Record<EventOrigin, string> = {
-  original: "Organized by SameCor",
+  original: "Organized by SAMECOR",
   community: "Submitted by Community",
-  curated: "Curated by SameCor",
+  curated: "Curated by SAMECOR",
 };
 
-/** Shown wherever a curated source did not state a value. We never guess. */
+const ORIGIN_ENTRY: Record<EventOrigin, Entry> = {
+  original: S.originOriginal,
+  community: S.originCommunity,
+  curated: S.originCurated,
+};
+
+/** Origin tag in the UI language. */
+export function originLabel(origin: EventOrigin, lang: Lang = getLang()): string {
+  return tr(ORIGIN_ENTRY[origin] ?? S.originCommunity, undefined, lang);
+}
+
+/** Shown wherever a curated source did not state a value. We never guess. Thai constant; UI: notSpecified(). */
 export const NOT_SPECIFIED = "ไม่ระบุ";
+
+/** "ไม่ระบุ" / "Not specified" / "未注明" in the UI language. */
+export function notSpecified(lang: Lang = getLang()): string {
+  return tr(COMMON.notSpecified, undefined, lang);
+}
 
 export type ExhibitionEvent = {
   id: string;
@@ -130,7 +149,15 @@ export function emptyEventDraft(): EventDraft {
   };
 }
 
-export type EventAction = { label: string; url: string };
+export type EventActionKind = "tickets" | "apply" | "workshop" | "register";
+export type EventAction = { label: string; url: string; kind: EventActionKind };
+
+const ACTION_ENTRY: Record<EventActionKind, Entry> = {
+  tickets: S.ctaTickets,
+  apply: S.ctaApply,
+  workshop: S.ctaWorkshop,
+  register: S.ctaRegister,
+};
 
 /**
  * The main button on an event page: buy tickets for paid events with a ticket page, Apply for open calls,
@@ -138,25 +165,37 @@ export type EventAction = { label: string; url: string };
  */
 export function eventPrimaryAction(
   e: Pick<ExhibitionEvent, "category" | "fee_type" | "registration_url" | "ticket_url" | "registration_open">,
+  lang: Lang = getLang(),
 ): EventAction | null {
-  if (e.ticket_url && e.fee_type !== "free") return { label: "ซื้อบัตร / Get Tickets", url: e.ticket_url };
+  const act = (kind: EventActionKind, url: string): EventAction => ({ kind, url, label: tr(ACTION_ENTRY[kind], undefined, lang) });
+  if (e.ticket_url && e.fee_type !== "free") return act("tickets", e.ticket_url);
   if (e.registration_url && e.registration_open) {
-    if (e.category === "open_call") return { label: "Apply Now", url: e.registration_url };
-    if (e.category === "workshop") return { label: "ลงทะเบียน Workshop", url: e.registration_url };
-    return { label: "ลงทะเบียนเข้าร่วม", url: e.registration_url };
+    if (e.category === "open_call") return act("apply", e.registration_url);
+    if (e.category === "workshop") return act("workshop", e.registration_url);
+    return act("register", e.registration_url);
   }
-  if (e.ticket_url) return { label: "ซื้อบัตร / Get Tickets", url: e.ticket_url };
+  if (e.ticket_url) return act("tickets", e.ticket_url);
   return null;
 }
 
-export function feeLabel(e: Pick<ExhibitionEvent, "fee_type" | "fee_note">): string {
-  if (e.fee_type === "free") return "เข้าชมฟรี";
-  if (e.fee_type === "paid") return e.fee_note ? `มีค่าใช้จ่าย · ${e.fee_note}` : "มีค่าใช้จ่าย";
-  return `ค่าเข้าชม: ${NOT_SPECIFIED}`;
+export function feeLabel(e: Pick<ExhibitionEvent, "fee_type" | "fee_note">, lang: Lang = getLang()): string {
+  if (e.fee_type === "free") return tr(S.feeFree, undefined, lang);
+  if (e.fee_type === "paid") return e.fee_note ? tr(S.feePaidNote, { note: e.fee_note }, lang) : tr(S.feePaid, undefined, lang);
+  return tr(S.feeUnspecified, { ns: notSpecified(lang) }, lang);
 }
 
-export function categoryLabel(id: string): string {
-  return EVENT_CATEGORIES.find((c) => c.id === id)?.label ?? "Event";
+const CATEGORY_ENTRY: Record<EventCategory, Entry> = {
+  exhibition: S.catExhibition,
+  workshop: S.catWorkshop,
+  art_fair: S.catArtFair,
+  talk_forum: S.catTalkForum,
+  open_call: S.catOpenCall,
+  other: S.catOther,
+};
+
+/** Category name in the UI language ("Event" for an unknown id). Thai keeps the English names shown today. */
+export function categoryLabel(id: string, lang: Lang = getLang()): string {
+  return tr(CATEGORY_ENTRY[id as EventCategory] ?? S.catEvent, undefined, lang);
 }
 
 function todayIso(): string {
@@ -188,22 +227,10 @@ export const EVENT_STATUS_LABEL: Record<EventDisplayStatus, { label: string; th:
   ended: { label: "Ended", th: "งานจบแล้ว", dot: "bg-foreground/40" },
 };
 
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-function parts(iso: string) {
-  const [y, m, d] = iso.split("-").map(Number);
-  return { y, m: MONTHS[m - 1], d };
-}
-
-/** "15 Nov – 28 Dec 2026", "8 Dec 2026", "1 – 15 Dec 2026". */
-export function formatEventDates(starts?: string | null, ends?: string | null): string {
+/** "15 – 28 พ.ย. 2569" / "15 Nov – 28 Dec 2026" / "2026年11月15日 – 12月28日", in the UI language. "" without a start. */
+export function formatEventDates(starts?: string | null, ends?: string | null, lang: Lang = getLang()): string {
   if (!starts) return "";
-  const a = parts(starts);
-  if (!ends || ends === starts) return `${a.d} ${a.m} ${a.y}`;
-  const b = parts(ends);
-  if (a.y !== b.y) return `${a.d} ${a.m} ${a.y} – ${b.d} ${b.m} ${b.y}`;
-  if (a.m !== b.m) return `${a.d} ${a.m} – ${b.d} ${b.m} ${b.y}`;
-  return `${a.d} – ${b.d} ${b.m} ${b.y}`;
+  return formatDateRange(starts, ends, lang);
 }
 
 /** Published events for the public list: picks first, then running/upcoming by start date, ended last. */
@@ -322,26 +349,128 @@ export function isDemoEventId(id: string | undefined): boolean {
 }
 
 /** "สรุปโดย SAMECOR": short lists written from the organiser's page; null when not prepared yet. */
+export type EventLinkKind = "download" | "form" | "rules" | "register" | "tickets" | "info";
+export type EventInsightLink = { label: string; url: string; kind: EventLinkKind };
+
 export type EventInsights = {
   who_for: string[];
   takeaways: string[];
   know_before: string[];
   /** SAMECOR work categories (projects.category) for the related-works row. */
   related_categories: string[];
+  /** Ordered steps: apply (open call), book (workshop), register (talk). */
+  steps: string[];
+  eligibility: string[];
+  /** Prizes (contests) or what selected applicants get. */
+  benefits: string[];
+  /** What to bring / prepare (workshops). */
+  bring: string[];
+  speakers: string[];
+  /** Programme times, or rounds / ticket sessions. */
+  schedule: string[];
+  highlights: string[];
+  capacity: string | null;
+  /** Closing date (YYYY-MM-DD) when it differs from ends_on. */
+  deadline: string | null;
+  /** Buttons that say exactly what they open — only links from the organiser's page. */
+  links: EventInsightLink[];
 };
 
 export const EVENT_INSIGHT_KEYS = ["who_for", "takeaways", "know_before"] as const;
+
+/** List keys with their limits (mirrors anthem.event_insights_clean). */
+export const EVENT_INSIGHT_LISTS = {
+  who_for: 5,
+  takeaways: 4,
+  know_before: 5,
+  related_categories: 4,
+  steps: 8,
+  eligibility: 5,
+  benefits: 5,
+  bring: 6,
+  speakers: 8,
+  schedule: 8,
+  highlights: 6,
+} as const;
+export type EventInsightListKey = keyof typeof EVENT_INSIGHT_LISTS;
+
+export const EVENT_LINK_KINDS: Record<EventLinkKind, string> = {
+  download: "ดาวน์โหลด",
+  form: "แบบฟอร์มสมัคร",
+  rules: "กติกา",
+  register: "ลงทะเบียน",
+  tickets: "ซื้อบัตร / จอง",
+  info: "รายละเอียด",
+};
+
+const LINK_KIND_ENTRY: Record<EventLinkKind, Entry> = {
+  download: S.linkDownload,
+  form: S.linkForm,
+  rules: S.linkRules,
+  register: S.linkRegister,
+  tickets: S.linkTickets,
+  info: S.linkInfo,
+};
+
+/** Link kind name in the UI language (EVENT_LINK_KINDS stays the Thai list for the team editor). */
+export function linkKindLabel(kind: EventLinkKind, lang: Lang = getLang()): string {
+  return tr(LINK_KIND_ENTRY[kind] ?? S.linkInfo, undefined, lang);
+}
+
+const LINK_KINDS = Object.keys(EVENT_LINK_KINDS) as EventLinkKind[];
+const SHORTENERS = /^(bit\.ly|bitly\.com|tinyurl\.com|t\.co|goo\.gl|ow\.ly|is\.gd|buff\.ly|rebrand\.ly|cutt\.ly|shorturl\.at|tiny\.cc|rb\.gy|lnkd\.in|s\.id|v\.gd|clck\.ru|adf\.ly|bc\.vc)$/i;
+
+/** https only, no link shorteners (same list as anthem.event_link_ok). */
+export function isSafeEventLink(url: string): boolean {
+  try {
+    const u = new URL(url);
+    return u.protocol === "https:" && !SHORTENERS.test(u.hostname.replace(/^www\./, ""));
+  } catch {
+    return false;
+  }
+}
+
+/** Accessible button text: "ดาวน์โหลด: <label>" — the kind in the UI language, then the organiser's label. */
+export function eventLinkText(l: Pick<EventInsightLink, "label" | "kind">, lang: Lang = getLang()): string {
+  return tr(S.linkText, { kind: linkKindLabel(l.kind, lang), label: l.label }, lang);
+}
 
 export function parseEventInsights(raw: unknown): EventInsights | null {
   if (!raw || typeof raw !== "object") return null;
   const r = raw as Record<string, unknown>;
   const list = (v: unknown, max: number) =>
     Array.isArray(v) ? v.filter((x): x is string => typeof x === "string" && x.trim() !== "").map((x) => x.trim()).slice(0, max) : [];
-  const out: EventInsights = {
-    who_for: list(r.who_for, 5),
-    takeaways: list(r.takeaways, 4),
-    know_before: list(r.know_before, 5),
-    related_categories: list(r.related_categories, 4),
-  };
-  return out.who_for.length || out.takeaways.length || out.know_before.length || out.related_categories.length ? out : null;
+  const lists = Object.fromEntries(
+    (Object.entries(EVENT_INSIGHT_LISTS) as [EventInsightListKey, number][]).map(([k, max]) => [k, list(r[k], max)]),
+  ) as Record<EventInsightListKey, string[]>;
+  const links = (Array.isArray(r.links) ? r.links : [])
+    .filter(
+      (l): l is EventInsightLink =>
+        !!l &&
+        typeof l === "object" &&
+        typeof (l as EventInsightLink).label === "string" &&
+        (l as EventInsightLink).label.trim() !== "" &&
+        typeof (l as EventInsightLink).url === "string" &&
+        isSafeEventLink((l as EventInsightLink).url) &&
+        LINK_KINDS.includes((l as EventInsightLink).kind),
+    )
+    .slice(0, 6)
+    .map((l) => ({ label: l.label.trim(), url: l.url, kind: l.kind }));
+  const capacity = typeof r.capacity === "string" && r.capacity.trim() ? r.capacity.trim() : null;
+  const deadline = typeof r.deadline === "string" && /^\d{4}-\d{2}-\d{2}$/.test(r.deadline) ? r.deadline : null;
+  const out: EventInsights = { ...lists, capacity, deadline, links };
+  const any = Object.values(lists).some((v) => v.length > 0) || capacity || deadline || links.length > 0;
+  return any ? out : null;
+}
+
+/** "ปิดรับใน 32 วัน" / "ปิดรับพรุ่งนี้" / "ปิดรับวันนี้" / "ปิดรับแล้ว", by Bangkok date. Null without a date. */
+export function deadlineLabel(iso: string | null | undefined, now: Date = new Date(), lang: Lang = getLang()): string | null {
+  if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
+  const day = (s: string) => Date.UTC(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10)) / 86_400_000;
+  const today = new Date(now.getTime() + 7 * 3_600_000).toISOString().slice(0, 10);
+  const n = day(iso) - day(today);
+  if (n < 0) return tr(S.deadlineClosed, undefined, lang);
+  if (n === 0) return tr(S.deadlineToday, undefined, lang);
+  if (n === 1) return tr(S.deadlineTomorrow, undefined, lang);
+  return tr(S.deadlineInDays, { n }, lang);
 }

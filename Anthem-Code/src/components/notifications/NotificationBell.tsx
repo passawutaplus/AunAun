@@ -4,6 +4,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNotifications } from "@/core/notifications";
 import NotificationsDialog from "@/components/notifications/NotificationsDialog";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n";
+import { NAV } from "@/lib/i18n/nav";
 
 type Props = {
   variant?: "header" | "nav";
@@ -12,6 +14,7 @@ type Props = {
 
 const NotificationBell = ({ variant = "header", active = false }: Props) => {
   const [open, setOpen] = useState(false);
+  const t = useT(NAV);
   const { user } = useAuth();
   const { unreadCount } = useNotifications(user?.id);
 
@@ -21,7 +24,7 @@ const NotificationBell = ({ variant = "header", active = false }: Props) => {
     setOpen(true);
   };
 
-  const label = `แจ้งเตือน${unreadCount > 0 ? ` (${unreadCount} รายการใหม่)` : ""}`;
+  const label = unreadCount > 0 ? t("withNew", { label: t("notifications"), n: unreadCount }) : t("notifications");
 
   if (variant === "nav") {
     return (
@@ -55,7 +58,7 @@ const NotificationBell = ({ variant = "header", active = false }: Props) => {
       <button
         onClick={handleClick}
         aria-label={label}
-        title="แจ้งเตือน"
+        title={t("notifications")}
         className="relative inline-flex items-center justify-center w-9 h-9 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
       >
         <Bell className="w-5 h-5" />

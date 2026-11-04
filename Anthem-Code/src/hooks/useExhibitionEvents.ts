@@ -4,6 +4,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { mapWriteFlowError } from "@/lib/writeFlowErrors";
+import { COMMON, tr } from "@/lib/i18n";
+import { DETAIL } from "@/lib/i18n/exhibition/detail";
 import {
   DEMO_EVENTS,
   EVENT_SELECT,
@@ -425,9 +427,9 @@ export function useToggleEventInterest() {
       void qc.invalidateQueries({ queryKey: ["events", "stats"] });
       void qc.invalidateQueries({ queryKey: ["events", "my-interests"] });
       void qc.invalidateQueries({ queryKey: ["events", "my-list"] });
-      if (row.interested) toast.success("บันทึกแล้ว — จะเตือนก่อนงานเริ่ม 3 วันและ 1 วัน");
+      if (row.interested) toast.success(tr(DETAIL.interestSaved));
     },
-    onError: () => toast.error("บันทึกไม่สำเร็จ ลองอีกครั้ง"),
+    onError: () => toast.error(tr(COMMON.saveFailed)),
   });
 }
 

@@ -1,16 +1,27 @@
 import * as React from 'react'
 import { createPortal } from 'react-dom'
-import { Link } from 'react-router-dom'
 import { BRAND_NAME, BRAND_SUPPORT_EMAIL } from '@/lib/brandConfig'
 import { startStatusCodeWave } from '@/components/statusCodeWave'
 import { HTTP_ERROR_COPY, resolveErrorKind, type HttpErrorKind } from '@/lib/httpErrorCopy'
 import { cn } from '@/lib/utils'
+import { BrandLogo } from '@/components/brand/BrandLogo'
+import { loadLocalePrefs, saveLocalePrefs, type AppLocale } from '@/lib/localePrefs'
 
-const LANG_KEY = 'aplus1-status-lang'
+const LANGS: { code: AppLocale; label: string }[] = [
+  { code: 'th', label: 'TH' },
+  { code: 'en', label: 'EN' },
+  { code: 'zh', label: '中文' },
+]
+const WORDS: Record<'home' | 'retry' | 'contact', Record<AppLocale, string>> = {
+  home: { th: 'หน้าแรก', en: 'Home', zh: '首页' },
+  retry: { th: 'ลองใหม่', en: 'Retry', zh: '重试' },
+  contact: { th: 'ติดต่อเรา', en: 'Contact', zh: '联系我们' },
+}
 
 type ActionLink = {
   labelTh: string
   labelEn: string
+  labelZh?: string
   to: string
 }
 
@@ -59,15 +70,18 @@ export function HttpErrorPage({
   const heroRef = React.useRef<HTMLElement>(null)
   const codeRef = React.useRef<HTMLParagraphElement>(null)
   const waveRef = React.useRef<HTMLCanvasElement>(null)
-  const [ui, setUi] = React.useState<'en' | 'th'>('en')
-  const homeLabel = ui === 'th' ? 'หน้าแรก' : 'Home'
-  const retryLabel = ui === 'th' ? 'ลองใหม่' : 'Retry'
-  const contactLabel = ui === 'th' ? 'ติดต่อ' : 'Contact'
-
-  React.useEffect(() => {
-    const stored = localStorage.getItem(LANG_KEY)
-    if (stored === 'th' || stored === 'en') setUi(stored)
-  }, [])
+  // Same language setting as the rest of the app (Settings → ภาษา).
+  const [ui, setUi] = React.useState<AppLocale>(() => loadLocalePrefs().locale)
+  const title = ui === 'th' ? copy.titleTh : ui === 'zh' ? copy.titleZh : copy.titleEn
+  const pick = (w: keyof typeof WORDS) => WORDS[w][ui]
+  const chooseLang = (code: AppLocale) => {
+    setUi(code)
+    try {
+      saveLocalePrefs({ ...loadLocalePrefs(), locale: code })
+    } catch {
+      /* storage blocked: still switch on screen */
+    }
+  }
 
   React.useEffect(() => {
     const mine = heroRef.current
@@ -75,7 +89,9 @@ export function HttpErrorPage({
     const hidden: HTMLElement[] = []
     const mark = (el: Element) => {
       if (!(el instanceof HTMLElement)) return
-      if (el === mine || el.contains(mine)) {
+      // The screen itself stays live; only what is around it goes inert.
+      if (el === mine) return
+      if (el.contains(mine)) {
         for (const child of el.children) mark(child)
         return
       }
@@ -107,33 +123,35 @@ export function HttpErrorPage({
       ) : null}
 
       <div className="status-screen-panel">
-        <Link to={homeTo} className="status-screen-logo" aria-label={BRAND_NAME}>
-          {BRAND_NAME}
-        </Link>
-        <h1>{copy.titleEn}</h1>
+        {/* Plain links (full page load): this screen can be the app's crash fallback, where in-app navigation would keep showing it. */}
+        <a href={homeTo} className="status-screen-logo" aria-label={BRAND_NAME}>
+          <BrandLogo tone="theme" size="sm" className="justify-center" />
+        </a>
+        <h1 lang={ui === 'zh' ? 'zh-CN' : ui}>{title}</h1>
         {errorMessage && errorMessage.length < 180 && !errorMessage.includes('\n') ? (
           <p className="sr-only">{errorMessage}</p>
         ) : null}
         <div className="status-screen-actions">
-          <Link className="status-screen-link" to={homeTo}>
-            {homeLabel}
+          <a className="status-screen-link" href={homeTo}>
+            {pick('home')}
             <Arrow />
-          </Link>
+          </a>
           {showsRetry(resolvedKind, showRetry) ? (
             <button type="button" className="status-screen-link" onClick={() => window.location.reload()}>
-              {retryLabel}
+              {pick('retry')}
               <Arrow />
             </button>
           ) : null}
           {extraAction ? (
-            <Link className="status-screen-link" to={extraAction.to}>
-              {ui === 'th' ? extraAction.labelTh : extraAction.labelEn}
+            <a className="status-screen-link" href={extraAction.to}>
+              {ui === 'th' ? extraAction.labelTh : ui === 'zh' ? extraAction.labelZh ?? extraAction.labelEn : extraAction.labelEn}
               <Arrow />
-            </Link>
+            </a>
           ) : null}
           {showsContact(resolvedKind, showSupport) ? (
-            <a className="status-screen-link" href={`mailto:${BRAND_SUPPORT_EMAIL}`}>
-              {contactLabel}
+            // Help centre (works without a mail app); the address is in the title for anyone who wants to write.
+            <a className="status-screen-link" href="/help" title={BRAND_SUPPORT_EMAIL}>
+              {pick('contact')}
               <Arrow />
             </a>
           ) : null}
@@ -142,18 +160,15 @@ export function HttpErrorPage({
 
       <footer className="status-screen-foot">
         <div className="status-screen-lang" role="group" aria-label="Language">
-          {(['en', 'th'] as const).map((code) => (
+          {LANGS.map(({ code, label }) => (
             <button
               key={code}
               type="button"
               aria-pressed={ui === code}
               className={ui === code ? 'is-on' : undefined}
-              onClick={() => {
-                setUi(code)
-                localStorage.setItem(LANG_KEY, code)
-              }}
+              onClick={() => chooseLang(code)}
             >
-              {code.toUpperCase()}
+              {label}
             </button>
           ))}
         </div>

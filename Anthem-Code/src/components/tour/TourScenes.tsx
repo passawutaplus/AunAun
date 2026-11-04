@@ -173,7 +173,7 @@ export function CollabPlanScene() {
     </div>
   );
   return (
-    <Scene label="คุยในแชท ตกลงแผน แล้วติ๊กงานไปด้วยกันใน Plan & Tasks">
+    <Scene label="คุยในแชท ตกลงแผน แล้วเลือกงานที่เสร็จไปด้วยกันใน Plan & Tasks">
       <div className="gt-card gt-anim" style={{ left: 14, top: 16, width: 112, height: 22, ...anim("gt-bubble") }}>
         <span className="gt-label" style={{ left: 8, top: 6 }}>สนใจทำด้วยกันไหม</span>
       </div>

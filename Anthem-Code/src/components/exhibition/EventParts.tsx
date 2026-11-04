@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, ArrowUpRight, CalendarDays, ChevronLeft, ChevronRight, ImageOff, MapPin, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatDate, useLang, useT } from "@/lib/i18n";
+import { DETAIL } from "@/lib/i18n/exhibition/detail";
 import { EventActions } from "@/components/exhibition/EventActions";
 import type { EventStats } from "@/hooks/useExhibitionEvents";
 import {
@@ -47,7 +49,7 @@ export function PickTag({ className }: { className?: string }) {
       )}
     >
       <Star className="h-3 w-3 fill-current" aria-hidden />
-      SameCor Pick
+      SAMECOR Pick
     </span>
   );
 }
@@ -57,7 +59,7 @@ export function OriginTag({ origin, className }: { origin: ExhibitionEvent["orig
     <span
       className={cn(
         "inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium",
-        origin === "community" ? "bg-muted text-muted-foreground" : "bg-foreground text-background",
+        origin === "community" ? "bg-muted text-muted-foreground" : "border border-border text-muted-foreground",
         className,
       )}
     >
@@ -74,6 +76,8 @@ export function EventSourceNote({
   event: Pick<ExhibitionEvent, "source_name" | "source_url" | "source_checked_at">;
   className?: string;
 }) {
+  const t = useT(DETAIL);
+  const lang = useLang();
   let host: string;
   try {
     const u = new URL(event.source_url ?? "");
@@ -83,19 +87,19 @@ export function EventSourceNote({
     return null;
   }
   const checked = event.source_checked_at
-    ? new Date(event.source_checked_at).toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "numeric" })
+    ? formatDate(new Date(event.source_checked_at), { day: "numeric", month: lang === "zh" ? "long" : "short", year: "numeric" }, lang)
     : null;
   return (
     <p className={cn("text-xs leading-relaxed text-muted-foreground", className)}>
-      Event information sourced from <span className="font-medium text-foreground">{event.source_name || host}</span>
-      {checked ? <> · Last checked {checked}</> : null} ·{" "}
+      {t("sourcedFrom")} <span className="font-medium text-foreground">{event.source_name || host}</span>
+      {checked ? <> · {t("lastChecked", { date: checked })}</> : null} ·{" "}
       <a
         href={event.source_url ?? undefined}
         target="_blank"
         rel="noopener noreferrer nofollow"
         className="inline-flex items-center gap-0.5 font-medium text-foreground underline-offset-2 hover:underline"
       >
-        View original <ArrowUpRight className="h-3 w-3" aria-hidden />
+        {t("viewOriginal")} <ArrowUpRight className="h-3 w-3" aria-hidden />
       </a>
     </p>
   );
@@ -138,6 +142,7 @@ export function EventGallery({
   /** Extra classes for the title shown when there is no image (e.g. hide it where the title sits right below). */
   emptyTitleClassName?: string;
 }) {
+  const t = useT(DETAIL);
   const list = images.filter(Boolean);
   const [index, setIndex] = useState(0);
   if (!list.length) {
@@ -153,7 +158,7 @@ export function EventGallery({
       >
         <ImageOff className="mb-auto h-5 w-5 text-muted-foreground" />
         <span className={cn("line-clamp-3 font-display text-xl font-semibold leading-tight", emptyTitleClassName)}>{title}</span>
-        <span className="text-xs text-muted-foreground">ยังไม่มีรูปจากผู้จัด</span>
+        <span className="text-xs text-muted-foreground">{t("noImageYet")}</span>
       </div>
     );
   }
@@ -164,7 +169,7 @@ export function EventGallery({
     <div className={cn("relative overflow-hidden rounded-lg bg-muted", aspect, className)}>
       <img
         src={list[i]}
-        alt={list.length > 1 ? `${title} — รูปที่ ${i + 1} จาก ${list.length}` : title}
+        alt={list.length > 1 ? t("imageOf", { title, i: i + 1, n: list.length }) : title}
         className="absolute inset-0 h-full w-full object-cover"
         loading="lazy"
         decoding="async"
@@ -177,10 +182,10 @@ export function EventGallery({
             <span aria-live="polite" className="mr-1 text-sm font-medium tabular-nums [text-shadow:0_1px_2px_rgb(0_0_0/0.4)]">
               {i + 1} / {list.length}
             </span>
-            <button type="button" onClick={() => go(-1)} className={GALLERY_BTN} aria-label="รูปก่อนหน้า">
+            <button type="button" onClick={() => go(-1)} className={GALLERY_BTN} aria-label={t("prevImage")}>
               <ChevronLeft className="h-4 w-4" strokeWidth={1.75} />
             </button>
-            <button type="button" onClick={() => go(1)} className={GALLERY_BTN} aria-label="รูปถัดไป">
+            <button type="button" onClick={() => go(1)} className={GALLERY_BTN} aria-label={t("nextImage")}>
               <ChevronRight className="h-4 w-4" strokeWidth={1.75} />
             </button>
           </div>
@@ -205,6 +210,7 @@ export function EventListCard({
   stats?: EventStats;
   interested?: boolean;
 }) {
+  const t = useT(DETAIL);
   const href = `/exhibition/${event.id}`;
   return (
     <article className="grid gap-4 border-b border-border py-6 last:border-0 md:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] md:gap-8">
@@ -228,13 +234,13 @@ export function EventListCard({
           </Link>
         </h2>
         <EventMeta event={event} />
-        <p className="line-clamp-2 text-sm text-foreground/80">{event.description}</p>
+        <p className="line-clamp-2 text-sm text-muted-foreground max-md:hidden">{event.description}</p>
         <div className="mt-1 flex items-center justify-between gap-3">
           <Link
             to={href}
             className="inline-flex items-center gap-1.5 rounded-full border border-foreground/20 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-foreground hover:bg-foreground hover:text-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground"
           >
-            View Event <ArrowRight className="h-4 w-4" aria-hidden />
+            {t("viewEvent")} <ArrowRight className="h-4 w-4" aria-hidden />
           </Link>
           <EventActions event={event} stats={stats} interested={interested} className="md:hidden" />
         </div>

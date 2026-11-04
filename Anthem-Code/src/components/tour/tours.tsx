@@ -136,7 +136,7 @@ export const CHAT_TOUR: GuideTourStep[] = [
   {
     id: "plan",
     title: "Plan & Tasks",
-    body: "แชทคอลแลปมีแผงด้านข้าง ตกลงแผน แบ่งงาน และติ๊กงานที่เสร็จไปด้วยกัน ทุกคนเห็นความคืบหน้าเหมือนกัน",
+    body: "แชทคอลแลปมีแผงด้านข้าง ตกลงแผน แบ่งงาน และเลือกงานที่เสร็จไปด้วยกัน ทุกคนเห็นความคืบหน้าเหมือนกัน",
     target: "chat-side",
     optional: true,
     scene: <CollabPlanScene />,

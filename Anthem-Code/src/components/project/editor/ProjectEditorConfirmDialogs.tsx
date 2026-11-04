@@ -95,7 +95,7 @@ export function ProjectEditorPublishConfirmDialog({
         <DialogContent className="max-w-md rounded-2xl">
           <DialogHeader>
             <DialogTitle>ยืนยันก่อนเผยแพร่</DialogTitle>
-            <DialogDescription>ติ๊กยืนยันสิทธิ์ในผลงาน แล้วกดเผยแพร่</DialogDescription>
+            <DialogDescription>เลือกยืนยันสิทธิ์ในผลงาน แล้วกดเผยแพร่</DialogDescription>
           </DialogHeader>
           <OriginalWorkAttestation checked={attestChecked} onCheckedChange={onAttestChange} />
           <DialogFooter className="gap-2 sm:justify-end flex-col-reverse sm:flex-row">

@@ -3,6 +3,9 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { mapWriteFlowError } from "@/lib/writeFlowErrors";
 import { EVENT_SELECT, isDemoEventId, type ExhibitionEvent } from "@/lib/exhibitionEvents";
+import { roundCoord } from "@/lib/routeStart";
+import { COMMON, tr } from "@/lib/i18n";
+import { VENUES } from "@/lib/i18n/exhibition/venues";
 import { featureActive, VENUE_SELECT, type EventVenue, type VenueDraft } from "@/lib/eventVenues";
 import { invalidateEvents } from "@/hooks/useExhibitionEvents";
 
@@ -61,6 +64,7 @@ export function useEventVenues(parentId: string | null | undefined) {
       return ((data ?? []) as EventVenue[]).map((v) => ({
         ...v,
         opening_hours: Array.isArray(v.opening_hours) ? v.opening_hours : [],
+        gallery_urls: Array.isArray(v.gallery_urls) ? v.gallery_urls : [],
       }));
     },
   });
@@ -96,9 +100,9 @@ export function useSetAllVenuesInterest() {
       void qc.invalidateQueries({ queryKey: ["events", "venues"] });
       void qc.invalidateQueries({ queryKey: ["events", "stats"] });
       void qc.invalidateQueries({ queryKey: ["events", "my-list"] });
-      toast.success(v.on ? "สนใจทุกสถานที่แล้ว — จะเตือนก่อนแต่ละที่เริ่ม" : "เลิกสนใจทุกสถานที่แล้ว");
+      toast.success(tr(v.on ? VENUES.allInterestedOn : VENUES.allInterestedOff));
     },
-    onError: () => toast.error("บันทึกไม่สำเร็จ ลองอีกครั้ง"),
+    onError: () => toast.error(tr(COMMON.saveFailed)),
   });
 }
 
@@ -159,5 +163,74 @@ export function useReorderVenues() {
     },
     onSettled: () => void qc.invalidateQueries({ queryKey: ["events", "venues"] }),
     onError: (err: unknown) => toast.error(mapWriteFlowError(err, "เรียงลำดับไม่สำเร็จ")),
+  });
+}
+
+export type VenueRoute = {
+  /** [lng, lat] along streets, or the straight legs when routing is unavailable. */
+  line: [number, number][];
+  meters: number | null;
+  seconds: number | null;
+  /** True when it follows streets (OSRM walking); false = straight-line fallback. */
+  streets: boolean;
+};
+
+async function osrmFoot(coords: string, signal?: AbortSignal): Promise<VenueRoute | null> {
+  try {
+    const res = await fetch(
+      `https://routing.openstreetmap.de/routed-foot/route/v1/foot/${coords}?overview=full&geometries=geojson`,
+      { signal },
+    );
+    if (!res.ok) return null;
+    const json = (await res.json()) as {
+      code?: string;
+      routes?: Array<{ distance: number; duration: number; geometry: { coordinates: [number, number][] } }>;
+    };
+    const r = json.code === "Ok" ? json.routes?.[0] : undefined;
+    return r ? { line: r.geometry.coordinates, meters: r.distance, seconds: r.duration, streets: true } : null;
+  } catch {
+    return null;
+  }
+}
+
+const straight = (pts: Array<{ lat: number; lng: number }>): VenueRoute => ({
+  line: pts.map((p) => [p.lng, p.lat]),
+  meters: null,
+  seconds: null,
+  streets: false,
+});
+
+export type VenueRoutePlan = {
+  /** From the viewer's start point to the first ticked venue (shown dashed). */
+  lead: VenueRoute | null;
+  /** Between the ticked venues, in list order. */
+  inner: VenueRoute | null;
+};
+
+/**
+ * Walking route through the ticked venues, optionally from a start point (OSRM foot profile on
+ * routing.openstreetmap.de; free, no key). The start point is rounded to ~100 m before it is sent.
+ */
+export function useVenueRoute(
+  points: Array<{ lat: number | null; lng: number | null }>,
+  start?: { lat: number; lng: number } | null,
+) {
+  const stops = points.filter((p): p is { lat: number; lng: number } => p.lat != null && p.lng != null);
+  const fmt = (p: { lat: number; lng: number }) => `${p.lng.toFixed(5)},${p.lat.toFixed(5)}`;
+  const innerCoords = stops.map(fmt).join(";");
+  const origin = start ? { lat: roundCoord(start.lat), lng: roundCoord(start.lng) } : null;
+  const leadCoords = origin && stops.length ? `${fmt(origin)};${fmt(stops[0])}` : "";
+  return useQuery({
+    queryKey: ["venue-route", innerCoords, leadCoords],
+    enabled: stops.length >= 2 || (!!origin && stops.length >= 1),
+    staleTime: Infinity,
+    retry: false,
+    queryFn: async ({ signal }): Promise<VenueRoutePlan> => {
+      const [inner, lead] = await Promise.all([
+        stops.length >= 2 ? osrmFoot(innerCoords, signal).then((r) => r ?? straight(stops)) : Promise.resolve(null),
+        origin && stops.length ? osrmFoot(leadCoords, signal).then((r) => r ?? straight([origin, stops[0]])) : Promise.resolve(null),
+      ]);
+      return { lead, inner };
+    },
   });
 }

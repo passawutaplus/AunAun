@@ -24,3 +24,11 @@ Remove-Item Env:SAMECOR_KEYSTORE_PASSWORD
 
 Output: `android/app/build/outputs/bundle/release/app-release.aab`.
 `android/local.properties` must contain `sdk.dir=C:/Users/PC/.bubblewrap/android_sdk`.
+
+## Location (Exhibition route start point)
+
+`AndroidManifest.xml` declares `ACCESS_COARSE_LOCATION` / `ACCESS_FINE_LOCATION` so the WebView can answer
+`navigator.geolocation` (Capacitor's BridgeWebChromeClient asks the user at runtime). The position is only
+used on the device to draw the route; a ~100 m rounded point goes to routing.openstreetmap.de. Play Console →
+Data safety: declare "Approximate / Precise location — not collected" (not sent to SAMECOR) and mention the
+routing service if Play asks about third-party sharing.

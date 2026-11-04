@@ -1,16 +1,23 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import {
   emptyVenueDraft,
   featureActive,
   featuredCountdown,
   formatOpeningHours,
+  googleMapsRouteUrl,
   groupVenuesByArea,
   parseOpeningHours,
+  routeSummary,
   venueCounts,
   venueMapsUrl,
   venueOpenState,
   type EventVenue,
 } from "../eventVenues";
+
+// These assert the Thai labels; new visitors now default to English, so pin Thai.
+beforeEach(() => {
+  localStorage.setItem("aplus1:locale-prefs", JSON.stringify({ locale: "th", timezone: "Asia/Bangkok" }));
+});
 
 /** Bangkok wall-clock time → Date (Bangkok = UTC+7). */
 const bkk = (iso: string) => new Date(`${iso}+07:00`);
@@ -111,5 +118,21 @@ describe("opening hours text", () => {
     const rules = [{ d: [1, 2, 3, 4, 5, 6], o: "08:00", c: "19:00" }, { d: [0], o: "08:00", c: "17:00" }];
     expect(parseOpeningHours(formatOpeningHours(rules))).toEqual(rules);
     expect(parseOpeningHours("")).toEqual([]);
+  });
+});
+
+describe("my route", () => {
+  const stop = (name: string, lat: number) => ({ id: name, title: name, name_en: name, address: null, lat, lng: 100.5, coords_approx: true });
+  it("builds a walking Google Maps route through the stops", () => {
+    expect(googleMapsRouteUrl([stop("A", 13.7)])).toBeNull();
+    const url = googleMapsRouteUrl([stop("A", 13.7), stop("B", 13.71), stop("C", 13.72)])!;
+    expect(url).toContain("travelmode=walking");
+    expect(url).toContain("origin=A%2C+Bangkok");
+    expect(url).toContain("waypoints=B%2C+Bangkok");
+    expect(url).toContain("destination=C%2C+Bangkok");
+  });
+  it("summarises distance and walking time", () => {
+    expect(routeSummary(6462, 5172)).toBe("6.5 กม. · เดิน ~1 ชม. 26 นาที");
+    expect(routeSummary(800, 600)).toBe("800 ม. · เดิน ~10 นาที");
   });
 });

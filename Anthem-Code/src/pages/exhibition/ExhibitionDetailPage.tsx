@@ -1,6 +1,7 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
+  ArrowUpRight,
   CalendarDays,
   ExternalLink,
   Flag,
@@ -8,10 +9,13 @@ import {
   Handshake,
   MessageCircle,
   MapPin,
+  Paperclip,
   Ticket,
   TrainFront,
 } from "lucide-react";
 import SeoHead from "@/components/SeoHead";
+import { cn } from "@/lib/utils";
+import { GoogleCalendarIcon } from "@/components/icons/GoogleCalendarIcon";
 import SeoBreadcrumb from "@/components/seo/SeoBreadcrumb";
 import { BackButton } from "@/components/ui/BackButton";
 import { HeaderAccountActions } from "@/components/HeaderAccountActions";
@@ -31,15 +35,16 @@ import EmptyState from "@/components/ui/EmptyState";
 import QueryStatusPanel from "@/components/ui/QueryStatusPanel";
 import { Button } from "@/components/ui/button";
 import { recordEventRegistration, useEvent, useEventInsights, useEventProjects, useEventStats, useMyEventInterests, useRecordEventView } from "@/hooks/useExhibitionEvents";
-import { EventInsightsPanel, EventRelatedWorks } from "@/components/exhibition/EventInsights";
+import { EventInsightsPanel, EventLinkButtons, EventRelatedWorks } from "@/components/exhibition/EventInsights";
 import { EventActions } from "@/components/exhibition/EventActions";
 import { EventVenuesSection, VenueOpenBadge } from "@/components/exhibition/EventVenuesSection";
 import { useEventVenues, useParentEvent } from "@/hooks/useEventVenues";
 import { venueMapsUrl, venueOpenState } from "@/lib/eventVenues";
 import { useAuth } from "@/hooks/useAuth";
 import { navigateToAuth } from "@/lib/authRedirect";
+import { COMMON, useT } from "@/lib/i18n";
+import { DETAIL } from "@/lib/i18n/exhibition/detail";
 import {
-  NOT_SPECIFIED,
   eventPrimaryAction,
   feeLabel,
   formatEventDates,
@@ -90,10 +95,26 @@ function RegistrationCta({ event, onRegister }: { event: ExhibitionEvent; onRegi
   );
 }
 
+function useMinWidth(px: number): boolean {
+  const query = `(min-width: ${px}px)`;
+  return useSyncExternalStore(
+    (cb) => {
+      const mq = window.matchMedia(query);
+      mq.addEventListener("change", cb);
+      return () => mq.removeEventListener("change", cb);
+    },
+    () => window.matchMedia(query).matches,
+    () => false,
+  );
+}
+
 export default function ExhibitionDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const t = useT(DETAIL);
+  const tc = useT(COMMON);
+  const NOT_SPECIFIED = tc("notSpecified");
   const { data: event, isLoading, isError, refetch } = useEvent(id);
   const statIds = useMemo(() => (id ? [id] : []), [id]);
   const { data: stats } = useEventStats(statIds);
@@ -107,12 +128,14 @@ export default function ExhibitionDetailPage() {
   const { data: siblings = [] } = useEventVenues(parent?.id);
   const venue = siblings.find((v) => v.id === event?.id) ?? null;
   const [contactOpen, setContactOpen] = useState(false);
+  // Desktop: Organizer / Sponsors join the facts column so there is no gap under the image.
+  const wide = useMinWidth(1024);
   const [sponsorOpen, setSponsorOpen] = useState(false);
 
   if (isLoading || isError) {
     return (
       <div className="container mx-auto max-w-6xl px-4 py-10">
-        <QueryStatusPanel isLoading={isLoading} isError={isError} onRetry={() => void refetch()} errorTitle="โหลดงานนี้ไม่สำเร็จ" />
+        <QueryStatusPanel isLoading={isLoading} isError={isError} onRetry={() => void refetch()} errorTitle={t("loadFailed")} />
       </div>
     );
   }
@@ -121,11 +144,11 @@ export default function ExhibitionDetailPage() {
     return (
       <div className="container mx-auto max-w-6xl px-4 py-16">
         <EmptyState
-          title="ไม่พบงานนี้"
-          description="งานอาจถูกถอน หรือยังไม่ผ่านการตรวจ"
+          title={t("notFound")}
+          description={t("notFoundHint")}
           action={
             <Button asChild variant="outline" className="rounded-full">
-              <Link to="/exhibition">ดู Exhibition ทั้งหมด</Link>
+              <Link to="/exhibition">{t("seeAllExhibition")}</Link>
             </Button>
           }
         />
@@ -156,8 +179,120 @@ export default function ExhibitionDetailPage() {
     if (!needsAuth()) setSponsorOpen(true);
   };
 
+  const aboutSection = (
+    <section aria-labelledby="about-heading" className={wide ? undefined : "border-t border-border pt-6"}>
+      <h2 id="about-heading" className="font-display text-2xl font-semibold text-foreground">
+        About This Event
+      </h2>
+      <div className="mt-3 space-y-3 whitespace-pre-line text-sm leading-relaxed text-foreground/85">
+        <p>{lead}</p>
+        {rest.map((p, i) => (
+          <p key={i}>{p}</p>
+        ))}
+      </div>
+    </section>
+  );
+
+  const sideSections = (
+    <>
+          <section aria-labelledby="organizer-heading">
+            <h2 id="organizer-heading" className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              Organizer
+            </h2>
+            <p className="mt-2 text-base font-medium text-foreground">
+              {isHttpUrl(event.website_url) ? (
+                // The organiser's name opens their website.
+                <a
+                  href={event.website_url}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  className="group inline-flex items-center gap-1 underline-offset-4 hover:underline focus-visible:underline focus-visible:outline-none"
+                >
+                  {event.organizer_name ?? t("organizerWebsite")}
+                  <ArrowUpRight
+                    className="h-4 w-4 shrink-0 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-focus-visible:-translate-y-0.5 group-focus-visible:translate-x-0.5 motion-reduce:transition-none"
+                    aria-hidden
+                  />
+                </a>
+              ) : (
+                (event.organizer_name ?? (event.origin === "community" ? t("organizerFallback") : NOT_SPECIFIED))
+              )}
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2 empty:hidden">
+              {/* Team events are owned by an admin account; that profile is not the organiser. */}
+              {!isDemoEventId(event.id) && event.origin === "community" ? (
+                <Button asChild size="sm" variant="outline" className="rounded-full">
+                  <Link to={`/u/${event.owner_id}`}>{t("viewProfile")}</Link>
+                </Button>
+              ) : null}
+              {canChat ? (
+                <Button type="button" size="sm" className="rounded-full" onClick={contactOrganizer}>
+                  <MessageCircle className="mr-1.5 h-4 w-4" aria-hidden /> {t("message")}
+                </Button>
+              ) : null}
+            </div>
+          </section>
+
+          {event.sponsors.length || openForSponsors ? (
+            <section aria-labelledby="sponsors-heading">
+              <h2 id="sponsors-heading" className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                Sponsored by
+              </h2>
+              {event.sponsors.length ? (
+                <ul className="mt-3 space-y-3">
+                  {event.sponsors.map((s, i) => (
+                    <li key={`${s.name}-${i}`} className="flex items-center gap-3">
+                      {s.logo_url ? (
+                        <img src={s.logo_url} alt={t("sponsorLogo", { name: s.name })} className="h-10 w-10 rounded-md border border-border bg-background object-contain" loading="lazy" />
+                      ) : (
+                        <span className="flex h-10 w-10 items-center justify-center rounded-md border border-border bg-muted text-sm font-semibold text-foreground" aria-hidden>
+                          {s.name.slice(0, 1).toUpperCase()}
+                        </span>
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground">{s.name}</p>
+                        {s.note ? <p className="text-xs text-muted-foreground">{s.note}</p> : null}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : !openForSponsors ? (
+                <p className="mt-2 text-sm text-muted-foreground">{NOT_SPECIFIED}</p>
+              ) : null}
+              {/* Last in the list: there is still room for one more sponsor. */}
+              {openForSponsors ? (
+                <div className="mt-4 flex items-start gap-3 rounded-lg bg-muted/50 p-4">
+                  <Handshake className="mt-0.5 h-5 w-5 shrink-0 text-foreground" aria-hidden />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-foreground">{t("openForSponsorship")}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {event.sponsors.length ? t("sponsorMoreWanted") : t("sponsorWanted")} — {t("talkToOrganizer")}
+                    </p>
+                    {canSponsor ? (
+                      <Button type="button" size="sm" className="mt-3 rounded-full" onClick={offerSponsorship}>
+                        <Handshake className="mr-1.5 h-4 w-4" aria-hidden /> {t("offerSponsorship")}
+                      </Button>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
+            </section>
+          ) : null}
+
+          {user && !isOwner && event.status === "published" && !isDemoEventId(event.id) ? (
+            <div>
+              <ReportDialog targetType="event" targetId={event.id} targetOwnerId={event.owner_id}>
+                <Button type="button" size="sm" variant="ghost" className="-ml-3 rounded-full text-muted-foreground">
+                  <Flag className="mr-1.5 h-4 w-4" aria-hidden /> {t("reportEvent")}
+                </Button>
+              </ReportDialog>
+            </div>
+          ) : null}
+    </>
+  );
+
   const crumbs = [
-    { name: "หน้าแรก", path: "/" },
+    { name: tc("home"), path: "/" },
     { name: "Exhibition", path: "/exhibition" },
     { name: event.title, path },
   ];
@@ -190,17 +325,21 @@ export default function ExhibitionDetailPage() {
       {event.status !== "published" ? (
         <div className="mb-5 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm">
           <EventStatusBadge event={event} />
-          <span className="text-muted-foreground">หน้านี้มีแค่คุณและทีมงานที่เห็นจนกว่าจะเผยแพร่</span>
+          <span className="text-muted-foreground">{t("draftNotice")}</span>
         </div>
       ) : null}
 
       {/* Same columns as a work page: wide media, narrow info rail. */}
       <div className="mx-auto grid w-full max-w-[84rem] grid-cols-1 lg:grid-cols-[minmax(0,56rem)_22.5rem] lg:justify-center lg:gap-x-10 xl:grid-cols-[minmax(0,56rem)_24rem] xl:gap-x-12 gap-8">
-        <EventGallery
-          images={eventImages(event).length ? eventImages(event) : parent?.cover_url ? [parent.cover_url] : []}
-          title={event.title}
-          aspect="aspect-[4/3]"
-        />
+        {/* Desktop: About sits under the image so the tall facts column leaves no empty gap. */}
+        <div className="flex min-w-0 flex-col gap-10">
+          <EventGallery
+            images={eventImages(event).length ? eventImages(event) : parent?.cover_url ? [parent.cover_url] : []}
+            title={event.title}
+            aspect="aspect-[4/3]"
+          />
+          {wide ? aboutSection : null}
+        </div>
 
         <div className="flex flex-col gap-5">
           <div className="flex flex-wrap items-center gap-2">
@@ -213,7 +352,7 @@ export default function ExhibitionDetailPage() {
               to={`/exhibition/${parent.id}#venues`}
               className="-mb-2 text-sm text-muted-foreground underline decoration-foreground/30 underline-offset-4 hover:text-foreground"
             >
-              สถานที่หนึ่งของ {parent.title}
+              {t("venueOf", { title: parent.title })}
             </Link>
           ) : null}
           <h1 className="font-display text-4xl font-semibold leading-[1.05] tracking-tight text-foreground sm:text-5xl">
@@ -232,7 +371,7 @@ export default function ExhibitionDetailPage() {
             <InfoRow icon={CalendarDays}>
               {event.starts_on ? formatEventDates(event.starts_on, event.ends_on) : venue?.date_note ?? NOT_SPECIFIED}
               <span className="block text-muted-foreground">
-                เวลา: {venue?.hours_note ?? event.time_note ?? NOT_SPECIFIED}
+                {t("timeLabel", { time: venue?.hours_note ?? event.time_note ?? NOT_SPECIFIED })}
               </span>
               {venue ? <VenueOpenBadge state={venueOpenState(venue)} className="mt-1" /> : null}
               {gcalHref ? (
@@ -240,9 +379,14 @@ export default function ExhibitionDetailPage() {
                   href={gcalHref}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground underline decoration-foreground/30 underline-offset-4 hover:text-foreground hover:decoration-foreground"
+                  className="group mt-1 inline-flex items-center gap-1.5 text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:underline focus-visible:outline-none"
                 >
-                  เพิ่มลง Google Calendar <ExternalLink className="h-3 w-3" aria-hidden />
+                  <GoogleCalendarIcon className="h-3.5 w-3.5 shrink-0" />
+                  {t("addToGoogleCalendar")}
+                  <ArrowUpRight
+                    className="h-3.5 w-3.5 shrink-0 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-focus-visible:-translate-y-0.5 group-focus-visible:translate-x-0.5 motion-reduce:transition-none"
+                    aria-hidden
+                  />
                 </a>
               ) : null}
             </InfoRow>
@@ -253,7 +397,7 @@ export default function ExhibitionDetailPage() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="underline decoration-foreground/30 underline-offset-4 hover:decoration-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground"
-                  title="เปิดใน Google Maps"
+                  title={tc("openInGoogleMaps")}
                 >
                   {event.location_name}
                 </a>
@@ -265,7 +409,7 @@ export default function ExhibitionDetailPage() {
             {venue?.transit_note ? <InfoRow icon={TrainFront}>{venue.transit_note}</InfoRow> : null}
             <InfoRow icon={Ticket}>{venue?.admission_note ?? feeLabel(event)}</InfoRow>
             {isEventEnded(event) ? (
-              <p className="text-sm font-medium text-muted-foreground">งานนี้จบแล้ว</p>
+              <p className="text-sm font-medium text-muted-foreground">{t("eventEnded")}</p>
             ) : null}
             {sourcePage ? (
               <InfoRow icon={Globe}>
@@ -279,6 +423,13 @@ export default function ExhibitionDetailPage() {
                 </a>
               </InfoRow>
             ) : null}
+            {/* Documents / links from the organiser's page, right under the facts (no heading — the icon says it). */}
+            {insights?.links.length ? (
+              <InfoRow icon={Paperclip}>
+                <span className="sr-only">{t("docsAndLinks")}</span>
+                <EventLinkButtons links={insights.links} className="-mt-1" />
+              </InfoRow>
+            ) : null}
           </div>
 
           <RegistrationCta
@@ -286,117 +437,32 @@ export default function ExhibitionDetailPage() {
             // Signed-in clicks land in Portfolio → Exhibition → ลงทะเบียน.
             onRegister={user && event.status === "published" ? () => recordEventRegistration(event.id) : undefined}
           />
+          {wide ? <aside className="divide-y divide-border border-t border-border [&>*]:py-5">{sideSections}</aside> : null}
         </div>
       </div>
 
-      {venues.length ? (
-        <EventVenuesSection parent={event} venues={venues} className="mx-auto mt-12 w-full max-w-[84rem]" />
+      {!wide ? (
+      <div className="mx-auto mt-10 grid w-full max-w-[84rem] grid-cols-1 gap-y-6">
+        {/* Phones: a rule separates About from the event facts / documents above. */}
+        {!wide ? aboutSection : null}
+
+        {/* Thin rules between the side sections, and one above Organizer to close off the event facts. */}
+        {/* Phones / tablets: Organizer + Sponsors under About (on desktop they sit in the facts column above). */}
+        {!wide ? (
+          <aside className="divide-y divide-border border-t border-border [&>*]:py-6">
+            {sideSections}
+          </aside>
+        ) : null}
+      </div>
       ) : null}
 
-      <div className="mt-12 mx-auto grid w-full max-w-[84rem] grid-cols-1 lg:grid-cols-[minmax(0,56rem)_22.5rem] lg:justify-center lg:gap-x-10 xl:grid-cols-[minmax(0,56rem)_24rem] xl:gap-x-12 gap-y-10">
-        <section aria-labelledby="about-heading">
-          <h2 id="about-heading" className="font-display text-2xl font-semibold text-foreground">
-            About This Event
-          </h2>
-          <div className="mt-3 space-y-3 whitespace-pre-line text-sm leading-relaxed text-foreground/85">
-            <p>{lead}</p>
-            {rest.map((p, i) => (
-              <p key={i}>{p}</p>
-            ))}
-          </div>
-        </section>
-
-        {/* Thin rules between the side sections; on phones the first one also separates them from About. */}
-        <aside className="divide-y divide-border border-t border-border lg:border-t-0 [&>*]:py-6 lg:[&>*:first-child]:pt-0">
-          <section aria-labelledby="organizer-heading">
-            <h2 id="organizer-heading" className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              Organizer
-            </h2>
-            <p className="mt-2 text-base font-medium text-foreground">
-              {event.organizer_name ?? (event.origin === "community" ? "ผู้จัดงาน" : NOT_SPECIFIED)}
-            </p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {/* Team events are owned by an admin account; that profile is not the organiser. */}
-              {!isDemoEventId(event.id) && event.origin === "community" ? (
-                <Button asChild size="sm" variant="outline" className="rounded-full">
-                  <Link to={`/u/${event.owner_id}`}>View Profile</Link>
-                </Button>
-              ) : null}
-              {canChat ? (
-                <Button type="button" size="sm" className="rounded-full" onClick={contactOrganizer}>
-                  <MessageCircle className="mr-1.5 h-4 w-4" aria-hidden /> Message
-                </Button>
-              ) : null}
-              {isHttpUrl(event.website_url) ? (
-                <Button asChild size="sm" variant="ghost" className="rounded-full">
-                  <a href={event.website_url} target="_blank" rel="noopener noreferrer nofollow">
-                    <Globe className="mr-1.5 h-4 w-4" aria-hidden /> Website
-                  </a>
-                </Button>
-              ) : null}
-            </div>
-          </section>
-
-          {event.sponsors.length || openForSponsors || event.origin === "curated" ? (
-            <section aria-labelledby="sponsors-heading">
-              <h2 id="sponsors-heading" className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                Sponsored by
-              </h2>
-              {event.sponsors.length ? (
-                <ul className="mt-3 space-y-3">
-                  {event.sponsors.map((s, i) => (
-                    <li key={`${s.name}-${i}`} className="flex items-center gap-3">
-                      {s.logo_url ? (
-                        <img src={s.logo_url} alt={`โลโก้ ${s.name}`} className="h-10 w-10 rounded-md border border-border bg-background object-contain" loading="lazy" />
-                      ) : (
-                        <span className="flex h-10 w-10 items-center justify-center rounded-md border border-border bg-muted text-sm font-semibold text-foreground" aria-hidden>
-                          {s.name.slice(0, 1).toUpperCase()}
-                        </span>
-                      )}
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-foreground">{s.name}</p>
-                        {s.note ? <p className="text-xs text-muted-foreground">{s.note}</p> : null}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              ) : !openForSponsors ? (
-                <p className="mt-2 text-sm text-muted-foreground">{NOT_SPECIFIED}</p>
-              ) : null}
-              {/* Last in the list: there is still room for one more sponsor. */}
-              {openForSponsors ? (
-                <div className="mt-4 flex items-start gap-3 rounded-lg bg-muted/50 p-4">
-                  <Handshake className="mt-0.5 h-5 w-5 shrink-0 text-foreground" aria-hidden />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-foreground">Open for Sponsorship</p>
-                    <p className="text-xs text-muted-foreground">
-                      {event.sponsors.length ? "ยังรับผู้สนับสนุนเพิ่ม" : "งานนี้กำลังหาผู้สนับสนุน"} — คุยกับผู้จัดได้โดยตรง
-                    </p>
-                    {canSponsor ? (
-                      <Button type="button" size="sm" className="mt-3 rounded-full" onClick={offerSponsorship}>
-                        <Handshake className="mr-1.5 h-4 w-4" aria-hidden /> เสนอเป็นผู้สนับสนุน
-                      </Button>
-                    ) : null}
-                  </div>
-                </div>
-              ) : null}
-            </section>
-          ) : null}
-
-          {user && !isOwner && event.status === "published" && !isDemoEventId(event.id) ? (
-            <div>
-              <ReportDialog targetType="event" targetId={event.id} targetOwnerId={event.owner_id}>
-                <Button type="button" size="sm" variant="ghost" className="-ml-3 rounded-full text-muted-foreground">
-                  <Flag className="mr-1.5 h-4 w-4" aria-hidden /> รายงานงานนี้
-                </Button>
-              </ReportDialog>
-            </div>
-          ) : null}
-        </aside>
-      </div>
+      {/* Venues (sub-events) with the pinned map: below About, above the summary. */}
+      {venues.length ? (
+        <EventVenuesSection parent={event} venues={venues} className="mx-auto mt-10 w-full max-w-[84rem] border-t border-border pt-8 lg:mt-14" />
+      ) : null}
 
       {works.length ? (
-        <section className="mt-12" aria-labelledby="works-heading">
+        <section className="mx-auto mt-10 w-full max-w-[84rem] border-t border-border pt-8 lg:mt-14" aria-labelledby="works-heading">
           <h2 id="works-heading" className="font-display text-2xl font-semibold text-foreground">
             Works by the Organizer
           </h2>
@@ -415,10 +481,10 @@ export default function ExhibitionDetailPage() {
         </section>
       ) : null}
 
-      {insights ? <EventInsightsPanel insights={insights} className="mx-auto mt-14 w-full max-w-[84rem]" /> : null}
+      {insights ? <EventInsightsPanel insights={insights} event={event} className="mx-auto mt-10 w-full max-w-[84rem] border-t border-border pt-8 lg:mt-14" /> : null}
 
       {insights?.related_categories.length ? (
-        <EventRelatedWorks categories={insights.related_categories} className="mx-auto mt-14 w-full max-w-[84rem]" />
+        <EventRelatedWorks categories={insights.related_categories} className="mx-auto mt-10 w-full max-w-[84rem] border-t border-border pt-8 lg:mt-14" />
       ) : null}
 
       {canChat ? (
@@ -427,9 +493,9 @@ export default function ExhibitionDetailPage() {
           open={contactOpen}
           onOpenChange={setContactOpen}
           recipientId={event.owner_id}
-          recipientName={event.organizer_name ?? "ผู้จัดงาน"}
+          recipientName={event.organizer_name ?? t("organizerFallback")}
           appendText={`${window.location.origin}${path}`}
-          description="ถามรายละเอียดงาน การเข้าร่วม หรือชวนคุยกับผู้จัดได้เลย — การ์ดงานนี้จะแนบไปกับข้อความ"
+          description={t("contactDescription")}
         />
       ) : null}
       {canSponsor ? <SponsorOfferDialog open={sponsorOpen} onOpenChange={setSponsorOpen} event={event} /> : null}

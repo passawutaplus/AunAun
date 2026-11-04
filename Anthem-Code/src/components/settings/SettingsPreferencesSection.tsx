@@ -38,7 +38,7 @@ export function SettingsPreferencesSection() {
       <ThemeSettingsSection embedded />
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label htmlFor="settings-locale">ภาษา</Label>
+          <Label htmlFor="settings-locale">ภาษา · Language · 语言</Label>
           <select
             id="settings-locale"
             value={locale}

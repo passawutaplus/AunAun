@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
-import { ArrowDown, ArrowUp, Loader2, Pencil, Pin, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ImagePlus, Loader2, Pencil, Pin, Plus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "@/hooks/useAuth";
+import { uploadProjectImage } from "@/lib/uploadImage";
 import {
   useDeleteVenue,
   useEventFeature,
@@ -73,6 +75,22 @@ function VenueForm({
   const [d, setD] = useState<VenueDraft>(initial);
   const [hoursText, setHoursText] = useState(formatOpeningHours(initial.opening_hours));
   const set = <K extends keyof VenueDraft>(k: K, v: VenueDraft[K]) => setD((x) => ({ ...x, [k]: v }));
+  const { user } = useAuth();
+  const [uploading, setUploading] = useState(false);
+  const addPhotos = async (files: FileList | null) => {
+    if (!files?.length || !user) return;
+    setUploading(true);
+    try {
+      const room = 8 - d.gallery_urls.length;
+      const urls: string[] = [];
+      for (const f of Array.from(files).slice(0, room)) urls.push(await uploadProjectImage(f, user.id, "events"));
+      setD((x) => ({ ...x, gallery_urls: [...x.gallery_urls, ...urls].slice(0, 8) }));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "อัปโหลดรูปไม่สำเร็จ");
+    } finally {
+      setUploading(false);
+    }
+  };
   const num = (s: string) => (s.trim() === "" ? null : Number(s));
 
   const submit = () => {
@@ -139,6 +157,40 @@ function VenueForm({
           <Switch checked={d.coords_approx} onCheckedChange={(v) => set("coords_approx", v)} /> พิกัดโดยประมาณ
         </label>
       </div>
+      <div className="space-y-1.5">
+        <Label className="text-xs">รูปสถานที่ / ผลงานที่จัดที่นี่ (สูงสุด 8 · หน้าเว็บแสดง 3 รูปแรก · ใช้รูปที่ถ่ายเองหรือได้รับอนุญาต)</Label>
+        <div className="flex flex-wrap gap-2">
+          {d.gallery_urls.map((url, i) => (
+            <div key={url} className="relative h-16 w-16 overflow-hidden rounded-md bg-muted">
+              <img src={url} alt="" className="h-full w-full object-cover" />
+              <button
+                type="button"
+                aria-label={`ลบรูปที่ ${i + 1}`}
+                onClick={() => set("gallery_urls", d.gallery_urls.filter((u) => u !== url))}
+                className="absolute right-0.5 top-0.5 rounded-full bg-black/60 p-0.5 text-white"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          ))}
+          {d.gallery_urls.length < 8 ? (
+            <label className="flex h-16 w-16 cursor-pointer items-center justify-center rounded-md border border-dashed border-border text-muted-foreground hover:text-foreground">
+              {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+                multiple
+                className="sr-only"
+                disabled={uploading}
+                onChange={(e) => {
+                  void addPhotos(e.target.files);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+          ) : null}
+        </div>
+      </div>
       <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-muted-foreground">
         <label className="flex items-center gap-2">
           <Switch checked={d.is_special} onCheckedChange={(v) => set("is_special", v)} /> โปรเจกต์พิเศษ (ไม่นับรวมจำนวนสถานที่)
@@ -148,7 +200,7 @@ function VenueForm({
         </label>
       </div>
       <div className="flex gap-2">
-        <Button type="button" size="sm" className="rounded-full" disabled={busy} onClick={submit}>
+        <Button type="button" size="sm" className="rounded-full" disabled={busy || uploading} onClick={submit}>
           {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null} บันทึกสถานที่
         </Button>
         <Button type="button" size="sm" variant="ghost" className="rounded-full" onClick={onCancel}>

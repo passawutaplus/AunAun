@@ -11,8 +11,18 @@ import { useAuth } from "@/hooks/useAuth";
 import { openConnectChat } from "@/lib/chat/openConnectChat";
 import { trackProductEvent } from "@/lib/productEvents";
 import { cn } from "@/lib/utils";
+import { tr, useT } from "@/lib/i18n";
+import { DETAIL } from "@/lib/i18n/exhibition/detail";
 
-const SUPPORT_TYPES = ["เงินทุน", "สถานที่", "สินค้า / อุปกรณ์", "สื่อ / ประชาสัมพันธ์", "อาหาร / เครื่องดื่ม", "อื่น ๆ"] as const;
+/** The Thai label goes into the chat message (always Thai); the key is only for the button text. */
+const SUPPORT_TYPES = [
+  "supportFunding",
+  "supportVenue",
+  "supportGoods",
+  "supportMedia",
+  "supportFood",
+  "supportOther",
+] as const satisfies ReadonlyArray<keyof typeof DETAIL>;
 
 type Props = {
   open: boolean;
@@ -27,8 +37,9 @@ type Props = {
 export default function SponsorOfferDialog({ open, onOpenChange, event }: Props) {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const t = useT(DETAIL);
   const [who, setWho] = useState("");
-  const [types, setTypes] = useState<string[]>([]);
+  const [types, setTypes] = useState<Array<(typeof SUPPORT_TYPES)[number]>>([]);
   const [details, setDetails] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -48,7 +59,7 @@ export default function SponsorOfferDialog({ open, onOpenChange, event }: Props)
       const intro = [
         `${SPONSOR_OFFER_HEADER} "${event.title}"`,
         `ผู้สนับสนุน: ${who.trim()}`,
-        types.length ? `สนับสนุนเรื่อง: ${types.join(", ")}` : "",
+        types.length ? `สนับสนุนเรื่อง: ${types.map((k) => DETAIL[k].th).join(", ")}` : "",
         details.trim(),
       ]
         .filter(Boolean)
@@ -59,7 +70,7 @@ export default function SponsorOfferDialog({ open, onOpenChange, event }: Props)
       onOpenChange(false);
       navigate(`/chat/${conversationId}`);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "ส่งข้อเสนอไม่สำเร็จ");
+      toast.error(e instanceof Error ? e.message : tr(DETAIL.sendOfferFailed));
     } finally {
       setBusy(false);
     }
@@ -71,45 +82,45 @@ export default function SponsorOfferDialog({ open, onOpenChange, event }: Props)
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Handshake className="h-4 w-4 text-primary" aria-hidden />
-            เสนอเป็นผู้สนับสนุน
+            {t("offerSponsorship")}
           </DialogTitle>
           <DialogDescription>
-            แนะนำตัวสั้น ๆ ให้ {event.organizer_name ?? "ผู้จัดงาน"} รู้ว่าคุณคือใครและช่วยอะไรได้ — ข้อความจะส่งเข้าแชทพร้อมการ์ดงานนี้
+            {t("sponsorIntro", { name: event.organizer_name ?? t("organizerFallback") })}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <label className="block space-y-1.5">
-            <span className="text-sm font-medium">คุณคือใคร</span>
+            <span className="text-sm font-medium">{t("whoAreYou")}</span>
             <Input
               autoFocus
               maxLength={80}
               value={who}
               onChange={(e) => setWho(e.target.value)}
-              placeholder="ชื่อแบรนด์ / บริษัท / ตัวคุณ"
+              placeholder={t("whoPlaceholder")}
               className="rounded-xl"
               disabled={busy}
             />
           </label>
 
           <fieldset className="space-y-1.5">
-            <legend className="text-sm font-medium">สนับสนุนเรื่องอะไร</legend>
+            <legend className="text-sm font-medium">{t("supportWhat")}</legend>
             <div className="flex flex-wrap gap-2 pt-1">
-              {SUPPORT_TYPES.map((t) => {
-                const on = types.includes(t);
+              {SUPPORT_TYPES.map((k) => {
+                const on = types.includes(k);
                 return (
                   <button
-                    key={t}
+                    key={k}
                     type="button"
                     aria-pressed={on}
                     disabled={busy}
-                    onClick={() => setTypes((cur) => (on ? cur.filter((x) => x !== t) : [...cur, t]))}
+                    onClick={() => setTypes((cur) => (on ? cur.filter((x) => x !== k) : [...cur, k]))}
                     className={cn(
                       "min-h-8 rounded-full border px-3 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground",
                       on ? "border-foreground bg-foreground text-background" : "border-border text-foreground hover:border-foreground/50",
                     )}
                   >
-                    {t}
+                    {t(k)}
                   </button>
                 );
               })}
@@ -117,7 +128,7 @@ export default function SponsorOfferDialog({ open, onOpenChange, event }: Props)
           </fieldset>
 
           <label className="block space-y-1.5">
-            <span className="text-sm font-medium">รายละเอียดคร่าว ๆ</span>
+            <span className="text-sm font-medium">{t("roughDetails")}</span>
             <Textarea
               rows={3}
               maxLength={600}
@@ -126,7 +137,7 @@ export default function SponsorOfferDialog({ open, onOpenChange, event }: Props)
               onKeyDown={(e) => {
                 if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) void send();
               }}
-              placeholder="เช่น ให้ใช้พื้นที่ร้านจัดเวิร์กช็อปฟรี 1 วัน / สนับสนุนกระดาษพิมพ์ 500 แผ่น…"
+              placeholder={t("detailsPlaceholder")}
               className="resize-none rounded-xl"
               disabled={busy}
             />
@@ -136,7 +147,7 @@ export default function SponsorOfferDialog({ open, onOpenChange, event }: Props)
         <div className="flex justify-end">
           <Button type="button" className="gap-1.5 rounded-full" disabled={busy || !ready} onClick={() => void send()}>
             {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Send className="h-4 w-4" aria-hidden />}
-            ส่งข้อเสนอ
+            {t("sendOffer")}
           </Button>
         </div>
       </DialogContent>

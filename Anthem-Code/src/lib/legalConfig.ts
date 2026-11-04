@@ -32,7 +32,7 @@ export const LEGAL_PRIVACY_VERSION =
 export const LEGAL_COOKIES_VERSION =
   (import.meta.env.VITE_LEGAL_COOKIES_VERSION as string | undefined) ?? "2026-07-03";
 
-/** รุ่นข้อตกลงการจ้างงาน / นโยบายชำระเงิน — บันทึกตอนผู้จ้างติ๊ก consent */
+/** รุ่นข้อตกลงการจ้างงาน / นโยบายชำระเงิน — บันทึกตอนผู้จ้างเลือก consent */
 export const HIRE_POLICY_VERSION =
   (import.meta.env.VITE_HIRE_POLICY_VERSION as string | undefined) ?? "2026-07-18";
 

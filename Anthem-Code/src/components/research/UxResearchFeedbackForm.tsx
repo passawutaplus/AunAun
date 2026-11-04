@@ -164,7 +164,7 @@ export default function UxResearchFeedbackForm({ onSuccess }: Props) {
       </section>
 
       <section className="space-y-4 rounded-2xl border border-border p-4">
-        <h2 className="font-semibold text-sm">สิ่งที่ทำแล้ว (ติ๊กเท่าที่ทำ)</h2>
+        <h2 className="font-semibold text-sm">สิ่งที่ทำแล้ว (เลือกเท่าที่ทำ)</h2>
         <div className="space-y-3">
           <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
             Moderated tasks T1–T11
