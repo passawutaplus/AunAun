@@ -571,7 +571,12 @@ const ProjectDetailPage = ({ overlay = false }: { overlay?: boolean } = {}) => {
                 ownerId={dbProject.owner_id}
               />
             )}
-            <div className="work-paper rounded-2xl p-2 shadow-sm ring-1 ring-black/5 sm:p-5 lg:p-8">
+            <div
+              className={cn(
+                "work-paper rounded-2xl",
+                overlay ? "p-0 sm:p-2" : "p-2 shadow-sm ring-1 ring-black/5 sm:p-5 lg:p-8",
+              )}
+            >
               {editorMode === "flex_grid" && flexLayout ? (
                 <FlexGridView
                   layout={flexLayout}

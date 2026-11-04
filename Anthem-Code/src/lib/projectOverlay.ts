@@ -30,3 +30,37 @@ export function useOpenProject() {
     [navigate, state],
   );
 }
+
+/**
+ * Where the last tap landed: the card (nearest ancestor holding an image) the user pressed, so the
+ * work overlay can zoom out of it and back into it. Recorded on pointerdown, read once on open.
+ */
+type Origin = { rect: DOMRect; at: number };
+let lastOrigin: Origin | null = null;
+
+function cardFor(target: EventTarget | null): Element | null {
+  let el = target instanceof Element ? target : null;
+  for (let i = 0; el && i < 8; i++, el = el.parentElement) {
+    const r = el.getBoundingClientRect();
+    if (r.width >= 60 && r.height >= 60 && el.querySelector("img")) return el;
+  }
+  return null;
+}
+
+if (typeof document !== "undefined") {
+  document.addEventListener(
+    "pointerdown",
+    (e) => {
+      const card = cardFor(e.target);
+      lastOrigin = card ? { rect: card.getBoundingClientRect(), at: Date.now() } : null;
+    },
+    { capture: true, passive: true },
+  );
+}
+
+/** The card rect from a tap in the last second (consumed), or null. */
+export function takeOverlayOrigin(): DOMRect | null {
+  const o = lastOrigin;
+  lastOrigin = null;
+  return o && Date.now() - o.at < 1500 ? o.rect : null;
+}
