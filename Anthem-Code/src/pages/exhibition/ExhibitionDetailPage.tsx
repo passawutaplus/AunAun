@@ -302,8 +302,9 @@ export default function ExhibitionDetailPage() {
         <EventVenuesSection parent={event} venues={venues} className="mx-auto mt-12 w-full max-w-[84rem]" />
       ) : null}
 
-      <div className="mt-12 mx-auto grid w-full max-w-[84rem] grid-cols-1 lg:grid-cols-[minmax(0,56rem)_22.5rem] lg:justify-center lg:gap-x-10 xl:grid-cols-[minmax(0,56rem)_24rem] xl:gap-x-12 gap-y-10">
-        <section aria-labelledby="about-heading">
+      <div className="mt-6 mx-auto grid w-full max-w-[84rem] grid-cols-1 gap-y-6 lg:mt-12 lg:grid-cols-[minmax(0,56rem)_22.5rem] lg:justify-center lg:gap-x-10 lg:gap-y-10 xl:grid-cols-[minmax(0,56rem)_24rem] xl:gap-x-12">
+        {/* Phones: a rule separates About from the event facts / documents above. */}
+        <section aria-labelledby="about-heading" className="border-t border-border pt-6 lg:border-t-0 lg:pt-0">
           <h2 id="about-heading" className="font-display text-2xl font-semibold text-foreground">
             About This Event
           </h2>
@@ -430,7 +431,7 @@ export default function ExhibitionDetailPage() {
         </section>
       ) : null}
 
-      {insights ? <EventInsightsPanel insights={insights} event={event} className="mx-auto mt-14 w-full max-w-[84rem]" /> : null}
+      {insights ? <EventInsightsPanel insights={insights} event={event} className="mx-auto w-full max-w-[84rem] lg:mt-14" /> : null}
 
       {insights?.related_categories.length ? (
         <EventRelatedWorks categories={insights.related_categories} className="mx-auto mt-14 w-full max-w-[84rem]" />
