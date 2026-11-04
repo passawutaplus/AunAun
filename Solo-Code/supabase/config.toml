@@ -67,6 +67,16 @@ verify_jwt = false
 [functions.line-admin-notify]
 verify_jwt = false
 
+# Creator Invitation V1: public token-gated API (no account), admin actions (JWT + has_role), cron sweep
+[functions.creator-invite]
+verify_jwt = false
+
+[functions.creator-invite-admin]
+verify_jwt = true
+
+[functions.creator-invite-mail]
+verify_jwt = false
+
 [functions.line-admin-webhook]
 verify_jwt = false
 

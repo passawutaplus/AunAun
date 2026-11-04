@@ -2576,3 +2576,14 @@ html [data-feed-sheet] [data-feed-catalog-head] .gap-y-1 {
   background: radial-gradient(120% 70% at 0% 0%, rgba(248, 247, 242, 0.16), rgba(248, 247, 242, 0.04) 45%, transparent 70%),
     radial-gradient(90% 50% at 100% 100%, rgba(248, 247, 242, 0.08), transparent 70%), hsl(var(--background));
 }
+
+/* Creator invitation: decorative works strip drifting in alternating columns */
+@keyframes invite-drift {
+  from { transform: translateY(0); }
+  to { transform: translateY(-50%); }
+}
+.invite-drift { animation: invite-drift 70s linear infinite; will-change: transform; }
+.invite-drift-reverse { animation-direction: reverse; }
+@media (prefers-reduced-motion: reduce) {
+  .invite-drift { animation: none; }
+}

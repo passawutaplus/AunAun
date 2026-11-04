@@ -68,6 +68,15 @@ export type TrendInfo = {
   doc_url: string;
 };
 
+export type CreatorInviteInfo = {
+  display_name: string;
+  discipline: string | null;
+  country: string | null;
+  submit_mode: string | null;
+  submitted_at: string | null;
+  project_count: number;
+};
+
 export type DigestInfo = {
   total_members: number;
   new_members: number;
@@ -814,5 +823,38 @@ export function flexTrend(t: TrendInfo): LineMessage {
       label: "อ่านรายงานเต็ม (Google Docs)",
       uri: t.doc_url,
     }),
+  );
+}
+
+function creatorInviteMode(c: CreatorInviteInfo): string {
+  return c.submit_mode === "quick"
+    ? "Quick submit (ลิงก์ผลงาน)"
+    : `ฟอร์มเต็ม · ${c.project_count} โปรเจกต์`;
+}
+
+export function formatCreatorInvite(c: CreatorInviteInfo): string {
+  return [
+    `✉️ ครีเอเตอร์ที่เชิญส่งข้อมูลแล้ว — ${clip(c.display_name, 60)}`,
+    [c.discipline, c.country, creatorInviteMode(c)].filter(Boolean).join(" · "),
+    c.submitted_at ? bkkTime(c.submitted_at) : "",
+    `${ADMIN_SITE}/admin/creator-invitations`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+export function flexCreatorInvite(c: CreatorInviteInfo): LineMessage {
+  const meta = [
+    [c.discipline, c.country].filter(Boolean).join(" · "),
+    c.submitted_at ? bkkTime(c.submitted_at) : "",
+  ].filter(Boolean);
+  return flex(
+    formatCreatorInvite(c),
+    bubble(
+      "ครีเอเตอร์ส่งข้อมูลแล้ว",
+      null,
+      [section("user-plus", clip(c.display_name, 60), creatorInviteMode(c), meta)],
+      { label: "เปิดคำเชิญ", uri: `${ADMIN_SITE}/admin/creator-invitations` },
+    ),
   );
 }

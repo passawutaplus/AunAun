@@ -5,6 +5,9 @@ export type ResendSendParams = {
   html: string;
   text?: string;
   idempotencyKey?: string;
+  replyTo?: string;
+  /** Extra headers, e.g. List-Unsubscribe */
+  headers?: Record<string, string>;
 };
 
 export type ResendSendResult =
@@ -36,6 +39,8 @@ export async function sendResendEmail(params: ResendSendParams): Promise<ResendS
       subject: params.subject,
       html: params.html,
       ...(params.text ? { text: params.text } : {}),
+      ...(params.replyTo ? { reply_to: params.replyTo } : {}),
+      ...(params.headers ? { headers: params.headers } : {}),
     }),
   });
 
