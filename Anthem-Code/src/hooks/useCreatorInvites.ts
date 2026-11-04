@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { InviteApiError, inviteCall, type InviteLang, type InviteStatus } from "@/lib/creatorInvite";
-import { DEMO_ROWS, demoAction, demoDetail, isAdminDemo } from "@/lib/creatorInviteAdminDemo";
+import { demoAction, demoDetail, demoRows, isAdminDemo } from "@/lib/creatorInviteAdminDemo";
 
 export interface AdminInviteRow {
   id: string;
@@ -82,7 +82,7 @@ export function useAdminInvites() {
   return useQuery({
     queryKey: ["admin-creator-invites"],
     queryFn: async () => {
-      if (isAdminDemo()) return DEMO_ROWS;
+      if (isAdminDemo()) return demoRows();
       const { data, error } = await rpc("admin_creator_invites_list");
       if (error) throw new Error(error.message);
       return (data ?? []) as AdminInviteRow[];

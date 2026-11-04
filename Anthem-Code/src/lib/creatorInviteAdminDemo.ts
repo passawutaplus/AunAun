@@ -59,8 +59,21 @@ export const DEMO_MEDIA_URLS: Record<string, string> = {
   [M(5)]: "/landing/works/market.jpg",
 };
 
+/** In-memory changes made by clicking actions in the preview (reset on reload). */
+const overrides = new Map<string, Partial<AdminInviteRow> & Record<string, unknown>>();
+const extraEvents = new Map<string, { kind: string; actor_type: string; actor: string | null; detail: Record<string, unknown>; created_at: string }[]>();
+
+export function demoRows(): AdminInviteRow[] {
+  return DEMO_ROWS.map((r) => ({ ...r, ...overrides.get(r.id) }) as AdminInviteRow);
+}
+
+function patch(id: string, p: Record<string, unknown>, event: string) {
+  overrides.set(id, { ...overrides.get(id), ...p, updated_at: new Date().toISOString() });
+  extraEvents.set(id, [{ kind: event, actor_type: "admin", actor: "Aun", detail: {}, created_at: new Date().toISOString() }, ...(extraEvents.get(id) ?? [])]);
+}
+
 export function demoDetail(id: string | undefined): AdminInviteDetail | null {
-  const row = DEMO_ROWS.find((r) => r.id === id);
+  const row = demoRows().find((r) => r.id === id);
   if (!row) return null;
   const submitted = !!row.submitted_at;
   const data = {
@@ -100,6 +113,7 @@ export function demoDetail(id: string | undefined): AdminInviteDetail | null {
       decline_note: null,
       delete_after: row.status === "declined" ? new Date(Date.now() + 29 * day).toISOString() : null,
       published_at: row.status === "published" ? ago(0) : null,
+      ...overrides.get(row.id),
       user_id: null,
       self_signup_at: null,
       account_created_at: row.status === "published" ? ago(0) : null,
@@ -117,6 +131,7 @@ export function demoDetail(id: string | undefined): AdminInviteDetail | null {
         ]
       : [],
     events: [
+      ...(extraEvents.get(row.id) ?? []),
       ...(submitted ? [{ kind: "submitted", actor_type: "artist", actor: null, detail: {}, created_at: row.submitted_at! }] : []),
       ...(row.sent_at ? [{ kind: row.social_handle ? "marked_sent" : "email_invite_sent", actor_type: row.social_handle ? "admin" : "system", actor: row.social_handle ? "Aun" : null, detail: {}, created_at: row.sent_at }] : []),
       { kind: "created", actor_type: "admin", actor: "Aun", detail: {}, created_at: row.created_at },
@@ -127,6 +142,17 @@ export function demoDetail(id: string | undefined): AdminInviteDetail | null {
 
 /** Fake responses for admin actions so buttons can be clicked in the preview. */
 export function demoAction(body: Record<string, unknown>): Record<string, unknown> {
+  const id = typeof body.id === "string" ? body.id : "";
+  const now = new Date().toISOString();
+  if (id) {
+    if (body.action === "start_draft") patch(id, { status: "preparing" }, "draft_started");
+    if (body.action === "save_draft") patch(id, {}, "draft_saved");
+    if (body.action === "send_review") patch(id, { status: "preparing", review_sent_at: now, review_expires_at: new Date(Date.now() + 14 * day).toISOString() }, "review_link_created");
+    if (body.action === "publish") patch(id, { status: "published", published_at: now, account_created_at: now }, "published");
+    if (body.action === "mark_sent") patch(id, { status: "sent", sent_at: now }, "marked_sent");
+    if (body.action === "revoke") patch(id, { revoked: true, revoked_at: now }, "revoked");
+    if (body.action === "extend") patch(id, { revoked: false, revoked_at: null }, "extended");
+  }
   const link = "http://localhost:8081/invite/creator/devdemo000000000000000000000000000000000000";
   switch (body.action) {
     case "links":

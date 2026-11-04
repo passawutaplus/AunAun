@@ -103,6 +103,7 @@ export default function AdminCreatorInvitationDetailPage() {
     review_link: null,
   }));
   const [tpl, setTpl] = useState<TemplateId>("dm-th");
+  const [tab, setTab] = useState("data");
   const [confirm, setConfirm] = useState<
     "publish" | "revoke" | "delete" | null
   >(null);
@@ -238,7 +239,7 @@ export default function AdminCreatorInvitationDetailPage() {
         <>
           <p className="text-xs text-admin-muted">
             {status === "submitted"
-              ? `ศิลปินส่ง${inv.submit_mode === "quick" ? "แค่ลิงก์" : "แบบเต็ม"}แล้ว · ทำ Draft จากข้อมูลที่ส่ง แล้วส่งลิงก์ตรวจ`
+              ? `ศิลปินส่ง${inv.submit_mode === "quick" ? "แค่ลิงก์" : "แบบเต็ม"}แล้ว · กดรับเรื่อง ระบบจะคัดลอกข้อมูลที่ส่งมาเป็นโปรไฟล์ร่างให้ทีมแก้ได้ และล็อกฟอร์มของศิลปินไว้`
               : "ศิลปินขอแก้ไข — แก้ Draft แล้วส่งลิงก์ตรวจใหม่"}
           </p>
           {inv.change_request_note ? (
@@ -252,10 +253,13 @@ export default function AdminCreatorInvitationDetailPage() {
                 size="sm"
                 disabled={action.isPending}
                 onClick={() =>
-                  void run({ action: "start_draft" }, "สถานะ → Preparing")
+                  void run(
+                    { action: "start_draft" },
+                    "รับเรื่องแล้ว · จัดโปรไฟล์ร่างได้ในแท็บ Draft & พรีวิว",
+                  ).then(() => setTab("draft"))
                 }
               >
-                เริ่มทำ Draft
+                รับเรื่อง · เริ่มจัดโปรไฟล์
               </Button>
             ) : (
               <Button
@@ -481,7 +485,7 @@ export default function AdminCreatorInvitationDetailPage() {
 
       <Card title="ขั้นถัดไป">{nextStep}</Card>
 
-      <Tabs defaultValue="data" className="w-full">
+      <Tabs value={tab} onValueChange={setTab} className="w-full">
         <TabsList className="h-auto flex-wrap justify-start gap-1 rounded-sm border border-admin-border bg-admin-surface p-1">
           <TabsTrigger value="data" className="rounded-sm text-xs">
             ข้อมูลที่ส่ง
