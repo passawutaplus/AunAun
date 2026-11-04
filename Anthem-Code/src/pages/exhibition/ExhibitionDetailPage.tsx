@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
+  ArrowUpRight,
   CalendarDays,
   ExternalLink,
   Flag,
@@ -314,16 +315,29 @@ export default function ExhibitionDetailPage() {
           </div>
         </section>
 
-        {/* Thin rules between the side sections; on phones the first one also separates them from About. */}
-        <aside className="divide-y divide-border border-t border-border lg:border-t-0 [&>*]:py-6 lg:[&>*:first-child]:pt-0">
+        {/* Thin rules between the side sections, and one above Organizer to close off the event facts. */}
+        <aside className="divide-y divide-border border-t border-border [&>*]:py-6">
           <section aria-labelledby="organizer-heading">
             <h2 id="organizer-heading" className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
               Organizer
             </h2>
             <p className="mt-2 text-base font-medium text-foreground">
-              {event.organizer_name ?? (event.origin === "community" ? "ผู้จัดงาน" : NOT_SPECIFIED)}
+              {isHttpUrl(event.website_url) ? (
+                // The organiser's name opens their website.
+                <a
+                  href={event.website_url}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  className="inline-flex items-center gap-1 underline decoration-foreground/30 underline-offset-4 hover:decoration-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground"
+                >
+                  {event.organizer_name ?? "เว็บไซต์ผู้จัด"}
+                  <ArrowUpRight className="h-4 w-4 shrink-0" aria-hidden />
+                </a>
+              ) : (
+                (event.organizer_name ?? (event.origin === "community" ? "ผู้จัดงาน" : NOT_SPECIFIED))
+              )}
             </p>
-            <div className="mt-2 flex flex-wrap gap-2">
+            <div className="mt-2 flex flex-wrap gap-2 empty:hidden">
               {/* Team events are owned by an admin account; that profile is not the organiser. */}
               {!isDemoEventId(event.id) && event.origin === "community" ? (
                 <Button asChild size="sm" variant="outline" className="rounded-full">
@@ -333,13 +347,6 @@ export default function ExhibitionDetailPage() {
               {canChat ? (
                 <Button type="button" size="sm" className="rounded-full" onClick={contactOrganizer}>
                   <MessageCircle className="mr-1.5 h-4 w-4" aria-hidden /> Message
-                </Button>
-              ) : null}
-              {isHttpUrl(event.website_url) ? (
-                <Button asChild size="sm" variant="ghost" className="rounded-full">
-                  <a href={event.website_url} target="_blank" rel="noopener noreferrer nofollow">
-                    <Globe className="mr-1.5 h-4 w-4" aria-hidden /> Website
-                  </a>
                 </Button>
               ) : null}
             </div>
