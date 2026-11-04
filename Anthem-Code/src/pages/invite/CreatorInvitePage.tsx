@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { ArrowLeft, ArrowRight, ArrowUpRight, Check, ChevronLeft, ChevronRight, ImagePlus, Loader2, Mail, X } from "lucide-react";
 import SeoHead from "@/components/SeoHead";
 import InviteProfilePreview from "@/components/invite/InviteProfilePreview";
+import InviteWorksBackdrop from "@/components/invite/InviteWorksBackdrop";
 import { InviteShell, InviteStateCard } from "@/components/invite/InviteShell";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -112,7 +113,13 @@ export default function CreatorInvitePage() {
         onSubmitted={() => setSubmitted(true)}
       />
     );
-  else body = <Landing token={token} t={t} invite={invite} />;
+  else
+    body = (
+      <>
+        <Landing token={token} t={t} invite={invite} />
+        <InviteWorksBackdrop className="mx-auto max-w-6xl px-4 sm:px-6" />
+      </>
+    );
 
   return (
     <InviteShell lang={effectiveLang} onLang={setLang} t={t}>
