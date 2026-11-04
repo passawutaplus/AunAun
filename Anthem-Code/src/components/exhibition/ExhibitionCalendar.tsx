@@ -431,7 +431,7 @@ export function ExhibitionCalendar({ events, className }: Props) {
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-5xl gap-0 rounded-2xl p-0">
+        <DialogContent className="max-h-[calc(100dvh-1.5rem)] max-w-5xl gap-0 overflow-y-auto overscroll-contain rounded-2xl p-0 max-sm:w-[calc(100vw-1.5rem)]">
           <DialogHeader className="px-6 pb-4 pt-6 text-left">
             <DialogTitle className="text-3xl font-semibold tracking-tight">
               Event Calendar
