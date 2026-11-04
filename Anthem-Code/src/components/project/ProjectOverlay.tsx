@@ -7,13 +7,12 @@ import {
   type MouseEvent,
 } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { X } from "lucide-react";
 import { getBackgroundLocation } from "@/lib/projectOverlay";
 import { cn } from "@/lib/utils";
 
 const ProjectDetailPage = lazy(() => import("@/pages/ProjectDetailPage"));
 
-/** /showcase/:id on top of the page it was opened from: dark backdrop, fade in, ✕ / backdrop / Esc to close. */
+/** /showcase/:id on top of the page it was opened from: dark backdrop, fade in; click outside the work, Esc or Back to close. */
 export default function ProjectOverlay() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -86,14 +85,6 @@ export default function ProjectOverlay() {
           <ProjectDetailPage overlay />
         </Suspense>
       </div>
-      <button
-        type="button"
-        onClick={close}
-        aria-label="ปิด"
-        className="fixed right-3 top-3 z-[60] inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
-      >
-        <X className="h-5 w-5" aria-hidden />
-      </button>
     </div>
   );
 }

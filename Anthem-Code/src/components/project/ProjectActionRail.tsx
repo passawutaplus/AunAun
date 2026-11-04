@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Bookmark, Mail, Share } from "lucide-react";
+import { Bookmark, MessageCircle, Share } from "lucide-react";
 import UserAvatar from "@/components/UserAvatar";
 import FollowButton from "@/components/FollowButton";
 import SharePopover from "@/components/SharePopover";
@@ -83,7 +83,7 @@ const ProjectActionRail = ({
           freelancerId={ownerId}
           iconOnly
           announceName={ownerName}
-          className="absolute -bottom-1 -right-1 !h-6 !w-6 border-2 border-background p-0 [&_svg]:!h-3 [&_svg]:!w-3"
+          className="absolute -bottom-1 -right-1 !h-6 !w-6 border-2 border-background !bg-brand p-0 !text-white shadow-sm hover:!bg-brand/90 aria-pressed:!bg-white aria-pressed:!text-neutral-900 [&_svg]:!h-3 [&_svg]:!w-3"
         />
       ) : null}
     </div>
@@ -108,7 +108,7 @@ const ProjectActionRail = ({
           title="Collection"
         >
           <Bookmark
-            className={cn("h-5 w-5", saved && "fill-primary text-primary")}
+            className={cn("h-5 w-5", saved && "fill-brand text-brand")}
             strokeWidth={saved ? 0 : 1.8}
           />
         </button>
@@ -136,7 +136,7 @@ const ProjectActionRail = ({
           aria-label="ส่งข้อความ"
           title="Message"
         >
-          <Mail className="h-5 w-5" strokeWidth={1.8} />
+          <MessageCircle className="h-5 w-5" strokeWidth={1.8} />
         </button>
       ) : null}
     </div>
