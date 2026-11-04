@@ -3,7 +3,15 @@ import { adminInviteBase } from "@/lib/creatorInviteAdminDemo";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { format } from "date-fns";
 import { th } from "date-fns/locale";
-import { Copy, ExternalLink, Loader2, MoreHorizontal } from "lucide-react";
+import {
+  Copy,
+  ExternalLink,
+  Loader2,
+  MoreHorizontal,
+  Pencil,
+  RotateCcw,
+  Send,
+} from "lucide-react";
 import { toast } from "sonner";
 import StatusPill from "@/components/admin/StatusPill";
 import InviteProfilePreview from "@/components/invite/InviteProfilePreview";
@@ -87,6 +95,13 @@ function Row({ k, v }: { k: string; v: React.ReactNode }) {
   );
 }
 
+type DraftVersion = {
+  key: string;
+  label: string;
+  at: string | null;
+  data: InviteSubmission;
+};
+
 export default function AdminCreatorInvitationDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -107,6 +122,8 @@ export default function AdminCreatorInvitationDetailPage() {
     "publish" | "revoke" | "delete" | null
   >(null);
   const [draft, setDraft] = useState<InviteSubmission | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [viewing, setViewing] = useState<DraftVersion | null>(null);
   const hasMedia = (data?.media.length ?? 0) > 0;
   const urls = useAdminInviteMediaUrls(id, hasMedia);
 
@@ -135,7 +152,7 @@ export default function AdminCreatorInvitationDetailPage() {
         : null,
     [data],
   );
-  useEffect(() => setDraft(staffDraft), [staffDraft]);
+  useEffect(() => setDraft(staffDraft ?? submission), [staffDraft, submission]);
 
   const [addedMedia, setAddedMedia] = useState<Map<string, InviteMedia>>(
     new Map(),
@@ -242,37 +259,29 @@ export default function AdminCreatorInvitationDetailPage() {
         <>
           <p className="text-xs text-admin-muted">
             {status === "submitted"
-              ? `ศิลปินส่ง${inv.submit_mode === "quick" ? "แค่ลิงก์" : "แบบเต็ม"}แล้ว · กดรับเรื่อง ระบบจะคัดลอกข้อมูลที่ส่งมาเป็นโปรไฟล์ร่างให้ทีมแก้ได้ และล็อกฟอร์มของศิลปินไว้`
-              : "ศิลปินขอแก้ไข — แก้ Draft แล้วส่งลิงก์ตรวจใหม่"}
+              ? `ศิลปินส่ง${inv.submit_mode === "quick" ? "แค่ลิงก์" : "แบบเต็ม"}แล้ว · ดูพรีวิวด้านล่าง ไม่มีอะไรแก้ก็ส่ง Review ได้เลย มีแก้ค่อยกดแก้ไข`
+              : "ศิลปินขอแก้ไข — ดูรายการแก้ด้านล่าง กดแก้ไข บันทึก แล้วส่ง Review รอบใหม่"}
           </p>
-          {inv.change_request_note ? (
-            <p className="mt-2 whitespace-pre-line rounded-sm bg-admin-surface p-2 text-sm">
-              {inv.change_request_note}
-            </p>
-          ) : null}
           <div className="mt-3 flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              variant={status === "submitted" ? "outline" : "default"}
+              disabled={action.isPending}
+              onClick={() => void beginEdit()}
+            >
+              <Pencil className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+              {status === "submitted" ? "แก้ไข" : "แก้ไขตามคำขอ"}
+            </Button>
             {status === "submitted" ? (
-              <Button
-                size="sm"
-                disabled={action.isPending}
-                onClick={() =>
-                  void run(
-                    { action: "start_draft" },
-                    "รับเรื่องแล้ว · จัดโปรไฟล์ร่างได้ด้านล่าง",
-                  ).then(() => setTab("profile"))
-                }
-              >
-                รับเรื่อง · เริ่มจัดโปรไฟล์
-              </Button>
-            ) : (
               <Button
                 size="sm"
                 disabled={action.isPending}
                 onClick={() => void sendReview()}
               >
-                ส่งลิงก์ตรวจใหม่
+                <Send className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                ส่ง Review ให้ศิลปิน
               </Button>
-            )}
+            ) : null}
           </div>
         </>
       );
@@ -282,18 +291,9 @@ export default function AdminCreatorInvitationDetailPage() {
         <>
           <p className="text-xs text-admin-muted">
             {inv.review_sent_at
-              ? `ส่งลิงก์ตรวจแล้ว ${when(inv.review_sent_at)} · รอศิลปินอนุมัติ`
-              : "แก้ Draft ด้านล่างให้พร้อม แล้วส่งลิงก์ตรวจ"}
+              ? `ส่ง Review แล้ว ${when(inv.review_sent_at)} · รอศิลปินตอบ — ถ้ากด Approve ระบบสร้างโปรไฟล์และลงผลงานให้อัตโนมัติ`
+              : "ดูโปรไฟล์ร่างด้านล่าง · ไม่มีอะไรแก้ก็ส่ง Review ได้เลย มีแก้ค่อยกดแก้ไข"}
           </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Button
-              size="sm"
-              disabled={action.isPending}
-              onClick={() => void sendReview()}
-            >
-              {inv.review_sent_at ? "ส่งลิงก์ตรวจอีกครั้ง" : "ส่งลิงก์ตรวจ"}
-            </Button>
-          </div>
         </>
       );
     }
@@ -302,7 +302,8 @@ export default function AdminCreatorInvitationDetailPage() {
         <>
           <p className="text-xs text-admin-muted">
             ศิลปินอนุมัติแล้ว {when(inv.approved_at)} ·
-            เผยแพร่และสร้างบัญชีด้วยอีเมลศิลปิน + รหัสสุ่ม (ส่งทางอีเมลเท่านั้น)
+            ระบบสร้างโปรไฟล์อัตโนมัติไม่สำเร็จ (ดูประวัติ) —
+            แก้แล้วกดเผยแพร่อีกครั้ง
           </p>
           <div className="mt-3">
             <Button
@@ -310,7 +311,7 @@ export default function AdminCreatorInvitationDetailPage() {
               disabled={action.isPending}
               onClick={() => setConfirm("publish")}
             >
-              เผยแพร่ + สร้างบัญชี
+              เผยแพร่อีกครั้ง
             </Button>
           </div>
         </>
@@ -340,7 +341,20 @@ export default function AdminCreatorInvitationDetailPage() {
     );
   })();
 
+  /** The artist's submission becomes the team's working draft the first time we act on it. */
+  async function ensureDraft() {
+    if (status === "submitted") await run({ action: "start_draft" });
+  }
+
+  async function beginEdit() {
+    await ensureDraft();
+    setTab("profile");
+    setViewing(null);
+    setEditing(true);
+  }
+
   async function sendReview() {
+    await ensureDraft();
     const r = (await run({ action: "send_review" })) as {
       review_link: string;
       emailed: boolean;
@@ -365,9 +379,194 @@ export default function AdminCreatorInvitationDetailPage() {
     );
   }
 
+  const dataCard = (
+    <Card title="ข้อมูลที่ส่ง">
+      {submission ? (
+        <>
+          <dl className="grid grid-cols-[8rem_1fr] gap-x-3 gap-y-1.5 text-sm">
+            <Row
+              k="โหมด"
+              v={
+                inv.submit_mode === "quick"
+                  ? "Quick submit"
+                  : inv.submit_mode === "full"
+                    ? "ฟอร์มเต็ม"
+                    : "ยังไม่ส่ง (ร่าง)"
+              }
+            />
+            <Row k="ชื่อ" v={submission.about.name || "—"} />
+            <Row k="สาขา" v={submission.about.discipline || "—"} />
+            <Row k="อีเมล" v={submission.about.email || "—"} />
+            <Row k="เมือง" v={submission.about.city || "—"} />
+            <Row k="ลิงก์" v={submission.about.links || "—"} />
+            {submission.quick.portfolio_url ? (
+              <Row
+                k="พอร์ตโฟลิโอ"
+                v={
+                  <span className="flex flex-col gap-1">
+                    {submission.quick.portfolio_url
+                      .split("\n")
+                      .map((u) => u.trim())
+                      .filter(Boolean)
+                      .map((u) => (
+                        <a
+                          key={u}
+                          href={u}
+                          target="_blank"
+                          rel="noopener noreferrer nofollow"
+                          className="inline-flex items-center gap-1 break-all underline"
+                        >
+                          {u}{" "}
+                          <ExternalLink
+                            className="h-3 w-3 shrink-0"
+                            aria-hidden
+                          />
+                        </a>
+                      ))}
+                  </span>
+                }
+              />
+            ) : null}
+            <Row
+              k="ติดต่อทาง"
+              v={[submission.contact_pref || "—", submission.contact_handle]
+                .filter(Boolean)
+                .join(" · ")}
+            />
+            <Row k="Bio" v={submission.about.bio || "—"} />
+          </dl>
+          {submission.projects.map((p, i) => (
+            <div
+              key={p.slot}
+              className="mt-4 border-t border-admin-border pt-3 text-sm"
+            >
+              <p className="font-medium">
+                โปรเจกต์ {i + 1}: {p.title || "(ไม่มีชื่อ)"}
+              </p>
+              <p className="text-xs text-admin-muted">
+                {[
+                  p.role,
+                  p.url,
+                  p.rights ? "ยืนยันสิทธิ์ภาพ ✓" : "ยังไม่ยืนยันสิทธิ์",
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </p>
+              {p.description ? (
+                <p className="mt-1 whitespace-pre-line text-admin-fg/90">
+                  {p.description}
+                </p>
+              ) : null}
+              <div className="mt-2 flex flex-wrap gap-2">
+                {p.media.map((m) => {
+                  const u = mediaMap.get(m)?.url;
+                  return u ? (
+                    <a
+                      key={m}
+                      href={u}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <img
+                        src={u}
+                        alt=""
+                        className="h-20 w-20 rounded-sm object-cover"
+                      />
+                    </a>
+                  ) : (
+                    <span
+                      key={m}
+                      className="flex h-20 w-20 items-center justify-center rounded-sm bg-admin-surface text-[10px] text-admin-muted"
+                    >
+                      —
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+          {data.media.some((m) => m.slot === "extra") ? (
+            <div className="mt-4 border-t border-admin-border pt-3 text-sm">
+              <p className="font-medium">รูปที่ศิลปินแนบมาตอนขอแก้</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {data.media
+                  .filter((m) => m.slot === "extra")
+                  .map((m) => {
+                    const u = urls.data?.[m.id];
+                    return u ? (
+                      <a
+                        key={m.id}
+                        href={u}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <img
+                          src={u}
+                          alt=""
+                          className="h-20 w-20 rounded-sm object-cover"
+                        />
+                      </a>
+                    ) : null;
+                  })}
+              </div>
+            </div>
+          ) : null}
+          <p className="mt-3 text-xs text-admin-muted">
+            {data.media.length} ไฟล์ ·{" "}
+            {data.media.filter((m) => m.scan_status === "clean").length}{" "}
+            ผ่านการตรวจ
+            {data.media.some((m) => m.scan_status === "blocked")
+              ? ` · ${data.media.filter((m) => m.scan_status === "blocked").length} ไม่ผ่าน (ถูกลบ)`
+              : ""}
+            {data.media.some((m) => m.scan_note?.includes("vt_pending"))
+              ? " · VirusTotal กำลังตรวจ"
+              : ""}
+          </p>
+        </>
+      ) : (
+        <p className="text-sm text-admin-muted">ศิลปินยังไม่ได้กรอกข้อมูล</p>
+      )}
+    </Card>
+  );
+  const events = data.events ?? [];
+  const changeRounds = events
+    .filter((e) => e.kind === "review_changes")
+    .map((e) => ({
+      created_at: e.created_at,
+      note: typeof e.detail?.note === "string" ? e.detail.note : "",
+    }))
+    .reverse();
+  const extraImages = data.media
+    .filter((m) => m.slot === "extra" && urls.data?.[m.id])
+    .map((m) => ({ id: m.id, url: urls.data![m.id] }));
+  const sentRounds = events.filter((e) => e.kind === "review_link_created");
+  const reviewRound = sentRounds.length + 1;
+  const versions: DraftVersion[] = [
+    ...(submission
+      ? [
+          {
+            key: "original",
+            label: "ต้นฉบับจากศิลปิน",
+            at: data.submission?.submitted_at ?? null,
+            data: submission,
+          },
+        ]
+      : []),
+    ...sentRounds
+      .filter((e) => !!e.detail?.draft && typeof e.detail.draft === "object")
+      .map((e, i, arr) => ({
+        key: e.created_at,
+        label: `ส่ง Review รอบ ${typeof e.detail.round === "number" ? e.detail.round : arr.length - i}`,
+        at: e.created_at,
+        data: normalizeSubmission(e.detail.draft),
+      }))
+      .reverse(),
+  ];
   const editable =
-    staffDraft && ["preparing", "needs_changes", "submitted"].includes(status);
+    !!submission &&
+    ["preparing", "needs_changes", "submitted"].includes(status);
   const shown = draft ?? submission;
+  const previewData = viewing?.data ?? shown;
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -500,24 +699,86 @@ export default function AdminCreatorInvitationDetailPage() {
             ประวัติ
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="profile" className="mt-4">
-          {/* Same layout as the artist's form: live preview left, editing right */}
+        <TabsContent value="profile" className="mt-4 space-y-5">
+          {changeRounds.length ? (
+            <section className="rounded-sm border border-admin-border p-4">
+              <h2 className="text-sm font-semibold text-admin-fg">
+                คำขอแก้ไขจากศิลปิน ({changeRounds.length} รอบ)
+              </h2>
+              <div className="mt-3 space-y-2">
+                {changeRounds.map((r, i) => (
+                  <details
+                    key={r.created_at}
+                    open={i === changeRounds.length - 1}
+                    className="rounded-sm bg-admin-surface p-3"
+                  >
+                    <summary className="cursor-pointer text-sm font-medium">
+                      รอบที่ {i + 1} · {when(r.created_at)}
+                      {i === changeRounds.length - 1 &&
+                      status === "needs_changes"
+                        ? " · ล่าสุด รอแก้"
+                        : ""}
+                    </summary>
+                    <p className="mt-2 whitespace-pre-line text-sm text-admin-fg/90">
+                      {r.note}
+                    </p>
+                  </details>
+                ))}
+              </div>
+              {extraImages.length ? (
+                <div className="mt-3">
+                  <p className="text-xs text-admin-muted">
+                    รูปที่ศิลปินแนบมาตอนขอแก้
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {extraImages.map((m) => (
+                      <a
+                        key={m.id}
+                        href={m.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <img
+                          src={m.url}
+                          alt=""
+                          className="h-20 w-20 rounded-sm object-cover"
+                        />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </section>
+          ) : null}
+          {/* Same layout as the artist's form: live preview left, details / editing right */}
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
             <div className="min-w-0 space-y-5">
-              {shown ? (
+              {viewing ? (
+                <p className="flex items-center justify-between gap-2 rounded-sm bg-admin-surface px-3 py-2 text-xs">
+                  <span>กำลังดู: {viewing.label}</span>
+                  <button
+                    type="button"
+                    className="underline"
+                    onClick={() => setViewing(null)}
+                  >
+                    กลับไปเวอร์ชันปัจจุบัน
+                  </button>
+                </p>
+              ) : null}
+              {previewData ? (
                 <>
                   <InviteProfilePreview
-                    data={shown}
+                    data={previewData}
                     media={mediaMap}
                     t={t}
                     badge={staffDraft ? "Draft · ยังไม่เผยแพร่" : t.pvBadge}
                   />
-                  {shown.projects.map((p, i) => (
+                  {previewData.projects.map((p, i) => (
                     <InviteProjectPreview
                       key={p.slot}
                       project={p}
                       index={i}
-                      name={shown.about.name}
+                      name={previewData.about.name}
                       media={mediaMap}
                       t={t}
                       badge={staffDraft ? "Draft" : t.pvBadge}
@@ -531,7 +792,7 @@ export default function AdminCreatorInvitationDetailPage() {
               )}
             </div>
             <div className="min-w-0 space-y-5">
-              {editable && draft ? (
+              {editable && draft && editing ? (
                 <AdminDraftEditor
                   invitationId={inv.id}
                   draft={draft}
@@ -545,351 +806,106 @@ export default function AdminCreatorInvitationDetailPage() {
                     void run(
                       { action: "save_draft", draft },
                       "บันทึก Draft แล้ว",
-                    )
+                    ).then(() => setEditing(false))
                   }
-                  onReset={() => setDraft(staffDraft)}
+                  onReset={() => {
+                    setDraft(staffDraft);
+                    setEditing(false);
+                  }}
                 />
+              ) : editable ? (
+                <section className="rounded-sm border border-admin-border p-4">
+                  <h2 className="text-sm font-semibold text-admin-fg">
+                    โปรไฟล์ร่าง
+                  </h2>
+                  <p className="mt-1 text-xs text-admin-muted">
+                    {status === "needs_changes"
+                      ? "แก้ตามที่ศิลปินขอด้านบน กดบันทึก แล้วส่ง Review รอบใหม่"
+                      : "ดูพรีวิวด้านซ้าย ถ้าไม่มีอะไรต้องแก้ ส่ง Review ให้ศิลปินได้เลย · ศิลปินกด Approve แล้วระบบสร้างโปรไฟล์และลงผลงานให้อัตโนมัติ"}
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={action.isPending}
+                      onClick={() => void beginEdit()}
+                    >
+                      <Pencil className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                      แก้ไข
+                    </Button>
+                    <Button
+                      size="sm"
+                      disabled={action.isPending}
+                      onClick={() => void sendReview()}
+                    >
+                      <Send className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                      {status === "preparing" && inv.review_sent_at
+                        ? "ส่งลิงก์ Review ซ้ำ"
+                        : reviewRound > 1
+                          ? `ส่ง Review รอบ ${reviewRound}`
+                          : "ส่ง Review ให้ศิลปิน"}
+                    </Button>
+                  </div>
+                </section>
               ) : null}
-              {editable && draft ? (
+              {versions.length > 1 ? (
+                <section className="rounded-sm border border-admin-border p-4">
+                  <h2 className="text-sm font-semibold text-admin-fg">
+                    เวอร์ชันที่บันทึกไว้
+                  </h2>
+                  <ul className="mt-2 divide-y divide-admin-border text-sm">
+                    {versions.map((v) => (
+                      <li
+                        key={v.key}
+                        className="flex flex-wrap items-center gap-2 py-2"
+                      >
+                        <span className="min-w-0 flex-1">
+                          {v.label}
+                          <span className="ml-2 text-xs text-admin-muted">
+                            {when(v.at)}
+                          </span>
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setViewing(v)}
+                        >
+                          ดูพรีวิว
+                        </Button>
+                        {editable ? (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setDraft(v.data);
+                              setViewing(null);
+                              setEditing(true);
+                              toast.message(
+                                `โหลด “${v.label}” มาแก้แล้ว — กดบันทึกเพื่อใช้`,
+                              );
+                            }}
+                          >
+                            <RotateCcw
+                              className="mr-1.5 h-3.5 w-3.5"
+                              aria-hidden
+                            />
+                            ใช้เวอร์ชันนี้
+                          </Button>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ) : null}
+              {staffDraft ? (
                 <details className="rounded-sm border border-admin-border p-4">
                   <summary className="cursor-pointer text-sm font-medium">
                     ข้อมูลต้นฉบับที่ศิลปินส่ง
                   </summary>
-                  <div className="mt-4">
-                    <Card title="ข้อมูลที่ส่ง">
-                      {submission ? (
-                        <>
-                          <dl className="grid grid-cols-[8rem_1fr] gap-x-3 gap-y-1.5 text-sm">
-                            <Row
-                              k="โหมด"
-                              v={
-                                inv.submit_mode === "quick"
-                                  ? "Quick submit"
-                                  : inv.submit_mode === "full"
-                                    ? "ฟอร์มเต็ม"
-                                    : "ยังไม่ส่ง (ร่าง)"
-                              }
-                            />
-                            <Row k="ชื่อ" v={submission.about.name || "—"} />
-                            <Row
-                              k="สาขา"
-                              v={submission.about.discipline || "—"}
-                            />
-                            <Row k="อีเมล" v={submission.about.email || "—"} />
-                            <Row k="เมือง" v={submission.about.city || "—"} />
-                            <Row k="ลิงก์" v={submission.about.links || "—"} />
-                            {submission.quick.portfolio_url ? (
-                              <Row
-                                k="พอร์ตโฟลิโอ"
-                                v={
-                                  <span className="flex flex-col gap-1">
-                                    {submission.quick.portfolio_url
-                                      .split("\n")
-                                      .map((u) => u.trim())
-                                      .filter(Boolean)
-                                      .map((u) => (
-                                        <a
-                                          key={u}
-                                          href={u}
-                                          target="_blank"
-                                          rel="noopener noreferrer nofollow"
-                                          className="inline-flex items-center gap-1 break-all underline"
-                                        >
-                                          {u}{" "}
-                                          <ExternalLink
-                                            className="h-3 w-3 shrink-0"
-                                            aria-hidden
-                                          />
-                                        </a>
-                                      ))}
-                                  </span>
-                                }
-                              />
-                            ) : null}
-                            <Row
-                              k="ติดต่อทาง"
-                              v={[
-                                submission.contact_pref || "—",
-                                submission.contact_handle,
-                              ]
-                                .filter(Boolean)
-                                .join(" · ")}
-                            />
-                            <Row k="Bio" v={submission.about.bio || "—"} />
-                          </dl>
-                          {submission.projects.map((p, i) => (
-                            <div
-                              key={p.slot}
-                              className="mt-4 border-t border-admin-border pt-3 text-sm"
-                            >
-                              <p className="font-medium">
-                                โปรเจกต์ {i + 1}: {p.title || "(ไม่มีชื่อ)"}
-                              </p>
-                              <p className="text-xs text-admin-muted">
-                                {[
-                                  p.role,
-                                  p.url,
-                                  p.rights
-                                    ? "ยืนยันสิทธิ์ภาพ ✓"
-                                    : "ยังไม่ยืนยันสิทธิ์",
-                                ]
-                                  .filter(Boolean)
-                                  .join(" · ")}
-                              </p>
-                              {p.description ? (
-                                <p className="mt-1 whitespace-pre-line text-admin-fg/90">
-                                  {p.description}
-                                </p>
-                              ) : null}
-                              <div className="mt-2 flex flex-wrap gap-2">
-                                {p.media.map((m) => {
-                                  const u = mediaMap.get(m)?.url;
-                                  return u ? (
-                                    <a
-                                      key={m}
-                                      href={u}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                    >
-                                      <img
-                                        src={u}
-                                        alt=""
-                                        className="h-20 w-20 rounded-sm object-cover"
-                                      />
-                                    </a>
-                                  ) : (
-                                    <span
-                                      key={m}
-                                      className="flex h-20 w-20 items-center justify-center rounded-sm bg-admin-surface text-[10px] text-admin-muted"
-                                    >
-                                      —
-                                    </span>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          ))}
-                          {data.media.some((m) => m.slot === "extra") ? (
-                            <div className="mt-4 border-t border-admin-border pt-3 text-sm">
-                              <p className="font-medium">
-                                รูปที่ศิลปินแนบมาตอนขอแก้
-                              </p>
-                              <div className="mt-2 flex flex-wrap gap-2">
-                                {data.media
-                                  .filter((m) => m.slot === "extra")
-                                  .map((m) => {
-                                    const u = urls.data?.[m.id];
-                                    return u ? (
-                                      <a
-                                        key={m.id}
-                                        href={u}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                      >
-                                        <img
-                                          src={u}
-                                          alt=""
-                                          className="h-20 w-20 rounded-sm object-cover"
-                                        />
-                                      </a>
-                                    ) : null;
-                                  })}
-                              </div>
-                            </div>
-                          ) : null}
-                          <p className="mt-3 text-xs text-admin-muted">
-                            {data.media.length} ไฟล์ ·{" "}
-                            {
-                              data.media.filter(
-                                (m) => m.scan_status === "clean",
-                              ).length
-                            }{" "}
-                            ผ่านการตรวจ
-                            {data.media.some((m) => m.scan_status === "blocked")
-                              ? ` · ${data.media.filter((m) => m.scan_status === "blocked").length} ไม่ผ่าน (ถูกลบ)`
-                              : ""}
-                            {data.media.some((m) =>
-                              m.scan_note?.includes("vt_pending"),
-                            )
-                              ? " · VirusTotal กำลังตรวจ"
-                              : ""}
-                          </p>
-                        </>
-                      ) : (
-                        <p className="text-sm text-admin-muted">
-                          ศิลปินยังไม่ได้กรอกข้อมูล
-                        </p>
-                      )}
-                    </Card>
-                  </div>
+                  <div className="mt-4">{dataCard}</div>
                 </details>
               ) : (
-                <>
-                  <Card title="ข้อมูลที่ส่ง">
-                    {submission ? (
-                      <>
-                        <dl className="grid grid-cols-[8rem_1fr] gap-x-3 gap-y-1.5 text-sm">
-                          <Row
-                            k="โหมด"
-                            v={
-                              inv.submit_mode === "quick"
-                                ? "Quick submit"
-                                : inv.submit_mode === "full"
-                                  ? "ฟอร์มเต็ม"
-                                  : "ยังไม่ส่ง (ร่าง)"
-                            }
-                          />
-                          <Row k="ชื่อ" v={submission.about.name || "—"} />
-                          <Row
-                            k="สาขา"
-                            v={submission.about.discipline || "—"}
-                          />
-                          <Row k="อีเมล" v={submission.about.email || "—"} />
-                          <Row k="เมือง" v={submission.about.city || "—"} />
-                          <Row k="ลิงก์" v={submission.about.links || "—"} />
-                          {submission.quick.portfolio_url ? (
-                            <Row
-                              k="พอร์ตโฟลิโอ"
-                              v={
-                                <span className="flex flex-col gap-1">
-                                  {submission.quick.portfolio_url
-                                    .split("\n")
-                                    .map((u) => u.trim())
-                                    .filter(Boolean)
-                                    .map((u) => (
-                                      <a
-                                        key={u}
-                                        href={u}
-                                        target="_blank"
-                                        rel="noopener noreferrer nofollow"
-                                        className="inline-flex items-center gap-1 break-all underline"
-                                      >
-                                        {u}{" "}
-                                        <ExternalLink
-                                          className="h-3 w-3 shrink-0"
-                                          aria-hidden
-                                        />
-                                      </a>
-                                    ))}
-                                </span>
-                              }
-                            />
-                          ) : null}
-                          <Row
-                            k="ติดต่อทาง"
-                            v={[
-                              submission.contact_pref || "—",
-                              submission.contact_handle,
-                            ]
-                              .filter(Boolean)
-                              .join(" · ")}
-                          />
-                          <Row k="Bio" v={submission.about.bio || "—"} />
-                        </dl>
-                        {submission.projects.map((p, i) => (
-                          <div
-                            key={p.slot}
-                            className="mt-4 border-t border-admin-border pt-3 text-sm"
-                          >
-                            <p className="font-medium">
-                              โปรเจกต์ {i + 1}: {p.title || "(ไม่มีชื่อ)"}
-                            </p>
-                            <p className="text-xs text-admin-muted">
-                              {[
-                                p.role,
-                                p.url,
-                                p.rights
-                                  ? "ยืนยันสิทธิ์ภาพ ✓"
-                                  : "ยังไม่ยืนยันสิทธิ์",
-                              ]
-                                .filter(Boolean)
-                                .join(" · ")}
-                            </p>
-                            {p.description ? (
-                              <p className="mt-1 whitespace-pre-line text-admin-fg/90">
-                                {p.description}
-                              </p>
-                            ) : null}
-                            <div className="mt-2 flex flex-wrap gap-2">
-                              {p.media.map((m) => {
-                                const u = mediaMap.get(m)?.url;
-                                return u ? (
-                                  <a
-                                    key={m}
-                                    href={u}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                  >
-                                    <img
-                                      src={u}
-                                      alt=""
-                                      className="h-20 w-20 rounded-sm object-cover"
-                                    />
-                                  </a>
-                                ) : (
-                                  <span
-                                    key={m}
-                                    className="flex h-20 w-20 items-center justify-center rounded-sm bg-admin-surface text-[10px] text-admin-muted"
-                                  >
-                                    —
-                                  </span>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        ))}
-                        {data.media.some((m) => m.slot === "extra") ? (
-                          <div className="mt-4 border-t border-admin-border pt-3 text-sm">
-                            <p className="font-medium">
-                              รูปที่ศิลปินแนบมาตอนขอแก้
-                            </p>
-                            <div className="mt-2 flex flex-wrap gap-2">
-                              {data.media
-                                .filter((m) => m.slot === "extra")
-                                .map((m) => {
-                                  const u = urls.data?.[m.id];
-                                  return u ? (
-                                    <a
-                                      key={m.id}
-                                      href={u}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                    >
-                                      <img
-                                        src={u}
-                                        alt=""
-                                        className="h-20 w-20 rounded-sm object-cover"
-                                      />
-                                    </a>
-                                  ) : null;
-                                })}
-                            </div>
-                          </div>
-                        ) : null}
-                        <p className="mt-3 text-xs text-admin-muted">
-                          {data.media.length} ไฟล์ ·{" "}
-                          {
-                            data.media.filter((m) => m.scan_status === "clean")
-                              .length
-                          }{" "}
-                          ผ่านการตรวจ
-                          {data.media.some((m) => m.scan_status === "blocked")
-                            ? ` · ${data.media.filter((m) => m.scan_status === "blocked").length} ไม่ผ่าน (ถูกลบ)`
-                            : ""}
-                          {data.media.some((m) =>
-                            m.scan_note?.includes("vt_pending"),
-                          )
-                            ? " · VirusTotal กำลังตรวจ"
-                            : ""}
-                        </p>
-                      </>
-                    ) : (
-                      <p className="text-sm text-admin-muted">
-                        ศิลปินยังไม่ได้กรอกข้อมูล
-                      </p>
-                    )}
-                  </Card>
-                </>
+                dataCard
               )}
             </div>
           </div>

@@ -161,13 +161,11 @@ export function normalizeSubmission(
   const r = raw as Partial<InviteSubmission>;
   const projects =
     Array.isArray(r.projects) && r.projects.length
-      ? r.projects
-          .slice(0, MAX_PROJECTS)
-          .map((p, i) => ({
-            ...emptyProject(PROJECT_SLOTS[i]),
-            ...p,
-            media: Array.isArray(p?.media) ? p.media : [],
-          }))
+      ? r.projects.slice(0, MAX_PROJECTS).map((p, i) => ({
+          ...emptyProject(PROJECT_SLOTS[i]),
+          ...p,
+          media: Array.isArray(p?.media) ? p.media : [],
+        }))
       : base.projects;
   return {
     about: { ...base.about, ...(r.about ?? {}) },
@@ -317,7 +315,11 @@ export const publicInviteApi = {
   reviewRemoveMedia: (token: string, mediaId: string) =>
     demo(token)
       ? Promise.resolve({})
-      : inviteCall("creator-invite", { action: "review_media_remove", token, media_id: mediaId }),
+      : inviteCall("creator-invite", {
+          action: "review_media_remove",
+          token,
+          media_id: mediaId,
+        }),
   removeMedia: (token: string, mediaId: string) =>
     demo(token)
       ? Promise.resolve({})
@@ -350,18 +352,22 @@ export const publicInviteApi = {
   ) =>
     demo(token)
       ? Promise.resolve({
+          published: decision === "approve",
           status: (decision === "approve"
-            ? "approved"
+            ? "published"
             : decision === "changes"
               ? "needs_changes"
               : "declined") as InviteStatus,
         })
-      : inviteCall<{ status: InviteStatus }>("creator-invite", {
-          action: "review_decide",
-          token,
-          decision,
-          note,
-        }),
+      : inviteCall<{ status: InviteStatus; published?: boolean }>(
+          "creator-invite",
+          {
+            action: "review_decide",
+            token,
+            decision,
+            note,
+          },
+        ),
 };
 
 /** Signed upload into the private invite bucket, then a server-side type/size/malware check. */

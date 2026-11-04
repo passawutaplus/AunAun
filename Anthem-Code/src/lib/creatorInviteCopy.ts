@@ -4,9 +4,11 @@ import type { PageLang } from "@/lib/creatorInvite";
 const th = {
   getInTouch: "รู้จัก SAMECOR",
   declinedTitle: "ขอบคุณที่สละเวลาพิจารณาคำเชิญ",
-  declinedBody: "เราเคารพการตัดสินใจของคุณ ข้อมูลและรูปที่ส่งมาจะถูกลบภายใน 30 วัน หวังว่าจะมีโอกาสได้ร่วมงานกันในวันข้างหน้า",
+  declinedBody:
+    "เราเคารพการตัดสินใจของคุณ ข้อมูลและรูปที่ส่งมาจะถูกลบภายใน 30 วัน หวังว่าจะมีโอกาสได้ร่วมงานกันในวันข้างหน้า",
   backHome: "กลับหน้าแรก",
-  changesSentBanner: (n: number) => `ส่งคำขอแก้แล้ว${n > 1 ? ` (รอบที่ ${n})` : ""} · ทีมจะแก้และส่งลิงก์ตรวจใหม่ทางอีเมล คุณยังขอแก้เพิ่มหรือกดอนุมัติได้ทุกเมื่อ`,
+  changesSentBanner: (n: number) =>
+    `ส่งคำขอแก้แล้ว${n > 1 ? ` (รอบที่ ${n})` : ""} · ทีมจะแก้และส่งลิงก์ตรวจใหม่ทางอีเมล คุณยังขอแก้เพิ่มหรือกดอนุมัติได้ทุกเมื่อ`,
   attachImage: "แนบรูป",
   attachedCount: (n: number) => `แนบรูป ${n} รูป`,
   partsLabel: "เลือกส่วนที่อยากให้แก้",
@@ -15,16 +17,23 @@ const th = {
   extraNote: "หมายเหตุเพิ่มเติม",
   extraNoteHint: "ไม่บังคับ",
   cardCover: "หน้าปก",
-  dragHint: "ลากเพื่อสลับลำดับ (มือถือ: กดค้างแล้วลาก) · รูปแรกเป็นหน้าปกการ์ดเสมอ",
-  s3sub: "โปรดตรวจสอบข้อมูลก่อนส่งให้ทีม SAMECOR จัดทำโปรไฟล์ แล้วเราจะส่งให้คุณตรวจอีกครั้ง",
+  dragHint:
+    "ลากเพื่อสลับลำดับ (มือถือ: กดค้างแล้วลาก) · รูปแรกเป็นหน้าปกการ์ดเสมอ",
+  s3sub:
+    "โปรดตรวจสอบข้อมูลก่อนส่งให้ทีม SAMECOR จัดทำโปรไฟล์ แล้วเราจะส่งให้คุณตรวจอีกครั้ง",
   rowBasic: "ข้อมูลพื้นฐาน",
   rowBasicSub: "ชื่อ / สาขา / อีเมล",
   rowBio: "แนะนำตัว",
   rowBioSub: "เกี่ยวกับคุณและงาน",
   rowWorks: "ผลงานที่เลือก",
   edit: "แก้ไข",
-  consentTitle: "อนุญาตให้ SAMECOR จัดทำโปรไฟล์ (ส่วนตัว) จากข้อมูลและภาพที่ส่ง",
-  consentPoints: ["ทีมงานจะจัดทำร่างโปรไฟล์และส่งให้คุณตรวจสอบก่อนเผยแพร่", "ข้อมูลและภาพจะไม่ถูกเผยแพร่สาธารณะโดยไม่ได้รับอนุมัติจากคุณ", "คุณยังคงเป็นเจ้าของลิขสิทธิ์ในผลงานทั้งหมด"] as string[],
+  consentTitle:
+    "อนุญาตให้ SAMECOR จัดทำโปรไฟล์ (ส่วนตัว) จากข้อมูลและภาพที่ส่ง",
+  consentPoints: [
+    "ทีมงานจะจัดทำร่างโปรไฟล์และส่งให้คุณตรวจสอบก่อนเผยแพร่",
+    "ข้อมูลและภาพจะไม่ถูกเผยแพร่สาธารณะโดยไม่ได้รับอนุมัติจากคุณ",
+    "คุณยังคงเป็นเจ้าของลิขสิทธิ์ในผลงานทั้งหมด",
+  ] as string[],
   addLink: "เพิ่มลิงก์",
   cover: "รูปปก (ไม่บังคับ)",
   coverHint: "แนะนำแนวนอน เช่น 1600×600",
@@ -39,11 +48,13 @@ const th = {
   by: "โดย",
   home: "Explore",
   headline: "มาร่วมเป็นหนึ่งในครีเอเตอร์กลุ่มแรกของ SAMECOR",
-  subline: "เราอยากเชิญคุณมาร่วมสร้างคอมมูนิตี้ที่เชื่อมศิลปิน นักออกแบบ และโอกาสสร้างสรรค์จากประเทศไทยสู่ผู้คนทั่วโลก",
+  subline:
+    "เราอยากเชิญคุณมาร่วมสร้างคอมมูนิตี้ที่เชื่อมศิลปิน นักออกแบบ และโอกาสสร้างสรรค์จากประเทศไทยสู่ผู้คนทั่วโลก",
   inviteFrom: "คำเชิญจาก ภาสวุฒิ แซ่ล้อ (อั๋น)",
   founderRole: "Founder, SAMECOR",
   cardA: "ให้ SAMECOR ช่วยสร้างโปรไฟล์",
-  cardAsub: "ส่งข้อมูลสั้น ๆ และผลงาน 1–3 โปรเจกต์ ทีมของเราจะจัดทำโปรไฟล์ให้ตรวจสอบก่อนเผยแพร่",
+  cardAsub:
+    "ส่งข้อมูลสั้น ๆ และผลงาน 1–3 โปรเจกต์ ทีมของเราจะจัดทำโปรไฟล์ให้ตรวจสอบก่อนเผยแพร่",
   cardBsub: "สร้างบัญชีและจัดการโปรไฟล์ของคุณได้ด้วยตัวเอง",
   trust: "ไม่มีค่าใช้จ่าย · ไม่เผยแพร่ก่อนอนุมัติ · แก้ไขได้ตามต้องการ",
   nextTitle: "What happens next?",
@@ -55,11 +66,13 @@ const th = {
   next3sub: "โปรไฟล์จะเผยแพร่เมื่อคุณอนุมัติ",
   livePreview: "Live preview",
   lpTitle: "See how your profile could look on SAMECOR.",
-  lpSub: "ตัวอย่างการนำเสนอผลงานและโปรไฟล์บนแพลตฟอร์ม (ปรับแต่งได้ตามความเหมาะสม)",
+  lpSub:
+    "ตัวอย่างการนำเสนอผลงานและโปรไฟล์บนแพลตฟอร์ม (ปรับแต่งได้ตามความเหมาะสม)",
   lpBio: "เน้นงานกราฟิกและอาร์ต พร้อมเปิดรับทุกโอกาส",
   ctaA: "เริ่มกรอกข้อมูล",
   ctaB: "ไปหน้าสมัคร",
-  defaultNote: "เราชื่นชอบผลงานของคุณ และอยากชวนคุณมาร่วมเป็นหนึ่งในครีเอเตอร์กลุ่มแรกของ SAMECOR",
+  defaultNote:
+    "เราชื่นชอบผลงานของคุณ และอยากชวนคุณมาร่วมเป็นหนึ่งในครีเอเตอร์กลุ่มแรกของ SAMECOR",
   language: "ภาษา",
   eyebrow: "Founding Creator Invitation",
   invFor: "คำเชิญสำหรับ",
@@ -70,9 +83,11 @@ const th = {
   recommended: "แนะนำ",
   diy: "ทำเอง",
   pathA: "ให้ SAMECOR ช่วยสร้างโปรไฟล์",
-  pathAsub: "กรอกสั้น ๆ 3 ขั้น หรือส่งแค่ลิงก์ผลงาน ทีมเราจัดทำโปรไฟล์ร่างให้ตรวจก่อนเผยแพร่",
+  pathAsub:
+    "กรอกสั้น ๆ 3 ขั้น หรือส่งแค่ลิงก์ผลงาน ทีมเราจัดทำโปรไฟล์ร่างให้ตรวจก่อนเผยแพร่",
   pathB: "สมัครและลงผลงานเอง",
-  pathBsub: "ไปหน้าสมัครสมาชิก ระบบจะเชื่อมบัญชีกับคำเชิญนี้ให้ และจะไม่สร้างโปรไฟล์แทนคุณ",
+  pathBsub:
+    "ไปหน้าสมัครสมาชิก ระบบจะเชื่อมบัญชีกับคำเชิญนี้ให้ และจะไม่สร้างโปรไฟล์แทนคุณ",
   free: "ไม่มีค่าใช้จ่าย · ไม่ต้องสมัครบัญชีก่อน · ไม่มีอะไรเผยแพร่จนกว่าคุณอนุมัติ",
   explore: "รู้จัก SAMECOR",
   exploreHint: "เปิดในแท็บใหม่ ข้อมูลที่กรอกยังอยู่",
@@ -83,7 +98,8 @@ const th = {
   s2: "ผลงานที่เลือก",
   s3: "ตรวจทานและยืนยันข้อมูล",
   stepOf: (n: number) => `ขั้นที่ ${n} จาก 3`,
-  contactViaEmail: (email: string) => (email ? `เราจะติดต่อที่ ${email}` : "เราจะติดต่อทางอีเมลที่ให้ไว้ในขั้นแรก"),
+  contactViaEmail: (email: string) =>
+    email ? `เราจะติดต่อที่ ${email}` : "เราจะติดต่อทางอีเมลที่ให้ไว้ในขั้นแรก",
   contactHandle: (channel: string) => `บัญชี ${channel} ของคุณ`,
   chooseContact: "เลือกช่องทาง",
   rowWorksSub: (n: number) => `${n} โปรเจกต์`,
@@ -104,7 +120,8 @@ const th = {
   links: "เว็บไซต์ / โซเชียล",
   avatar: "รูปโปรไฟล์",
   chooseImage: "เลือกรูป",
-  s2intro: "ส่งได้ 1–3 โปรเจกต์ (อย่างน้อย 1) · ส่งแค่ลิงก์ก็ได้ ทีมจะขออนุญาตก่อนใช้รูปทุกครั้ง",
+  s2intro:
+    "ส่งได้ 1–3 โปรเจกต์ (อย่างน้อย 1) · ส่งแค่ลิงก์ก็ได้ ทีมจะขออนุญาตก่อนใช้รูปทุกครั้ง",
   project: (n: number) => `โปรเจกต์ ${n}`,
   remove: "ลบ",
   title: "ชื่อผลงาน",
@@ -123,20 +140,29 @@ const th = {
   works: "ผลงาน",
   untitled: "(ยังไม่ตั้งชื่อ)",
   privacyTitle: "ความเป็นส่วนตัวและสิทธิ์",
-  privacy: "ข้อมูลนี้ใช้เตรียมโปรไฟล์ร่างแบบส่วนตัวเท่านั้น ไม่มีอะไรเผยแพร่จนกว่าคุณกดอนุมัติ ผลงานยังเป็นลิขสิทธิ์ของคุณ ขอลบข้อมูลได้ทุกเมื่อที่ privacy@samecor.com",
-  consent: "อนุญาตให้ SAMECOR จัดทำโปรไฟล์ร่าง (ส่วนตัว) จากข้อมูลและภาพที่ส่ง และส่งให้ฉันตรวจก่อนเผยแพร่",
+  privacy:
+    "ข้อมูลนี้ใช้เตรียมโปรไฟล์ร่างแบบส่วนตัวเท่านั้น ไม่มีอะไรเผยแพร่จนกว่าคุณกดอนุมัติ ผลงานยังเป็นลิขสิทธิ์ของคุณ ขอลบข้อมูลได้ทุกเมื่อที่ privacy@samecor.com",
+  consent:
+    "อนุญาตให้ SAMECOR จัดทำโปรไฟล์ร่าง (ส่วนตัว) จากข้อมูลและภาพที่ส่ง และส่งให้ฉันตรวจก่อนเผยแพร่",
   consentHint: "ระบบบันทึกเวลาที่คุณให้ความยินยอม",
   contactPref: "ช่องทางที่สะดวกให้ติดต่อ",
-  contactOptions: { email: "อีเมล", instagram: "Instagram DM", line: "LINE", other: "อื่น ๆ" },
+  contactOptions: {
+    email: "อีเมล",
+    instagram: "Instagram DM",
+    line: "LINE",
+    other: "อื่น ๆ",
+  },
   quickTitle: "ส่งแค่ลิงก์ผลงาน ที่เหลือเราช่วย",
   quickSub: "ใช้เวลาไม่ถึงหนึ่งนาที",
   portfolio: "ลิงก์พอร์ตโฟลิโอ (Behance, เว็บไซต์, IG)",
-  quickConsent: "อนุญาตให้ SAMECOR ดูลิงก์นี้และจัดทำโปรไฟล์ร่างแบบส่วนตัวให้ฉันตรวจ",
+  quickConsent:
+    "อนุญาตให้ SAMECOR ดูลิงก์นี้และจัดทำโปรไฟล์ร่างแบบส่วนตัวให้ฉันตรวจ",
   quickNote: "หากต้องการรูปหรือข้อมูลเพิ่มเติม ทีมงานจะติดต่อคุณก่อนทุกครั้ง",
   pv: "ตัวอย่างโปรไฟล์",
   pvBadge: "Private preview",
   pvBtn: "ดูตัวอย่างโปรไฟล์",
-  pvNote: "หน้านี้ไม่ถูกค้นหาและเห็นได้เฉพาะผู้ถือลิงก์ · อัปเดตตามที่กรอกด้านบน",
+  pvNote:
+    "หน้านี้ไม่ถูกค้นหาและเห็นได้เฉพาะผู้ถือลิงก์ · อัปเดตตามที่กรอกด้านบน",
   collapse: "ย่อ",
   expand: "ขยาย",
   yourName: "ชื่อของคุณ",
@@ -186,10 +212,12 @@ const th = {
     declined: "คุณปฏิเสธคำเชิญนี้แล้ว",
   } as Record<string, string>,
   expiredTitle: "ลิงก์นี้หมดอายุหรือถูกยกเลิกแล้ว",
-  expiredBody: "ถ้ายังสนใจ ตอบกลับอีเมลคำเชิญหรือติดต่อ info@samecor.com ทีมจะส่งลิงก์ใหม่ให้",
+  expiredBody:
+    "ถ้ายังสนใจ ตอบกลับอีเมลคำเชิญหรือติดต่อ info@samecor.com ทีมจะส่งลิงก์ใหม่ให้",
   notFoundTitle: "ไม่พบคำเชิญนี้",
   unsubTitle: "หยุดรับอีเมลคำเชิญ",
-  unsubBody: "เราจะไม่ส่งอีเมลคำเชิญหรือการเตือนถึงคุณอีก ลิงก์คำเชิญยังใช้ได้ถ้าเปลี่ยนใจ",
+  unsubBody:
+    "เราจะไม่ส่งอีเมลคำเชิญหรือการเตือนถึงคุณอีก ลิงก์คำเชิญยังใช้ได้ถ้าเปลี่ยนใจ",
   unsubBtn: "ยืนยันหยุดรับอีเมล",
   unsubDone: "เรียบร้อย คุณจะไม่ได้รับอีเมลคำเชิญอีก",
   selfTitle: "สมัครด้วยคำเชิญ",
@@ -199,7 +227,12 @@ const th = {
   reviewBody: "นี่คือทุกอย่างที่จะเห็นบนหน้าสาธารณะ ทั้งข้อความ รูป และลิงก์",
   reviewDraftBadge: "Draft · ยังไม่เผยแพร่",
   willPublish: "รายการที่จะเผยแพร่",
-  willPublishItems: (name: string, links: string, projects: number, images: number) => [
+  willPublishItems: (
+    name: string,
+    links: string,
+    projects: number,
+    images: number,
+  ) => [
     `ชื่อ ${name}, สาขา, เมือง และ bio`,
     links ? `ลิงก์ ${links}` : "ไม่มีลิงก์ภายนอก",
     `${projects} โปรเจกต์ · ${images} รูป พร้อมเครดิต`,
@@ -218,36 +251,56 @@ const th = {
   cancel: "ยกเลิก",
   confirmDecline: "ยืนยันปฏิเสธ",
   doneApprove: "ขอบคุณ! ทีมจะเผยแพร่โปรไฟล์ และส่งข้อมูลเข้าใช้บัญชีทางอีเมล",
+  donePublished:
+    "ขอบคุณ! โปรไฟล์และผลงานของคุณออนไลน์แล้ว เราส่งข้อมูลเข้าใช้บัญชีไปทางอีเมลแล้ว",
   doneChanges: "ส่งคำขอแก้แล้ว ทีมจะส่งลิงก์ตรวจใหม่ให้",
   doneDecline: "รับทราบ เราจะลบข้อมูลของคุณภายใน 30 วัน ขอบคุณที่พิจารณาคำเชิญ",
 } as const;
 
-export type InviteCopy = { [K in keyof typeof th]: (typeof th)[K] extends (...a: infer A) => infer R ? (...a: A) => R : (typeof th)[K] extends readonly unknown[] ? (typeof th)[K] : (typeof th)[K] extends Record<string, unknown> ? { [P in keyof (typeof th)[K]]: string } : string };
+export type InviteCopy = {
+  [K in keyof typeof th]: (typeof th)[K] extends (...a: infer A) => infer R
+    ? (...a: A) => R
+    : (typeof th)[K] extends readonly unknown[]
+      ? (typeof th)[K]
+      : (typeof th)[K] extends Record<string, unknown>
+        ? { [P in keyof (typeof th)[K]]: string }
+        : string;
+};
 
 const en: InviteCopy = {
   getInTouch: "Get in touch",
   declinedTitle: "Thank you for considering our invitation",
-  declinedBody: "We respect your decision. Your details and images will be deleted within 30 days. We hope our paths cross again.",
+  declinedBody:
+    "We respect your decision. Your details and images will be deleted within 30 days. We hope our paths cross again.",
   backHome: "Back to home",
-  changesSentBanner: (n: number) => `Change request sent${n > 1 ? ` (round ${n})` : ""} · We'll update the draft and email a new review link. You can request more changes or approve anytime.`,
+  changesSentBanner: (n: number) =>
+    `Change request sent${n > 1 ? ` (round ${n})` : ""} · We'll update the draft and email a new review link. You can request more changes or approve anytime.`,
   attachImage: "Attach image",
   attachedCount: (n: number) => `${n} image${n > 1 ? "s" : ""} attached`,
   partsLabel: "Choose what to change",
   partProfile: "Profile card details",
-  partPlaceholder: "What should we change? e.g. swap the cover, edit the description",
+  partPlaceholder:
+    "What should we change? e.g. swap the cover, edit the description",
   extraNote: "Other notes",
   extraNoteHint: "Optional",
   cardCover: "Cover",
-  dragHint: "Drag to reorder (on phones, press and hold) · The first image is the cover",
-  s3sub: "Please check your details before sending them to the SAMECOR team. We'll send the profile back for your review.",
+  dragHint:
+    "Drag to reorder (on phones, press and hold) · The first image is the cover",
+  s3sub:
+    "Please check your details before sending them to the SAMECOR team. We'll send the profile back for your review.",
   rowBasic: "Basics",
   rowBasicSub: "Name / discipline / email",
   rowBio: "Introduction",
   rowBioSub: "About you and your work",
   rowWorks: "Selected works",
   edit: "Edit",
-  consentTitle: "I allow SAMECOR to prepare a private profile from the details and images I send",
-  consentPoints: ["The team prepares a draft and sends it to you before anything is published", "Nothing is made public without your approval", "You keep full copyright of all your work"],
+  consentTitle:
+    "I allow SAMECOR to prepare a private profile from the details and images I send",
+  consentPoints: [
+    "The team prepares a draft and sends it to you before anything is published",
+    "Nothing is made public without your approval",
+    "You keep full copyright of all your work",
+  ],
   addLink: "Add link",
   cover: "Cover image (optional)",
   coverHint: "Landscape works best, e.g. 1600×600",
@@ -262,11 +315,13 @@ const en: InviteCopy = {
   by: "by",
   home: "Explore",
   headline: "Join SAMECOR's first creators",
-  subline: "We'd love for you to help build a community that connects artists, designers and creative opportunities from Thailand with people around the world.",
+  subline:
+    "We'd love for you to help build a community that connects artists, designers and creative opportunities from Thailand with people around the world.",
   inviteFrom: "Invitation from Passawut Saelore (Aun)",
   founderRole: "Founder, SAMECOR",
   cardA: "Let SAMECOR build your profile",
-  cardAsub: "Send a few details and 1–3 projects. Our team prepares your profile for you to review before anything is published.",
+  cardAsub:
+    "Send a few details and 1–3 projects. Our team prepares your profile for you to review before anything is published.",
   cardBsub: "Create an account and manage your profile yourself",
   trust: "Free · Nothing published before you approve · Edit anytime",
   nextTitle: "What happens next?",
@@ -278,11 +333,13 @@ const en: InviteCopy = {
   next3sub: "It goes live only when you approve",
   livePreview: "Live preview",
   lpTitle: "See how your profile could look on SAMECOR.",
-  lpSub: "An example of how your work and profile are presented (details can be adjusted).",
+  lpSub:
+    "An example of how your work and profile are presented (details can be adjusted).",
   lpBio: "Graphic design and art. Open to new opportunities.",
   ctaA: "Get started",
   ctaB: "Sign up",
-  defaultNote: "We admire your work and would love for you to be one of SAMECOR's first creators.",
+  defaultNote:
+    "We admire your work and would love for you to be one of SAMECOR's first creators.",
   language: "Language",
   eyebrow: "Founding Creator Invitation",
   invFor: "An invitation for",
@@ -293,9 +350,11 @@ const en: InviteCopy = {
   recommended: "Recommended",
   diy: "Do it yourself",
   pathA: "Let SAMECOR build your profile",
-  pathAsub: "A short 3-step form, or just your portfolio link. We prepare a draft for your approval before anything goes live.",
+  pathAsub:
+    "A short 3-step form, or just your portfolio link. We prepare a draft for your approval before anything goes live.",
   pathB: "Sign up and add my work",
-  pathBsub: "Go to sign-up. Your account is matched to this invitation — we won't create a profile for you.",
+  pathBsub:
+    "Go to sign-up. Your account is matched to this invitation — we won't create a profile for you.",
   free: "Free · No account needed · Nothing goes public until you approve",
   explore: "Get to know SAMECOR",
   exploreHint: "Opens in a new tab — your form stays here",
@@ -306,7 +365,8 @@ const en: InviteCopy = {
   s2: "Selected works",
   s3: "Review and confirm",
   stepOf: (n: number) => `Step ${n} of 3`,
-  contactViaEmail: (email: string) => (email ? `We'll contact you at ${email}` : "We'll use the email from step 1"),
+  contactViaEmail: (email: string) =>
+    email ? `We'll contact you at ${email}` : "We'll use the email from step 1",
   contactHandle: (channel: string) => `Your ${channel} account`,
   chooseContact: "Choose a channel",
   rowWorksSub: (n: number) => `${n} project${n > 1 ? "s" : ""}`,
@@ -323,11 +383,13 @@ const en: InviteCopy = {
   bio: "Short bio",
   city: "City / country",
   email: "Contact email",
-  emailHint: "Use an email you check. We'll create your account with it after you approve.",
+  emailHint:
+    "Use an email you check. We'll create your account with it after you approve.",
   links: "Website / social links",
   avatar: "Profile picture",
   chooseImage: "Choose image",
-  s2intro: "Share 1–3 projects (1 required). A link alone is fine — we'll ask before using any images.",
+  s2intro:
+    "Share 1–3 projects (1 required). A link alone is fine — we'll ask before using any images.",
   project: (n: number) => `Project ${n}`,
   remove: "Remove",
   title: "Project title",
@@ -340,26 +402,36 @@ const en: InviteCopy = {
   imageRules: "JPG / PNG / WebP · up to 20 MB each · max 8 images",
   moveLeft: "Move earlier",
   moveRight: "Move later",
-  rights: "I own the rights to, or have permission to publish, the images in this project",
+  rights:
+    "I own the rights to, or have permission to publish, the images in this project",
   addProject: "Add another project",
   recap: "Summary",
   works: "Works",
   untitled: "(untitled)",
   privacyTitle: "Privacy and rights",
-  privacy: "We use this only to prepare a private draft. Nothing is published until you approve it. Your work stays yours. Ask us to delete your data anytime at privacy@samecor.com.",
-  consent: "I allow SAMECOR to prepare a private draft profile from the details and images I send, and to send it to me for approval before publishing.",
+  privacy:
+    "We use this only to prepare a private draft. Nothing is published until you approve it. Your work stays yours. Ask us to delete your data anytime at privacy@samecor.com.",
+  consent:
+    "I allow SAMECOR to prepare a private draft profile from the details and images I send, and to send it to me for approval before publishing.",
   consentHint: "We record the time you give permission",
   contactPref: "Preferred contact",
-  contactOptions: { email: "Email", instagram: "Instagram DM", line: "LINE", other: "Other" },
+  contactOptions: {
+    email: "Email",
+    instagram: "Instagram DM",
+    line: "LINE",
+    other: "Other",
+  },
   quickTitle: "Just send your portfolio link",
   quickSub: "Takes less than a minute",
   portfolio: "Portfolio link (Behance, website, Instagram)",
-  quickConsent: "I allow SAMECOR to review this link and prepare a private draft profile for my approval",
+  quickConsent:
+    "I allow SAMECOR to review this link and prepare a private draft profile for my approval",
   quickNote: "If we need more images or details, we'll always ask you first.",
   pv: "Profile preview",
   pvBadge: "Private preview",
   pvBtn: "Preview my profile",
-  pvNote: "Not indexed and only visible to people with the link · updates as you type above",
+  pvNote:
+    "Not indexed and only visible to people with the link · updates as you type above",
   collapse: "Collapse",
   expand: "Expand",
   yourName: "Your name",
@@ -381,7 +453,8 @@ const en: InviteCopy = {
     file_rejected: "This file didn't pass our checks — try another",
     too_many_files: "Up to 8 images per project",
     rate_limited: "Too many requests — please wait a moment and try again",
-    locked: "Our team has started your draft — request edits via the review link we'll email you",
+    locked:
+      "Our team has started your draft — request edits via the review link we'll email you",
     generic: "Something went wrong — please try again",
   },
   thanksBadge: "Submitted",
@@ -409,10 +482,12 @@ const en: InviteCopy = {
     declined: "You declined this invitation",
   },
   expiredTitle: "This link has expired or was withdrawn",
-  expiredBody: "Still interested? Reply to the invitation email or write to info@samecor.com and we'll send a new link.",
+  expiredBody:
+    "Still interested? Reply to the invitation email or write to info@samecor.com and we'll send a new link.",
   notFoundTitle: "We couldn't find this invitation",
   unsubTitle: "Stop invitation emails",
-  unsubBody: "We won't send invitation or reminder emails again. The invitation link keeps working if you change your mind.",
+  unsubBody:
+    "We won't send invitation or reminder emails again. The invitation link keeps working if you change your mind.",
   unsubBtn: "Stop emails",
   unsubDone: "Done — you won't get invitation emails anymore",
   selfTitle: "Sign up with your invitation",
@@ -421,7 +496,12 @@ const en: InviteCopy = {
   reviewBody: "This is everything visitors will see — text, images and links.",
   reviewDraftBadge: "Draft · not published yet",
   willPublish: "What will be published",
-  willPublishItems: (name: string, links: string, projects: number, images: number) => [
+  willPublishItems: (
+    name: string,
+    links: string,
+    projects: number,
+    images: number,
+  ) => [
     `Name ${name}, discipline, city and bio`,
     links ? `Links ${links}` : "No external links",
     `${projects} project(s) · ${images} image(s) with credits`,
@@ -434,22 +514,29 @@ const en: InviteCopy = {
   changesTitle: "What should we change?",
   changesHint: "Tell us which text, images or links to change",
   declineTitle: "Decline the invitation?",
-  declineBody: "Nothing will be published, and we'll delete your details and images within 30 days.",
+  declineBody:
+    "Nothing will be published, and we'll delete your details and images within 30 days.",
   declineNote: "Reason (optional)",
   send: "Send",
   cancel: "Cancel",
   confirmDecline: "Decline",
-  doneApprove: "Thank you! We'll publish your profile and email your sign-in details.",
+  doneApprove:
+    "Thank you! We'll publish your profile and email your sign-in details.",
+  donePublished:
+    "Thank you! Your profile and works are live. We've emailed your sign-in details.",
   doneChanges: "Request sent — we'll email a new review link.",
-  doneDecline: "Understood. We'll delete your details within 30 days. Thank you for considering our invitation.",
+  doneDecline:
+    "Understood. We'll delete your details within 30 days. Thank you for considering our invitation.",
 };
 
 const zh: InviteCopy = {
   getInTouch: "了解 SAMECOR",
   declinedTitle: "感谢您抽空考虑我们的邀请",
-  declinedBody: "我们尊重您的决定。您提交的资料和图片将在 30 天内删除。期待未来有机会合作。",
+  declinedBody:
+    "我们尊重您的决定。您提交的资料和图片将在 30 天内删除。期待未来有机会合作。",
   backHome: "返回首页",
-  changesSentBanner: (n: number) => `修改请求已发送${n > 1 ? `（第 ${n} 轮）` : ""} · 我们会更新草稿并发送新的审核链接。您可随时继续提出修改或直接确认。`,
+  changesSentBanner: (n: number) =>
+    `修改请求已发送${n > 1 ? `（第 ${n} 轮）` : ""} · 我们会更新草稿并发送新的审核链接。您可随时继续提出修改或直接确认。`,
   attachImage: "添加图片",
   attachedCount: (n: number) => `已附 ${n} 张图片`,
   partsLabel: "选择需要修改的部分",
@@ -467,7 +554,11 @@ const zh: InviteCopy = {
   rowWorks: "精选作品",
   edit: "编辑",
   consentTitle: "我同意 SAMECOR 使用我提交的资料和图片准备非公开主页",
-  consentPoints: ["团队会先准备草稿，发布前交给您审核", "未经您同意不会公开任何内容", "您仍拥有全部作品的版权"],
+  consentPoints: [
+    "团队会先准备草稿，发布前交给您审核",
+    "未经您同意不会公开任何内容",
+    "您仍拥有全部作品的版权",
+  ],
   addLink: "添加链接",
   cover: "封面图（可选）",
   coverHint: "建议横图，例如 1600×600",
@@ -482,11 +573,13 @@ const zh: InviteCopy = {
   by: "作者",
   home: "Explore",
   headline: "成为 SAMECOR 首批创作者",
-  subline: "我们诚邀您一起打造一个连接艺术家、设计师与创意机会的社区——从泰国走向世界。",
+  subline:
+    "我们诚邀您一起打造一个连接艺术家、设计师与创意机会的社区——从泰国走向世界。",
   inviteFrom: "邀请人：Passawut Saelore（Aun）",
   founderRole: "SAMECOR 创始人",
   cardA: "让 SAMECOR 帮您建立主页",
-  cardAsub: "发送简短资料和 1–3 个项目，我们的团队会准备好主页，经您确认后才发布。",
+  cardAsub:
+    "发送简短资料和 1–3 个项目，我们的团队会准备好主页，经您确认后才发布。",
   cardBsub: "创建账号，自己管理主页",
   trust: "完全免费 · 未经确认不会发布 · 可随时修改",
   nextTitle: "What happens next?",
@@ -513,7 +606,8 @@ const zh: InviteCopy = {
   recommended: "推荐",
   diy: "自行创建",
   pathA: "让 SAMECOR 帮您建立主页",
-  pathAsub: "填写简短的三步表单，或只发送作品集链接。我们会准备草稿，经您确认后才会发布。",
+  pathAsub:
+    "填写简短的三步表单，或只发送作品集链接。我们会准备草稿，经您确认后才会发布。",
   pathB: "自行注册并上传作品",
   pathBsub: "前往注册。您的账号会与此邀请关联——我们不会替您创建主页。",
   free: "完全免费 · 无需先注册 · 未经您确认不会公开任何内容",
@@ -526,7 +620,8 @@ const zh: InviteCopy = {
   s2: "精选作品",
   s3: "检查并确认",
   stepOf: (n: number) => `第 ${n} 步，共 3 步`,
-  contactViaEmail: (email: string) => (email ? `我们会通过 ${email} 联系您` : "我们会使用第一步填写的邮箱"),
+  contactViaEmail: (email: string) =>
+    email ? `我们会通过 ${email} 联系您` : "我们会使用第一步填写的邮箱",
   contactHandle: (channel: string) => `您的 ${channel} 账号`,
   chooseContact: "选择联系方式",
   rowWorksSub: (n: number) => `${n} 个项目`,
@@ -547,7 +642,8 @@ const zh: InviteCopy = {
   links: "网站 / 社交媒体",
   avatar: "头像",
   chooseImage: "选择图片",
-  s2intro: "分享 1–3 个项目（至少 1 个）。只发链接也可以——使用任何图片前我们都会先询问您。",
+  s2intro:
+    "分享 1–3 个项目（至少 1 个）。只发链接也可以——使用任何图片前我们都会先询问您。",
   project: (n: number) => `项目 ${n}`,
   remove: "删除",
   title: "项目名称",
@@ -566,11 +662,18 @@ const zh: InviteCopy = {
   works: "作品",
   untitled: "（未命名）",
   privacyTitle: "隐私与版权",
-  privacy: "这些资料仅用于准备非公开草稿。在您确认之前不会发布任何内容。作品版权仍归您所有。可随时发邮件至 privacy@samecor.com 要求删除资料。",
-  consent: "我同意 SAMECOR 使用我提交的资料和图片准备非公开主页草稿，并在发布前交由我确认。",
+  privacy:
+    "这些资料仅用于准备非公开草稿。在您确认之前不会发布任何内容。作品版权仍归您所有。可随时发邮件至 privacy@samecor.com 要求删除资料。",
+  consent:
+    "我同意 SAMECOR 使用我提交的资料和图片准备非公开主页草稿，并在发布前交由我确认。",
   consentHint: "我们会记录您同意的时间",
   contactPref: "偏好的联系方式",
-  contactOptions: { email: "邮箱", instagram: "Instagram 私信", line: "LINE", other: "其他" },
+  contactOptions: {
+    email: "邮箱",
+    instagram: "Instagram 私信",
+    line: "LINE",
+    other: "其他",
+  },
   quickTitle: "只需发送作品集链接",
   quickSub: "不到一分钟即可完成",
   portfolio: "作品集链接（Behance、网站、Instagram）",
@@ -629,7 +732,8 @@ const zh: InviteCopy = {
     declined: "您已婉拒此邀请",
   },
   expiredTitle: "此链接已过期或已被撤回",
-  expiredBody: "仍有兴趣？回复邀请邮件或发邮件至 info@samecor.com，我们会发送新链接。",
+  expiredBody:
+    "仍有兴趣？回复邀请邮件或发邮件至 info@samecor.com，我们会发送新链接。",
   notFoundTitle: "找不到此邀请",
   unsubTitle: "停止接收邀请邮件",
   unsubBody: "我们将不再发送邀请或提醒邮件。如果您改变主意，邀请链接仍然有效。",
@@ -641,7 +745,12 @@ const zh: InviteCopy = {
   reviewBody: "这是访客将看到的全部内容——文字、图片和链接。",
   reviewDraftBadge: "草稿 · 尚未发布",
   willPublish: "将发布的内容",
-  willPublishItems: (name: string, links: string, projects: number, images: number) => [
+  willPublishItems: (
+    name: string,
+    links: string,
+    projects: number,
+    images: number,
+  ) => [
     `名称 ${name}、领域、城市和简介`,
     links ? `链接 ${links}` : "无外部链接",
     `${projects} 个项目 · ${images} 张图片（附署名）`,
@@ -660,12 +769,17 @@ const zh: InviteCopy = {
   cancel: "取消",
   confirmDecline: "婉拒",
   doneApprove: "谢谢！我们会发布您的主页，并通过邮件发送登录信息。",
+  donePublished: "谢谢！您的主页和作品已上线，登录信息已发送到您的邮箱。",
   doneChanges: "已发送修改要求——我们会通过邮件发送新的审核链接。",
   doneDecline: "明白了。我们会在 30 天内删除您的资料。感谢您考虑我们的邀请。",
 };
 
 export function inviteCopy(lang: PageLang): InviteCopy {
-  return lang === "en" ? en : lang === "zh" ? zh : (th as unknown as InviteCopy);
+  return lang === "en"
+    ? en
+    : lang === "zh"
+      ? zh
+      : (th as unknown as InviteCopy);
 }
 
 export const PAGE_LANGS: { id: PageLang; label: string; short: string }[] = [

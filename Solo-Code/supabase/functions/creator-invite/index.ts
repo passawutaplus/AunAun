@@ -10,6 +10,7 @@ import { corsHeadersForRequest } from "../_shared/cors.ts";
 import { supabaseSecretKey } from "../_shared/supabase-keys.ts";
 import { signatureMatchesExtension } from "../_shared/asset-content-checks.ts";
 import { virusTotalConfigured, virusTotalScanFile } from "../_shared/virustotal.ts";
+import { publishInvitation } from "../_shared/creator-invite-publish.ts";
 import {
   CONSENT_TEXT_VERSION,
   DECLINE_PURGE_DAYS,
@@ -540,8 +541,27 @@ async function actReviewDecide(ctx: Ctx) {
       delete_after: new Date(now.getTime() + DECLINE_PURGE_DAYS * 86400_000).toISOString(),
     };
   } else return json(req, { error: "invalid_decision" }, 400);
-  await anthem.from("creator_invitations").update(patch).eq("id", inv.id);
+  // Conditional update so a double click can't approve (and publish) twice.
+  const { data: changed } = await anthem
+    .from("creator_invitations")
+    .update(patch)
+    .eq("id", inv.id)
+    .in("status", ["preparing", "needs_changes"])
+    .select("id");
+  if (!changed?.length) return json(req, { error: "already_decided" }, 409);
   await logEvent(admin, inv.id, `review_${body.decision}`, "artist", null, note ? { note } : {});
+  if (body.decision === "approve") {
+    // The artist's approval is the go-ahead: create the account, profile and works right away.
+    // If it fails (e.g. the email already has an account) the invitation stays "approved" and the
+    // team can retry with the admin "publish" action.
+    const res = await publishInvitation(admin, { ...inv, status: "approved" }, "artist", null);
+    return json(req, {
+      ok: true,
+      status: res.status === 200 ? "published" : "approved",
+      published: res.status === 200,
+      emailed: res.status === 200 ? !!res.body.emailed : false,
+    });
+  }
   return json(req, { ok: true, status: patch.status });
 }
 

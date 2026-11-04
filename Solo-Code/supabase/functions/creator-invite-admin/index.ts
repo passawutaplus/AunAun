@@ -7,52 +7,25 @@ import { z } from "npm:zod@3";
 import { corsHeadersForRequest } from "../_shared/cors.ts";
 import { requireAdminUser } from "../_shared/admin-auth.ts";
 import { supabaseSecretKey } from "../_shared/supabase-keys.ts";
-import { anthemSiteUrl } from "../_shared/anthem-email-html.ts";
-import { sendResendEmail } from "../_shared/resend-send.ts";
 import {
   INVITE_BUCKET,
   INVITE_COLS,
   REVIEW_LINK_DAYS,
-  TEMP_PASSWORD_DAYS,
   type InviteRow,
   decryptToken,
   enqueueEmail,
-  inviteEmailFrom,
   inviteLink,
   isActive,
   logEvent,
   mintToken,
   processOutbox,
   purgeInvitation,
-  randomPassword,
-  renderInviteEmail,
   reviewLink,
   signedMediaUrls,
 } from "../_shared/creator-invite-core.ts";
-import { EMAIL_RE, SubmissionSchema, type Submission } from "../_shared/creator-invite-schema.ts";
+import { EMAIL_RE, SubmissionSchema } from "../_shared/creator-invite-schema.ts";
 import { signatureMatchesExtension } from "../_shared/asset-content-checks.ts";
-
-const RIGHTS_ATTESTATION_VERSION = "2026-08-14";
-const PROJECT_CATEGORIES = new Set([
-  "Graphic / Branding",
-  "Advertising / Campaign",
-  "Illustration / Art",
-  "UI/UX",
-  "Web / App",
-  "Motion / Animation",
-  "Video / Film",
-  "Photography",
-  "3D / CG / Game",
-  "Art Toy / Model",
-  "Architecture / Interior",
-  "Product / Industrial",
-  "Fashion / Textile",
-  "Craft / Handmade",
-  "Content / Social",
-  "Writing / Storytelling",
-  "Music / Audio",
-  "AI / Experimental",
-]);
+import { publishInvitation } from "../_shared/creator-invite-publish.ts";
 
 const CreateSchema = z.object({
   display_name: z.string().trim().min(1).max(120),
@@ -258,211 +231,26 @@ async function sendReview(req: Request, admin: SupabaseClient, userId: string, i
       status: "preparing",
     })
     .eq("id", inv.id);
-  await logEvent(admin, inv.id, "review_link_created", "admin", userId, {});
+  // Snapshot the draft that was sent, so the team can look back at (or restore) each review round.
+  const anthem = admin.schema("anthem");
+  const [{ data: sub }, { count: rounds }] = await Promise.all([
+    anthem.from("invite_submissions").select("staff_draft").eq("invitation_id", inv.id).maybeSingle(),
+    anthem
+      .from("invite_events")
+      .select("id", { count: "exact", head: true })
+      .eq("invitation_id", inv.id)
+      .eq("kind", "review_link_created"),
+  ]);
+  await logEvent(admin, inv.id, "review_link_created", "admin", userId, {
+    round: (rounds ?? 0) + 1,
+    draft: sub?.staff_draft ?? null,
+  });
   let mail = null;
   if (inv.contact_email) {
     await enqueueEmail(admin, inv.id, "review");
     mail = await processOutbox(admin, 5);
   }
   return json(req, { review_link: reviewLink(tok.token), emailed: !!inv.contact_email, mail });
-}
-
-/** Copy a private invite image into the public portfolio bucket. */
-async function copyToPortfolio(
-  admin: SupabaseClient,
-  uid: string,
-  folder: string,
-  m: { storage_path: string; mime: string },
-) {
-  const { data: blob, error } = await admin.storage.from(INVITE_BUCKET).download(m.storage_path);
-  if (error || !blob) throw new Error("media_download_failed");
-  const ext = m.mime === "image/png" ? "png" : m.mime === "image/webp" ? "webp" : "jpg";
-  const path = `anthem/${uid}/${folder}/${crypto.randomUUID()}.${ext}`;
-  const { error: upErr } = await admin.storage
-    .from("project-media")
-    .upload(path, blob, { contentType: m.mime, upsert: false });
-  if (upErr) throw new Error(`media_upload_failed: ${upErr.message}`);
-  return admin.storage.from("project-media").getPublicUrl(path).data.publicUrl;
-}
-
-async function publish(req: Request, admin: SupabaseClient, userId: string, inv: InviteRow) {
-  if (inv.status !== "approved") return json(req, { error: "needs_artist_approval" }, 409);
-  const anthem = admin.schema("anthem");
-  const { data: sub } = await anthem
-    .from("invite_submissions")
-    .select("data, staff_draft")
-    .eq("invitation_id", inv.id)
-    .maybeSingle();
-  const parsed = SubmissionSchema.safeParse(sub?.staff_draft ?? sub?.data ?? {});
-  if (!parsed.success) return json(req, { error: "draft_invalid" }, 422);
-  const draft: Submission = parsed.data;
-  const email = (inv.contact_email ?? draft.about.email ?? "").toLowerCase();
-  if (!EMAIL_RE.test(email)) return json(req, { error: "email_required" }, 422);
-
-  // 1) Account: reuse the account the artist created through the invitation, else create one.
-  let uid = inv.user_id;
-  let password: string | null = null;
-  if (!uid) {
-    password = randomPassword(20);
-    const { data: created, error } = await admin.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-      user_metadata: {
-        display_name: draft.about.name || inv.display_name,
-        must_change_password: true,
-        source: "creator_invite",
-      },
-    });
-    if (error || !created?.user) {
-      const exists = /already|registered|exists/i.test(error?.message ?? "");
-      return json(
-        req,
-        { error: exists ? "email_has_account" : "account_create_failed" },
-        exists ? 409 : 500,
-      );
-    }
-    uid = created.user.id;
-    await logEvent(admin, inv.id, "account_created", "admin", userId, { user_id: uid });
-  }
-
-  try {
-    // 2) Media
-    const { data: mediaRows } = await anthem
-      .from("invite_media")
-      .select("id, slot, storage_path, mime")
-      .eq("invitation_id", inv.id)
-      .eq("scan_status", "clean");
-    const media = new Map(
-      (mediaRows ?? []).map(
-        (m: { id: string; slot: string; storage_path: string; mime: string }) => [m.id, m],
-      ),
-    );
-
-    // 3) Profile
-    const profilePatch: Record<string, unknown> = {
-      display_name: draft.about.name || inv.display_name,
-      bio: draft.about.bio || null,
-      location: draft.about.city || inv.country || null,
-      locale: inv.language,
-    };
-    const site = draft.about.links.split(/\s+/).find((u) => /^https:\/\//i.test(u));
-    if (site) profilePatch.website = site;
-    const avatar = draft.about.avatar ? media.get(draft.about.avatar) : undefined;
-    if (avatar) profilePatch.avatar_url = await copyToPortfolio(admin, uid, "avatar", avatar);
-    const cover = draft.about.cover ? media.get(draft.about.cover) : undefined;
-    if (cover) profilePatch.cover_url = await copyToPortfolio(admin, uid, "cover", cover);
-    const { error: pErr } = await admin.from("profiles").update(profilePatch).eq("user_id", uid);
-    if (pErr) throw new Error(`profile: ${pErr.message}`);
-
-    // 4) Projects (1–3), published with the artist's rights confirmation
-    const created: string[] = [];
-    for (const p of draft.projects) {
-      const imgs = p.media.map((id) => media.get(id)).filter(Boolean) as {
-        storage_path: string;
-        mime: string;
-      }[];
-      if (!p.title || imgs.length === 0) continue;
-      const projectId = crypto.randomUUID();
-      const urls: string[] = [];
-      for (const m of imgs) urls.push(await copyToPortfolio(admin, uid, projectId, m));
-      const category = PROJECT_CATEGORIES.has(draft.about.discipline)
-        ? draft.about.discipline
-        : PROJECT_CATEGORIES.has(inv.discipline ?? "")
-          ? inv.discipline
-          : null;
-      const { error: prErr } = await anthem.from("projects").insert({
-        id: projectId,
-        owner_id: uid,
-        title: p.title,
-        description: p.description || null,
-        category,
-        cover_url: urls[0],
-        gallery_urls: urls.slice(1),
-        creator_role: p.role || null,
-        status: "Published",
-        license_type: "all_rights",
-        copyright_holder: draft.about.name || inv.display_name,
-        rights_attested_at: new Date().toISOString(),
-        rights_attestation_version: RIGHTS_ATTESTATION_VERSION,
-        external_links: p.url ? [{ url: p.url, label: "Project link" }] : [],
-        gallery_display_mode: urls.length > 1 ? "gallery" : "single",
-      });
-      if (prErr) throw new Error(`project: ${prErr.message}`);
-      created.push(projectId);
-    }
-
-    // 5) Invitation → published
-    const now = new Date();
-    await anthem
-      .from("creator_invitations")
-      .update({
-        status: "published",
-        published_at: now.toISOString(),
-        user_id: uid,
-        account_created_at: password ? now.toISOString() : null,
-        account_temp_expires_at: password
-          ? new Date(now.getTime() + TEMP_PASSWORD_DAYS * 86400_000).toISOString()
-          : null,
-      })
-      .eq("id", inv.id);
-    await logEvent(admin, inv.id, "published", "admin", userId, {
-      projects: created.length,
-      new_account: !!password,
-    });
-
-    // 6) Account-ready email — sent directly (never queued) because it carries the one-time password.
-    const { data: prof } = await admin
-      .from("profiles")
-      .select("username")
-      .eq("user_id", uid)
-      .maybeSingle();
-    const site_ = anthemSiteUrl();
-    const mail = renderInviteEmail("account", {
-      lang: inv.language,
-      name: draft.about.name || inv.display_name,
-      link: `${site_}/auth`,
-      profileUrl: password
-        ? `${site_}/auth`
-        : prof?.username
-          ? `${site_}/@${prof.username}`
-          : site_,
-      email,
-      password: password ?? undefined,
-    });
-    const { from, replyTo } = inviteEmailFrom();
-    const r = await sendResendEmail({
-      to: email,
-      from,
-      replyTo,
-      subject: mail.subject,
-      html: mail.html,
-      text: mail.text,
-      idempotencyKey: `creator-invite-account-${inv.id}`,
-    });
-    password = null;
-    await logEvent(
-      admin,
-      inv.id,
-      r.ok ? "email_account_sent" : "email_account_failed",
-      "system",
-      null,
-      r.ok ? { provider_id: r.id ?? null } : { error: r.message.slice(0, 200) },
-    );
-    return json(req, {
-      ok: true,
-      user_id: uid,
-      username: prof?.username ?? null,
-      projects: created.length,
-      emailed: r.ok,
-    });
-  } catch (e) {
-    console.error("[creator-invite-admin] publish", (e as Error).message);
-    await logEvent(admin, inv.id, "publish_failed", "admin", userId, {
-      error: (e as Error).message.slice(0, 200),
-    });
-    return json(req, { error: "publish_failed", detail: (e as Error).message.slice(0, 200) }, 500);
-  }
 }
 
 // ---------------------------------------------------------------------------
@@ -579,7 +367,11 @@ Deno.serve(async (req) => {
       case "send_review":
         return await sendReview(req, admin, uid, inv);
       case "publish":
-        return await publish(req, admin, uid, inv);
+        if (inv.status !== "approved") return json(req, { error: "needs_artist_approval" }, 409);
+        {
+          const res = await publishInvitation(admin, inv, "admin", uid);
+          return json(req, res.body, res.status);
+        }
       case "media_upload_url": {
         const EXT: Record<string, string> = {
           "image/jpeg": "jpg",
@@ -594,16 +386,14 @@ Deno.serve(async (req) => {
           .from(INVITE_BUCKET)
           .createSignedUploadUrl(path);
         if (error || !signed) return json(req, { error: "upload_unavailable" }, 500);
-        const { error: insErr } = await anthem
-          .from("invite_media")
-          .insert({
-            id: mid,
-            invitation_id: inv.id,
-            slot: body.slot,
-            storage_path: path,
-            mime: body.mime,
-            size_bytes: body.size,
-          });
+        const { error: insErr } = await anthem.from("invite_media").insert({
+          id: mid,
+          invitation_id: inv.id,
+          slot: body.slot,
+          storage_path: path,
+          mime: body.mime,
+          size_bytes: body.size,
+        });
         if (insErr) return json(req, { error: "upload_unavailable" }, 500);
         return json(req, { media_id: mid, bucket: INVITE_BUCKET, path, token: signed.token });
       }

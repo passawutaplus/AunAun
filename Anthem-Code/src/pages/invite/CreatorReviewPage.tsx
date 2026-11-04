@@ -67,6 +67,7 @@ export default function CreatorReviewPage() {
   const [uploadingPart, setUploadingPart] = useState<string | null>(null);
   const [busy, setBusy] = useState<Decision | null>(null);
   const [done, setDone] = useState<Decision | null>(null);
+  const [published, setPublished] = useState(false);
   // Change requests keep the artist on this page; they can ask again (round 2, 3…) or approve later.
   const [changeRounds, setChangeRounds] = useState(0);
 
@@ -164,7 +165,7 @@ export default function CreatorReviewPage() {
   async function decide(decision: Decision) {
     setBusy(decision);
     try {
-      await publicInviteApi.reviewDecide(
+      const res = await publicInviteApi.reviewDecide(
         token,
         decision,
         (decision === "changes" ? changesNote() : note.trim()) || undefined,
@@ -173,7 +174,10 @@ export default function CreatorReviewPage() {
       if (decision === "changes") {
         setChangeRounds((n) => n + 1);
         toast.success(t.doneChanges);
-      } else setDone(decision);
+      } else {
+        if (decision === "approve") setPublished(!!res.published);
+        setDone(decision);
+      }
       void queryClient.invalidateQueries({
         queryKey: ["creator-invite-review", token],
       });
@@ -205,13 +209,18 @@ export default function CreatorReviewPage() {
   }
 
   if (done || (!decidable && changeRounds === 0)) {
-    const msg = done === "approve" ? t.doneApprove : "";
+    const msg =
+      done === "approve" ? (published ? t.donePublished : t.doneApprove) : "";
     return (
       <InviteShell lang={l} onLang={setLang} t={t}>
         {seo}
         <InviteStateCard
           title={
-            done === "approve" ? t.statusTitle.approved : (t.statusTitle[status] ?? t.expiredTitle)
+            done === "approve"
+              ? published
+                ? t.statusTitle.published
+                : t.statusTitle.approved
+              : (t.statusTitle[status] ?? t.expiredTitle)
           }
           body={msg}
           explore={t}
