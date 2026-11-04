@@ -67,6 +67,8 @@ export default function CreatorReviewPage() {
   const [uploadingPart, setUploadingPart] = useState<string | null>(null);
   const [busy, setBusy] = useState<Decision | null>(null);
   const [done, setDone] = useState<Decision | null>(null);
+  // Change requests keep the artist on this page; they can ask again (round 2, 3…) or approve later.
+  const [changeRounds, setChangeRounds] = useState(0);
 
   const media = useMemo(
     () => new Map((q.data?.media ?? []).map((m) => [m.id, m])),
@@ -167,8 +169,11 @@ export default function CreatorReviewPage() {
         decision,
         (decision === "changes" ? changesNote() : note.trim()) || undefined,
       );
-      setDone(decision);
       setDialog(null);
+      if (decision === "changes") {
+        setChangeRounds((n) => n + 1);
+        toast.success(t.doneChanges);
+      } else setDone(decision);
       void queryClient.invalidateQueries({
         queryKey: ["creator-invite-review", token],
       });
@@ -181,27 +186,32 @@ export default function CreatorReviewPage() {
     }
   }
 
-  if (done || !decidable) {
-    const msg =
-      done === "approve"
-        ? t.doneApprove
-        : done === "changes"
-          ? t.doneChanges
-          : done === "decline"
-            ? t.doneDecline
-            : "";
+  if (done === "decline") {
+    return (
+      <InviteShell lang={l} onLang={setLang} t={t}>
+        {seo}
+        <div className="mx-auto flex max-w-xl flex-col items-center px-4 py-16 text-center sm:py-24">
+          <SadBuddy className="h-24 w-24" />
+          <h1 className="mt-6 font-display text-3xl font-semibold tracking-tight text-foreground">
+            {t.declinedTitle}
+          </h1>
+          <p className="mt-3 text-sm text-muted-foreground">{t.declinedBody}</p>
+          <Button asChild className="mt-8 rounded-full px-6">
+            <a href="/">{t.backHome}</a>
+          </Button>
+        </div>
+      </InviteShell>
+    );
+  }
+
+  if (done || (!decidable && changeRounds === 0)) {
+    const msg = done === "approve" ? t.doneApprove : "";
     return (
       <InviteShell lang={l} onLang={setLang} t={t}>
         {seo}
         <InviteStateCard
           title={
-            done
-              ? done === "decline"
-                ? t.statusTitle.declined
-                : done === "approve"
-                  ? t.statusTitle.approved
-                  : t.statusTitle.needs_changes
-              : (t.statusTitle[status] ?? t.expiredTitle)
+            done === "approve" ? t.statusTitle.approved : (t.statusTitle[status] ?? t.expiredTitle)
           }
           body={msg}
           explore={t}
@@ -270,6 +280,17 @@ export default function CreatorReviewPage() {
           {t.reviewTitle}
         </h1>
         <p className="mt-3 text-sm text-muted-foreground">{t.reviewBody}</p>
+        {changeRounds > 0 || status === "needs_changes" ? (
+          <div
+            role="status"
+            className="mt-5 flex items-start gap-3 rounded-xl border border-brand/40 bg-brand/10 p-4 text-sm"
+          >
+            <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand" aria-hidden />
+            <span className="text-foreground">
+              {t.changesSentBanner(Math.max(changeRounds, 1))}
+            </span>
+          </div>
+        ) : null}
 
         <div className="mt-6">{actions}</div>
 

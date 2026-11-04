@@ -3,6 +3,10 @@ import type { PageLang } from "@/lib/creatorInvite";
 
 const th = {
   getInTouch: "รู้จัก SAMECOR",
+  declinedTitle: "ขอบคุณที่สละเวลาพิจารณาคำเชิญ",
+  declinedBody: "เราเคารพการตัดสินใจของคุณ ข้อมูลและรูปที่ส่งมาจะถูกลบภายใน 30 วัน หวังว่าจะมีโอกาสได้ร่วมงานกันในวันข้างหน้า",
+  backHome: "กลับหน้าแรก",
+  changesSentBanner: (n: number) => `ส่งคำขอแก้แล้ว${n > 1 ? ` (รอบที่ ${n})` : ""} · ทีมจะแก้และส่งลิงก์ตรวจใหม่ทางอีเมล คุณยังขอแก้เพิ่มหรือกดอนุมัติได้ทุกเมื่อ`,
   attachImage: "แนบรูป",
   attachedCount: (n: number) => `แนบรูป ${n} รูป`,
   partsLabel: "เลือกส่วนที่อยากให้แก้",
@@ -222,6 +226,10 @@ export type InviteCopy = { [K in keyof typeof th]: (typeof th)[K] extends (...a:
 
 const en: InviteCopy = {
   getInTouch: "Get in touch",
+  declinedTitle: "Thank you for considering our invitation",
+  declinedBody: "We respect your decision. Your details and images will be deleted within 30 days. We hope our paths cross again.",
+  backHome: "Back to home",
+  changesSentBanner: (n: number) => `Change request sent${n > 1 ? ` (round ${n})` : ""} · We'll update the draft and email a new review link. You can request more changes or approve anytime.`,
   attachImage: "Attach image",
   attachedCount: (n: number) => `${n} image${n > 1 ? "s" : ""} attached`,
   partsLabel: "Choose what to change",
@@ -438,6 +446,10 @@ const en: InviteCopy = {
 
 const zh: InviteCopy = {
   getInTouch: "了解 SAMECOR",
+  declinedTitle: "感谢您抽空考虑我们的邀请",
+  declinedBody: "我们尊重您的决定。您提交的资料和图片将在 30 天内删除。期待未来有机会合作。",
+  backHome: "返回首页",
+  changesSentBanner: (n: number) => `修改请求已发送${n > 1 ? `（第 ${n} 轮）` : ""} · 我们会更新草稿并发送新的审核链接。您可随时继续提出修改或直接确认。`,
   attachImage: "添加图片",
   attachedCount: (n: number) => `已附 ${n} 张图片`,
   partsLabel: "选择需要修改的部分",
