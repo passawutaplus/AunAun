@@ -47,7 +47,10 @@ export async function enqueueAnthemNotificationEmail(
       });
       return { ok: true };
     }
-    console.warn(`[${opts.label}] Resend direct send failed, falling back to queue`, resend.message);
+    console.warn(
+      `[${opts.label}] Resend direct send failed, falling back to queue`,
+      resend.message,
+    );
   }
 
   await admin.from("email_send_log").insert({

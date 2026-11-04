@@ -263,7 +263,7 @@ export function renderInviteEmail(
           list([
             "Your artist name and creative discipline",
             "A short introduction",
-            "1–2 projects with images of your choice",
+            "1–3 projects with images of your choice",
             "Website or preferred social links",
           ]) +
           p(
@@ -286,7 +286,7 @@ export function renderInviteEmail(
           list([
             "ชื่อ/ชื่อศิลปินและสาขาที่ทำงาน",
             "ข้อความแนะนำตัวสั้น ๆ",
-            "ผลงาน 1–2 โปรเจกต์ พร้อมภาพตามสะดวก",
+            "ผลงาน 1–3 โปรเจกต์ พร้อมภาพตามสะดวก",
             "เว็บไซต์หรือช่องทางติดต่อที่ต้องการแสดง",
           ]) +
           p(

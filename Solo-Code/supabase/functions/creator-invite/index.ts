@@ -34,7 +34,7 @@ import {
 const MAX_IMAGE_BYTES = 20 * 1024 * 1024;
 const MAX_AVATAR_BYTES = 10 * 1024 * 1024;
 const MAX_PER_PROJECT = 8;
-const MAX_MEDIA_TOTAL = 24;
+const MAX_MEDIA_TOTAL = 30; // avatar + cover + 3 projects × 8 (+ slack for retries)
 const EXT: Record<string, string> = {
   "image/jpeg": "jpg",
   "image/png": "png",
@@ -72,7 +72,7 @@ const Body = z.object({
   token: z.string(),
   data: z.unknown().optional(),
   mode: z.enum(["full", "quick"]).optional(),
-  slot: z.enum(["avatar", "p1", "p2"]).optional(),
+  slot: z.enum(["avatar", "cover", "p1", "p2", "p3"]).optional(),
   mime: z.string().optional(),
   size: z.number().int().positive().optional(),
   media_id: z.string().uuid().optional(),
@@ -173,6 +173,7 @@ async function sanitizeMediaRefs(
     about: {
       ...s.about,
       avatar: s.about.avatar && owned.get(s.about.avatar) === "avatar" ? s.about.avatar : null,
+      cover: s.about.cover && owned.get(s.about.cover) === "cover" ? s.about.cover : null,
     },
     projects: s.projects.map((p) => ({
       ...p,
@@ -257,9 +258,14 @@ async function actUploadUrl(ctx: Ctx) {
     .select("id, slot, scan_status")
     .eq("invitation_id", inv.id)
     .neq("scan_status", "blocked");
-  const rows = (existing ?? []) as { id: string; slot: string }[];
+  const rows = (existing ?? []) as { id: string; slot: string; scan_status: string }[];
   if (rows.length >= MAX_MEDIA_TOTAL) return json(req, { error: "too_many_files" }, 400);
-  if (slot !== "avatar" && rows.filter((r) => r.slot === slot).length >= MAX_PER_PROJECT)
+  const single = slot === "avatar" || slot === "cover";
+  // single-image slots ignore abandoned uploads, so a failed attempt never blocks a retry
+  if (
+    rows.filter((r) => r.slot === slot && (!single || r.scan_status !== "pending_upload")).length >=
+    (single ? 1 : MAX_PER_PROJECT)
+  )
     return json(req, { error: "too_many_files" }, 400);
 
   const id = crypto.randomUUID();

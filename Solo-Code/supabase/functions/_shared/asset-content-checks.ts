@@ -13,7 +13,12 @@ const SIGNATURES: Record<string, (b: Uint8Array) => boolean> = {
   png: (b) => startsWith(b, 0x89, 0x50, 0x4e, 0x47),
   jpg: (b) => startsWith(b, 0xff, 0xd8, 0xff),
   jpeg: (b) => startsWith(b, 0xff, 0xd8, 0xff),
-  webp: (b) => startsWith(b, 0x52, 0x49, 0x46, 0x46) && b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50,
+  webp: (b) =>
+    startsWith(b, 0x52, 0x49, 0x46, 0x46) &&
+    b[8] === 0x57 &&
+    b[9] === 0x45 &&
+    b[10] === 0x42 &&
+    b[11] === 0x50,
   ttf: (b) => startsWith(b, 0x00, 0x01, 0x00, 0x00) || startsWith(b, 0x74, 0x72, 0x75, 0x65),
   otf: (b) => startsWith(b, 0x4f, 0x54, 0x54, 0x4f),
   woff: (b) => startsWith(b, 0x77, 0x4f, 0x46, 0x46),
@@ -38,7 +43,12 @@ export function zipEntryNames(bytes: Uint8Array): string[] | null {
   const min = Math.max(0, bytes.length - 22 - 0xffff);
   let eocd = -1;
   for (let i = bytes.length - 22; i >= min; i--) {
-    if (bytes[i] === 0x50 && bytes[i + 1] === 0x4b && bytes[i + 2] === 0x05 && bytes[i + 3] === 0x06) {
+    if (
+      bytes[i] === 0x50 &&
+      bytes[i + 1] === 0x4b &&
+      bytes[i + 2] === 0x05 &&
+      bytes[i + 3] === 0x06
+    ) {
       eocd = i;
       break;
     }
@@ -63,14 +73,46 @@ export function zipEntryNames(bytes: Uint8Array): string[] | null {
 
 /** Programs and scripts that must not ride along inside an uploaded ZIP. */
 export const DANGEROUS_ARCHIVE_EXTENSIONS = new Set([
-  "exe", "msi", "bat", "cmd", "com", "scr", "pif", "vbs", "vbe", "js", "jse", "wsf", "wsh", "ps1", "psm1",
-  "hta", "jar", "apk", "dmg", "app", "lnk", "dll", "sh", "reg", "cpl", "msc", "iso", "appimage",
+  "exe",
+  "msi",
+  "bat",
+  "cmd",
+  "com",
+  "scr",
+  "pif",
+  "vbs",
+  "vbe",
+  "js",
+  "jse",
+  "wsf",
+  "wsh",
+  "ps1",
+  "psm1",
+  "hta",
+  "jar",
+  "apk",
+  "dmg",
+  "app",
+  "lnk",
+  "dll",
+  "sh",
+  "reg",
+  "cpl",
+  "msc",
+  "iso",
+  "appimage",
 ]);
 
 export function dangerousZipEntry(names: string[]): string | null {
   for (const name of names) {
     // Path traversal in an archive entry is never legitimate.
-    if (name.includes("..\\") || name.includes("../") || name.startsWith("/") || /^[a-zA-Z]:/.test(name)) return name;
+    if (
+      name.includes("..\\") ||
+      name.includes("../") ||
+      name.startsWith("/") ||
+      /^[a-zA-Z]:/.test(name)
+    )
+      return name;
     if (DANGEROUS_ARCHIVE_EXTENSIONS.has(extensionOf(name))) return name;
   }
   return null;
@@ -84,7 +126,12 @@ export function pdfHasLaunchAction(bytes: Uint8Array): boolean {
   for (let i = 0; i < bytes.length; i += step) {
     text += String.fromCharCode(...bytes.subarray(i, Math.min(bytes.length, i + step)));
   }
-  return /\/Launch\b/.test(text) || /\/EmbeddedFile\b/.test(text) && /\/Filespec\b/.test(text) && /\.(exe|bat|cmd|scr|vbs|js|jar|msi)\b/i.test(text);
+  return (
+    /\/Launch\b/.test(text) ||
+    (/\/EmbeddedFile\b/.test(text) &&
+      /\/Filespec\b/.test(text) &&
+      /\.(exe|bat|cmd|scr|vbs|js|jar|msi)\b/i.test(text))
+  );
 }
 
 export type ContentCheck = { ok: true } | { ok: false; reason: string };

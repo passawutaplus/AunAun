@@ -9,8 +9,10 @@ import { DEV_INVITE_TOKEN, devInviteApi } from "@/lib/creatorInviteDemo";
 export type InviteLang = "th" | "en";
 /** Languages the invitee pages can show (emails stay TH/EN). */
 export type PageLang = InviteLang | "zh";
-export type ProjectSlot = "p1" | "p2";
-export type MediaSlot = "avatar" | ProjectSlot;
+export type ProjectSlot = "p1" | "p2" | "p3";
+export const PROJECT_SLOTS: ProjectSlot[] = ["p1", "p2", "p3"];
+export const MAX_PROJECTS = 3;
+export type MediaSlot = "avatar" | "cover" | ProjectSlot;
 
 export type InviteStatus =
   | "draft"
@@ -44,6 +46,7 @@ export interface InviteSubmission {
     email: string;
     links: string;
     avatar: string | null;
+    cover: string | null;
   };
   projects: InviteProject[];
   contact_pref: "email" | "instagram" | "line" | "other";
@@ -118,6 +121,7 @@ export function emptySubmission(invite?: Pick<PublicInvite, "display_name" | "di
       email: "",
       links: "",
       avatar: null,
+      cover: null,
     },
     projects: [emptyProject("p1")],
     contact_pref: "email",
@@ -131,7 +135,7 @@ export function normalizeSubmission(raw: unknown, invite?: PublicInvite | null):
   if (!raw || typeof raw !== "object") return base;
   const r = raw as Partial<InviteSubmission>;
   const projects = Array.isArray(r.projects) && r.projects.length
-    ? r.projects.slice(0, 2).map((p, i) => ({ ...emptyProject(i === 0 ? "p1" : "p2"), ...p, media: Array.isArray(p?.media) ? p.media : [] }))
+    ? r.projects.slice(0, MAX_PROJECTS).map((p, i) => ({ ...emptyProject(PROJECT_SLOTS[i]), ...p, media: Array.isArray(p?.media) ? p.media : [] }))
     : base.projects;
   return {
     about: { ...base.about, ...(r.about ?? {}) },
@@ -151,6 +155,7 @@ export function validateStep(step: 1 | 2 | 3, s: InviteSubmission, clean: Set<st
     if (!s.about.discipline) e["about.discipline"] = true;
     if (!EMAIL_RE.test(s.about.email.trim())) e["about.email"] = true;
     if (s.about.bio.length > BIO_MAX) e["about.bio"] = true;
+    if (!s.about.avatar || !clean.has(s.about.avatar)) e["about.avatar"] = true;
   }
   if (step === 2) {
     if (s.projects.length === 0) e.projects = true;

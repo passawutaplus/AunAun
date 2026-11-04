@@ -8,7 +8,7 @@ const httpsUrl = z
   .refine((v) => v === "" || /^https:\/\/[^\s]+\.[^\s]+$/i.test(v), "https_url");
 
 export const ProjectSchema = z.object({
-  slot: z.enum(["p1", "p2"]),
+  slot: z.enum(["p1", "p2", "p3"]),
   title: text(120),
   description: text(1000),
   role: text(120),
@@ -27,9 +27,10 @@ export const SubmissionSchema = z.object({
       email: z.string().trim().max(254).optional().default(""),
       links: text(500),
       avatar: z.string().uuid().nullable().optional().default(null),
+      cover: z.string().uuid().nullable().optional().default(null),
     })
     .default({}),
-  projects: z.array(ProjectSchema).max(2).optional().default([]),
+  projects: z.array(ProjectSchema).max(3).optional().default([]),
   contact_pref: z.enum(["email", "instagram", "line", "other"]).optional().default("email"),
   quick: z
     .object({ portfolio_url: httpsUrl.optional().default("") })

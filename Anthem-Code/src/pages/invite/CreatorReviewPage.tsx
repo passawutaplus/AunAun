@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Check, Loader2 } from "lucide-react";
 import SeoHead from "@/components/SeoHead";
 import InviteProfilePreview from "@/components/invite/InviteProfilePreview";
+import InviteProjectPreview from "@/components/invite/InviteProjectPreview";
 import { InviteShell, InviteStateCard } from "@/components/invite/InviteShell";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -107,6 +108,9 @@ export default function CreatorReviewPage() {
         <p className="mt-3 text-sm text-muted-foreground">{t.reviewBody}</p>
 
         <InviteProfilePreview className="mt-6" data={profile} media={media} t={t} badge={t.reviewDraftBadge} collapsible={false} />
+        {profile.projects.map((p, i) => (
+          <InviteProjectPreview key={p.slot} className="mt-6" project={p} index={i} name={profile.about.name} media={media} t={t} badge={t.reviewDraftBadge} />
+        ))}
 
         <div className="mt-6 rounded-xl border border-border bg-card p-5">
           <h2 className="text-sm font-semibold">{t.willPublish}</h2>

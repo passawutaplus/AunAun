@@ -93,16 +93,25 @@ describe("creator invite emails", () => {
 
 describe("validateForSubmit", () => {
   const base = {
-    about: { name: "A", email: "a@b.co", discipline: "Photography" },
+    about: { name: "A", email: "a@b.co", discipline: "Photography", avatar: "av" },
     projects: [{ title: "P", media: ["m1"], rights: true }],
     quick: { portfolio_url: "" },
   };
   it("accepts a full submission with one clean image and rights", () => {
-    expect(validateForSubmit("full", base, new Set(["m1"]))).toEqual([]);
+    expect(validateForSubmit("full", base, new Set(["m1", "av"]))).toEqual([]);
+  });
+  it("requires a scanned profile picture in the full form", () => {
+    expect(
+      validateForSubmit(
+        "full",
+        { ...base, about: { ...base.about, avatar: null } },
+        new Set(["m1"]),
+      ),
+    ).toEqual(["about.avatar"]);
   });
   it("rejects missing rights, unscanned images and empty projects", () => {
     const bad = { ...base, projects: [{ title: "", media: ["m2"], rights: false }] };
-    expect(validateForSubmit("full", bad, new Set(["m1"]))).toEqual([
+    expect(validateForSubmit("full", bad, new Set(["m1", "av"]))).toEqual([
       "projects.0.title",
       "projects.0.media",
       "projects.0.rights",

@@ -25,7 +25,9 @@ function readNamedKey(envName: string, name: string): string | undefined {
 
 /** Server-side admin key (was SUPABASE_SERVICE_ROLE_KEY). Empty string when none is configured. */
 export function supabaseSecretKey(name = "default"): string {
-  return readNamedKey("SUPABASE_SECRET_KEYS", name) ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  return (
+    readNamedKey("SUPABASE_SECRET_KEYS", name) ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+  );
 }
 
 /** Public key for user-scoped clients (was SUPABASE_ANON_KEY). Empty string when none is configured. */

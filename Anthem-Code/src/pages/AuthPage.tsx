@@ -30,6 +30,8 @@ import {
   BRAND_STORAGE_NO_PERSIST,
 } from "@/lib/brandConfig";
 import SeoHead from "@/components/SeoHead";
+import { LangMenu } from "@/components/invite/InviteShell";
+import { authCopy, useUiLang } from "@/lib/authCopy";
 import { hasCompletedProfileOnboarding } from "@/hooks/useFeedInterests";
 import { rememberAfterOnboarding } from "@/lib/afterOnboarding";
 import { PasswordField } from "@/components/ui/PasswordField";
@@ -81,6 +83,8 @@ const AuthPage = () => {
   const redirect = safeRelativePath(rawRedirect, "/");
 
   const { user } = useAuth();
+  const [lang, setLang] = useUiLang();
+  const t = authCopy(lang);
   const authHeroRef = useRef<HTMLDivElement>(null);
   const heroCycle = useHeroRotatingCycle();
   // ?tab=signup — e.g. "I'll create my profile" from a creator invitation
@@ -125,13 +129,16 @@ const AuthPage = () => {
       "relative min-h-screen overflow-x-hidden bg-background text-foreground",
       "lg:overflow-hidden",
     )}>
-      <SeoHead title="เข้าสู่ระบบ" path="/auth" noindex />
+      <SeoHead title={t.seoTitle} path="/auth" noindex />
       <main id="main-content" className="contents">
       <BackButton
         to="/"
-        label="กลับหน้าแรก"
+        label={t.backHome}
         className="absolute top-4 left-4 z-30 border-border bg-white/90 text-foreground hover:bg-white"
       />
+      <div className="absolute right-4 top-4 z-30">
+        <LangMenu lang={lang} onChange={setLang} label={t.language} />
+      </div>
 
       <div className="relative z-10 min-h-screen grid lg:grid-cols-2">
         {/* LEFT: Full-bleed work wall. Hidden on mobile. */}
@@ -153,11 +160,15 @@ const AuthPage = () => {
               </span>
             </p>
             <p className="mt-3 max-w-md text-sm font-normal leading-relaxed text-[#6b6862]">
-              <span className="inline-flex flex-wrap items-baseline gap-x-1.5">
-                <span>ให้ผลงานพาคุณไปสู่</span>
-                <HeroRotatingWord cycle={heroCycle} lang="th" className="font-medium text-foreground" />
-                <span>ใหม่ๆ</span>
-              </span>
+              {lang === "th" ? (
+                <span className="inline-flex flex-wrap items-baseline gap-x-1.5">
+                  <span>ให้ผลงานพาคุณไปสู่</span>
+                  <HeroRotatingWord cycle={heroCycle} lang="th" className="font-medium text-foreground" />
+                  <span>ใหม่ๆ</span>
+                </span>
+              ) : (
+                t.heroLine
+              )}
             </p>
           </div>
         </div>
@@ -173,11 +184,11 @@ const AuthPage = () => {
             </div>
 
             <h1 className="mb-6 font-display text-[2.15rem] font-medium leading-tight tracking-tight text-foreground">
-              {tab === "login" ? "ยินดีต้อนรับกลับมา" : "สร้างบัญชีใหม่"}
+              {tab === "login" ? t.welcomeBack : t.createAccount}
             </h1>
             {tab === "signup" ? (
               <p className="text-sm text-muted-foreground -mt-4 mb-6 thai-body">
-                เริ่มต้นใช้งานฟรี
+                {t.startFree}
               </p>
             ) : null}
 
@@ -187,21 +198,21 @@ const AuthPage = () => {
                   value="login"
                   className="rounded-full text-[#6b6862] data-[state=active]:!bg-foreground data-[state=active]:!text-background data-[state=active]:shadow-none"
                 >
-                  เข้าสู่ระบบ
+                  {t.loginTab}
                 </TabsTrigger>
                 <TabsTrigger
                   value="signup"
                   className="rounded-full text-[#6b6862] data-[state=active]:!bg-foreground data-[state=active]:!text-background data-[state=active]:shadow-none"
                 >
-                  สมัครสมาชิก
+                  {t.signupTab}
                 </TabsTrigger>
               </TabsList>
 
               <FeedModeTransition modeKey={tab}>
                 {tab === "login" ? (
                   <div className="space-y-4">
-                    <SocialButtons redirectTo={redirect} buttonClassName={paperGoogle} />
-                    <AuthEmailSeparator />
+                    <SocialButtons redirectTo={redirect} buttonClassName={paperGoogle} label={t.google} />
+                    <AuthEmailSeparator label={t.orEmail} />
                     <LoginForm redirect={redirect} onSwitch={() => setTab("signup")} />
                   </div>
                 ) : (
@@ -209,8 +220,8 @@ const AuthPage = () => {
                     {/* Demo: no Google on signup — email signup blocked; avoid accidental OAuth account create */}
                     {import.meta.env.VITE_DEMO_MODE === "true" ? null : (
                       <>
-                        <SocialButtons redirectTo={redirect} buttonClassName={paperGoogle} />
-                        <AuthEmailSeparator />
+                        <SocialButtons redirectTo={redirect} buttonClassName={paperGoogle} label={t.google} />
+                        <AuthEmailSeparator label={t.orEmail} />
                       </>
                     )}
                     <SignupForm onSwitch={() => setTab("login")} />
@@ -220,10 +231,10 @@ const AuthPage = () => {
             </Tabs>
 
             <p className="mt-8 text-center text-[11px] text-muted-foreground">
-              ดำเนินการต่อเท่ากับยอมรับ{" "}
-              <Link to="/legal/terms" className="hover:text-foreground underline underline-offset-2">ข้อกำหนด</Link>
-              {" "}และ{" "}
-              <Link to="/legal/privacy" className="hover:text-foreground underline underline-offset-2">นโยบายความเป็นส่วนตัว</Link>
+              {t.agreePrefix}{" "}
+              <Link to="/legal/terms" className="hover:text-foreground underline underline-offset-2">{t.terms}</Link>
+              {" "}{t.and}{" "}
+              <Link to="/legal/privacy" className="hover:text-foreground underline underline-offset-2">{t.privacy}</Link>
             </p>
           </div>
         </div>
@@ -239,6 +250,8 @@ const AuthPage = () => {
 };
 
 const LoginForm = ({ redirect, onSwitch }: { redirect: string; onSwitch: () => void }) => {
+  const [lang] = useUiLang();
+  const t = authCopy(lang);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
@@ -272,13 +285,13 @@ const LoginForm = ({ redirect, onSwitch }: { redirect: string; onSwitch: () => v
       if (error) {
         const invalid = error.message.toLowerCase().includes("invalid");
         setEmailError(null);
-        setPasswordError(invalid ? "อีเมลหรือรหัสผ่านไม่ถูกต้อง" : error.message);
+        setPasswordError(invalid ? t.badLogin : error.message);
         setShake(true);
         setTimeout(() => setShake(false), 450);
       } else {
         if (!remember) sessionStorage.setItem(BRAND_STORAGE_NO_PERSIST, "1");
         else sessionStorage.removeItem(BRAND_STORAGE_NO_PERSIST);
-        toast.success("เข้าสู่ระบบสำเร็จ");
+        toast.success(t.loginOk);
         signedIn = true;
       }
     } finally {
@@ -299,7 +312,7 @@ const LoginForm = ({ redirect, onSwitch }: { redirect: string; onSwitch: () => v
         }}
       />
       <div className="space-y-1.5">
-        <Label htmlFor="login-email" className="text-xs">อีเมล</Label>
+        <Label htmlFor="login-email" className="text-xs">{t.email}</Label>
         <Input
           id="login-email"
           type="email"
@@ -320,7 +333,7 @@ const LoginForm = ({ redirect, onSwitch }: { redirect: string; onSwitch: () => v
         <FieldError id="login-email-error" message={emailError} />
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="login-pass" className="text-xs">รหัสผ่าน</Label>
+        <Label htmlFor="login-pass" className="text-xs">{t.password}</Label>
         <PasswordField
           id="login-pass"
           autoComplete="current-password"
@@ -339,10 +352,10 @@ const LoginForm = ({ redirect, onSwitch }: { redirect: string; onSwitch: () => v
       <div className="flex items-center justify-between">
         <label className="flex items-center gap-2 cursor-pointer text-xs text-muted-foreground">
           <Checkbox checked={remember} onCheckedChange={(v) => setRemember(v === true)} />
-          จดจำฉันไว้
+          {t.remember}
         </label>
         <Link to="/auth/forgot" className="text-xs text-foreground underline underline-offset-2">
-          ลืมรหัสผ่าน?
+          {t.forgot}
         </Link>
       </div>
 
@@ -352,13 +365,13 @@ const LoginForm = ({ redirect, onSwitch }: { redirect: string; onSwitch: () => v
         className={paperSubmit}
       >
         {busy && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-        เข้าสู่ระบบ
+        {t.login}
       </Button>
 
       <p className="text-center text-xs text-[#6b6862]">
-        ยังไม่มีบัญชี?{" "}
+        {t.noAccount}{" "}
         <button type="button" onClick={onSwitch} className="font-medium text-foreground underline underline-offset-2">
-          สมัครสมาชิกที่นี่
+          {t.signupHere}
         </button>
       </p>
     </form>
@@ -374,6 +387,8 @@ const SignupForm = ({ onSwitch }: { onSwitch: () => void }) => {
 
 /** Hooks live here so they always run in the same order (rules of hooks). */
 const SignupFormFields = ({ onSwitch }: { onSwitch: () => void }) => {
+  const [lang] = useUiLang();
+  const t = authCopy(lang);
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -389,10 +404,10 @@ const SignupFormFields = ({ onSwitch }: { onSwitch: () => void }) => {
   const emailValid = !email || /^\S+@\S+\.\S+$/.test(email.trim());
   const passValid = password.length >= 8;
   const confirmValid = password === confirmPassword && confirmPassword.length > 0;
-  const emailError = emailTouched && email && !emailValid ? "กรุณากรอกอีเมลให้ถูกต้อง" : null;
-  const passError = passTouched && password && !passValid ? "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร" : null;
+  const emailError = emailTouched && email && !emailValid ? t.emailInvalid : null;
+  const passError = passTouched && password && !passValid ? t.passShort : null;
   const confirmError =
-    confirmTouched && confirmPassword && !confirmValid ? "รหัสผ่านยืนยันไม่ตรงกัน" : null;
+    confirmTouched && confirmPassword && !confirmValid ? t.passMismatch : null;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -402,7 +417,7 @@ const SignupFormFields = ({ onSwitch }: { onSwitch: () => void }) => {
     setConsentError(null);
     if (!emailValid || !passValid || !confirmValid) return;
     if (!consents.terms || !consents.privacy) {
-      setConsentError("กรุณายืนยันข้อกำหนดและความเป็นส่วนตัวก่อนสมัคร");
+      setConsentError(t.consentRequired);
       return;
     }
 
@@ -424,13 +439,13 @@ const SignupFormFields = ({ onSwitch }: { onSwitch: () => void }) => {
       } else if (!data.session && data.user?.identities?.length === 0) {
         // Supabase hides "already registered" behind an empty identities list.
         setPendingEmail(null);
-        toast.error("อีเมลนี้มีบัญชีแล้ว ลองเข้าสู่ระบบแทน");
+        toast.error(t.emailTaken);
       } else {
         markPendingSignupConsent();
         void recordSignupConsents();
         if (data.session) {
           setPendingEmail(null);
-          toast.success("สมัครสำเร็จ ยินดีต้อนรับสู่ SAMECOR");
+          toast.success(t.signupOk);
         }
       }
     } catch (err) {
@@ -456,12 +471,12 @@ const SignupFormFields = ({ onSwitch }: { onSwitch: () => void }) => {
     <form onSubmit={submit} className="space-y-4">
       <ReferralSignupHint />
       <div className="space-y-1.5">
-        <Label htmlFor="su-name" className="text-xs">ชื่อที่แสดง</Label>
+        <Label htmlFor="su-name" className="text-xs">{t.displayName}</Label>
         <div className="relative">
           <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             id="su-name"
-            placeholder="ภัสวุฒิ"
+            placeholder={t.namePlaceholder}
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
             className={cn("pl-9", paperInput)}
@@ -471,7 +486,7 @@ const SignupFormFields = ({ onSwitch }: { onSwitch: () => void }) => {
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="su-email" className="text-xs">อีเมล</Label>
+        <Label htmlFor="su-email" className="text-xs">{t.email}</Label>
         <Input
           id="su-email"
           type="email"
@@ -491,7 +506,7 @@ const SignupFormFields = ({ onSwitch }: { onSwitch: () => void }) => {
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="su-pass" className="text-xs">รหัสผ่าน (อย่างน้อย 8 ตัว)</Label>
+        <Label htmlFor="su-pass" className="text-xs">{t.passwordMin}</Label>
         <PasswordField
           id="su-pass"
           autoComplete="new-password"
@@ -509,7 +524,7 @@ const SignupFormFields = ({ onSwitch }: { onSwitch: () => void }) => {
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="su-pass-confirm" className="text-xs">ยืนยันรหัสผ่าน</Label>
+        <Label htmlFor="su-pass-confirm" className="text-xs">{t.confirmPassword}</Label>
         <PasswordField
           id="su-pass-confirm"
           autoComplete="new-password"
@@ -524,7 +539,7 @@ const SignupFormFields = ({ onSwitch }: { onSwitch: () => void }) => {
         />
       </div>
 
-      <LegalSignupConsents value={consents} onChange={(v) => { setConsents(v); setConsentError(null); }} compact />
+      <LegalSignupConsents lang={lang} value={consents} onChange={(v) => { setConsents(v); setConsentError(null); }} compact />
       <FieldError message={consentError} />
 
       <Button
@@ -533,13 +548,13 @@ const SignupFormFields = ({ onSwitch }: { onSwitch: () => void }) => {
         className={paperSubmit}
       >
         {busy && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-        สมัครสมาชิก
+        {t.signup}
       </Button>
 
       <p className="text-center text-xs text-[#6b6862]">
-        มีบัญชีอยู่แล้ว?{" "}
+        {t.haveAccount}{" "}
         <button type="button" onClick={onSwitch} className="font-medium text-foreground underline underline-offset-2">
-          เข้าสู่ระบบ
+          {t.loginTab}
         </button>
       </p>
     </form>

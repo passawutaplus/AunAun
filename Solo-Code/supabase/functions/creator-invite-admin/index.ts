@@ -342,10 +342,12 @@ async function publish(req: Request, admin: SupabaseClient, userId: string, inv:
     if (site) profilePatch.website = site;
     const avatar = draft.about.avatar ? media.get(draft.about.avatar) : undefined;
     if (avatar) profilePatch.avatar_url = await copyToPortfolio(admin, uid, "avatar", avatar);
+    const cover = draft.about.cover ? media.get(draft.about.cover) : undefined;
+    if (cover) profilePatch.cover_url = await copyToPortfolio(admin, uid, "cover", cover);
     const { error: pErr } = await admin.from("profiles").update(profilePatch).eq("user_id", uid);
     if (pErr) throw new Error(`profile: ${pErr.message}`);
 
-    // 4) Projects (1–2), published with the artist's rights confirmation
+    // 4) Projects (1–3), published with the artist's rights confirmation
     const created: string[] = [];
     for (const p of draft.projects) {
       const imgs = p.media.map((id) => media.get(id)).filter(Boolean) as {

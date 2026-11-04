@@ -22,7 +22,7 @@ const InviteProfilePreview = forwardRef<HTMLElement, Props>(function InviteProfi
 ) {
   const [open, setOpen] = useState(true);
   const urlOf = (id: string | null | undefined) => (id ? media.get(id)?.url ?? null : null);
-  const cover = data.projects.flatMap((p) => p.media).map(urlOf).find(Boolean) ?? null;
+  const cover = urlOf(data.about.cover) ?? data.projects.flatMap((p) => p.media).map(urlOf).find(Boolean) ?? null;
   const avatar = urlOf(data.about.avatar);
   const name = data.about.name.trim() || t.yourName;
   const meta = [data.about.discipline, data.about.city].filter(Boolean).join(" · ");

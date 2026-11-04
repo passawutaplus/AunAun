@@ -13,6 +13,7 @@ import { eventLabel, outreachTemplate } from "@/lib/creatorInviteAdmin";
 function filled(): InviteSubmission {
   const s = emptySubmission({ display_name: "Tanawat K.", discipline: "Photography" });
   s.about.email = "t@example.com";
+  s.about.avatar = "av";
   s.projects[0] = { ...s.projects[0], title: "Identity", media: ["m1"], rights: true };
   return s;
 }
@@ -25,10 +26,10 @@ describe("creator invite form rules", () => {
     expect(emptySubmission({ display_name: "x", discipline: "Not a category" }).about.discipline).toBe("");
   });
 
-  it("step 1 needs name, discipline and a valid email", () => {
+  it("step 1 needs name, discipline, a valid email and a profile picture", () => {
     const s = emptySubmission(null);
-    expect(Object.keys(validateStep(1, s, new Set(), false)).sort()).toEqual(["about.discipline", "about.email", "about.name"]);
-    expect(validateStep(1, filled(), new Set(), false)).toEqual({});
+    expect(Object.keys(validateStep(1, s, new Set(), false)).sort()).toEqual(["about.avatar", "about.discipline", "about.email", "about.name"]);
+    expect(validateStep(1, filled(), new Set(["av"]), false)).toEqual({});
   });
 
   it("step 2 needs a title, one scanned image and the rights checkbox per project", () => {
@@ -54,10 +55,10 @@ describe("creator invite form rules", () => {
   });
 
   it("normalizes partial server data without losing fields", () => {
-    const s = normalizeSubmission({ about: { name: "X" }, projects: [{ title: "P" }, { title: "Q" }, { title: "R" }] });
+    const s = normalizeSubmission({ about: { name: "X" }, projects: [{ title: "P" }, { title: "Q" }, { title: "R" }, { title: "S" }] });
     expect(s.about.name).toBe("X");
     expect(s.about.email).toBe("");
-    expect(s.projects.map((p) => p.slot)).toEqual(["p1", "p2"]);
+    expect(s.projects.map((p) => p.slot)).toEqual(["p1", "p2", "p3"]);
     expect(s.projects[1].media).toEqual([]);
   });
 

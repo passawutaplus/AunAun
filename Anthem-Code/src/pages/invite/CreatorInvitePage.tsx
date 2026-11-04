@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import SeoHead from "@/components/SeoHead";
 import InviteProfilePreview from "@/components/invite/InviteProfilePreview";
+import InviteProjectPreview from "@/components/invite/InviteProjectPreview";
 import InviteLanding from "@/components/invite/InviteLanding";
 import InviteWorksBackdrop from "@/components/invite/InviteWorksBackdrop";
 import { InviteShell, InviteStateCard } from "@/components/invite/InviteShell";
@@ -43,6 +44,8 @@ import {
   INVITE_DISCIPLINES,
   InviteApiError,
   MAX_IMAGES_PER_PROJECT,
+  MAX_PROJECTS,
+  PROJECT_SLOTS,
   emptyProject,
   isTokenShape,
   normalizeSubmission,
@@ -58,6 +61,7 @@ import {
   type PublicInvite,
 } from "@/lib/creatorInvite";
 import { inviteCopy, type InviteCopy } from "@/lib/creatorInviteCopy";
+import { setUiLang } from "@/lib/authCopy";
 
 const backupKey = (token: string) =>
   `samecor.creatorInvite.draft.${token.slice(0, 12)}`;
@@ -87,6 +91,8 @@ export default function CreatorInvitePage() {
   });
   const [lang, setLang] = useState<PageLang | null>(null);
   const effectiveLang: PageLang = lang ?? q.data?.invite.language ?? "th";
+  // The sign-up page ("I'll create my profile") opens in the language the artist is reading
+  useEffect(() => setUiLang(effectiveLang), [effectiveLang]);
   const t = inviteCopy(effectiveLang);
   const [submitted, setSubmitted] = useState(false);
 
@@ -246,14 +252,31 @@ function InviteForm({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [data, setData] = useState<InviteSubmission>(() => {
-    if (initial) return normalizeSubmission(initial, invite);
-    try {
-      const raw = localStorage.getItem(backupKey(token));
-      if (raw) return normalizeSubmission(JSON.parse(raw).data, invite);
-    } catch {
-      /* ignore */
+    let d = normalizeSubmission(null, invite);
+    if (initial) d = normalizeSubmission(initial, invite);
+    else {
+      try {
+        const raw = localStorage.getItem(backupKey(token));
+        if (raw) d = normalizeSubmission(JSON.parse(raw).data, invite);
+      } catch {
+        /* ignore */
+      }
     }
-    return normalizeSubmission(null, invite);
+    // Drop references to images that no longer exist (removed, blocked or never finished uploading)
+    const known = new Set(initialMedia.map((m) => m.id));
+    const keep = (id: string | null) => (id && known.has(id) ? id : null);
+    return {
+      ...d,
+      about: {
+        ...d.about,
+        avatar: keep(d.about.avatar),
+        cover: keep(d.about.cover),
+      },
+      projects: d.projects.map((p) => ({
+        ...p,
+        media: p.media.filter((m) => known.has(m)),
+      })),
+    };
   });
   const [media, setMedia] = useState(
     () => new Map(initialMedia.map((m) => [m.id, m])),
@@ -332,7 +355,7 @@ function InviteForm({
     setUploading(slot);
     try {
       for (const file of Array.from(files)) {
-        if (slot !== "avatar") {
+        if (slot !== "avatar" && slot !== "cover") {
           const p = data.projects.find((x) => x.slot === slot);
           if (p && p.media.length >= MAX_IMAGES_PER_PROJECT) {
             toast.error(t.err.too_many_files);
@@ -342,8 +365,10 @@ function InviteForm({
         try {
           const m = await uploadInviteImage(token, slot, file);
           setMedia((prev) => new Map(prev).set(m.id, m));
-          if (slot === "avatar") setAbout("avatar", m.id);
-          else {
+          if (slot === "avatar" || slot === "cover") {
+            setAbout(slot, m.id);
+            clearErr(`about.${slot}`);
+          } else {
             update((d) => ({
               ...d,
               projects: d.projects.map((p) =>
@@ -369,7 +394,7 @@ function InviteForm({
       n.delete(id);
       return n;
     });
-    if (slot === "avatar") setAbout("avatar", null);
+    if (slot === "avatar" || slot === "cover") setAbout(slot, null);
     else
       update((d) => ({
         ...d,
@@ -647,18 +672,40 @@ function InviteForm({
                         onChange={(ev) => setAbout("links", ev.target.value)}
                       />
                     </Field>
-                    <div className="space-y-1.5">
-                      <p className="text-sm font-medium">{t.avatar}</p>
-                      <ImageStrip
-                        t={t}
-                        ids={data.about.avatar ? [data.about.avatar] : []}
-                        media={media}
-                        slot="avatar"
-                        uploading={uploading === "avatar"}
-                        canAdd={!data.about.avatar}
-                        onAdd={(f) => void addFiles("avatar", f)}
-                        onRemove={(id) => removeImage("avatar", id)}
-                      />
+                    <div className="grid gap-5 sm:grid-cols-[auto_minmax(0,1fr)]">
+                      {(["avatar", "cover"] as const).map((slot) => (
+                        <div
+                          key={slot}
+                          className="space-y-1.5"
+                          data-field={`about.${slot}`}
+                        >
+                          <p className="text-sm font-medium">
+                            {slot === "avatar" ? t.avatar : t.cover}
+                            {slot === "avatar" ? (
+                              <span className="text-brand"> *</span>
+                            ) : null}
+                          </p>
+                          <ImageStrip
+                            t={t}
+                            ids={data.about[slot] ? [data.about[slot]!] : []}
+                            media={media}
+                            slot={slot}
+                            uploading={uploading === slot}
+                            canAdd={!data.about[slot]}
+                            onAdd={(f) => void addFiles(slot, f)}
+                            onRemove={(id) => removeImage(slot, id)}
+                          />
+                          {slot === "avatar" && errors["about.avatar"] ? (
+                            <p className="text-xs font-medium text-destructive">
+                              {t.avatarErr}
+                            </p>
+                          ) : slot === "cover" ? (
+                            <p className="text-xs text-muted-foreground">
+                              {t.coverHint}
+                            </p>
+                          ) : null}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 ) : step === 2 ? (
@@ -729,13 +776,11 @@ function InviteForm({
                         </Field>
                         <div className="grid gap-4 sm:grid-cols-2">
                           <Field id={`projects.${i}.role`} label={t.role}>
-                            <Input
-                              {...aria(`projects.${i}.role`, false)}
+                            <RolePicker
+                              id={`projects.${i}.role`}
+                              t={t}
                               value={p.role}
-                              maxLength={120}
-                              onChange={(ev) =>
-                                setProject(i, { role: ev.target.value })
-                              }
+                              onChange={(role) => setProject(i, { role })}
                             />
                           </Field>
                           <Field
@@ -815,7 +860,7 @@ function InviteForm({
                         </div>
                       </div>
                     ))}
-                    {data.projects.length < 2 ? (
+                    {data.projects.length < MAX_PROJECTS ? (
                       <Button
                         type="button"
                         variant="outline"
@@ -823,7 +868,14 @@ function InviteForm({
                         onClick={() =>
                           update((d) => ({
                             ...d,
-                            projects: [...d.projects, emptyProject("p2")],
+                            projects: [
+                              ...d.projects,
+                              emptyProject(
+                                PROJECT_SLOTS.find(
+                                  (x) => !d.projects.some((q) => q.slot === x),
+                                ) ?? "p3",
+                              ),
+                            ],
                           }))
                         }
                       >
@@ -956,7 +1008,7 @@ function InviteForm({
         </div>
 
         <div className="min-w-0 lg:col-start-1 lg:row-start-1">
-          <div className="lg:sticky lg:top-6">
+          <div className="space-y-6">
             <InviteProfilePreview
               ref={previewRef}
               data={data}
@@ -964,6 +1016,19 @@ function InviteForm({
               t={t}
               badge={t.pvBadge}
             />
+            {quick
+              ? null
+              : data.projects.map((p, i) => (
+                  <InviteProjectPreview
+                    key={p.slot}
+                    project={p}
+                    index={i}
+                    name={data.about.name}
+                    media={media}
+                    t={t}
+                    badge={t.pvBadge}
+                  />
+                ))}
           </div>
         </div>
       </div>
@@ -1070,6 +1135,73 @@ function ConsentBox({
   );
 }
 
+/** Role / credit: three common roles, or "other" with a free-text field. Stores the readable label. */
+function RolePicker({
+  id,
+  t,
+  value,
+  onChange,
+}: {
+  id: string;
+  t: InviteCopy;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const presets = [t.roleOwner, t.roleTeam, t.roleAdvisor];
+  // Match labels in any language so switching language keeps the choice
+  const all = (["th", "en", "zh"] as const).map((l) => inviteCopy(l));
+  const presetIndex =
+    all
+      .map((c) => [c.roleOwner, c.roleTeam, c.roleAdvisor].indexOf(value))
+      .find((i) => i >= 0) ?? -1;
+  const [other, setOther] = useState(presetIndex < 0 && !!value);
+  const selected =
+    presetIndex >= 0 ? String(presetIndex) : other ? "other" : "";
+  return (
+    <div className="space-y-2">
+      <Select
+        value={selected}
+        onValueChange={(v) => {
+          if (v === "other") {
+            setOther(true);
+            onChange("");
+          } else {
+            setOther(false);
+            onChange(presets[Number(v)]);
+          }
+        }}
+      >
+        <SelectTrigger id={id}>
+          <SelectValue placeholder={t.chooseRole} />
+        </SelectTrigger>
+        <SelectContent>
+          {presets.map((label, i) => (
+            <SelectItem key={label} value={String(i)}>
+              {label}
+            </SelectItem>
+          ))}
+          <SelectItem value="other">{t.roleOther}</SelectItem>
+        </SelectContent>
+      </Select>
+      {selected === "other" ? (
+        <Input
+          aria-label={t.roleOther}
+          value={value}
+          maxLength={120}
+          placeholder={t.roleOtherPh}
+          onChange={(ev) => onChange(ev.target.value)}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function tileShape(slot: MediaSlot): string {
+  if (slot === "avatar") return "h-20 w-20 rounded-full sm:h-24 sm:w-24";
+  if (slot === "cover") return "h-20 w-52 rounded-lg sm:h-24 sm:w-64";
+  return "h-20 w-20 rounded-lg sm:h-24 sm:w-24";
+}
+
 function ImageStrip({
   t,
   ids,
@@ -1100,8 +1232,8 @@ function ImageStrip({
           <div
             key={id}
             className={cn(
-              "group relative h-20 w-20 overflow-hidden bg-muted sm:h-24 sm:w-24",
-              slot === "avatar" ? "rounded-full" : "rounded-lg",
+              "group relative overflow-hidden bg-muted",
+              tileShape(slot),
             )}
           >
             {m?.url ? (
@@ -1149,8 +1281,8 @@ function ImageStrip({
         <label
           htmlFor={inputId}
           className={cn(
-            "flex h-20 w-20 cursor-pointer flex-col items-center justify-center gap-1 border border-dashed border-border text-[11px] text-muted-foreground hover:border-foreground/40 hover:text-foreground sm:h-24 sm:w-24",
-            slot === "avatar" ? "rounded-full" : "rounded-lg",
+            "flex cursor-pointer flex-col items-center justify-center gap-1 border border-dashed border-border text-[11px] text-muted-foreground hover:border-foreground/40 hover:text-foreground",
+            tileShape(slot),
             uploading && "pointer-events-none opacity-60",
           )}
         >
@@ -1162,7 +1294,7 @@ function ImageStrip({
           <span>
             {uploading
               ? t.uploading
-              : slot === "avatar"
+              : slot === "avatar" || slot === "cover"
                 ? t.chooseImage
                 : t.addImage}
           </span>
@@ -1170,7 +1302,7 @@ function ImageStrip({
             id={inputId}
             type="file"
             accept="image/jpeg,image/png,image/webp"
-            multiple={slot !== "avatar"}
+            multiple={slot !== "avatar" && slot !== "cover"}
             className="sr-only"
             onChange={(ev) => {
               onAdd(ev.target.files);

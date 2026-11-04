@@ -53,10 +53,7 @@ async function probeGemini(): Promise<{ configured: boolean; reachable: boolean;
 }
 
 export async function fetchAiSummary(): Promise<AiSummarySnapshot> {
-  const admin = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    supabaseSecretKey(),
-  );
+  const admin = createClient(Deno.env.get("SUPABASE_URL")!, supabaseSecretKey());
 
   const now = new Date();
   const d30 = new Date(now);
