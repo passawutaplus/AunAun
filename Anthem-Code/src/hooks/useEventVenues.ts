@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { mapWriteFlowError } from "@/lib/writeFlowErrors";
 import { EVENT_SELECT, isDemoEventId, type ExhibitionEvent } from "@/lib/exhibitionEvents";
+import { roundCoord } from "@/lib/routeStart";
 import { featureActive, VENUE_SELECT, type EventVenue, type VenueDraft } from "@/lib/eventVenues";
 import { invalidateEvents } from "@/hooks/useExhibitionEvents";
 
@@ -172,33 +173,62 @@ export type VenueRoute = {
   streets: boolean;
 };
 
-/** Walking route through the ticked venues (OSRM foot profile on routing.openstreetmap.de; free, no key). */
-export function useVenueRoute(points: Array<{ lat: number | null; lng: number | null }>) {
+async function osrmFoot(coords: string, signal?: AbortSignal): Promise<VenueRoute | null> {
+  try {
+    const res = await fetch(
+      `https://routing.openstreetmap.de/routed-foot/route/v1/foot/${coords}?overview=full&geometries=geojson`,
+      { signal },
+    );
+    if (!res.ok) return null;
+    const json = (await res.json()) as {
+      code?: string;
+      routes?: Array<{ distance: number; duration: number; geometry: { coordinates: [number, number][] } }>;
+    };
+    const r = json.code === "Ok" ? json.routes?.[0] : undefined;
+    return r ? { line: r.geometry.coordinates, meters: r.distance, seconds: r.duration, streets: true } : null;
+  } catch {
+    return null;
+  }
+}
+
+const straight = (pts: Array<{ lat: number; lng: number }>): VenueRoute => ({
+  line: pts.map((p) => [p.lng, p.lat]),
+  meters: null,
+  seconds: null,
+  streets: false,
+});
+
+export type VenueRoutePlan = {
+  /** From the viewer's start point to the first ticked venue (shown dashed). */
+  lead: VenueRoute | null;
+  /** Between the ticked venues, in list order. */
+  inner: VenueRoute | null;
+};
+
+/**
+ * Walking route through the ticked venues, optionally from a start point (OSRM foot profile on
+ * routing.openstreetmap.de; free, no key). The start point is rounded to ~100 m before it is sent.
+ */
+export function useVenueRoute(
+  points: Array<{ lat: number | null; lng: number | null }>,
+  start?: { lat: number; lng: number } | null,
+) {
   const stops = points.filter((p): p is { lat: number; lng: number } => p.lat != null && p.lng != null);
-  const coords = stops.map((p) => `${p.lng.toFixed(5)},${p.lat.toFixed(5)}`).join(";");
+  const fmt = (p: { lat: number; lng: number }) => `${p.lng.toFixed(5)},${p.lat.toFixed(5)}`;
+  const innerCoords = stops.map(fmt).join(";");
+  const origin = start ? { lat: roundCoord(start.lat), lng: roundCoord(start.lng) } : null;
+  const leadCoords = origin && stops.length ? `${fmt(origin)};${fmt(stops[0])}` : "";
   return useQuery({
-    queryKey: ["venue-route", coords],
-    enabled: stops.length >= 2,
+    queryKey: ["venue-route", innerCoords, leadCoords],
+    enabled: stops.length >= 2 || (!!origin && stops.length >= 1),
     staleTime: Infinity,
     retry: false,
-    queryFn: async ({ signal }): Promise<VenueRoute> => {
-      const straight: VenueRoute = { line: stops.map((p) => [p.lng, p.lat]), meters: null, seconds: null, streets: false };
-      try {
-        const res = await fetch(
-          `https://routing.openstreetmap.de/routed-foot/route/v1/foot/${coords}?overview=full&geometries=geojson`,
-          { signal },
-        );
-        if (!res.ok) return straight;
-        const json = (await res.json()) as {
-          code?: string;
-          routes?: Array<{ distance: number; duration: number; geometry: { coordinates: [number, number][] } }>;
-        };
-        const r = json.code === "Ok" ? json.routes?.[0] : undefined;
-        if (!r) return straight;
-        return { line: r.geometry.coordinates, meters: r.distance, seconds: r.duration, streets: true };
-      } catch {
-        return straight;
-      }
+    queryFn: async ({ signal }): Promise<VenueRoutePlan> => {
+      const [inner, lead] = await Promise.all([
+        stops.length >= 2 ? osrmFoot(innerCoords, signal).then((r) => r ?? straight(stops)) : Promise.resolve(null),
+        origin && stops.length ? osrmFoot(leadCoords, signal).then((r) => r ?? straight([origin, stops[0]])) : Promise.resolve(null),
+      ]);
+      return { lead, inner };
     },
   });
 }

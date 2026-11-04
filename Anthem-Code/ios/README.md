@@ -39,3 +39,15 @@ build from Windows.
 - `review-notes.md`: what to tell App Review, including a test account placeholder.
 
 Review every draft against the live app before submitting: Apple treats wrong privacy answers as a violation.
+
+## Location (Exhibition route start point)
+
+When the iOS Capacitor project is created, add to `ios/App/App/Info.plist`:
+
+```xml
+<key>NSLocationWhenInUseUsageDescription</key>
+<string>ใช้ตำแหน่งของคุณเป็นจุดเริ่มต้นเส้นทางไปสถานที่จัดงาน (ไม่บันทึกขึ้นเซิร์ฟเวอร์)</string>
+```
+
+WKWebView then answers `navigator.geolocation` with the system prompt. App Privacy: location is used on the
+device only (a ~100 m rounded point is sent to the routing service to draw the route).

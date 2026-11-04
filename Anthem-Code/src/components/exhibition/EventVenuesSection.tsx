@@ -3,6 +3,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Bookmark, Check, ChevronDown, ExternalLink, Map as MapIcon, Navigation, Route, TrainFront, Ticket, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GoogleCalendarIcon } from "@/components/icons/GoogleCalendarIcon";
+import { RouteStartPicker } from "./RouteStartPicker";
+import { START_LABEL, loadRouteStart, saveRouteStart, type RouteStart } from "@/lib/routeStart";
 import { useAuth } from "@/hooks/useAuth";
 import { useMyEventInterests, useToggleEventInterest } from "@/hooks/useExhibitionEvents";
 import { useSetAllVenuesInterest, useVenueRoute } from "@/hooks/useEventVenues";
@@ -14,6 +16,7 @@ import {
   venueMapsUrl,
   venueOpenState,
   googleMapsRouteUrl,
+  formatDistance,
   routeSummary,
   type EventVenue,
   type VenueOpenState,
@@ -96,8 +99,17 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
   const allOn = venues.length > 0 && venues.every((v) => interested.has(v.id));
   const pinned = useMemo(() => groups.flatMap((g) => g.venues), [groups]);
   const stops = useMemo(() => pinned.filter((v) => picked.has(v.id)), [pinned, picked]);
-  const { data: route, isFetching: routing } = useVenueRoute(stops);
-  const routeUrl = googleMapsRouteUrl(stops);
+  // Where the route starts (home / work / here…): this device only.
+  const [start, setStartState] = useState<RouteStart | null>(() => loadRouteStart());
+  const setStart = (p: RouteStart | null) => {
+    setStartState(p);
+    saveRouteStart(p);
+  };
+  const [picking, setPicking] = useState(false);
+  const { data: route, isFetching: routing } = useVenueRoute(stops, start);
+  const routeUrl = googleMapsRouteUrl(stops, start);
+  const lead = route?.lead ?? null;
+  const inner = route?.inner ?? null;
   const now = new Date();
 
   // /exhibition/<id>#venues or #venue-map (from the featured banner) once the list is here.
@@ -187,7 +199,13 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
               activeId={activeId}
               onSelect={selectFromMap}
               picked={picked}
-              route={stops.length >= 2 ? route : null}
+              route={stops.length >= 2 || (start && stops.length) ? route : null}
+              start={start}
+              pickMode={picking}
+              onPick={(p) => {
+                setPicking(false);
+                setStart({ ...p, kind: "map", label: START_LABEL.map });
+              }}
               className="h-64 sm:h-80 lg:h-[34rem]"
             />
           </Suspense>
@@ -195,34 +213,56 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
 
         <div className="space-y-6">
           {/* My route: on top of the venue list column. */}
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-lg bg-muted/40 px-3 py-2.5 text-sm" aria-live="polite">
-            <Route className="h-4 w-4 shrink-0 text-brand" aria-hidden />
-            {stops.length < 2 ? (
-              <span className="text-muted-foreground">ติ๊กสถานที่ที่จะไป ตั้งแต่ 2 ที่ขึ้นไป เพื่อดูเส้นทางเดินบนแผนที่</span>
-            ) : (
-              <>
-                <span className="font-medium text-foreground">
-                  เส้นทางของคุณ · {stops.length} ที่
-                  <span className="ml-2 font-normal text-muted-foreground">
-                    {routing
-                      ? "กำลังคำนวณเส้นทาง…"
-                      : route?.meters != null && route.seconds != null
-                        ? routeSummary(route.meters, route.seconds)
-                        : "เส้นตรงโดยประมาณ (คำนวณตามถนนไม่ได้)"}
+          <div className="space-y-2 rounded-lg bg-muted/40 px-3 py-2.5 text-sm">
+            <RouteStartPicker start={start} onChange={setStart} onPickOnMap={() => setPicking(true)} />
+            {picking ? (
+              <p className="flex items-center gap-2 text-xs text-brand">
+                แตะบนแผนที่ตรงจุดที่จะเริ่ม
+                <button type="button" onClick={() => setPicking(false)} className="text-muted-foreground underline underline-offset-4">
+                  ยกเลิก
+                </button>
+              </p>
+            ) : null}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5" aria-live="polite">
+              <Route className="h-4 w-4 shrink-0 text-brand" aria-hidden />
+              {stops.length === 0 || (stops.length === 1 && !start) ? (
+                <span className="text-muted-foreground">
+                  {start ? "ติ๊กสถานที่ที่จะไป เพื่อดูเส้นทางบนแผนที่" : "ติ๊กสถานที่ที่จะไป ตั้งแต่ 2 ที่ขึ้นไป เพื่อดูเส้นทางเดินบนแผนที่"}
+                </span>
+              ) : (
+                <>
+                  <span className="font-medium text-foreground">
+                    เส้นทางของคุณ · {stops.length} ที่
+                    <span className="ml-2 font-normal text-muted-foreground">
+                      {routing
+                        ? "กำลังคำนวณเส้นทาง…"
+                        : [
+                            start && lead
+                              ? `จาก${start.label} ${lead.meters != null ? `~${formatDistance(lead.meters)}` : "(เส้นตรง)"}`
+                              : null,
+                            inner
+                              ? inner.meters != null && inner.seconds != null
+                                ? `${start ? "ในงาน " : ""}${routeSummary(inner.meters, inner.seconds)}`
+                                : "ในงาน: เส้นตรงโดยประมาณ"
+                              : null,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")}
+                    </span>
                   </span>
-                </span>
-                <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
-                  {routeUrl ? (
-                    <a href={routeUrl} target="_blank" rel="noopener noreferrer" className={linkCls}>
-                      <Navigation className="h-3.5 w-3.5" aria-hidden /> เปิดเส้นทางใน Google Maps
-                    </a>
-                  ) : null}
-                  <button type="button" onClick={clearPicks} className={linkCls}>
-                    <X className="h-3.5 w-3.5" aria-hidden /> ล้าง
-                  </button>
-                </span>
-              </>
-            )}
+                  <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                    {routeUrl ? (
+                      <a href={routeUrl} target="_blank" rel="noopener noreferrer" className={linkCls}>
+                        <Navigation className="h-3.5 w-3.5" aria-hidden /> เปิดเส้นทางใน Google Maps
+                      </a>
+                    ) : null}
+                    <button type="button" onClick={clearPicks} className={linkCls}>
+                      <X className="h-3.5 w-3.5" aria-hidden /> ล้าง
+                    </button>
+                  </span>
+                </>
+              )}
+            </div>
           </div>
           {groups.map((g) => (
             <div key={g.area ?? "-"}>
