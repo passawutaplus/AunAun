@@ -1371,25 +1371,20 @@ function ReviewRow({
   children: React.ReactNode;
 }) {
   return (
-    <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-3 p-4 sm:grid-cols-[auto_11rem_minmax(0,1fr)_auto] sm:items-center sm:gap-4">
-      <Icon
-        className="mt-0.5 h-5 w-5 shrink-0 text-foreground sm:mt-0"
-        aria-hidden
-      />
+    <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2 p-4 sm:gap-x-4 sm:p-5">
+      <Icon className="mt-0.5 h-5 w-5 shrink-0 text-foreground" aria-hidden />
       <div className="min-w-0">
         <p className="font-semibold text-foreground">{title}</p>
+        <div className="mt-2 min-w-0 text-sm">{children}</div>
       </div>
       <button
         type="button"
         onClick={onEdit}
         aria-label={`${editLabel}: ${title}`}
-        className="col-start-3 row-start-1 flex h-9 w-9 items-center justify-center rounded-full border border-border text-foreground hover:bg-secondary sm:col-start-4"
+        className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-foreground hover:bg-secondary"
       >
         <Pencil className="h-4 w-4" aria-hidden />
       </button>
-      <div className="col-span-3 min-w-0 text-sm sm:col-span-1 sm:col-start-3 sm:row-start-1 sm:border-l sm:border-border sm:pl-4">
-        {children}
-      </div>
     </div>
   );
 }
