@@ -33,7 +33,9 @@ SELECT public.scout_event_draft($j$
     "who_for": ["นักออกแบบที่อยากเห็นงานออกแบบเมืองจริงในย่านเก่า", "…"],
     "takeaways": ["…"],
     "know_before": ["…"],
-    "related_categories": ["Graphic / Branding", "Architecture / Interior"]
+    "related_categories": ["Graphic / Branding", "Architecture / Interior"],
+    "steps": ["…"],
+    "links": [{ "kind": "download", "label": "ใบสมัคร Open Call 2027 (.pdf)", "url": "https://…" }]
   }
 }
 $j$::jsonb);
@@ -51,3 +53,26 @@ very similar title is already in the table. No images are ever copied: `cover_ur
 `know_before` ≤ 5 short lines (≤ 140 chars, Thai, written only from the organiser's page — skip a
 list rather than guess), `related_categories` ≤ 4 values from SAMECOR's work categories
 (`Anthem-Code/src/data/projectTypes.ts` PROJECT_CATEGORIES). Never mention AI in these texts.
+
+Category details (same `insights` object; the event page shows the blocks that fit the category and
+hides empty ones — fill them whenever the organiser's page states them):
+
+| key | for | limit |
+| --- | --- | --- |
+| `steps` | ordered steps — open call: how to apply · workshop: how to book · talk: how to register · art fair: how to buy tickets | ≤ 8 × 140 |
+| `eligibility` | open call: who can apply | ≤ 5 × 140 |
+| `benefits` | open call / contest: prizes or what selected applicants get | ≤ 5 × 140 |
+| `bring` | workshop: what to bring / prepare | ≤ 6 × 140 |
+| `speakers` | talk & forum: "ชื่อ — ตำแหน่ง / สังกัด" | ≤ 8 × 140 |
+| `schedule` | talk / workshop programme, art fair rounds | ≤ 8 × 140 |
+| `highlights` | art fair highlights | ≤ 6 × 140 |
+| `capacity` | workshop seats, e.g. "รับ 12 คน" | ≤ 80 |
+| `deadline` | open call closing date `YYYY-MM-DD` when it differs from `ends_on` | date |
+| `links` | buttons `{ "kind", "label", "url" }`, kind ∈ download · form · rules · register · tickets · info | ≤ 6 |
+
+**The weekly scout should fill `steps` and `links` for every open call, workshop and talk** whose page
+gives them. Links must be copied exactly from the organiser's page (application forms, rule PDFs,
+booking pages) — never guessed or built, `https://` only, no shorteners (if the page only gives a
+shortener, link the announcement page itself as `info`). Labels say exactly what the button opens,
+e.g. `"label": "โครงการสนับสนุนพื้นที่สำหรับศิลปินสาขาศิลปะการแสดง 2027 (ใบสมัคร .docx)"` with
+`"kind": "download"`. Anything the page doesn't state is left out.

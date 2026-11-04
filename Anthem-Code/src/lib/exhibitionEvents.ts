@@ -322,26 +322,115 @@ export function isDemoEventId(id: string | undefined): boolean {
 }
 
 /** "สรุปโดย SAMECOR": short lists written from the organiser's page; null when not prepared yet. */
+export type EventLinkKind = "download" | "form" | "rules" | "register" | "tickets" | "info";
+export type EventInsightLink = { label: string; url: string; kind: EventLinkKind };
+
 export type EventInsights = {
   who_for: string[];
   takeaways: string[];
   know_before: string[];
   /** SAMECOR work categories (projects.category) for the related-works row. */
   related_categories: string[];
+  /** Ordered steps: apply (open call), book (workshop), register (talk). */
+  steps: string[];
+  eligibility: string[];
+  /** Prizes (contests) or what selected applicants get. */
+  benefits: string[];
+  /** What to bring / prepare (workshops). */
+  bring: string[];
+  speakers: string[];
+  /** Programme times, or rounds / ticket sessions. */
+  schedule: string[];
+  highlights: string[];
+  capacity: string | null;
+  /** Closing date (YYYY-MM-DD) when it differs from ends_on. */
+  deadline: string | null;
+  /** Buttons that say exactly what they open — only links from the organiser's page. */
+  links: EventInsightLink[];
 };
 
 export const EVENT_INSIGHT_KEYS = ["who_for", "takeaways", "know_before"] as const;
+
+/** List keys with their limits (mirrors anthem.event_insights_clean). */
+export const EVENT_INSIGHT_LISTS = {
+  who_for: 5,
+  takeaways: 4,
+  know_before: 5,
+  related_categories: 4,
+  steps: 8,
+  eligibility: 5,
+  benefits: 5,
+  bring: 6,
+  speakers: 8,
+  schedule: 8,
+  highlights: 6,
+} as const;
+export type EventInsightListKey = keyof typeof EVENT_INSIGHT_LISTS;
+
+export const EVENT_LINK_KINDS: Record<EventLinkKind, string> = {
+  download: "ดาวน์โหลด",
+  form: "แบบฟอร์มสมัคร",
+  rules: "กติกา",
+  register: "ลงทะเบียน",
+  tickets: "ซื้อบัตร / จอง",
+  info: "รายละเอียด",
+};
+
+const LINK_KINDS = Object.keys(EVENT_LINK_KINDS) as EventLinkKind[];
+const SHORTENERS = /^(bit\.ly|bitly\.com|tinyurl\.com|t\.co|goo\.gl|ow\.ly|is\.gd|buff\.ly|rebrand\.ly|cutt\.ly|shorturl\.at|tiny\.cc|rb\.gy|lnkd\.in|s\.id|v\.gd|clck\.ru|adf\.ly|bc\.vc)$/i;
+
+/** https only, no link shorteners (same list as anthem.event_link_ok). */
+export function isSafeEventLink(url: string): boolean {
+  try {
+    const u = new URL(url);
+    return u.protocol === "https:" && !SHORTENERS.test(u.hostname.replace(/^www\./, ""));
+  } catch {
+    return false;
+  }
+}
+
+/** Button text: "ดาวน์โหลด: <label>" unless the label already says it. */
+export function eventLinkText(l: Pick<EventInsightLink, "label" | "kind">): string {
+  const prefix = EVENT_LINK_KINDS[l.kind];
+  return l.label.startsWith(prefix.split(" ")[0]) ? l.label : `${prefix}: ${l.label}`;
+}
 
 export function parseEventInsights(raw: unknown): EventInsights | null {
   if (!raw || typeof raw !== "object") return null;
   const r = raw as Record<string, unknown>;
   const list = (v: unknown, max: number) =>
     Array.isArray(v) ? v.filter((x): x is string => typeof x === "string" && x.trim() !== "").map((x) => x.trim()).slice(0, max) : [];
-  const out: EventInsights = {
-    who_for: list(r.who_for, 5),
-    takeaways: list(r.takeaways, 4),
-    know_before: list(r.know_before, 5),
-    related_categories: list(r.related_categories, 4),
-  };
-  return out.who_for.length || out.takeaways.length || out.know_before.length || out.related_categories.length ? out : null;
+  const lists = Object.fromEntries(
+    (Object.entries(EVENT_INSIGHT_LISTS) as [EventInsightListKey, number][]).map(([k, max]) => [k, list(r[k], max)]),
+  ) as Record<EventInsightListKey, string[]>;
+  const links = (Array.isArray(r.links) ? r.links : [])
+    .filter(
+      (l): l is EventInsightLink =>
+        !!l &&
+        typeof l === "object" &&
+        typeof (l as EventInsightLink).label === "string" &&
+        (l as EventInsightLink).label.trim() !== "" &&
+        typeof (l as EventInsightLink).url === "string" &&
+        isSafeEventLink((l as EventInsightLink).url) &&
+        LINK_KINDS.includes((l as EventInsightLink).kind),
+    )
+    .slice(0, 6)
+    .map((l) => ({ label: l.label.trim(), url: l.url, kind: l.kind }));
+  const capacity = typeof r.capacity === "string" && r.capacity.trim() ? r.capacity.trim() : null;
+  const deadline = typeof r.deadline === "string" && /^\d{4}-\d{2}-\d{2}$/.test(r.deadline) ? r.deadline : null;
+  const out: EventInsights = { ...lists, capacity, deadline, links };
+  const any = Object.values(lists).some((v) => v.length > 0) || capacity || deadline || links.length > 0;
+  return any ? out : null;
+}
+
+/** "ปิดรับใน 32 วัน" / "ปิดรับพรุ่งนี้" / "ปิดรับวันนี้" / "ปิดรับแล้ว", by Bangkok date. Null without a date. */
+export function deadlineLabel(iso: string | null | undefined, now: Date = new Date()): string | null {
+  if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
+  const day = (s: string) => Date.UTC(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10)) / 86_400_000;
+  const today = new Date(now.getTime() + 7 * 3_600_000).toISOString().slice(0, 10);
+  const n = day(iso) - day(today);
+  if (n < 0) return "ปิดรับแล้ว";
+  if (n === 0) return "ปิดรับวันนี้";
+  if (n === 1) return "ปิดรับพรุ่งนี้";
+  return `ปิดรับใน ${n} วัน`;
 }

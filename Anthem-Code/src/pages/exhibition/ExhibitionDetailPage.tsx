@@ -415,7 +415,7 @@ export default function ExhibitionDetailPage() {
         </section>
       ) : null}
 
-      {insights ? <EventInsightsPanel insights={insights} className="mx-auto mt-14 w-full max-w-[84rem]" /> : null}
+      {insights ? <EventInsightsPanel insights={insights} event={event} className="mx-auto mt-14 w-full max-w-[84rem]" /> : null}
 
       {insights?.related_categories.length ? (
         <EventRelatedWorks categories={insights.related_categories} className="mx-auto mt-14 w-full max-w-[84rem]" />

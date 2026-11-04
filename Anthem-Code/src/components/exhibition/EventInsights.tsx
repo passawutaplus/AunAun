@@ -1,53 +1,244 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Info, Lightbulb, Users } from "lucide-react";
+import {
+  ArrowRight,
+  CalendarClock,
+  Download,
+  ExternalLink,
+  FileText,
+  Gift,
+  Info,
+  Lightbulb,
+  ListOrdered,
+  Mic,
+  Plus,
+  ScrollText,
+  Sparkles,
+  Ticket,
+  Trash2,
+  UserCheck,
+  UserPlus,
+  Users,
+  Wrench,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { PROJECT_CATEGORIES } from "@/data/projectTypes";
 import { useEventInsights, useRelatedWorks, useSetEventInsights } from "@/hooks/useExhibitionEvents";
-import type { EventInsights } from "@/lib/exhibitionEvents";
+import {
+  EVENT_INSIGHT_LISTS,
+  EVENT_LINK_KINDS,
+  deadlineLabel,
+  eventLinkText,
+  formatEventDates,
+  isSafeEventLink,
+  type EventInsightLink,
+  type EventInsightListKey,
+  type EventInsights,
+  type EventLinkKind,
+  type ExhibitionEvent,
+} from "@/lib/exhibitionEvents";
 import { cn } from "@/lib/utils";
 
-const COLUMNS: { key: "who_for" | "takeaways" | "know_before"; title: string; icon: LucideIcon }[] = [
-  { key: "who_for", title: "เหมาะกับใคร", icon: Users },
-  { key: "takeaways", title: "จะได้อะไรกลับไป", icon: Lightbulb },
-  { key: "know_before", title: "ก่อนไปควรรู้", icon: Info },
+type ListKey = Exclude<EventInsightListKey, "related_categories">;
+type Block = { key: ListKey; title: string; icon: LucideIcon };
+
+const DEFAULT_BLOCKS: Record<ListKey, Block> = {
+  steps: { key: "steps", title: "ขั้นตอน", icon: ListOrdered },
+  eligibility: { key: "eligibility", title: "ใครสมัครได้", icon: UserCheck },
+  benefits: { key: "benefits", title: "รางวัล / สิ่งที่ได้", icon: Gift },
+  bring: { key: "bring", title: "สิ่งที่ต้องเตรียม", icon: Wrench },
+  speakers: { key: "speakers", title: "วิทยากร", icon: Mic },
+  schedule: { key: "schedule", title: "กำหนดการ", icon: CalendarClock },
+  highlights: { key: "highlights", title: "ไฮไลต์", icon: Sparkles },
+  who_for: { key: "who_for", title: "เหมาะกับใคร", icon: Users },
+  takeaways: { key: "takeaways", title: "จะได้อะไรกลับไป", icon: Lightbulb },
+  know_before: { key: "know_before", title: "ก่อนไปควรรู้", icon: Info },
+};
+
+/** Category first: what matters most for that kind of event, with category-specific headings. */
+const CATEGORY_BLOCKS: Partial<Record<ExhibitionEvent["category"], Array<Partial<Block> & { key: ListKey }>>> = {
+  open_call: [
+    { key: "steps", title: "ขั้นตอนการสมัคร" },
+    { key: "eligibility" },
+    { key: "benefits" },
+  ],
+  workshop: [{ key: "steps", title: "ขั้นตอนการจอง" }, { key: "bring" }, { key: "schedule" }],
+  talk_forum: [{ key: "speakers" }, { key: "schedule" }, { key: "steps", title: "ขั้นตอนการลงทะเบียน" }],
+  art_fair: [{ key: "highlights" }, { key: "schedule", title: "รอบ / บัตร" }, { key: "steps", title: "ขั้นตอนการซื้อบัตร" }],
+};
+
+const GENERIC_ORDER: ListKey[] = [
+  "steps",
+  "eligibility",
+  "benefits",
+  "bring",
+  "speakers",
+  "schedule",
+  "highlights",
+  "who_for",
+  "takeaways",
+  "know_before",
 ];
 
-/** "สรุปโดย SAMECOR": up to three short lists side by side, a thin rule above, no boxes. */
-export function EventInsightsPanel({ insights, className }: { insights: EventInsights; className?: string }) {
-  const cols = COLUMNS.filter((c) => insights[c.key].length > 0);
-  if (!cols.length) return null;
+const LINK_ICON: Record<EventLinkKind, LucideIcon> = {
+  download: Download,
+  form: FileText,
+  rules: ScrollText,
+  register: UserPlus,
+  tickets: Ticket,
+  info: ExternalLink,
+};
+
+/** Blocks to show, in order: the category's own blocks, then any other non-empty list. Empty lists are hidden. */
+function insightBlocks(insights: EventInsights, category: string): Block[] {
+  const first = (CATEGORY_BLOCKS[category as ExhibitionEvent["category"]] ?? []).map((b) => ({ ...DEFAULT_BLOCKS[b.key], ...b }));
+  const seen = new Set(first.map((b) => b.key));
+  const rest = GENERIC_ORDER.filter((k) => !seen.has(k)).map((k) => DEFAULT_BLOCKS[k]);
+  return [...first, ...rest].filter((b) => insights[b.key].length > 0);
+}
+
+function BlockList({ block, items }: { block: Block; items: string[] }) {
+  const Icon = block.icon;
+  const ordered = block.key === "steps" || block.key === "schedule";
+  return (
+    <div>
+      <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+        <Icon className="h-4 w-4 text-brand" aria-hidden />
+        {block.title}
+      </h3>
+      {block.key === "steps" ? (
+        <ol className="mt-3 space-y-2.5">
+          {items.map((item, i) => (
+            <li key={item} className="flex gap-3 text-sm leading-relaxed text-foreground/85">
+              <span
+                className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-foreground/25 text-[11px] font-semibold tabular-nums text-foreground"
+                aria-hidden
+              >
+                {i + 1}
+              </span>
+              <span>{item}</span>
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <ul className={cn("mt-3", ordered ? "space-y-1.5" : "space-y-2.5")}>
+          {items.map((item) => (
+            <li key={item} className="flex gap-2.5 text-sm leading-relaxed text-foreground/85">
+              <span className="mt-[0.6em] h-1 w-1 shrink-0 rounded-full bg-foreground/40" aria-hidden />
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/** Buttons that say exactly what they open, e.g. "ดาวน์โหลด: ใบสมัคร …". */
+export function EventLinkButtons({ links, className }: { links: EventInsightLink[]; className?: string }) {
+  if (!links.length) return null;
+  return (
+    <div className={cn("flex flex-wrap gap-2", className)}>
+      {links.map((l, i) => {
+        const Icon = LINK_ICON[l.kind];
+        return (
+          <Button
+            key={`${l.url}-${i}`}
+            asChild
+            variant={i === 0 && l.kind !== "info" ? "default" : "outline"}
+            className="h-auto min-h-10 max-w-full whitespace-normal rounded-full py-2 text-left"
+          >
+            <a href={l.url} target="_blank" rel="noopener noreferrer nofollow">
+              <Icon className="h-4 w-4 shrink-0" aria-hidden />
+              <span>{eventLinkText(l)}</span>
+            </a>
+          </Button>
+        );
+      })}
+    </div>
+  );
+}
+
+type PanelEvent = Pick<ExhibitionEvent, "category" | "ends_on" | "source_url" | "website_url">;
+
+/** "สรุปโดย SAMECOR": one layout for every category; the blocks and headings follow the category. No boxes. */
+export function EventInsightsPanel({
+  insights,
+  event,
+  className,
+}: {
+  insights: EventInsights;
+  event: PanelEvent;
+  className?: string;
+}) {
+  const blocks = insightBlocks(insights, event.category);
+  const isOpenCall = event.category === "open_call";
+  const deadline = isOpenCall ? (insights.deadline ?? event.ends_on) : insights.deadline;
+  const countdown = deadlineLabel(deadline);
+  const organiserPage = [event.source_url, event.website_url].find((u): u is string => !!u && isSafeEventLink(u));
+  if (!blocks.length && !insights.links.length && !insights.capacity && !countdown) return null;
+
+  // Category blocks first row (up to 3), the rest below.
+  const lead = blocks.slice(0, 3);
+  const more = blocks.slice(3);
+  const grid = (n: number) => cn("grid grid-cols-1 gap-x-10 gap-y-8", n === 2 && "md:grid-cols-2", n >= 3 && "md:grid-cols-3");
+
   return (
     <section aria-labelledby="insights-heading" className={cn("border-t border-border pt-6", className)}>
       <p id="insights-heading" className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
         สรุปโดย SAMECOR
       </p>
-      <div
-        className={cn(
-          "mt-5 grid grid-cols-1 gap-x-10 gap-y-8",
-          cols.length === 2 && "md:grid-cols-2",
-          cols.length >= 3 && "md:grid-cols-3",
-        )}
-      >
-        {cols.map(({ key, title, icon: Icon }) => (
-          <div key={key}>
-            <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
-              <Icon className="h-4 w-4 text-brand" aria-hidden />
-              {title}
-            </h3>
-            <ul className="mt-3 space-y-2.5">
-              {insights[key].map((item) => (
-                <li key={item} className="flex gap-2.5 text-sm leading-relaxed text-foreground/85">
-                  <span className="mt-[0.6em] h-1 w-1 shrink-0 rounded-full bg-foreground/40" aria-hidden />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
+
+      {countdown || insights.capacity ? (
+        <div className="mt-4 flex flex-wrap items-baseline gap-x-6 gap-y-2">
+          {countdown ? (
+            <p className="font-display text-2xl font-semibold text-foreground">
+              {countdown}
+              {deadline ? (
+                <span className="ml-2 text-sm font-normal text-muted-foreground">{formatEventDates(deadline)}</span>
+              ) : null}
+            </p>
+          ) : null}
+          {insights.capacity ? (
+            <p className="flex items-center gap-1.5 text-sm text-foreground/85">
+              <Users className="h-4 w-4 text-brand" aria-hidden />
+              {insights.capacity}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
+      {lead.length ? (
+        <div className={cn("mt-5", grid(lead.length))}>
+          {lead.map((b) => (
+            <BlockList key={b.key} block={b} items={insights[b.key]} />
+          ))}
+        </div>
+      ) : null}
+
+      <EventLinkButtons links={insights.links} className="mt-6" />
+
+      {more.length ? (
+        <div className={cn("mt-8", grid(more.length))}>
+          {more.map((b) => (
+            <BlockList key={b.key} block={b} items={insights[b.key]} />
+          ))}
+        </div>
+      ) : null}
+
+      {isOpenCall && organiserPage ? (
+        <a
+          href={organiserPage}
+          target="_blank"
+          rel="noopener noreferrer nofollow"
+          className="mt-6 inline-flex items-center gap-1.5 text-sm text-muted-foreground underline decoration-foreground/30 underline-offset-4 hover:text-foreground hover:decoration-foreground"
+        >
+          อ่านรายละเอียดเต็มได้ที่เว็บไซต์ผู้จัด <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+        </a>
+      ) : null}
     </section>
   );
 }
@@ -89,38 +280,66 @@ export function EventRelatedWorks({ categories, className }: { categories: strin
 const linesOf = (text: string, max: number) =>
   text
     .split("\n")
-    .map((l) => l.replace(/^[\s•\-*]+/, "").trim())
+    .map((l) => l.replace(/^[\s•\-*]+/, "").replace(/^\d+[.)]\s*/, "").trim())
     .filter(Boolean)
     .slice(0, max);
+
+const EDITOR_FIELDS: Array<{ key: ListKey; title: string; hint: string; placeholder: string }> = [
+  { key: "who_for", title: "เหมาะกับใคร", hint: "ทุกหมวด", placeholder: "นักวาดภาพประกอบที่สนใจงานสีน้ำ" },
+  { key: "takeaways", title: "จะได้อะไรกลับไป", hint: "ทุกหมวด", placeholder: "เห็นเทคนิคภาพพิมพ์ 5 แบบในที่เดียว" },
+  { key: "know_before", title: "ก่อนไปควรรู้", hint: "ทุกหมวด", placeholder: "ปิดวันจันทร์ · ใกล้ MRT สามยอด" },
+  { key: "steps", title: "ขั้นตอน (เรียงลำดับ)", hint: "สมัคร / จอง / ลงทะเบียน / ซื้อบัตร", placeholder: "กรอกใบสมัคร\nรวมเอกสารเป็น PDF ไฟล์เดียว" },
+  { key: "eligibility", title: "ใครสมัครได้", hint: "Open call", placeholder: "ทำงานมาแล้วอย่างน้อย 4 ปี" },
+  { key: "benefits", title: "รางวัล / สิ่งที่ได้", hint: "Open call", placeholder: "ทุนผลิตงาน 70,000 บาท" },
+  { key: "bring", title: "สิ่งที่ต้องเตรียม", hint: "Workshop", placeholder: "ผ้ากันเปื้อน" },
+  { key: "speakers", title: "วิทยากร", hint: "Talk & Forum", placeholder: "ชื่อ — ตำแหน่ง / สังกัด" },
+  { key: "schedule", title: "กำหนดการ / รอบ", hint: "Talk · Workshop · Art fair", placeholder: "16:00–18:00 เวิร์กช็อป" },
+  { key: "highlights", title: "ไฮไลต์", hint: "Art fair", placeholder: "บูธจากแกลเลอรี 40 แห่ง" },
+];
+
+type LinkRow = { label: string; url: string; kind: EventLinkKind };
 
 /** Admin editor for "สรุปโดย SAMECOR": one item per line; saved on its own, not with the event form. */
 export function EventInsightsEditor({ eventId }: { eventId: string }) {
   const { data: saved, isLoading } = useEventInsights(eventId);
   const setInsights = useSetEventInsights();
-  const [text, setText] = useState<Record<(typeof COLUMNS)[number]["key"], string> | null>(null);
+  const [text, setText] = useState<Record<ListKey, string> | null>(null);
   const [cats, setCats] = useState<string[]>([]);
+  const [capacity, setCapacity] = useState("");
+  const [deadline, setDeadline] = useState("");
+  const [links, setLinks] = useState<LinkRow[]>([]);
 
   useEffect(() => {
     if (isLoading) return;
-    setText({
-      who_for: (saved?.who_for ?? []).join("\n"),
-      takeaways: (saved?.takeaways ?? []).join("\n"),
-      know_before: (saved?.know_before ?? []).join("\n"),
-    });
+    setText(
+      Object.fromEntries(EDITOR_FIELDS.map((f) => [f.key, (saved?.[f.key] ?? []).join("\n")])) as Record<ListKey, string>,
+    );
     setCats(saved?.related_categories ?? []);
+    setCapacity(saved?.capacity ?? "");
+    setDeadline(saved?.deadline ?? "");
+    setLinks(saved?.links ?? []);
   }, [saved, isLoading]);
 
   if (!text) return null;
   const toggleCat = (c: string) =>
     setCats((cur) => (cur.includes(c) ? cur.filter((x) => x !== c) : cur.length >= 4 ? cur : [...cur, c]));
+  const badLinks = links.filter((l) => (l.url.trim() || l.label.trim()) && (!l.label.trim() || !isSafeEventLink(l.url.trim())));
+  const setLink = (i: number, patch: Partial<LinkRow>) => setLinks((cur) => cur.map((l, j) => (j === i ? { ...l, ...patch } : l)));
+
   const onSave = () =>
     setInsights.mutate({
       id: eventId,
       insights: {
-        who_for: linesOf(text.who_for, 5),
-        takeaways: linesOf(text.takeaways, 4),
-        know_before: linesOf(text.know_before, 5),
+        ...(Object.fromEntries(
+          EDITOR_FIELDS.map((f) => [f.key, linesOf(text[f.key], EVENT_INSIGHT_LISTS[f.key])]),
+        ) as Record<ListKey, string[]>),
         related_categories: cats,
+        capacity: capacity.trim() || null,
+        deadline: deadline || null,
+        links: links
+          .map((l) => ({ ...l, label: l.label.trim(), url: l.url.trim() }))
+          .filter((l) => l.label && isSafeEventLink(l.url))
+          .slice(0, 6),
       },
     });
 
@@ -129,26 +348,89 @@ export function EventInsightsEditor({ eventId }: { eventId: string }) {
       <div>
         <h2 className="font-display text-xl font-semibold text-foreground">สรุปโดย SAMECOR</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          บรรทัดละ 1 ข้อ เขียนจากข้อมูลของผู้จัดเท่านั้น · ช่องไหนว่าง หน้าเว็บจะไม่แสดงหัวข้อนั้น
+          บรรทัดละ 1 ข้อ เขียนจากข้อมูลของผู้จัดเท่านั้น · ช่องไหนว่าง หน้าเว็บจะไม่แสดงหัวข้อนั้น · หัวข้อบนหน้างานเปลี่ยนตามหมวดของงาน
         </p>
       </div>
       <div className="grid gap-4 md:grid-cols-3">
-        {COLUMNS.map(({ key, title }) => (
+        {EDITOR_FIELDS.map(({ key, title, hint, placeholder }) => (
           <div key={key}>
             <label htmlFor={`ins-${key}`} className="text-sm font-medium text-foreground">
-              {title}
+              {title} <span className="text-xs font-normal text-muted-foreground">· {hint}</span>
             </label>
             <Textarea
               id={`ins-${key}`}
-              rows={6}
+              rows={key === "steps" ? 7 : 5}
               className="mt-1.5"
               value={text[key]}
               onChange={(e) => setText({ ...text, [key]: e.target.value })}
-              placeholder={key === "who_for" ? "นักวาดภาพประกอบที่สนใจงานสีน้ำ" : key === "takeaways" ? "เห็นเทคนิคภาพพิมพ์ 5 แบบในที่เดียว" : "ปิดวันจันทร์ · ใกล้ MRT สามยอด"}
+              placeholder={placeholder}
             />
           </div>
         ))}
+        <div className="space-y-3">
+          <div>
+            <label htmlFor="ins-capacity" className="text-sm font-medium text-foreground">
+              จำนวนที่รับ <span className="text-xs font-normal text-muted-foreground">· Workshop</span>
+            </label>
+            <Input id="ins-capacity" className="mt-1.5" maxLength={80} value={capacity} placeholder="รับ 12 คน" onChange={(e) => setCapacity(e.target.value)} />
+          </div>
+          <div>
+            <label htmlFor="ins-deadline" className="text-sm font-medium text-foreground">
+              วันปิดรับ <span className="text-xs font-normal text-muted-foreground">· ถ้าไม่ตรงกับวันจบ</span>
+            </label>
+            <Input id="ins-deadline" type="date" className="mt-1.5" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
+          </div>
+        </div>
       </div>
+
+      <fieldset className="space-y-2">
+        <legend className="text-sm font-medium text-foreground">ปุ่มเอกสาร / ลิงก์ (สูงสุด 6)</legend>
+        <p className="text-xs text-muted-foreground">
+          ใช้เฉพาะลิงก์จากหน้าของผู้จัด · https:// เท่านั้น ห้ามลิงก์ย่อ · ชื่อปุ่มบอกให้ชัดว่าเปิดอะไร เช่น “ใบสมัคร PAP 2027 (.docx)”
+        </p>
+        {links.map((l, i) => (
+          <div key={i} className="grid gap-2 sm:grid-cols-[9rem_minmax(0,1fr)_minmax(0,1.3fr)_auto]">
+            <select
+              aria-label="ประเภทลิงก์"
+              value={l.kind}
+              onChange={(e) => setLink(i, { kind: e.target.value as EventLinkKind })}
+              className="h-10 rounded-md border border-input bg-background px-2 text-sm"
+            >
+              {(Object.entries(EVENT_LINK_KINDS) as [EventLinkKind, string][]).map(([k, label]) => (
+                <option key={k} value={k}>
+                  {label}
+                </option>
+              ))}
+            </select>
+            <Input aria-label="ชื่อปุ่ม" maxLength={100} value={l.label} placeholder="ชื่อเอกสาร / หน้า" onChange={(e) => setLink(i, { label: e.target.value })} />
+            <Input
+              aria-label="ลิงก์"
+              value={l.url}
+              placeholder="https://"
+              aria-invalid={!!l.url.trim() && !isSafeEventLink(l.url.trim())}
+              onChange={(e) => setLink(i, { url: e.target.value })}
+            />
+            <Button type="button" size="icon" variant="ghost" aria-label="ลบลิงก์" onClick={() => setLinks((cur) => cur.filter((_, j) => j !== i))}>
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        ))}
+        {badLinks.length ? (
+          <p className="text-xs text-destructive">ลิงก์ที่ไม่มีชื่อปุ่ม ไม่ใช่ https:// หรือเป็นลิงก์ย่อ จะไม่ถูกบันทึก</p>
+        ) : null}
+        {links.length < 6 ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="rounded-full"
+            onClick={() => setLinks((cur) => [...cur, { kind: "download", label: "", url: "" }])}
+          >
+            <Plus className="h-4 w-4" aria-hidden /> เพิ่มปุ่ม
+          </Button>
+        ) : null}
+      </fieldset>
+
       <fieldset>
         <legend className="text-sm font-medium text-foreground">หมวดผลงานที่เกี่ยวข้อง (สูงสุด 4)</legend>
         <p className="text-xs text-muted-foreground">ใช้แสดง “Works Like This on SAMECOR” ท้ายหน้างาน</p>
