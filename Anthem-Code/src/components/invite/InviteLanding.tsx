@@ -1,6 +1,5 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, ChevronDown, Layers, Search, ShieldCheck, User } from "lucide-react";
+import { ArrowRight, Layers, Search, ShieldCheck, User } from "lucide-react";
 import { BrandLogo } from "@/components/brand/BrandLogo";
 import { Button } from "@/components/ui/button";
 import { publicInviteApi, rememberSelfSignup, type PublicInvite } from "@/lib/creatorInvite";
@@ -24,7 +23,6 @@ const SAMPLE = {
 /** Personal invitation landing: who it is for, who sends it, the two paths, what happens next, a preview. */
 export default function InviteLanding({ token, t, invite }: { token: string; t: InviteCopy; invite: PublicInvite }) {
   const navigate = useNavigate();
-  const [nextOpen, setNextOpen] = useState(false);
   const open = () => void publicInviteApi.open(token).catch(() => undefined);
   const steps: [string, string][] = [
     [t.next1, t.next1sub],
@@ -104,34 +102,25 @@ export default function InviteLanding({ token, t, invite }: { token: string; t: 
           </section>
         </div>
 
-        {/* What happens next — inline on desktop, collapsible on phones */}
-        <div className="mt-12 border-t border-border pt-6">
-          <button
-            type="button"
-            className="flex w-full items-center justify-between rounded-2xl bg-card/80 px-5 py-4 text-left md:hidden"
-            aria-expanded={nextOpen}
-            onClick={() => setNextOpen((v) => !v)}
-          >
-            <span className="text-base font-semibold text-foreground">{t.nextTitle}</span>
-            <ChevronDown className={cn("h-5 w-5 transition-transform", nextOpen && "rotate-180")} aria-hidden />
-          </button>
-          <div className={cn("mt-4 md:mt-0 md:flex md:items-center md:gap-6", nextOpen ? "block" : "hidden md:flex")}>
-            <h2 className="hidden shrink-0 text-lg font-semibold text-foreground md:block md:border-r md:border-border md:pr-6">{t.nextTitle}</h2>
-            <ol className="flex flex-col gap-4 md:flex-1 md:flex-row md:items-center md:gap-3">
-              {steps.map(([title, sub], i) => (
-                <li key={title} className="flex items-center gap-3 md:flex-1">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-secondary font-mono text-xs font-semibold text-foreground">
-                    0{i + 1}
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block text-sm font-semibold text-foreground">{title}</span>
-                    <span className="block text-xs text-muted-foreground">{sub}</span>
-                  </span>
-                  {i < steps.length - 1 ? <span aria-hidden className="ml-auto hidden h-px w-6 shrink-0 bg-border lg:block" /> : null}
-                </li>
-              ))}
-            </ol>
-          </div>
+        {/* What happens next — a row on desktop, a vertical timeline on phones */}
+        <div className="mt-12 border-t border-border pt-6 md:flex md:items-center md:gap-6">
+          <h2 className="shrink-0 text-lg font-semibold text-foreground md:border-r md:border-border md:pr-6">{t.nextTitle}</h2>
+          <ol className="relative mt-5 flex flex-col gap-5 md:mt-0 md:flex-1 md:flex-row md:items-center md:gap-3">
+            {/* vertical rail behind the numbers (phones) */}
+            <span aria-hidden className="absolute bottom-4 left-[17px] top-4 w-px bg-border md:hidden" />
+            {steps.map(([title, sub], i) => (
+              <li key={title} className="relative flex items-center gap-3 md:flex-1">
+                <span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-secondary font-mono text-xs font-semibold text-foreground">
+                  0{i + 1}
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold text-foreground">{title}</span>
+                  <span className="block text-xs text-muted-foreground">{sub}</span>
+                </span>
+                {i < steps.length - 1 ? <span aria-hidden className="ml-auto hidden h-px w-6 shrink-0 bg-border lg:block" /> : null}
+              </li>
+            ))}
+          </ol>
         </div>
 
         {/* Live preview teaser */}
