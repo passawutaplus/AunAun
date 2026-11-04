@@ -7,6 +7,8 @@ import type { ProjectCategory } from "@/data/projectTypes";
 import { DEV_INVITE_TOKEN, devInviteApi } from "@/lib/creatorInviteDemo";
 
 export type InviteLang = "th" | "en";
+/** Languages the invitee pages can show (emails stay TH/EN). */
+export type PageLang = InviteLang | "zh";
 export type ProjectSlot = "p1" | "p2";
 export type MediaSlot = "avatar" | ProjectSlot;
 

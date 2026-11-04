@@ -69,10 +69,13 @@ describe("creator invite form rules", () => {
 });
 
 describe("creator invite copy + admin helpers", () => {
-  it("has Thai and English copy for every key", () => {
+  it("has Thai, English and Chinese copy for every key", () => {
     const th = inviteCopy("th");
     const en = inviteCopy("en");
+    const zh = inviteCopy("zh");
     expect(Object.keys(en).sort()).toEqual(Object.keys(th).sort());
+    expect(Object.keys(zh).sort()).toEqual(Object.keys(th).sort());
+    expect(zh.pathA).toContain("SAMECOR");
     expect(th.pathA).toContain("SAMECOR");
     expect(en.pvBadge).toMatch(/not published/i);
   });

@@ -1,41 +1,65 @@
 import type { ReactNode } from "react";
-import { ArrowUpRight } from "lucide-react";
-import type { InviteLang } from "@/lib/creatorInvite";
-import type { InviteCopy } from "@/lib/creatorInviteCopy";
+import { ArrowUpRight, Check, ChevronDown, Globe } from "lucide-react";
+import { BrandLogo } from "@/components/brand/BrandLogo";
+import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import type { PageLang } from "@/lib/creatorInvite";
+import { PAGE_LANGS, type InviteCopy } from "@/lib/creatorInviteCopy";
 
-export function LangToggle({ lang, onChange }: { lang: InviteLang; onChange: (l: InviteLang) => void }) {
+export function LangMenu({ lang, onChange, label }: { lang: PageLang; onChange: (l: PageLang) => void; label: string }) {
+  const current = PAGE_LANGS.find((l) => l.id === lang) ?? PAGE_LANGS[0];
   return (
-    <div className="inline-flex rounded-full border border-border p-0.5 text-xs" role="group" aria-label="Language / ภาษา">
-      {(["th", "en"] as const).map((l) => (
-        <button
-          key={l}
-          type="button"
-          lang={l}
-          aria-pressed={lang === l}
-          onClick={() => onChange(l)}
-          className={
-            lang === l
-              ? "rounded-full bg-foreground px-3 py-1 font-semibold text-background"
-              : "rounded-full px-3 py-1 font-medium text-muted-foreground hover:text-foreground"
-          }
-        >
-          {l === "th" ? "ไทย" : "EN"}
-        </button>
-      ))}
-    </div>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="sm" className="h-9 gap-1.5 rounded-full px-3" aria-label={`${label}: ${current.label}`}>
+          <Globe className="h-4 w-4" aria-hidden />
+          <span className="text-xs font-semibold">{current.short}</span>
+          <ChevronDown className="h-3.5 w-3.5 opacity-70" aria-hidden />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="min-w-[9rem]">
+        {PAGE_LANGS.map((l) => (
+          <DropdownMenuItem key={l.id} lang={l.id} onSelect={() => onChange(l.id)} className="justify-between">
+            {l.label}
+            {l.id === lang ? <Check className="h-4 w-4" aria-hidden /> : null}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
-/** Page frame for the private invitation pages (no index, no app chrome beyond the global nav). */
-export function InviteShell({ langToggle, children }: { langToggle: ReactNode; children: ReactNode }) {
+/** Page frame for the private invitation pages: logo, "Get in touch" (→ /learn, new tab), language menu. */
+export function InviteShell({
+  lang,
+  onLang,
+  t,
+  children,
+}: {
+  lang: PageLang;
+  onLang: (l: PageLang) => void;
+  t: InviteCopy;
+  children: ReactNode;
+}) {
   return (
-    <main id="main-content" className="min-h-[calc(100vh-4rem)] bg-background pb-28">
-      <div className="mx-auto flex max-w-5xl items-center justify-between px-4 pt-4">
-        <span className="font-display text-sm font-semibold tracking-tight text-foreground">
-          SAMECOR<span className="text-brand">.</span>
-        </span>
-        {langToggle}
-      </div>
+    <main id="main-content" lang={lang} className="min-h-[calc(100vh-4rem)] bg-background pb-28">
+      <header className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 pt-5 sm:px-6">
+        <a href="/" target="_blank" rel="noopener" aria-label="SAMECOR">
+          <BrandLogo tone="theme" className="shrink-0" />
+        </a>
+        <nav className="flex shrink-0 items-center gap-1 sm:gap-2" aria-label={t.getInTouch}>
+          {/* New tab so the invitation (and any form progress) stays open behind it */}
+          <a
+            href="/learn"
+            target="_blank"
+            rel="noopener"
+            className="inline-flex h-9 items-center gap-1 whitespace-nowrap rounded-full px-2 text-xs font-medium text-foreground hover:bg-secondary sm:px-3 sm:text-sm"
+          >
+            {t.getInTouch} <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
+          </a>
+          <LangMenu lang={lang} onChange={onLang} label={t.language} />
+        </nav>
+      </header>
       {children}
     </main>
   );

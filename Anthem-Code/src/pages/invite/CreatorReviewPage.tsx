@@ -2,17 +2,17 @@ import { useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { enUS, th as thLocale } from "date-fns/locale";
+import { enUS, th as thLocale, zhCN } from "date-fns/locale";
 import { toast } from "sonner";
 import { Check, Loader2 } from "lucide-react";
 import SeoHead from "@/components/SeoHead";
 import InviteProfilePreview from "@/components/invite/InviteProfilePreview";
-import { InviteShell, InviteStateCard, LangToggle } from "@/components/invite/InviteShell";
+import { InviteShell, InviteStateCard } from "@/components/invite/InviteShell";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { InviteApiError, isTokenShape, normalizeSubmission, publicInviteApi, type InviteLang } from "@/lib/creatorInvite";
+import { InviteApiError, isTokenShape, normalizeSubmission, publicInviteApi, type PageLang } from "@/lib/creatorInvite";
 import { inviteCopy } from "@/lib/creatorInviteCopy";
 
 type Decision = "approve" | "changes" | "decline";
@@ -28,8 +28,8 @@ export default function CreatorReviewPage() {
     retry: (n, e) => !(e instanceof InviteApiError && [404, 410, 429].includes(e.status)) && n < 2,
     refetchOnWindowFocus: false,
   });
-  const [lang, setLang] = useState<InviteLang | null>(null);
-  const l: InviteLang = lang ?? q.data?.invite.language ?? "th";
+  const [lang, setLang] = useState<PageLang | null>(null);
+  const l: PageLang = lang ?? q.data?.invite.language ?? "th";
   const t = inviteCopy(l);
   const [dialog, setDialog] = useState<"changes" | "decline" | null>(null);
   const [note, setNote] = useState("");
@@ -40,12 +40,11 @@ export default function CreatorReviewPage() {
   const profile = useMemo(() => normalizeSubmission(q.data?.profile), [q.data]);
 
   const seo = <SeoHead title="Review your profile" path="/invite" noindex />;
-  const toggle = <LangToggle lang={l} onChange={setLang} />;
 
   if (!validToken || q.error) {
     const expired = q.error instanceof InviteApiError && q.error.status === 410;
     return (
-      <InviteShell langToggle={toggle}>
+      <InviteShell lang={l} onLang={setLang} t={t}>
         {seo}
         <InviteStateCard title={expired ? t.expiredTitle : t.notFoundTitle} body={t.expiredBody} />
       </InviteShell>
@@ -53,7 +52,7 @@ export default function CreatorReviewPage() {
   }
   if (!q.data) {
     return (
-      <InviteShell langToggle={toggle}>
+      <InviteShell lang={l} onLang={setLang} t={t}>
         {seo}
         <div className="flex min-h-[50vh] items-center justify-center">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" aria-label="Loading" />
@@ -84,7 +83,7 @@ export default function CreatorReviewPage() {
   if (done || !decidable) {
     const msg = done === "approve" ? t.doneApprove : done === "changes" ? t.doneChanges : done === "decline" ? t.doneDecline : "";
     return (
-      <InviteShell langToggle={toggle}>
+      <InviteShell lang={l} onLang={setLang} t={t}>
         {seo}
         <InviteStateCard title={done ? (done === "decline" ? t.statusTitle.declined : done === "approve" ? t.statusTitle.approved : t.statusTitle.needs_changes) : t.statusTitle[status] ?? t.expiredTitle} body={msg} explore={t} />
       </InviteShell>
@@ -93,11 +92,11 @@ export default function CreatorReviewPage() {
 
   const images = profile.projects.reduce((a, p) => a + p.media.filter((m) => media.get(m)?.url).length, 0);
   const expires = q.data.invite.review_expires_at
-    ? format(new Date(q.data.invite.review_expires_at), "d MMM yyyy", { locale: l === "en" ? enUS : thLocale })
+    ? format(new Date(q.data.invite.review_expires_at), "d MMM yyyy", { locale: l === "en" ? enUS : l === "zh" ? zhCN : thLocale })
     : null;
 
   return (
-    <InviteShell langToggle={toggle}>
+    <InviteShell lang={l} onLang={setLang} t={t}>
       {seo}
       <div className="mx-auto max-w-3xl px-4 py-8 sm:py-12">
         <span className="inline-flex rounded-full bg-brand/15 px-3 py-1 text-xs font-semibold text-brand">

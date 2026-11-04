@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { ArrowLeft, ArrowRight, ArrowUpRight, Check, ChevronLeft, ChevronRight, ImagePlus, Loader2, Mail, X } from "lucide-react";
 import SeoHead from "@/components/SeoHead";
 import InviteProfilePreview from "@/components/invite/InviteProfilePreview";
-import { InviteShell, InviteStateCard, LangToggle } from "@/components/invite/InviteShell";
+import { InviteShell, InviteStateCard } from "@/components/invite/InviteShell";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -27,7 +27,7 @@ import {
   validateQuick,
   validateStep,
   type FieldErrors,
-  type InviteLang,
+  type PageLang,
   type InviteMedia,
   type InviteSubmission,
   type MediaSlot,
@@ -58,17 +58,16 @@ export default function CreatorInvitePage() {
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
-  const [lang, setLang] = useState<InviteLang | null>(null);
-  const effectiveLang: InviteLang = lang ?? q.data?.invite.language ?? "th";
+  const [lang, setLang] = useState<PageLang | null>(null);
+  const effectiveLang: PageLang = lang ?? q.data?.invite.language ?? "th";
   const t = inviteCopy(effectiveLang);
   const [submitted, setSubmitted] = useState(false);
 
   const seo = <SeoHead title="Creator invitation" path="/invite" noindex />;
-  const toggle = <LangToggle lang={effectiveLang} onChange={setLang} />;
 
   if (!validToken || (q.error instanceof InviteApiError && q.error.status === 404)) {
     return (
-      <InviteShell langToggle={toggle}>
+      <InviteShell lang={effectiveLang} onLang={setLang} t={t}>
         {seo}
         <InviteStateCard title={t.notFoundTitle} body={t.expiredBody} />
       </InviteShell>
@@ -77,7 +76,7 @@ export default function CreatorInvitePage() {
   if (q.error) {
     const expired = q.error instanceof InviteApiError && q.error.status === 410;
     return (
-      <InviteShell langToggle={toggle}>
+      <InviteShell lang={effectiveLang} onLang={setLang} t={t}>
         {seo}
         <InviteStateCard title={expired ? t.expiredTitle : t.err.generic} body={expired ? t.expiredBody : ""} />
       </InviteShell>
@@ -85,7 +84,7 @@ export default function CreatorInvitePage() {
   }
   if (!q.data) {
     return (
-      <InviteShell langToggle={toggle}>
+      <InviteShell lang={effectiveLang} onLang={setLang} t={t}>
         {seo}
         <div className="flex min-h-[50vh] items-center justify-center">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" aria-label="Loading" />
@@ -116,7 +115,7 @@ export default function CreatorInvitePage() {
   else body = <Landing token={token} t={t} invite={invite} />;
 
   return (
-    <InviteShell langToggle={toggle}>
+    <InviteShell lang={effectiveLang} onLang={setLang} t={t}>
       {seo}
       {body}
     </InviteShell>
@@ -127,36 +126,44 @@ export default function CreatorInvitePage() {
 function Landing({ token, t, invite }: { token: string; t: InviteCopy; invite: PublicInvite }) {
   const navigate = useNavigate();
   const open = () => void publicInviteApi.open(token).catch(() => undefined);
+  const pathCard =
+    "group flex flex-col rounded-2xl bg-card p-6 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:p-7";
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10 sm:py-16">
-      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand">{t.eyebrow}</p>
-      <p className="mt-6 text-sm text-muted-foreground">{t.invFor}</p>
-      <h1 className="mt-1 break-words font-display text-4xl font-semibold leading-[1.05] tracking-tight text-foreground sm:text-6xl">
-        {invite.display_name}
-      </h1>
-      <p className="mt-5 max-w-2xl text-base text-foreground/85 sm:text-lg">{t.join}</p>
-      <p className="mt-3 text-sm italic text-muted-foreground">“{t.promise}”</p>
+    <div className="mx-auto grid max-w-6xl gap-10 px-4 py-10 sm:px-6 sm:py-14 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] md:items-center md:gap-10 lg:gap-16 lg:py-20">
+      <section>
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand">{t.eyebrow}</p>
+        <p className="mt-6 text-sm text-muted-foreground">{t.invFor}</p>
+        <h1 className="mt-1 break-words font-display text-5xl font-semibold leading-[1.02] tracking-tight text-foreground sm:text-6xl lg:text-7xl">
+          {invite.display_name}
+        </h1>
+        <p className="mt-6 max-w-xl text-base text-foreground/85 sm:text-lg">{t.join}</p>
+        <p className="mt-3 text-sm italic text-muted-foreground">“{t.promise}”</p>
 
-      <div className="mt-8 flex max-w-2xl gap-3 rounded-xl border border-border bg-card p-4">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary text-sm font-semibold">อั๋น</span>
-        <div className="min-w-0 text-sm">
-          <p className="text-muted-foreground">
-            {t.from} <span className="text-foreground">{t.founder}</span>
-          </p>
-          {invite.personal_note ? <p className="mt-1.5 whitespace-pre-line text-foreground/90">“{invite.personal_note}”</p> : null}
-        </div>
-      </div>
+        <figure className="mt-10 flex max-w-xl gap-4">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-secondary text-sm font-semibold" aria-hidden>
+            อั๋น
+          </span>
+          <div className="min-w-0 text-sm">
+            {invite.personal_note ? (
+              <blockquote className="whitespace-pre-line text-base text-foreground">“{invite.personal_note}”</blockquote>
+            ) : null}
+            <figcaption className={invite.personal_note ? "mt-2 text-muted-foreground" : "text-muted-foreground"}>
+              {t.from} <span className="font-medium text-foreground">{t.founder}</span>
+            </figcaption>
+          </div>
+        </figure>
+      </section>
 
-      <div className="mt-8 grid gap-4 md:grid-cols-2">
+      <section className="flex flex-col gap-4" aria-label={t.pathA}>
         <button
           type="button"
           onClick={() => {
             open();
             navigate(`/invite/creator/${token}/form`);
           }}
-          className="group rounded-2xl border-2 border-brand/70 bg-card p-6 text-left transition-colors hover:border-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className={`${pathCard} border-2 border-brand/70 hover:border-brand`}
         >
-          <span className="rounded-full bg-brand/15 px-2.5 py-0.5 text-[11px] font-semibold text-brand">{t.recommended}</span>
+          <span className="w-fit rounded-full bg-brand/15 px-2.5 py-0.5 text-[11px] font-semibold text-brand">{t.recommended}</span>
           <h2 className="mt-3 text-xl font-semibold text-foreground">{t.pathA}</h2>
           <p className="mt-2 text-sm text-muted-foreground">{t.pathAsub}</p>
           <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-foreground">
@@ -170,22 +177,22 @@ function Landing({ token, t, invite }: { token: string; t: InviteCopy; invite: P
             rememberSelfSignup(token);
             navigate("/auth?tab=signup");
           }}
-          className="group rounded-2xl border border-border bg-card p-6 text-left transition-colors hover:border-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className={`${pathCard} border border-border hover:border-foreground/40`}
         >
-          <span className="rounded-full bg-secondary px-2.5 py-0.5 text-[11px] font-semibold text-muted-foreground">{t.diy}</span>
+          <span className="w-fit rounded-full bg-secondary px-2.5 py-0.5 text-[11px] font-semibold text-muted-foreground">{t.diy}</span>
           <h2 className="mt-3 text-xl font-semibold text-foreground">{t.pathB}</h2>
           <p className="mt-2 text-sm text-muted-foreground">{t.pathBsub}</p>
           <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-foreground">
             {t.pathB} <ArrowUpRight className="h-4 w-4" aria-hidden />
           </span>
         </button>
-      </div>
-      <p className="mt-6 text-xs text-muted-foreground">
-        {t.free} ·{" "}
-        <a href="/" target="_blank" rel="noopener" className="underline underline-offset-2 hover:text-foreground" title={t.exploreHint}>
-          {t.explore} ↗
-        </a>
-      </p>
+        <p className="px-1 text-xs leading-relaxed text-muted-foreground">
+          {t.free} ·{" "}
+          <a href="/" target="_blank" rel="noopener" className="underline underline-offset-2 hover:text-foreground" title={t.exploreHint}>
+            {t.explore} ↗
+          </a>
+        </p>
+      </section>
     </div>
   );
 }
