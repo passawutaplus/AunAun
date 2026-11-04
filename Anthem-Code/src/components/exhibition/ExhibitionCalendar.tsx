@@ -432,8 +432,8 @@ export function ExhibitionCalendar({ events, className }: Props) {
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[calc(100dvh-1.5rem)] max-w-5xl gap-0 overflow-y-auto overscroll-contain rounded-2xl p-0 max-sm:w-[calc(100vw-1.5rem)]">
-          <DialogHeader className="px-6 pb-4 pt-6 text-left">
-            <DialogTitle className="text-3xl font-semibold tracking-tight">
+          <DialogHeader className="px-4 pb-3 pt-5 text-left sm:px-6 sm:pb-4 sm:pt-6">
+            <DialogTitle className="text-2xl font-semibold tracking-tight sm:text-3xl">
               Event Calendar
             </DialogTitle>
             <DialogDescription>
@@ -441,9 +441,9 @@ export function ExhibitionCalendar({ events, className }: Props) {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid gap-6 px-6 pb-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <div className="grid gap-6 px-4 pb-5 sm:px-6 sm:pb-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
             {/* Month grid with its own nav row: ‹ Month › … Today */}
-            <div>
+            <div className="min-w-0">
               <div className="mb-2 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <button
@@ -519,11 +519,15 @@ export function ExhibitionCalendar({ events, className }: Props) {
                 classNames={{
                   caption: "hidden",
                   nav: "hidden",
-                  table: "w-full border-collapse",
-                  head_cell:
-                    "w-12 pb-1 text-sm font-medium text-muted-foreground",
-                  cell: "h-12 w-12 p-0 text-center text-base relative",
-                  day: "relative h-12 w-12 rounded-lg p-0 text-base font-medium transition-colors hover:bg-muted aria-selected:opacity-100",
+                  // Fluid columns: seven equal cells that shrink with the dialog on narrow phones.
+                  months: "w-full",
+                  month: "w-full space-y-2",
+                  table: "w-full table-fixed border-collapse",
+                  head_row: "",
+                  row: "",
+                  head_cell: "pb-1 text-xs font-medium text-muted-foreground sm:text-sm",
+                  cell: "h-10 p-0 text-center text-sm relative sm:h-12 sm:text-base",
+                  day: "relative mx-auto flex h-10 w-full max-w-12 items-center justify-center rounded-lg p-0 text-sm font-medium transition-colors hover:bg-muted aria-selected:opacity-100 sm:h-12 sm:text-base",
                   day_selected:
                     "bg-brand text-neutral-950 hover:bg-brand after:bg-neutral-950",
                   day_today: "ring-1 ring-brand/60",
@@ -536,7 +540,7 @@ export function ExhibitionCalendar({ events, className }: Props) {
             <div className="min-w-0 md:max-h-[30rem] md:overflow-y-auto md:pr-1">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-2xl font-semibold text-foreground">
+                  <p className="whitespace-nowrap text-lg font-semibold text-foreground sm:text-2xl">
                     {formatDate(
                       selected,
                       {
