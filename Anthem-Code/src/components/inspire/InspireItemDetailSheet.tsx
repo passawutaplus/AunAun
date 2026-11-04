@@ -45,6 +45,7 @@ import {
 import { InspireMoveToBoardButton } from "@/components/inspire/InspireMoveToBoardButton";
 import { cn } from "@/lib/utils";
 
+import { copyText } from "@/lib/copyText";
 type Props = {
   item: InspireRecentItem | null;
   open: boolean;
@@ -66,7 +67,7 @@ function formatSavedAt(iso: string | undefined): string {
 
 async function copyValue(label: string, value: string) {
   try {
-    await navigator.clipboard.writeText(value);
+    await copyText(value);
     toast.success(`คัดลอก ${label}`);
   } catch {
     toast.error("คัดลอกไม่สำเร็จ");

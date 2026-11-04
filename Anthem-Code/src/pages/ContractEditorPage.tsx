@@ -31,6 +31,7 @@ import {
 } from "@/lib/licenses";
 import { userFacingError } from "@/lib/userFacingError";
 
+import { copyText } from "@/lib/copyText";
 type ContractType = "project" | "fulltime";
 
 interface FormState {
@@ -208,7 +209,7 @@ const ContractEditorInner = () => {
   });
 
   const copyDraft = async () => {
-    await navigator.clipboard.writeText(draft);
+    await copyText(draft);
     toast.success("คัดลอกแล้ว");
   };
 

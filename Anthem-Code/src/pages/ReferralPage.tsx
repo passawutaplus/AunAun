@@ -11,6 +11,7 @@ import SeoHead from "@/components/SeoHead";
 import { isAplus1PxEnabled } from "@/lib/aplus1Launch";
 import LaunchUnavailablePage from "@/pages/LaunchUnavailablePage";
 
+import { copyText } from "@/lib/copyText";
 export default function ReferralPage() {
   const pxOn = isAplus1PxEnabled();
   const navigate = useNavigate();
@@ -22,7 +23,7 @@ export default function ReferralPage() {
 
   const copyLink = async () => {
     try {
-      await navigator.clipboard.writeText(referralLink);
+      await copyText(referralLink);
       toast.success("คัดลอกลิงก์ชวนเพื่อนแล้ว");
     } catch {
       toast.error("คัดลอกไม่สำเร็จ กรุณาเลือกและคัดลอกลิงก์ด้วยตนเอง");

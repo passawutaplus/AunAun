@@ -56,6 +56,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+import { copyText } from "@/lib/copyText";
 type Partner = {
   name: string;
   avatarUrl?: string | null;
@@ -414,7 +415,7 @@ export function HireOrderDetailContent({
 
   const copyCode = async () => {
     try {
-      await navigator.clipboard.writeText(orderCode);
+      await copyText(orderCode);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {

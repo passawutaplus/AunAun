@@ -22,6 +22,7 @@ import { useSubmitFeedback } from "@/hooks/useFeedback";
 import MascotMood, { type MascotMoodValue } from "@/components/beta/MascotMood";
 import { useFeedbackComposer } from "@/stores/feedbackComposerStore";
 
+import { copyText } from "@/lib/copyText";
 const SHOW_DELAY_MS = 4_000;
 
 const LEAD: Record<RatingMoment, string> = {
@@ -128,7 +129,7 @@ export default function RatingPrompt() {
         await navigator.share({ title: "SAMECOR", text, url });
         return;
       }
-      await navigator.clipboard.writeText(`${text} ${url}`);
+      await copyText(`${text} ${url}`);
       toast.success("คัดลอกลิงก์แล้ว — ส่งต่อให้เพื่อนได้เลย");
     } catch {
       /* user cancelled share */

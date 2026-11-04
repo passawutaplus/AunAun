@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { formatMemberCode } from "@/lib/memberCode";
 import { cn } from "@/lib/utils";
 
+import { copyText } from "@/lib/copyText";
 type Props = {
   userId: string;
   className?: string;
@@ -14,7 +15,7 @@ export function MemberCodeCopy({ userId, className, size = "xs" }: Props) {
   const textSize = size === "sm" ? "text-xs" : "text-[10px]";
 
   const copy = () => {
-    void navigator.clipboard.writeText(code).then(
+    void copyText(code).then(
       () => toast.success("คัดลอกรหัสสมาชิกแล้ว"),
       () => toast.error("คัดลอกไม่สำเร็จ"),
     );

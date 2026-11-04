@@ -9,6 +9,7 @@ import { toHexColor } from "@/lib/imagePalette";
 import { palettePercentages } from "@/lib/imageColorTools";
 import { cn } from "@/lib/utils";
 
+import { copyText as copyToClipboard } from "@/lib/copyText";
 type EyeDropperResult = { sRGBHex: string };
 type EyeDropperCtor = new () => { open: () => Promise<EyeDropperResult> };
 
@@ -30,7 +31,7 @@ type Props = {
 
 async function copyText(text: string, done: string) {
   try {
-    await navigator.clipboard.writeText(text);
+    await copyToClipboard(text);
     toast.success(done);
   } catch {
     toast.error("คัดลอกไม่สำเร็จ");

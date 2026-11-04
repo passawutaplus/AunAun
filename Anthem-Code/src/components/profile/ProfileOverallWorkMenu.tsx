@@ -38,6 +38,7 @@ import { mapWriteFlowError } from "@/lib/writeFlowErrors";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
+import { copyText } from "@/lib/copyText";
 type Props = {
   project: DBProject;
   allProjects: DBProject[];
@@ -89,7 +90,7 @@ export function ProfileOverallWorkMenu({ project, allProjects }: Props) {
 
   const handleCopyLink = async () => {
     try {
-      await navigator.clipboard.writeText(shareUrl);
+      await copyText(shareUrl);
       toast.success("คัดลอกลิงก์แล้ว");
     } catch {
       toast.error("คัดลอกไม่สำเร็จ");

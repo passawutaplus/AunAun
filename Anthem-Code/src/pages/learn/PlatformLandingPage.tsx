@@ -26,6 +26,7 @@ import {
 } from "@/lib/brandConfig";
 import { optimizedFeedImageUrl } from "@/lib/feedProjectCover";
 
+import { copyText } from "@/lib/copyText";
 const MARQUEE = ["Graphic", "Illustration", "UX/UI", "Motion", "Photo", "3D", "Branding", "Typography"];
 
 const ICONS = [
@@ -193,7 +194,7 @@ export default function PlatformLandingPage() {
   }, []);
 
   const copyEmail = () => {
-    void navigator.clipboard?.writeText(BRAND_SUPPORT_EMAIL).catch(() => {});
+    void copyText(BRAND_SUPPORT_EMAIL).catch(() => {});
     toast(t("mail"));
   };
 

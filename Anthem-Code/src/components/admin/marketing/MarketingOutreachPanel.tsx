@@ -14,6 +14,7 @@ import {
 import { isInternalLead } from "@/lib/marketing/compliance";
 import { MarketingCard } from "./MarketingShell";
 
+import { copyText } from "@/lib/copyText";
 export default function MarketingOutreachPanel() {
   const { activeBusiness, activeBusinessId } = useMarketingBusinesses();
   const { leads } = useMarketingLeads(activeBusinessId);
@@ -224,7 +225,7 @@ export default function MarketingOutreachPanel() {
             <button
               type="button"
               onClick={() => {
-                void navigator.clipboard.writeText(message);
+                void copyText(message);
                 toast.success("Copied draft");
               }}
               className="marketing-btn-primary inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm"
