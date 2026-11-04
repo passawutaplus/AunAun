@@ -1,10 +1,28 @@
 import type { ReactNode } from "react";
-import { ArrowUpRight, Check, ChevronDown, Globe } from "lucide-react";
+import { ArrowUpRight, Check, ChevronDown, Globe, Moon, Sun } from "lucide-react";
+import { useThemeFade } from "@/hooks/useThemeFade";
 import { BrandLogo } from "@/components/brand/BrandLogo";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { PageLang } from "@/lib/creatorInvite";
 import { PAGE_LANGS, type InviteCopy } from "@/lib/creatorInviteCopy";
+
+function ThemeToggle() {
+  const { isDark, mounted, toggleTheme } = useThemeFade();
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      className="h-9 w-9 rounded-full p-0"
+      aria-label={isDark ? "Light mode" : "Dark mode"}
+      title={isDark ? "Light mode" : "Dark mode"}
+      onClick={toggleTheme}
+    >
+      {mounted && !isDark ? <Moon className="h-4 w-4" aria-hidden /> : <Sun className="h-4 w-4" aria-hidden />}
+    </Button>
+  );
+}
 
 export function LangMenu({ lang, onChange, label }: { lang: PageLang; onChange: (l: PageLang) => void; label: string }) {
   const current = PAGE_LANGS.find((l) => l.id === lang) ?? PAGE_LANGS[0];
@@ -68,6 +86,7 @@ export function InviteShell({
             {t.getInTouch} <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
           </a>
           <LangMenu lang={lang} onChange={onLang} label={t.language} />
+          <ThemeToggle />
         </nav>
       </header>
       {children}
