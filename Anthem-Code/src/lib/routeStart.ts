@@ -81,13 +81,23 @@ export async function searchPlaces(q: string, signal?: AbortSignal): Promise<Pla
 export function currentPosition(): Promise<{ lat: number; lng: number }> {
   return new Promise((resolve, reject) => {
     if (!("geolocation" in navigator)) {
-      reject(new Error("อุปกรณ์นี้หาตำแหน่งไม่ได้"));
+      reject(new Error("อุปกรณ์นี้หาตำแหน่งไม่ได้ ลองค้นหาที่อยู่หรือแตะบนแผนที่แทน"));
+      return;
+    }
+    if (typeof window !== "undefined" && window.isSecureContext === false) {
+      reject(new Error("หาตำแหน่งได้เฉพาะหน้าเว็บ https ลองค้นหาที่อยู่หรือแตะบนแผนที่แทน"));
       return;
     }
     navigator.geolocation.getCurrentPosition(
       (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
       (err) =>
-        reject(new Error(err.code === err.PERMISSION_DENIED ? "ไม่ได้รับอนุญาตให้ใช้ตำแหน่ง" : "หาตำแหน่งไม่สำเร็จ ลองอีกครั้ง")),
+        reject(
+          new Error(
+            err.code === err.PERMISSION_DENIED
+              ? "ไม่ได้รับอนุญาตให้ใช้ตำแหน่ง เปิดสิทธิ์ตำแหน่งให้ samecor.com ในการตั้งค่าเบราว์เซอร์/แอป หรือค้นหาที่อยู่แทน"
+              : "หาตำแหน่งไม่สำเร็จ ลองอีกครั้ง",
+          ),
+        ),
       { enableHighAccuracy: false, timeout: 10_000, maximumAge: 60_000 },
     );
   });
