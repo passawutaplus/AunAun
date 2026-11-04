@@ -24,6 +24,7 @@ import { naturalFeedCoverUrl } from "@/lib/feedProjectCover";
 import { sortPortfolioProjects } from "@/lib/portfolioSort";
 import { ProfileOverallWorkMenu } from "@/components/profile/ProfileOverallWorkMenu";
 import { cn } from "@/lib/utils";
+import { useProjectOverlayState } from "@/lib/projectOverlay";
 
 const OVERALL_GRID_STORAGE_KEY = "aplus1.profile.overall.grid.density.v2";
 
@@ -78,6 +79,9 @@ function OverallWorkCard({
   const published = status === "Published";
   // Drafts and private works have no public page: the card opens the editor instead.
   const href = published ? `/showcase/${project.id}` : `/portfolio/${project.id}/edit`;
+  // Published works open as the overlay over the profile, like the feed.
+  const overlayState = useProjectOverlayState();
+  const linkState = published ? overlayState : undefined;
   const views = (project.views ?? 0).toLocaleString("th-TH");
   const likes = (project.likes ?? 0).toLocaleString("th-TH");
 
@@ -102,11 +106,11 @@ function OverallWorkCard({
   if (list) {
     return (
       <div className="group flex items-center gap-3 rounded-xl border border-border/60 bg-card/40 p-2">
-        <Link to={href} className="relative h-16 w-20 shrink-0 overflow-hidden rounded-lg bg-muted">
+        <Link to={href} state={linkState} className="relative h-16 w-20 shrink-0 overflow-hidden rounded-lg bg-muted">
           {cover ? <img src={cover} alt="" className="h-full w-full object-cover" loading="lazy" /> : null}
           <CardBadge pinNumber={pinNumber} status={status} />
         </Link>
-        <Link to={href} className="min-w-0 flex-1">
+        <Link to={href} state={linkState} className="min-w-0 flex-1">
           <h3 className="line-clamp-1 text-sm font-medium text-foreground">{title}</h3>
         </Link>
         {stats}
@@ -116,7 +120,7 @@ function OverallWorkCard({
 
   return (
     <div className="w-full">
-      <Link to={href} className="group block">
+      <Link to={href} state={linkState} className="group block">
         <div className="relative w-full overflow-hidden rounded-[6px] bg-muted">
           {cover ? (
             <img src={cover} alt={title} className="block h-auto w-full max-w-full" loading="lazy" />
@@ -129,7 +133,7 @@ function OverallWorkCard({
         </div>
       </Link>
       <div className="mt-1.5 flex items-start justify-between gap-2">
-        <Link to={href} className="min-w-0 flex-1">
+        <Link to={href} state={linkState} className="min-w-0 flex-1">
           <h3 className="line-clamp-2 text-sm font-medium leading-snug text-foreground">{title}</h3>
         </Link>
         {stats}

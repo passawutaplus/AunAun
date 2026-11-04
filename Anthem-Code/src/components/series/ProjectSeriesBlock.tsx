@@ -2,6 +2,8 @@
 import CatalogIcon from "@/components/icons/CatalogIcon";
 import { useSeriesForProject } from "@/hooks/useProjectSeries";
 import { cn } from "@/lib/utils";
+import { useProjectOverlayState } from "@/lib/projectOverlay";
+import { useProjectT } from "@/lib/i18n/project";
 
 const MAX_SIBLINGS = 4;
 
@@ -13,6 +15,8 @@ interface Props {
 }
 
 export function ProjectSeriesBlock({ projectId, className, compact = false }: Props) {
+  const overlayState = useProjectOverlayState();
+  const { t } = useProjectT();
   const { data } = useSeriesForProject(projectId);
 
   if (!data?.series || !projectId) return null;
@@ -48,16 +52,16 @@ export function ProjectSeriesBlock({ projectId, className, compact = false }: Pr
           to={`/series/${series.id}`}
           className="text-[11px] text-primary hover:underline shrink-0 pt-0.5"
         >
-          ดูทั้ง Catalog
+          {t("catalogAll")}
         </Link>
       </div>
 
       {shown.length > 0 ? (
         <>
           <p className="text-xs text-muted-foreground">
-            งานอื่นใน Catalog นี้
+            {t("catalogOthers")}
             {siblings.length > MAX_SIBLINGS
-              ? ` · แสดง ${shown.length}/${siblings.length}`
+              ? t("catalogShown", { shown: shown.length, total: siblings.length })
               : ` (${siblings.length})`}
           </p>
           <div className={cn(compact ? "grid grid-cols-2 gap-2" : "flex gap-2 overflow-x-auto pb-1")}>
@@ -69,6 +73,7 @@ export function ProjectSeriesBlock({ projectId, className, compact = false }: Pr
                 <Link
                   key={item.project_id}
                   to={`/showcase/${p.id}`}
+                  state={overlayState}
                   className={cn("group", compact ? "min-w-0" : "shrink-0 w-24")}
                 >
                   <div className="aspect-square rounded-xl overflow-hidden bg-muted border border-border/50 group-hover:border-primary/50 transition-colors">
@@ -88,12 +93,12 @@ export function ProjectSeriesBlock({ projectId, className, compact = false }: Pr
               to={`/series/${series.id}`}
               className="block text-center text-xs text-primary hover:underline pt-0.5"
             >
-              ดูอีก {moreCount} ชิ้นใน Catalog →
+              {t("catalogMore", { count: moreCount })}
             </Link>
           )}
         </>
       ) : (
-        <p className="text-xs text-muted-foreground">ชิ้นนี้เป็นผลงานเดียวใน Catalog ที่เผยแพร่แล้ว</p>
+        <p className="text-xs text-muted-foreground">{t("catalogOnly")}</p>
       )}
     </section>
   );

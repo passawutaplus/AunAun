@@ -12,6 +12,7 @@ import {
 import { profilePublicPath } from "@/lib/profileRoutes";
 import { cn } from "@/lib/utils";
 import type { ProfileLite } from "@/server/queries/profiles";
+import { useProjectOverlayState } from "@/lib/projectOverlay";
 
 export type CollectionWorkProject = {
   id: string;
@@ -142,6 +143,7 @@ function CollectionWorkCard({
   onToggleSelect,
   isCover,
 }: CardProps) {
+  const overlayState = useProjectOverlayState();
   const title = project.title?.trim() || "ไม่มีชื่อ";
   const list = density === "list";
 
@@ -149,7 +151,7 @@ function CollectionWorkCard({
     return (
       <div className="group relative flex items-center gap-3 rounded-xl px-3 py-2.5 glass-panel">
         {selectMode ? <SelectOverlay title={title} selected={selected} onToggle={onToggleSelect} /> : null}
-        <Link to={`/showcase/${project.id}`} className="flex min-w-0 flex-1 items-center gap-3">
+        <Link to={`/showcase/${project.id}`} state={overlayState} className="flex min-w-0 flex-1 items-center gap-3">
           <div className="relative h-14 w-20 shrink-0 overflow-hidden rounded-md bg-muted">
             {project.cover_url ? (
               <img
@@ -190,7 +192,7 @@ function CollectionWorkCard({
     <div className="group relative">
       {selectMode ? <SelectOverlay title={title} selected={selected} onToggle={onToggleSelect} /> : null}
       {isCover ? <CoverChip /> : null}
-      <Link to={`/showcase/${project.id}`} className="block">
+      <Link to={`/showcase/${project.id}`} state={overlayState} className="block">
         <div
           className={cn(
             "relative w-full overflow-hidden rounded-md bg-muted",

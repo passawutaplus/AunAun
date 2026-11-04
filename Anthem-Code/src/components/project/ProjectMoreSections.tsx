@@ -10,19 +10,23 @@ import { stripCategorySubTags } from "@/data/categoryTaxonomy";
 import { isCommerceEnabled } from "@/lib/aplus1Launch";
 import { useBlockedUserIds } from "@/hooks/useBlockedUserIds";
 import { withoutBlocked } from "@/lib/blockedUsers";
+import { useProjectOverlayState } from "@/lib/projectOverlay";
+import { useProjectT, type ProjectT } from "@/lib/i18n/project";
 
 /** Either a view count (works, shown with an eye like "ผลงานอื่นของ…") or a short price label. */
 type Tile = { id: string; href: string; title: string; image: string; meta?: string; views?: number; ownerId?: string };
 
 function TileRow({ title, tiles, moreHref, moreLabel }: { title: string; tiles: Tile[]; moreHref?: string; moreLabel?: string }) {
+  const overlayState = useProjectOverlayState();
+  const { t: tr } = useProjectT();
   if (!tiles.length) return null;
   return (
-    <section className="space-y-3 pt-2">
-      <div className="flex items-baseline justify-between gap-3">
-        <h2 className="text-base font-semibold text-foreground">{title}</h2>
+    <section className="space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="min-w-0 truncate text-lg font-semibold text-foreground">{title}</h2>
         {moreHref ? (
           <Link to={moreHref} className="inline-flex shrink-0 items-center gap-0.5 text-xs text-muted-foreground hover:text-foreground">
-            {moreLabel ?? "ดูเพิ่ม"} <ArrowUpRight className="h-3 w-3" aria-hidden />
+            {moreLabel ?? tr("seeMore")} <ArrowUpRight className="h-3 w-3" aria-hidden />
           </Link>
         ) : null}
       </div>
@@ -31,6 +35,7 @@ function TileRow({ title, tiles, moreHref, moreLabel }: { title: string; tiles: 
           <Link
             key={t.id}
             to={t.href}
+            state={t.href.startsWith("/showcase/") ? overlayState : undefined}
             className="group min-w-0 overflow-hidden rounded-xl glass-panel transition-shadow hover:shadow-md"
           >
             <div className="relative aspect-[4/3] overflow-hidden bg-muted">
@@ -48,7 +53,7 @@ function TileRow({ title, tiles, moreHref, moreLabel }: { title: string; tiles: 
               {typeof t.views === "number" ? (
                 <span
                   className="inline-flex shrink-0 items-center gap-0.5 text-[10px] tabular-nums text-muted-foreground"
-                  aria-label={`${t.views.toLocaleString("th-TH")} วิว`}
+                  aria-label={tr("views", { count: t.views.toLocaleString("th-TH") })}
                 >
                   <Eye className="h-2.5 w-2.5" aria-hidden />
                   {t.views.toLocaleString("th-TH")}
@@ -64,17 +69,18 @@ function TileRow({ title, tiles, moreHref, moreLabel }: { title: string; tiles: 
   );
 }
 
-const startPrice = (min: number | null, max: number | null) => {
+const startPrice = (t: ProjectT, min: number | null, max: number | null) => {
   const lo = Number(min) || 0;
   const hi = Number(max) || 0;
   const start = lo > 0 ? lo : hi;
-  return start > 0 ? `เริ่ม ${formatServicePrice(start)}` : "คุยราคา";
+  return start > 0 ? t("priceFrom", { price: formatServicePrice(start) }) : t("priceTalk");
 };
 
 /** Packages the creator linked to this work (editor: เชื่อมแพ็กเกจ). */
 export function RelatedPackagesRow({ projectId }: { projectId?: string }) {
+  const { t, locale } = useProjectT();
   const { data = [] } = useQuery({
-    queryKey: ["project-related-packages", projectId],
+    queryKey: ["project-related-packages", projectId, locale],
     enabled: !!projectId && isCommerceEnabled(),
     staleTime: 60_000,
     queryFn: async (): Promise<Tile[]> => {
@@ -97,17 +103,18 @@ export function RelatedPackagesRow({ projectId }: { projectId?: string }) {
         href: `/service/${r.id}`,
         title: r.title,
         image: r.cover_url || r.gallery_urls?.[0] || "",
-        meta: startPrice(r.price_min_thb, r.price_thb),
+        meta: startPrice(t, r.price_min_thb, r.price_thb),
       }));
     },
   });
-  return <TileRow title="แพ็กเกจที่เกี่ยวข้อง" tiles={data} />;
+  return <TileRow title={t("relPackages")} tiles={data} />;
 }
 
 /** Objects (products) the creator linked to this work. */
 export function RelatedObjectsRow({ projectId }: { projectId?: string }) {
+  const { t, locale } = useProjectT();
   const { data = [] } = useQuery({
-    queryKey: ["project-related-objects", projectId],
+    queryKey: ["project-related-objects", projectId, locale],
     enabled: !!projectId && isCommerceEnabled(),
     staleTime: 60_000,
     queryFn: async (): Promise<Tile[]> => {
@@ -128,11 +135,11 @@ export function RelatedObjectsRow({ projectId }: { projectId?: string }) {
         href: `/object/${r.id}`,
         title: r.title,
         image: r.cover_url || r.gallery_urls?.[0] || "",
-        meta: Number(r.price_thb) > 0 ? formatServicePrice(Number(r.price_thb)) : "สอบถามราคา",
+        meta: Number(r.price_thb) > 0 ? formatServicePrice(Number(r.price_thb)) : t("priceAsk"),
       }));
     },
   });
-  return <TileRow title="สินค้าที่เกี่ยวข้อง" tiles={data} />;
+  return <TileRow title={t("relProducts")} tiles={data} />;
 }
 
 type SimilarRow = {
@@ -164,6 +171,7 @@ export function SimilarWorksRow({
   tools?: string[];
 }) {
   const blocked = useBlockedUserIds();
+  const { t: tr } = useProjectT();
   const { data = [] } = useQuery({
     queryKey: ["project-similar-works", projectId, category],
     enabled: !!projectId && !!category,
@@ -202,10 +210,10 @@ export function SimilarWorksRow({
   });
   return (
     <TileRow
-      title="ผลงานใกล้เคียงจากครีเอเตอร์อื่น"
+      title={tr("similarOthers")}
       tiles={withoutBlocked(data, blocked, (t) => t.ownerId).slice(0, 8)}
       moreHref={projectId ? `/similar/${projectId}` : undefined}
-      moreLabel="ดูภาพคล้ายแบบละเอียด"
+      moreLabel={tr("similarMore")}
     />
   );
 }

@@ -1,11 +1,11 @@
 import { useMemo } from "react";
-import { useNavigate } from "react-router-dom";
 import { useReducedMotion } from "framer-motion";
 import { Eye, Heart } from "lucide-react";
 import { useTopProjects, type DBProject } from "@/hooks/useProjects";
 import { optimizedFeedImageUrl } from "@/lib/feedProjectCover";
 import { formatCompact } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { useOpenProject } from "@/lib/projectOverlay";
 
 const projectCover = (p: DBProject) =>
   p.cover_url?.trim() || p.gallery_urls?.find((url) => url?.trim()) || "";
@@ -34,7 +34,7 @@ function MarqueeRow({
   eagerCount: number;
   fillHeight?: boolean;
 }) {
-  const navigate = useNavigate();
+  const openProject = useOpenProject();
   const loop = items.length ? [...items, ...items] : [];
 
   return (
@@ -60,7 +60,7 @@ function MarqueeRow({
               tabIndex={isClone ? -1 : 0}
               aria-hidden={isClone || undefined}
               aria-label={isClone ? undefined : `ดูผลงาน: ${project.title}`}
-              onClick={() => navigate(`/showcase/${project.id}`)}
+              onClick={() => openProject(project.id)}
               className={cn(
                 "group relative shrink-0 overflow-hidden rounded-xl sm:rounded-2xl",
                 fillHeight
