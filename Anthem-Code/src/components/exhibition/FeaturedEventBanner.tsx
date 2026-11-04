@@ -44,7 +44,7 @@ export function FeaturedEventBanner({ className }: { className?: string }) {
 
       <div className="flex flex-col justify-center gap-3 p-5 sm:p-7">
         <div className="flex flex-wrap items-center gap-2 text-xs">
-          <span className="rounded-full bg-brand px-2.5 py-1 font-semibold text-white">อีเวนต์เด่น</span>
+          <span className="rounded-full bg-brand px-2.5 py-1 font-semibold text-white">Featured Event</span>
           {countdown ? <span className="font-medium text-muted-foreground">{countdown}</span> : null}
         </div>
         <h2 id="featured-event-title" className="font-display text-3xl font-semibold leading-[1.1] tracking-tight text-foreground sm:text-4xl max-sm:text-2xl">

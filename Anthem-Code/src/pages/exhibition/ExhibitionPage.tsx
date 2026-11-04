@@ -9,13 +9,11 @@ import { BrandLogo } from "@/components/brand/BrandLogo";
 import ProfileButton from "@/components/ProfileButton";
 import FeedModeToggle from "@/components/feed/FeedModeToggle";
 import { EventListCard } from "@/components/exhibition/EventParts";
-import { ExhibitionHero } from "@/components/exhibition/ExhibitionHero";
 import { ExhibitionCalendar } from "@/components/exhibition/ExhibitionCalendar";
 import { FeaturedEventBanner } from "@/components/exhibition/FeaturedEventBanner";
 import EmptyState from "@/components/ui/EmptyState";
 import QueryStatusPanel from "@/components/ui/QueryStatusPanel";
 import { useEventStats, useMyEventInterests, usePublishedEvents } from "@/hooks/useExhibitionEvents";
-import { useFeaturedEvent } from "@/hooks/useEventVenues";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useHideOnScroll } from "@/hooks/useHideOnScroll";
 import { useAuth } from "@/hooks/useAuth";
@@ -67,16 +65,6 @@ export default function ExhibitionPage() {
           matchesSearch(e, search),
       ),
     [data, category, when, search],
-  );
-
-  // The featured event has its own banner, so the slideshow skips it.
-  const { data: featured } = useFeaturedEvent();
-  const heroEvents = useMemo(
-    () =>
-      [...data]
-        .filter((e) => eventTiming(e) !== "done" && e.id !== featured?.id)
-        .sort((x, y) => Number(y.is_pick) - Number(x.is_pick)),
-    [data, featured?.id],
   );
 
   const rowIds = useMemo(() => rows.map((e) => e.id), [rows]);
@@ -276,13 +264,17 @@ export default function ExhibitionPage() {
         {/* Type tabs sit right under the mode pill, as on Showcase / Creators. */}
         <div className={cn("hidden pb-4 lg:block", scrolled && "lg:invisible")}>{filters}</div>
 
-        {/* Team-pinned event (one at a time), above everything else. */}
-        <FeaturedEventBanner className="mb-6" />
-
-        <ExhibitionHero events={heroEvents} className="mb-6 hidden lg:grid" />
+        {/* Desktop: a plain page title, like Showcase / Creators (no slideshow). */}
+        <h2 className="hidden pb-8 pt-10 text-[5.25rem] font-semibold leading-[0.8] tracking-tight text-foreground lg:block xl:text-[6.5rem]">
+          Exhibition <span className="text-muted-foreground">&amp; Events</span>
+        </h2>
 
         {/* This week + full calendar; uses every published event, not just the filtered list. */}
         <ExhibitionCalendar events={data} className="mb-8" />
+
+        {/* Team-pinned event (one at a time), under This Week. */}
+        <FeaturedEventBanner className="mb-8" />
+
 
         <div>
       {isLoading || isError ? (

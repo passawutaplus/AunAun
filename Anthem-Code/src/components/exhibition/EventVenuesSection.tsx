@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Bookmark, ExternalLink, Navigation, TrainFront, Ticket } from "lucide-react";
+import { Bookmark, ChevronDown, ExternalLink, Map as MapIcon, Navigation, TrainFront, Ticket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GoogleCalendarIcon } from "@/components/icons/GoogleCalendarIcon";
 import { useAuth } from "@/hooks/useAuth";
@@ -54,6 +54,8 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
   const toggle = useToggleEventInterest();
   const setAll = useSetAllVenuesInterest();
   const [activeId, setActiveId] = useState<string | null>(null);
+  // Map can be folded away; "ดูเส้นทาง" (#venue-map) always opens it.
+  const [mapOpen, setMapOpen] = useState(true);
   const rowRefs = useRef(new Map<string, HTMLLIElement>());
   const sectionRef = useRef<HTMLElement>(null);
   const mapRef = useRef<HTMLDivElement>(null);
@@ -64,7 +66,8 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
 
   // /exhibition/<id>#venues or #venue-map (from the featured banner) once the list is here.
   useEffect(() => {
-    const target = location.hash === "#venue-map" ? mapRef.current : location.hash === "#venues" ? sectionRef.current : null;
+    if (location.hash === "#venue-map") setMapOpen(true);
+    const target = location.hash === "#venues" || location.hash === "#venue-map" ? sectionRef.current : null;
     target?.scrollIntoView({ block: "start" });
   }, [location.hash, venues.length]);
 
@@ -93,6 +96,20 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">จัดกลุ่มตามย่าน เดินต่อกันได้ · หมุดเป็นตำแหน่งโดยประมาณ</p>
         </div>
+        <div className="flex flex-wrap gap-2">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="rounded-full"
+          aria-expanded={mapOpen}
+          aria-controls="venue-map"
+          onClick={() => setMapOpen((o) => !o)}
+        >
+          <MapIcon className="h-4 w-4" aria-hidden />
+          {mapOpen ? "ซ่อนแผนที่" : "ดูแผนที่"}
+          <ChevronDown className={cn("h-4 w-4 transition-transform", mapOpen && "rotate-180")} aria-hidden />
+        </Button>
         <Button
           type="button"
           variant="outline"
@@ -105,9 +122,16 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
           <Bookmark className={cn("h-4 w-4", allOn && "fill-current")} aria-hidden />
           {allOn ? "สนใจทุกที่แล้ว" : "สนใจทั้งหมด"}
         </Button>
+        </div>
       </div>
 
-      <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_25rem] lg:gap-8 xl:grid-cols-[minmax(0,1fr)_27rem]">
+      <div
+        className={cn(
+          "mt-5 grid grid-cols-1 gap-5",
+          mapOpen && "lg:grid-cols-[minmax(0,1fr)_25rem] lg:gap-8 xl:grid-cols-[minmax(0,1fr)_27rem]",
+        )}
+      >
+        {mapOpen ? (
         <div ref={mapRef} id="venue-map" className="scroll-mt-20 lg:sticky lg:top-20 lg:self-start">
           <Suspense fallback={<div className="h-64 animate-pulse rounded-lg bg-muted sm:h-80 lg:h-[34rem]" />}>
             <VenueMap
@@ -119,8 +143,10 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
             />
           </Suspense>
         </div>
+        ) : null}
 
-        <div className="space-y-6">
+        {/* Map folded away: areas side by side. */}
+        <div className={cn(mapOpen ? "space-y-6" : "grid grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2 xl:grid-cols-3")}>
           {groups.map((g) => (
             <div key={g.area ?? "-"}>
               {g.area ? (

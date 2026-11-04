@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import maplibregl from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
 import "./venueMap.css";
 import type { EventVenue } from "@/lib/eventVenues";
 
@@ -14,44 +14,71 @@ type Props = {
   className?: string;
 };
 
-const pinIcon = (n: number, on: boolean, active: boolean) =>
-  L.divIcon({
-    className: "",
-    html: `<span class="venue-pin${on ? " venue-pin--on" : ""}${active ? " venue-pin--active" : ""}">${n}</span>`,
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
-  });
+/** OpenFreeMap vector styles: free, no key, OpenStreetMap data. Muted dark / light to match the theme. */
+const STYLE = {
+  dark: "https://tiles.openfreemap.org/styles/dark",
+  light: "https://tiles.openfreemap.org/styles/positron",
+};
 
-/** Numbered pins on OpenStreetMap: brand red = สนใจ, grey = not. Loaded lazily (Leaflet is only on event pages). */
+const PIN_SVG =
+  '<svg viewBox="0 0 28 36" aria-hidden="true"><path d="M14 1C7 1 1.5 6.4 1.5 13.3 1.5 22.6 14 35 14 35s12.5-12.4 12.5-21.7C26.5 6.4 21 1 14 1z"/></svg>';
+
+/** MapLibre positions the outer element with `transform`, so the pin (which scales when active) sits inside it. */
+function pinElement(v: PinnedVenue): { el: HTMLDivElement; pin: HTMLButtonElement } {
+  const el = document.createElement("div");
+  const pin = document.createElement("button");
+  pin.type = "button";
+  pin.className = "venue-pin";
+  pin.setAttribute("aria-label", `${v.pin}. ${v.title}`);
+  pin.innerHTML = `${PIN_SVG}<span>${v.pin}</span>`;
+  el.appendChild(pin);
+  return { el, pin };
+}
+
+/** Keep the base map quiet: no shop / place-of-interest labels or transit icons, only streets, water and areas. */
+function quietStyle(map: maplibregl.Map) {
+  for (const layer of map.getStyle().layers ?? []) {
+    if (/poi|transit|aerialway|housenumber|building/i.test(layer.id)) map.setLayoutProperty(layer.id, "visibility", "none");
+  }
+}
+
+/** Pin-shaped numbered markers: brand red = สนใจ, grey = not. Loaded lazily (only on event pages with venues). */
 export default function VenueMap({ venues, interested, activeId, onSelect, className }: Props) {
   const box = useRef<HTMLDivElement>(null);
-  const map = useRef<L.Map | null>(null);
-  const markers = useRef(new Map<string, L.Marker>());
+  const map = useRef<maplibregl.Map | null>(null);
+  const markers = useRef(new Map<string, { marker: maplibregl.Marker; el: HTMLDivElement; pin: HTMLButtonElement }>());
   const onSelectRef = useRef(onSelect);
   onSelectRef.current = onSelect;
 
   const placed = venues.filter((v) => v.lat != null && v.lng != null);
-  const placedKey = placed.map((v) => `${v.id}:${v.lat},${v.lng}`).join("|");
+  const placedKey = placed.map((v) => `${v.id}:${v.lat},${v.lng}:${v.pin}`).join("|");
 
   useEffect(() => {
     if (!box.current) return;
-    const m = L.map(box.current, { scrollWheelZoom: false, zoomControl: true, attributionControl: true });
-    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      className: "venue-map-tiles",
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>',
-    }).addTo(m);
-    m.attributionControl.setPrefix(false);
-    m.setView([13.7563, 100.5018], 12);
+    const dark = document.documentElement.classList.contains("dark");
+    const m = new maplibregl.Map({
+      container: box.current,
+      style: dark ? STYLE.dark : STYLE.light,
+      center: [100.515, 13.745],
+      zoom: 12,
+      attributionControl: { compact: true },
+      dragRotate: false,
+      pitchWithRotate: false,
+    });
+    m.scrollZoom.disable();
+    m.touchZoomRotate.disableRotation();
+    m.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-left");
+    m.on("style.load", () => quietStyle(m));
     map.current = m;
-    const ro = new ResizeObserver(() => m.invalidateSize());
+    const ro = new ResizeObserver(() => m.resize());
     ro.observe(box.current);
     const current = markers.current;
     return () => {
       ro.disconnect();
+      current.forEach(({ marker }) => marker.remove());
+      current.clear();
       m.remove();
       map.current = null;
-      current.clear();
     };
   }, []);
 
@@ -59,39 +86,38 @@ export default function VenueMap({ venues, interested, activeId, onSelect, class
   useEffect(() => {
     const m = map.current;
     if (!m) return;
-    markers.current.forEach((mk) => mk.remove());
+    markers.current.forEach(({ marker }) => marker.remove());
     markers.current.clear();
     placed.forEach((v) => {
-      const mk = L.marker([v.lat!, v.lng!], {
-        icon: pinIcon(v.pin, interested.has(v.id), v.id === activeId),
-        title: `${v.pin}. ${v.title}`,
-        alt: `${v.pin}. ${v.title}`,
-        keyboard: true,
-        riseOnHover: true,
-      })
-        .on("click", () => onSelectRef.current(v.id))
-        .addTo(m);
-      markers.current.set(v.id, mk);
+      const { el, pin } = pinElement(v);
+      pin.addEventListener("click", (e) => {
+        e.stopPropagation();
+        onSelectRef.current(v.id);
+      });
+      const marker = new maplibregl.Marker({ element: el, anchor: "bottom" }).setLngLat([v.lng!, v.lat!]).addTo(m);
+      markers.current.set(v.id, { marker, el, pin });
     });
     if (placed.length > 1) {
-      m.fitBounds(L.latLngBounds(placed.map((v) => [v.lat!, v.lng!] as [number, number])), { padding: [28, 28] });
+      const bounds = new maplibregl.LngLatBounds();
+      placed.forEach((v) => bounds.extend([v.lng!, v.lat!]));
+      m.fitBounds(bounds, { padding: { top: 48, bottom: 24, left: 32, right: 32 }, maxZoom: 15, duration: 0 });
     } else if (placed.length === 1) {
-      m.setView([placed[0].lat!, placed[0].lng!], 15);
+      m.jumpTo({ center: [placed[0].lng!, placed[0].lat!], zoom: 15 });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [placedKey]);
 
   // Colours and the active pin, without refitting.
   useEffect(() => {
-    placed.forEach((v) => {
-      const mk = markers.current.get(v.id);
-      if (!mk) return;
-      mk.setIcon(pinIcon(v.pin, interested.has(v.id), v.id === activeId));
-      mk.setZIndexOffset(v.id === activeId ? 1000 : 0);
+    markers.current.forEach(({ el, pin }, id) => {
+      pin.classList.toggle("venue-pin--on", interested.has(id));
+      pin.classList.toggle("venue-pin--active", id === activeId);
+      el.style.zIndex = id === activeId ? "2" : "";
     });
     const active = placed.find((v) => v.id === activeId);
-    if (active && map.current && !map.current.getBounds().contains([active.lat!, active.lng!])) {
-      map.current.panTo([active.lat!, active.lng!]);
+    const m = map.current;
+    if (active && m && !m.getBounds().contains([active.lng!, active.lat!])) {
+      m.easeTo({ center: [active.lng!, active.lat!], duration: 400 });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeId, interested, placedKey]);

@@ -14,6 +14,7 @@ import {
   TrainFront,
 } from "lucide-react";
 import SeoHead from "@/components/SeoHead";
+import { cn } from "@/lib/utils";
 import { GoogleCalendarIcon } from "@/components/icons/GoogleCalendarIcon";
 import SeoBreadcrumb from "@/components/seo/SeoBreadcrumb";
 import { BackButton } from "@/components/ui/BackButton";
@@ -304,10 +305,6 @@ export default function ExhibitionDetailPage() {
         </div>
       </div>
 
-      {venues.length ? (
-        <EventVenuesSection parent={event} venues={venues} className="mx-auto mt-12 w-full max-w-[84rem]" />
-      ) : null}
-
       <div className="mt-6 mx-auto grid w-full max-w-[84rem] grid-cols-1 gap-y-6 lg:mt-12 lg:grid-cols-[minmax(0,56rem)_22.5rem] lg:justify-center lg:gap-x-10 lg:gap-y-10 xl:grid-cols-[minmax(0,56rem)_24rem] xl:gap-x-12">
         {/* Phones: a rule separates About from the event facts / documents above. */}
         <section aria-labelledby="about-heading" className="border-t border-border pt-6 lg:border-t-0 lg:pt-0">
@@ -420,6 +417,11 @@ export default function ExhibitionDetailPage() {
         </aside>
       </div>
 
+      {/* Venues (sub-events) with the pinned map: below About, above the summary. */}
+      {venues.length ? (
+        <EventVenuesSection parent={event} venues={venues} className="mx-auto mt-10 w-full max-w-[84rem] border-t border-border pt-6 lg:mt-14" />
+      ) : null}
+
       {works.length ? (
         <section className="mt-12" aria-labelledby="works-heading">
           <h2 id="works-heading" className="font-display text-2xl font-semibold text-foreground">
@@ -440,7 +442,7 @@ export default function ExhibitionDetailPage() {
         </section>
       ) : null}
 
-      {insights ? <EventInsightsPanel insights={insights} event={event} className="mx-auto w-full max-w-[84rem] lg:mt-14" /> : null}
+      {insights ? <EventInsightsPanel insights={insights} event={event} className={cn("mx-auto w-full max-w-[84rem] lg:mt-14", (venues.length > 0 || works.length > 0) && "mt-10")} /> : null}
 
       {insights?.related_categories.length ? (
         <EventRelatedWorks categories={insights.related_categories} className="mx-auto mt-14 w-full max-w-[84rem]" />
