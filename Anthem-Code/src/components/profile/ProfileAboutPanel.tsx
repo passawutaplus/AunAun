@@ -18,6 +18,7 @@ import AboutDocumentPreviewDialog, {
 } from "@/components/profile/AboutDocumentPreview";
 import type { ExperienceItem, SocialLinkItem } from "@/lib/validators";
 
+import { copyText } from "@/lib/copyText";
 type ProfileAbout = {
   display_name?: string | null;
   username?: string | null;
@@ -104,7 +105,7 @@ export default function ProfileAboutPanel({
   const handleCopyLink = async () => {
     if (!shareUrl) return;
     try {
-      await navigator.clipboard.writeText(shareUrl);
+      await copyText(shareUrl);
       toast.success("คัดลอกลิงก์ CV แล้ว");
     } catch {
       toast.error("คัดลอกลิงก์ไม่สำเร็จ");

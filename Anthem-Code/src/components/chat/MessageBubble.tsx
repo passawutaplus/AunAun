@@ -112,6 +112,7 @@ import type { HireCancelRequestRow } from "@/lib/hireCancelRequest";
 import type { CollabEndRequestRow } from "@/lib/collabEndRequest";
 import type { CollabGroupExpandRequestRow } from "@/lib/collabGroupExpand";
 
+import { copyText as copyToClipboard } from "@/lib/copyText";
 function ChatAttachmentImage({ refUrl }: { refUrl: string }) {
   const src = useSignedStorageUrl(refUrl);
   if (!src) return <div className="rounded-2xl mb-1 h-32 bg-muted animate-pulse" />;
@@ -631,7 +632,7 @@ const MessageBubble = ({
 
   const copyMessage = async () => {
     try {
-      await navigator.clipboard.writeText(copyText);
+      await copyToClipboard(copyText);
       toast.success("คัดลอกแล้ว");
     } catch {
       toast.error("คัดลอกไม่สำเร็จ");

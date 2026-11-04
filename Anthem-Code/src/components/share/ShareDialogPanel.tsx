@@ -13,6 +13,7 @@ import {
   type ShareTarget,
 } from "@/lib/shareTargets";
 
+import { copyText } from "@/lib/copyText";
 type Props = {
   title: string;
   url: string;
@@ -45,7 +46,7 @@ const ShareDialogPanel = ({
 
   const copyLink = async (successMessage = copySuccessMessage) => {
     try {
-      await navigator.clipboard.writeText(copyPayload || url);
+      await copyText(copyPayload || url);
       setCopied(true);
       toast.success(successMessage);
       return true;

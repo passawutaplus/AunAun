@@ -5,6 +5,7 @@ import { useMarketingBusinesses } from "@/hooks/admin/useMarketingBusinesses";
 import { useMarketingInsights } from "@/hooks/admin/useMarketingInsights";
 import { MarketingCard } from "./MarketingShell";
 
+import { copyText } from "@/lib/copyText";
 const REFERRAL_COPY = {
   th: {
     headline: "แคมเปญ Referral — ชวนเพื่อนมา SAMECOR",
@@ -54,7 +55,7 @@ export default function MarketingOfferBuilder() {
 
   const copyReferral = () => {
     const text = [referral.headline, "", ...referral.bullets.map((b) => `• ${b}`), "", referral.cta].join("\n");
-    void navigator.clipboard.writeText(text);
+    void copyText(text);
     toast.success("Copied referral pack");
   };
 

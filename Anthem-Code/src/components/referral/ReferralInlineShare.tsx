@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useReferralDashboard } from "@/hooks/useReferral";
 import { buildReferralShareUrl } from "@/lib/referralDashboard";
 
+import { copyText } from "@/lib/copyText";
 type Props = {
   /** When false, skip fetching until parent is visible (e.g. closed dialog). */
   enabled?: boolean;
@@ -23,7 +24,7 @@ export function ReferralInlineShare({ enabled = true }: Props) {
   const copyLink = async () => {
     if (!referralLink) return;
     try {
-      await navigator.clipboard.writeText(referralLink);
+      await copyText(referralLink);
       toast.success("คัดลอกลิงก์ชวนเพื่อนแล้ว");
     } catch {
       toast.error("คัดลอกไม่สำเร็จ — ลองเลือกลิงก์แล้วคัดลอกเอง");

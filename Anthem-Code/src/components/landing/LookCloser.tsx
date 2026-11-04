@@ -2,6 +2,7 @@ import { useCallback, useRef, useState, type PointerEvent as ReactPointerEvent }
 import { toast } from "sonner";
 import type { LandingText } from "./useLandingCopy";
 
+import { copyText } from "@/lib/copyText";
 const TOOLS = ["none", "zoom", "gray", "thirds", "deutan", "pick"] as const;
 type Tool = (typeof TOOLS)[number];
 type Swatch = { hex: string; share: number };
@@ -53,7 +54,7 @@ export function LookCloser({ src, t, behind }: { src?: string; t: LandingText; b
   }, [readPixels]);
 
   const copyHex = (hex: string) => {
-    void navigator.clipboard?.writeText(hex).catch(() => {});
+    void copyText(hex).catch(() => {});
     toast(t("picked", { hex }));
   };
 
