@@ -18,12 +18,13 @@ export default function InviteWorksBackdrop({ className }: { className?: string 
     <div
       aria-hidden
       className={cn(
-        "pointer-events-none relative h-[22rem] select-none overflow-hidden opacity-60 sm:h-[26rem]",
-        "[mask-image:linear-gradient(to_bottom,transparent,black_18%,black_82%,transparent)]",
+        "pointer-events-none relative min-h-[18rem] flex-1 select-none overflow-hidden opacity-60",
+        // fades in at the top only; the bottom runs off the edge of the screen
+        "[mask-image:linear-gradient(to_bottom,transparent,black_22%)]",
         className,
       )}
     >
-      <div className="grid h-full grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+      <div className="absolute inset-x-4 inset-y-0 grid grid-cols-2 sm:inset-x-6 gap-3 md:grid-cols-3 lg:grid-cols-4">
         {columns.map((col, c) => (
           <div key={c} className={cn("min-w-0", c === 2 && "hidden md:block", c === 3 && "hidden lg:block", c % 2 === 1 && "-mt-24")}>
             <div className={cn("invite-drift flex flex-col gap-3", c % 2 === 1 && "invite-drift-reverse")} style={{ animationDuration: `${70 + c * 8}s` }}>

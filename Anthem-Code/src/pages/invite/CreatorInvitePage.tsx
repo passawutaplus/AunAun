@@ -96,6 +96,7 @@ export default function CreatorInvitePage() {
 
   const { invite } = q.data;
   let body: React.ReactNode;
+  let bleed = false;
   if (params.get("unsubscribe") === "1") body = <Unsubscribe token={token} t={t} already={invite.unsubscribed} />;
   else if (submitted || (invite.status === "submitted" && !formRoute))
     body = <Thanks t={t} invite={invite} submission={normalizeSubmission(q.data.submission, invite)} token={token} />;
@@ -113,16 +114,18 @@ export default function CreatorInvitePage() {
         onSubmitted={() => setSubmitted(true)}
       />
     );
-  else
+  else {
+    bleed = true;
     body = (
       <>
         <Landing token={token} t={t} invite={invite} />
-        <InviteWorksBackdrop className="mx-auto max-w-6xl px-4 sm:px-6" />
+        <InviteWorksBackdrop className="mx-auto w-full max-w-6xl" />
       </>
     );
+  }
 
   return (
-    <InviteShell lang={effectiveLang} onLang={setLang} t={t}>
+    <InviteShell lang={effectiveLang} onLang={setLang} t={t} bleed={bleed}>
       {seo}
       {body}
     </InviteShell>
@@ -136,7 +139,7 @@ function Landing({ token, t, invite }: { token: string; t: InviteCopy; invite: P
   const pathCard =
     "group flex flex-col rounded-2xl bg-card p-6 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:p-7";
   return (
-    <div className="mx-auto grid max-w-6xl gap-10 px-4 py-10 sm:px-6 sm:py-14 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] md:items-center md:gap-10 lg:gap-16 lg:py-20">
+    <div className="mx-auto grid w-full max-w-6xl gap-10 px-4 py-10 sm:px-6 sm:py-14 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] md:items-center md:gap-10 lg:gap-16 lg:py-20">
       <section>
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand">{t.eyebrow}</p>
         <p className="mt-6 text-sm text-muted-foreground">{t.invFor}</p>
