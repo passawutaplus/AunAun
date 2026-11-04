@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
     .in("status", ["sent", "opened"])
     .not("contact_email", "is", null)
     .lt("sent_at", remindBefore)
-    .gt("expires_at", nowIso)
+    .or(`expires_at.is.null,expires_at.gt.${nowIso}`)
     .limit(100);
   let reminders = 0;
   for (const r of toRemind ?? []) {

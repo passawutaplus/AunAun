@@ -51,7 +51,8 @@ CREATE TABLE IF NOT EXISTS anthem.creator_invitations (
   account_created_at timestamptz,
   account_temp_expires_at timestamptz,
   unsubscribed_at timestamptz,
-  expires_at timestamptz NOT NULL DEFAULT now() + interval '30 days',
+  -- NULL = never expires; the team turns links off by revoking or deleting the invitation.
+  expires_at timestamptz,
   revoked_at timestamptz,
   created_by uuid REFERENCES auth.users (id) ON DELETE SET NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
@@ -214,7 +215,7 @@ BEGIN
   END IF;
   SELECT * INTO inv FROM anthem.creator_invitations
    WHERE token_hash = encode(extensions.digest(_token, 'sha256'), 'hex');
-  IF NOT FOUND OR inv.revoked_at IS NOT NULL OR inv.expires_at < now()
+  IF NOT FOUND OR inv.revoked_at IS NOT NULL OR (inv.expires_at IS NOT NULL AND inv.expires_at < now())
      OR inv.status IN ('published', 'declined', 'expired') THEN
     RETURN false;
   END IF;
@@ -261,7 +262,7 @@ BEGIN
       'social_handle', i.social_handle,
       'language', i.language,
       'send_mode', i.send_mode,
-      'status', CASE WHEN i.status IN ('draft', 'sent', 'opened', 'started') AND (i.expires_at < now() OR i.revoked_at IS NOT NULL)
+      'status', CASE WHEN i.status IN ('draft', 'sent', 'opened', 'started') AND ((i.expires_at IS NOT NULL AND i.expires_at < now()) OR i.revoked_at IS NOT NULL)
                      THEN 'expired' ELSE i.status END,
       'revoked', i.revoked_at IS NOT NULL,
       'unsubscribed', i.unsubscribed_at IS NOT NULL,

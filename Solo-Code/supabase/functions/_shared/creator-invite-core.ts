@@ -32,7 +32,7 @@ export type InviteRow = {
   auto_reminder: boolean;
   reminder_sent_at: string | null;
   sent_at: string | null;
-  expires_at: string;
+  expires_at: string | null;
   revoked_at: string | null;
   unsubscribed_at: string | null;
   review_expires_at: string | null;
@@ -153,7 +153,7 @@ export const unsubscribeLink = (token: string) => `${inviteLink(token)}?unsubscr
 export function isActive(inv: Pick<InviteRow, "revoked_at" | "expires_at" | "status">): boolean {
   return (
     !inv.revoked_at &&
-    new Date(inv.expires_at).getTime() > Date.now() &&
+    (!inv.expires_at || new Date(inv.expires_at).getTime() > Date.now()) &&
     !["declined", "expired", "published"].includes(inv.status)
   );
 }
@@ -333,13 +333,10 @@ export function renderInviteEmail(
       body = en
         ? p(
             `Hi ${name}, we've prepared a draft of your profile. The link shows exactly what visitors will see — text, images and links.`,
-          ) +
-          p(
-            `Approve it, ask for changes, or decline. The link expires in ${REVIEW_LINK_DAYS} days.`,
-          )
+          ) + p("Approve it, ask for changes, or decline.")
         : p(
             `สวัสดีครับคุณ${name} ทีมเตรียมโปรไฟล์ร่างให้แล้ว ลิงก์นี้แสดงทุกอย่างที่จะเห็นบนหน้าสาธารณะ ทั้งข้อความ รูป และลิงก์`,
-          ) + p(`กดอนุมัติ ขอแก้ไข หรือปฏิเสธได้เลยครับ ลิงก์หมดอายุใน ${REVIEW_LINK_DAYS} วัน`);
+          ) + p("กดอนุมัติ ขอแก้ไข หรือปฏิเสธได้เลยครับ");
       cta = en ? "Review my profile" : "ตรวจโปรไฟล์ของฉัน";
       break;
     case "account": {

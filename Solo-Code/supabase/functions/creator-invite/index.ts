@@ -600,7 +600,7 @@ Deno.serve(async (req) => {
 
   if (inv.revoked_at && body.action !== "unsubscribe") return json(req, { error: "expired" }, 410);
   if (review) {
-    if (!inv.review_expires_at || new Date(inv.review_expires_at).getTime() < Date.now())
+    if (inv.review_expires_at && new Date(inv.review_expires_at).getTime() < Date.now())
       return json(req, { error: "expired" }, 410);
   } else if (body.action !== "unsubscribe") {
     // Before submitting, the invitation's own expiry applies; after that the artist keeps read access.

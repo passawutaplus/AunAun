@@ -10,7 +10,6 @@ import { supabaseSecretKey } from "../_shared/supabase-keys.ts";
 import {
   INVITE_BUCKET,
   INVITE_COLS,
-  REVIEW_LINK_DAYS,
   type InviteRow,
   decryptToken,
   enqueueEmail,
@@ -33,7 +32,6 @@ const CreateSchema = z.object({
   country: z.string().trim().max(80).optional().default(""),
   contact: z.string().trim().min(1).max(254),
   language: z.enum(["th", "en"]).default("th"),
-  expires_days: z.number().int().min(1).max(90).default(30),
   personal_note: z.string().trim().max(600).optional().default(""),
   interest_url: z.string().trim().max(500).optional().default(""),
   send_mode: z.enum(["email_now", "scheduled", "manual_dm"]),
@@ -139,7 +137,7 @@ async function create(req: Request, admin: SupabaseClient, userId: string, raw: 
       send_mode: v.send_mode,
       scheduled_at: v.send_mode === "scheduled" ? v.scheduled_at : null,
       auto_reminder: isEmail && v.auto_reminder,
-      expires_at: new Date(Date.now() + v.expires_days * 86400_000).toISOString(),
+      expires_at: null, // links never expire; revoke or delete to turn them off
       created_by: userId,
     })
     .select("id")
@@ -226,7 +224,7 @@ async function sendReview(req: Request, admin: SupabaseClient, userId: string, i
     .update({
       review_token_hash: tok.hash,
       review_token_cipher: tok.cipher,
-      review_expires_at: new Date(now.getTime() + REVIEW_LINK_DAYS * 86400_000).toISOString(),
+      review_expires_at: null,
       review_sent_at: now.toISOString(),
       status: "preparing",
     })
@@ -234,7 +232,11 @@ async function sendReview(req: Request, admin: SupabaseClient, userId: string, i
   // Snapshot the draft that was sent, so the team can look back at (or restore) each review round.
   const anthem = admin.schema("anthem");
   const [{ data: sub }, { count: rounds }] = await Promise.all([
-    anthem.from("invite_submissions").select("staff_draft").eq("invitation_id", inv.id).maybeSingle(),
+    anthem
+      .from("invite_submissions")
+      .select("staff_draft")
+      .eq("invitation_id", inv.id)
+      .maybeSingle(),
     anthem
       .from("invite_events")
       .select("id", { count: "exact", head: true })
@@ -310,20 +312,16 @@ Deno.serve(async (req) => {
         await logEvent(admin, inv.id, "revoked", "admin", uid);
         return json(req, { ok: true });
       case "extend": {
-        const days = body.days ?? 14;
-        const base = Math.max(Date.now(), new Date(inv.expires_at).getTime());
+        // "Reopen": links don't expire any more, so this only undoes a revoke (and clears old expiry dates).
         const patch: Record<string, unknown> = {
-          expires_at: new Date(base + days * 86400_000).toISOString(),
+          expires_at: null,
+          review_expires_at: null,
           revoked_at: null,
         };
         if (inv.status === "expired") patch.status = inv.sent_at ? "sent" : "draft";
-        if (inv.review_expires_at)
-          patch.review_expires_at = new Date(
-            Math.max(Date.now(), new Date(inv.review_expires_at).getTime()) + days * 86400_000,
-          ).toISOString();
         await anthem.from("creator_invitations").update(patch).eq("id", inv.id);
-        await logEvent(admin, inv.id, "extended", "admin", uid, { days });
-        return json(req, { ok: true, expires_at: patch.expires_at });
+        await logEvent(admin, inv.id, "reopened", "admin", uid);
+        return json(req, { ok: true });
       }
       case "regenerate_link": {
         const tok = await mintToken();

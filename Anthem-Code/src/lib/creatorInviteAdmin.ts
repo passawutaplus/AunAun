@@ -70,6 +70,7 @@ export const EVENT_LABEL: Record<string, string> = {
   publish_failed: "เผยแพร่ไม่สำเร็จ",
   revoked: "ยกเลิกลิงก์",
   extended: "ต่ออายุ",
+  reopened: "เปิดลิงก์อีกครั้ง",
   link_regenerated: "สร้างลิงก์ใหม่",
   unsubscribed: "ศิลปินหยุดรับอีเมล",
   expired: "หมดอายุ",

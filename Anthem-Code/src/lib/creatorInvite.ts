@@ -72,7 +72,7 @@ export interface PublicInvite {
   language: InviteLang;
   personal_note: string | null;
   status: InviteStatus;
-  expires_at: string;
+  expires_at: string | null;
   submit_mode: "full" | "quick" | null;
   submitted_at: string | null;
   can_edit: boolean;

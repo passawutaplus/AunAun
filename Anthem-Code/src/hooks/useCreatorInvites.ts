@@ -19,7 +19,7 @@ export interface AdminInviteRow {
   review_sent_at: string | null;
   sent_at: string | null;
   submitted_at: string | null;
-  expires_at: string;
+  expires_at: string | null;
   created_at: string;
   updated_at: string;
 }

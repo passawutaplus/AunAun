@@ -414,7 +414,7 @@ export default function AdminCreatorInvitationDetailPage() {
       );
     return (
       <p className="text-xs text-admin-muted">
-        หมดอายุ/ยกเลิกแล้ว — ต่ออายุเพื่อเปิดลิงก์อีกครั้ง
+        ยกเลิกลิงก์แล้ว — เปิดอีกครั้งได้จากเมนู ⋯
       </p>
     );
   })();
@@ -718,14 +718,16 @@ export default function AdminCreatorInvitationDetailPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-[13rem]">
-              <DropdownMenuItem
-                disabled={action.isPending}
-                onSelect={() =>
-                  void run({ action: "extend", days: 14 }, "ต่ออายุ 14 วันแล้ว")
-                }
-              >
-                ต่ออายุ 14 วัน
-              </DropdownMenuItem>
+              {inv.revoked_at || status === "expired" ? (
+                <DropdownMenuItem
+                  disabled={action.isPending}
+                  onSelect={() =>
+                    void run({ action: "extend" }, "เปิดลิงก์อีกครั้งแล้ว")
+                  }
+                >
+                  เปิดลิงก์อีกครั้ง
+                </DropdownMenuItem>
+              ) : null}
               <DropdownMenuItem
                 disabled={action.isPending}
                 onSelect={() =>
@@ -1049,7 +1051,14 @@ export default function AdminCreatorInvitationDetailPage() {
                   )
                 }
               />
-              <Row k="หมดอายุ" v={when(inv.expires_at, "d MMM yyyy")} />
+              <Row
+                k="หมดอายุ"
+                v={
+                  inv.expires_at
+                    ? when(inv.expires_at, "d MMM yyyy")
+                    : "ไม่หมดอายุ (ยกเลิก/ลบเอง)"
+                }
+              />
               <Row
                 k="ตรวจอนุมัติ"
                 v={
@@ -1225,7 +1234,7 @@ export default function AdminCreatorInvitationDetailPage() {
                   ? "เผยแพร่ Draft ที่ศิลปินอนุมัติเข้าบัญชีที่ศิลปินสมัครเองไว้แล้ว และส่งอีเมลแจ้ง"
                   : `สร้างบัญชีด้วย ${inv.contact_email ?? submission?.about.email ?? "อีเมลศิลปิน"} + รหัสสุ่ม 20 ตัว (ส่งทางอีเมลเท่านั้น ไม่แสดงที่นี่) แล้วเผยแพร่โปรไฟล์และผลงานที่อนุมัติ`
                 : confirm === "revoke"
-                  ? "ลิงก์คำเชิญและลิงก์ตรวจจะใช้ไม่ได้ทันที อีเมลที่รอส่งจะถูกยกเลิก (ต่ออายุเพื่อเปิดใหม่ได้)"
+                  ? "ลิงก์คำเชิญและลิงก์ตรวจจะใช้ไม่ได้ทันที อีเมลที่รอส่งจะถูกยกเลิก (เปิดใหม่ได้จากเมนู ⋯)"
                   : "ลบข้อมูล รูป และประวัติของคำเชิญนี้ถาวร ใช้เมื่อศิลปินขอลบข้อมูล"}
             </DialogDescription>
           </DialogHeader>
