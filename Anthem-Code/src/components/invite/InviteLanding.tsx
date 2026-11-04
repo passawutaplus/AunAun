@@ -7,8 +7,19 @@ import { publicInviteApi, rememberSelfSignup, type PublicInvite } from "@/lib/cr
 import type { InviteCopy } from "@/lib/creatorInviteCopy";
 import { cn } from "@/lib/utils";
 
-const COVER = "/landing/works/concrete.jpg";
-const THUMBS = ["/landing/works/poster.jpg", "/landing/works/riso.jpg", "/landing/works/chrome.jpg"];
+/** Example profile in the preview: the founder's own published SAMECOR profile and works (used with permission). */
+const MEDIA = "https://zkflkpbmbozrchqncpzi.supabase.co/storage/v1/object/public/project-media/anthem/82039b6d-cdf4-4c46-958a-d770d849382c";
+const SAMPLE = {
+  name: "Passawut Saelore",
+  discipline: "Illustration / Art",
+  avatar: `${MEDIA}/avatar/5c1c6002-4002-41f7-b0a7-2dacdd7dfe91.webp`,
+  cover: `${MEDIA}/cover/db9ff535-5214-44a0-88c7-8cd0b521f0f4.webp`,
+  works: [
+    `${MEDIA}/b04d9734-3412-4d3c-a851-9164f5cb300f/0c699f0d-a0d4-469f-9578-ab5cb50ae154.webp`,
+    `${MEDIA}/8fca0cac-ea67-4a47-aa04-742f4082b885/a9733fa1-5c3b-4f66-bdbd-463e79a75737.webp`,
+    `${MEDIA}/3fcd9ef0-1bf8-427c-8e9c-7127081c8886/b1c76751-db6e-46a7-834e-05683a627b42.webp`,
+  ],
+};
 
 /** Personal invitation landing: who it is for, who sends it, the two paths, what happens next, a preview. */
 export default function InviteLanding({ token, t, invite }: { token: string; t: InviteCopy; invite: PublicInvite }) {
@@ -20,7 +31,6 @@ export default function InviteLanding({ token, t, invite }: { token: string; t: 
     [t.next2, t.next2sub],
     [t.next3, t.next3sub],
   ];
-  const discipline = invite.discipline ?? "Creator";
 
   return (
     <div className="relative overflow-hidden">
@@ -30,7 +40,7 @@ export default function InviteLanding({ token, t, invite }: { token: string; t: 
         <div className="absolute -top-24 left-[34%] h-[40rem] w-10 rotate-[28deg] rounded-full bg-gradient-to-b from-brand/0 via-brand/30 to-brand/0 blur-xl" />
       </div>
 
-      <div className="relative mx-auto w-full max-w-6xl px-4 pb-16 pt-8 sm:px-6 sm:pt-12">
+      <div className="relative mx-auto w-full max-w-6xl px-4 pb-10 pt-8 sm:px-6 sm:pt-12">
         <div className="grid gap-10 md:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] md:items-start md:gap-10 lg:gap-16">
           <section>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand">{t.eyebrow}</p>
@@ -144,15 +154,13 @@ export default function InviteLanding({ token, t, invite }: { token: string; t: 
               <Search className="h-3.5 w-3.5 text-muted-foreground" />
               <Bell className="h-3.5 w-3.5 text-muted-foreground" />
             </div>
-            <img src={COVER} alt="" className="h-28 w-full object-cover grayscale sm:h-36" loading="lazy" />
+            <img src={SAMPLE.cover} alt="" className="h-28 w-full object-cover sm:h-36" loading="lazy" />
             <div className="px-4 pb-4">
-              <div className="-mt-8 flex items-end gap-3">
-                <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-4 border-background bg-secondary text-lg font-semibold text-foreground">
-                  {invite.display_name.slice(0, 1).toUpperCase()}
-                </span>
-                <div className="min-w-0 flex-1 pb-1">
-                  <p className="truncate text-base font-semibold text-foreground">{invite.display_name}</p>
-                  <p className="truncate text-[11px] text-muted-foreground">{discipline}</p>
+              <div className="relative flex items-end gap-3">
+                <img src={SAMPLE.avatar} alt="" loading="lazy" className="-mt-8 h-16 w-16 shrink-0 rounded-full border-4 border-background object-cover" />
+                <div className="min-w-0 flex-1 pt-2">
+                  <p className="truncate text-base font-semibold text-foreground">{SAMPLE.name}</p>
+                  <p className="truncate text-[11px] text-muted-foreground">{SAMPLE.discipline}</p>
                 </div>
                 <span className="mb-1 rounded-md bg-brand px-3 py-1 text-[11px] font-semibold text-white">Follow</span>
               </div>
@@ -162,7 +170,7 @@ export default function InviteLanding({ token, t, invite }: { token: string; t: 
                 <span className="pb-1.5 text-muted-foreground">About</span>
               </div>
               <div className="mt-3 grid grid-cols-3 gap-2">
-                {THUMBS.map((src) => (
+                {SAMPLE.works.map((src) => (
                   <img key={src} src={src} alt="" loading="lazy" className="aspect-[4/3] w-full rounded-md object-cover" />
                 ))}
               </div>

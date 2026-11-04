@@ -6,6 +6,7 @@ import { ArrowLeft, ArrowRight, ArrowUpRight, Check, ChevronLeft, ChevronRight, 
 import SeoHead from "@/components/SeoHead";
 import InviteProfilePreview from "@/components/invite/InviteProfilePreview";
 import InviteLanding from "@/components/invite/InviteLanding";
+import InviteWorksBackdrop from "@/components/invite/InviteWorksBackdrop";
 import { InviteShell, InviteStateCard } from "@/components/invite/InviteShell";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -95,6 +96,7 @@ export default function CreatorInvitePage() {
 
   const { invite } = q.data;
   let body: React.ReactNode;
+  let bleed = false;
   if (params.get("unsubscribe") === "1") body = <Unsubscribe token={token} t={t} already={invite.unsubscribed} />;
   else if (submitted || (invite.status === "submitted" && !formRoute))
     body = <Thanks t={t} invite={invite} submission={normalizeSubmission(q.data.submission, invite)} token={token} />;
@@ -112,10 +114,18 @@ export default function CreatorInvitePage() {
         onSubmitted={() => setSubmitted(true)}
       />
     );
-  else body = <InviteLanding token={token} t={t} invite={invite} />;
+  else {
+    bleed = true;
+    body = (
+      <>
+        <InviteLanding token={token} t={t} invite={invite} />
+        <InviteWorksBackdrop className="mx-auto w-full max-w-6xl" />
+      </>
+    );
+  }
 
   return (
-    <InviteShell lang={effectiveLang} onLang={setLang} t={t}>
+    <InviteShell lang={effectiveLang} onLang={setLang} t={t} bleed={bleed}>
       {seo}
       {body}
     </InviteShell>
