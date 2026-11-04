@@ -23,7 +23,6 @@ import {
   isTokenShape,
   normalizeSubmission,
   publicInviteApi,
-  rememberSelfSignup,
   uploadInviteImage,
   validateQuick,
   validateStep,
