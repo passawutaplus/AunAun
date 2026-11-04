@@ -493,7 +493,7 @@ const ProjectDetailPage = ({ overlay = false }: { overlay?: boolean } = {}) => {
       <div
         className={cn(
           "max-w-[1920px] mx-auto px-3 sm:px-[calc(1rem+25px)] lg:px-[calc(1.5rem+25px)] 2xl:px-[calc(2.5rem+25px)] py-6 lg:py-10",
-          overlay && "pt-16 lg:pt-10",
+          overlay && "pt-16 lg:px-0 lg:pt-6 2xl:px-0",
         )}
         data-overlay-backdrop={overlay || undefined}
       >
@@ -547,13 +547,15 @@ const ProjectDetailPage = ({ overlay = false }: { overlay?: boolean } = {}) => {
         <div
           className={cn(
             "mx-auto grid w-full max-w-[64rem] grid-cols-1 gap-6 lg:grid-cols-[minmax(0,58rem)_3.5rem] lg:justify-center lg:gap-x-5",
-            overlay && "gap-y-0 lg:gap-y-0",
+            overlay &&
+              "max-w-none gap-y-0 lg:grid-cols-[minmax(4.5rem,1fr)_minmax(0,88rem)_minmax(4.5rem,1fr)] lg:gap-x-0 lg:gap-y-0",
           )}
           data-overlay-backdrop={overlay || undefined}
         >
           <div
             className={cn(
               "min-w-0 w-full space-y-4 overflow-x-clip lg:col-start-1 lg:row-start-1",
+              overlay && "lg:col-start-2",
               overlay && "rounded-t-2xl bg-background p-3 sm:p-5 lg:p-6",
             )}
           >
@@ -581,7 +583,7 @@ const ProjectDetailPage = ({ overlay = false }: { overlay?: boolean } = {}) => {
               ) : canvasBlocks.length > 0 ? (
                 <ProjectContentBlocksView
                   blocks={canvasBlocks}
-                  className="mx-auto w-full min-w-0 max-w-4xl"
+                  className={cn("mx-auto w-full min-w-0 max-w-4xl", overlay && "max-w-6xl")}
                   projectId={dbProject?.id ?? project.id}
                   projectTitle={project.title}
                   onContact={!isOwner && project.ownerId ? openChat : undefined}
@@ -596,7 +598,10 @@ const ProjectDetailPage = ({ overlay = false }: { overlay?: boolean } = {}) => {
 
           {/* Right: floating rail — profile + follow, then collection / share / message. */}
           <div
-            className="hidden lg:block lg:col-start-2 lg:row-span-2 lg:row-start-1"
+            className={cn(
+              "hidden lg:block lg:col-start-2 lg:row-span-2 lg:row-start-1",
+              overlay && "lg:col-start-3 lg:justify-self-center",
+            )}
             data-overlay-backdrop={overlay || undefined}
           >
             <ProjectActionRail
@@ -610,6 +615,7 @@ const ProjectDetailPage = ({ overlay = false }: { overlay?: boolean } = {}) => {
           <div
             className={cn(
               "min-w-0 w-full space-y-6 pt-2 lg:col-start-1 lg:row-start-2",
+              overlay && "lg:col-start-2",
               overlay &&
                 "rounded-b-2xl bg-background px-3 pb-8 pt-6 sm:px-5 lg:px-10 lg:pb-12",
             )}
