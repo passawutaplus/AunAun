@@ -14,8 +14,37 @@ import {
   formatReport,
   formatEvent,
   flexEvent,
+  flexTrend,
   isIgnoredEmail,
 } from "../../../supabase/functions/_shared/line-admin-format";
+
+describe("weekly trend report", () => {
+  const t = {
+    title: "SAMECOR Trend Report",
+    week_of: "2026-11-02",
+    summary: [
+      "งานสาย Illustration มาแรง",
+      "ลูกค้าหาคนทำ short video มากขึ้น",
+      "คู่แข่งเปิดฟีเจอร์ AI ใหม่",
+    ],
+    doc_url: "https://docs.google.com/document/d/abc123/edit",
+  };
+
+  it("lists every summary line and links the button to the Doc", () => {
+    const s = JSON.stringify(flexTrend(t));
+    for (const line of t.summary) expect(s).toContain(line);
+    expect(s).toContain('"uri":"https://docs.google.com/document/d/abc123/edit"');
+    expect(s).toContain("อ่านรายงานเต็ม");
+  });
+
+  it("shows the week in Thai and keeps at most seven lines", () => {
+    const many = { ...t, summary: Array.from({ length: 9 }, (_, i) => `ข้อ ${i + 1}`) };
+    const s = JSON.stringify(flexTrend(many));
+    expect(s).toContain("สัปดาห์ของ");
+    expect(s).toContain("ข้อ 7");
+    expect(s).not.toContain('"text":"ข้อ 8"');
+  });
+});
 
 describe("exhibition event alerts", () => {
   const ev = {
@@ -40,11 +69,19 @@ describe("exhibition event alerts", () => {
 
   it("says when an event comes back after a review", () => {
     expect(formatEvent({ ...ev, resubmitted: true })).toContain("ส่งตรวจใหม่");
-    expect(JSON.stringify(flexEvent({ ...ev, resubmitted: true }))).toContain("Exhibition ส่งตรวจใหม่");
+    expect(JSON.stringify(flexEvent({ ...ev, resubmitted: true }))).toContain(
+      "Exhibition ส่งตรวจใหม่",
+    );
   });
 
   it("copes with a one-day event and missing details", () => {
-    const t = formatEvent({ ...ev, ends_on: ev.starts_on, location_name: null, organizer_name: null, owner: null });
+    const t = formatEvent({
+      ...ev,
+      ends_on: ev.starts_on,
+      location_name: null,
+      organizer_name: null,
+      owner: null,
+    });
     expect(t).toContain("Exhibition · 2026-11-15");
     expect(t).not.toContain("–");
   });
@@ -89,7 +126,11 @@ describe("formatters", () => {
     expect(t).toContain("@newuser");
   });
   it("burst lists members and caps at 10", () => {
-    const many = Array.from({ length: 12 }, (_, i) => ({ ...member, id: String(i), email: `u${i}@gmail.com` }));
+    const many = Array.from({ length: 12 }, (_, i) => ({
+      ...member,
+      id: String(i),
+      email: `u${i}@gmail.com`,
+    }));
     const t = formatMembersBurst(many);
     expect(t).toContain("12 คน");
     expect(t).toContain("u9@gmail.com");
@@ -98,24 +139,41 @@ describe("formatters", () => {
   });
   it("feedback and report include admin links", () => {
     const f = formatFeedback({
-      ticket_number: "FB-1", kind: "bug", rating: 4, message: "พัง", route: "/feed",
-      created_at: "2026-10-30T07:28:00Z", username: "u", from_app: true,
+      ticket_number: "FB-1",
+      kind: "bug",
+      rating: 4,
+      message: "พัง",
+      route: "/feed",
+      created_at: "2026-10-30T07:28:00Z",
+      username: "u",
+      from_app: true,
     });
     expect(f).toContain("FB-1");
     expect(f).toContain("จากแอป");
     expect(f).toContain("/admin/feedback");
     const r = formatReport({
-      target_type: "project", target_id: "1", reason: "spam", details: null,
-      created_at: "2026-10-30T07:28:00Z", reporter: "a", target_owner: "b",
+      target_type: "project",
+      target_id: "1",
+      reason: "spam",
+      details: null,
+      created_at: "2026-10-30T07:28:00Z",
+      reporter: "a",
+      target_owner: "b",
     });
     expect(r).toContain("สแปม");
     expect(r).toContain("/admin/reports");
   });
   it("digest lists works and Android sessions", () => {
     const t = formatDigest({
-      total_members: 50, new_members: 3, new_works: 8,
+      total_members: 50,
+      new_members: 3,
+      new_works: 8,
       new_works_list: Array.from({ length: 8 }, (_, i) => ({ title: `w${i}`, owner: "o" })),
-      feedback_24h: 1, feedback_open: 2, reports_open: 0, sessions_24h: 40, android_sessions_24h: 5,
+      feedback_24h: 1,
+      feedback_open: 2,
+      reports_open: 0,
+      sessions_24h: 40,
+      android_sessions_24h: 5,
     });
     expect(t).toContain("สมาชิกใหม่: 3 (รวม 50)");
     expect(t).toContain("อีก 2 ชิ้น");
@@ -125,9 +183,15 @@ describe("formatters", () => {
 
 describe("flex messages", () => {
   const digest = {
-    total_members: 19, new_members: 1, new_works: 1,
+    total_members: 19,
+    new_members: 1,
+    new_works: 1,
     new_works_list: [{ title: "To day", owner: "goodnight" }],
-    feedback_24h: 1, feedback_open: 3, reports_open: 0, sessions_24h: 76, android_sessions_24h: 28,
+    feedback_24h: 1,
+    feedback_open: 3,
+    reports_open: 0,
+    sessions_24h: 76,
+    android_sessions_24h: 28,
   };
   it("digest is a bubble with icons, a text altText and an admin link", () => {
     const m = flexDigest(digest);
@@ -135,15 +199,22 @@ describe("flex messages", () => {
     if (m.type !== "flex") return;
     expect(m.altText).toContain("สรุปประจำวัน");
     const json = JSON.stringify(m.contents);
-    for (const i of ["user-plus", "message", "users"]) expect(json).toContain(`/line-icons/${i}.png`);
+    for (const i of ["user-plus", "message", "users"])
+      expect(json).toContain(`/line-icons/${i}.png`);
     expect(json).toContain("https://samecor.com/admin");
     expect(m.altText.length).toBeLessThanOrEqual(400);
   });
   it("dashboard shows device split, sources, top works and deltas", () => {
     const m = flexDigest({
-      ...digest, sessions_prev: 50, views_24h: 269, views_prev: 72,
+      ...digest,
+      sessions_prev: 50,
+      views_24h: 269,
+      views_prev: 72,
       devices: { mobile: 30, desktop: 10, android: 28, unknown: 8 },
-      sources: [{ label: "QR / NFC", n: 17 }, { label: "Facebook", n: 4 }],
+      sources: [
+        { label: "QR / NFC", n: 17 },
+        { label: "Facebook", n: 4 },
+      ],
       top_works: [{ title: "To day", owner: "goodnight", views: 7 }],
     });
     const json = JSON.stringify(m);
@@ -161,17 +232,42 @@ describe("flex messages", () => {
     expect(deltaText(5, 10)?.text).toBe("▼ 50%");
   });
   it("member keeps the full email", () => {
-    const m = flexMember({ id: "1", email: "full.addr@gmail.com", provider: "email", joined_at: "2026-10-30T07:28:00Z", username: "u", display_name: "U", works: 2 });
+    const m = flexMember({
+      id: "1",
+      email: "full.addr@gmail.com",
+      provider: "email",
+      joined_at: "2026-10-30T07:28:00Z",
+      username: "u",
+      display_name: "U",
+      works: 2,
+    });
     expect(JSON.stringify(m)).toContain("full.addr@gmail.com");
   });
   it("feedback without message or ticket still builds", () => {
-    const m = flexFeedback({ ticket_number: null, kind: null, rating: null, message: null, route: null, created_at: "2026-10-30T07:28:00Z", username: null, from_app: false });
+    const m = flexFeedback({
+      ticket_number: null,
+      kind: null,
+      rating: null,
+      message: null,
+      route: null,
+      created_at: "2026-10-30T07:28:00Z",
+      username: null,
+      from_app: false,
+    });
     expect(m.type).toBe("flex");
   });
 });
 
 describe("members batch (every 2 h)", () => {
-  const mk = (i: number) => ({ id: String(i), email: `u${i}@gmail.com`, provider: i % 2 ? "google" : "email", joined_at: "2026-10-30T07:28:00Z", username: `u${i}`, display_name: `User ${i}`, works: 0 });
+  const mk = (i: number) => ({
+    id: String(i),
+    email: `u${i}@gmail.com`,
+    provider: i % 2 ? "google" : "email",
+    joined_at: "2026-10-30T07:28:00Z",
+    username: `u${i}`,
+    display_name: `User ${i}`,
+    works: 0,
+  });
   it("lists names and full emails in one card", () => {
     const m = flexMembersBatch([mk(1), mk(2)]);
     expect(m.type).toBe("flex");
@@ -198,7 +294,17 @@ describe("batchWindow", () => {
   it("member card shows the window and each sign-up time", () => {
     const json = JSON.stringify(
       flexMembersBatch(
-        [{ id: "1", email: "a@gmail.com", provider: "google", joined_at: "2026-10-30T09:05:00Z", username: "a", display_name: "A", works: 0 }],
+        [
+          {
+            id: "1",
+            email: "a@gmail.com",
+            provider: "google",
+            joined_at: "2026-10-30T09:05:00Z",
+            username: "a",
+            display_name: "A",
+            works: 0,
+          },
+        ],
         new Date("2026-10-30T09:00:00Z"),
       ),
     );
