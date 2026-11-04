@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/button";
 import PageLoader from "@/components/ui/PageLoader";
@@ -7,9 +7,13 @@ import HireDialog from "@/components/HireDialog";
 import CollabDialog from "@/components/CollabDialog";
 import CommentSection from "@/components/CommentSection";
 import ProjectSidePanel from "@/components/ProjectSidePanel";
+import ProjectActionRail from "@/components/project/ProjectActionRail";
 import ProjectContextCard from "@/components/project/ProjectContextCard";
 import { OwnerOtherWorks } from "@/components/project/OwnerOtherWorks";
-import { hasPendingProjectAssets, parseProjectAssets } from "@/lib/projectAssets";
+import {
+  hasPendingProjectAssets,
+  parseProjectAssets,
+} from "@/lib/projectAssets";
 import ProjectCreditsBlock from "@/components/ProjectCreditsBlock";
 import { supabase } from "@/integrations/supabase/client";
 import { ProjectContentBlocksView } from "@/components/project/ProjectContentBlocksView";
@@ -55,12 +59,18 @@ import {
   fetchPostsMentioningProject,
   type LinkedPostSummary,
 } from "@/lib/portfolioLinkedPosts";
-import { profilesPublicFrom, PUBLIC_PROFILE_READ_SELECT } from "@/lib/profileAccess";
+import {
+  profilesPublicFrom,
+  PUBLIC_PROFILE_READ_SELECT,
+} from "@/lib/profileAccess";
 import PackageReturnBanner from "@/components/services/PackageReturnBanner";
 import ProjectCollabInviteBanner from "@/components/project/ProjectCollabInviteBanner";
 import { cn } from "@/lib/utils";
-import UserAvatar from "@/components/UserAvatar";
-import { RelatedObjectsRow, RelatedPackagesRow, SimilarWorksRow } from "@/components/project/ProjectMoreSections";
+import {
+  RelatedObjectsRow,
+  RelatedPackagesRow,
+  SimilarWorksRow,
+} from "@/components/project/ProjectMoreSections";
 import { isVideoUrl } from "@/lib/videoAccept";
 
 const ProjectDetailPage = () => {
@@ -75,7 +85,13 @@ const ProjectDetailPage = () => {
   }, [id]);
   const { user } = useAuth();
   const hiddenProjectIds = useHiddenProjectIds();
-  const { data: dbProject, isLoading, isError, refetch, isFetching } = useProject(id);
+  const {
+    data: dbProject,
+    isLoading,
+    isError,
+    refetch,
+    isFetching,
+  } = useProject(id);
   const { data: sponsorAd } = useAdCampaign(sponsorAdId ?? undefined);
 
   useEffect(() => {
@@ -95,26 +111,41 @@ const ProjectDetailPage = () => {
       sessionStorage.setItem(key, "1");
       void supabase
         .rpc("increment_project_view", { _project_id: dbProject.id })
-        .then(() => {
-          void refetch();
-        }, () => {});
+        .then(
+          () => {
+            void refetch();
+          },
+          () => {},
+        );
     }
     if (analyticsOk) {
-      void trackProductEvent("project_view", { project_id: dbProject.id }, { debounceMs: 5_000 });
+      void trackProductEvent(
+        "project_view",
+        { project_id: dbProject.id },
+        { debounceMs: 5_000 },
+      );
     }
     recordProjectViewAffinity({
       category: dbProject.category,
-      opportunityTypes: (dbProject as { opportunity_types?: string[] | null }).opportunity_types,
+      opportunityTypes: (dbProject as { opportunity_types?: string[] | null })
+        .opportunity_types,
     });
     // Per-user history (signed-in + analytics consent) for personalized Explore
     if (user?.id && analyticsOk) {
       supabase
         .from("project_views")
         .upsert(
-          { user_id: user.id, project_id: dbProject.id, viewed_at: new Date().toISOString() },
-          { onConflict: "user_id,project_id" }
+          {
+            user_id: user.id,
+            project_id: dbProject.id,
+            viewed_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id,project_id" },
         )
-        .then(() => {}, () => {});
+        .then(
+          () => {},
+          () => {},
+        );
     }
   }, [user?.id, dbProject?.id, dbProject?.category, refetch]);
 
@@ -130,7 +161,10 @@ const ProjectDetailPage = () => {
     const interval = window.setInterval(() => {
       void refetch();
     }, 5000);
-    const timeout = window.setTimeout(() => window.clearInterval(interval), 120_000);
+    const timeout = window.setTimeout(
+      () => window.clearInterval(interval),
+      120_000,
+    );
     return () => {
       window.clearInterval(interval);
       window.clearTimeout(timeout);
@@ -142,7 +176,6 @@ const ProjectDetailPage = () => {
     user?.id,
     refetch,
   ]);
-
 
   // Fetch owner profile for DB projects
   const { data: ownerProfile } = useQuery({
@@ -174,15 +207,18 @@ const ProjectDetailPage = () => {
     ? parseEditorMode((dbProject as { editor_mode?: string }).editor_mode)
     : "casual";
   const flexLayout = dbProject
-    ? parseFlexGridLayout((dbProject as { flex_grid_layout?: unknown }).flex_grid_layout)
+    ? parseFlexGridLayout(
+        (dbProject as { flex_grid_layout?: unknown }).flex_grid_layout,
+      )
     : null;
   const canvasBlocks = dbProject
     ? resolveProjectCanvas({
-        content_blocks: (dbProject as { content_blocks?: unknown }).content_blocks,
+        content_blocks: (dbProject as { content_blocks?: unknown })
+          .content_blocks,
         // The short description already has its own card in the side panel; do not repeat it in the canvas.
         description: null,
         gallery_urls: dbProject.gallery_urls ?? [],
-        video_urls: ((dbProject as { video_urls?: string[] }).video_urls) ?? [],
+        video_urls: (dbProject as { video_urls?: string[] }).video_urls ?? [],
       })
     : [];
   const mediaItems =
@@ -204,14 +240,17 @@ const ProjectDetailPage = () => {
         ownerId: dbProject.owner_id,
         owner: ownerProfile?.display_name || "ฟรีแลนซ์",
         ownerAvatar: ownerProfile?.avatar_url ?? "",
-        ownerVerified: !!(ownerProfile as { is_verified?: boolean } | null)?.is_verified,
+        ownerVerified: !!(ownerProfile as { is_verified?: boolean } | null)
+          ?.is_verified,
         likes: dbProject.likes,
         views: dbProject.views,
         bookmarked: false,
         publishedDate: dbProject.created_at,
         tools: dbProject.tools ?? [],
         tags: dbProject.tags ?? [],
-        price: dbProject.price_thb ? `฿${dbProject.price_thb.toLocaleString("th-TH")}` : undefined,
+        price: dbProject.price_thb
+          ? `฿${dbProject.price_thb.toLocaleString("th-TH")}`
+          : undefined,
         priceThb: dbProject.price_thb ?? null,
         description: dbProject.description ?? "",
         allowHire: (dbProject as any).allow_hire ?? true,
@@ -221,18 +260,25 @@ const ProjectDetailPage = () => {
         copyrightHolder: dbProject.copyright_holder ?? "",
         hasThirdPartyAssets: dbProject.has_third_party_assets ?? false,
         thirdPartyNote: dbProject.third_party_note ?? "",
-        aiAssisted: (dbProject as { ai_assisted?: boolean }).ai_assisted ?? false,
-        aiDisclosureNote: (dbProject as { ai_disclosure_note?: string }).ai_disclosure_note ?? "",
+        aiAssisted:
+          (dbProject as { ai_assisted?: boolean }).ai_assisted ?? false,
+        aiDisclosureNote:
+          (dbProject as { ai_disclosure_note?: string }).ai_disclosure_note ??
+          "",
         context: {
           brief: (dbProject as { brief?: string }).brief,
           creator_role: (dbProject as { creator_role?: string }).creator_role,
           process_note: (dbProject as { process_note?: string }).process_note,
           deliverables: (dbProject as { deliverables?: string }).deliverables,
-          duration_label: (dbProject as { duration_label?: string }).duration_label,
+          duration_label: (dbProject as { duration_label?: string })
+            .duration_label,
           outcome_note: (dbProject as { outcome_note?: string }).outcome_note,
-          context_images: (dbProject as { context_images?: unknown }).context_images,
-          opportunity_types: (dbProject as { opportunity_types?: string[] }).opportunity_types,
-          opportunity_note: (dbProject as { opportunity_note?: string }).opportunity_note,
+          context_images: (dbProject as { context_images?: unknown })
+            .context_images,
+          opportunity_types: (dbProject as { opportunity_types?: string[] })
+            .opportunity_types,
+          opportunity_note: (dbProject as { opportunity_note?: string })
+            .opportunity_note,
         },
       }
     : null;
@@ -242,13 +288,25 @@ const ProjectDetailPage = () => {
   const [chatOpen, setChatOpen] = useState(false);
 
   const projectIdForLike = dbProject?.id;
-  const { likes: likeCount, isLiked: liked, toggle: toggleLike, canInteract } = useProjectLike(projectIdForLike);
+  const {
+    likes: likeCount,
+    isLiked: liked,
+    toggle: toggleLike,
+    canInteract,
+  } = useProjectLike(projectIdForLike);
 
   const { data: linkedPosts = [] } = useQuery({
-    queryKey: ["project-linked-posts", id, (dbProject as { linked_community_post_ids?: string[] } | undefined)?.linked_community_post_ids],
+    queryKey: [
+      "project-linked-posts",
+      id,
+      (dbProject as { linked_community_post_ids?: string[] } | undefined)
+        ?.linked_community_post_ids,
+    ],
     enabled: !!id && !!dbProject,
     queryFn: async (): Promise<LinkedPostSummary[]> => {
-      const stored = (dbProject as { linked_community_post_ids?: string[] }).linked_community_post_ids ?? [];
+      const stored =
+        (dbProject as { linked_community_post_ids?: string[] })
+          .linked_community_post_ids ?? [];
       const [fromStored, fromMentions] = await Promise.all([
         stored.length ? fetchLinkedPostSummaries(stored) : Promise.resolve([]),
         fetchPostsMentioningProject(id!),
@@ -294,15 +352,24 @@ const ProjectDetailPage = () => {
   };
 
   if (isLoading || (isFetching && !dbProject)) {
-    return <PageLoader label="กำลังโหลดผลงาน… รอสักครู่" className="bg-app-ambient" />;
+    return (
+      <PageLoader
+        label="กำลังโหลดผลงาน… รอสักครู่"
+        className="bg-app-ambient"
+      />
+    );
   }
   if (isError) {
     return (
       <div className="min-h-screen bg-app-ambient flex items-center justify-center px-4">
         <div className="text-center space-y-4 max-w-md">
-          <p className="text-muted-foreground">โหลดผลงานไม่สำเร็จ — อาจเป็นชั่วคราวหรือคุณไม่มีสิทธิ์ดูผลงานนี้</p>
+          <p className="text-muted-foreground">
+            โหลดผลงานไม่สำเร็จ — อาจเป็นชั่วคราวหรือคุณไม่มีสิทธิ์ดูผลงานนี้
+          </p>
           <div className="flex flex-wrap justify-center gap-2">
-            <Button variant="outline" onClick={() => void refetch()}>ลองใหม่</Button>
+            <Button variant="outline" onClick={() => void refetch()}>
+              ลองใหม่
+            </Button>
             <Button onClick={() => navigate("/")}>กลับหน้าหลัก</Button>
           </div>
         </div>
@@ -313,17 +380,21 @@ const ProjectDetailPage = () => {
     return (
       <div className="min-h-screen bg-app-ambient flex items-center justify-center">
         <div className="text-center">
-          <p className="text-muted-foreground mb-4">ไม่พบผลงานนี้ หรือยังไม่ได้เผยแพร่</p>
+          <p className="text-muted-foreground mb-4">
+            ไม่พบผลงานนี้ หรือยังไม่ได้เผยแพร่
+          </p>
           <Button onClick={() => navigate("/")}>กลับหน้าหลัก</Button>
         </div>
       </div>
     );
   }
 
-  const shareUrl = typeof window !== "undefined" ? window.location.href : `/showcase/${id}`;
+  const shareUrl =
+    typeof window !== "undefined" ? window.location.href : `/showcase/${id}`;
   const isOwner = !!user?.id && user.id === dbProject?.owner_id;
   const ownerUsername =
-    (ownerProfile as { username?: string | null } | null | undefined)?.username ?? null;
+    (ownerProfile as { username?: string | null } | null | undefined)
+      ?.username ?? null;
   const localSelfHirePreview =
     isOwner &&
     (isLocalDevSelfHirePreview(ownerUsername) ||
@@ -340,7 +411,20 @@ const ProjectDetailPage = () => {
     { name: "ผลงาน", path: "/" },
     { name: project.title, path: projectPath },
   ];
-  const authorUrl = project.ownerId ? absoluteUrl(`/u/${project.ownerId}`) : undefined;
+  const authorUrl = project.ownerId
+    ? absoluteUrl(`/u/${project.ownerId}`)
+    : undefined;
+  const railProps = {
+    projectId: dbProject?.id,
+    title: project.title,
+    ownerId: project.ownerId,
+    ownerName: project.owner,
+    ownerAvatar: project.ownerAvatar,
+    isOwner,
+    onChat: project.ownerId ? openChat : undefined,
+    shareUrl,
+    shareImageUrl: coverImage || undefined,
+  };
 
   return (
     <main id="main-content" className="min-h-screen bg-app-ambient">
@@ -374,7 +458,10 @@ const ProjectDetailPage = () => {
         >
           <div className="flex items-center gap-3 min-w-0">
             <BackButton />
-            <SeoBreadcrumb items={crumbs} className="mb-0 hidden md:flex min-w-0" />
+            <SeoBreadcrumb
+              items={crumbs}
+              className="mb-0 hidden md:flex min-w-0"
+            />
           </div>
           <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             {dbProject ? (
@@ -389,7 +476,9 @@ const ProjectDetailPage = () => {
             <HeaderAccountActions />
           </div>
         </div>
-        {fromPackageId ? <PackageReturnBanner serviceId={fromPackageId} /> : null}
+        {fromPackageId ? (
+          <PackageReturnBanner serviceId={fromPackageId} />
+        ) : null}
       </div>
 
       <div className="max-w-[1920px] mx-auto px-3 sm:px-[calc(1rem+25px)] lg:px-[calc(1.5rem+25px)] 2xl:px-[calc(2.5rem+25px)] py-6 lg:py-10">
@@ -398,11 +487,13 @@ const ProjectDetailPage = () => {
             projectId={dbProject.id}
             ownerName={
               ownerProfile?.display_name ||
-              (ownerProfile as { username?: string | null } | null | undefined)?.username ||
+              (ownerProfile as { username?: string | null } | null | undefined)
+                ?.username ||
               "เจ้าของผลงาน"
             }
             isCollaborator={(
-              (dbProject as { collab_user_ids?: string[] | null }).collab_user_ids ?? []
+              (dbProject as { collab_user_ids?: string[] | null })
+                .collab_user_ids ?? []
             ).includes(user.id)}
           />
         ) : null}
@@ -411,10 +502,14 @@ const ProjectDetailPage = () => {
             <div className="flex items-start gap-3">
               <Megaphone className="w-5 h-5 text-primary shrink-0 mt-0.5" />
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-primary">Sponsored</p>
+                <p className="text-xs font-medium uppercase tracking-wide text-primary">
+                  Sponsored
+                </p>
                 <p className="font-medium text-sm">{sponsorAd.title}</p>
                 {sponsorAd.tagline ? (
-                  <p className="text-xs text-muted-foreground">{sponsorAd.tagline}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {sponsorAd.tagline}
+                  </p>
                 ) : null}
               </div>
             </div>
@@ -433,25 +528,14 @@ const ProjectDetailPage = () => {
             ) : null}
           </div>
         ) : null}
-        {/* Centered canvas + sidebar cluster — wider than old 1fr|320 so margins balance. */}
-        {/* Grid so phones read: work → creator & actions → comments / more works; desktop keeps the sticky side panel. */}
-        <div className="mx-auto grid w-full max-w-[84rem] grid-cols-1 gap-8 lg:grid-cols-[minmax(0,56rem)_22.5rem] lg:justify-center lg:gap-x-10 xl:grid-cols-[minmax(0,56rem)_24rem] xl:gap-x-12">
+        {/* Work on a paper canvas with a floating action rail beside it (lg+); details sit under the work. */}
+        <div className="mx-auto grid w-full max-w-[64rem] grid-cols-1 gap-6 lg:grid-cols-[minmax(0,58rem)_3.5rem] lg:justify-center lg:gap-x-5">
           <div className="min-w-0 w-full space-y-4 overflow-x-clip lg:col-start-1 lg:row-start-1">
-            <div className="flex items-center gap-3 lg:hidden">
-              <Link to={`/u/${project.ownerId}`} className="flex min-w-0 flex-1 items-center gap-2">
-                <UserAvatar src={project.ownerAvatar} name={project.owner} className="h-8 w-8" fallbackClassName="text-[10px]" />
-                <span className="truncate text-sm font-medium text-foreground">{project.owner}</span>
-              </Link>
-              {isOwner && dbProject ? (
-                <Button asChild size="sm" variant="outline" className="h-8 rounded-full">
-                  <Link to={`/portfolio/${dbProject.id}/edit`}>แก้ไขผลงาน</Link>
-                </Button>
-              ) : project.ownerId ? (
-                <Button size="sm" className="h-8 rounded-full" onClick={openChat}>
-                  Message
-                </Button>
-              ) : null}
-            </div>
+            <ProjectActionRail
+              variant="row"
+              className="lg:hidden"
+              {...railProps}
+            />
             {dbProject && (
               <ProjectCreditsBlock
                 studioId={(dbProject as any).studio_id}
@@ -459,83 +543,99 @@ const ProjectDetailPage = () => {
                 ownerId={dbProject.owner_id}
               />
             )}
-            {editorMode === "flex_grid" && flexLayout ? (
-              <FlexGridView
-                layout={flexLayout}
-                className="w-full min-w-0 max-w-full"
-                projectId={dbProject?.id ?? project.id}
-                projectTitle={project.title}
-                onContact={!isOwner && project.ownerId ? openChat : undefined}
-              />
-            ) : canvasBlocks.length > 0 ? (
-              <ProjectContentBlocksView
-                blocks={canvasBlocks}
-                className="w-full min-w-0 max-w-4xl"
-                projectId={dbProject?.id ?? project.id}
-                projectTitle={project.title}
-                onContact={!isOwner && project.ownerId ? openChat : undefined}
-              />
-            ) : (
-              <div className="aspect-video rounded-2xl bg-muted flex items-center justify-center text-muted-foreground">
-                ยังไม่มีเนื้อหา
-              </div>
-            )}
-
+            <div className="work-paper rounded-2xl p-2 shadow-sm ring-1 ring-black/5 sm:p-5 lg:p-8">
+              {editorMode === "flex_grid" && flexLayout ? (
+                <FlexGridView
+                  layout={flexLayout}
+                  className="w-full min-w-0 max-w-full"
+                  projectId={dbProject?.id ?? project.id}
+                  projectTitle={project.title}
+                  onContact={!isOwner && project.ownerId ? openChat : undefined}
+                />
+              ) : canvasBlocks.length > 0 ? (
+                <ProjectContentBlocksView
+                  blocks={canvasBlocks}
+                  className="mx-auto w-full min-w-0 max-w-4xl"
+                  projectId={dbProject?.id ?? project.id}
+                  projectTitle={project.title}
+                  onContact={!isOwner && project.ownerId ? openChat : undefined}
+                />
+              ) : (
+                <div className="aspect-video rounded-2xl bg-muted flex items-center justify-center text-muted-foreground">
+                  ยังไม่มีเนื้อหา
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Right: Side panel — sticky + self-scroll when hovered */}
-          <FadeUp
-            className="w-full min-w-0 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto lg:overscroll-contain scrollbar-hide"
-            delay={0.06}
-          >
-            <ProjectSidePanel
-              projectId={dbProject?.id}
-              title={project.title}
-              category={project.category}
-              ownerName={project.owner}
-              ownerAvatar={project.ownerAvatar}
-              ownerId={project.ownerId}
-              ownerVerified={project.ownerVerified}
-              publishedDate={project.publishedDate}
-              description={project.description}
-              tools={project.tools}
-              tags={project.tags}
-              price={project.price}
-              priceThb={project.priceThb}
-              views={project.views}
-              likes={likeCount}
-              commentsCount={commentsCount}
-              liked={liked}
-              onLike={handleLike}
-              onHire={openHire}
-              onCollab={() => setCollabOpen(true)}
-              onChat={project.ownerId ? openChat : undefined}
-              allowHire={project.allowHire}
-              allowCollab={project.allowCollab}
-              isOwner={isOwner}
-              localSelfHirePreview={localSelfHirePreview}
-              projectAssets={parseProjectAssets(
-                (dbProject as { project_assets?: unknown } | undefined)?.project_assets,
-                (dbProject as { external_links?: unknown } | undefined)?.external_links,
-              )}
-              licenseType={project.licenseType}
-              licenseNote={project.licenseNote}
-              copyrightHolder={project.copyrightHolder}
-              hasThirdPartyAssets={project.hasThirdPartyAssets}
-              thirdPartyNote={project.thirdPartyNote}
-              aiAssisted={project.aiAssisted}
-              aiDisclosureNote={project.aiDisclosureNote}
-              shareUrl={shareUrl}
-              shareTitle={project.title}
-              shareImageUrl={coverImage || undefined}
-              onHidden={() => navigate("/", { replace: true })}
-              onBlocked={() => navigate("/", { replace: true })}
-              collaboratorIds={((dbProject as { collab_user_ids?: string[] | null } | undefined)?.collab_user_ids) ?? []}
+          {/* Right: floating rail — profile + follow, then collection / share / message. */}
+          <div className="hidden lg:block lg:col-start-2 lg:row-span-2 lg:row-start-1">
+            <ProjectActionRail
+              variant="rail"
+              className="sticky top-[35vh]"
+              {...railProps}
             />
-          </FadeUp>
+          </div>
 
-          <div className="min-w-0 w-full space-y-6 pt-4 lg:col-start-1 lg:row-start-2 lg:pt-8">
-            {linkedPosts.length > 0 && <ProjectLinkedPostsBlock posts={linkedPosts} />}
+          <div className="min-w-0 w-full space-y-6 pt-2 lg:col-start-1 lg:row-start-2">
+            <FadeUp className="w-full min-w-0" delay={0.06}>
+              <ProjectSidePanel
+                wide
+                projectId={dbProject?.id}
+                title={project.title}
+                category={project.category}
+                ownerName={project.owner}
+                ownerAvatar={project.ownerAvatar}
+                ownerId={project.ownerId}
+                ownerVerified={project.ownerVerified}
+                publishedDate={project.publishedDate}
+                description={project.description}
+                tools={project.tools}
+                tags={project.tags}
+                price={project.price}
+                priceThb={project.priceThb}
+                views={project.views}
+                likes={likeCount}
+                commentsCount={commentsCount}
+                liked={liked}
+                onLike={handleLike}
+                onHire={openHire}
+                onCollab={() => setCollabOpen(true)}
+                onChat={project.ownerId ? openChat : undefined}
+                allowHire={project.allowHire}
+                allowCollab={project.allowCollab}
+                isOwner={isOwner}
+                localSelfHirePreview={localSelfHirePreview}
+                projectAssets={parseProjectAssets(
+                  (dbProject as { project_assets?: unknown } | undefined)
+                    ?.project_assets,
+                  (dbProject as { external_links?: unknown } | undefined)
+                    ?.external_links,
+                )}
+                licenseType={project.licenseType}
+                licenseNote={project.licenseNote}
+                copyrightHolder={project.copyrightHolder}
+                hasThirdPartyAssets={project.hasThirdPartyAssets}
+                thirdPartyNote={project.thirdPartyNote}
+                aiAssisted={project.aiAssisted}
+                aiDisclosureNote={project.aiDisclosureNote}
+                shareUrl={shareUrl}
+                shareTitle={project.title}
+                shareImageUrl={coverImage || undefined}
+                onHidden={() => navigate("/", { replace: true })}
+                onBlocked={() => navigate("/", { replace: true })}
+                collaboratorIds={
+                  (
+                    dbProject as
+                      | { collab_user_ids?: string[] | null }
+                      | undefined
+                  )?.collab_user_ids ?? []
+                }
+              />
+            </FadeUp>
+            {linkedPosts.length > 0 && (
+              <ProjectLinkedPostsBlock posts={linkedPosts} />
+            )}
             <ProjectContextCard context={project.context} />
             <CommentSection projectId={project.id} />
             <OwnerOtherWorks
@@ -556,13 +656,17 @@ const ProjectDetailPage = () => {
         </div>
       </div>
 
-
       <HireDialog
         open={hireOpen}
         onOpenChange={setHireOpen}
         projectTitle={project.title}
         projectId={project.id}
-        projectCoverUrl={dbProject?.cover_url || dbProject?.gallery_urls?.find((u) => !/\.(mp4|webm|mov|m4v)(\?|$)/i.test(u))}
+        projectCoverUrl={
+          dbProject?.cover_url ||
+          dbProject?.gallery_urls?.find(
+            (u) => !/\.(mp4|webm|mov|m4v)(\?|$)/i.test(u),
+          )
+        }
         freelancerId={project.ownerId}
         freelancerUsername={ownerUsername ?? project.owner}
       />
@@ -574,7 +678,12 @@ const ProjectDetailPage = () => {
         recipientName={project.owner}
         projectId={project.id}
         projectTitle={project.title}
-        projectCoverUrl={dbProject?.cover_url || dbProject?.gallery_urls?.find((u) => !/\.(mp4|webm|mov|m4v)(\?|$)/i.test(u))}
+        projectCoverUrl={
+          dbProject?.cover_url ||
+          dbProject?.gallery_urls?.find(
+            (u) => !/\.(mp4|webm|mov|m4v)(\?|$)/i.test(u),
+          )
+        }
       />
       {project.ownerId ? (
         <ConnectMessageDialog
@@ -592,6 +701,5 @@ const ProjectDetailPage = () => {
     </main>
   );
 };
-
 
 export default ProjectDetailPage;

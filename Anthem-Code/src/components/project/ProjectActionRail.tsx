@@ -1,0 +1,166 @@
+import { Link } from "react-router-dom";
+import { Bookmark, Mail, Share } from "lucide-react";
+import UserAvatar from "@/components/UserAvatar";
+import FollowButton from "@/components/FollowButton";
+import SharePopover from "@/components/SharePopover";
+import SaveToCollectionPopover from "@/components/collections/SaveToCollectionPopover";
+import { useAuth } from "@/hooks/useAuth";
+import { useSavedProjectIds } from "@/hooks/useCollections";
+import { cn } from "@/lib/utils";
+
+type Props = {
+  projectId?: string;
+  title: string;
+  ownerId?: string;
+  ownerName: string;
+  ownerAvatar?: string;
+  isOwner?: boolean;
+  onChat?: () => void;
+  shareUrl: string;
+  shareImageUrl?: string;
+  /** "rail": floating vertical pill beside the work (desktop). "row": inline row above the work (phones). */
+  variant?: "rail" | "row";
+  className?: string;
+};
+
+const iconBtn =
+  "inline-flex h-11 w-11 items-center justify-center rounded-full text-foreground transition-colors hover:bg-foreground/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+
+/** Profile (+ follow badge) and one pill of icon-only actions: collection, share, message. */
+const ProjectActionRail = ({
+  projectId,
+  title,
+  ownerId,
+  ownerName,
+  ownerAvatar,
+  isOwner,
+  onChat,
+  shareUrl,
+  shareImageUrl,
+  variant = "rail",
+  className,
+}: Props) => {
+  const { user } = useAuth();
+  const { data: savedProjectIds = [] } = useSavedProjectIds(user?.id);
+  const saved = !!projectId && savedProjectIds.includes(projectId);
+  const rail = variant === "rail";
+
+  const avatar = (
+    <div className="relative shrink-0">
+      {ownerId ? (
+        <Link
+          to={`/u/${ownerId}`}
+          aria-label={`ดูโปรไฟล์ ${ownerName}`}
+          title={ownerName}
+          className="block rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <UserAvatar
+            src={ownerAvatar}
+            name={ownerName}
+            className={rail ? "h-12 w-12" : "h-9 w-9"}
+          />
+        </Link>
+      ) : (
+        <UserAvatar
+          src={ownerAvatar}
+          name={ownerName}
+          className={rail ? "h-12 w-12" : "h-9 w-9"}
+        />
+      )}
+      {!isOwner ? (
+        <FollowButton
+          freelancerId={ownerId}
+          iconOnly
+          announceName={ownerName}
+          className="absolute -bottom-1 -right-1 !h-6 !w-6 border-2 border-background p-0 [&_svg]:!h-3 [&_svg]:!w-3"
+        />
+      ) : null}
+    </div>
+  );
+
+  const pill = (
+    <div
+      className={cn(
+        "flex items-center gap-1 rounded-full bg-card p-1 shadow-sm ring-1 ring-border/60",
+        rail && "flex-col",
+      )}
+    >
+      <SaveToCollectionPopover projectId={projectId}>
+        <button
+          type="button"
+          className={iconBtn}
+          aria-pressed={saved}
+          aria-label={saved ? "เก็บเข้าคอลเลกชันแล้ว" : "เก็บเข้าคอลเลกชัน"}
+          title="Collection"
+        >
+          <Bookmark
+            className={cn("h-5 w-5", saved && "fill-primary text-primary")}
+            strokeWidth={saved ? 0 : 1.8}
+          />
+        </button>
+      </SaveToCollectionPopover>
+      <SharePopover
+        url={shareUrl}
+        title={title}
+        label="แชร์"
+        imageUrl={shareImageUrl}
+      >
+        <button
+          type="button"
+          className={iconBtn}
+          aria-label="แชร์ผลงาน"
+          title="Share"
+        >
+          <Share className="h-5 w-5" strokeWidth={1.8} />
+        </button>
+      </SharePopover>
+      {onChat && !isOwner ? (
+        <button
+          type="button"
+          className={iconBtn}
+          onClick={onChat}
+          aria-label="ส่งข้อความ"
+          title="Message"
+        >
+          <Mail className="h-5 w-5" strokeWidth={1.8} />
+        </button>
+      ) : null}
+    </div>
+  );
+
+  if (rail) {
+    return (
+      <nav
+        aria-label="การกระทำกับผลงาน"
+        className={cn("flex flex-col items-center gap-4", className)}
+      >
+        {avatar}
+        {pill}
+      </nav>
+    );
+  }
+
+  return (
+    <nav
+      aria-label="การกระทำกับผลงาน"
+      className={cn("flex items-center gap-3", className)}
+    >
+      {avatar}
+      {ownerId ? (
+        <Link
+          to={`/u/${ownerId}`}
+          className="min-w-0 flex-1 truncate text-sm font-medium text-foreground"
+        >
+          {ownerName}
+        </Link>
+      ) : (
+        <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+          {ownerName}
+        </span>
+      )}
+      {pill}
+    </nav>
+  );
+};
+
+export default ProjectActionRail;

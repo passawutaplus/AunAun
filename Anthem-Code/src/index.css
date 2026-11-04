@@ -917,6 +917,22 @@
 
   }
 
+  /* Work canvas on /showcase/:id — always Studio White paper, also in dark mode, so text blocks stay readable. */
+  .work-paper,
+  .dark .work-paper {
+    --background: 50 30% 96%;
+    --foreground: 0 0% 7%;
+    --muted-foreground: 0 0% 40%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 7%;
+    --border: 60 6% 90%;
+    --muted: 40 6% 92%;
+    --secondary: 40 6% 92%;
+    --secondary-foreground: 40 3% 18%;
+    color: hsl(var(--foreground));
+    background-color: hsl(var(--background));
+  }
+
   /* Chat — paper field (light) and warm charcoal (dark), not cool blue bubbles */
   .chat-paper {
     --background: 50 30% 96%;
