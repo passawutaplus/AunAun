@@ -30,6 +30,7 @@ import {
   signedMediaUrls,
 } from "../_shared/creator-invite-core.ts";
 import { EMAIL_RE, SubmissionSchema, type Submission } from "../_shared/creator-invite-schema.ts";
+import { signatureMatchesExtension } from "../_shared/asset-content-checks.ts";
 
 const RIGHTS_ATTESTATION_VERSION = "2026-08-14";
 const PROJECT_CATEGORIES = new Set([
@@ -82,6 +83,9 @@ const Body = z.object({
     "send_review",
     "publish",
     "media_urls",
+    // team uploads images into the draft (e.g. ones the artist emailed)
+    "media_upload_url",
+    "media_upload_done",
     "delete_data",
   ]),
   id: z.string().uuid().optional(),
@@ -90,6 +94,10 @@ const Body = z.object({
   draft: z.unknown().optional(),
   channel: z.string().trim().max(40).optional(),
   days: z.number().int().min(1).max(90).optional(),
+  slot: z.enum(["avatar", "cover", "p1", "p2", "p3", "extra"]).optional(),
+  mime: z.string().optional(),
+  size: z.number().int().positive().optional(),
+  media_id: z.string().uuid().optional(),
 });
 type BodyT = z.infer<typeof Body>;
 
@@ -572,6 +580,65 @@ Deno.serve(async (req) => {
         return await sendReview(req, admin, uid, inv);
       case "publish":
         return await publish(req, admin, uid, inv);
+      case "media_upload_url": {
+        const EXT: Record<string, string> = {
+          "image/jpeg": "jpg",
+          "image/png": "png",
+          "image/webp": "webp",
+        };
+        if (!body.slot || !EXT[body.mime ?? ""]) return json(req, { error: "file_type" }, 400);
+        if ((body.size ?? 0) > 20 * 1024 * 1024) return json(req, { error: "file_too_large" }, 400);
+        const mid = crypto.randomUUID();
+        const path = `${inv.id}/${body.slot}/${mid}.${EXT[body.mime!]}`;
+        const { data: signed, error } = await admin.storage
+          .from(INVITE_BUCKET)
+          .createSignedUploadUrl(path);
+        if (error || !signed) return json(req, { error: "upload_unavailable" }, 500);
+        const { error: insErr } = await anthem
+          .from("invite_media")
+          .insert({
+            id: mid,
+            invitation_id: inv.id,
+            slot: body.slot,
+            storage_path: path,
+            mime: body.mime,
+            size_bytes: body.size,
+          });
+        if (insErr) return json(req, { error: "upload_unavailable" }, 500);
+        return json(req, { media_id: mid, bucket: INVITE_BUCKET, path, token: signed.token });
+      }
+      case "media_upload_done": {
+        const { data: m } = await anthem
+          .from("invite_media")
+          .select("id, storage_path, mime")
+          .eq("id", body.media_id ?? "")
+          .eq("invitation_id", inv.id)
+          .maybeSingle();
+        if (!m) return json(req, { error: "not_found" }, 404);
+        const { data: blob } = await admin.storage.from(INVITE_BUCKET).download(m.storage_path);
+        if (!blob) return json(req, { error: "not_uploaded" }, 409);
+        const bytes = new Uint8Array(await blob.arrayBuffer());
+        const ext = m.mime === "image/png" ? "png" : m.mime === "image/webp" ? "webp" : "jpg";
+        if (!signatureMatchesExtension(ext, bytes) || bytes.byteLength > 20 * 1024 * 1024) {
+          await admin.storage.from(INVITE_BUCKET).remove([m.storage_path]);
+          await anthem
+            .from("invite_media")
+            .update({ scan_status: "blocked", scan_note: "signature_mismatch" })
+            .eq("id", m.id);
+          return json(req, { error: "file_rejected" }, 400);
+        }
+        await anthem
+          .from("invite_media")
+          .update({
+            scan_status: "clean",
+            size_bytes: bytes.byteLength,
+            scan_note: "uploaded_by_team",
+          })
+          .eq("id", m.id);
+        await logEvent(admin, inv.id, "media_added_by_team", "admin", uid, { media_id: m.id });
+        const urls = await signedMediaUrls(admin, [m]);
+        return json(req, { ok: true, scan_status: "clean", url: urls[m.id] ?? null });
+      }
       case "media_urls": {
         const { data } = await anthem
           .from("invite_media")

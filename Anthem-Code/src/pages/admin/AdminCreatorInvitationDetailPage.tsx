@@ -7,6 +7,7 @@ import { Copy, ExternalLink, Loader2, MoreHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import StatusPill from "@/components/admin/StatusPill";
 import InviteProfilePreview from "@/components/invite/InviteProfilePreview";
+import InviteProjectPreview from "@/components/invite/InviteProjectPreview";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,6 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import AdminDraftEditor from "@/components/admin/invite/AdminDraftEditor";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -24,9 +26,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   useAdminInvite,
   useAdminInviteAction,
@@ -103,7 +102,7 @@ export default function AdminCreatorInvitationDetailPage() {
     review_link: null,
   }));
   const [tpl, setTpl] = useState<TemplateId>("dm-th");
-  const [tab, setTab] = useState("data");
+  const [tab, setTab] = useState("profile");
   const [confirm, setConfirm] = useState<
     "publish" | "revoke" | "delete" | null
   >(null);
@@ -138,6 +137,9 @@ export default function AdminCreatorInvitationDetailPage() {
   );
   useEffect(() => setDraft(staffDraft), [staffDraft]);
 
+  const [addedMedia, setAddedMedia] = useState<Map<string, InviteMedia>>(
+    new Map(),
+  );
   const mediaMap = useMemo(() => {
     const m = new Map<string, InviteMedia>();
     for (const x of data?.media ?? []) {
@@ -151,8 +153,9 @@ export default function AdminCreatorInvitationDetailPage() {
         url: urls.data?.[x.id] ?? null,
       });
     }
+    for (const [k, v] of addedMedia) m.set(k, v);
     return m;
-  }, [data, urls.data]);
+  }, [data, urls.data, addedMedia]);
 
   if (isLoading)
     return (
@@ -255,8 +258,8 @@ export default function AdminCreatorInvitationDetailPage() {
                 onClick={() =>
                   void run(
                     { action: "start_draft" },
-                    "รับเรื่องแล้ว · จัดโปรไฟล์ร่างได้ในแท็บ Draft & พรีวิว",
-                  ).then(() => setTab("draft"))
+                    "รับเรื่องแล้ว · จัดโปรไฟล์ร่างได้ด้านล่าง",
+                  ).then(() => setTab("profile"))
                 }
               >
                 รับเรื่อง · เริ่มจัดโปรไฟล์
@@ -487,11 +490,8 @@ export default function AdminCreatorInvitationDetailPage() {
 
       <Tabs value={tab} onValueChange={setTab} className="w-full">
         <TabsList className="h-auto flex-wrap justify-start gap-1 rounded-sm border border-admin-border bg-admin-surface p-1">
-          <TabsTrigger value="data" className="rounded-sm text-xs">
-            ข้อมูลที่ส่ง
-          </TabsTrigger>
-          <TabsTrigger value="draft" className="rounded-sm text-xs">
-            Draft & พรีวิว
+          <TabsTrigger value="profile" className="rounded-sm text-xs">
+            โปรไฟล์ & Draft
           </TabsTrigger>
           <TabsTrigger value="send" className="rounded-sm text-xs">
             ลิงก์ & ข้อความ
@@ -500,299 +500,399 @@ export default function AdminCreatorInvitationDetailPage() {
             ประวัติ
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="data" className="mt-4 space-y-5">
-          <Card title="ข้อมูลที่ส่ง">
-            {submission ? (
-              <>
-                <dl className="grid grid-cols-[8rem_1fr] gap-x-3 gap-y-1.5 text-sm">
-                  <Row
-                    k="โหมด"
-                    v={
-                      inv.submit_mode === "quick"
-                        ? "Quick submit"
-                        : inv.submit_mode === "full"
-                          ? "ฟอร์มเต็ม"
-                          : "ยังไม่ส่ง (ร่าง)"
-                    }
+        <TabsContent value="profile" className="mt-4">
+          {/* Same layout as the artist's form: live preview left, editing right */}
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
+            <div className="min-w-0 space-y-5">
+              {shown ? (
+                <>
+                  <InviteProfilePreview
+                    data={shown}
+                    media={mediaMap}
+                    t={t}
+                    badge={staffDraft ? "Draft · ยังไม่เผยแพร่" : t.pvBadge}
                   />
-                  <Row k="ชื่อ" v={submission.about.name || "—"} />
-                  <Row k="สาขา" v={submission.about.discipline || "—"} />
-                  <Row k="อีเมล" v={submission.about.email || "—"} />
-                  <Row k="เมือง" v={submission.about.city || "—"} />
-                  <Row k="ลิงก์" v={submission.about.links || "—"} />
-                  {submission.quick.portfolio_url ? (
-                    <Row
-                      k="พอร์ตโฟลิโอ"
-                      v={
-                        <span className="flex flex-col gap-1">
-                          {submission.quick.portfolio_url
-                            .split("\n")
-                            .map((u) => u.trim())
-                            .filter(Boolean)
-                            .map((u) => (
-                              <a
-                                key={u}
-                                href={u}
-                                target="_blank"
-                                rel="noopener noreferrer nofollow"
-                                className="inline-flex items-center gap-1 break-all underline"
-                              >
-                                {u}{" "}
-                                <ExternalLink
-                                  className="h-3 w-3 shrink-0"
-                                  aria-hidden
-                                />
-                              </a>
-                            ))}
-                        </span>
-                      }
+                  {shown.projects.map((p, i) => (
+                    <InviteProjectPreview
+                      key={p.slot}
+                      project={p}
+                      index={i}
+                      name={shown.about.name}
+                      media={mediaMap}
+                      t={t}
+                      badge={staffDraft ? "Draft" : t.pvBadge}
                     />
-                  ) : null}
-                  <Row
-                    k="ติดต่อทาง"
-                    v={[
-                      submission.contact_pref || "—",
-                      submission.contact_handle,
-                    ]
-                      .filter(Boolean)
-                      .join(" · ")}
-                  />
-                  <Row k="Bio" v={submission.about.bio || "—"} />
-                </dl>
-                {submission.projects.map((p, i) => (
-                  <div
-                    key={p.slot}
-                    className="mt-4 border-t border-admin-border pt-3 text-sm"
-                  >
-                    <p className="font-medium">
-                      โปรเจกต์ {i + 1}: {p.title || "(ไม่มีชื่อ)"}
-                    </p>
-                    <p className="text-xs text-admin-muted">
-                      {[
-                        p.role,
-                        p.url,
-                        p.rights ? "ยืนยันสิทธิ์ภาพ ✓" : "ยังไม่ยืนยันสิทธิ์",
-                      ]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </p>
-                    {p.description ? (
-                      <p className="mt-1 whitespace-pre-line text-admin-fg/90">
-                        {p.description}
-                      </p>
-                    ) : null}
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {p.media.map((m) => {
-                        const u = mediaMap.get(m)?.url;
-                        return u ? (
-                          <a
-                            key={m}
-                            href={u}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            <img
-                              src={u}
-                              alt=""
-                              className="h-20 w-20 rounded-sm object-cover"
-                            />
-                          </a>
-                        ) : (
-                          <span
-                            key={m}
-                            className="flex h-20 w-20 items-center justify-center rounded-sm bg-admin-surface text-[10px] text-admin-muted"
-                          >
-                            —
-                          </span>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-                {data.media.some((m) => m.slot === "extra") ? (
-                  <div className="mt-4 border-t border-admin-border pt-3 text-sm">
-                    <p className="font-medium">รูปที่ศิลปินแนบมาตอนขอแก้</p>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {data.media
-                        .filter((m) => m.slot === "extra")
-                        .map((m) => {
-                          const u = urls.data?.[m.id];
-                          return u ? (
-                            <a
-                              key={m.id}
-                              href={u}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              <img
-                                src={u}
-                                alt=""
-                                className="h-20 w-20 rounded-sm object-cover"
-                              />
-                            </a>
-                          ) : null;
-                        })}
-                    </div>
-                  </div>
-                ) : null}
-                <p className="mt-3 text-xs text-admin-muted">
-                  {data.media.length} ไฟล์ ·{" "}
-                  {data.media.filter((m) => m.scan_status === "clean").length}{" "}
-                  ผ่านการตรวจ
-                  {data.media.some((m) => m.scan_status === "blocked")
-                    ? ` · ${data.media.filter((m) => m.scan_status === "blocked").length} ไม่ผ่าน (ถูกลบ)`
-                    : ""}
-                  {data.media.some((m) => m.scan_note?.includes("vt_pending"))
-                    ? " · VirusTotal กำลังตรวจ"
-                    : ""}
+                  ))}
+                </>
+              ) : (
+                <p className="text-sm text-admin-muted">
+                  ยังไม่มีข้อมูลให้พรีวิว
                 </p>
-              </>
-            ) : (
-              <p className="text-sm text-admin-muted">
-                ศิลปินยังไม่ได้กรอกข้อมูล
-              </p>
-            )}
-          </Card>
-        </TabsContent>
-        <TabsContent value="draft" className="mt-4 space-y-5">
-          {editable && draft ? (
-            <Card title="Draft ที่จะส่งให้ศิลปินตรวจ (แก้ได้)">
-              <div className="grid gap-3 sm:grid-cols-2">
-                {(["name", "discipline", "city", "links"] as const).map((k) => (
-                  <div key={k} className="space-y-1">
-                    <Label htmlFor={`d-${k}`} className="text-xs">
-                      {
-                        {
-                          name: "ชื่อ",
-                          discipline: "สาขา",
-                          city: "เมือง",
-                          links: "ลิงก์",
-                        }[k]
-                      }
-                    </Label>
-                    <Input
-                      id={`d-${k}`}
-                      value={draft.about[k]}
-                      onChange={(e) =>
-                        setDraft({
-                          ...draft,
-                          about: { ...draft.about, [k]: e.target.value },
-                        })
-                      }
-                    />
-                  </div>
-                ))}
-              </div>
-              <div className="mt-3 space-y-1">
-                <Label htmlFor="d-bio" className="text-xs">
-                  Bio
-                </Label>
-                <Textarea
-                  id="d-bio"
-                  rows={3}
-                  maxLength={300}
-                  value={draft.about.bio}
-                  onChange={(e) =>
-                    setDraft({
-                      ...draft,
-                      about: { ...draft.about, bio: e.target.value },
-                    })
+              )}
+            </div>
+            <div className="min-w-0 space-y-5">
+              {editable && draft ? (
+                <AdminDraftEditor
+                  invitationId={inv.id}
+                  draft={draft}
+                  setDraft={setDraft}
+                  media={mediaMap}
+                  addMedia={(m) =>
+                    setAddedMedia((prev) => new Map(prev).set(m.id, m))
                   }
-                />
-              </div>
-              {draft.projects.map((p, i) => (
-                <div
-                  key={p.slot}
-                  className="mt-3 grid gap-2 border-t border-admin-border pt-3 sm:grid-cols-2"
-                >
-                  <div className="space-y-1">
-                    <Label htmlFor={`d-p${i}-t`} className="text-xs">
-                      โปรเจกต์ {i + 1} · ชื่อ
-                    </Label>
-                    <Input
-                      id={`d-p${i}-t`}
-                      value={p.title}
-                      onChange={(e) =>
-                        setDraft({
-                          ...draft,
-                          projects: draft.projects.map((x, j) =>
-                            j === i ? { ...x, title: e.target.value } : x,
-                          ),
-                        })
-                      }
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor={`d-p${i}-r`} className="text-xs">
-                      บทบาท / เครดิต
-                    </Label>
-                    <Input
-                      id={`d-p${i}-r`}
-                      value={p.role}
-                      onChange={(e) =>
-                        setDraft({
-                          ...draft,
-                          projects: draft.projects.map((x, j) =>
-                            j === i ? { ...x, role: e.target.value } : x,
-                          ),
-                        })
-                      }
-                    />
-                  </div>
-                  <div className="space-y-1 sm:col-span-2">
-                    <Label htmlFor={`d-p${i}-d`} className="text-xs">
-                      คำอธิบาย
-                    </Label>
-                    <Textarea
-                      id={`d-p${i}-d`}
-                      rows={2}
-                      value={p.description}
-                      onChange={(e) =>
-                        setDraft({
-                          ...draft,
-                          projects: draft.projects.map((x, j) =>
-                            j === i ? { ...x, description: e.target.value } : x,
-                          ),
-                        })
-                      }
-                    />
-                  </div>
-                </div>
-              ))}
-              <div className="mt-3 flex gap-2">
-                <Button
-                  size="sm"
-                  disabled={action.isPending}
-                  onClick={() =>
+                  saving={action.isPending}
+                  onSave={() =>
                     void run(
                       { action: "save_draft", draft },
                       "บันทึก Draft แล้ว",
                     )
                   }
-                >
-                  บันทึก Draft
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setDraft(staffDraft)}
-                >
-                  ยกเลิกการแก้
-                </Button>
-              </div>
-              <p className="mt-2 text-[11px] text-admin-muted">
-                ใช้เฉพาะข้อมูลและรูปที่ศิลปินส่ง · ไม่ดึงรูปจากเว็บอื่นมาใส่
-              </p>
-            </Card>
-          ) : null}
-          {shown ? (
-            <InviteProfilePreview
-              data={shown}
-              media={mediaMap}
-              t={t}
-              badge={staffDraft ? "Draft · ยังไม่เผยแพร่" : t.pvBadge}
-            />
-          ) : null}
+                  onReset={() => setDraft(staffDraft)}
+                />
+              ) : null}
+              {editable && draft ? (
+                <details className="rounded-sm border border-admin-border p-4">
+                  <summary className="cursor-pointer text-sm font-medium">
+                    ข้อมูลต้นฉบับที่ศิลปินส่ง
+                  </summary>
+                  <div className="mt-4">
+                    <Card title="ข้อมูลที่ส่ง">
+                      {submission ? (
+                        <>
+                          <dl className="grid grid-cols-[8rem_1fr] gap-x-3 gap-y-1.5 text-sm">
+                            <Row
+                              k="โหมด"
+                              v={
+                                inv.submit_mode === "quick"
+                                  ? "Quick submit"
+                                  : inv.submit_mode === "full"
+                                    ? "ฟอร์มเต็ม"
+                                    : "ยังไม่ส่ง (ร่าง)"
+                              }
+                            />
+                            <Row k="ชื่อ" v={submission.about.name || "—"} />
+                            <Row
+                              k="สาขา"
+                              v={submission.about.discipline || "—"}
+                            />
+                            <Row k="อีเมล" v={submission.about.email || "—"} />
+                            <Row k="เมือง" v={submission.about.city || "—"} />
+                            <Row k="ลิงก์" v={submission.about.links || "—"} />
+                            {submission.quick.portfolio_url ? (
+                              <Row
+                                k="พอร์ตโฟลิโอ"
+                                v={
+                                  <span className="flex flex-col gap-1">
+                                    {submission.quick.portfolio_url
+                                      .split("\n")
+                                      .map((u) => u.trim())
+                                      .filter(Boolean)
+                                      .map((u) => (
+                                        <a
+                                          key={u}
+                                          href={u}
+                                          target="_blank"
+                                          rel="noopener noreferrer nofollow"
+                                          className="inline-flex items-center gap-1 break-all underline"
+                                        >
+                                          {u}{" "}
+                                          <ExternalLink
+                                            className="h-3 w-3 shrink-0"
+                                            aria-hidden
+                                          />
+                                        </a>
+                                      ))}
+                                  </span>
+                                }
+                              />
+                            ) : null}
+                            <Row
+                              k="ติดต่อทาง"
+                              v={[
+                                submission.contact_pref || "—",
+                                submission.contact_handle,
+                              ]
+                                .filter(Boolean)
+                                .join(" · ")}
+                            />
+                            <Row k="Bio" v={submission.about.bio || "—"} />
+                          </dl>
+                          {submission.projects.map((p, i) => (
+                            <div
+                              key={p.slot}
+                              className="mt-4 border-t border-admin-border pt-3 text-sm"
+                            >
+                              <p className="font-medium">
+                                โปรเจกต์ {i + 1}: {p.title || "(ไม่มีชื่อ)"}
+                              </p>
+                              <p className="text-xs text-admin-muted">
+                                {[
+                                  p.role,
+                                  p.url,
+                                  p.rights
+                                    ? "ยืนยันสิทธิ์ภาพ ✓"
+                                    : "ยังไม่ยืนยันสิทธิ์",
+                                ]
+                                  .filter(Boolean)
+                                  .join(" · ")}
+                              </p>
+                              {p.description ? (
+                                <p className="mt-1 whitespace-pre-line text-admin-fg/90">
+                                  {p.description}
+                                </p>
+                              ) : null}
+                              <div className="mt-2 flex flex-wrap gap-2">
+                                {p.media.map((m) => {
+                                  const u = mediaMap.get(m)?.url;
+                                  return u ? (
+                                    <a
+                                      key={m}
+                                      href={u}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                    >
+                                      <img
+                                        src={u}
+                                        alt=""
+                                        className="h-20 w-20 rounded-sm object-cover"
+                                      />
+                                    </a>
+                                  ) : (
+                                    <span
+                                      key={m}
+                                      className="flex h-20 w-20 items-center justify-center rounded-sm bg-admin-surface text-[10px] text-admin-muted"
+                                    >
+                                      —
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ))}
+                          {data.media.some((m) => m.slot === "extra") ? (
+                            <div className="mt-4 border-t border-admin-border pt-3 text-sm">
+                              <p className="font-medium">
+                                รูปที่ศิลปินแนบมาตอนขอแก้
+                              </p>
+                              <div className="mt-2 flex flex-wrap gap-2">
+                                {data.media
+                                  .filter((m) => m.slot === "extra")
+                                  .map((m) => {
+                                    const u = urls.data?.[m.id];
+                                    return u ? (
+                                      <a
+                                        key={m.id}
+                                        href={u}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                      >
+                                        <img
+                                          src={u}
+                                          alt=""
+                                          className="h-20 w-20 rounded-sm object-cover"
+                                        />
+                                      </a>
+                                    ) : null;
+                                  })}
+                              </div>
+                            </div>
+                          ) : null}
+                          <p className="mt-3 text-xs text-admin-muted">
+                            {data.media.length} ไฟล์ ·{" "}
+                            {
+                              data.media.filter(
+                                (m) => m.scan_status === "clean",
+                              ).length
+                            }{" "}
+                            ผ่านการตรวจ
+                            {data.media.some((m) => m.scan_status === "blocked")
+                              ? ` · ${data.media.filter((m) => m.scan_status === "blocked").length} ไม่ผ่าน (ถูกลบ)`
+                              : ""}
+                            {data.media.some((m) =>
+                              m.scan_note?.includes("vt_pending"),
+                            )
+                              ? " · VirusTotal กำลังตรวจ"
+                              : ""}
+                          </p>
+                        </>
+                      ) : (
+                        <p className="text-sm text-admin-muted">
+                          ศิลปินยังไม่ได้กรอกข้อมูล
+                        </p>
+                      )}
+                    </Card>
+                  </div>
+                </details>
+              ) : (
+                <>
+                  <Card title="ข้อมูลที่ส่ง">
+                    {submission ? (
+                      <>
+                        <dl className="grid grid-cols-[8rem_1fr] gap-x-3 gap-y-1.5 text-sm">
+                          <Row
+                            k="โหมด"
+                            v={
+                              inv.submit_mode === "quick"
+                                ? "Quick submit"
+                                : inv.submit_mode === "full"
+                                  ? "ฟอร์มเต็ม"
+                                  : "ยังไม่ส่ง (ร่าง)"
+                            }
+                          />
+                          <Row k="ชื่อ" v={submission.about.name || "—"} />
+                          <Row
+                            k="สาขา"
+                            v={submission.about.discipline || "—"}
+                          />
+                          <Row k="อีเมล" v={submission.about.email || "—"} />
+                          <Row k="เมือง" v={submission.about.city || "—"} />
+                          <Row k="ลิงก์" v={submission.about.links || "—"} />
+                          {submission.quick.portfolio_url ? (
+                            <Row
+                              k="พอร์ตโฟลิโอ"
+                              v={
+                                <span className="flex flex-col gap-1">
+                                  {submission.quick.portfolio_url
+                                    .split("\n")
+                                    .map((u) => u.trim())
+                                    .filter(Boolean)
+                                    .map((u) => (
+                                      <a
+                                        key={u}
+                                        href={u}
+                                        target="_blank"
+                                        rel="noopener noreferrer nofollow"
+                                        className="inline-flex items-center gap-1 break-all underline"
+                                      >
+                                        {u}{" "}
+                                        <ExternalLink
+                                          className="h-3 w-3 shrink-0"
+                                          aria-hidden
+                                        />
+                                      </a>
+                                    ))}
+                                </span>
+                              }
+                            />
+                          ) : null}
+                          <Row
+                            k="ติดต่อทาง"
+                            v={[
+                              submission.contact_pref || "—",
+                              submission.contact_handle,
+                            ]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          />
+                          <Row k="Bio" v={submission.about.bio || "—"} />
+                        </dl>
+                        {submission.projects.map((p, i) => (
+                          <div
+                            key={p.slot}
+                            className="mt-4 border-t border-admin-border pt-3 text-sm"
+                          >
+                            <p className="font-medium">
+                              โปรเจกต์ {i + 1}: {p.title || "(ไม่มีชื่อ)"}
+                            </p>
+                            <p className="text-xs text-admin-muted">
+                              {[
+                                p.role,
+                                p.url,
+                                p.rights
+                                  ? "ยืนยันสิทธิ์ภาพ ✓"
+                                  : "ยังไม่ยืนยันสิทธิ์",
+                              ]
+                                .filter(Boolean)
+                                .join(" · ")}
+                            </p>
+                            {p.description ? (
+                              <p className="mt-1 whitespace-pre-line text-admin-fg/90">
+                                {p.description}
+                              </p>
+                            ) : null}
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              {p.media.map((m) => {
+                                const u = mediaMap.get(m)?.url;
+                                return u ? (
+                                  <a
+                                    key={m}
+                                    href={u}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
+                                    <img
+                                      src={u}
+                                      alt=""
+                                      className="h-20 w-20 rounded-sm object-cover"
+                                    />
+                                  </a>
+                                ) : (
+                                  <span
+                                    key={m}
+                                    className="flex h-20 w-20 items-center justify-center rounded-sm bg-admin-surface text-[10px] text-admin-muted"
+                                  >
+                                    —
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ))}
+                        {data.media.some((m) => m.slot === "extra") ? (
+                          <div className="mt-4 border-t border-admin-border pt-3 text-sm">
+                            <p className="font-medium">
+                              รูปที่ศิลปินแนบมาตอนขอแก้
+                            </p>
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              {data.media
+                                .filter((m) => m.slot === "extra")
+                                .map((m) => {
+                                  const u = urls.data?.[m.id];
+                                  return u ? (
+                                    <a
+                                      key={m.id}
+                                      href={u}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                    >
+                                      <img
+                                        src={u}
+                                        alt=""
+                                        className="h-20 w-20 rounded-sm object-cover"
+                                      />
+                                    </a>
+                                  ) : null;
+                                })}
+                            </div>
+                          </div>
+                        ) : null}
+                        <p className="mt-3 text-xs text-admin-muted">
+                          {data.media.length} ไฟล์ ·{" "}
+                          {
+                            data.media.filter((m) => m.scan_status === "clean")
+                              .length
+                          }{" "}
+                          ผ่านการตรวจ
+                          {data.media.some((m) => m.scan_status === "blocked")
+                            ? ` · ${data.media.filter((m) => m.scan_status === "blocked").length} ไม่ผ่าน (ถูกลบ)`
+                            : ""}
+                          {data.media.some((m) =>
+                            m.scan_note?.includes("vt_pending"),
+                          )
+                            ? " · VirusTotal กำลังตรวจ"
+                            : ""}
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-sm text-admin-muted">
+                        ศิลปินยังไม่ได้กรอกข้อมูล
+                      </p>
+                    )}
+                  </Card>
+                </>
+              )}
+            </div>
+          </div>
         </TabsContent>
         <TabsContent value="send" className="mt-4 grid gap-5 md:grid-cols-2">
           <Card title="ลิงก์">
