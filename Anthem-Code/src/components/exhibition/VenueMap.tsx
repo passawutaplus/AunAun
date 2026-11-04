@@ -47,6 +47,9 @@ export default function VenueMap({ venues, interested, activeId, onSelect, class
   const box = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const markers = useRef(new Map<string, { marker: maplibregl.Marker; el: HTMLDivElement; pin: HTMLButtonElement }>());
+  const fitRef = useRef<() => void>(() => {});
+  // Refit on load / resize until the viewer pans or zooms themselves.
+  const userMoved = useRef(false);
   const onSelectRef = useRef(onSelect);
   onSelectRef.current = onSelect;
 
@@ -69,8 +72,17 @@ export default function VenueMap({ venues, interested, activeId, onSelect, class
     m.touchZoomRotate.disableRotation();
     m.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-left");
     m.on("style.load", () => quietStyle(m));
+    m.on("load", () => fitRef.current());
+    const markMoved = (e: { originalEvent?: unknown }) => {
+      if (e.originalEvent) userMoved.current = true;
+    };
+    m.on("dragstart", markMoved);
+    m.on("zoomstart", markMoved);
     map.current = m;
-    const ro = new ResizeObserver(() => m.resize());
+    const ro = new ResizeObserver(() => {
+      m.resize();
+      if (!userMoved.current) fitRef.current();
+    });
     ro.observe(box.current);
     const current = markers.current;
     return () => {
@@ -97,13 +109,19 @@ export default function VenueMap({ venues, interested, activeId, onSelect, class
       const marker = new maplibregl.Marker({ element: el, anchor: "bottom" }).setLngLat([v.lng!, v.lat!]).addTo(m);
       markers.current.set(v.id, { marker, el, pin });
     });
-    if (placed.length > 1) {
-      const bounds = new maplibregl.LngLatBounds();
-      placed.forEach((v) => bounds.extend([v.lng!, v.lat!]));
-      m.fitBounds(bounds, { padding: { top: 48, bottom: 24, left: 32, right: 32 }, maxZoom: 15, duration: 0 });
-    } else if (placed.length === 1) {
-      m.jumpTo({ center: [placed[0].lng!, placed[0].lat!], zoom: 15 });
-    }
+    fitRef.current = () => {
+      const box2 = m.getContainer();
+      if (!box2.clientWidth || !box2.clientHeight) return;
+      if (placed.length > 1) {
+        const bounds = new maplibregl.LngLatBounds();
+        placed.forEach((v) => bounds.extend([v.lng!, v.lat!]));
+        const pad = Math.min(40, Math.round(box2.clientWidth / 10));
+        m.fitBounds(bounds, { padding: { top: pad + 24, bottom: pad, left: pad, right: pad }, maxZoom: 15, duration: 0 });
+      } else if (placed.length === 1) {
+        m.jumpTo({ center: [placed[0].lng!, placed[0].lat!], zoom: 15 });
+      }
+    };
+    fitRef.current();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [placedKey]);
 

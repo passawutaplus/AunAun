@@ -54,7 +54,7 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
   const toggle = useToggleEventInterest();
   const setAll = useSetAllVenuesInterest();
   const [activeId, setActiveId] = useState<string | null>(null);
-  // Map can be folded away; "ดูเส้นทาง" (#venue-map) always opens it.
+  // The whole venues block (map + list) folds away; "ดูเส้นทาง" (#venue-map) always opens it.
   const [mapOpen, setMapOpen] = useState(true);
   const rowRefs = useRef(new Map<string, HTMLLIElement>());
   const sectionRef = useRef<HTMLElement>(null);
@@ -82,12 +82,28 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
     rowRefs.current.get(id)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
   };
 
+  const allButton = (className: string) => (
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      className={cn("rounded-full", allOn && "border-brand text-brand hover:text-brand", className)}
+      disabled={setAll.isPending}
+      aria-pressed={allOn}
+      onClick={() => requireUser() && setAll.mutate({ parentId: parent.id, on: !allOn })}
+    >
+      <Bookmark className={cn("h-4 w-4", allOn && "fill-current")} aria-hidden />
+      {allOn ? "สนใจทุกที่แล้ว" : "สนใจทั้งหมด"}
+    </Button>
+  );
+
   const pageUrl = (id: string) => (typeof window !== "undefined" ? `${window.location.origin}/exhibition/${id}` : null);
 
   return (
     <section ref={sectionRef} id="venues" aria-labelledby="venues-heading" className={cn("scroll-mt-20", className)}>
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
+      {/* Title left; fold toggle always top-right (phones too). "สนใจทั้งหมด" sits beside it on wider screens. */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
           <h2 id="venues-heading" className="font-display text-2xl font-semibold text-foreground">
             สถานที่จัดงาน
             <span className="ml-2 text-base font-normal text-muted-foreground">
@@ -96,42 +112,37 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">จัดกลุ่มตามย่าน เดินต่อกันได้ · หมุดเป็นตำแหน่งโดยประมาณ</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="rounded-full"
-          aria-expanded={mapOpen}
-          aria-controls="venue-map"
-          onClick={() => setMapOpen((o) => !o)}
-        >
-          <MapIcon className="h-4 w-4" aria-hidden />
-          {mapOpen ? "ซ่อนแผนที่" : "ดูแผนที่"}
-          <ChevronDown className={cn("h-4 w-4 transition-transform", mapOpen && "rotate-180")} aria-hidden />
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className={cn("rounded-full", allOn && "border-brand text-brand hover:text-brand")}
-          disabled={setAll.isPending}
-          aria-pressed={allOn}
-          onClick={() => requireUser() && setAll.mutate({ parentId: parent.id, on: !allOn })}
-        >
-          <Bookmark className={cn("h-4 w-4", allOn && "fill-current")} aria-hidden />
-          {allOn ? "สนใจทุกที่แล้ว" : "สนใจทั้งหมด"}
-        </Button>
+        <div className="flex shrink-0 items-center gap-2">
+          {allButton("hidden sm:inline-flex")}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="rounded-full"
+            aria-expanded={mapOpen}
+            aria-controls="venues-body"
+            onClick={() => setMapOpen((o) => !o)}
+          >
+            <MapIcon className="h-4 w-4" aria-hidden />
+            {mapOpen ? (
+              "ซ่อน"
+            ) : (
+              <>
+                <span className="sm:hidden">แสดง</span>
+                <span className="hidden sm:inline">ดูแผนที่และ {venues.length} สถานที่</span>
+              </>
+            )}
+            <ChevronDown className={cn("h-4 w-4 transition-transform", mapOpen && "rotate-180")} aria-hidden />
+          </Button>
         </div>
       </div>
+      {mapOpen ? allButton("mt-3 sm:hidden") : null}
 
+      {mapOpen ? (
       <div
-        className={cn(
-          "mt-5 grid grid-cols-1 gap-5",
-          mapOpen && "lg:grid-cols-[minmax(0,1fr)_25rem] lg:gap-8 xl:grid-cols-[minmax(0,1fr)_27rem]",
-        )}
+        id="venues-body"
+        className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_25rem] lg:gap-8 xl:grid-cols-[minmax(0,1fr)_27rem]"
       >
-        {mapOpen ? (
         <div ref={mapRef} id="venue-map" className="scroll-mt-20 lg:sticky lg:top-20 lg:self-start">
           <Suspense fallback={<div className="h-64 animate-pulse rounded-lg bg-muted sm:h-80 lg:h-[34rem]" />}>
             <VenueMap
@@ -143,10 +154,8 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
             />
           </Suspense>
         </div>
-        ) : null}
 
-        {/* Map folded away: areas side by side. */}
-        <div className={cn(mapOpen ? "space-y-6" : "grid grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2 xl:grid-cols-3")}>
+        <div className="space-y-6">
           {groups.map((g) => (
             <div key={g.area ?? "-"}>
               {g.area ? (
@@ -273,6 +282,7 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
           ))}
         </div>
       </div>
+      ) : null}
     </section>
   );
 }

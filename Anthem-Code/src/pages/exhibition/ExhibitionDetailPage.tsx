@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowUpRight,
@@ -94,6 +94,19 @@ function RegistrationCta({ event, onRegister }: { event: ExhibitionEvent; onRegi
   );
 }
 
+function useMinWidth(px: number): boolean {
+  const query = `(min-width: ${px}px)`;
+  return useSyncExternalStore(
+    (cb) => {
+      const mq = window.matchMedia(query);
+      mq.addEventListener("change", cb);
+      return () => mq.removeEventListener("change", cb);
+    },
+    () => window.matchMedia(query).matches,
+    () => false,
+  );
+}
+
 export default function ExhibitionDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -111,6 +124,8 @@ export default function ExhibitionDetailPage() {
   const { data: siblings = [] } = useEventVenues(parent?.id);
   const venue = siblings.find((v) => v.id === event?.id) ?? null;
   const [contactOpen, setContactOpen] = useState(false);
+  // Desktop: Organizer / Sponsors join the facts column so there is no gap under the image.
+  const wide = useMinWidth(1024);
   const [sponsorOpen, setSponsorOpen] = useState(false);
 
   if (isLoading || isError) {
@@ -159,6 +174,104 @@ export default function ExhibitionDetailPage() {
   const offerSponsorship = () => {
     if (!needsAuth()) setSponsorOpen(true);
   };
+
+  const sideSections = (
+    <>
+          <section aria-labelledby="organizer-heading">
+            <h2 id="organizer-heading" className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              Organizer
+            </h2>
+            <p className="mt-2 text-base font-medium text-foreground">
+              {isHttpUrl(event.website_url) ? (
+                // The organiser's name opens their website.
+                <a
+                  href={event.website_url}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  className="group inline-flex items-center gap-1 underline-offset-4 hover:underline focus-visible:underline focus-visible:outline-none"
+                >
+                  {event.organizer_name ?? "เว็บไซต์ผู้จัด"}
+                  <ArrowUpRight
+                    className="h-4 w-4 shrink-0 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-focus-visible:-translate-y-0.5 group-focus-visible:translate-x-0.5 motion-reduce:transition-none"
+                    aria-hidden
+                  />
+                </a>
+              ) : (
+                (event.organizer_name ?? (event.origin === "community" ? "ผู้จัดงาน" : NOT_SPECIFIED))
+              )}
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2 empty:hidden">
+              {/* Team events are owned by an admin account; that profile is not the organiser. */}
+              {!isDemoEventId(event.id) && event.origin === "community" ? (
+                <Button asChild size="sm" variant="outline" className="rounded-full">
+                  <Link to={`/u/${event.owner_id}`}>View Profile</Link>
+                </Button>
+              ) : null}
+              {canChat ? (
+                <Button type="button" size="sm" className="rounded-full" onClick={contactOrganizer}>
+                  <MessageCircle className="mr-1.5 h-4 w-4" aria-hidden /> Message
+                </Button>
+              ) : null}
+            </div>
+          </section>
+
+          {event.sponsors.length || openForSponsors || event.origin === "curated" ? (
+            <section aria-labelledby="sponsors-heading">
+              <h2 id="sponsors-heading" className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                Sponsored by
+              </h2>
+              {event.sponsors.length ? (
+                <ul className="mt-3 space-y-3">
+                  {event.sponsors.map((s, i) => (
+                    <li key={`${s.name}-${i}`} className="flex items-center gap-3">
+                      {s.logo_url ? (
+                        <img src={s.logo_url} alt={`โลโก้ ${s.name}`} className="h-10 w-10 rounded-md border border-border bg-background object-contain" loading="lazy" />
+                      ) : (
+                        <span className="flex h-10 w-10 items-center justify-center rounded-md border border-border bg-muted text-sm font-semibold text-foreground" aria-hidden>
+                          {s.name.slice(0, 1).toUpperCase()}
+                        </span>
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground">{s.name}</p>
+                        {s.note ? <p className="text-xs text-muted-foreground">{s.note}</p> : null}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : !openForSponsors ? (
+                <p className="mt-2 text-sm text-muted-foreground">{NOT_SPECIFIED}</p>
+              ) : null}
+              {/* Last in the list: there is still room for one more sponsor. */}
+              {openForSponsors ? (
+                <div className="mt-4 flex items-start gap-3 rounded-lg bg-muted/50 p-4">
+                  <Handshake className="mt-0.5 h-5 w-5 shrink-0 text-foreground" aria-hidden />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-foreground">Open for Sponsorship</p>
+                    <p className="text-xs text-muted-foreground">
+                      {event.sponsors.length ? "ยังรับผู้สนับสนุนเพิ่ม" : "งานนี้กำลังหาผู้สนับสนุน"} — คุยกับผู้จัดได้โดยตรง
+                    </p>
+                    {canSponsor ? (
+                      <Button type="button" size="sm" className="mt-3 rounded-full" onClick={offerSponsorship}>
+                        <Handshake className="mr-1.5 h-4 w-4" aria-hidden /> เสนอเป็นผู้สนับสนุน
+                      </Button>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
+            </section>
+          ) : null}
+
+          {user && !isOwner && event.status === "published" && !isDemoEventId(event.id) ? (
+            <div>
+              <ReportDialog targetType="event" targetId={event.id} targetOwnerId={event.owner_id}>
+                <Button type="button" size="sm" variant="ghost" className="-ml-3 rounded-full text-muted-foreground">
+                  <Flag className="mr-1.5 h-4 w-4" aria-hidden /> รายงานงานนี้
+                </Button>
+              </ReportDialog>
+            </div>
+          ) : null}
+    </>
+  );
 
   const crumbs = [
     { name: "หน้าแรก", path: "/" },
@@ -302,6 +415,7 @@ export default function ExhibitionDetailPage() {
             // Signed-in clicks land in Portfolio → Exhibition → ลงทะเบียน.
             onRegister={user && event.status === "published" ? () => recordEventRegistration(event.id) : undefined}
           />
+          {wide ? <aside className="divide-y divide-border border-t border-border [&>*]:py-5">{sideSections}</aside> : null}
         </div>
       </div>
 
@@ -320,106 +434,17 @@ export default function ExhibitionDetailPage() {
         </section>
 
         {/* Thin rules between the side sections, and one above Organizer to close off the event facts. */}
-        <aside className="divide-y divide-border border-t border-border [&>*]:py-6">
-          <section aria-labelledby="organizer-heading">
-            <h2 id="organizer-heading" className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              Organizer
-            </h2>
-            <p className="mt-2 text-base font-medium text-foreground">
-              {isHttpUrl(event.website_url) ? (
-                // The organiser's name opens their website.
-                <a
-                  href={event.website_url}
-                  target="_blank"
-                  rel="noopener noreferrer nofollow"
-                  className="group inline-flex items-center gap-1 underline-offset-4 hover:underline focus-visible:underline focus-visible:outline-none"
-                >
-                  {event.organizer_name ?? "เว็บไซต์ผู้จัด"}
-                  <ArrowUpRight
-                    className="h-4 w-4 shrink-0 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-focus-visible:-translate-y-0.5 group-focus-visible:translate-x-0.5 motion-reduce:transition-none"
-                    aria-hidden
-                  />
-                </a>
-              ) : (
-                (event.organizer_name ?? (event.origin === "community" ? "ผู้จัดงาน" : NOT_SPECIFIED))
-              )}
-            </p>
-            <div className="mt-2 flex flex-wrap gap-2 empty:hidden">
-              {/* Team events are owned by an admin account; that profile is not the organiser. */}
-              {!isDemoEventId(event.id) && event.origin === "community" ? (
-                <Button asChild size="sm" variant="outline" className="rounded-full">
-                  <Link to={`/u/${event.owner_id}`}>View Profile</Link>
-                </Button>
-              ) : null}
-              {canChat ? (
-                <Button type="button" size="sm" className="rounded-full" onClick={contactOrganizer}>
-                  <MessageCircle className="mr-1.5 h-4 w-4" aria-hidden /> Message
-                </Button>
-              ) : null}
-            </div>
-          </section>
-
-          {event.sponsors.length || openForSponsors || event.origin === "curated" ? (
-            <section aria-labelledby="sponsors-heading">
-              <h2 id="sponsors-heading" className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                Sponsored by
-              </h2>
-              {event.sponsors.length ? (
-                <ul className="mt-3 space-y-3">
-                  {event.sponsors.map((s, i) => (
-                    <li key={`${s.name}-${i}`} className="flex items-center gap-3">
-                      {s.logo_url ? (
-                        <img src={s.logo_url} alt={`โลโก้ ${s.name}`} className="h-10 w-10 rounded-md border border-border bg-background object-contain" loading="lazy" />
-                      ) : (
-                        <span className="flex h-10 w-10 items-center justify-center rounded-md border border-border bg-muted text-sm font-semibold text-foreground" aria-hidden>
-                          {s.name.slice(0, 1).toUpperCase()}
-                        </span>
-                      )}
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-foreground">{s.name}</p>
-                        {s.note ? <p className="text-xs text-muted-foreground">{s.note}</p> : null}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              ) : !openForSponsors ? (
-                <p className="mt-2 text-sm text-muted-foreground">{NOT_SPECIFIED}</p>
-              ) : null}
-              {/* Last in the list: there is still room for one more sponsor. */}
-              {openForSponsors ? (
-                <div className="mt-4 flex items-start gap-3 rounded-lg bg-muted/50 p-4">
-                  <Handshake className="mt-0.5 h-5 w-5 shrink-0 text-foreground" aria-hidden />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-foreground">Open for Sponsorship</p>
-                    <p className="text-xs text-muted-foreground">
-                      {event.sponsors.length ? "ยังรับผู้สนับสนุนเพิ่ม" : "งานนี้กำลังหาผู้สนับสนุน"} — คุยกับผู้จัดได้โดยตรง
-                    </p>
-                    {canSponsor ? (
-                      <Button type="button" size="sm" className="mt-3 rounded-full" onClick={offerSponsorship}>
-                        <Handshake className="mr-1.5 h-4 w-4" aria-hidden /> เสนอเป็นผู้สนับสนุน
-                      </Button>
-                    ) : null}
-                  </div>
-                </div>
-              ) : null}
-            </section>
-          ) : null}
-
-          {user && !isOwner && event.status === "published" && !isDemoEventId(event.id) ? (
-            <div>
-              <ReportDialog targetType="event" targetId={event.id} targetOwnerId={event.owner_id}>
-                <Button type="button" size="sm" variant="ghost" className="-ml-3 rounded-full text-muted-foreground">
-                  <Flag className="mr-1.5 h-4 w-4" aria-hidden /> รายงานงานนี้
-                </Button>
-              </ReportDialog>
-            </div>
-          ) : null}
-        </aside>
+        {/* Phones / tablets: Organizer + Sponsors under About (on desktop they sit in the facts column above). */}
+        {!wide ? (
+          <aside className="divide-y divide-border border-t border-border [&>*]:py-6">
+            {sideSections}
+          </aside>
+        ) : null}
       </div>
 
       {/* Venues (sub-events) with the pinned map: below About, above the summary. */}
       {venues.length ? (
-        <EventVenuesSection parent={event} venues={venues} className="mx-auto mt-10 w-full max-w-[84rem] border-t border-border pt-6 lg:mt-14" />
+        <EventVenuesSection parent={event} venues={venues} className="mx-auto w-full max-w-[84rem] border-t border-border pt-6 lg:mt-14" />
       ) : null}
 
       {works.length ? (

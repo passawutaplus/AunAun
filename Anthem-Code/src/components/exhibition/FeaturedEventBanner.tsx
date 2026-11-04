@@ -20,6 +20,10 @@ export function FeaturedEventBanner({ className }: { className?: string }) {
   if (!event) return null;
 
   const countdown = featuredCountdown(event.starts_on, event.ends_on);
+  // Round badge: the day count from the countdown ("เหลือ 116 วัน" / "เริ่มใน 3 วัน").
+  const days = countdown?.match(/(เหลือ|เริ่มใน) (\d+) วัน/);
+  // The badge carries the number, so the line beside "Featured Event" just says it's on.
+  const status = days ? (days[1] === "เหลือ" ? "กำลังจัด" : null) : countdown;
   const { main } = venueCounts(venues);
   const to = `/exhibition/${event.id}`;
 
@@ -42,10 +46,20 @@ export function FeaturedEventBanner({ className }: { className?: string }) {
         ) : null}
       </Link>
 
-      <div className="flex flex-col justify-center gap-3 p-5 sm:p-7">
+      <div className={cn("relative flex flex-col justify-center gap-3 p-5 sm:p-7", days && "pr-24 sm:pr-32")}>
+        {days ? (
+          <div
+            className="absolute right-4 top-4 flex h-[4.5rem] w-[4.5rem] rotate-[8deg] flex-col items-center justify-center rounded-full bg-brand text-white shadow-lg shadow-brand/25 ring-4 ring-brand/20 sm:right-6 sm:top-6 sm:h-24 sm:w-24"
+            aria-hidden
+          >
+            <span className="text-[10px] font-medium leading-none sm:text-xs">{days[1] === "เหลือ" ? "เหลืออีก" : "เริ่มใน"}</span>
+            <span className="font-display text-2xl font-semibold leading-none tabular-nums sm:text-3xl">{days[2]}</span>
+            <span className="text-[10px] font-medium leading-none sm:text-xs">วัน</span>
+          </div>
+        ) : null}
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <span className="rounded-full bg-brand px-2.5 py-1 font-semibold text-white">Featured Event</span>
-          {countdown ? <span className="font-medium text-muted-foreground">{countdown}</span> : null}
+          {status ? <span className="font-medium text-muted-foreground">{status}</span> : null}
         </div>
         <h2 id="featured-event-title" className="font-display text-3xl font-semibold leading-[1.1] tracking-tight text-foreground sm:text-4xl max-sm:text-2xl">
           <Link to={to} className="hover:underline hover:decoration-foreground/30 hover:underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground">
