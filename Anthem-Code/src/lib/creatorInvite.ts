@@ -49,7 +49,9 @@ export interface InviteSubmission {
     cover: string | null;
   };
   projects: InviteProject[];
-  contact_pref: "email" | "instagram" | "line" | "other";
+  contact_pref: "" | "email" | "instagram" | "line" | "other";
+  /** IG / LINE / other account when contact_pref is not email */
+  contact_handle: string;
   quick: { portfolio_url: string };
 }
 
@@ -124,7 +126,8 @@ export function emptySubmission(invite?: Pick<PublicInvite, "display_name" | "di
       cover: null,
     },
     projects: [emptyProject("p1")],
-    contact_pref: "email",
+    contact_pref: "",
+    contact_handle: "",
     quick: { portfolio_url: "" },
   };
 }
@@ -140,7 +143,8 @@ export function normalizeSubmission(raw: unknown, invite?: PublicInvite | null):
   return {
     about: { ...base.about, ...(r.about ?? {}) },
     projects,
-    contact_pref: r.contact_pref ?? "email",
+    contact_pref: r.contact_pref ?? "",
+    contact_handle: r.contact_handle ?? "",
     quick: { ...base.quick, ...(r.quick ?? {}) },
   };
 }
@@ -166,7 +170,11 @@ export function validateStep(step: 1 | 2 | 3, s: InviteSubmission, clean: Set<st
       if (p.url && !HTTPS_RE.test(p.url)) e[`projects.${i}.url`] = true;
     });
   }
-  if (step === 3 && !consent) e.consent = true;
+  if (step === 3) {
+    if (!consent) e.consent = true;
+    if (!s.contact_pref) e.contact_pref = true;
+    else if (s.contact_pref !== "email" && !s.contact_handle.trim()) e.contact_handle = true;
+  }
   return e;
 }
 

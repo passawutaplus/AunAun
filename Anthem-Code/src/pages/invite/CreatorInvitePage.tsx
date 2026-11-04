@@ -13,12 +13,16 @@ import {
   ArrowRight,
   ArrowUpRight,
   Check,
-  ChevronLeft,
-  ChevronRight,
   ImagePlus,
   Loader2,
   Mail,
   X,
+  Images,
+  ShieldCheck,
+  UserRound,
+  CheckCircle2,
+  FileText,
+  Pencil,
 } from "lucide-react";
 import SeoHead from "@/components/SeoHead";
 import InviteProfilePreview from "@/components/invite/InviteProfilePreview";
@@ -39,6 +43,24 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import {
+  DndContext,
+  KeyboardSensor,
+  MouseSensor,
+  TouchSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  rectSortingStrategy,
+  sortableKeyboardCoordinates,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import {
   BIO_MAX,
   INVITE_DISCIPLINES,
@@ -294,6 +316,7 @@ function InviteForm({
   const [consent, setConsent] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [saveState, setSaveState] = useState<SaveState>("idle");
+  const [savedAt, setSavedAt] = useState<string | null>(null);
   const [uploading, setUploading] = useState<MediaSlot | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const previewRef = useRef<HTMLElement>(null);
@@ -322,7 +345,15 @@ function InviteForm({
     const id = window.setTimeout(() => {
       publicInviteApi
         .save(token, data)
-        .then(() => setSaveState("saved"))
+        .then(() => {
+          setSaveState("saved");
+          setSavedAt(
+            new Date().toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+          );
+        })
         .catch(() => setSaveState("error"));
     }, 1200);
     return () => window.clearTimeout(id);
@@ -406,17 +437,10 @@ function InviteForm({
       }));
   }
 
-  function moveImage(i: number, from: number, dir: -1 | 1) {
+  function reorderImages(i: number, ids: string[]) {
     update((d) => ({
       ...d,
-      projects: d.projects.map((p, j) => {
-        if (j !== i) return p;
-        const to = from + dir;
-        if (to < 0 || to >= p.media.length) return p;
-        const m = [...p.media];
-        [m[from], m[to]] = [m[to], m[from]];
-        return { ...p, media: m };
-      }),
+      projects: d.projects.map((p, j) => (j === i ? { ...p, media: ids } : p)),
     }));
   }
 
@@ -490,11 +514,15 @@ function InviteForm({
     }
   }
 
+  const goStep = (n: 1 | 2 | 3) => {
+    setStep(n);
+    scrollTop();
+  };
   const saveLabel =
     saveState === "saving"
       ? t.saving
       : saveState === "saved"
-        ? t.saved
+        ? `${t.saved}${savedAt ? ` ${savedAt}` : ""}`
         : saveState === "error"
           ? t.saveFailed
           : "";
@@ -545,8 +573,8 @@ function InviteForm({
               to={`/invite/creator/${token}`}
               className="inline-flex items-center gap-1 font-display text-xs text-muted-foreground hover:text-foreground"
             >
-              <ArrowLeft className="h-3.5 w-3.5" aria-hidden /> Private creator invitation ·{" "}
-              {invite.display_name}
+              <ArrowLeft className="h-3.5 w-3.5" aria-hidden /> Private creator
+              invitation · {invite.display_name}
             </Link>
             {modeSwitch}
           </div>
@@ -618,6 +646,34 @@ function InviteForm({
                         </SelectContent>
                       </Select>
                     </Field>
+                    {data.contact_pref && data.contact_pref !== "email" ? (
+                      <Field
+                        id="contact_handle"
+                        label={t.contactHandle(
+                          t.contactOptions[data.contact_pref],
+                        )}
+                        required
+                        error={e("contact_handle", t.err.required)}
+                      >
+                        <Input
+                          {...aria("contact_handle", !!errors.contact_handle)}
+                          value={data.contact_handle}
+                          maxLength={120}
+                          placeholder={
+                            data.contact_pref === "instagram"
+                              ? "@username"
+                              : data.contact_pref === "line"
+                                ? "LINE ID"
+                                : ""
+                          }
+                          onChange={(ev) => {
+                            const v = ev.target.value;
+                            update((d) => ({ ...d, contact_handle: v }));
+                            clearErr("contact_handle");
+                          }}
+                        />
+                      </Field>
+                    ) : null}
                     <Field
                       id="about.bio"
                       label={t.bio}
@@ -632,6 +688,7 @@ function InviteForm({
                         onChange={(ev) => setAbout("bio", ev.target.value)}
                       />
                     </Field>
+                    <div aria-hidden className="border-t border-border" />
                     <div className="grid gap-5 sm:grid-cols-2">
                       <Field id="about.city" label={t.city}>
                         <Input
@@ -664,14 +721,14 @@ function InviteForm({
                       </Field>
                     </div>
                     <Field id="about.links" label={t.links}>
-                      <Input
-                        {...aria("about.links", false)}
+                      <LinksInput
+                        id="about.links"
+                        t={t}
                         value={data.about.links}
-                        maxLength={500}
-                        placeholder="https://"
-                        onChange={(ev) => setAbout("links", ev.target.value)}
+                        onChange={(v) => setAbout("links", v)}
                       />
                     </Field>
+                    <div aria-hidden className="border-t border-border" />
                     <div className="grid gap-5 sm:grid-cols-[auto_minmax(0,1fr)]">
                       {(["avatar", "cover"] as const).map((slot) => (
                         <div
@@ -710,15 +767,15 @@ function InviteForm({
                   </div>
                 ) : step === 2 ? (
                   <div className="space-y-6">
-                    <StepHead n={2} title={t.s2} sub={t.s2intro} />
+                    <StepHead n={2} title={t.s2} />
                     {data.projects.map((p, i) => (
                       <div
                         key={p.slot}
                         className="space-y-4 rounded-xl border border-border p-4 sm:p-5"
                       >
                         <div className="flex items-center justify-between">
-                          <h3 className="text-sm font-semibold">
-                            {t.project(i + 1)}
+                          <h3 className="font-display text-lg font-semibold">
+                            Project {i + 1}
                           </h3>
                           {i > 0 ? (
                             <Button
@@ -821,7 +878,7 @@ function InviteForm({
                             canAdd={p.media.length < MAX_IMAGES_PER_PROJECT}
                             onAdd={(f) => void addFiles(p.slot, f)}
                             onRemove={(id) => removeImage(p.slot, id)}
-                            onMove={(from, dir) => moveImage(i, from, dir)}
+                            onReorder={(ids) => reorderImages(i, ids)}
                           />
                           <p
                             className={cn(
@@ -885,47 +942,152 @@ function InviteForm({
                   </div>
                 ) : (
                   <div className="space-y-5">
-                    <StepHead n={3} title={t.s3} />
-                    <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 rounded-xl bg-muted/50 p-4 text-sm">
-                      <dt className="text-muted-foreground">{t.name}</dt>
-                      <dd>
-                        {data.about.name} · {data.about.discipline}
-                      </dd>
-                      <dt className="text-muted-foreground">{t.email}</dt>
-                      <dd className="break-all">{data.about.email}</dd>
-                      <dt className="text-muted-foreground">{t.works}</dt>
-                      <dd>
-                        {data.projects
-                          .map((p) => p.title || t.untitled)
-                          .join(", ")}
-                      </dd>
-                    </dl>
-                    <div className="rounded-xl border border-border p-4">
-                      <p className="text-sm font-semibold">{t.privacyTitle}</p>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        {t.privacy}
+                    <StepHead n={3} title={t.s3} sub={t.s3sub} />
+                    <div className="divide-y divide-border overflow-hidden rounded-xl border border-border">
+                      <ReviewRow
+                        icon={UserRound}
+                        title={t.rowBasic}
+                        sub={t.rowBasicSub}
+                        editLabel={t.edit}
+                        onEdit={() => goStep(1)}
+                      >
+                        <p className="font-semibold text-foreground">
+                          {data.about.name}
+                        </p>
+                        <p className="text-muted-foreground">
+                          {data.about.discipline}
+                        </p>
+                        <p className="break-all text-muted-foreground">
+                          {data.about.email}
+                        </p>
+                      </ReviewRow>
+                      <ReviewRow
+                        icon={FileText}
+                        title={t.rowBio}
+                        sub={t.rowBioSub}
+                        editLabel={t.edit}
+                        onEdit={() => goStep(1)}
+                      >
+                        <p className="line-clamp-3 text-foreground/85">
+                          {data.about.bio || "—"}
+                        </p>
+                      </ReviewRow>
+                      <ReviewRow
+                        icon={Images}
+                        title={t.rowWorks}
+                        sub={t.rowWorksSub(data.projects.length)}
+                        editLabel={t.edit}
+                        onEdit={() => goStep(2)}
+                      >
+                        <div className="space-y-3">
+                          {data.projects.map((p) => {
+                            const img = p.media
+                              .map((m) => media.get(m)?.url)
+                              .find(Boolean);
+                            return (
+                              <div
+                                key={p.slot}
+                                className="flex items-center gap-3"
+                              >
+                                <span className="h-12 w-16 shrink-0 overflow-hidden rounded-md bg-muted">
+                                  {img ? (
+                                    <img
+                                      src={img}
+                                      alt=""
+                                      className="h-full w-full object-cover"
+                                    />
+                                  ) : null}
+                                </span>
+                                <span className="min-w-0">
+                                  <span className="block truncate font-semibold text-foreground">
+                                    {p.title || t.untitled}
+                                  </span>
+                                  {p.description ? (
+                                    <span className="block truncate text-xs text-muted-foreground">
+                                      {p.description}
+                                    </span>
+                                  ) : null}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </ReviewRow>
+                    </div>
+                    <div
+                      data-field="consent"
+                      className={cn(
+                        "rounded-xl border p-4 sm:p-5",
+                        errors.consent
+                          ? "border-destructive"
+                          : consent
+                            ? "border-brand/60"
+                            : "border-border",
+                      )}
+                    >
+                      <label className="flex items-start gap-3">
+                        <Checkbox
+                          id="consent"
+                          checked={consent}
+                          onCheckedChange={(v) => (
+                            setConsent(v === true),
+                            clearErr("consent")
+                          )}
+                          aria-invalid={!!errors.consent || undefined}
+                          className="mt-0.5 h-5 w-5 data-[state=checked]:border-brand data-[state=checked]:bg-brand"
+                        />
+                        <span className="text-base font-semibold text-foreground">
+                          {t.consentTitle}
+                        </span>
+                      </label>
+                      <ul className="mt-3 space-y-2 pl-8 text-sm text-muted-foreground">
+                        {t.consentPoints.map((x) => (
+                          <li key={x} className="flex items-start gap-2">
+                            <CheckCircle2
+                              className="mt-0.5 h-4 w-4 shrink-0"
+                              aria-hidden
+                            />{" "}
+                            {x}
+                          </li>
+                        ))}
+                      </ul>
+                      <p
+                        className={cn(
+                          "mt-3 pl-8 text-xs",
+                          errors.consent
+                            ? "font-medium text-destructive"
+                            : "text-muted-foreground",
+                        )}
+                      >
+                        {errors.consent ? t.err.consent : t.consentHint}
                       </p>
                     </div>
-                    <ConsentBox
-                      id="consent"
-                      label={t.consent}
-                      hint={t.consentHint}
-                      checked={consent}
-                      error={errors.consent ? t.err.consent : null}
-                      onChange={(v) => (setConsent(v), clearErr("consent"))}
-                    />
-                    <Field id="contact_pref" label={t.contactPref}>
+                    <Field
+                      id="contact_pref"
+                      label={t.contactPref}
+                      required
+                      error={e("contact_pref", t.err.required)}
+                      hint={
+                        data.contact_pref === "email"
+                          ? t.contactViaEmail(data.about.email)
+                          : undefined
+                      }
+                    >
                       <Select
                         value={data.contact_pref}
-                        onValueChange={(v) =>
+                        onValueChange={(v) => {
                           update((d) => ({
                             ...d,
                             contact_pref: v as InviteSubmission["contact_pref"],
-                          }))
-                        }
+                          }));
+                          clearErr("contact_pref");
+                        }}
                       >
-                        <SelectTrigger id="contact_pref">
-                          <SelectValue />
+                        <SelectTrigger
+                          id="contact_pref"
+                          aria-invalid={!!errors.contact_pref || undefined}
+                        >
+                          <SelectValue placeholder={t.chooseContact} />
                         </SelectTrigger>
                         <SelectContent>
                           {(
@@ -981,7 +1143,7 @@ function InviteForm({
               {quick || step === 3 ? (
                 <Button
                   type="button"
-                  className="w-full sm:w-auto"
+                  className="h-12 w-full rounded-xl bg-brand px-6 text-base font-semibold text-white hover:bg-brand/90 sm:w-auto"
                   disabled={submitting || !!uploading}
                   onClick={() => void submit(quick ? "quick" : "full")}
                 >
@@ -991,7 +1153,8 @@ function InviteForm({
                       aria-hidden
                     />
                   ) : null}
-                  {t.submit}
+                  {t.submit}{" "}
+                  <ArrowRight className="ml-1.5 h-4 w-4" aria-hidden />
                 </Button>
               ) : (
                 <Button
@@ -1079,13 +1242,117 @@ function StepHead({
   title: string;
   sub?: string;
 }) {
+  const Icon = n === 1 ? UserRound : n === 2 ? Images : ShieldCheck;
   return (
     <div>
-      <p className="font-mono text-xs text-muted-foreground">0{n} / 3</p>
-      <h2 className="mt-1 text-2xl font-semibold text-foreground">{title}</h2>
+      <h2 className="mt-1 flex items-center gap-2.5 text-2xl font-semibold text-foreground">
+        <Icon className="h-6 w-6 shrink-0 text-brand" aria-hidden />
+        {title}
+      </h2>
       {sub ? (
         <p className="mt-1.5 text-sm text-muted-foreground">{sub}</p>
       ) : null}
+    </div>
+  );
+}
+
+const LINK_SEP = "\n";
+
+/** Website / social links: one per row, up to 5, stored newline-separated in about.links. */
+function LinksInput({
+  id,
+  t,
+  value,
+  onChange,
+}: {
+  id: string;
+  t: InviteCopy;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const rows = value.split(LINK_SEP);
+  const setRow = (i: number, v: string) =>
+    onChange(
+      rows.map((r, j) => (j === i ? v.replace(/\s+/g, "") : r)).join(LINK_SEP),
+    );
+  return (
+    <div className="space-y-2">
+      {rows.map((r, i) => (
+        <div key={i} className="flex gap-2">
+          <Input
+            id={i === 0 ? id : `${id}.${i}`}
+            aria-label={i === 0 ? undefined : `${t.links} ${i + 1}`}
+            type="url"
+            value={r}
+            maxLength={200}
+            placeholder="https://"
+            onChange={(ev) => setRow(i, ev.target.value)}
+          />
+          {rows.length > 1 ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label={t.remove}
+              onClick={() =>
+                onChange(rows.filter((_, j) => j !== i).join(LINK_SEP))
+              }
+            >
+              <X className="h-4 w-4" aria-hidden />
+            </Button>
+          ) : null}
+        </div>
+      ))}
+      {rows.length < 5 ? (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-8 px-2 text-xs"
+          onClick={() => onChange(value + LINK_SEP)}
+        >
+          + {t.addLink}
+        </Button>
+      ) : null}
+    </div>
+  );
+}
+
+function ReviewRow({
+  icon: Icon,
+  title,
+  sub,
+  editLabel,
+  onEdit,
+  children,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  sub: string;
+  editLabel: string;
+  onEdit: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-3 p-4 sm:grid-cols-[auto_11rem_minmax(0,1fr)_auto] sm:items-center sm:gap-4">
+      <Icon
+        className="mt-0.5 h-5 w-5 shrink-0 text-foreground sm:mt-0"
+        aria-hidden
+      />
+      <div className="min-w-0">
+        <p className="font-semibold text-foreground">{title}</p>
+      </div>
+      <button
+        type="button"
+        onClick={onEdit}
+        aria-label={`${editLabel}: ${title}`}
+        className="col-start-3 row-start-1 flex h-9 w-9 items-center justify-center rounded-full border border-border text-foreground hover:bg-secondary sm:col-start-4"
+      >
+        <Pencil className="h-4 w-4" aria-hidden />
+      </button>
+      <div className="col-span-3 min-w-0 text-sm sm:col-span-1 sm:col-start-3 sm:row-start-1 sm:border-l sm:border-border sm:pl-4">
+        {children}
+      </div>
     </div>
   );
 }
@@ -1211,7 +1478,7 @@ function ImageStrip({
   canAdd,
   onAdd,
   onRemove,
-  onMove,
+  onReorder,
 }: {
   t: InviteCopy;
   ids: string[];
@@ -1221,96 +1488,170 @@ function ImageStrip({
   canAdd: boolean;
   onAdd: (files: FileList | null) => void;
   onRemove: (id: string) => void;
-  onMove?: (from: number, dir: -1 | 1) => void;
+  /** Project images only: drag to reorder (mouse drag, or press and hold then drag on touch). */
+  onReorder?: (ids: string[]) => void;
 }) {
   const inputId = `upload-${slot}`;
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 250, tolerance: 6 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
+  const onDragEnd = (ev: DragEndEvent) => {
+    const { active, over } = ev;
+    if (!onReorder || !over || active.id === over.id) return;
+    const from = ids.indexOf(String(active.id));
+    const to = ids.indexOf(String(over.id));
+    if (from >= 0 && to >= 0) onReorder(arrayMove(ids, from, to));
+  };
+  const showCover = !!onReorder && ids.length > 1;
+
+  const addTile = canAdd ? (
+    <label
+      htmlFor={inputId}
+      className={cn(
+        "flex cursor-pointer flex-col items-center justify-center gap-1 border border-dashed border-border text-[11px] text-muted-foreground hover:border-foreground/40 hover:text-foreground",
+        tileShape(slot),
+        uploading && "pointer-events-none opacity-60",
+      )}
+    >
+      {uploading ? (
+        <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+      ) : (
+        <ImagePlus className="h-5 w-5" aria-hidden />
+      )}
+      <span>
+        {uploading
+          ? t.uploading
+          : slot === "avatar" || slot === "cover"
+            ? t.chooseImage
+            : t.addImage}
+      </span>
+      <input
+        id={inputId}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        multiple={slot !== "avatar" && slot !== "cover"}
+        className="sr-only"
+        onChange={(ev) => {
+          onAdd(ev.target.files);
+          ev.target.value = "";
+        }}
+      />
+    </label>
+  ) : null;
+
+  const tiles = ids.map((id, i) => (
+    <SortableTile
+      key={id}
+      id={id}
+      url={media.get(id)?.url ?? null}
+      shape={tileShape(slot)}
+      sortable={!!onReorder}
+      coverLabel={showCover && i === 0 ? t.cardCover : null}
+      removeLabel={t.remove}
+      dragLabel={t.dragHint}
+      onRemove={() => onRemove(id)}
+    />
+  ));
+
   return (
-    <div className="flex flex-wrap gap-2">
-      {ids.map((id, i) => {
-        const m = media.get(id);
-        return (
-          <div
-            key={id}
-            className={cn(
-              "group relative overflow-hidden bg-muted",
-              tileShape(slot),
-            )}
+    <div className="space-y-1.5">
+      <div className="flex flex-wrap gap-2">
+        {onReorder ? (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={onDragEnd}
           >
-            {m?.url ? (
-              <img src={m.url} alt="" className="h-full w-full object-cover" />
-            ) : (
-              <Loader2
-                className="m-auto mt-8 h-5 w-5 animate-spin text-muted-foreground"
-                aria-hidden
-              />
-            )}
-            <button
-              type="button"
-              onClick={() => onRemove(id)}
-              aria-label={t.remove}
-              className="absolute right-1 top-1 rounded-full bg-background/90 p-1 text-foreground shadow"
-            >
-              <X className="h-3 w-3" aria-hidden />
-            </button>
-            {onMove && ids.length > 1 ? (
-              <div className="absolute inset-x-1 bottom-1 flex justify-between">
-                <button
-                  type="button"
-                  disabled={i === 0}
-                  onClick={() => onMove(i, -1)}
-                  aria-label={t.moveLeft}
-                  className="rounded-full bg-background/90 p-0.5 disabled:opacity-0"
-                >
-                  <ChevronLeft className="h-3.5 w-3.5" aria-hidden />
-                </button>
-                <button
-                  type="button"
-                  disabled={i === ids.length - 1}
-                  onClick={() => onMove(i, 1)}
-                  aria-label={t.moveRight}
-                  className="rounded-full bg-background/90 p-0.5 disabled:opacity-0"
-                >
-                  <ChevronRight className="h-3.5 w-3.5" aria-hidden />
-                </button>
-              </div>
-            ) : null}
-          </div>
-        );
-      })}
-      {canAdd ? (
-        <label
-          htmlFor={inputId}
-          className={cn(
-            "flex cursor-pointer flex-col items-center justify-center gap-1 border border-dashed border-border text-[11px] text-muted-foreground hover:border-foreground/40 hover:text-foreground",
-            tileShape(slot),
-            uploading && "pointer-events-none opacity-60",
-          )}
-        >
-          {uploading ? (
-            <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
-          ) : (
-            <ImagePlus className="h-5 w-5" aria-hidden />
-          )}
-          <span>
-            {uploading
-              ? t.uploading
-              : slot === "avatar" || slot === "cover"
-                ? t.chooseImage
-                : t.addImage}
-          </span>
-          <input
-            id={inputId}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            multiple={slot !== "avatar" && slot !== "cover"}
-            className="sr-only"
-            onChange={(ev) => {
-              onAdd(ev.target.files);
-              ev.target.value = "";
-            }}
-          />
-        </label>
+            <SortableContext items={ids} strategy={rectSortingStrategy}>
+              {tiles}
+            </SortableContext>
+          </DndContext>
+        ) : (
+          tiles
+        )}
+        {addTile}
+      </div>
+      {showCover ? (
+        <p className="text-[11px] text-muted-foreground">{t.dragHint}</p>
       ) : null}
+    </div>
+  );
+}
+
+function SortableTile({
+  id,
+  url,
+  shape,
+  sortable,
+  coverLabel,
+  removeLabel,
+  dragLabel,
+  onRemove,
+}: {
+  id: string;
+  url: string | null;
+  shape: string;
+  sortable: boolean;
+  coverLabel: string | null;
+  removeLabel: string;
+  dragLabel: string;
+  onRemove: () => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id, disabled: !sortable });
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={cn(
+        "group relative touch-manipulation select-none overflow-hidden bg-muted",
+        shape,
+        sortable && "cursor-grab active:cursor-grabbing",
+        isDragging && "z-10 opacity-80 shadow-xl ring-2 ring-brand",
+      )}
+      {...(sortable
+        ? { ...attributes, ...listeners, "aria-roledescription": dragLabel }
+        : {})}
+    >
+      {url ? (
+        <img
+          src={url}
+          alt=""
+          draggable={false}
+          className="pointer-events-none h-full w-full object-cover"
+        />
+      ) : (
+        <Loader2
+          className="m-auto mt-8 h-5 w-5 animate-spin text-muted-foreground"
+          aria-hidden
+        />
+      )}
+      {coverLabel ? (
+        <span className="absolute bottom-1 left-1 rounded-full bg-brand px-2 py-0.5 text-[10px] font-semibold text-white">
+          {coverLabel}
+        </span>
+      ) : null}
+      <button
+        type="button"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={onRemove}
+        aria-label={removeLabel}
+        className="absolute right-1 top-1 rounded-full bg-background/90 p-1 text-foreground shadow"
+      >
+        <X className="h-3 w-3" aria-hidden />
+      </button>
     </div>
   );
 }

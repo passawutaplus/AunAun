@@ -14,6 +14,7 @@ function filled(): InviteSubmission {
   const s = emptySubmission({ display_name: "Tanawat K.", discipline: "Photography" });
   s.about.email = "t@example.com";
   s.about.avatar = "av";
+  s.contact_pref = "email";
   s.projects[0] = { ...s.projects[0], title: "Identity", media: ["m1"], rights: true };
   return s;
 }
@@ -39,6 +40,15 @@ describe("creator invite form rules", () => {
     s.projects[0].rights = false;
     s.projects[0].url = "http://insecure";
     expect(validateStep(2, s, new Set(["m1"]), false)).toEqual({ "projects.0.rights": true, "projects.0.url": true });
+  });
+
+  it("step 3 needs a contact channel, and an account for IG / LINE / other", () => {
+    const s = filled();
+    s.contact_pref = "line";
+    expect(validateStep(3, s, new Set(), true)).toEqual({ contact_handle: true });
+    s.contact_handle = "@tanawat";
+    expect(validateStep(3, s, new Set(), true)).toEqual({});
+    expect(validateStep(3, { ...s, contact_pref: "" }, new Set(), true)).toEqual({ contact_pref: true });
   });
 
   it("step 3 requires the unchecked-by-default consent", () => {
@@ -78,7 +88,7 @@ describe("creator invite copy + admin helpers", () => {
     expect(Object.keys(zh).sort()).toEqual(Object.keys(th).sort());
     expect(zh.pathA).toContain("SAMECOR");
     expect(th.pathA).toContain("SAMECOR");
-    expect(en.pvBadge).toMatch(/not published/i);
+    expect(en.pvBadge).toBe("Private preview");
   });
 
   it("fills the name and link into outreach templates", () => {

@@ -96,6 +96,8 @@ describe("validateForSubmit", () => {
     about: { name: "A", email: "a@b.co", discipline: "Photography", avatar: "av" },
     projects: [{ title: "P", media: ["m1"], rights: true }],
     quick: { portfolio_url: "" },
+    contact_pref: "email",
+    contact_handle: "",
   };
   it("accepts a full submission with one clean image and rights", () => {
     expect(validateForSubmit("full", base, new Set(["m1", "av"]))).toEqual([]);

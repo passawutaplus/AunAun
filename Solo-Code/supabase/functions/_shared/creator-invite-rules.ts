@@ -3,6 +3,8 @@ export type SubmitShape = {
   about: { name: string; email: string; discipline: string; avatar?: string | null };
   projects: { title: string; media: string[]; rights: boolean }[];
   quick: { portfolio_url: string };
+  contact_pref?: string;
+  contact_handle?: string;
 };
 
 export const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -22,6 +24,8 @@ export function validateForSubmit(
   }
   if (!s.about.discipline) errs.push("about.discipline");
   if (!s.about.avatar || !cleanMedia.has(s.about.avatar)) errs.push("about.avatar");
+  if (!s.contact_pref) errs.push("contact_pref");
+  else if (s.contact_pref !== "email" && !s.contact_handle?.trim()) errs.push("contact_handle");
   if (s.projects.length < 1) errs.push("projects");
   s.projects.forEach((p, i) => {
     if (!p.title) errs.push(`projects.${i}.title`);

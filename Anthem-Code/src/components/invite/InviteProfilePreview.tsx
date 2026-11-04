@@ -98,7 +98,7 @@ const InviteProfilePreview = forwardRef<HTMLElement, Props>(function InviteProfi
               const img = p.media.map(urlOf).find(Boolean);
               return (
                 <div key={p.slot} className="min-w-0">
-                  <div className="aspect-[4/3] overflow-hidden rounded-lg bg-muted">
+                  <div className="aspect-[4/3] overflow-hidden rounded bg-muted">
                     {img ? (
                       <img src={img} alt="" className="h-full w-full object-cover" />
                     ) : (

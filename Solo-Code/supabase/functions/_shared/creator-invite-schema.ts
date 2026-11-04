@@ -31,7 +31,9 @@ export const SubmissionSchema = z.object({
     })
     .default({}),
   projects: z.array(ProjectSchema).max(3).optional().default([]),
-  contact_pref: z.enum(["email", "instagram", "line", "other"]).optional().default("email"),
+  contact_pref: z.enum(["", "email", "instagram", "line", "other"]).optional().default(""),
+  /** IG / LINE / other handle when contact_pref is not email */
+  contact_handle: text(120),
   quick: z
     .object({ portfolio_url: httpsUrl.optional().default("") })
     .optional()
