@@ -1,6 +1,6 @@
 import { useLayoutEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Bookmark, MessageCircle, Share2 } from "lucide-react";
+import { Bookmark, MessageCircle, Pencil, Share2 } from "lucide-react";
 import UserAvatar from "@/components/UserAvatar";
 import FollowButton from "@/components/FollowButton";
 import SharePopover from "@/components/SharePopover";
@@ -170,20 +170,27 @@ const ProjectActionRail = ({
           : "bg-background/55 text-foreground ring-1 ring-inset ring-foreground/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_8px_24px_rgba(0,0,0,0.12)] dark:bg-card/40 dark:ring-white/15 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_8px_24px_rgba(0,0,0,0.4)]",
       )}
     >
-      <SaveToCollectionPopover projectId={projectId}>
-        <button
-          type="button"
-          className={iconBtn}
-          aria-pressed={saved}
-          aria-label={saved ? "เก็บเข้าคอลเลกชันแล้ว" : "เก็บเข้าคอลเลกชัน"}
-          title="Collection"
-        >
-          <Bookmark
-            className={cn("h-5 w-5", saved && "fill-brand text-brand")}
-            strokeWidth={saved ? 0 : 1.8}
-          />
-        </button>
-      </SaveToCollectionPopover>
+      {isOwner && projectId ? (
+        // Own work: edit instead of saving it to a collection.
+        <Link to={`/portfolio/${projectId}/edit`} className={iconBtn} aria-label="แก้ไขผลงาน" title="แก้ไขผลงาน">
+          <Pencil className="h-5 w-5" strokeWidth={1.8} />
+        </Link>
+      ) : (
+        <SaveToCollectionPopover projectId={projectId}>
+          <button
+            type="button"
+            className={iconBtn}
+            aria-pressed={saved}
+            aria-label={saved ? "เก็บเข้าคอลเลกชันแล้ว" : "เก็บเข้าคอลเลกชัน"}
+            title="Collection"
+          >
+            <Bookmark
+              className={cn("h-5 w-5", saved && "fill-brand text-brand")}
+              strokeWidth={saved ? 0 : 1.8}
+            />
+          </button>
+        </SaveToCollectionPopover>
+      )}
       <SharePopover
         url={shareUrl}
         title={title}
