@@ -196,7 +196,6 @@ export default function ExhibitionDetailPage() {
           <h1 className="font-display text-4xl font-semibold leading-[1.05] tracking-tight text-foreground sm:text-5xl">
             {event.title}
           </h1>
-          <p className="text-base text-foreground/80">{lead}</p>
           <EventActions
             event={event}
             stats={stats?.[event.id]}
