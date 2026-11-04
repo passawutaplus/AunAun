@@ -24,6 +24,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ThemeModePicker } from "@/components/settings/ThemeModePicker";
+import { LanguagePicker } from "@/components/settings/LanguagePicker";
 import { FeedGridDensityPicker } from "@/components/feed/FeedGridDensityPicker";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -151,6 +152,7 @@ export function ProfileMenuContent({ onNavigate, variant = "default" }: ProfileM
       ) : null}
       <DropdownMenuSeparator />
       <div className="px-2 py-1.5 space-y-1" onPointerDown={preventClose}>
+        <LanguagePicker label="Language" />
         <ThemeModePicker label="Theme" />
         {variant !== "forum" ? <FeedGridDensityPicker label="Grid Feed" /> : null}
       </div>
