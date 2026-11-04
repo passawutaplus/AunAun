@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, ChevronDown, Layers, Search, ShieldCheck, User } from "lucide-react";
 import { BrandLogo } from "@/components/brand/BrandLogo";
-import { CATEGORY_PARENTS } from "@/data/categoryTaxonomy";
 import { Button } from "@/components/ui/button";
 import { publicInviteApi, rememberSelfSignup, type PublicInvite } from "@/lib/creatorInvite";
 import type { InviteCopy } from "@/lib/creatorInviteCopy";
@@ -146,16 +145,15 @@ export default function InviteLanding({ token, t, invite }: { token: string; t: 
             <div className="flex items-center gap-3 border-b border-border px-4 py-2.5">
               <BrandLogo tone="theme" size="sm" className="shrink-0" />
               <span className="ml-auto flex min-w-0 gap-1.5 overflow-hidden">
-                {CATEGORY_PARENTS.slice(0, 5).map((c, i) => (
+                {["Showcase", "Creators", "Exhibition"].map((label, i) => (
                   <span
-                    key={c.id}
+                    key={label}
                     className={cn(
                       "shrink-0 rounded-full px-2.5 py-1 text-[10px] font-medium",
-                      i === 0 ? "bg-foreground text-background" : "border border-border text-muted-foreground",
-                      i >= 3 && "hidden sm:inline",
+                      i === 1 ? "bg-foreground text-background" : "border border-border text-muted-foreground",
                     )}
                   >
-                    {c.label}
+                    {label}
                   </span>
                 ))}
               </span>
