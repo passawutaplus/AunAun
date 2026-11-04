@@ -18,11 +18,19 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { CommunityMediaAspectPicker } from "@/components/community/CommunityMediaAspectPicker";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { getCroppedImageFile } from "@/lib/cropImage";
 import {
   type CommunityMediaAspect,
   communityCropMinZoom,
+  COMMUNITY_MEDIA_ASPECT_ORDER,
+  COMMUNITY_MEDIA_ASPECTS,
   communityMediaAspectMeta,
   DEFAULT_COMMUNITY_MEDIA_ASPECT,
   normalizeCommunityMediaAspect,
@@ -118,6 +126,10 @@ export function ModuleImageCropDialog({
 }: Props) {
   const isFlexGrid = variant === "flex_grid";
   const [aspect, setAspect] = useState<CommunityMediaAspect>(DEFAULT_COMMUNITY_MEDIA_ASPECT);
+  /** Default variant opens at the image's own ratio; a fixed ratio is picked from the dropdown. */
+  const [useOriginal, setUseOriginal] = useState(true);
+  const [naturalRatio, setNaturalRatio] = useState<number | null>(null);
+  const [zoomInput, setZoomInput] = useState("100");
   const [flexAspect, setFlexAspect] = useState<FlexGridCropAspectKey>(DEFAULT_FLEX_GRID_CROP_ASPECT);
   const freeMeta = communityMediaAspectMeta(normalizeCommunityMediaAspect(aspect));
   const locked = !isFlexGrid && typeof lockedRatio === "number" && lockedRatio > 0;
@@ -134,7 +146,10 @@ export function ModuleImageCropDialog({
           exportW: flexMeta.exportW,
           exportH: flexMeta.exportH,
         }
-      : freeMeta;
+      : useOriginal
+        ? { ratio: naturalRatio ?? 1, exportW: freeMeta.exportW, exportH: freeMeta.exportH }
+        : freeMeta;
+  const originalMode = !locked && !isFlexGrid && useOriginal;
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -175,6 +190,15 @@ export function ModuleImageCropDialog({
     setCornerRadius(0);
     setCornerInput("0");
     setAspect(DEFAULT_COMMUNITY_MEDIA_ASPECT);
+    setUseOriginal(true);
+    setNaturalRatio(null);
+    const probe = new Image();
+    probe.onload = () => {
+      if (probe.naturalWidth > 0 && probe.naturalHeight > 0) {
+        setNaturalRatio(probe.naturalWidth / probe.naturalHeight);
+      }
+    };
+    probe.src = url;
     setFlexAspect(DEFAULT_FLEX_GRID_CROP_ASPECT);
     setFrameScale(0.85);
     setFreeRatio(1);
@@ -199,6 +223,22 @@ export function ModuleImageCropDialog({
     ro.observe(el);
     return () => ro.disconnect();
   }, [open, isFlexGrid, cropReady]);
+
+  // Keep the zoom number in step with pinch / slider changes.
+  useEffect(() => {
+    setZoomInput(String(Math.round(zoom * 100)));
+  }, [zoom]);
+
+  const applyZoomPercent = useCallback(
+    (percent: number) => {
+      const next = Number.isFinite(percent)
+        ? Math.max(minZoom, Math.min(MAX_ZOOM, percent / 100))
+        : zoom;
+      setZoom(next);
+      setZoomInput(String(Math.round(next * 100)));
+    },
+    [minZoom, zoom],
+  );
 
   const applyCorner = useCallback((value: number) => {
     const next = clampCorner(value);
@@ -286,7 +326,14 @@ export function ModuleImageCropDialog({
     try {
       const mime = "image/png";
       const exportDims =
-        isFlexGrid && (meta.ratio == null || flexAspect === "free")
+        originalMode
+          ? // Original ratio: keep the cropped pixels (no upscale), long edge capped at 2400.
+            exportSizeFromCropPixels(
+              croppedAreaPixels.width,
+              croppedAreaPixels.height,
+              Math.min(2400, Math.max(croppedAreaPixels.width, croppedAreaPixels.height)),
+            )
+          : isFlexGrid && (meta.ratio == null || flexAspect === "free")
           ? exportSizeFromCropPixels(croppedAreaPixels.width, croppedAreaPixels.height)
           : { width: meta.exportW, height: meta.exportH };
       const cropped = await getCroppedImageFile(imageSrc, croppedAreaPixels, file.name, mime, {
@@ -314,7 +361,7 @@ export function ModuleImageCropDialog({
   // should keep pan/zoom state.
   const cropperKey = isFlexGrid
     ? `${imageSrc}-${flexAspect}`
-    : `${imageSrc}-${locked ? lockedRatio : aspect}`;
+    : `${imageSrc}-${locked ? lockedRatio : originalMode ? `orig-${naturalRatio}` : aspect}`;
 
   return (
     <Dialog
@@ -332,7 +379,7 @@ export function ModuleImageCropDialog({
               ? `สัดส่วนล็อก ${lockedRatioLabel ?? "ตามช่อง"} — ลาก/ซูมจัดกรอบก่อนบันทึก`
               : isFlexGrid
                 ? "เลือกสัดส่วน แล้วลากมุมขวาล่างเพื่อย่อขยายกรอบ · ลาก/ซูมจัดภาพก่อนบันทึก"
-                : "เลือกสัดส่วน แล้วลาก/ซูมจัดกรอบก่อนบันทึก"}
+                : "ลาก/ซูมจัดกรอบ · เปลี่ยนสัดส่วนได้ใต้ภาพ"}
           </p>
         </DialogHeader>
 
@@ -340,11 +387,7 @@ export function ModuleImageCropDialog({
           <div className="px-4 pb-3">
             <FlexGridAspectPicker value={flexAspect} onChange={setFlexAspect} />
           </div>
-        ) : (
-          <div className="px-4 pb-3">
-            <CommunityMediaAspectPicker value={aspect} onChange={setAspect} />
-          </div>
-        )}
+        ) : null}
 
         <div
           ref={cropHostRef}
@@ -355,7 +398,7 @@ export function ModuleImageCropDialog({
             } as CSSProperties
           }
         >
-          {imageSrc && cropReady ? (
+          {imageSrc && cropReady && (!originalMode || naturalRatio) ? (
             <Cropper
               key={cropperKey}
               image={imageSrc}
@@ -407,8 +450,67 @@ export function ModuleImageCropDialog({
             </p>
           ) : null}
 
+          {!locked && !isFlexGrid ? (
+            <div className="flex items-center justify-between gap-2">
+              <label className="text-xs text-muted-foreground" htmlFor="module-crop-aspect">
+                สัดส่วน
+              </label>
+              <Select
+                value={useOriginal ? "original" : aspect}
+                onValueChange={(v) => {
+                  if (v === "original") {
+                    setUseOriginal(true);
+                  } else {
+                    setUseOriginal(false);
+                    setAspect(v as CommunityMediaAspect);
+                  }
+                }}
+              >
+                <SelectTrigger id="module-crop-aspect" className="h-8 w-44 rounded-none text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="original" className="text-xs">
+                    ต้นฉบับ (ครอบอิสระ)
+                  </SelectItem>
+                  {COMMUNITY_MEDIA_ASPECT_ORDER.map((key) => {
+                    const m = COMMUNITY_MEDIA_ASPECTS[key];
+                    return (
+                      <SelectItem key={key} value={key} className="text-xs">
+                        {m.label} · {m.ratioLabel}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : null}
+
           <div>
-            <label className="mb-1 block text-xs text-muted-foreground">ซูม</label>
+            <div className="mb-1 flex items-center justify-between gap-2">
+              <label className="text-xs text-muted-foreground">ซูม</label>
+              <div className="flex items-center gap-1">
+                <Input
+                  type="number"
+                  min={Math.round(minZoom * 100)}
+                  max={MAX_ZOOM * 100}
+                  step={1}
+                  value={zoomInput}
+                  onChange={(e) => setZoomInput(e.target.value)}
+                  onBlur={() => applyZoomPercent(Number(zoomInput))}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      applyZoomPercent(Number(zoomInput));
+                      (e.target as HTMLInputElement).blur();
+                    }
+                  }}
+                  className="h-7 w-16 rounded-none px-2 text-center text-xs"
+                  aria-label={`ซูม ${Math.round(minZoom * 100)} ถึง ${MAX_ZOOM * 100} เปอร์เซ็นต์`}
+                />
+                <span className="text-[10px] text-muted-foreground">%</span>
+              </div>
+            </div>
             <input
               type="range"
               min={minZoom}
@@ -417,6 +519,7 @@ export function ModuleImageCropDialog({
               value={zoom}
               onChange={(e) => setZoom(Number(e.target.value))}
               className="w-full accent-primary"
+              aria-label="เลื่อนซูม"
             />
           </div>
 
