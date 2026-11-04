@@ -139,9 +139,9 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 id="venues-heading" className="font-display text-2xl font-semibold text-foreground">
-            สถานที่จัดงาน
+            Venues
             <span className="ml-2 text-base font-normal text-muted-foreground">
-              {counts.main} สถานที่
+              {counts.main} Venues
             </span>
           </h2>
         </div>
