@@ -8,6 +8,7 @@
 //   LINE_SAMECOR_ADMIN_IGNORE_EMAILS  optional, comma-separated extra emails to never alert on
 import { createClient } from "npm:@supabase/supabase-js@2";
 import {
+  type CreatorInviteInfo,
   type DigestInfo,
   type EventInfo,
   type FeedbackInfo,
@@ -15,6 +16,7 @@ import {
   type ReportInfo,
   type TrendInfo,
   type LineMessage,
+  flexCreatorInvite,
   flexDigest,
   flexEvent,
   flexFeedback,
@@ -26,7 +28,7 @@ import {
 
 type OutboxRow = {
   id: number;
-  kind: "member" | "feedback" | "report" | "digest" | "event" | "trend";
+  kind: "member" | "feedback" | "report" | "digest" | "event" | "trend" | "creator_invite";
   ref_id: string | null;
   attempts: number;
 };
@@ -135,6 +137,13 @@ Deno.serve(async (req) => {
         .maybeSingle();
       if (data) {
         texts.push(flexTrend(data as TrendInfo));
+        sentIds.push(r.id);
+      } else skippedIds.push(r.id);
+    } else if (r.kind === "creator_invite" && r.ref_id) {
+      const { data } = await admin.rpc("admin_line_creator_invite_info", { _id: r.ref_id });
+      const ci = ((data ?? []) as CreatorInviteInfo[])[0];
+      if (ci) {
+        texts.push(flexCreatorInvite(ci));
         sentIds.push(r.id);
       } else skippedIds.push(r.id);
     } else if (r.kind === "digest") {
