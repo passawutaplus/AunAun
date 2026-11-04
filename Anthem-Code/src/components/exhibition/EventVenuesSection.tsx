@@ -172,37 +172,6 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
       </div>
       {mapOpen ? allButton("mt-3 sm:hidden") : null}
 
-      {mapOpen ? (
-        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-lg bg-muted/40 px-3 py-2.5 text-sm" aria-live="polite">
-          <Route className="h-4 w-4 shrink-0 text-brand" aria-hidden />
-          {stops.length < 2 ? (
-            <span className="text-muted-foreground">ติ๊กสถานที่ที่จะไป ตั้งแต่ 2 ที่ขึ้นไป เพื่อดูเส้นทางเดินบนแผนที่</span>
-          ) : (
-            <>
-              <span className="font-medium text-foreground">
-                เส้นทางของคุณ · {stops.length} ที่
-                <span className="ml-2 font-normal text-muted-foreground">
-                  {routing
-                    ? "กำลังคำนวณเส้นทาง…"
-                    : route?.meters != null && route.seconds != null
-                      ? routeSummary(route.meters, route.seconds)
-                      : "เส้นตรงโดยประมาณ (คำนวณตามถนนไม่ได้)"}
-                </span>
-              </span>
-              <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
-                {routeUrl ? (
-                  <a href={routeUrl} target="_blank" rel="noopener noreferrer" className={linkCls}>
-                    <Navigation className="h-3.5 w-3.5" aria-hidden /> เปิดเส้นทางใน Google Maps
-                  </a>
-                ) : null}
-                <button type="button" onClick={clearPicks} className={linkCls}>
-                  <X className="h-3.5 w-3.5" aria-hidden /> ล้าง
-                </button>
-              </span>
-            </>
-          )}
-        </div>
-      ) : null}
 
       {mapOpen ? (
       <div
@@ -224,6 +193,36 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
         </div>
 
         <div className="space-y-6">
+          {/* My route: on top of the venue list column. */}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-lg bg-muted/40 px-3 py-2.5 text-sm" aria-live="polite">
+            <Route className="h-4 w-4 shrink-0 text-brand" aria-hidden />
+            {stops.length < 2 ? (
+              <span className="text-muted-foreground">ติ๊กสถานที่ที่จะไป ตั้งแต่ 2 ที่ขึ้นไป เพื่อดูเส้นทางเดินบนแผนที่</span>
+            ) : (
+              <>
+                <span className="font-medium text-foreground">
+                  เส้นทางของคุณ · {stops.length} ที่
+                  <span className="ml-2 font-normal text-muted-foreground">
+                    {routing
+                      ? "กำลังคำนวณเส้นทาง…"
+                      : route?.meters != null && route.seconds != null
+                        ? routeSummary(route.meters, route.seconds)
+                        : "เส้นตรงโดยประมาณ (คำนวณตามถนนไม่ได้)"}
+                  </span>
+                </span>
+                <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                  {routeUrl ? (
+                    <a href={routeUrl} target="_blank" rel="noopener noreferrer" className={linkCls}>
+                      <Navigation className="h-3.5 w-3.5" aria-hidden /> เปิดเส้นทางใน Google Maps
+                    </a>
+                  ) : null}
+                  <button type="button" onClick={clearPicks} className={linkCls}>
+                    <X className="h-3.5 w-3.5" aria-hidden /> ล้าง
+                  </button>
+                </span>
+              </>
+            )}
+          </div>
           {groups.map((g) => (
             <div key={g.area ?? "-"}>
               {g.area ? (
