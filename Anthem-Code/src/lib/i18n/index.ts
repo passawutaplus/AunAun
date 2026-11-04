@@ -69,8 +69,10 @@ export function formatDateRange(start: string, end?: string | null, lang: Lang =
   const a = new Date(`${start.slice(0, 10)}T00:00:00`);
   if (!end || end.slice(0, 10) === start.slice(0, 10)) return formatDate(a, opts, lang);
   const b = new Date(`${end.slice(0, 10)}T00:00:00`);
-  const fmt = new Intl.DateTimeFormat(intlLocale(lang), opts);
-  // formatRange drops the repeated year / month ("17 Oct – 15 Nov 2026").
+  // formatRange (ES2021, not in our TS lib target) drops the repeated year / month ("17 Oct – 15 Nov 2026").
+  const fmt = new Intl.DateTimeFormat(intlLocale(lang), opts) as Intl.DateTimeFormat & {
+    formatRange?: (from: Date, to: Date) => string;
+  };
   return typeof fmt.formatRange === "function" ? fmt.formatRange(a, b) : `${fmt.format(a)} – ${fmt.format(b)}`;
 }
 

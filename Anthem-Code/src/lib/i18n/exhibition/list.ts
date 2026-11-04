@@ -47,4 +47,9 @@ export const LIST = {
   today: { th: "Today", en: "Today", zh: "今天" },
   noEventsThisDay: { th: "ไม่มีงานในวันนี้", en: "No events on this day", zh: "这一天没有活动" },
   viewAllEvents: { th: "View All Events", en: "View All Events", zh: "查看全部活动" },
+  sortBy: { th: "เรียงตาม", en: "Sort by", zh: "排序" },
+  sortEnding: { th: "ใกล้จบก่อน", en: "Ending soon", zh: "即将结束" },
+  sortNewest: { th: "เพิ่งเปิด", en: "Just opened", zh: "最新开幕" },
+  sortPopular: { th: "ยอดนิยม", en: "Most popular", zh: "最受欢迎" },
+  sortCategory: { th: "ตามหมวด", en: "By category", zh: "按类别" },
 } satisfies Dict;

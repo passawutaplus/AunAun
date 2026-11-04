@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { addDays, addMonths, format, startOfWeek } from "date-fns";
 import { enUS, th, zhCN } from "date-fns/locale";
 import {
   ArrowRight,
+  ArrowUpDown,
   CalendarDays,
   CalendarRange,
   Check,
@@ -14,6 +15,16 @@ import {
   MapPin,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useEventStats } from "@/hooks/useExhibitionEvents";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Dialog,
@@ -22,14 +33,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { googleCalendarLink } from "@/lib/googleCalendarLink";
 import {
+  EVENT_CATEGORIES,
   categoryLabel,
   formatEventDates,
   type ExhibitionEvent,
@@ -39,6 +45,14 @@ import { formatDate, formatDateRange, tr, useLang, useT } from "@/lib/i18n";
 import { LIST } from "@/lib/i18n/exhibition/list";
 
 const DAY_PICKER_LOCALE = { th, en: enUS, zh: zhCN } as const;
+
+type SortKey = "ending" | "newest" | "popular" | "category";
+const SORT_KEYS: SortKey[] = ["ending", "newest", "popular", "category"];
+const SORT_LABEL = { ending: "sortEnding", newest: "sortNewest", popular: "sortPopular", category: "sortCategory" } as const;
+const SORT_STORE = "samecor:exhibition-calendar-sort";
+
+/** Last day an event runs (no end date → its start; no dates at all → last). */
+const lastDay = (e: ExhibitionEvent) => e.ends_on ?? e.starts_on ?? "9999-12-31";
 
 type Props = {
   events: ExhibitionEvent[];
@@ -370,7 +384,38 @@ export function ExhibitionCalendar({ events, className }: Props) {
   // formatRange drops the repeated month / year ("3 – 9 Nov 2026").
   const weekLabel = formatDateRange(isoDay(weekStart), isoDay(weekEnd), lang);
 
-  const dayList = eventsOn(events, selected);
+  const [sort, setSortState] = useState<SortKey>(() => {
+    try {
+      const v = localStorage.getItem(SORT_STORE);
+      return SORT_KEYS.includes(v as SortKey) ? (v as SortKey) : "ending";
+    } catch {
+      return "ending";
+    }
+  });
+  const setSort = (v: SortKey) => {
+    setSortState(v);
+    try {
+      localStorage.setItem(SORT_STORE, v);
+    } catch {
+      /* ignore */
+    }
+  };
+  const dayEvents = eventsOn(events, selected);
+  const { data: dayStats } = useEventStats(open && sort === "popular" ? dayEvents.map((e) => e.id) : []);
+  const catOrder = (id: string) => {
+    const i = EVENT_CATEGORIES.findIndex((c) => c.id === id);
+    return i < 0 ? EVENT_CATEGORIES.length : i;
+  };
+  const dayList = [...dayEvents].sort((a, b) => {
+    if (sort === "newest") return (b.starts_on ?? "").localeCompare(a.starts_on ?? "");
+    if (sort === "popular") {
+      const sa = dayStats?.[a.id];
+      const sb = dayStats?.[b.id];
+      return (sb?.interest_count ?? 0) - (sa?.interest_count ?? 0) || (sb?.view_count ?? 0) - (sa?.view_count ?? 0);
+    }
+    if (sort === "category") return catOrder(a.category) - catOrder(b.category) || lastDay(a).localeCompare(lastDay(b));
+    return lastDay(a).localeCompare(lastDay(b));
+  });
   const openOn = (d: Date) => {
     setSelected(d);
     setMonth(d);
@@ -578,6 +623,30 @@ export function ExhibitionCalendar({ events, className }: Props) {
                   >
                     <CalendarRange className="h-4 w-4" aria-hidden />
                   </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8 rounded-full"
+                        aria-label={`${t("sortBy")}: ${t(SORT_LABEL[sort])}`}
+                        title={`${t("sortBy")}: ${t(SORT_LABEL[sort])}`}
+                      >
+                        <ArrowUpDown className="h-4 w-4" aria-hidden />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="z-[60] min-w-[11rem]">
+                      <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">{t("sortBy")}</DropdownMenuLabel>
+                      <DropdownMenuRadioGroup value={sort} onValueChange={(v) => setSort(v as SortKey)}>
+                        {SORT_KEYS.map((k) => (
+                          <DropdownMenuRadioItem key={k} value={k}>
+                            {t(SORT_LABEL[k])}
+                          </DropdownMenuRadioItem>
+                        ))}
+                      </DropdownMenuRadioGroup>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                   <Button
                     type="button"
                     variant="outline"
@@ -591,13 +660,20 @@ export function ExhibitionCalendar({ events, className }: Props) {
               </div>
               {dayList.length ? (
                 <ul className="mt-2 divide-y divide-border">
-                  {dayList.map((e) => (
-                    <EventRow
-                      key={e.id}
-                      event={e}
-                      color={colorOf(e.id)}
-                      onToggle={rangeMode ? () => toggleTracked(e.id) : null}
-                    />
+                  {dayList.map((e, i) => (
+                    <Fragment key={e.id}>
+                      {/* By category: a small heading where each group starts. */}
+                      {sort === "category" && (i === 0 || dayList[i - 1].category !== e.category) ? (
+                        <li className="pb-1 pt-4 text-xs font-medium uppercase tracking-wide text-muted-foreground first:pt-1" aria-hidden>
+                          {categoryLabel(e.category, lang)}
+                        </li>
+                      ) : null}
+                      <EventRow
+                        event={e}
+                        color={colorOf(e.id)}
+                        onToggle={rangeMode ? () => toggleTracked(e.id) : null}
+                      />
+                    </Fragment>
                   ))}
                 </ul>
               ) : (
