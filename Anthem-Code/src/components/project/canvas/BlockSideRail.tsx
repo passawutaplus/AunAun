@@ -7,7 +7,7 @@ export function BlockSideRail({
   isFirst,
   isLast,
   visible,
-  phoneSide = "right",
+  phoneBelowTools = false,
   canDuplicate,
   dragListeners,
   dragAttributes,
@@ -20,8 +20,8 @@ export function BlockSideRail({
   isFirst: boolean;
   isLast: boolean;
   visible?: boolean;
-  /** Phones (< lg): which top corner inside the module the action column sits in. */
-  phoneSide?: "left" | "right";
+  /** Phones (< lg): start the column under the image's replace / crop chips (top-right). */
+  phoneBelowTools?: boolean;
   canDuplicate?: boolean;
   dragListeners: Record<string, unknown>;
   dragAttributes: Record<string, unknown>;
@@ -40,8 +40,8 @@ export function BlockSideRail({
   return (
     <div
       className={cn(
-        "absolute top-2 z-30 flex flex-col gap-1.5 transition-opacity duration-150",
-        phoneSide === "left" ? "left-2" : "right-2",
+        "absolute right-2 z-30 flex flex-col gap-1.5 transition-opacity duration-150",
+        phoneBelowTools ? "top-[6.125rem]" : "top-2",
         "lg:left-full lg:right-auto lg:top-1/2 lg:z-20 lg:-translate-y-1/2 lg:gap-0.5 lg:pl-2",
         visible ? "opacity-100" : "pointer-events-none opacity-0",
       )}
@@ -57,10 +57,10 @@ export function BlockSideRail({
       >
         <GripVertical className={icon} />
       </button>
-      <button type="button" className={btn} aria-label="เลื่อนขึ้น" disabled={disabled || isFirst} onClick={onMoveUp}>
+      <button type="button" className={cn(btn, "max-lg:hidden")} aria-label="เลื่อนขึ้น" disabled={disabled || isFirst} onClick={onMoveUp}>
         <ArrowUp className={icon} />
       </button>
-      <button type="button" className={btn} aria-label="เลื่อนลง" disabled={disabled || isLast} onClick={onMoveDown}>
+      <button type="button" className={cn(btn, "max-lg:hidden")} aria-label="เลื่อนลง" disabled={disabled || isLast} onClick={onMoveDown}>
         <ArrowDown className={icon} />
       </button>
       <button

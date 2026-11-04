@@ -612,7 +612,7 @@ export function SortableCanvasBlock({
         isFirst={index === 0}
         isLast={index === total - 1}
         visible={showRail}
-        phoneSide={isTextBlockType(block.type) ? "right" : "left"}
+        phoneBelowTools={!isTextBlockType(block.type)}
         canDuplicate={canDuplicate}
         dragAttributes={attributes as unknown as Record<string, unknown>}
         dragListeners={listeners as unknown as Record<string, unknown>}
