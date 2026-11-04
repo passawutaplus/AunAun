@@ -140,14 +140,10 @@ function Landing({ token, t, invite }: { token: string; t: InviteCopy; invite: P
         <p className="mt-3 text-sm italic text-muted-foreground">“{t.promise}”</p>
 
         <figure className="mt-10 flex max-w-xl gap-4">
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-secondary text-sm font-semibold" aria-hidden>
-            อั๋น
-          </span>
+          <img src="/invite/aun.webp" alt="" width={48} height={48} className="h-12 w-12 shrink-0 rounded-full object-cover" />
           <div className="min-w-0 text-sm">
-            {invite.personal_note ? (
-              <blockquote className="whitespace-pre-line text-base text-foreground">“{invite.personal_note}”</blockquote>
-            ) : null}
-            <figcaption className={invite.personal_note ? "mt-2 text-muted-foreground" : "text-muted-foreground"}>
+            <blockquote className="whitespace-pre-line text-base text-foreground">“{invite.personal_note?.trim() || t.defaultNote}”</blockquote>
+            <figcaption className="mt-2 text-muted-foreground">
               {t.from} <span className="font-medium text-foreground">{t.founder}</span>
             </figcaption>
           </div>
@@ -167,7 +163,7 @@ function Landing({ token, t, invite }: { token: string; t: InviteCopy; invite: P
           <h2 className="mt-3 text-xl font-semibold text-foreground">{t.pathA}</h2>
           <p className="mt-2 text-sm text-muted-foreground">{t.pathAsub}</p>
           <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-foreground">
-            {t.pathA} <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden />
+            {t.ctaA} <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden />
           </span>
         </button>
         <button
@@ -183,12 +179,12 @@ function Landing({ token, t, invite }: { token: string; t: InviteCopy; invite: P
           <h2 className="mt-3 text-xl font-semibold text-foreground">{t.pathB}</h2>
           <p className="mt-2 text-sm text-muted-foreground">{t.pathBsub}</p>
           <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-foreground">
-            {t.pathB} <ArrowUpRight className="h-4 w-4" aria-hidden />
+            {t.ctaB} <ArrowUpRight className="h-4 w-4" aria-hidden />
           </span>
         </button>
         <p className="px-1 text-xs leading-relaxed text-muted-foreground">
           {t.free} ·{" "}
-          <a href="/" target="_blank" rel="noopener" className="underline underline-offset-2 hover:text-foreground" title={t.exploreHint}>
+          <a href="/learn" target="_blank" rel="noopener" className="underline underline-offset-2 hover:text-foreground" title={t.exploreHint}>
             {t.explore} ↗
           </a>
         </p>
@@ -657,7 +653,7 @@ function InviteForm({
 
       <InviteProfilePreview ref={previewRef} className="mt-8" data={data} media={media} t={t} badge={t.pvBadge} />
       <p className="mt-6 text-center text-xs text-muted-foreground">
-        <a href="/" target="_blank" rel="noopener" className="underline underline-offset-2 hover:text-foreground">
+        <a href="/learn" target="_blank" rel="noopener" className="underline underline-offset-2 hover:text-foreground">
           {t.explore} ↗
         </a>{" "}
         · {t.exploreHint}

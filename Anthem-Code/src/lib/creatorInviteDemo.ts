@@ -12,7 +12,7 @@ const invite: PublicInvite = {
   discipline: "Graphic / Branding",
   country: "Thailand",
   language: "th",
-  personal_note: "ผมสนใจผลงานของคุณ เลยอยากชวนมาเป็นครีเอเตอร์กลุ่มแรกของเรา",
+  personal_note: "ได้เห็นงานโปสเตอร์ชุดล่าสุดของคุณแล้วชอบมากครับ เลยอยากชวนมาร่วมเป็นหนึ่งในครีเอเตอร์กลุ่มแรกของ SAMECOR",
   status: "sent",
   expires_at: new Date(Date.now() + 20 * 86400_000).toISOString(),
   submit_mode: null,

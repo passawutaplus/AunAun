@@ -3,6 +3,9 @@ import type { PageLang } from "@/lib/creatorInvite";
 
 const th = {
   getInTouch: "รู้จัก SAMECOR",
+  ctaA: "เริ่มกรอกข้อมูล",
+  ctaB: "ไปหน้าสมัคร",
+  defaultNote: "ได้เห็นผลงานของคุณแล้วชอบมากครับ เลยอยากชวนมาร่วมเป็นหนึ่งในครีเอเตอร์กลุ่มแรกของ SAMECOR",
   language: "ภาษา",
   eyebrow: "Founding Creator Invitation",
   invFor: "คำเชิญสำหรับ",
@@ -17,7 +20,7 @@ const th = {
   pathB: "สมัครและลงผลงานเอง",
   pathBsub: "ไปหน้าสมัครสมาชิก ระบบจะจับคู่กับคำเชิญนี้ให้ และจะไม่สร้างโปรไฟล์แทนคุณ",
   free: "ไม่มีค่าใช้จ่าย · ไม่ต้องสมัครบัญชีก่อน · ไม่มีอะไรเผยแพร่จนกว่าคุณอนุมัติ",
-  explore: "ดู SAMECOR ก่อน",
+  explore: "รู้จัก SAMECOR",
   exploreHint: "เปิดในแท็บใหม่ ข้อมูลที่กรอกยังอยู่",
   private: "Private creator invitation",
   full: "ฟอร์มเต็ม",
@@ -165,6 +168,9 @@ export type InviteCopy = { [K in keyof typeof th]: (typeof th)[K] extends (...a:
 
 const en: InviteCopy = {
   getInTouch: "Get in touch",
+  ctaA: "Start",
+  ctaB: "Go to sign-up",
+  defaultNote: "I came across your work and really liked it — I'd love for you to be one of SAMECOR's first creators.",
   language: "Language",
   eyebrow: "Founding Creator Invitation",
   invFor: "An invitation for",
@@ -179,7 +185,7 @@ const en: InviteCopy = {
   pathB: "I'll create my profile",
   pathBsub: "Go to sign-up. Your account is matched to this invitation — we won't create a profile for you.",
   free: "Free · No account needed first · Nothing goes public until you approve",
-  explore: "Explore SAMECOR first",
+  explore: "Get to know SAMECOR",
   exploreHint: "Opens in a new tab — your form stays here",
   private: "Private creator invitation",
   full: "Full form",
@@ -324,6 +330,9 @@ const en: InviteCopy = {
 
 const zh: InviteCopy = {
   getInTouch: "了解 SAMECOR",
+  ctaA: "开始填写",
+  ctaB: "前往注册",
+  defaultNote: "看到你的作品后非常喜欢，想邀请你成为 SAMECOR 首批创作者之一。",
   language: "语言",
   eyebrow: "Founding Creator Invitation",
   invFor: "特别邀请",
@@ -338,7 +347,7 @@ const zh: InviteCopy = {
   pathB: "我自己创建主页",
   pathBsub: "前往注册。你的账号会与此邀请关联——我们不会替你创建主页。",
   free: "完全免费 · 无需先注册 · 未经你确认不会公开任何内容",
-  explore: "先看看 SAMECOR",
+  explore: "了解 SAMECOR",
   exploreHint: "在新标签页打开——表单内容会保留",
   private: "私人创作者邀请",
   full: "完整表单",
