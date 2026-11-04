@@ -81,8 +81,10 @@ const ProjectDetailPage = ({ overlay = false }: { overlay?: boolean } = {}) => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // As an overlay the page underneath must keep its scroll; ProjectOverlay resets its own scroller.
+    if (overlay) return;
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-  }, [id]);
+  }, [id, overlay]);
   const { user } = useAuth();
   const hiddenProjectIds = useHiddenProjectIds();
   const {
