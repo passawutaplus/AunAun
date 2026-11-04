@@ -548,7 +548,7 @@ const ProjectDetailPage = ({ overlay = false }: { overlay?: boolean } = {}) => {
           className={cn(
             "mx-auto grid w-full max-w-[64rem] grid-cols-1 gap-6 lg:grid-cols-[minmax(0,58rem)_3.5rem] lg:justify-center lg:gap-x-5",
             overlay &&
-              "max-w-none gap-y-0 lg:grid-cols-[minmax(4.5rem,1fr)_minmax(0,88rem)_minmax(4.5rem,1fr)] lg:gap-x-0 lg:gap-y-0",
+              "max-w-none gap-y-0 lg:grid-cols-[minmax(4.5rem,1fr)_minmax(0,72rem)_minmax(4.5rem,1fr)] lg:gap-x-0 lg:gap-y-0",
           )}
           data-overlay-backdrop={overlay || undefined}
         >
@@ -583,7 +583,7 @@ const ProjectDetailPage = ({ overlay = false }: { overlay?: boolean } = {}) => {
               ) : canvasBlocks.length > 0 ? (
                 <ProjectContentBlocksView
                   blocks={canvasBlocks}
-                  className={cn("mx-auto w-full min-w-0 max-w-4xl", overlay && "max-w-6xl")}
+                  className={cn("mx-auto w-full min-w-0 max-w-4xl", overlay && "max-w-none")}
                   projectId={dbProject?.id ?? project.id}
                   projectTitle={project.title}
                   onContact={!isOwner && project.ownerId ? openChat : undefined}

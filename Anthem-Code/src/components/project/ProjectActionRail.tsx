@@ -34,8 +34,9 @@ const RAIL_W = 52;
 const RAIL_GAP = 12;
 
 /**
- * Avatar disc + liquid neck + vertical pill as one outline (bottom-nav style, turned upright).
- * Built in horizontal coordinates (disc left, pill right) and transposed, so arc sweeps flip.
+ * Vertical pill + liquid neck + avatar disc below it as one outline (bottom-nav style, upright).
+ * Built in horizontal coordinates (disc left, pill right), then rotated so the disc ends up at
+ * the bottom (x -> total height - x, y -> x); a rotation keeps the arc sweep directions.
  */
 function railOutline(pillH: number): string {
   const R = RAIL_W / 2;
@@ -48,18 +49,18 @@ function railOutline(pillH: number): string {
   const a2 = [R + R * cos, R + R * sin];
   const b2 = [x0 + R - R * cos, R + R * sin];
   const k = (b[0] - a[0]) / 2;
-  const P = (x: number, y: number) => `${y.toFixed(2)} ${x.toFixed(2)}`;
   const end = x0 + pillH;
+  const P = (x: number, y: number) => `${y.toFixed(2)} ${(end - x).toFixed(2)}`;
   return [
     `M ${P(a[0], a[1])}`,
     `C ${P(a[0] + k * sin, a[1] + k * cos)} ${P(b[0] - k * sin, b[1] + k * cos)} ${P(b[0], b[1])}`,
-    `A ${R} ${R} 0 0 0 ${P(x0 + R, 0)}`,
+    `A ${R} ${R} 0 0 1 ${P(x0 + R, 0)}`,
     `L ${P(end - R, 0)}`,
-    `A ${R} ${R} 0 1 0 ${P(end - R, 2 * R)}`,
+    `A ${R} ${R} 0 1 1 ${P(end - R, 2 * R)}`,
     `L ${P(x0 + R, 2 * R)}`,
-    `A ${R} ${R} 0 0 0 ${P(b2[0], b2[1])}`,
+    `A ${R} ${R} 0 0 1 ${P(b2[0], b2[1])}`,
     `C ${P(b2[0] - k * sin, b2[1] - k * cos)} ${P(a2[0] + k * sin, a2[1] - k * cos)} ${P(a2[0], a2[1])}`,
-    `A ${R} ${R} 0 1 0 ${P(a[0], a[1])}`,
+    `A ${R} ${R} 0 1 1 ${P(a[0], a[1])}`,
     "Z",
   ].join(" ");
 }
@@ -220,10 +221,10 @@ const ProjectActionRail = ({
         style={{ gap: RAIL_GAP }}
       >
         <RailGlass pill={pillEl} onDark={onDark} />
+        {pill}
         <div className="relative flex items-center justify-center" style={{ width: RAIL_W, height: RAIL_W }}>
           {avatar}
         </div>
-        {pill}
       </nav>
     );
   }
