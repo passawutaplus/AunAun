@@ -22,10 +22,12 @@ import UserAvatar from "@/components/UserAvatar";
 
 import NotificationBell from "@/components/notifications/NotificationBell";
 import { useChatInboxBadgeCount } from "@/hooks/useChat";
+import { useT } from "@/lib/i18n";
+import { NAV } from "@/lib/i18n/nav";
 
 type NavItem = {
   to: string;
-  label: string;
+  label: keyof typeof NAV;
   icon: typeof Home;
   match: (pathname: string, mode: string | null) => boolean;
   requiresAuth?: boolean;
@@ -34,12 +36,12 @@ type NavItem = {
 const NAV_ITEMS: NavItem[] = [
   {
     to: "/",
-    label: "Home",
+    label: "home",
     icon: Home,
     match: (p) => p === "/",
   },
-  { to: "/hiring", label: "งาน", icon: BriefcaseIcon, match: (p) => p.startsWith("/hiring") },
-  { to: "/chat", label: "Chat", icon: MessageCircle, match: (p) => p.startsWith("/chat"), requiresAuth: true },
+  { to: "/hiring", label: "jobs", icon: BriefcaseIcon, match: (p) => p.startsWith("/hiring") },
+  { to: "/chat", label: "chatNav", icon: MessageCircle, match: (p) => p.startsWith("/chat"), requiresAuth: true },
 ];
 
 const launchNavItems = NAV_ITEMS.filter((item) => item.to === "/" || item.to === "/chat");
@@ -122,6 +124,7 @@ const FloatingNav = () => {
   const { showBottomNav } = useAppLayout();
   const { data: chatBadgeCount = 0 } = useChatInboxBadgeCount();
   const [pillEl, setPillEl] = useState<HTMLDivElement | null>(null);
+  const t = useT(NAV);
 
   if (!showBottomNav) return null;
 
@@ -146,7 +149,7 @@ const FloatingNav = () => {
       type="button"
       onClick={openCreate}
       data-tour="create"
-      aria-label="ลงผลงาน"
+      aria-label={t("shareWork")}
       className={cn(
         "relative flex items-center justify-center rounded-full transition-colors h-11 w-11 min-h-11",
         createActive ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground hover:bg-accent",
@@ -190,7 +193,7 @@ const FloatingNav = () => {
   return (
     <>
       <nav
-        aria-label="เมนูหลัก"
+        aria-label={t("mainMenu")}
         className="lg:hidden fixed inset-x-0 z-30 flex justify-center px-4 pointer-events-none"
         style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 0.75rem)" }}
       >
@@ -200,7 +203,8 @@ const FloatingNav = () => {
           ref={setPillEl}
           className="pointer-events-auto relative flex items-center gap-0.5 rounded-full px-1.5 py-1.5"
         >
-          {navItems.map(({ to, label, icon: Icon, match, requiresAuth }) => {
+          {navItems.map(({ to, label: labelKey, icon: Icon, match, requiresAuth }) => {
+            const label = t(labelKey);
             const active = match(pathname, feedMode);
             const showChatBadge = to === "/chat" && user && chatBadgeCount > 0;
             const isHome = to === "/";
@@ -234,7 +238,7 @@ const FloatingNav = () => {
                 onClick={(e) => {
                   guardAuth(e, requiresAuth, to);
                 }}
-                aria-label={showChatBadge ? `${label} (${chatBadgeCount} รายการใหม่)` : label}
+                aria-label={showChatBadge ? t("withNew", { label, n: chatBadgeCount }) : label}
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   "relative flex items-center justify-center rounded-full transition-colors h-11 w-11 min-h-11",
@@ -264,7 +268,7 @@ const FloatingNav = () => {
               trigger={
                 <button
                   type="button"
-                  aria-label="Profile"
+                  aria-label={t("profileNav")}
                   aria-haspopup="menu"
                   aria-current={PROFILE_MATCH(pathname) ? "page" : undefined}
                   className="flex h-11 w-11 min-h-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
@@ -281,7 +285,7 @@ const FloatingNav = () => {
           ) : (
             <button
               type="button"
-              aria-label="Profile"
+              aria-label={t("profileNav")}
               onClick={() => openAuth("/portfolio")}
               className="flex h-11 w-11 min-h-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
@@ -294,7 +298,7 @@ const FloatingNav = () => {
           type="button"
           onClick={openSearch}
           data-tour="search"
-          aria-label="ค้นหาผลงาน"
+          aria-label={t("searchWorks")}
           // Sits on the shared glass (NavGlass); no background of its own.
           className="pointer-events-auto relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-foreground transition-transform duration-200 ease-out active:scale-95"
         >

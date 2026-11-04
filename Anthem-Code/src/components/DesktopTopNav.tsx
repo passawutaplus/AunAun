@@ -18,6 +18,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { isPortfolioEditorRoute } from "@/lib/mobileLayout";
 import { cn } from "@/lib/utils";
 import { BackButton } from "@/components/ui/BackButton";
+import { useT } from "@/lib/i18n";
+import { NAV } from "@/lib/i18n/nav";
 
 /** Public creator profile: `/u/:id` or vanity `/@handle`. */
 function isPublicProfilePath(pathname: string): boolean {
@@ -76,6 +78,7 @@ const DesktopTopNav = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const openSignup = useAuthDialog((s) => s.openSignup);
+  const t = useT(NAV);
   // /exhibition is a feed mode too: same top chrome and scroll hand-off to the page's own bar.
   const isHome = pathname === "/" || pathname === "/exhibition";
   const isLearn = pathname.startsWith("/learn");
@@ -231,7 +234,7 @@ const DesktopTopNav = () => {
   const mainNav = (
     <nav
       className={cn("flex min-w-0 items-center", isGuestHome ? "gap-6 xl:gap-8" : "gap-6")}
-      aria-label="เมนูหลัก"
+      aria-label={t("mainMenu")}
     >
       <CommunityNavDropdown className={isHome ? "text-background/80 hover:text-background" : undefined} />
       <NavLink
@@ -239,7 +242,7 @@ const DesktopTopNav = () => {
         end={false}
         className={isHome ? "text-[13px] font-medium text-background transition-opacity hover:opacity-70" : linkClass}
       >
-        About
+        {t("about")}
       </NavLink>
     </nav>
   );
@@ -264,7 +267,7 @@ const DesktopTopNav = () => {
     >
       <div className="mx-auto flex h-14 max-w-[1920px] items-center gap-4 px-[calc(1.5rem+25px)] 2xl:px-[calc(2.5rem+25px)]">
         {isPublicProfilePath(pathname) ? (
-          <BackButton fallbackTo="/" label="Back" className="border-border/60 bg-background/60" />
+          <BackButton fallbackTo="/" label={t("back")} className="border-border/60 bg-background/60" />
         ) : null}
         <button
           type="button"
@@ -274,7 +277,7 @@ const DesktopTopNav = () => {
             // Over the home feed's photos the logo needs a solid plate (Brand Book p11)
             isHome && "rounded-xl bg-background px-2.5 py-1.5",
           )}
-          aria-label={`${BRAND_NAME} หน้าแรก`}
+          aria-label={t("brandHome", { brand: BRAND_NAME })}
         >
           <BrandLogo beta size="sm" tone={isLearn ? "ink" : isHome ? "theme" : "brand"} />
         </button>
@@ -287,7 +290,7 @@ const DesktopTopNav = () => {
               to="/learn"
               className="text-[13px] font-medium text-foreground transition-opacity hover:opacity-70"
             >
-              Get in Touch
+              {t("getInTouch")}
             </NavLink>
           ) : isGuestHome ? (
             mainNav
@@ -296,7 +299,7 @@ const DesktopTopNav = () => {
             <button
               type="button"
               onClick={onShareProject}
-              aria-label="ลงผลงานใหม่"
+              aria-label={t("shareNewWork")}
               className={cn(
                 "group relative hidden h-9 items-center overflow-visible rounded-full sm:inline-flex",
                 "bg-foreground px-1.5",
@@ -316,7 +319,7 @@ const DesktopTopNav = () => {
                 >
                   <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
                 </span>
-                <span className="whitespace-nowrap">ลงผลงานใหม่</span>
+                <span className="whitespace-nowrap">{t("shareNewWork")}</span>
               </span>
             </button>
           )}
@@ -333,7 +336,7 @@ const DesktopTopNav = () => {
               trigger={
                 <button
                   type="button"
-                  aria-label="โปรไฟล์"
+                  aria-label={t("profile")}
                   className="flex items-center gap-1.5 rounded-full py-0.5 pl-0.5 pr-1 transition-colors hover:bg-accent/60"
                 >
                   <UserAvatar
@@ -360,7 +363,7 @@ const DesktopTopNav = () => {
                     : "h-8 rounded-full bg-foreground px-4 text-[13px] font-normal text-background hover:bg-foreground/90"
               }
             >
-              เข้าสู่ระบบ
+              {t("logIn")}
             </Button>
           )}
         </div>

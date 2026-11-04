@@ -13,6 +13,8 @@ import { isAplus1GiftEconomyEnabled, isAplus1LaunchMinimal } from "@/lib/aplus1L
 import { Button } from "@/components/ui/button";
 import UserAvatar from "@/components/UserAvatar";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n";
+import { NAV } from "@/lib/i18n/nav";
 
 type Props = {
   className?: string;
@@ -25,6 +27,7 @@ type Props = {
 const ProfileButton = ({ className, fillRail = false, accountOnly = false }: Props) => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const t = useT(NAV);
   const [profile, setProfile] = useState<{
     avatar_url: string | null;
     display_name: string | null;
@@ -49,7 +52,7 @@ const ProfileButton = ({ className, fillRail = false, accountOnly = false }: Pro
       trigger={
         <button
           type="button"
-          aria-label="โปรไฟล์"
+          aria-label={t("profile")}
           className="flex items-center gap-1.5 rounded-full py-0.5 pl-0.5 pr-1 transition-colors hover:bg-accent/60"
         >
           <UserAvatar
@@ -75,7 +78,7 @@ const ProfileButton = ({ className, fillRail = false, accountOnly = false }: Pro
           className={cn("rounded-full bg-gradient-brand text-white hover:opacity-90", className)}
         >
           <User className="mr-1.5 h-4 w-4" />
-          เข้าสู่ระบบ
+          {t("logIn")}
         </Button>
       );
     }
@@ -100,7 +103,7 @@ const ProfileButton = ({ className, fillRail = false, accountOnly = false }: Pro
           size="sm"
           className="rounded-full bg-gradient-brand text-white hover:opacity-90"
         >
-          <User className="w-4 h-4 mr-1.5" /> <span className="hidden sm:inline">เข้าสู่ระบบ</span>
+          <User className="w-4 h-4 mr-1.5" /> <span className="hidden sm:inline">{t("logIn")}</span>
         </Button>
       </div>
     );

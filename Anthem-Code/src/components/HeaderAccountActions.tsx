@@ -11,6 +11,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { navigateToAuth } from "@/lib/authRedirect";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n";
+import { NAV } from "@/lib/i18n/nav";
 
 type Props = {
   className?: string;
@@ -20,6 +22,7 @@ type Props = {
 export function HeaderAccountActions({ className }: Props) {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const t = useT(NAV);
   const [profile, setProfile] = useState<{
     avatar_url: string | null;
     display_name: string | null;
@@ -48,7 +51,7 @@ export function HeaderAccountActions({ className }: Props) {
         className={cn("rounded-full bg-gradient-brand text-white hover:opacity-90 shrink-0", className)}
       >
         <User className="mr-1.5 h-4 w-4" />
-        เข้าสู่ระบบ
+        {t("logIn")}
       </Button>
     );
   }
@@ -62,7 +65,7 @@ export function HeaderAccountActions({ className }: Props) {
         trigger={
           <button
             type="button"
-            aria-label="โปรไฟล์"
+            aria-label={t("profile")}
             className="flex items-center gap-1.5 rounded-full py-0.5 pl-0.5 pr-1 transition-colors hover:bg-accent/60"
           >
             <UserAvatar

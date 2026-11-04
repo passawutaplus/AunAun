@@ -34,6 +34,8 @@ import { openBrandLineContact } from "@/lib/brandConfig";
 import LineMarkIcon from "@/components/icons/LineMarkIcon";
 import { isCommerceEnabled } from "@/lib/aplus1Launch";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n";
+import { NAV } from "@/lib/i18n/nav";
 
 function preventClose(e: PointerEvent) {
   e.preventDefault();
@@ -53,6 +55,7 @@ export function ProfileMenuContent({ onNavigate, variant = "default" }: ProfileM
   const { data: profile } = useProfile(user?.id);
   const { data: isAdmin } = useIsAdmin();
   const openFeedback = useOpenFeedbackTicket();
+  const t = useT(NAV);
   const isVerified = !!(profile as { is_verified?: boolean } | null)?.is_verified;
 
   const go = (path: string) => {
@@ -76,7 +79,7 @@ export function ProfileMenuContent({ onNavigate, variant = "default" }: ProfileM
         className="rounded-lg"
       >
         <User className="w-4 h-4 mr-2" />{" "}
-        {variant === "forum" ? "โปรไฟล์ชุมชนของฉัน" : "My Profile"}
+        {variant === "forum" ? t("myCommunityProfile") : t("myProfile")}
       </DropdownMenuItem>
       {variant !== "forum" ? (
         <>
@@ -85,26 +88,26 @@ export function ProfileMenuContent({ onNavigate, variant = "default" }: ProfileM
           </DropdownMenuItem>
           {commerce ? (
             <DropdownMenuItem onClick={() => go("/earnings")} className="rounded-lg">
-              <Wallet className="w-4 h-4 mr-2" /> My Wallet
+              <Wallet className="w-4 h-4 mr-2" /> {t("myWallet")}
             </DropdownMenuItem>
           ) : null}
         </>
       ) : (
         <>
           <DropdownMenuItem onClick={() => go("/")} className="rounded-lg">
-            <ArrowLeft className="w-4 h-4 mr-2" /> กลับฟีดหลัก
+            <ArrowLeft className="w-4 h-4 mr-2" /> {t("backToFeed")}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => go("/forum")} className="rounded-lg">
-            <MessagesSquare className="w-4 h-4 mr-2" /> หน้าแรกชุมชน
+            <MessagesSquare className="w-4 h-4 mr-2" /> {t("communityHome")}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => go("/legal/community")} className="rounded-lg">
-            <BookOpen className="w-4 h-4 mr-2" /> แนวทางชุมชน
+            <BookOpen className="w-4 h-4 mr-2" /> {t("communityGuidelines")}
           </DropdownMenuItem>
         </>
       )}
       {variant !== "forum" && !isVerified && commerce ? (
         <DropdownMenuItem onClick={() => go("/verify")} className="rounded-lg">
-          <Rocket className="w-4 h-4 mr-2" /> Become a Creator
+          <Rocket className="w-4 h-4 mr-2" /> {t("becomeCreator")}
         </DropdownMenuItem>
       ) : null}
       <DropdownMenuSeparator />
@@ -115,7 +118,7 @@ export function ProfileMenuContent({ onNavigate, variant = "default" }: ProfileM
         }}
         className="rounded-lg"
       >
-        <MessageSquarePlus className="w-4 h-4 mr-2" /> ส่งฟีดแบ็ก
+        <MessageSquarePlus className="w-4 h-4 mr-2" /> {t("sendFeedback")}
       </DropdownMenuItem>
       {variant !== "forum" && commerce ? (
         <DropdownMenuItem
@@ -125,41 +128,41 @@ export function ProfileMenuContent({ onNavigate, variant = "default" }: ProfileM
           }}
           className="rounded-lg"
         >
-          <MessagesSquare className="w-4 h-4 mr-2" /> Community
+          <MessagesSquare className="w-4 h-4 mr-2" /> {t("community")}
         </DropdownMenuItem>
       ) : null}
       <DropdownMenuItem
         onClick={() => {
           onNavigate?.();
           if (!openBrandLineContact()) {
-            toast.message("กำลังเปิดช่องทางไลน์เร็วๆ นี้");
+            toast.message(t("lineSoon"));
           }
         }}
         className="rounded-lg"
       >
-        <LineMarkIcon className="w-4 h-4 mr-2" /> ติดต่อเรา Line
+        <LineMarkIcon className="w-4 h-4 mr-2" /> {t("contactLine")}
       </DropdownMenuItem>
       {variant !== "forum" ? (
         <DropdownMenuItem onClick={() => go("/learn#contact")} className="rounded-lg">
-          <Mail className="w-4 h-4 mr-2" /> Get in Touch
+          <Mail className="w-4 h-4 mr-2" /> {t("getInTouch")}
         </DropdownMenuItem>
       ) : null}
       {variant === "forum" && isAdmin ? (
         <DropdownMenuItem onClick={() => go("/forum/admin")} className="rounded-lg">
-          <Shield className="w-4 h-4 mr-2" /> แอดมินฟอรัม
+          <Shield className="w-4 h-4 mr-2" /> {t("forumAdmin")}
         </DropdownMenuItem>
       ) : null}
       <DropdownMenuSeparator />
       <div className="px-2 py-1.5 space-y-1" onPointerDown={preventClose}>
-        <ThemeModePicker label="Theme" />
-        {variant !== "forum" ? <FeedGridDensityPicker label="Grid Feed" /> : null}
+        <ThemeModePicker label={t("theme")} />
+        {variant !== "forum" ? <FeedGridDensityPicker label={t("gridFeed")} /> : null}
       </div>
       <DropdownMenuSeparator />
       <DropdownMenuItem onClick={() => go("/settings")} className="rounded-lg">
-        <Settings className="w-4 h-4 mr-2" /> Setting
+        <Settings className="w-4 h-4 mr-2" /> {t("settings")}
       </DropdownMenuItem>
       <DropdownMenuItem onClick={() => void signOut()} className="rounded-lg text-destructive focus:text-destructive">
-        <LogOut className="w-4 h-4 mr-2" /> Log Out
+        <LogOut className="w-4 h-4 mr-2" /> {t("logOut")}
       </DropdownMenuItem>
     </>
   );

@@ -7,6 +7,8 @@ import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import PackagesIcon from "@/components/icons/PackagesIcon";
 import { isFeedModeVisible, isLaunchDesignDrillEnabled } from "@/lib/aplus1Launch";
+import { useT } from "@/lib/i18n";
+import { NAV } from "@/lib/i18n/nav";
 
 export type FeedMode = "showcase" | "creators" | "packages" | "objects" | "studios" | "community";
 
@@ -84,6 +86,7 @@ const FeedModeToggle = ({
   compact = false,
 }: Props) => {
   const reduced = useReducedMotion();
+  const t = useT(NAV);
   const navigate = useNavigate();
   const trackRef = useRef<HTMLDivElement>(null);
   const btnRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
@@ -176,7 +179,7 @@ const FeedModeToggle = ({
         className,
       )}
       role="group"
-      aria-label="Feed view"
+      aria-label={t("feedView")}
     >
       {indicator ? (
         reduced ? (
@@ -212,7 +215,7 @@ const FeedModeToggle = ({
               if (el) btnRefs.current.set(id, el);
               else btnRefs.current.delete(id);
             }}
-            aria-label={`${label} view`}
+            aria-label={t("modeView", { label })}
             aria-pressed={active}
             onClick={() => {
               lastActive = { id: activeId, at: Date.now() };
