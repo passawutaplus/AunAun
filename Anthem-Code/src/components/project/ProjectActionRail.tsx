@@ -1,3 +1,4 @@
+import { useLayoutEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Bookmark, MessageCircle, Share } from "lucide-react";
 import UserAvatar from "@/components/UserAvatar";
@@ -28,6 +29,71 @@ type Props = {
 const iconBtn =
   "inline-flex h-11 w-11 items-center justify-center rounded-full text-current transition-colors hover:bg-foreground/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
+/** Rail geometry: avatar disc diameter = pill width (h-11 button + p-1), gap between disc and pill. */
+const RAIL_W = 52;
+const RAIL_GAP = 12;
+
+/**
+ * Avatar disc + liquid neck + vertical pill as one outline (bottom-nav style, turned upright).
+ * Built in horizontal coordinates (disc left, pill right) and transposed, so arc sweeps flip.
+ */
+function railOutline(pillH: number): string {
+  const R = RAIL_W / 2;
+  const x0 = RAIL_W + RAIL_GAP;
+  const t = (50 * Math.PI) / 180;
+  const sin = Math.sin(t);
+  const cos = Math.cos(t);
+  const a = [R + R * cos, R - R * sin];
+  const b = [x0 + R - R * cos, R - R * sin];
+  const a2 = [R + R * cos, R + R * sin];
+  const b2 = [x0 + R - R * cos, R + R * sin];
+  const k = (b[0] - a[0]) / 2;
+  const P = (x: number, y: number) => `${y.toFixed(2)} ${x.toFixed(2)}`;
+  const end = x0 + pillH;
+  return [
+    `M ${P(a[0], a[1])}`,
+    `C ${P(a[0] + k * sin, a[1] + k * cos)} ${P(b[0] - k * sin, b[1] + k * cos)} ${P(b[0], b[1])}`,
+    `A ${R} ${R} 0 0 0 ${P(x0 + R, 0)}`,
+    `L ${P(end - R, 0)}`,
+    `A ${R} ${R} 0 1 0 ${P(end - R, 2 * R)}`,
+    `L ${P(x0 + R, 2 * R)}`,
+    `A ${R} ${R} 0 0 0 ${P(b2[0], b2[1])}`,
+    `C ${P(b2[0] - k * sin, b2[1] - k * cos)} ${P(a2[0] + k * sin, a2[1] - k * cos)} ${P(a2[0], a2[1])}`,
+    `A ${R} ${R} 0 1 0 ${P(a[0], a[1])}`,
+    "Z",
+  ].join(" ");
+}
+
+/** Frosted glass behind the avatar disc and the pill, sized from the pill. */
+function RailGlass({ pill, onDark }: { pill: HTMLDivElement | null; onDark: boolean }) {
+  const [h, setH] = useState(0);
+  useLayoutEffect(() => {
+    if (!pill) return;
+    const measure = () => setH(pill.offsetHeight);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(pill);
+    return () => ro.disconnect();
+  }, [pill]);
+  if (!h) return null;
+  const height = RAIL_W + RAIL_GAP + h;
+  const d = railOutline(h);
+  return (
+    <div aria-hidden className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2" style={{ width: RAIL_W, height }}>
+      <div
+        className={cn(
+          "absolute inset-0 backdrop-blur-2xl backdrop-saturate-150",
+          onDark ? "bg-white/[0.08]" : "bg-background/65 dark:bg-card/50",
+        )}
+        style={{ clipPath: `path('${d}')` }}
+      />
+      <svg className="absolute inset-0 overflow-visible" width={RAIL_W} height={height}>
+        <path d={d} fill="none" className={onDark ? "stroke-white/25" : "stroke-foreground/15"} strokeWidth={1} />
+      </svg>
+    </div>
+  );
+}
+
 /** Profile (+ follow badge) and one pill of icon-only actions: collection, share, message. */
 const ProjectActionRail = ({
   projectId,
@@ -47,6 +113,7 @@ const ProjectActionRail = ({
   const { data: savedProjectIds = [] } = useSavedProjectIds(user?.id);
   const saved = !!projectId && savedProjectIds.includes(projectId);
   const rail = variant === "rail";
+  const [pillEl, setPillEl] = useState<HTMLDivElement | null>(null);
   const avatarCls = cn(
     rail ? "h-12 w-12" : "h-9 w-9",
     "ring-2",
@@ -91,12 +158,15 @@ const ProjectActionRail = ({
 
   const pill = (
     <div
+      ref={rail ? setPillEl : undefined}
       className={cn(
-        "flex items-center gap-1 rounded-full p-1 backdrop-blur-2xl backdrop-saturate-150",
-        onDark
+        "relative flex items-center gap-1 rounded-full p-1",
+        rail
+          ? cn("flex-col", onDark ? "text-white [&_button:hover]:bg-white/15" : "text-foreground")
+          : "backdrop-blur-2xl backdrop-saturate-150",
+        rail ? null : onDark
           ? "bg-white/[0.08] text-white [&_button:hover]:bg-white/15 ring-1 ring-inset ring-white/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.35),inset_0_-1px_0_rgba(255,255,255,0.06),0_10px_30px_rgba(0,0,0,0.45)]"
           : "bg-background/55 text-foreground ring-1 ring-inset ring-foreground/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_8px_24px_rgba(0,0,0,0.12)] dark:bg-card/40 dark:ring-white/15 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_8px_24px_rgba(0,0,0,0.4)]",
-        rail && "flex-col",
       )}
     >
       <SaveToCollectionPopover projectId={projectId}>
@@ -146,9 +216,13 @@ const ProjectActionRail = ({
     return (
       <nav
         aria-label="การกระทำกับผลงาน"
-        className={cn("flex flex-col items-center gap-4", className)}
+        className={cn("relative flex flex-col items-center", className)}
+        style={{ gap: RAIL_GAP }}
       >
-        {avatar}
+        <RailGlass pill={pillEl} onDark={onDark} />
+        <div className="relative flex items-center justify-center" style={{ width: RAIL_W, height: RAIL_W }}>
+          {avatar}
+        </div>
         {pill}
       </nav>
     );
