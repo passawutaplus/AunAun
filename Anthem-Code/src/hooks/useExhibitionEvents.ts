@@ -8,7 +8,9 @@ import {
   DEMO_EVENTS,
   EVENT_SELECT,
   isDemoEventId,
+  parseEventInsights,
   sortPublicEvents,
+  type EventInsights,
   type EventDraft,
   type ExhibitionEvent,
   type TeamEventDraft,
@@ -115,6 +117,61 @@ export function useEventProjects(ids: string[] | undefined) {
       if (error) throw error;
       const rows = (data as EventProjectCard[]) ?? [];
       return ids!.map((id) => rows.find((r) => r.id === id)).filter(Boolean) as EventProjectCard[];
+    },
+  });
+}
+
+/**
+ * "สรุปโดย SAMECOR" for one event. Read on its own so a database without the column yet
+ * (migration not applied) just shows nothing instead of breaking the page.
+ */
+export function useEventInsights(id: string | undefined | null) {
+  return useQuery({
+    queryKey: ["events", "insights", id],
+    enabled: !!id && !isDemoEventId(id),
+    retry: false,
+    queryFn: async (): Promise<EventInsights | null> => {
+      const { data, error } = await eventsTable().select("insights").eq("id", id!).maybeSingle();
+      if (error) return null;
+      return parseEventInsights((data as { insights?: unknown } | null)?.insights);
+    },
+  });
+}
+
+export function useSetEventInsights() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, insights }: { id: string; insights: EventInsights | null }) => {
+      const { data, error } = await rpc("admin_event_set_insights", { _id: id, _insights: insights });
+      if (error) throw error;
+      return parseEventInsights(data);
+    },
+    onSuccess: (_d, v) => {
+      void qc.invalidateQueries({ queryKey: ["events", "insights", v.id] });
+      toast.success("บันทึกสรุปแล้ว");
+    },
+    onError: () => toast.error("บันทึกสรุปไม่สำเร็จ ลองอีกครั้ง"),
+  });
+}
+
+/** A few recent published works in the given categories, for the event page's related row. */
+export function useRelatedWorks(categories: string[] | undefined, limit = 6) {
+  const key = (categories ?? []).join("|");
+  return useQuery({
+    queryKey: ["events", "related-works", key, limit],
+    enabled: !!categories?.length,
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("projects" as never)
+        .select("id, title, cover_url, category")
+        .eq("status", "Published")
+        .in("category", categories!)
+        .not("cover_url", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(limit);
+      if (error) return [];
+      return (data as (EventProjectCard & { category: string | null })[]) ?? [];
     },
   });
 }

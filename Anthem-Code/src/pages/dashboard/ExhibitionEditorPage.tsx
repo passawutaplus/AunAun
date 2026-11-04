@@ -38,6 +38,7 @@ import {
 } from "@/lib/exhibitionEvents";
 import { uploadProjectImage } from "@/lib/uploadImage";
 import { cn } from "@/lib/utils";
+import { EventInsightsEditor } from "@/components/exhibition/EventInsights";
 
 const ACCEPT = "image/jpeg,image/png,image/webp,image/heic,image/heif";
 
@@ -307,6 +308,7 @@ export default function ExhibitionEditorPage({ team = false }: { team?: boolean 
             startsOn={draft.starts_on}
             onApply={applyExtracted}
           />
+          {eventId ? <EventInsightsEditor eventId={eventId} /> : null}
         </div>
       ) : null}
 

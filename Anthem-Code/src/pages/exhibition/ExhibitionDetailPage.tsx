@@ -29,7 +29,8 @@ import {
 import EmptyState from "@/components/ui/EmptyState";
 import QueryStatusPanel from "@/components/ui/QueryStatusPanel";
 import { Button } from "@/components/ui/button";
-import { recordEventRegistration, useEvent, useEventProjects, useEventStats, useMyEventInterests, useRecordEventView } from "@/hooks/useExhibitionEvents";
+import { recordEventRegistration, useEvent, useEventInsights, useEventProjects, useEventStats, useMyEventInterests, useRecordEventView } from "@/hooks/useExhibitionEvents";
+import { EventInsightsPanel, EventRelatedWorks } from "@/components/exhibition/EventInsights";
 import { EventActions } from "@/components/exhibition/EventActions";
 import { useAuth } from "@/hooks/useAuth";
 import { navigateToAuth } from "@/lib/authRedirect";
@@ -95,6 +96,7 @@ export default function ExhibitionDetailPage() {
   const { data: myInterests } = useMyEventInterests(statIds);
   useRecordEventView(event?.id, event?.status === "published");
   const { data: works = [] } = useEventProjects(event?.project_ids);
+  const { data: insights } = useEventInsights(event?.id);
   const [contactOpen, setContactOpen] = useState(false);
   const [sponsorOpen, setSponsorOpen] = useState(false);
 
@@ -263,6 +265,8 @@ export default function ExhibitionDetailPage() {
         </div>
       </div>
 
+      {insights ? <EventInsightsPanel insights={insights} className="mx-auto mt-12 w-full max-w-[84rem]" /> : null}
+
       <div className="mt-12 mx-auto grid w-full max-w-[84rem] grid-cols-1 lg:grid-cols-[minmax(0,56rem)_22.5rem] lg:justify-center lg:gap-x-10 xl:grid-cols-[minmax(0,56rem)_24rem] xl:gap-x-12 gap-y-10">
         <section aria-labelledby="about-heading">
           <h2 id="about-heading" className="font-display text-2xl font-semibold text-foreground">
@@ -383,6 +387,10 @@ export default function ExhibitionDetailPage() {
             ))}
           </div>
         </section>
+      ) : null}
+
+      {insights?.related_categories.length ? (
+        <EventRelatedWorks categories={insights.related_categories} className="mx-auto mt-14 w-full max-w-[84rem]" />
       ) : null}
 
       {canChat ? (
