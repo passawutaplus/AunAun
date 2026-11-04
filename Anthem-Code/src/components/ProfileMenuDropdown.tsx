@@ -1,4 +1,4 @@
-import type { PointerEvent, ReactNode } from "react";
+import { useState, type PointerEvent, type ReactNode } from "react";
 import {
   User,
   LogOut,
@@ -11,6 +11,9 @@ import {
   ArrowLeft,
   Rocket,
   Mail,
+  Palette,
+  Headset,
+  ChevronDown,
 } from "lucide-react";
 import ManageWorkIcon from "@/components/icons/ManageWorkIcon";
 import { useNavigate } from "react-router-dom";
@@ -38,6 +41,38 @@ import { toast } from "sonner";
 
 function preventClose(e: PointerEvent) {
   e.preventDefault();
+}
+
+/** Collapsible group inside the menu: the header toggles without closing the menu. */
+function MenuSection({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div>
+      <button
+        type="button"
+        onPointerDown={preventClose}
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="flex w-full items-center rounded-lg px-2 py-1.5 text-sm text-foreground outline-none transition-colors hover:bg-accent focus-visible:bg-accent"
+      >
+        {icon}
+        <span className="flex-1 text-left">{title}</span>
+        <ChevronDown
+          className={cn("h-4 w-4 text-muted-foreground transition-transform duration-200", open && "rotate-180")}
+          aria-hidden
+        />
+      </button>
+      {/* Slides open / shut: grid rows 0fr -> 1fr; invisible when shut so its items leave the tab order. */}
+      <div
+        className={cn(
+          "grid transition-[grid-template-rows,opacity,visibility] duration-200 ease-out motion-reduce:transition-none",
+          open ? "visible grid-rows-[1fr] opacity-100" : "invisible grid-rows-[0fr] opacity-0",
+        )}
+      >
+        <div className="min-h-0 overflow-hidden pl-6">{children}</div>
+      </div>
+    </div>
+  );
 }
 
 type ProfileMenuVariant = "default" | "forum";
@@ -108,7 +143,20 @@ export function ProfileMenuContent({ onNavigate, variant = "default" }: ProfileM
           <Rocket className="w-4 h-4 mr-2" /> Become a Creator
         </DropdownMenuItem>
       ) : null}
+      {variant === "forum" && isAdmin ? (
+        <DropdownMenuItem onClick={() => go("/forum/admin")} className="rounded-lg">
+          <Shield className="w-4 h-4 mr-2" /> แอดมินฟอรัม
+        </DropdownMenuItem>
+      ) : null}
       <DropdownMenuSeparator />
+      <MenuSection icon={<Palette className="w-4 h-4 mr-2" />} title="Appearance">
+        <div className="space-y-1 py-1 pr-2" onPointerDown={preventClose}>
+          <LanguagePicker label="Language" />
+          <ThemeModePicker label="Theme" />
+          {variant !== "forum" ? <FeedGridDensityPicker label="Grid Feed" /> : null}
+        </div>
+      </MenuSection>
+      <MenuSection icon={<Headset className="w-4 h-4 mr-2" />} title="Contact">
       <DropdownMenuItem
         onClick={() => {
           onNavigate?.();
@@ -145,17 +193,7 @@ export function ProfileMenuContent({ onNavigate, variant = "default" }: ProfileM
           <Mail className="w-4 h-4 mr-2" /> Get in Touch
         </DropdownMenuItem>
       ) : null}
-      {variant === "forum" && isAdmin ? (
-        <DropdownMenuItem onClick={() => go("/forum/admin")} className="rounded-lg">
-          <Shield className="w-4 h-4 mr-2" /> แอดมินฟอรัม
-        </DropdownMenuItem>
-      ) : null}
-      <DropdownMenuSeparator />
-      <div className="px-2 py-1.5 space-y-1" onPointerDown={preventClose}>
-        <LanguagePicker label="Language" />
-        <ThemeModePicker label="Theme" />
-        {variant !== "forum" ? <FeedGridDensityPicker label="Grid Feed" /> : null}
-      </div>
+      </MenuSection>
       <DropdownMenuSeparator />
       <DropdownMenuItem onClick={() => go("/settings")} className="rounded-lg">
         <Settings className="w-4 h-4 mr-2" /> Setting
