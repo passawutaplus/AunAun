@@ -1,0 +1,51 @@
+/* Venue map (Leaflet + OpenStreetMap tiles). Dark theme: tone the light OSM tiles down instead of a second tile host. */
+.venue-map .leaflet-container {
+  background: hsl(var(--muted));
+  font-family: inherit;
+}
+.dark .venue-map .venue-map-tiles {
+  filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.85) saturate(0.35);
+}
+.venue-map .leaflet-control-attribution {
+  background: hsl(var(--background) / 0.75);
+  color: hsl(var(--muted-foreground));
+  font-size: 10px;
+}
+.venue-map .leaflet-control-attribution a {
+  color: inherit;
+}
+.venue-map .leaflet-bar a {
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  border-color: hsl(var(--border));
+}
+
+.venue-pin {
+  display: flex;
+  height: 28px;
+  width: 28px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 2px solid hsl(var(--background));
+  background: hsl(var(--muted-foreground));
+  color: hsl(var(--background));
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.35);
+  transition: transform 150ms ease;
+}
+.venue-pin--on {
+  background: hsl(var(--brand));
+  color: #fff;
+}
+.venue-pin--active {
+  transform: scale(1.25);
+  border-color: hsl(var(--foreground));
+}
+@media (prefers-reduced-motion: reduce) {
+  .venue-pin {
+    transition: none;
+  }
+}

@@ -11,9 +11,11 @@ import FeedModeToggle from "@/components/feed/FeedModeToggle";
 import { EventListCard } from "@/components/exhibition/EventParts";
 import { ExhibitionHero } from "@/components/exhibition/ExhibitionHero";
 import { ExhibitionCalendar } from "@/components/exhibition/ExhibitionCalendar";
+import { FeaturedEventBanner } from "@/components/exhibition/FeaturedEventBanner";
 import EmptyState from "@/components/ui/EmptyState";
 import QueryStatusPanel from "@/components/ui/QueryStatusPanel";
 import { useEventStats, useMyEventInterests, usePublishedEvents } from "@/hooks/useExhibitionEvents";
+import { useFeaturedEvent } from "@/hooks/useEventVenues";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useHideOnScroll } from "@/hooks/useHideOnScroll";
 import { useAuth } from "@/hooks/useAuth";
@@ -67,9 +69,14 @@ export default function ExhibitionPage() {
     [data, category, when, search],
   );
 
+  // The featured event has its own banner, so the slideshow skips it.
+  const { data: featured } = useFeaturedEvent();
   const heroEvents = useMemo(
-    () => [...data].filter((e) => eventTiming(e) !== "done").sort((x, y) => Number(y.is_pick) - Number(x.is_pick)),
-    [data],
+    () =>
+      [...data]
+        .filter((e) => eventTiming(e) !== "done" && e.id !== featured?.id)
+        .sort((x, y) => Number(y.is_pick) - Number(x.is_pick)),
+    [data, featured?.id],
   );
 
   const rowIds = useMemo(() => rows.map((e) => e.id), [rows]);
@@ -268,6 +275,9 @@ export default function ExhibitionPage() {
 
         {/* Type tabs sit right under the mode pill, as on Showcase / Creators. */}
         <div className={cn("hidden pb-4 lg:block", scrolled && "lg:invisible")}>{filters}</div>
+
+        {/* Team-pinned event (one at a time), above everything else. */}
+        <FeaturedEventBanner className="mb-6" />
 
         <ExhibitionHero events={heroEvents} className="mb-6 hidden lg:grid" />
 
