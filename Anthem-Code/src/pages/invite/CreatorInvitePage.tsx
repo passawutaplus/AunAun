@@ -567,16 +567,19 @@ function InviteForm({
       className="mx-auto max-w-3xl scroll-mt-20 px-4 py-6 sm:py-10 lg:max-w-6xl lg:px-6"
     >
       {/* Desktop: back link on its own row, flush left above the preview column */}
-      <Link
-        to={`/invite/creator/${token}`}
-        className="mb-6 hidden items-center gap-2 font-display text-base text-muted-foreground hover:text-foreground lg:inline-flex"
-      >
-        <ArrowLeft className="h-4 w-4" aria-hidden /> Private creator invitation · {invite.display_name}
-      </Link>
+      <div className="mb-6 hidden items-center justify-between gap-4 lg:flex">
+        <Link
+          to={`/invite/creator/${token}`}
+          className="inline-flex items-center gap-2 font-display text-base text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden /> Private creator invitation · {invite.display_name}
+        </Link>
+        {modeSwitch}
+      </div>
       {/* Phones/tablets: form, then the preview below it. Desktop: live preview left, form right. */}
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:gap-10">
         <div className="min-w-0 lg:col-start-2 lg:row-start-1">
-          <div className="mb-5 flex flex-wrap items-center justify-between gap-3 lg:justify-end">
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3 lg:hidden">
             <Link
               to={`/invite/creator/${token}`}
               className="inline-flex items-center gap-1 font-display text-xs text-muted-foreground hover:text-foreground lg:hidden"
