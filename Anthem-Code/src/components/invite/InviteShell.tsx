@@ -50,7 +50,7 @@ export function InviteShell({
       lang={lang}
       className={bleed ? "flex min-h-[100dvh] flex-col bg-background" : "min-h-[calc(100vh-4rem)] bg-background pb-12"}
     >
-      <header className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-2 pt-3 sm:gap-3 sm:px-6 sm:pt-5">
+      <header className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-2 pt-3 sm:gap-3 sm:px-6 sm:pt-5">
         <a href="/" target="_blank" rel="noopener" aria-label="SAMECOR">
           <BrandLogo tone="theme" className="shrink-0" />
         </a>
