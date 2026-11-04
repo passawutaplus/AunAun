@@ -10,7 +10,6 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
-  Clock,
   ExternalLink,
   MapPin,
 } from "lucide-react";
@@ -174,13 +173,13 @@ function EventRow({
           {event.title}
         </Link>
         <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
-          <span className="inline-flex items-center gap-1">
-            <Clock className="h-3 w-3" aria-hidden />
-            {event.time_note ??
-              (event.starts_on
-                ? formatEventDates(event.starts_on, event.ends_on)
-                : "")}
-          </span>
+          {/* Start – end only; opening hours live on the event page. */}
+          {event.starts_on ? (
+            <span className="inline-flex items-center gap-1">
+              <CalendarDays className="h-3 w-3" aria-hidden />
+              {formatEventDates(event.starts_on, event.ends_on)}
+            </span>
+          ) : null}
           {event.location_name ? (
             <span className="inline-flex items-center gap-1">
               <MapPin className="h-3 w-3" aria-hidden /> {event.location_name}
