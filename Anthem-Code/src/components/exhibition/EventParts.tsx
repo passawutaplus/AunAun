@@ -47,7 +47,7 @@ export function PickTag({ className }: { className?: string }) {
       )}
     >
       <Star className="h-3 w-3 fill-current" aria-hidden />
-      SameCor Pick
+      SAMECOR Pick
     </span>
   );
 }
@@ -57,7 +57,7 @@ export function OriginTag({ origin, className }: { origin: ExhibitionEvent["orig
     <span
       className={cn(
         "inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium",
-        origin === "community" ? "bg-muted text-muted-foreground" : "bg-foreground text-background",
+        origin === "community" ? "bg-muted text-muted-foreground" : "border border-border text-muted-foreground",
         className,
       )}
     >
@@ -228,7 +228,7 @@ export function EventListCard({
           </Link>
         </h2>
         <EventMeta event={event} />
-        <p className="line-clamp-2 text-sm text-foreground/80">{event.description}</p>
+        <p className="line-clamp-2 text-sm text-muted-foreground max-md:hidden">{event.description}</p>
         <div className="mt-1 flex items-center justify-between gap-3">
           <Link
             to={href}

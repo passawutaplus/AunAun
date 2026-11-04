@@ -46,7 +46,7 @@ export function FeaturedEventBanner({ className }: { className?: string }) {
         ) : null}
       </Link>
 
-      <div className={cn("relative flex flex-col justify-center gap-3 p-5 sm:p-7", days && "pr-24 sm:pr-32")}>
+      <div className={cn("relative flex flex-col justify-center gap-3 p-5 sm:p-7", days && "sm:pr-32")}>
         {days ? (
           <div
             className="absolute right-4 top-4 flex h-[4.5rem] w-[4.5rem] rotate-[8deg] flex-col items-center justify-center rounded-full bg-brand text-white shadow-lg shadow-brand/25 ring-4 ring-brand/20 sm:right-6 sm:top-6 sm:h-24 sm:w-24"
@@ -58,10 +58,10 @@ export function FeaturedEventBanner({ className }: { className?: string }) {
           </div>
         ) : null}
         <div className="flex flex-wrap items-center gap-2 text-xs">
-          <span className="rounded-full bg-brand px-2.5 py-1 font-semibold text-white">Featured Event</span>
+          <span className="rounded-full bg-brand px-2.5 py-1 font-semibold text-neutral-950">Featured Event</span>
           {status ? <span className="font-medium text-muted-foreground">{status}</span> : null}
         </div>
-        <h2 id="featured-event-title" className="font-display text-3xl font-semibold leading-[1.1] tracking-tight text-foreground sm:text-4xl max-sm:text-2xl">
+        <h2 id="featured-event-title" className="font-display text-3xl font-semibold leading-[1.1] tracking-tight text-foreground sm:text-4xl max-sm:text-2xl max-sm:pr-20">
           <Link to={to} className="hover:underline hover:decoration-foreground/30 hover:underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground">
             {event.title}
           </Link>
@@ -77,7 +77,7 @@ export function FeaturedEventBanner({ className }: { className?: string }) {
           <EventActions event={event} stats={stats?.[event.id]} interested={mine?.has(event.id)} labeled />
           {main > 0 ? (
             <Link to={`${to}#venue-map`} className={cn(pill, "border-transparent px-2 text-muted-foreground hover:text-foreground")}>
-              <Route className="h-4 w-4" aria-hidden /> ดูเส้นทาง
+              <Route className="h-4 w-4" aria-hidden /> <span className="max-sm:sr-only">ดูเส้นทาง</span>
             </Link>
           ) : null}
         </div>

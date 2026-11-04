@@ -24,9 +24,9 @@ export type EventFeeType = "free" | "paid" | "unspecified";
 export type EventOrigin = "original" | "community" | "curated";
 
 export const EVENT_ORIGIN_LABEL: Record<EventOrigin, string> = {
-  original: "Organized by SameCor",
+  original: "Organized by SAMECOR",
   community: "Submitted by Community",
-  curated: "Curated by SameCor",
+  curated: "Curated by SAMECOR",
 };
 
 /** Shown wherever a curated source did not state a value. We never guess. */

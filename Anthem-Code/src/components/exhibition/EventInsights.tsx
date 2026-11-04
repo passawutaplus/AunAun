@@ -192,10 +192,10 @@ export function EventInsightsPanel({
   const grid = (n: number) => cn("grid grid-cols-1 gap-x-10 gap-y-6", n === 2 && "md:grid-cols-2", n >= 3 && "md:grid-cols-3");
 
   return (
-    <section aria-labelledby="insights-heading" className={cn("border-t border-border pt-6", className)}>
-      <p id="insights-heading" className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+    <section aria-labelledby="insights-heading" className={className}>
+      <h2 id="insights-heading" className="font-display text-2xl font-semibold text-foreground">
         สรุปโดย SAMECOR
-      </p>
+      </h2>
 
       {countdown || insights.capacity ? (
         <div className="mt-4 flex flex-wrap items-baseline gap-x-6 gap-y-2">

@@ -175,6 +175,20 @@ export default function ExhibitionDetailPage() {
     if (!needsAuth()) setSponsorOpen(true);
   };
 
+  const aboutSection = (
+    <section aria-labelledby="about-heading" className={wide ? undefined : "border-t border-border pt-6"}>
+      <h2 id="about-heading" className="font-display text-2xl font-semibold text-foreground">
+        About This Event
+      </h2>
+      <div className="mt-3 space-y-3 whitespace-pre-line text-sm leading-relaxed text-foreground/85">
+        <p>{lead}</p>
+        {rest.map((p, i) => (
+          <p key={i}>{p}</p>
+        ))}
+      </div>
+    </section>
+  );
+
   const sideSections = (
     <>
           <section aria-labelledby="organizer-heading">
@@ -215,7 +229,7 @@ export default function ExhibitionDetailPage() {
             </div>
           </section>
 
-          {event.sponsors.length || openForSponsors || event.origin === "curated" ? (
+          {event.sponsors.length || openForSponsors ? (
             <section aria-labelledby="sponsors-heading">
               <h2 id="sponsors-heading" className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                 Sponsored by
@@ -313,11 +327,15 @@ export default function ExhibitionDetailPage() {
 
       {/* Same columns as a work page: wide media, narrow info rail. */}
       <div className="mx-auto grid w-full max-w-[84rem] grid-cols-1 lg:grid-cols-[minmax(0,56rem)_22.5rem] lg:justify-center lg:gap-x-10 xl:grid-cols-[minmax(0,56rem)_24rem] xl:gap-x-12 gap-8">
-        <EventGallery
-          images={eventImages(event).length ? eventImages(event) : parent?.cover_url ? [parent.cover_url] : []}
-          title={event.title}
-          aspect="aspect-[4/3]"
-        />
+        {/* Desktop: About sits under the image so the tall facts column leaves no empty gap. */}
+        <div className="flex min-w-0 flex-col gap-10">
+          <EventGallery
+            images={eventImages(event).length ? eventImages(event) : parent?.cover_url ? [parent.cover_url] : []}
+            title={event.title}
+            aspect="aspect-[4/3]"
+          />
+          {wide ? aboutSection : null}
+        </div>
 
         <div className="flex flex-col gap-5">
           <div className="flex flex-wrap items-center gap-2">
@@ -419,19 +437,10 @@ export default function ExhibitionDetailPage() {
         </div>
       </div>
 
-      <div className="mt-6 mx-auto grid w-full max-w-[84rem] grid-cols-1 gap-y-6 lg:mt-12 lg:grid-cols-[minmax(0,56rem)_22.5rem] lg:justify-center lg:gap-x-10 lg:gap-y-10 xl:grid-cols-[minmax(0,56rem)_24rem] xl:gap-x-12">
+      {!wide ? (
+      <div className="mx-auto mt-10 grid w-full max-w-[84rem] grid-cols-1 gap-y-6">
         {/* Phones: a rule separates About from the event facts / documents above. */}
-        <section aria-labelledby="about-heading" className="border-t border-border pt-6 lg:border-t-0 lg:pt-0">
-          <h2 id="about-heading" className="font-display text-2xl font-semibold text-foreground">
-            About This Event
-          </h2>
-          <div className="mt-3 space-y-3 whitespace-pre-line text-sm leading-relaxed text-foreground/85">
-            <p>{lead}</p>
-            {rest.map((p, i) => (
-              <p key={i}>{p}</p>
-            ))}
-          </div>
-        </section>
+        {!wide ? aboutSection : null}
 
         {/* Thin rules between the side sections, and one above Organizer to close off the event facts. */}
         {/* Phones / tablets: Organizer + Sponsors under About (on desktop they sit in the facts column above). */}
@@ -441,14 +450,15 @@ export default function ExhibitionDetailPage() {
           </aside>
         ) : null}
       </div>
+      ) : null}
 
       {/* Venues (sub-events) with the pinned map: below About, above the summary. */}
       {venues.length ? (
-        <EventVenuesSection parent={event} venues={venues} className="mx-auto w-full max-w-[84rem] border-t border-border pt-6 lg:mt-14" />
+        <EventVenuesSection parent={event} venues={venues} className="mx-auto mt-10 w-full max-w-[84rem] border-t border-border pt-8 lg:mt-14" />
       ) : null}
 
       {works.length ? (
-        <section className="mt-12" aria-labelledby="works-heading">
+        <section className="mx-auto mt-10 w-full max-w-[84rem] border-t border-border pt-8 lg:mt-14" aria-labelledby="works-heading">
           <h2 id="works-heading" className="font-display text-2xl font-semibold text-foreground">
             Works by the Organizer
           </h2>
@@ -467,10 +477,10 @@ export default function ExhibitionDetailPage() {
         </section>
       ) : null}
 
-      {insights ? <EventInsightsPanel insights={insights} event={event} className={cn("mx-auto w-full max-w-[84rem] lg:mt-14", (venues.length > 0 || works.length > 0) && "mt-10")} /> : null}
+      {insights ? <EventInsightsPanel insights={insights} event={event} className="mx-auto mt-10 w-full max-w-[84rem] border-t border-border pt-8 lg:mt-14" /> : null}
 
       {insights?.related_categories.length ? (
-        <EventRelatedWorks categories={insights.related_categories} className="mx-auto mt-14 w-full max-w-[84rem]" />
+        <EventRelatedWorks categories={insights.related_categories} className="mx-auto mt-10 w-full max-w-[84rem] border-t border-border pt-8 lg:mt-14" />
       ) : null}
 
       {canChat ? (

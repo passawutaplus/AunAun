@@ -172,7 +172,7 @@ export default function ExhibitionPage() {
         </div>
       </motion.div>
 
-      <div className="relative z-[1] mx-auto max-w-[1920px] px-3 pb-4 pt-0 sm:px-[calc(1rem+25px)] lg:px-[calc(1.5rem+25px)] lg:pt-4 2xl:px-[calc(2.5rem+25px)]">
+      <div className="relative z-[1] mx-auto max-w-[1920px] px-3 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-0 sm:px-[calc(1rem+25px)] lg:pb-4 lg:px-[calc(1.5rem+25px)] lg:pt-4 2xl:px-[calc(2.5rem+25px)]">
         {/* Phones / tablets: the feed's bar — brand mark + mode pill with the type tabs under it;
             it slides away while scrolling down and comes back on the way up. */}
         <div
