@@ -268,11 +268,11 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
                           aria-label={`${picked.has(v.id) ? "เอาออกจาก" : "เพิ่มใน"}เส้นทางของฉัน: ${v.title}`}
                           onClick={() => togglePick(v.id)}
                           className={cn(
-                            "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground",
+                            "mt-1 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground",
                             picked.has(v.id) ? "border-brand bg-brand text-white" : "border-foreground/30 hover:border-foreground",
                           )}
                         >
-                          {picked.has(v.id) ? <Check className="h-4 w-4" aria-hidden /> : null}
+                          {picked.has(v.id) ? <Check className="h-3 w-3" strokeWidth={3} aria-hidden /> : null}
                         </button>
                         <button
                           type="button"
@@ -280,14 +280,22 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
                           aria-expanded={active}
                           className="flex min-w-0 flex-1 items-start gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground"
                         >
-                          <span
-                            className={cn(
-                              "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold tabular-nums",
-                              on ? "bg-brand text-white" : "bg-muted-foreground/70 text-background",
-                            )}
-                            aria-hidden
-                          >
-                            {v.pin}
+                          {/* Same pin as on the map: red = สนใจ. */}
+                          <span className="relative -mt-0.5 h-7 w-[22px] shrink-0" aria-hidden>
+                            <svg viewBox="0 0 28 36" className="absolute inset-0 h-full w-full">
+                              <path
+                                d="M14 1C7 1 1.5 6.4 1.5 13.3 1.5 22.6 14 35 14 35s12.5-12.4 12.5-21.7C26.5 6.4 21 1 14 1z"
+                                className={on ? "fill-brand" : "fill-foreground/80"}
+                              />
+                            </svg>
+                            <span
+                              className={cn(
+                                "absolute inset-x-0 top-[5px] text-center text-[10px] font-bold leading-3 tabular-nums",
+                                on ? "text-white" : "text-background",
+                              )}
+                            >
+                              {v.pin}
+                            </span>
                           </span>
                           <span className="min-w-0 flex-1">
                             <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -325,7 +333,7 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
                       </div>
 
                       {active ? (
-                        <div className="space-y-1.5 pb-3 pl-[4.75rem] pr-3 text-xs text-muted-foreground">
+                        <div className="space-y-1.5 pb-3 pl-[4.5rem] pr-3 text-xs text-muted-foreground">
                           {v.address ? <p>{v.address}</p> : null}
                           {v.closed_note ? <p>{v.closed_note}</p> : null}
                           {v.transit_note ? (
