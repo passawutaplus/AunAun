@@ -580,7 +580,7 @@ function InviteForm({
         {modeSwitch}
       </div>
       {/* Phones/tablets: form, then the preview below it. Desktop: live preview left, form right. */}
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:gap-10">
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:gap-12">
         <div className="min-w-0 lg:col-start-2 lg:row-start-1">
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3 lg:hidden">
             <Link
@@ -593,7 +593,7 @@ function InviteForm({
             {modeSwitch}
           </div>
 
-          <div className="rounded-2xl border border-border bg-card p-5 sm:p-8">
+          <div className="rounded-2xl border border-border bg-card p-5 sm:p-8 lg:p-10">
             {quick ? (
               <QuickStep
                 t={t}
@@ -610,7 +610,7 @@ function InviteForm({
               <>
                 <Stepper step={step} t={t} />
                 {step === 1 ? (
-                  <div className="space-y-5">
+                  <div className="space-y-6">
                     <StepHead n={1} title={t.s1} />
                     <Field
                       id="about.name"
@@ -780,12 +780,12 @@ function InviteForm({
                     </div>
                   </div>
                 ) : step === 2 ? (
-                  <div className="space-y-6">
+                  <div className="space-y-8">
                     <StepHead n={2} title={t.s2} />
                     {data.projects.map((p, i) => (
                       <div
                         key={p.slot}
-                        className="space-y-4 rounded-xl border border-border p-4 sm:p-5"
+                        className="space-y-5 rounded-xl border border-border p-4 sm:p-6"
                       >
                         <div className="flex items-center justify-between">
                           <h3 className="font-display text-lg font-semibold">
@@ -958,7 +958,7 @@ function InviteForm({
                     ) : null}
                   </div>
                 ) : (
-                  <div className="space-y-5">
+                  <div className="space-y-6">
                     <StepHead n={3} title={t.s3} sub={t.s3sub} />
                     <div className="divide-y divide-border overflow-hidden rounded-xl border border-border">
                       <ReviewRow
@@ -1228,24 +1228,39 @@ function InviteForm({
 }
 
 function Stepper({ step, t }: { step: number; t: InviteCopy }) {
+  const labels = [t.s1, t.s2, t.s3];
   return (
     <div
-      className="mb-6 flex items-center gap-2"
+      className="mb-8 grid grid-cols-3 gap-2"
       role="progressbar"
       aria-valuemin={1}
       aria-valuemax={3}
       aria-valuenow={step}
       aria-label={t.stepOf(step)}
     >
-      {[1, 2, 3].map((i) => (
-        <span
-          key={i}
-          className={cn(
-            "h-1.5 flex-1 rounded-full",
-            i <= step ? "bg-brand" : "bg-muted",
-          )}
-        />
-      ))}
+      {labels.map((label, idx) => {
+        const i = idx + 1;
+        return (
+          <div key={i} className="min-w-0">
+            <span
+              className={cn(
+                "block h-1.5 rounded-full",
+                i <= step ? "bg-brand" : "bg-muted",
+              )}
+            />
+            <span
+              className={cn(
+                "mt-2 hidden truncate text-[11px] sm:block",
+                i === step
+                  ? "font-medium text-foreground"
+                  : "text-muted-foreground",
+              )}
+            >
+              {label}
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 }

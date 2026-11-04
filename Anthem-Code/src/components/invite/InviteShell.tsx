@@ -74,7 +74,7 @@ export function InviteShell({
         </a>
         <nav className="flex shrink-0 items-center gap-1 sm:gap-2" aria-label={t.getInTouch}>
           {/* New tabs so the invitation (and any form progress) stays open behind them */}
-          <a href="/" target="_blank" rel="noopener" className="inline-flex h-9 items-center gap-1 whitespace-nowrap rounded-full px-2 text-xs font-medium text-foreground hover:bg-secondary sm:px-3 sm:text-sm">
+          <a href="/" target="_blank" rel="noopener" className="hidden h-9 sm:inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 text-xs font-medium text-foreground hover:bg-secondary sm:px-3 sm:text-sm">
             {t.home}
           </a>
           <a
