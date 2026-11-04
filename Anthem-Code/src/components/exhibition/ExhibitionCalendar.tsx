@@ -1,13 +1,39 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
 import { addDays, addMonths, format, startOfWeek } from "date-fns";
-import { ArrowRight, CalendarDays, ChevronLeft, ChevronRight, Clock, ExternalLink, MapPin } from "lucide-react";
+import {
+  ArrowRight,
+  CalendarDays,
+  CalendarRange,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  ExternalLink,
+  MapPin,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { googleCalendarLink } from "@/lib/googleCalendarLink";
-import { categoryLabel, formatEventDates, type ExhibitionEvent } from "@/lib/exhibitionEvents";
+import {
+  categoryLabel,
+  formatEventDates,
+  type ExhibitionEvent,
+} from "@/lib/exhibitionEvents";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -18,7 +44,12 @@ type Props = {
 /** Google Calendar glyph (four-colour frame, "31" tile) drawn inline so it needs no asset. */
 function GoogleCalendarIcon({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" className={className} aria-hidden focusable="false">
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      aria-hidden
+      focusable="false"
+    >
       <path fill="#fff" d="M6 6h12v12H6z" />
       <path fill="#1a73e8" d="M18 24l4-4h-4z" />
       <path fill="#fbbc04" d="M18 6h4v14h-4z" />
@@ -42,29 +73,83 @@ const isoDay = (d: Date) => format(d, "yyyy-MM-dd");
 /** Events running on a day (start ≤ day ≤ end; a missing end means one day). */
 function eventsOn(events: ExhibitionEvent[], day: Date): ExhibitionEvent[] {
   const iso = isoDay(day);
-  return events.filter((e) => e.starts_on && e.starts_on <= iso && (e.ends_on ?? e.starts_on) >= iso);
+  return events.filter(
+    (e) =>
+      e.starts_on && e.starts_on <= iso && (e.ends_on ?? e.starts_on) >= iso,
+  );
 }
 
 /** Days with at least one event, for the dot markers — computed once per month view. */
 function eventDays(events: ExhibitionEvent[], from: Date, to: Date): Date[] {
   const out: Date[] = [];
-  for (let d = from; d <= to; d = addDays(d, 1)) if (eventsOn(events, d).length) out.push(d);
+  for (let d = from; d <= to; d = addDays(d, 1))
+    if (eventsOn(events, d).length) out.push(d);
   return out;
 }
 
 const gcalFor = (event: ExhibitionEvent) =>
   googleCalendarLink({
     ...event,
-    url: typeof window !== "undefined" ? `${window.location.origin}/exhibition/${event.id}` : null,
+    url:
+      typeof window !== "undefined"
+        ? `${window.location.origin}/exhibition/${event.id}`
+        : null,
   });
 
-function EventRow({ event }: { event: ExhibitionEvent }) {
+/** Colours for ticked events' date bars (brand red marks the selected day, so it's not used here). */
+const TRACK_COLORS = ["#F5F5F4", "#60A5FA", "#4ADE80"]; // up to 3 ticked at once
+const TRACK_KEY = "samecor:calendar-tracked";
+const dayKey = (d: Date) => format(d, "yyyy-MM-dd");
+
+function EventRow({
+  event,
+  color,
+  onToggle,
+}: {
+  event: ExhibitionEvent;
+  /** Bar colour when ticked; undefined = not ticked. */
+  color?: string;
+  /** Null hides the tick box (range view off). */
+  onToggle: (() => void) | null;
+}) {
+  const on = !!color;
   return (
     <li className="flex items-center gap-3 py-3">
-      <Link to={`/exhibition/${event.id}`} className="shrink-0" tabIndex={-1} aria-hidden>
-        <span className="block h-14 w-14 overflow-hidden rounded-lg bg-muted">
+      {onToggle ? (
+        <button
+          type="button"
+          role="checkbox"
+          aria-checked={on}
+          aria-label={`${on ? "เอาออกจาก" : "แสดง"}ช่วงวันบนปฏิทิน: ${event.title}`}
+          onClick={onToggle}
+          disabled={!event.starts_on}
+          className={cn(
+            "flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground disabled:opacity-30",
+            on
+              ? "border-transparent text-neutral-950"
+              : "border-foreground/30 hover:border-foreground",
+          )}
+          style={on ? { backgroundColor: color } : undefined}
+        >
+          {on ? (
+            <Check className="h-3 w-3" strokeWidth={3} aria-hidden />
+          ) : null}
+        </button>
+      ) : null}
+      <Link
+        to={`/exhibition/${event.id}`}
+        className="shrink-0"
+        tabIndex={-1}
+        aria-hidden
+      >
+        <span className="block h-16 w-16 overflow-hidden rounded-[3px] bg-muted">
           {event.cover_url ? (
-            <img src={event.cover_url} alt="" className="h-full w-full object-cover" loading="lazy" />
+            <img
+              src={event.cover_url}
+              alt=""
+              className="h-full w-full object-cover"
+              loading="lazy"
+            />
           ) : (
             <span className="flex h-full w-full items-center justify-center">
               <CalendarDays className="h-5 w-5 text-muted-foreground" />
@@ -73,14 +158,22 @@ function EventRow({ event }: { event: ExhibitionEvent }) {
         </span>
       </Link>
       <div className="min-w-0 flex-1">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{categoryLabel(event.category)}</p>
-        <Link to={`/exhibition/${event.id}`} className="line-clamp-1 text-sm font-semibold text-foreground hover:underline">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          {categoryLabel(event.category)}
+        </p>
+        <Link
+          to={`/exhibition/${event.id}`}
+          className="line-clamp-1 text-base font-semibold text-foreground hover:underline"
+        >
           {event.title}
         </Link>
-        <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground">
+        <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
           <span className="inline-flex items-center gap-1">
             <Clock className="h-3 w-3" aria-hidden />
-            {event.time_note ?? (event.starts_on ? formatEventDates(event.starts_on, event.ends_on) : "")}
+            {event.time_note ??
+              (event.starts_on
+                ? formatEventDates(event.starts_on, event.ends_on)
+                : "")}
           </span>
           {event.location_name ? (
             <span className="inline-flex items-center gap-1">
@@ -102,19 +195,31 @@ function EventRow({ event }: { event: ExhibitionEvent }) {
 
 /** Footer "Add to Google Calendar": one event → direct link; several → pick which one. */
 function AddToGoogle({ events }: { events: ExhibitionEvent[] }) {
-  const withLink = events.map((e) => ({ e, href: gcalFor(e) })).filter((x): x is { e: ExhibitionEvent; href: string } => !!x.href);
-  const cls = "inline-flex items-center gap-2 text-sm font-medium text-foreground underline-offset-4 hover:underline disabled:opacity-50";
+  const withLink = events
+    .map((e) => ({ e, href: gcalFor(e) }))
+    .filter((x): x is { e: ExhibitionEvent; href: string } => !!x.href);
+  const cls =
+    "inline-flex items-center gap-2 text-sm font-medium text-foreground underline-offset-4 hover:underline disabled:opacity-50";
   if (withLink.length === 0) {
     return (
-      <span className={cn(cls, "cursor-default text-muted-foreground no-underline")}>
-        <GoogleCalendarIcon className="h-4 w-4 opacity-50" /> Add to Google Calendar
+      <span
+        className={cn(cls, "cursor-default text-muted-foreground no-underline")}
+      >
+        <GoogleCalendarIcon className="h-4 w-4 opacity-50" /> Add to Google
+        Calendar
       </span>
     );
   }
   if (withLink.length === 1) {
     return (
-      <a href={withLink[0].href} target="_blank" rel="noopener noreferrer" className={cls}>
-        <GoogleCalendarIcon className="h-4 w-4" /> Add to Google Calendar <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+      <a
+        href={withLink[0].href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={cls}
+      >
+        <GoogleCalendarIcon className="h-4 w-4" /> Add to Google Calendar{" "}
+        <ExternalLink className="h-3.5 w-3.5" aria-hidden />
       </a>
     );
   }
@@ -125,12 +230,27 @@ function AddToGoogle({ events }: { events: ExhibitionEvent[] }) {
           <GoogleCalendarIcon className="h-4 w-4" /> Add to Google Calendar
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="min-w-[16rem] rounded-xl p-1.5">
+      <DropdownMenuContent
+        align="start"
+        className="min-w-[16rem] rounded-xl p-1.5"
+      >
         {withLink.map(({ e, href }) => (
-          <DropdownMenuItem key={e.id} asChild className="cursor-pointer rounded-lg">
-            <a href={href} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
+          <DropdownMenuItem
+            key={e.id}
+            asChild
+            className="cursor-pointer rounded-lg"
+          >
+            <a
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2"
+            >
               <span className="truncate">{e.title}</span>
-              <ExternalLink className="ml-auto h-3 w-3 shrink-0 text-muted-foreground" aria-hidden />
+              <ExternalLink
+                className="ml-auto h-3 w-3 shrink-0 text-muted-foreground"
+                aria-hidden
+              />
             </a>
           </DropdownMenuItem>
         ))}
@@ -146,11 +266,87 @@ function AddToGoogle({ events }: { events: ExhibitionEvent[] }) {
 export function ExhibitionCalendar({ events, className }: Props) {
   const today = useMemo(() => new Date(), []);
   const weekStart = startOfWeek(today, { weekStartsOn: 1 });
-  const week = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart]);
+  const week = useMemo(
+    () => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)),
+    [weekStart],
+  );
 
   const [open, setOpen] = useState(false);
   const [month, setMonth] = useState<Date>(today);
   const [selected, setSelected] = useState<Date>(today);
+  // Ticked events: their date ranges show as coloured bars on the month grid (kept in this browser).
+  const [tracked, setTracked] = useState<string[]>(() => {
+    try {
+      const v: unknown = JSON.parse(localStorage.getItem(TRACK_KEY) ?? "[]");
+      return Array.isArray(v)
+        ? v
+            .filter((x): x is string => typeof x === "string")
+            .slice(0, TRACK_COLORS.length)
+        : [];
+    } catch {
+      return [];
+    }
+  });
+  // "ดูช่วงวัน" mode: shows the tick boxes; turning it off clears the ticks.
+  const [rangeMode, setRangeModeState] = useState(() => tracked.length > 0);
+  const setRangeMode = (on: boolean) => {
+    setRangeModeState(on);
+    if (!on) {
+      setTracked([]);
+      try {
+        localStorage.removeItem(TRACK_KEY);
+      } catch {
+        /* ignore */
+      }
+    }
+  };
+  const toggleTracked = (id: string) =>
+    setTracked((cur) => {
+      if (!cur.includes(id) && cur.length >= TRACK_COLORS.length) {
+        toast.info(`เลือกดูได้สูงสุด ${TRACK_COLORS.length} รายการ`);
+        return cur;
+      }
+      const next = cur.includes(id)
+        ? cur.filter((x) => x !== id)
+        : [...cur, id];
+      try {
+        localStorage.setItem(TRACK_KEY, JSON.stringify(next));
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  const colorOf = (id: string) => {
+    const i = tracked.indexOf(id);
+    return i >= 0 ? TRACK_COLORS[i] : undefined;
+  };
+  /** day → bars for the ticked events covering it. */
+  const bars = useMemo(() => {
+    const map = new Map<
+      string,
+      Array<{ color: string; start: boolean; end: boolean }>
+    >();
+    tracked.forEach((id, i) => {
+      const e = events.find((x) => x.id === id);
+      if (!e?.starts_on) return;
+      const end =
+        e.ends_on && e.ends_on >= e.starts_on ? e.ends_on : e.starts_on;
+      const from = new Date(month.getFullYear(), month.getMonth() - 1, 20);
+      const to = new Date(month.getFullYear(), month.getMonth() + 1, 12);
+      for (let d = from; d <= to; d = addDays(d, 1)) {
+        const k = dayKey(d);
+        if (k < e.starts_on || k > end) continue;
+        const list = map.get(k) ?? [];
+        list.push({
+          color: TRACK_COLORS[i],
+          start: k === e.starts_on,
+          end: k === end,
+        });
+        map.set(k, list);
+      }
+    });
+    return map;
+  }, [tracked, events, month]);
 
   const monthDots = useMemo(() => {
     const from = new Date(month.getFullYear(), month.getMonth(), 1);
@@ -159,7 +355,8 @@ export function ExhibitionCalendar({ events, className }: Props) {
   }, [events, month]);
 
   const weekCount = useMemo(
-    () => new Set(week.flatMap((d) => eventsOn(events, d).map((e) => e.id))).size,
+    () =>
+      new Set(week.flatMap((d) => eventsOn(events, d).map((e) => e.id))).size,
     [events, week],
   );
   const weekEnd = week[6];
@@ -180,31 +377,62 @@ export function ExhibitionCalendar({ events, className }: Props) {
   };
   const viewAll = () => {
     setOpen(false);
-    window.setTimeout(() => document.querySelector("[data-event-list]")?.scrollIntoView({ behavior: "smooth", block: "start" }), 150);
+    window.setTimeout(
+      () =>
+        document
+          .querySelector("[data-event-list]")
+          ?.scrollIntoView({ behavior: "smooth", block: "start" }),
+      150,
+    );
   };
 
   return (
-    <section className={cn("py-1", className)} aria-labelledby="week-events-heading">
+    <section
+      className={cn("py-1", className)}
+      aria-labelledby="week-events-heading"
+    >
       <div className="flex items-center justify-between gap-3">
-        <div>
-          <h2 id="week-events-heading" className="whitespace-nowrap text-lg font-semibold tracking-tight text-foreground sm:text-2xl">
+        <div className="min-w-0">
+          <h2
+            id="week-events-heading"
+            className="whitespace-nowrap text-lg font-semibold tracking-tight text-foreground sm:text-2xl"
+          >
             This Week's Events
           </h2>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            {weekLabel} <span aria-hidden>·</span> {weekCount} {weekCount === 1 ? "Event" : "Events"}
+            {weekLabel} <span aria-hidden>·</span>{" "}
+            <span
+              className="inline-flex items-center gap-0.5"
+              aria-label={`${weekCount} งาน`}
+            >
+              <MapPin className="h-3.5 w-3.5" aria-hidden />
+              {weekCount}
+            </span>
           </p>
         </div>
-        <Button type="button" variant="outline" size="sm" className="shrink-0 rounded-full pl-3.5 pr-2.5" onClick={() => openOn(today)}>
-          <CalendarDays className="mr-1.5 h-4 w-4" aria-hidden /> Full Calendar
-          <ChevronRight className="ml-1.5 h-4 w-4" aria-hidden />
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="shrink-0 rounded-full px-2.5 sm:pl-3.5"
+          onClick={() => openOn(today)}
+          aria-label="Full Calendar"
+        >
+          <CalendarDays className="h-4 w-4 sm:mr-1.5" aria-hidden />
+          <span className="hidden sm:inline">Full Calendar</span>
+          <ChevronRight className="h-4 w-4 sm:ml-1.5" aria-hidden />
         </Button>
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-4xl gap-0 rounded-2xl p-0">
+        <DialogContent className="max-w-5xl gap-0 rounded-2xl p-0">
           <DialogHeader className="px-6 pb-4 pt-6 text-left">
-            <DialogTitle className="text-2xl font-semibold tracking-tight">Event Calendar</DialogTitle>
-            <DialogDescription>Explore upcoming creative events</DialogDescription>
+            <DialogTitle className="text-3xl font-semibold tracking-tight">
+              Event Calendar
+            </DialogTitle>
+            <DialogDescription>
+              Explore upcoming creative events
+            </DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-6 px-6 pb-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
@@ -212,11 +440,23 @@ export function ExhibitionCalendar({ events, className }: Props) {
             <div>
               <div className="mb-2 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <button type="button" onClick={() => setMonth(addMonths(month, -1))} aria-label="เดือนก่อน" className="flex h-8 w-8 items-center justify-center rounded-full bg-muted hover:bg-muted/70">
+                  <button
+                    type="button"
+                    onClick={() => setMonth(addMonths(month, -1))}
+                    aria-label="เดือนก่อน"
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-muted hover:bg-muted/70"
+                  >
                     <ChevronLeft className="h-4 w-4" aria-hidden />
                   </button>
-                  <span className="min-w-[9rem] text-center text-base font-semibold text-foreground">{format(month, "MMMM yyyy")}</span>
-                  <button type="button" onClick={() => setMonth(addMonths(month, 1))} aria-label="เดือนถัดไป" className="flex h-8 w-8 items-center justify-center rounded-full bg-muted hover:bg-muted/70">
+                  <span className="min-w-[10rem] text-center text-lg font-semibold text-foreground">
+                    {format(month, "MMMM yyyy")}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setMonth(addMonths(month, 1))}
+                    aria-label="เดือนถัดไป"
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-muted hover:bg-muted/70"
+                  >
                     <ChevronRight className="h-4 w-4" aria-hidden />
                   </button>
                 </div>
@@ -229,7 +469,41 @@ export function ExhibitionCalendar({ events, className }: Props) {
                 onMonthChange={setMonth}
                 selected={selected}
                 onSelect={(d) => d && setSelected(d)}
-                modifiers={{ hasEvent: monthDots }}
+                modifiers={{ hasEvent: tracked.length ? [] : monthDots }}
+                components={{
+                  DayContent: ({ date }) => (
+                    <>
+                      <span className="relative z-[1]">{date.getDate()}</span>
+                      {(bars.get(dayKey(date)) ?? []).map((b, i) => (
+                        <span key={i} aria-hidden>
+                          {/* Line runs from the start day's centre to the end day's centre; a dot marks each end. */}
+                          {!(b.start && b.end) ? (
+                            <span
+                              className={cn(
+                                "absolute h-[3px]",
+                                b.start ? "left-1/2" : "-left-px",
+                                b.end ? "right-1/2" : "-right-px",
+                              )}
+                              style={{
+                                backgroundColor: b.color,
+                                bottom: 5 + i * 6,
+                              }}
+                            />
+                          ) : null}
+                          {b.start || b.end ? (
+                            <span
+                              className="absolute left-1/2 h-[9px] w-[9px] -translate-x-1/2 rounded-full"
+                              style={{
+                                backgroundColor: b.color,
+                                bottom: 2 + i * 6,
+                              }}
+                            />
+                          ) : null}
+                        </span>
+                      ))}
+                    </>
+                  ),
+                }}
                 modifiersClassNames={{
                   hasEvent:
                     "relative after:absolute after:bottom-1 after:left-1/2 after:h-1.5 after:w-1.5 after:-translate-x-1/2 after:rounded-full after:bg-brand",
@@ -239,10 +513,12 @@ export function ExhibitionCalendar({ events, className }: Props) {
                   caption: "hidden",
                   nav: "hidden",
                   table: "w-full border-collapse",
-                  head_cell: "w-11 pb-1 text-xs font-medium text-muted-foreground",
-                  cell: "h-11 w-11 p-0 text-center text-sm relative",
-                  day: "h-11 w-11 rounded-lg p-0 text-sm font-medium transition-colors hover:bg-muted aria-selected:opacity-100",
-                  day_selected: "bg-brand text-neutral-950 hover:bg-brand after:bg-neutral-950",
+                  head_cell:
+                    "w-12 pb-1 text-sm font-medium text-muted-foreground",
+                  cell: "h-12 w-12 p-0 text-center text-base relative",
+                  day: "relative h-12 w-12 rounded-lg p-0 text-base font-medium transition-colors hover:bg-muted aria-selected:opacity-100",
+                  day_selected:
+                    "bg-brand text-neutral-950 hover:bg-brand after:bg-neutral-950",
                   day_today: "ring-1 ring-brand/60",
                   day_outside: "text-muted-foreground/40",
                 }}
@@ -250,32 +526,78 @@ export function ExhibitionCalendar({ events, className }: Props) {
             </div>
 
             {/* The picked day */}
-            <div className="min-w-0 md:max-h-[26rem] md:overflow-y-auto md:pr-1">
+            <div className="min-w-0 md:max-h-[30rem] md:overflow-y-auto md:pr-1">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-xl font-semibold text-foreground">{format(selected, "EEE, d MMM yyyy")}</p>
-                  <p className="text-xs text-muted-foreground">{dayList.length} Events</p>
+                  <p className="text-2xl font-semibold text-foreground">
+                    {format(selected, "EEE, d MMM yyyy")}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {dayList.length} Events
+                  </p>
                 </div>
-                <Button type="button" variant="outline" size="sm" className="h-8 shrink-0 rounded-full" onClick={goToday}>
-                  Today
-                </Button>
+                <div className="flex shrink-0 items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className={cn(
+                      "h-8 w-8 rounded-full",
+                      rangeMode &&
+                        "border-brand bg-brand/10 text-brand hover:text-brand",
+                    )}
+                    aria-pressed={rangeMode}
+                    aria-label={
+                      rangeMode ? "ปิดการดูช่วงวัน" : "ดูช่วงวันของงานบนปฏิทิน"
+                    }
+                    title={
+                      rangeMode
+                        ? "ปิดการดูช่วงวัน"
+                        : "ดูช่วงวัน (เลือกได้ 3 งาน)"
+                    }
+                    onClick={() => setRangeMode(!rangeMode)}
+                  >
+                    <CalendarRange className="h-4 w-4" aria-hidden />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 rounded-full"
+                    onClick={goToday}
+                  >
+                    Today
+                  </Button>
+                </div>
               </div>
               {dayList.length ? (
                 <ul className="mt-2 divide-y divide-border">
                   {dayList.map((e) => (
-                    <EventRow key={e.id} event={e} />
+                    <EventRow
+                      key={e.id}
+                      event={e}
+                      color={colorOf(e.id)}
+                      onToggle={rangeMode ? () => toggleTracked(e.id) : null}
+                    />
                   ))}
                 </ul>
               ) : (
-                <p className="mt-3 rounded-xl border border-dashed border-border px-3 py-8 text-center text-sm text-muted-foreground">ไม่มีงานในวันนี้</p>
+                <p className="mt-3 rounded-xl border border-dashed border-border px-3 py-8 text-center text-sm text-muted-foreground">
+                  ไม่มีงานในวันนี้
+                </p>
               )}
             </div>
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-6 py-4">
             <AddToGoogle events={dayList} />
-            <Button type="button" className="rounded-full bg-foreground text-background hover:bg-foreground/90" onClick={viewAll}>
-              View All Events <ArrowRight className="ml-1.5 h-4 w-4" aria-hidden />
+            <Button
+              type="button"
+              className="rounded-full bg-foreground text-background hover:bg-foreground/90"
+              onClick={viewAll}
+            >
+              View All Events{" "}
+              <ArrowRight className="ml-1.5 h-4 w-4" aria-hidden />
             </Button>
           </div>
         </DialogContent>

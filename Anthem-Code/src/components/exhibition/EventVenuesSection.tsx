@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Bookmark, Check, ChevronDown, ExternalLink, Map as MapIcon, Navigation, Route, TrainFront, Ticket, X } from "lucide-react";
+import { Bookmark, Check, MapPin, ChevronDown, ExternalLink, Map as MapIcon, Navigation, Route, TrainFront, Ticket, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GoogleCalendarIcon } from "@/components/icons/GoogleCalendarIcon";
 import { RouteStartPicker } from "./RouteStartPicker";
@@ -153,9 +153,11 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 id="venues-heading" className="font-display text-2xl font-semibold text-foreground">
-            Venues
-            <span className="ml-2 text-base font-normal text-muted-foreground">
-              {counts.main} Venues
+            Locations
+            <span className="ml-2 inline-flex items-center gap-1 align-middle text-base font-normal text-muted-foreground">
+              {counts.main}
+              <MapPin className="h-4 w-4" aria-hidden />
+              <span className="sr-only">สถานที่</span>
             </span>
           </h2>
         </div>
@@ -213,53 +215,63 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
 
         <div className="space-y-6">
           {/* My route: on top of the venue list column. */}
-          <div className="space-y-2 rounded-lg bg-muted/40 px-3 py-2.5 text-sm">
+          {/* My route: start point, then the summary as label / value rows, then actions. */}
+          <div className="rounded-lg bg-muted/40 p-3 text-sm">
             <RouteStartPicker start={start} onChange={setStart} onPickOnMap={() => setPicking(true)} />
             {picking ? (
-              <p className="flex items-center gap-2 text-xs text-brand">
+              <p className="mt-2 flex items-center gap-2 text-xs text-brand">
                 แตะบนแผนที่ตรงจุดที่จะเริ่ม
                 <button type="button" onClick={() => setPicking(false)} className="text-muted-foreground underline underline-offset-4">
                   ยกเลิก
                 </button>
               </p>
             ) : null}
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5" aria-live="polite">
-              <Route className="h-4 w-4 shrink-0 text-brand" aria-hidden />
+            <div className="mt-3 border-t border-border/70 pt-3" aria-live="polite">
               {stops.length === 0 || (stops.length === 1 && !start) ? (
-                <span className="text-muted-foreground">
-                  {start ? "ติ๊กสถานที่ที่จะไป เพื่อดูเส้นทางบนแผนที่" : "ติ๊กสถานที่ที่จะไป ตั้งแต่ 2 ที่ขึ้นไป เพื่อดูเส้นทางเดินบนแผนที่"}
-                </span>
+                <p className="flex items-start gap-2 text-muted-foreground">
+                  <Route className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                  {start ? "ติ๊กสถานที่ที่จะไป แล้วเส้นทางจะขึ้นบนแผนที่" : "ติ๊กสถานที่ที่จะไป 2 ที่ขึ้นไป แล้วเส้นทางจะขึ้นบนแผนที่"}
+                </p>
               ) : (
                 <>
-                  <span className="font-medium text-foreground">
+                  <p className="flex items-center gap-2 font-semibold text-foreground">
+                    <Route className="h-4 w-4 shrink-0 text-brand" aria-hidden />
                     เส้นทางของคุณ · {stops.length} ที่
-                    <span className="ml-2 font-normal text-muted-foreground">
-                      {routing
-                        ? "กำลังคำนวณเส้นทาง…"
-                        : [
-                            start && lead
-                              ? `จาก${start.label} ${lead.meters != null ? `~${formatDistance(lead.meters)}` : "(เส้นตรง)"}`
-                              : null,
-                            inner
-                              ? inner.meters != null && inner.seconds != null
-                                ? `${start ? "ในงาน " : ""}${routeSummary(inner.meters, inner.seconds)}`
-                                : "ในงาน: เส้นตรงโดยประมาณ"
-                              : null,
-                          ]
-                            .filter(Boolean)
-                            .join(" · ")}
-                    </span>
-                  </span>
-                  <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                  </p>
+                  {routing ? (
+                    <p className="mt-1.5 text-muted-foreground">กำลังคำนวณเส้นทาง…</p>
+                  ) : (
+                    <dl className="mt-1.5 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1 text-muted-foreground">
+                      {start && lead ? (
+                        <>
+                          <dt>จาก{start.label}</dt>
+                          <dd className="text-right text-foreground">
+                            {lead.meters != null ? `~${formatDistance(lead.meters)}` : "เส้นตรงโดยประมาณ"}
+                          </dd>
+                        </>
+                      ) : null}
+                      {inner ? (
+                        <>
+                          <dt>{start ? "ในงาน (เดิน)" : "ระยะเดิน"}</dt>
+                          <dd className="text-right text-foreground">
+                            {inner.meters != null && inner.seconds != null
+                              ? routeSummary(inner.meters, inner.seconds).replace(" · เดิน ", " · ")
+                              : "เส้นตรงโดยประมาณ"}
+                          </dd>
+                        </>
+                      ) : null}
+                    </dl>
+                  )}
+                  <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1">
                     {routeUrl ? (
                       <a href={routeUrl} target="_blank" rel="noopener noreferrer" className={linkCls}>
-                        <Navigation className="h-3.5 w-3.5" aria-hidden /> เปิดเส้นทางใน Google Maps
+                        <Navigation className="h-3.5 w-3.5" aria-hidden /> เปิดใน Google Maps
                       </a>
                     ) : null}
                     <button type="button" onClick={clearPicks} className={linkCls}>
-                      <X className="h-3.5 w-3.5" aria-hidden /> ล้าง
+                      <X className="h-3.5 w-3.5" aria-hidden /> ล้างที่ติ๊ก
                     </button>
-                  </span>
+                  </div>
                 </>
               )}
             </div>
