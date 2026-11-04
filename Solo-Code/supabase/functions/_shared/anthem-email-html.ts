@@ -40,8 +40,14 @@ export function anthemSiteUrl(): string {
 }
 
 export function anthemEmailFrom(): { from: string; senderDomain: string } {
-  const from = Deno.env.get("APLUS1_EMAIL_FROM") ?? Deno.env.get("ANTHEM_EMAIL_FROM") ?? "SAMECOR <noreply@samecor.com>";
-  const senderDomain = Deno.env.get("APLUS1_EMAIL_SENDER_DOMAIN") ?? Deno.env.get("ANTHEM_EMAIL_SENDER_DOMAIN") ?? "samecor.com";
+  const from =
+    Deno.env.get("APLUS1_EMAIL_FROM") ??
+    Deno.env.get("ANTHEM_EMAIL_FROM") ??
+    "SAMECOR <noreply@samecor.com>";
+  const senderDomain =
+    Deno.env.get("APLUS1_EMAIL_SENDER_DOMAIN") ??
+    Deno.env.get("ANTHEM_EMAIL_SENDER_DOMAIN") ??
+    "samecor.com";
   return { from, senderDomain };
 }
 
@@ -65,7 +71,10 @@ function cardRow(label: string, value: string, highlight = false): string {
 <p style="font-size:15px;color:${highlight ? brand.ink : brand.body};font-weight:${highlight ? 600 : 400};margin:0 0 12px;line-height:1.6">${v}</p>`;
 }
 
-function layout(opts: {
+/** Shared SAMECOR email shell (also used by the creator-invitation emails). */
+export function layout(opts: {
+  /** Document language; English swaps the fixed Thai footer lines too. */
+  lang?: "th" | "en";
   preview: string;
   badge: string;
   badgeTone: BadgeTone;
@@ -91,11 +100,12 @@ function layout(opts: {
   const year = new Date().getFullYear();
   const reason = opts.reason ?? "คุณได้รับอีเมลนี้เพราะมีความเคลื่อนไหวในบัญชี SAMECOR ของคุณ";
   const ctaHref = opts.ctaHrefRaw ?? escapeHtml(opts.ctaUrl);
+  const en = opts.lang === "en";
   const link = (href: string, label: string) =>
     `<a href="${href}" style="color:${brand.body};text-decoration:none">${label}</a>`;
 
   const html = `<!DOCTYPE html>
-<html lang="th" dir="ltr">
+<html lang="${opts.lang ?? "th"}" dir="ltr">
 <head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="color-scheme" content="light"/>
 <title>${escapeHtml(opts.title)} — SAMECOR</title></head>
 <body style="margin:0;padding:0;background:${brand.canvas};font-family:'IBM Plex Sans Thai','IBM Plex Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif">
@@ -118,11 +128,11 @@ ${opts.bodyHtml}
 <a href="${ctaHref}" style="display:inline-block;padding:14px 32px;font-size:15px;font-weight:600;color:${brand.white};text-decoration:none">${escapeHtml(opts.ctaLabel)}</a>
 </td></tr></table>
 ${opts.afterCtaHtml ?? ""}
-<p style="margin:0 0 4px;font-size:12px;color:${brand.mute}">ปุ่มกดไม่ได้? คัดลอกลิงก์นี้ไปเปิดในเบราว์เซอร์</p>
+<p style="margin:0 0 4px;font-size:12px;color:${brand.mute}">${en ? "Button not working? Copy this link into your browser" : "ปุ่มกดไม่ได้? คัดลอกลิงก์นี้ไปเปิดในเบราว์เซอร์"}</p>
 <p style="margin:0;font-size:12px;line-height:1.6;word-break:break-all"><a href="${ctaHref}" style="color:${brand.body}">${ctaHref}</a></p>
 </td></tr>
 <tr><td style="padding:16px 40px;border-top:1px solid ${brand.border};background:#FBFAF7">
-<p style="margin:0;font-size:12px;line-height:1.6;color:${brand.mute}"><img src="${siteUrl}/email/flat/shield-16.png" alt="" width="16" height="16" style="vertical-align:-3px;border:0"/>&nbsp; SAMECOR จะไม่ขอรหัสผ่าน รหัส OTP หรือข้อมูลบัตรของคุณทางอีเมล โทรศัพท์ หรือ LINE</p>
+<p style="margin:0;font-size:12px;line-height:1.6;color:${brand.mute}"><img src="${siteUrl}/email/flat/shield-16.png" alt="" width="16" height="16" style="vertical-align:-3px;border:0"/>&nbsp; ${en ? "SAMECOR will never ask for your password, OTP or card details by email, phone or LINE" : "SAMECOR จะไม่ขอรหัสผ่าน รหัส OTP หรือข้อมูลบัตรของคุณทางอีเมล โทรศัพท์ หรือ LINE"}</p>
 </td></tr>
 </table>
 <table role="presentation" width="560" cellspacing="0" cellpadding="0" style="max-width:560px;width:100%">
@@ -514,33 +524,42 @@ export function renderAuthEmailTemplate(kind: "recovery" | "confirmation" | "mag
   const copy = {
     recovery: {
       subject: "ตั้งรหัสผ่านใหม่สำหรับบัญชี SAMECOR",
-      badge: "ความปลอดภัยบัญชี", icon: "key", title: "ตั้งรหัสผ่านใหม่",
+      badge: "ความปลอดภัยบัญชี",
+      icon: "key",
+      title: "ตั้งรหัสผ่านใหม่",
       preview: "ลิงก์สำหรับตั้งรหัสผ่านใหม่ ใช้ได้ภายใน 1 ชั่วโมง",
       lead: "เราได้รับคำขอตั้งรหัสผ่านใหม่สำหรับบัญชี SAMECOR ที่ใช้อีเมล",
       tail: "กดปุ่มด้านล่างเพื่อตั้งรหัสผ่านใหม่",
-      cta: "ตั้งรหัสผ่านใหม่", type: "recovery",
+      cta: "ตั้งรหัสผ่านใหม่",
+      type: "recovery",
       noteTitle: "ไม่ได้เป็นคนขอใช่ไหม?",
       note: "ไม่ต้องทำอะไร รหัสผ่านเดิมของคุณยังใช้ได้ตามปกติ ลิงก์นี้ใช้ได้ครั้งเดียวและหมดอายุภายใน 1 ชั่วโมง",
       reason: "อีเมลนี้ส่งถึง {{ .Email }} เพราะมีคำขอตั้งรหัสผ่านใหม่บน SAMECOR",
     },
     confirmation: {
       subject: "ยืนยันอีเมลเพื่อเริ่มใช้ SAMECOR",
-      badge: "ยินดีต้อนรับ", icon: "welcome", title: "ยืนยันอีเมลของคุณ",
+      badge: "ยินดีต้อนรับ",
+      icon: "welcome",
+      title: "ยืนยันอีเมลของคุณ",
       preview: "อีกขั้นเดียว แล้วเริ่มลงผลงานบน SAMECOR ได้เลย",
       lead: "ยินดีต้อนรับสู่ SAMECOR พื้นที่ให้ผลงานของคุณถูกค้นพบ กดยืนยันอีเมล",
       tail: "แล้วเริ่มลงผลงานและเชื่อมต่อกับครีเอเตอร์ได้เลย",
-      cta: "ยืนยันอีเมล", type: "email",
+      cta: "ยืนยันอีเมล",
+      type: "email",
       noteTitle: "ไม่ได้สมัคร SAMECOR ใช่ไหม?",
       note: "ไม่ต้องทำอะไร ถ้าไม่กดยืนยัน บัญชีนี้จะไม่ถูกเปิดใช้ ลิงก์ใช้ได้ครั้งเดียวและหมดอายุภายใน 1 ชั่วโมง",
       reason: "อีเมลนี้ส่งถึง {{ .Email }} เพราะมีการสมัครบัญชี SAMECOR ด้วยอีเมลนี้",
     },
     magic_link: {
       subject: "ลิงก์เข้าสู่ระบบ SAMECOR",
-      badge: "เข้าสู่ระบบ", icon: "mail", title: "เข้าสู่ระบบ SAMECOR",
+      badge: "เข้าสู่ระบบ",
+      icon: "mail",
+      title: "เข้าสู่ระบบ SAMECOR",
       preview: "กดลิงก์เพื่อเข้าสู่ระบบ ไม่ต้องใช้รหัสผ่าน",
       lead: "กดปุ่มด้านล่างเพื่อเข้าสู่ระบบบัญชี",
       tail: "โดยไม่ต้องใช้รหัสผ่าน",
-      cta: "เข้าสู่ระบบ", type: "magiclink",
+      cta: "เข้าสู่ระบบ",
+      type: "magiclink",
       noteTitle: "ไม่ได้ขอลิงก์นี้ใช่ไหม?",
       note: "ไม่ต้องทำอะไร และอย่าส่งต่อลิงก์นี้ให้ใคร ลิงก์ใช้ได้ครั้งเดียวและหมดอายุภายใน 1 ชั่วโมง",
       reason: "อีเมลนี้ส่งถึง {{ .Email }} เพราะมีคำขอเข้าสู่ระบบ SAMECOR",
