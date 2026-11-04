@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { CalendarX2 } from "lucide-react";
+import { CalendarCheck, CalendarX2, Check, ChevronDown, Clock, Compass, Flame, Hourglass, type LucideIcon } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import SeoHead from "@/components/SeoHead";
 import SearchBar from "@/components/SearchBar";
@@ -22,6 +22,7 @@ import MobileFilterButton from "@/components/feed/MobileFilterButton";
 import MobileSearchScreen from "@/components/feed/MobileSearchScreen";
 import { OPEN_PHONE_SEARCH_EVENT } from "@/lib/phoneSearch";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { isBetaFeedbackEnabled } from "@/lib/aplus1Launch";
 import { EVENT_CATEGORIES, categoryLabel, eventTiming, type EventCategory } from "@/lib/exhibitionEvents";
@@ -39,12 +40,19 @@ function matchesSearch(e: { title: string; location_name: string | null; organiz
   return [e.title, e.location_name, e.organizer_name].some((v) => v?.toLowerCase().includes(needle));
 }
 
+/** One dropdown (like Creators' Discovery menu): what's on now, three sorts of it, or ended events. */
+type ListView = "now" | "ending" | "newest" | "popular" | "done";
+const LIST_VIEWS: ListView[] = ["now", "ending", "newest", "popular", "done"];
+const VIEW_LABEL = { now: "now", ending: "sortEnding", newest: "sortNewest", popular: "sortPopular", done: "done" } as const;
+const VIEW_ICON: Record<ListView, LucideIcon> = { now: Compass, ending: Hourglass, newest: Clock, popular: Flame, done: CalendarCheck };
+
 export default function ExhibitionPage() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { data = [], isLoading, isError, refetch } = usePublishedEvents();
   const [category, setCategory] = useState<EventCategory | "all">("all");
-  const [when, setWhen] = useState<"now" | "done">("now");
+  const [view, setView] = useState<ListView>("now");
+  const when: "now" | "done" = view === "done" ? "done" : "now";
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
   const [searchScreenOpen, setSearchScreenOpen] = useState(false);
@@ -71,6 +79,19 @@ export default function ExhibitionPage() {
 
   const rowIds = useMemo(() => rows.map((e) => e.id), [rows]);
   const { data: stats } = useEventStats(rowIds);
+
+  const sortedRows = useMemo(() => {
+    if (view === "now") return rows;
+    const end = (e: (typeof rows)[number]) => e.ends_on ?? e.starts_on ?? "9999-12-31";
+    return [...rows].sort((a, b) => {
+      if (view === "ending") return end(a).localeCompare(end(b));
+      if (view === "done") return end(b).localeCompare(end(a)); // most recently ended first
+      if (view === "newest") return (b.starts_on ?? "").localeCompare(a.starts_on ?? "");
+      const sa = stats?.[a.id];
+      const sb = stats?.[b.id];
+      return (sb?.interest_count ?? 0) - (sa?.interest_count ?? 0) || (sb?.view_count ?? 0) - (sa?.view_count ?? 0);
+    });
+  }, [rows, view, stats]);
   const { data: myInterests } = useMyEventInterests(rowIds);
 
   const scrolled = useFeedHomeNavStore((st) => st.scrolled);
@@ -98,32 +119,37 @@ export default function ExhibitionPage() {
       compact={compact}
     />
   );
-  const timingSwitch = (
-    <div className="flex shrink-0 rounded-full bg-muted/60 p-0.5" role="group" aria-label={t("timing")}>
-      {(
-        [
-          ["now", t("now")],
-          ["done", t("done")],
-        ] as const
-      ).map(([id, label]) => (
-        <button
-          key={id}
-          type="button"
-          aria-pressed={when === id}
-          onClick={() => setWhen(id)}
-          className={cn(
-            "min-h-8 rounded-full px-3 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground",
-            when === id ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
-          )}
+  const ViewIcon = VIEW_ICON[view];
+  const viewMenu = (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="outline"
+          className="h-9 shrink-0 gap-1.5 rounded-full border-border/60 bg-background/80 px-3.5 backdrop-blur-md"
+          aria-label={`${t("sortBy")}: ${t(VIEW_LABEL[view])}`}
         >
-          {label}
-        </button>
-      ))}
-    </div>
+          <ViewIcon className="h-3.5 w-3.5" aria-hidden />
+          <span className="text-sm font-medium">{t(VIEW_LABEL[view])}</span>
+          <ChevronDown className="h-3.5 w-3.5 opacity-60" aria-hidden />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-48 rounded-xl">
+        {LIST_VIEWS.map((v) => {
+          const I = VIEW_ICON[v];
+          return (
+            <DropdownMenuItem key={v} onClick={() => setView(v)} className="flex cursor-pointer items-center gap-2">
+              <I className="h-4 w-4 opacity-70" aria-hidden />
+              <span className="flex-1 text-sm">{t(VIEW_LABEL[v])}</span>
+              {v === view ? <Check className="h-4 w-4 text-primary" aria-hidden /> : null}
+            </DropdownMenuItem>
+          );
+        })}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
   const filters = (
     <div className="flex min-w-0 items-center gap-3 lg:justify-center lg:gap-6">
-      {timingSwitch}
+      {viewMenu}
       <div className="min-w-0 flex-1 lg:flex-none">
         <FilterChips
           align={isMobile ? "start" : "center"}
@@ -201,7 +227,7 @@ export default function ExhibitionPage() {
           </Link>
           {showBetaFeedback ? <FeedbackHeaderPill className="ml-auto" /> : null}
           <MobileFilterButton
-            count={(when === "done" ? 1 : 0) + (category !== "all" ? 1 : 0)}
+            count={(view !== "now" ? 1 : 0) + (category !== "all" ? 1 : 0)}
             onClick={() => setFilterOpen(true)}
             className={cn(!showBetaFeedback && "ml-auto")}
           />
@@ -227,7 +253,24 @@ export default function ExhibitionPage() {
             <div className="mt-4 space-y-5">
               <div className="space-y-2">
                 <p className="text-xs font-medium text-muted-foreground">{t("timing")}</p>
-                <div className="flex">{timingSwitch}</div>
+                <div className="flex flex-wrap gap-2">
+                  {LIST_VIEWS.map((v) => (
+                    <button
+                      key={v}
+                      type="button"
+                      aria-pressed={view === v}
+                      onClick={() => setView(v)}
+                      className={cn(
+                        "min-h-9 rounded-full border px-4 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground",
+                        view === v
+                          ? "border-foreground bg-foreground text-background"
+                          : "border-border text-foreground hover:border-foreground/50",
+                      )}
+                    >
+                      {t(VIEW_LABEL[v])}
+                    </button>
+                  ))}
+                </div>
               </div>
               <div className="space-y-2">
                 <p className="text-xs font-medium text-muted-foreground">{t("eventType")}</p>
@@ -301,7 +344,7 @@ export default function ExhibitionPage() {
         />
       ) : (
         <div data-event-list>
-          {rows.map((e) => (
+          {sortedRows.map((e) => (
             <EventListCard key={e.id} event={e} stats={stats?.[e.id]} interested={myInterests?.has(e.id)} />
           ))}
         </div>

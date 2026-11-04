@@ -52,5 +52,7 @@ export const LIST = {
   sortNewest: { th: "เพิ่งเปิด", en: "Just opened", zh: "最新开幕" },
   sortPopular: { th: "ยอดนิยม", en: "Most popular", zh: "最受欢迎" },
   sortCategory: { th: "ตามหมวด", en: "By category", zh: "按类别" },
+  sortRecommended: { th: "แนะนำ", en: "Recommended", zh: "推荐" },
+  sortJustEnded: { th: "เพิ่งจบ", en: "Recently ended", zh: "最近结束" },
   allCategories: { th: "ทุกหมวด", en: "All categories", zh: "全部类别" },
 } satisfies Dict;
