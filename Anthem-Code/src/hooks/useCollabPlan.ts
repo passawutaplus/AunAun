@@ -392,7 +392,7 @@ export function useCollabPlan(target: PlanTarget, enabled = true) {
       throw new Error("ขั้นนี้ล็อกแล้ว — ต้องขออนุมัติแก้ไขก่อน");
     }
     if (dirty) {
-      throw new Error("บันทึกแผนก่อน แล้วค่อยติ๊กยืนยัน");
+      throw new Error("บันทึกแผนก่อน แล้วค่อยเลือกยืนยัน");
     }
     const step = doc.currentStep;
     const map = { ...(doc.acks[step] ?? {}) };
@@ -431,7 +431,7 @@ export function useCollabPlan(target: PlanTarget, enabled = true) {
   const advanceStep = useCallback(async () => {
     if (!conversationId || !user?.id) return;
     if (doc.status !== "step_locked" || !stepAcksComplete(doc.acks, doc.currentStep, memberIds)) {
-      throw new Error("ต้องให้สมาชิกทุกคนติ๊กยืนยันก่อน");
+      throw new Error("ต้องให้สมาชิกทุกคนเลือกยืนยันก่อน");
     }
     const next = nextStepId(doc.currentStep, (draft ?? doc.payload).quick);
     if (!next) return;
@@ -461,7 +461,7 @@ export function useCollabPlan(target: PlanTarget, enabled = true) {
   /** Dev/demo: skip ack requirement and go to the next pipeline step. */
   const advanceStepDemo = useCallback(async () => {
     if (!collabPlanDemoShortcutsEnabled()) {
-      throw new Error("ต้องให้สมาชิกทุกคนติ๊กยืนยันก่อนไปขั้นถัดไป");
+      throw new Error("ต้องให้สมาชิกทุกคนเลือกยืนยันก่อนไปขั้นถัดไป");
     }
     if (!conversationId || !user?.id) return;
     if (doc.status === "change_pending") {

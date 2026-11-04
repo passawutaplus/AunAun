@@ -174,7 +174,7 @@ export function AdminKycReviewChecklist({
             Checklist ก่อนตัดสินใจ
           </p>
           <p className="text-[11px] text-muted-foreground mt-0.5">
-            ติ๊กครบ {total} ข้อก่อนอนุมัติ · ตอนนี้ {done}/{total}
+            เลือกครบ {total} ข้อก่อนอนุมัติ · ตอนนี้ {done}/{total}
             {allPassed ? " · พร้อมอนุมัติ" : ""}
           </p>
         </div>
@@ -186,7 +186,7 @@ export function AdminKycReviewChecklist({
           ) : null}
           {onMarkAll ? (
             <Button type="button" size="sm" variant="outline" className="h-7 text-xs" onClick={onMarkAll}>
-              ติ๊กทั้งหมด
+              เลือกทั้งหมด
             </Button>
           ) : null}
         </div>

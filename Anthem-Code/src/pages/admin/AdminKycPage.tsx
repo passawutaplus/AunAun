@@ -450,7 +450,7 @@ export default function AdminKycPage() {
                   <span>
                     <span className="text-sm font-medium">จะปฏิเสธคำขอนี้</span>
                     <span className="block text-[11px] text-muted-foreground mt-0.5">
-                      ติ๊กก่อน แล้วเลือกเหตุผลได้หลายข้อ จึงกดปฏิเสธได้
+                      เลือกก่อน แล้วเลือกเหตุผลได้หลายข้อ จึงกดปฏิเสธได้
                     </span>
                   </span>
                 </label>
@@ -522,7 +522,7 @@ export default function AdminKycPage() {
               onClick={() => {
                 if (!reviewItem) return;
                 if (!rejectIntent) {
-                  toast.error("ติ๊ก “จะปฏิเสธคำขอนี้” ก่อน");
+                  toast.error("เลือก “จะปฏิเสธคำขอนี้” ก่อน");
                   return;
                 }
                 const reasons = KYC_REJECT_REASONS.filter((r) => rejectReasons.includes(r.code));
@@ -568,11 +568,11 @@ export default function AdminKycPage() {
               onClick={() => {
                 if (!reviewItem) return;
                 if (rejectIntent) {
-                  toast.error("เอาติ๊กปฏิเสธออกก่อนถ้าจะอนุมัติ");
+                  toast.error("ยกเลิกการเลือกปฏิเสธก่อนถ้าจะอนุมัติ");
                   return;
                 }
                 if (!allKycReviewChecksPassed(reviewChecks)) {
-                  toast.error("ติ๊ก checklist ให้ครบ 8 ข้อก่อนอนุมัติ");
+                  toast.error("เลือก checklist ให้ครบ 8 ข้อก่อนอนุมัติ");
                   return;
                 }
                 approve.mutate(

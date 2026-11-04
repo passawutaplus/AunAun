@@ -330,7 +330,7 @@ export const FEATURE_SECTIONS: FeatureSection[] = [
       "สร้างผลงานใหม่",
       "อัปโหลด gallery, เลือก tools, ใส่ license",
       "ลอง AI assist (ถ้ามี)",
-      "ติ๊ก attestation แล้ว publish",
+      "เลือก attestation แล้ว publish",
     ],
     uxCriteria: [
       "Editor ไม่ overwhelming บน mobile",
@@ -830,7 +830,7 @@ export const MODERATED_TASKS: ModeratedTask[] = [
     steps: [
       "ไป /portfolio/new",
       "กรอกข้อมูล + อัปโหลดรูป",
-      "ติ๊ก attestation แล้ว publish",
+      "เลือก attestation แล้ว publish",
     ],
     success: "เผยแพร่ได้โดยเข้าใจข้อกำหนดลิขสิทธิ์",
     interviewQuestions: [
