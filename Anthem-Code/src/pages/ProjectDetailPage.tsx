@@ -600,7 +600,7 @@ const ProjectDetailPage = ({ overlay = false }: { overlay?: boolean } = {}) => {
           <div
             className={cn(
               "hidden lg:block lg:col-start-2 lg:row-span-2 lg:row-start-1",
-              overlay && "lg:col-start-3 lg:justify-self-center",
+              overlay && "lg:col-start-3 lg:justify-self-start lg:ml-5",
             )}
             data-overlay-backdrop={overlay || undefined}
           >
