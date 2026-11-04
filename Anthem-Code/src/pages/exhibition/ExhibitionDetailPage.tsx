@@ -14,6 +14,7 @@ import {
   TrainFront,
 } from "lucide-react";
 import SeoHead from "@/components/SeoHead";
+import { GoogleCalendarIcon } from "@/components/icons/GoogleCalendarIcon";
 import SeoBreadcrumb from "@/components/seo/SeoBreadcrumb";
 import { BackButton } from "@/components/ui/BackButton";
 import { HeaderAccountActions } from "@/components/HeaderAccountActions";
@@ -242,8 +243,9 @@ export default function ExhibitionDetailPage() {
                   href={gcalHref}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground underline decoration-foreground/30 underline-offset-4 hover:text-foreground hover:decoration-foreground"
+                  className="mt-1 inline-flex items-center gap-1.5 text-xs text-muted-foreground underline decoration-foreground/30 underline-offset-4 hover:text-foreground hover:decoration-foreground"
                 >
+                  <GoogleCalendarIcon className="h-3.5 w-3.5 shrink-0" />
                   เพิ่มลง Google Calendar <ExternalLink className="h-3 w-3" aria-hidden />
                 </a>
               ) : null}
@@ -329,10 +331,13 @@ export default function ExhibitionDetailPage() {
                   href={event.website_url}
                   target="_blank"
                   rel="noopener noreferrer nofollow"
-                  className="inline-flex items-center gap-1 underline decoration-foreground/30 underline-offset-4 hover:decoration-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground"
+                  className="group inline-flex items-center gap-1 underline-offset-4 hover:underline focus-visible:underline focus-visible:outline-none"
                 >
                   {event.organizer_name ?? "เว็บไซต์ผู้จัด"}
-                  <ArrowUpRight className="h-4 w-4 shrink-0" aria-hidden />
+                  <ArrowUpRight
+                    className="h-4 w-4 shrink-0 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-focus-visible:-translate-y-0.5 group-focus-visible:translate-x-0.5 motion-reduce:transition-none"
+                    aria-hidden
+                  />
                 </a>
               ) : (
                 (event.organizer_name ?? (event.origin === "community" ? "ผู้จัดงาน" : NOT_SPECIFIED))

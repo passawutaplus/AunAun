@@ -1,7 +1,8 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Bookmark, CalendarPlus, ExternalLink, Navigation, TrainFront, Ticket } from "lucide-react";
+import { Bookmark, ExternalLink, Navigation, TrainFront, Ticket } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { GoogleCalendarIcon } from "@/components/icons/GoogleCalendarIcon";
 import { useAuth } from "@/hooks/useAuth";
 import { useMyEventInterests, useToggleEventInterest } from "@/hooks/useExhibitionEvents";
 import { useSetAllVenuesInterest } from "@/hooks/useEventVenues";
@@ -227,7 +228,7 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
                             </a>
                             {gcal ? (
                               <a href={gcal} target="_blank" rel="noopener noreferrer" className={linkCls}>
-                                <CalendarPlus className="h-3.5 w-3.5" aria-hidden /> Google Calendar
+                                <GoogleCalendarIcon className="h-3.5 w-3.5" /> Google Calendar
                               </a>
                             ) : null}
                             {v.source_url ? (

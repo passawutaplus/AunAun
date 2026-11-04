@@ -244,12 +244,9 @@ export function EventRelatedWorks({ categories, className }: { categories: strin
   if (!works.length) return null;
   return (
     <section aria-labelledby="related-works-heading" className={className}>
-      <div className="flex items-baseline justify-between gap-3">
-        <h2 id="related-works-heading" className="font-display text-2xl font-semibold text-foreground">
-          Works Like This on SAMECOR
-        </h2>
-        <span className="hidden text-sm text-muted-foreground sm:inline">{categories.join(" · ")}</span>
-      </div>
+      <h2 id="related-works-heading" className="font-display text-2xl font-semibold text-foreground">
+        Works Like This on SAMECOR
+      </h2>
       <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         {works.map((w) => (
           <Link key={w.id} to={`/showcase/${w.id}`} className="group block min-w-0 focus-visible:outline-none">
