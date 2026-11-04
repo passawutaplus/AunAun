@@ -23,6 +23,7 @@ import {
   CheckCircle2,
   FileText,
   Pencil,
+  Trash2,
 } from "lucide-react";
 import SeoHead from "@/components/SeoHead";
 import InviteProfilePreview from "@/components/invite/InviteProfilePreview";
@@ -792,7 +793,10 @@ function InviteForm({
                             <Button
                               type="button"
                               variant="ghost"
-                              size="sm"
+                              size="icon"
+                              className="h-9 w-9 text-muted-foreground hover:text-destructive"
+                              aria-label={`${t.remove} Project ${i + 1}`}
+                              title={t.remove}
                               onClick={() => {
                                 p.media.forEach(
                                   (m) =>
@@ -808,7 +812,7 @@ function InviteForm({
                                 }));
                               }}
                             >
-                              {t.remove}
+                              <Trash2 className="h-4 w-4" aria-hidden />
                             </Button>
                           ) : null}
                         </div>
