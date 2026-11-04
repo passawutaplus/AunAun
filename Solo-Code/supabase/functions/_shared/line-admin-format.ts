@@ -137,8 +137,8 @@ function eventDates(e: EventInfo): string {
 
 /** Single line, trimmed, with an ellipsis; strips control characters and collapses whitespace. */
 export function clip(text: string | null | undefined, max: number): string {
-  // eslint-disable-next-line no-control-regex
   const flat = (text ?? "")
+    // eslint-disable-next-line no-control-regex
     .replace(/[\u0000-\u001f\u007f]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
