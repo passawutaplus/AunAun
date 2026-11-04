@@ -61,6 +61,7 @@ export function useEventVenues(parentId: string | null | undefined) {
       return ((data ?? []) as EventVenue[]).map((v) => ({
         ...v,
         opening_hours: Array.isArray(v.opening_hours) ? v.opening_hours : [],
+        gallery_urls: Array.isArray(v.gallery_urls) ? v.gallery_urls : [],
       }));
     },
   });

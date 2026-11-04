@@ -21,6 +21,7 @@ import {
 import { cn } from "@/lib/utils";
 
 const VenueMap = lazy(() => import("./VenueMap"));
+const ImageLightbox = lazy(() => import("@/components/project/ImageLightbox"));
 
 type Parent = { id: string; title: string; starts_on: string | null; ends_on: string | null };
 
@@ -58,6 +59,7 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
   const [activeId, setActiveId] = useState<string | null>(null);
   // The whole venues block (map + list) folds away; "ดูเส้นทาง" (#venue-map) always opens it.
   const [mapOpen, setMapOpen] = useState(true);
+  const [photos, setPhotos] = useState<{ images: string[]; index: number; title: string } | null>(null);
   // "My route": venues ticked to visit, kept in this browser per event.
   const routeKey = `venue-route:${parent.id}`;
   const [picked, setPicked] = useState<Set<string>>(() => {
@@ -359,6 +361,26 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
                               </a>
                             ) : null}
                           </div>
+                          {v.gallery_urls.length ? (
+                            <div className="grid grid-cols-3 gap-2 pt-2">
+                              {v.gallery_urls.slice(0, 3).map((url, i) => (
+                                <button
+                                  key={url}
+                                  type="button"
+                                  onClick={() => setPhotos({ images: v.gallery_urls, index: i, title: v.title })}
+                                  className="relative aspect-square overflow-hidden rounded-md bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground"
+                                  aria-label={`ดูรูป ${i + 1} ของ ${v.title}`}
+                                >
+                                  <img src={url} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-300 hover:scale-105" />
+                                  {i === 2 && v.gallery_urls.length > 3 ? (
+                                    <span className="absolute inset-0 flex items-center justify-center bg-black/55 text-sm font-semibold text-white">
+                                      +{v.gallery_urls.length - 3}
+                                    </span>
+                                  ) : null}
+                                </button>
+                              ))}
+                            </div>
+                          ) : null}
                         </div>
                       ) : null}
                     </li>
@@ -369,6 +391,18 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
           ))}
         </div>
       </div>
+      ) : null}
+      {photos ? (
+        <Suspense fallback={null}>
+          <ImageLightbox
+            images={photos.images}
+            index={photos.index}
+            onIndexChange={(index) => setPhotos((p) => (p ? { ...p, index } : p))}
+            alt={photos.title}
+            open
+            onClose={() => setPhotos(null)}
+          />
+        </Suspense>
       ) : null}
     </section>
   );

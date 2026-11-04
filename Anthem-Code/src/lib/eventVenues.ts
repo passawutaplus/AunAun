@@ -26,11 +26,13 @@ export type EventVenue = {
   source_url: string | null;
   website_url: string | null;
   description: string;
+  /** Team-uploaded photos of the venue / the work shown there (first 3 show on the event page). */
+  gallery_urls: string[];
   interest_count: number;
 };
 
 export const VENUE_SELECT =
-  "id, parent_id, sort_order, title, name_en, area, address, opening_hours, hours_note, closed_note, admission_note, transit_note, date_note, lat, lng, coords_approx, is_special, starts_on, ends_on, fee_type, source_url, website_url, description, interest_count";
+  "id, parent_id, sort_order, title, name_en, area, address, opening_hours, hours_note, closed_note, admission_note, transit_note, date_note, lat, lng, coords_approx, is_special, starts_on, ends_on, fee_type, source_url, website_url, description, gallery_urls, interest_count";
 
 /** What the team edits for one venue; sent as `_data` to admin_event_venue_save. */
 export type VenueDraft = Omit<EventVenue, "id" | "parent_id" | "sort_order" | "interest_count">;
@@ -57,6 +59,7 @@ export function emptyVenueDraft(parent?: { starts_on: string | null; ends_on: st
     source_url: null,
     website_url: null,
     description: "",
+    gallery_urls: [],
   };
 }
 
