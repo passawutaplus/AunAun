@@ -101,7 +101,7 @@ SAMECOR เป็น Creative Community สำหรับแสดงผลง�
 หากสะดวก เราอยากขอข้อมูลสั้น ๆ เพื่อเตรียมโปรไฟล์ให้:
 1. ชื่อ/ชื่อศิลปินและสาขาที่ทำงาน
 2. ข้อความแนะนำตัวสั้น ๆ
-3. ผลงาน 1–2 โปรเจกต์ พร้อมภาพตามสะดวก
+3. ผลงาน 1–3 โปรเจกต์ พร้อมภาพตามสะดวก
 4. เว็บไซต์หรือช่องทางติดต่อที่ต้องการแสดง
 
 คุณสามารถตอบกลับอีเมลนี้ กรอกแบบฟอร์ม ${link} หรือสมัครและลงผลงานเองที่ https://samecor.com ได้เลยครับ
@@ -124,7 +124,7 @@ SAMECOR is a new creative community from Thailand where artists and designers ca
 With your permission, we'd love to prepare a simple profile using:
 1. Your artist name and creative discipline
 2. A short introduction
-3. 1–2 projects with images of your choice
+3. 1–3 projects with images of your choice
 4. Website or preferred social links
 
 You can reply to this email, use our short form at ${link}, or sign up and upload your work yourself at https://samecor.com.
@@ -141,7 +141,7 @@ Passawut Saelore (Aun) · Founder, SAMECOR`;
 
 SAMECOR เป็นพื้นที่ให้ศิลปินและนักออกแบบโชว์ผลงาน เชื่อมต่อผู้คน และค้นพบโอกาสผ่านกิจกรรมทั้งออนไลน์และออนไซต์ — 1 Profile. 100+ Opportunities.
 
-หากสะดวก เราอยากขอข้อมูลแนะนำตัวสั้น ๆ และผลงาน 1–2 โปรเจกต์ พร้อมภาพที่คุณเลือก เพื่อจัดทำ Draft Profile ให้โดยไม่มีค่าใช้จ่ายและส่งให้คุณอนุมัติก่อนเผยแพร่ครับ
+หากสะดวก เราอยากขอข้อมูลแนะนำตัวสั้น ๆ และผลงาน 1–3 โปรเจกต์ พร้อมภาพที่คุณเลือก เพื่อจัดทำ Draft Profile ให้โดยไม่มีค่าใช้จ่ายและส่งให้คุณอนุมัติก่อนเผยแพร่ครับ
 
 ตอบกลับแชทนี้ได้เลย หรือกรอกฟอร์ม: ${link} หรือสมัครเองที่ https://samecor.com
 เรากำลังพัฒนาแอปให้เข้าถึง SAMECOR ได้สะดวกขึ้นด้วยครับ ขอบคุณที่พิจารณานะครับ 🙏
@@ -152,7 +152,7 @@ I'm Passawut Saelore (Aun), Founder of SAMECOR, a new creative community from Th
 
 SAMECOR helps artists and designers showcase their work, connect with people, and discover opportunities online and through real-world creative events — 1 Profile. 100+ Opportunities.
 
-With your permission, we'd love to prepare a simple profile with a short bio and 1–2 projects featuring images of your choice. It's free, and nothing goes public before your approval.
+With your permission, we'd love to prepare a simple profile with a short bio and 1–3 projects featuring images of your choice. It's free, and nothing goes public before your approval.
 
 You can reply here, use ${link}, or sign up and upload your own work at https://samecor.com.
 We're also developing a mobile app to make it easier to access SAMECOR. Thanks for considering the invitation!

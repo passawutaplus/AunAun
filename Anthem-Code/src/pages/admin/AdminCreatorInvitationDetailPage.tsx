@@ -3,10 +3,18 @@ import { adminInviteBase } from "@/lib/creatorInviteAdminDemo";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { format } from "date-fns";
 import { th } from "date-fns/locale";
-import { Copy, ExternalLink, Loader2 } from "lucide-react";
+import { Copy, ExternalLink, Loader2, MoreHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import StatusPill from "@/components/admin/StatusPill";
 import InviteProfilePreview from "@/components/invite/InviteProfilePreview";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -355,7 +363,7 @@ export default function AdminCreatorInvitationDetailPage() {
   const shown = draft ?? submission;
 
   return (
-    <div className="space-y-5">
+    <div className="mx-auto max-w-5xl space-y-6">
       <p className="text-xs text-admin-muted">
         <Link to={adminInviteBase()} className="hover:underline">
           Creator invitations
@@ -374,7 +382,7 @@ export default function AdminCreatorInvitationDetailPage() {
         {inv.unsubscribed_at ? (
           <StatusPill status="Unsubscribed" tone="muted" />
         ) : null}
-        <div className="ml-auto flex flex-wrap gap-2">
+        <div className="ml-auto flex items-center gap-2">
           <Button
             size="sm"
             variant="outline"
@@ -386,33 +394,109 @@ export default function AdminCreatorInvitationDetailPage() {
           >
             <Copy className="mr-1.5 h-3.5 w-3.5" aria-hidden /> คัดลอกลิงก์
           </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={action.isPending}
-            onClick={() =>
-              void run({ action: "extend", days: 14 }, "ต่ออายุ 14 วันแล้ว")
-            }
-          >
-            ต่ออายุ 14 วัน
-          </Button>
-          {!inv.revoked_at ? (
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={action.isPending}
-              onClick={() => setConfirm("revoke")}
-            >
-              ยกเลิกลิงก์
-            </Button>
-          ) : null}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-9 px-0"
+                aria-label="จัดการคำเชิญ"
+              >
+                <MoreHorizontal className="h-4 w-4" aria-hidden />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-[13rem]">
+              <DropdownMenuItem
+                disabled={action.isPending}
+                onSelect={() =>
+                  void run({ action: "extend", days: 14 }, "ต่ออายุ 14 วันแล้ว")
+                }
+              >
+                ต่ออายุ 14 วัน
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={action.isPending}
+                onSelect={() =>
+                  void run({ action: "regenerate_link" }).then((r) =>
+                    setLinks((l) => ({
+                      ...l,
+                      invite_link: (r as { invite_link: string }).invite_link,
+                    })),
+                  )
+                }
+              >
+                สร้างลิงก์ใหม่ (ลิงก์เดิมใช้ไม่ได้)
+              </DropdownMenuItem>
+              {!inv.revoked_at ? (
+                <DropdownMenuItem
+                  disabled={action.isPending}
+                  onSelect={() => setConfirm("revoke")}
+                >
+                  ยกเลิกลิงก์
+                </DropdownMenuItem>
+              ) : null}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive"
+                onSelect={() => setConfirm("delete")}
+              >
+                ลบคำเชิญและข้อมูลทั้งหมด
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <div className="space-y-5">
-          <Card title="ขั้นถัดไป">{nextStep}</Card>
+      {/* Progress at a glance */}
+      <ol
+        className="grid grid-cols-3 gap-x-2 gap-y-3 rounded-sm border border-admin-border p-3 sm:grid-cols-5 lg:grid-cols-9"
+        aria-label="สถานะ"
+      >
+        {INVITE_TIMELINE.map(({ key, label }) => {
+          const v = inv[key] as string | null | undefined;
+          return (
+            <li key={key} className="flex min-w-0 flex-col gap-1">
+              <span
+                className={cn(
+                  "h-1 rounded-full",
+                  v ? "bg-admin-accent" : "bg-admin-border",
+                )}
+                aria-hidden
+              />
+              <span
+                className={cn(
+                  "truncate text-[11px] font-medium",
+                  v ? "text-admin-fg" : "text-admin-muted",
+                )}
+              >
+                {label.split(/ ·| \(| →/)[0]}
+              </span>
+              <span className="text-[10px] text-admin-muted">
+                {v ? when(v, "d MMM HH:mm") : "—"}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
 
+      <Card title="ขั้นถัดไป">{nextStep}</Card>
+
+      <Tabs defaultValue="data" className="w-full">
+        <TabsList className="h-auto flex-wrap justify-start gap-1 rounded-sm border border-admin-border bg-admin-surface p-1">
+          <TabsTrigger value="data" className="rounded-sm text-xs">
+            ข้อมูลที่ส่ง
+          </TabsTrigger>
+          <TabsTrigger value="draft" className="rounded-sm text-xs">
+            Draft & พรีวิว
+          </TabsTrigger>
+          <TabsTrigger value="send" className="rounded-sm text-xs">
+            ลิงก์ & ข้อความ
+          </TabsTrigger>
+          <TabsTrigger value="history" className="rounded-sm text-xs">
+            ประวัติ
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="data" className="mt-4 space-y-5">
           <Card title="ข้อมูลที่ส่ง">
             {submission ? (
               <>
@@ -460,7 +544,15 @@ export default function AdminCreatorInvitationDetailPage() {
                       }
                     />
                   ) : null}
-                  <Row k="ติดต่อทาง" v={[submission.contact_pref || "—", submission.contact_handle].filter(Boolean).join(" · ")} />
+                  <Row
+                    k="ติดต่อทาง"
+                    v={[
+                      submission.contact_pref || "—",
+                      submission.contact_handle,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  />
                   <Row k="Bio" v={submission.about.bio || "—"} />
                 </dl>
                 {submission.projects.map((p, i) => (
@@ -522,8 +614,17 @@ export default function AdminCreatorInvitationDetailPage() {
                         .map((m) => {
                           const u = urls.data?.[m.id];
                           return u ? (
-                            <a key={m.id} href={u} target="_blank" rel="noopener noreferrer">
-                              <img src={u} alt="" className="h-20 w-20 rounded-sm object-cover" />
+                            <a
+                              key={m.id}
+                              href={u}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <img
+                                src={u}
+                                alt=""
+                                className="h-20 w-20 rounded-sm object-cover"
+                              />
                             </a>
                           ) : null;
                         })}
@@ -548,7 +649,8 @@ export default function AdminCreatorInvitationDetailPage() {
               </p>
             )}
           </Card>
-
+        </TabsContent>
+        <TabsContent value="draft" className="mt-4 space-y-5">
           {editable && draft ? (
             <Card title="Draft ที่จะส่งให้ศิลปินตรวจ (แก้ได้)">
               <div className="grid gap-3 sm:grid-cols-2">
@@ -679,7 +781,6 @@ export default function AdminCreatorInvitationDetailPage() {
               </p>
             </Card>
           ) : null}
-
           {shown ? (
             <InviteProfilePreview
               data={shown}
@@ -688,77 +789,8 @@ export default function AdminCreatorInvitationDetailPage() {
               badge={staffDraft ? "Draft · ยังไม่เผยแพร่" : t.pvBadge}
             />
           ) : null}
-
-          <Card title="บันทึกการยินยอม">
-            {data.consents.length ? (
-              <dl className="grid grid-cols-[10rem_1fr] gap-x-3 gap-y-1.5 text-sm">
-                {data.consents.map((c, i) => (
-                  <Row
-                    key={i}
-                    k={
-                      c.kind === "draft_permission"
-                        ? "ทำ Draft ส่วนตัว"
-                        : c.kind === "image_rights"
-                          ? `สิทธิ์ภาพ ${c.scope ?? ""}`
-                          : "อนุมัติเผยแพร่"
-                    }
-                    v={`✓ ${when(c.granted_at, "d MMM yyyy HH:mm:ss")} · ${c.text_version}`}
-                  />
-                ))}
-                <Row
-                  k="ติดตามการเปิดอีเมล"
-                  v="ไม่ได้ขอ (Opened = ศิลปินกดเลือกเส้นทางเอง)"
-                />
-              </dl>
-            ) : (
-              <p className="text-sm text-admin-muted">ยังไม่มี</p>
-            )}
-          </Card>
-        </div>
-
-        <div className="space-y-5">
-          <Card title="สถานะ">
-            <ol className="space-y-2 text-sm">
-              {INVITE_TIMELINE.map(({ key, label }) => {
-                const v = inv[key] as string | null | undefined;
-                return (
-                  <li key={key} className="flex gap-2">
-                    <span
-                      className={cn(
-                        "mt-1.5 h-2 w-2 shrink-0 rounded-full",
-                        v ? "bg-admin-accent" : "bg-admin-border",
-                      )}
-                      aria-hidden
-                    />
-                    <span>
-                      <span
-                        className={
-                          v ? "font-medium text-admin-fg" : "text-admin-muted"
-                        }
-                      >
-                        {label}
-                      </span>
-                      {v ? (
-                        <span className="text-xs text-admin-muted">
-                          {" "}
-                          · {when(v)}
-                          {key === "sent_at" && inv.sent_channel
-                            ? ` · ${inv.sent_channel}`
-                            : ""}
-                        </span>
-                      ) : null}
-                    </span>
-                  </li>
-                );
-              })}
-              {inv.declined_at ? (
-                <li className="text-sm text-admin-muted">
-                  Declined · {when(inv.declined_at)}
-                </li>
-              ) : null}
-            </ol>
-          </Card>
-
+        </TabsContent>
+        <TabsContent value="send" className="mt-4 grid gap-5 md:grid-cols-2">
           <Card title="ลิงก์">
             <dl className="grid grid-cols-[5.5rem_1fr] gap-x-2 gap-y-2 text-xs">
               <Row
@@ -807,24 +839,7 @@ export default function AdminCreatorInvitationDetailPage() {
                 />
               ) : null}
             </dl>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="mt-2 h-7 px-2 text-xs"
-              disabled={action.isPending}
-              onClick={() =>
-                void run({ action: "regenerate_link" }).then((r) =>
-                  setLinks((l) => ({
-                    ...l,
-                    invite_link: (r as { invite_link: string }).invite_link,
-                  })),
-                )
-              }
-            >
-              สร้างลิงก์คำเชิญใหม่ (ลิงก์เดิมใช้ไม่ได้)
-            </Button>
           </Card>
-
           <Card title="ข้อความ Email / DM">
             <div className="mb-2 flex flex-wrap gap-1">
               {(["dm-th", "dm-en", "email-th", "email-en"] as TemplateId[]).map(
@@ -865,7 +880,33 @@ export default function AdminCreatorInvitationDetailPage() {
               การ์ดภาพ 1080×1350 + QR = V1.1
             </p>
           </Card>
-
+        </TabsContent>
+        <TabsContent value="history" className="mt-4 grid gap-5 md:grid-cols-2">
+          <Card title="บันทึกการยินยอม">
+            {data.consents.length ? (
+              <dl className="grid grid-cols-[10rem_1fr] gap-x-3 gap-y-1.5 text-sm">
+                {data.consents.map((c, i) => (
+                  <Row
+                    key={i}
+                    k={
+                      c.kind === "draft_permission"
+                        ? "ทำ Draft ส่วนตัว"
+                        : c.kind === "image_rights"
+                          ? `สิทธิ์ภาพ ${c.scope ?? ""}`
+                          : "อนุมัติเผยแพร่"
+                    }
+                    v={`✓ ${when(c.granted_at, "d MMM yyyy HH:mm:ss")} · ${c.text_version}`}
+                  />
+                ))}
+                <Row
+                  k="ติดตามการเปิดอีเมล"
+                  v="ไม่ได้ขอ (Opened = ศิลปินกดเลือกเส้นทางเอง)"
+                />
+              </dl>
+            ) : (
+              <p className="text-sm text-admin-muted">ยังไม่มี</p>
+            )}
+          </Card>
           <Card title="อีเมลอัตโนมัติ">
             {data.emails.length ? (
               <ul className="space-y-1.5 text-xs">
@@ -889,7 +930,6 @@ export default function AdminCreatorInvitationDetailPage() {
               <p className="text-xs text-admin-muted">ยังไม่มี</p>
             )}
           </Card>
-
           <Card title="Audit log">
             <ul className="max-h-80 space-y-1.5 overflow-auto text-xs">
               {data.events.map((e, i) => (
@@ -917,7 +957,6 @@ export default function AdminCreatorInvitationDetailPage() {
               ))}
             </ul>
           </Card>
-
           {inv.interest_url ? (
             <Card title="ผลงานที่ทำให้สนใจ (ภายใน)">
               <a
@@ -930,17 +969,8 @@ export default function AdminCreatorInvitationDetailPage() {
               </a>
             </Card>
           ) : null}
-
-          <Button
-            size="sm"
-            variant="ghost"
-            className="text-destructive"
-            onClick={() => setConfirm("delete")}
-          >
-            ลบคำเชิญและข้อมูลทั้งหมด
-          </Button>
-        </div>
-      </div>
+        </TabsContent>
+      </Tabs>
 
       <Dialog open={!!confirm} onOpenChange={(o) => !o && setConfirm(null)}>
         <DialogContent className="sm:max-w-md">
