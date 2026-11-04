@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Layers, Search, ShieldCheck, User } from "lucide-react";
+import { ArrowRight, Search, ShieldCheck, User } from "lucide-react";
 import { BrandLogo } from "@/components/brand/BrandLogo";
 import { Button } from "@/components/ui/button";
 import { publicInviteApi, rememberSelfSignup, type PublicInvite } from "@/lib/creatorInvite";
@@ -62,7 +62,7 @@ export default function InviteLanding({ token, t, invite }: { token: string; t: 
           <section className="flex flex-col gap-3" aria-label={t.cardA}>
             <div className="rounded-2xl border border-brand/80 bg-card/80 p-5 backdrop-blur sm:p-6">
               <div className="flex gap-4">
-                <Layers className="mt-0.5 h-7 w-7 shrink-0 text-brand" aria-hidden />
+                <img src="/brand/symbol-red.svg" alt="" width={28} height={28} className="mt-0.5 h-7 w-7 shrink-0" />
                 <div className="min-w-0">
                   <h2 className="text-lg font-semibold text-foreground">{t.cardA}</h2>
                   <p className="mt-1.5 text-sm text-muted-foreground">{t.cardAsub}</p>
