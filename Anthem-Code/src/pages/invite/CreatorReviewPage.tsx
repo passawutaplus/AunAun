@@ -150,6 +150,39 @@ export default function CreatorReviewPage() {
       })
     : null;
 
+  const actions = (
+    <div className="flex flex-col gap-3 sm:flex-row">
+      <Button
+        className="w-full sm:w-auto"
+        disabled={!!busy}
+        onClick={() => void decide("approve")}
+      >
+        {busy === "approve" ? (
+          <Loader2 className="mr-1.5 h-4 w-4 animate-spin" aria-hidden />
+        ) : (
+          <Check className="mr-1.5 h-4 w-4" aria-hidden />
+        )}
+        {t.approve}
+      </Button>
+      <Button
+        variant="outline"
+        className="w-full sm:w-auto"
+        disabled={!!busy}
+        onClick={() => (setNote(""), setDialog("changes"))}
+      >
+        {t.changes}
+      </Button>
+      <Button
+        variant="ghost"
+        className="w-full text-muted-foreground sm:ml-auto sm:w-auto"
+        disabled={!!busy}
+        onClick={() => (setNote(""), setDialog("decline"))}
+      >
+        {t.decline}
+      </Button>
+    </div>
+  );
+
   return (
     <InviteShell lang={l} onLang={setLang} t={t}>
       {seo}
@@ -183,36 +216,7 @@ export default function CreatorReviewPage() {
                 </li>
               ))}
           </ul>
-          <div className="mt-5 flex flex-col gap-3 border-t border-border pt-5 sm:flex-row">
-            <Button
-              className="w-full sm:w-auto"
-              disabled={!!busy}
-              onClick={() => void decide("approve")}
-            >
-              {busy === "approve" ? (
-                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" aria-hidden />
-              ) : (
-                <Check className="mr-1.5 h-4 w-4" aria-hidden />
-              )}
-              {t.approve}
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full sm:w-auto"
-              disabled={!!busy}
-              onClick={() => (setNote(""), setDialog("changes"))}
-            >
-              {t.changes}
-            </Button>
-            <Button
-              variant="ghost"
-              className="w-full text-muted-foreground sm:ml-auto sm:w-auto"
-              disabled={!!busy}
-              onClick={() => (setNote(""), setDialog("decline"))}
-            >
-              {t.decline}
-            </Button>
-          </div>
+          <div className="mt-5 border-t border-border pt-5">{actions}</div>
         </div>
 
         <InviteProfilePreview
@@ -235,6 +239,9 @@ export default function CreatorReviewPage() {
             badge={t.reviewDraftBadge}
           />
         ))}
+        <div className="mt-8 rounded-xl border border-border bg-card p-5">
+          {actions}
+        </div>
       </div>
 
       <Dialog open={!!dialog} onOpenChange={(o) => !o && setDialog(null)}>
