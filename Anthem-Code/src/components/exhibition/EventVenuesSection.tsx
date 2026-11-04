@@ -154,12 +154,12 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
             className="rounded-full"
             aria-expanded={mapOpen}
             aria-controls="venues-body"
+            aria-label={mapOpen ? "ซ่อนแผนที่และรายการสถานที่" : undefined}
+            title={mapOpen ? "ซ่อน" : undefined}
             onClick={() => setMapOpen((o) => !o)}
           >
             <MapIcon className="h-4 w-4" aria-hidden />
-            {mapOpen ? (
-              "ซ่อน"
-            ) : (
+            {mapOpen ? null : (
               <>
                 <span className="sm:hidden">แสดง</span>
                 <span className="hidden sm:inline">ดูแผนที่และ {venues.length} สถานที่</span>
