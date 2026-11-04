@@ -161,3 +161,43 @@ export function useReorderVenues() {
     onError: (err: unknown) => toast.error(mapWriteFlowError(err, "เรียงลำดับไม่สำเร็จ")),
   });
 }
+
+export type VenueRoute = {
+  /** [lng, lat] along streets, or the straight legs when routing is unavailable. */
+  line: [number, number][];
+  meters: number | null;
+  seconds: number | null;
+  /** True when it follows streets (OSRM walking); false = straight-line fallback. */
+  streets: boolean;
+};
+
+/** Walking route through the ticked venues (OSRM foot profile on routing.openstreetmap.de; free, no key). */
+export function useVenueRoute(points: Array<{ lat: number | null; lng: number | null }>) {
+  const stops = points.filter((p): p is { lat: number; lng: number } => p.lat != null && p.lng != null);
+  const coords = stops.map((p) => `${p.lng.toFixed(5)},${p.lat.toFixed(5)}`).join(";");
+  return useQuery({
+    queryKey: ["venue-route", coords],
+    enabled: stops.length >= 2,
+    staleTime: Infinity,
+    retry: false,
+    queryFn: async ({ signal }): Promise<VenueRoute> => {
+      const straight: VenueRoute = { line: stops.map((p) => [p.lng, p.lat]), meters: null, seconds: null, streets: false };
+      try {
+        const res = await fetch(
+          `https://routing.openstreetmap.de/routed-foot/route/v1/foot/${coords}?overview=full&geometries=geojson`,
+          { signal },
+        );
+        if (!res.ok) return straight;
+        const json = (await res.json()) as {
+          code?: string;
+          routes?: Array<{ distance: number; duration: number; geometry: { coordinates: [number, number][] } }>;
+        };
+        const r = json.code === "Ok" ? json.routes?.[0] : undefined;
+        if (!r) return straight;
+        return { line: r.geometry.coordinates, meters: r.distance, seconds: r.duration, streets: true };
+      } catch {
+        return straight;
+      }
+    },
+  });
+}

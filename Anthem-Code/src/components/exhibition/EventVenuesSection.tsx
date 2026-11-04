@@ -1,11 +1,11 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Bookmark, ChevronDown, ExternalLink, Map as MapIcon, Navigation, TrainFront, Ticket } from "lucide-react";
+import { Bookmark, Check, ChevronDown, ExternalLink, Map as MapIcon, Navigation, Route, TrainFront, Ticket, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GoogleCalendarIcon } from "@/components/icons/GoogleCalendarIcon";
 import { useAuth } from "@/hooks/useAuth";
 import { useMyEventInterests, useToggleEventInterest } from "@/hooks/useExhibitionEvents";
-import { useSetAllVenuesInterest } from "@/hooks/useEventVenues";
+import { useSetAllVenuesInterest, useVenueRoute } from "@/hooks/useEventVenues";
 import { googleCalendarLink } from "@/lib/googleCalendarLink";
 import { formatEventDates } from "@/lib/exhibitionEvents";
 import {
@@ -13,6 +13,8 @@ import {
   venueCounts,
   venueMapsUrl,
   venueOpenState,
+  googleMapsRouteUrl,
+  routeSummary,
   type EventVenue,
   type VenueOpenState,
 } from "@/lib/eventVenues";
@@ -56,12 +58,44 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
   const [activeId, setActiveId] = useState<string | null>(null);
   // The whole venues block (map + list) folds away; "ดูเส้นทาง" (#venue-map) always opens it.
   const [mapOpen, setMapOpen] = useState(true);
+  // "My route": venues ticked to visit, kept in this browser per event.
+  const routeKey = `venue-route:${parent.id}`;
+  const [picked, setPicked] = useState<Set<string>>(() => {
+    try {
+      return new Set(JSON.parse(localStorage.getItem(routeKey) ?? "[]") as string[]);
+    } catch {
+      return new Set();
+    }
+  });
+  const togglePick = (id: string) =>
+    setPicked((cur) => {
+      const next = new Set(cur);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      try {
+        localStorage.setItem(routeKey, JSON.stringify([...next]));
+      } catch {
+        /* storage blocked: keep it for this visit */
+      }
+      return next;
+    });
+  const clearPicks = () => {
+    setPicked(new Set());
+    try {
+      localStorage.removeItem(routeKey);
+    } catch {
+      /* ignore */
+    }
+  };
   const rowRefs = useRef(new Map<string, HTMLLIElement>());
   const sectionRef = useRef<HTMLElement>(null);
   const mapRef = useRef<HTMLDivElement>(null);
   const counts = venueCounts(venues);
   const allOn = venues.length > 0 && venues.every((v) => interested.has(v.id));
   const pinned = useMemo(() => groups.flatMap((g) => g.venues), [groups]);
+  const stops = useMemo(() => pinned.filter((v) => picked.has(v.id)), [pinned, picked]);
+  const { data: route, isFetching: routing } = useVenueRoute(stops);
+  const routeUrl = googleMapsRouteUrl(stops);
   const now = new Date();
 
   // /exhibition/<id>#venues or #venue-map (from the featured banner) once the list is here.
@@ -139,6 +173,38 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
       {mapOpen ? allButton("mt-3 sm:hidden") : null}
 
       {mapOpen ? (
+        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-lg bg-muted/40 px-3 py-2.5 text-sm" aria-live="polite">
+          <Route className="h-4 w-4 shrink-0 text-brand" aria-hidden />
+          {stops.length < 2 ? (
+            <span className="text-muted-foreground">ติ๊กสถานที่ที่จะไป ตั้งแต่ 2 ที่ขึ้นไป เพื่อดูเส้นทางเดินบนแผนที่</span>
+          ) : (
+            <>
+              <span className="font-medium text-foreground">
+                เส้นทางของคุณ · {stops.length} ที่
+                <span className="ml-2 font-normal text-muted-foreground">
+                  {routing
+                    ? "กำลังคำนวณเส้นทาง…"
+                    : route?.meters != null && route.seconds != null
+                      ? routeSummary(route.meters, route.seconds)
+                      : "เส้นตรงโดยประมาณ (คำนวณตามถนนไม่ได้)"}
+                </span>
+              </span>
+              <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                {routeUrl ? (
+                  <a href={routeUrl} target="_blank" rel="noopener noreferrer" className={linkCls}>
+                    <Navigation className="h-3.5 w-3.5" aria-hidden /> เปิดเส้นทางใน Google Maps
+                  </a>
+                ) : null}
+                <button type="button" onClick={clearPicks} className={linkCls}>
+                  <X className="h-3.5 w-3.5" aria-hidden /> ล้าง
+                </button>
+              </span>
+            </>
+          )}
+        </div>
+      ) : null}
+
+      {mapOpen ? (
       <div
         id="venues-body"
         className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_25rem] lg:gap-8 xl:grid-cols-[minmax(0,1fr)_27rem]"
@@ -150,6 +216,8 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
               interested={interested}
               activeId={activeId}
               onSelect={selectFromMap}
+              picked={picked}
+              route={stops.length >= 2 ? route : null}
               className="h-64 sm:h-80 lg:h-[34rem]"
             />
           </Suspense>
@@ -193,6 +261,19 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
                     >
                       {active ? <span className="absolute inset-y-0 left-0 w-0.5 bg-brand" aria-hidden /> : null}
                       <div className="flex items-start gap-3 py-3 pl-2 pr-1">
+                        <button
+                          type="button"
+                          role="checkbox"
+                          aria-checked={picked.has(v.id)}
+                          aria-label={`${picked.has(v.id) ? "เอาออกจาก" : "เพิ่มใน"}เส้นทางของฉัน: ${v.title}`}
+                          onClick={() => togglePick(v.id)}
+                          className={cn(
+                            "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground",
+                            picked.has(v.id) ? "border-brand bg-brand text-white" : "border-foreground/30 hover:border-foreground",
+                          )}
+                        >
+                          {picked.has(v.id) ? <Check className="h-4 w-4" aria-hidden /> : null}
+                        </button>
                         <button
                           type="button"
                           onClick={() => setActiveId(active ? null : v.id)}
@@ -244,7 +325,7 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
                       </div>
 
                       {active ? (
-                        <div className="space-y-1.5 pb-3 pl-11 pr-3 text-xs text-muted-foreground">
+                        <div className="space-y-1.5 pb-3 pl-[4.75rem] pr-3 text-xs text-muted-foreground">
                           {v.address ? <p>{v.address}</p> : null}
                           {v.closed_note ? <p>{v.closed_note}</p> : null}
                           {v.transit_note ? (

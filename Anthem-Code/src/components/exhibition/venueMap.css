@@ -69,6 +69,13 @@
 .venue-pin--active svg path {
   stroke: hsl(var(--foreground));
 }
+.venue-pin--picked svg path {
+  stroke: #fff;
+  stroke-width: 2.5;
+}
+.venue-pin--faded {
+  opacity: 0.4;
+}
 .venue-pin:focus-visible {
   outline: 2px solid hsl(var(--foreground));
   outline-offset: 2px;

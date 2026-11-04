@@ -224,3 +224,31 @@ export function formatOpeningHours(rules: OpeningHoursRule[]): string {
     })
     .join("\n");
 }
+
+// ── "My route": ticked venues, walking route preview ─────────────────────────
+
+export type RoutePoint = Pick<EventVenue, "id" | "title" | "name_en" | "address" | "lat" | "lng" | "coords_approx">;
+
+/** Google Maps directions through every ticked venue in list order (walking), by name when coordinates are approximate. */
+export function googleMapsRouteUrl(stops: RoutePoint[]): string | null {
+  if (stops.length < 2) return null;
+  const place = (v: RoutePoint) =>
+    !v.coords_approx && v.lat != null && v.lng != null ? `${v.lat},${v.lng}` : `${v.name_en || v.title}, Bangkok`;
+  const params = new URLSearchParams({
+    api: "1",
+    origin: place(stops[0]),
+    destination: place(stops[stops.length - 1]),
+    travelmode: "walking",
+  });
+  const mid = stops.slice(1, -1).slice(0, 9); // Google allows up to 9 waypoints
+  if (mid.length) params.set("waypoints", mid.map(place).join("|"));
+  return `https://www.google.com/maps/dir/?${params.toString()}`;
+}
+
+/** "5.2 กม. · เดิน ~1 ชม. 25 นาที" */
+export function routeSummary(meters: number, seconds: number): string {
+  const km = meters >= 1000 ? `${(meters / 1000).toFixed(1)} กม.` : `${Math.round(meters)} ม.`;
+  const min = Math.max(1, Math.round(seconds / 60));
+  const time = min >= 60 ? `${Math.floor(min / 60)} ชม.${min % 60 ? ` ${min % 60} นาที` : ""}` : `${min} นาที`;
+  return `${km} · เดิน ~${time}`;
+}

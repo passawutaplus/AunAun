@@ -3,6 +3,7 @@ import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./venueMap.css";
 import type { EventVenue } from "@/lib/eventVenues";
+import type { VenueRoute } from "@/hooks/useEventVenues";
 
 type PinnedVenue = Pick<EventVenue, "id" | "title" | "lat" | "lng"> & { pin: number };
 
@@ -11,8 +12,47 @@ type Props = {
   interested: Set<string>;
   activeId: string | null;
   onSelect: (id: string) => void;
+  /** Ticked venues ("my route"); the others fade back while any are ticked. */
+  picked?: Set<string>;
+  route?: VenueRoute | null;
   className?: string;
 };
+
+const ROUTE_SOURCE = "my-route";
+const BRAND = "#EE3D29";
+
+function drawRoute(m: maplibregl.Map, route: VenueRoute | null | undefined) {
+  if (!m.isStyleLoaded()) {
+    m.once("idle", () => drawRoute(m, route));
+    return;
+  }
+  const data = {
+    type: "Feature" as const,
+    properties: {},
+    geometry: { type: "LineString" as const, coordinates: route?.line ?? [] },
+  };
+  const src = m.getSource(ROUTE_SOURCE) as maplibregl.GeoJSONSource | undefined;
+  if (src) src.setData(data);
+  else {
+    m.addSource(ROUTE_SOURCE, { type: "geojson", data });
+    m.addLayer({
+      id: `${ROUTE_SOURCE}-casing`,
+      type: "line",
+      source: ROUTE_SOURCE,
+      layout: { "line-join": "round", "line-cap": "round" },
+      paint: { "line-color": "#000", "line-opacity": 0.35, "line-width": 7 },
+    });
+    m.addLayer({
+      id: ROUTE_SOURCE,
+      type: "line",
+      source: ROUTE_SOURCE,
+      layout: { "line-join": "round", "line-cap": "round" },
+      paint: { "line-color": BRAND, "line-width": 4 },
+    });
+  }
+  // Straight-line fallback is dashed so it doesn't look like a real path.
+  m.setPaintProperty(ROUTE_SOURCE, "line-dasharray", route && !route.streets ? [1.5, 1.5] : [1, 0]);
+}
 
 /** OpenFreeMap vector styles: free, no key, OpenStreetMap data. Muted dark / light to match the theme. */
 const STYLE = {
@@ -43,13 +83,15 @@ function quietStyle(map: maplibregl.Map) {
 }
 
 /** Pin-shaped numbered markers: brand red = สนใจ, grey = not. Loaded lazily (only on event pages with venues). */
-export default function VenueMap({ venues, interested, activeId, onSelect, className }: Props) {
+export default function VenueMap({ venues, interested, activeId, onSelect, picked, route, className }: Props) {
   const box = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const markers = useRef(new Map<string, { marker: maplibregl.Marker; el: HTMLDivElement; pin: HTMLButtonElement }>());
   const fitRef = useRef<() => void>(() => {});
   // Refit on load / resize until the viewer pans or zooms themselves.
   const userMoved = useRef(false);
+  const routeRef = useRef(route);
+  routeRef.current = route;
   const onSelectRef = useRef(onSelect);
   onSelectRef.current = onSelect;
 
@@ -72,7 +114,10 @@ export default function VenueMap({ venues, interested, activeId, onSelect, class
     m.touchZoomRotate.disableRotation();
     m.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-left");
     m.on("style.load", () => quietStyle(m));
-    m.on("load", () => fitRef.current());
+    m.on("load", () => {
+      fitRef.current();
+      drawRoute(m, routeRef.current);
+    });
     const markMoved = (e: { originalEvent?: unknown }) => {
       if (e.originalEvent) userMoved.current = true;
     };
@@ -130,6 +175,8 @@ export default function VenueMap({ venues, interested, activeId, onSelect, class
     markers.current.forEach(({ el, pin }, id) => {
       pin.classList.toggle("venue-pin--on", interested.has(id));
       pin.classList.toggle("venue-pin--active", id === activeId);
+      pin.classList.toggle("venue-pin--picked", !!picked?.has(id));
+      pin.classList.toggle("venue-pin--faded", !!picked?.size && !picked.has(id) && id !== activeId);
       el.style.zIndex = id === activeId ? "2" : "";
     });
     const active = placed.find((v) => v.id === activeId);
@@ -138,7 +185,11 @@ export default function VenueMap({ venues, interested, activeId, onSelect, class
       m.easeTo({ center: [active.lng!, active.lat!], duration: 400 });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeId, interested, placedKey]);
+  }, [activeId, interested, picked, placedKey]);
+
+  useEffect(() => {
+    if (map.current) drawRoute(map.current, route);
+  }, [route]);
 
   return (
     <div className={`venue-map isolate overflow-hidden rounded-lg border border-border ${className ?? ""}`}>
