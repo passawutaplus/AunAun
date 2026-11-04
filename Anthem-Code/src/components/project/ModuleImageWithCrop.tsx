@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
-import { Crop, ImagePlus } from "lucide-react";
+import { Copy, Crop, ImagePlus, Trash2 } from "lucide-react";
+import { PhoneMoreMenu, type PhoneMoreItem } from "@/components/project/canvas/PhoneMoreMenu";
 import {
   endCanvasImageSlotDrag,
   isCanvasImageSlotDrag,
@@ -24,10 +25,16 @@ type Props = {
   dragSlot?: CanvasImageSlotRef | null;
   /** Drop another canvas image onto this slot. */
   onSlotDrop?: (from: CanvasImageSlotRef) => void;
+  /** Phones: module-level actions shown in the "⋯" menu next to crop. */
+  blockActions?: { onDuplicate?: () => void; canDuplicate?: boolean; onRemove?: () => void };
 };
 
-const TOOL_BTN =
-  "flex h-8 w-8 items-center justify-center rounded-md border border-border/60 bg-background/90 text-foreground shadow-sm backdrop-blur transition hover:bg-background";
+/** Phones: 40px dark glass chips readable on any image. Desktop (lg+): unchanged. */
+export const MODULE_TOOL_BTN =
+  "flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-black/55 text-white shadow-sm backdrop-blur-md transition active:bg-black/70 " +
+  "lg:h-8 lg:w-8 lg:rounded-md lg:border-border/60 lg:bg-background/90 lg:text-foreground lg:backdrop-blur lg:hover:bg-background";
+
+const TOOL_BTN = MODULE_TOOL_BTN;
 
 /** Image with hover crop + replace controls for canvas modules. */
 export function ModuleImageWithCrop({
@@ -42,10 +49,24 @@ export function ModuleImageWithCrop({
   imgClassName,
   dragSlot,
   onSlotDrop,
+  blockActions,
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dropOver, setDropOver] = useState(false);
-  const showToolbar = !disabled && (!!onCrop || !!onReplace);
+  const phoneItems: PhoneMoreItem[] = disabled
+    ? []
+    : [
+        ...(onReplace
+          ? [{ key: "replace", label: replaceLabel, icon: <ImagePlus className="h-4 w-4" />, onSelect: () => inputRef.current?.click() }]
+          : []),
+        ...(blockActions?.onDuplicate
+          ? [{ key: "dup", label: "ทำซ้ำบล็อก", icon: <Copy className="h-4 w-4" />, onSelect: blockActions.onDuplicate, disabled: !blockActions.canDuplicate }]
+          : []),
+        ...(blockActions?.onRemove
+          ? [{ key: "remove", label: "ลบบล็อก", icon: <Trash2 className="h-4 w-4" />, onSelect: blockActions.onRemove, danger: true }]
+          : []),
+      ];
+  const showToolbar = !disabled && (!!onCrop || !!onReplace || phoneItems.length > 0);
   const canDrag = !disabled && !!dragSlot?.url;
   const canDrop = !disabled && !!onSlotDrop;
 
@@ -85,20 +106,20 @@ export function ModuleImageWithCrop({
     >
       <img loading="lazy" decoding="async" src={src} alt={alt} className={cn("w-full object-contain pointer-events-none", imgClassName)} draggable={false} />
       {showToolbar ? (
-        <div className="absolute right-2 top-2 z-10 flex gap-1 opacity-100 sm:opacity-0 sm:group-hover/crop:opacity-100">
+        <div className="absolute right-2 top-2 z-10 flex flex-col gap-1.5 opacity-100 lg:flex-row lg:gap-1 lg:opacity-0 lg:group-hover/crop:opacity-100">
           {onReplace ? (
             <button
               type="button"
               aria-label={replaceLabel}
               title={replaceLabel}
-              className={TOOL_BTN}
+              className={cn(TOOL_BTN, "max-lg:hidden")}
               onClick={(e) => {
                 e.stopPropagation();
                 inputRef.current?.click();
               }}
               onPointerDown={(e) => e.stopPropagation()}
             >
-              <ImagePlus className="h-3.5 w-3.5" />
+              <ImagePlus className="h-4 w-4 lg:h-3.5 lg:w-3.5" />
             </button>
           ) : null}
           {onCrop ? (
@@ -113,9 +134,10 @@ export function ModuleImageWithCrop({
               }}
               onPointerDown={(e) => e.stopPropagation()}
             >
-              <Crop className="h-3.5 w-3.5" />
+              <Crop className="h-4 w-4 lg:h-3.5 lg:w-3.5" />
             </button>
           ) : null}
+          <PhoneMoreMenu items={phoneItems} />
         </div>
       ) : null}
       {onReplace && !disabled ? (

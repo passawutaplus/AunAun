@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ComponentProps } from "react";
 import { ChevronLeft, ChevronRight, Loader2, Plus } from "lucide-react";
 import {
   DndContext,
@@ -35,6 +35,8 @@ type Props = {
   onReplaceAt?: (index: number, file: File) => void;
   onCropAt?: (index: number, url: string) => void;
   onReorder?: (urls: string[]) => void;
+  /** Phones: module duplicate / delete inside each slide's "⋯" menu. */
+  blockActions?: ComponentProps<typeof ModuleImageWithCrop>["blockActions"];
 };
 
 function pickImageFiles(list: FileList | File[] | null | undefined): File[] {
@@ -104,6 +106,7 @@ export function GallerySlideBlockEditor({
   onReplaceAt,
   onCropAt,
   onReorder,
+  blockActions,
 }: Props) {
   const filled = urls.map((u) => u.trim()).filter(Boolean);
   const [api, setApi] = useState<CarouselApi>();
@@ -186,6 +189,7 @@ export function GallerySlideBlockEditor({
                     onCrop={onCropAt ? () => onCropAt(i, src) : undefined}
                     onReplace={onReplaceAt ? (file) => onReplaceAt(i, file) : undefined}
                     imgClassName="max-h-[min(80vh,720px)] w-full object-contain"
+                    blockActions={blockActions}
                   />
                 </div>
               </CarouselItem>
@@ -199,7 +203,7 @@ export function GallerySlideBlockEditor({
               aria-label="ภาพก่อนหน้า"
               disabled={disabled}
               onClick={() => api?.scrollPrev()}
-              className="absolute left-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-background/20 text-muted-foreground shadow-none backdrop-blur-[2px] hover:bg-background/40 hover:text-foreground/80"
+              className="absolute left-2 top-1/2 z-10 hidden h-8 w-8 -translate-y-1/2 lg:flex items-center justify-center rounded-full bg-background/20 text-muted-foreground shadow-none backdrop-blur-[2px] hover:bg-background/40 hover:text-foreground/80"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
@@ -208,7 +212,7 @@ export function GallerySlideBlockEditor({
               aria-label="ภาพถัดไป"
               disabled={disabled}
               onClick={() => api?.scrollNext()}
-              className="absolute right-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-background/20 text-muted-foreground shadow-none backdrop-blur-[2px] hover:bg-background/40 hover:text-foreground/80"
+              className="absolute right-2 top-1/2 z-10 hidden h-8 w-8 -translate-y-1/2 lg:flex items-center justify-center rounded-full bg-background/20 text-muted-foreground shadow-none backdrop-blur-[2px] hover:bg-background/40 hover:text-foreground/80"
             >
               <ChevronRight className="h-4 w-4" />
             </button>
