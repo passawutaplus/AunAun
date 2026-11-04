@@ -83,7 +83,8 @@ const AuthPage = () => {
   const { user } = useAuth();
   const authHeroRef = useRef<HTMLDivElement>(null);
   const heroCycle = useHeroRotatingCycle();
-  const [tab, setTab] = useState<"login" | "signup">("login");
+  // ?tab=signup — e.g. "I'll create my profile" from a creator invitation
+  const [tab, setTab] = useState<"login" | "signup">(() => (params.get("tab") === "signup" ? "signup" : "login"));
 
   useEffect(() => {
     if (!shouldStripRedirectParam(rawRedirect)) return;
