@@ -60,7 +60,7 @@ export function EventRelatedWorks({ categories, className }: { categories: strin
     <section aria-labelledby="related-works-heading" className={className}>
       <div className="flex items-baseline justify-between gap-3">
         <h2 id="related-works-heading" className="font-display text-2xl font-semibold text-foreground">
-          ผลงานแนวนี้บน SAMECOR
+          Works Like This on SAMECOR
         </h2>
         <span className="hidden text-sm text-muted-foreground sm:inline">{categories.join(" · ")}</span>
       </div>
@@ -151,7 +151,7 @@ export function EventInsightsEditor({ eventId }: { eventId: string }) {
       </div>
       <fieldset>
         <legend className="text-sm font-medium text-foreground">หมวดผลงานที่เกี่ยวข้อง (สูงสุด 4)</legend>
-        <p className="text-xs text-muted-foreground">ใช้แสดง “ผลงานแนวนี้บน SAMECOR” ท้ายหน้างาน</p>
+        <p className="text-xs text-muted-foreground">ใช้แสดง “Works Like This on SAMECOR” ท้ายหน้างาน</p>
         <div className="mt-2 flex flex-wrap gap-2">
           {PROJECT_CATEGORIES.map((c) => {
             const on = cats.includes(c);
