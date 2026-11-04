@@ -91,7 +91,7 @@ const ImageActionBar = ({
         showCount={likes > 0}
         onClick={handleLike}
         ariaLabel={liked ? "ยกเลิกถูกใจ" : "ถูกใจ"}
-        className={`${btn} text-white hover:text-white hover:bg-black/45 [&_span]:text-white/90`}
+        className={cn(btn, "text-white hover:text-white hover:bg-black/45 [&_span]:text-white/90", liked && "[&_svg]:fill-brand [&_svg]:text-brand")}
       />
 
       {isInspireEnabled() ? (
