@@ -400,7 +400,14 @@ export function ExhibitionCalendar({ events, className }: Props) {
       /* ignore */
     }
   };
-  const dayEvents = eventsOn(events, selected);
+  // "ตามหมวด": which category to show ("all" = every category, grouped).
+  const [catPick, setCat] = useState<string>("all");
+  const allDayEvents = eventsOn(events, selected);
+  const dayCats = EVENT_CATEGORIES.filter((c) => allDayEvents.some((e) => e.category === c.id));
+  // A day without the picked category falls back to all.
+  const cat = dayCats.some((c) => c.id === catPick) ? catPick : "all";
+  const dayEvents =
+    sort === "category" && cat !== "all" ? allDayEvents.filter((e) => e.category === cat) : allDayEvents;
   const { data: dayStats } = useEventStats(open && sort === "popular" ? dayEvents.map((e) => e.id) : []);
   const catOrder = (id: string) => {
     const i = EVENT_CATEGORIES.findIndex((c) => c.id === id);
@@ -640,11 +647,30 @@ export function ExhibitionCalendar({ events, className }: Props) {
                       <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">{t("sortBy")}</DropdownMenuLabel>
                       <DropdownMenuRadioGroup value={sort} onValueChange={(v) => setSort(v as SortKey)}>
                         {SORT_KEYS.map((k) => (
-                          <DropdownMenuRadioItem key={k} value={k}>
+                          <DropdownMenuRadioItem
+                            key={k}
+                            value={k}
+                            // "ตามหมวด" keeps the menu open and unfolds the category list under it.
+                            onSelect={k === "category" ? (e) => e.preventDefault() : undefined}
+                          >
                             {t(SORT_LABEL[k])}
                           </DropdownMenuRadioItem>
                         ))}
                       </DropdownMenuRadioGroup>
+                      {sort === "category" ? (
+                        <DropdownMenuRadioGroup
+                          value={cat}
+                          onValueChange={setCat}
+                          className="ml-4 border-l border-border pl-1 animate-in fade-in-0 slide-in-from-top-1"
+                        >
+                          {[{ id: "all", n: allDayEvents.length }, ...dayCats.map((c) => ({ id: c.id as string, n: allDayEvents.filter((e) => e.category === c.id).length }))].map((c) => (
+                            <DropdownMenuRadioItem key={c.id} value={c.id} className="text-sm">
+                              <span className="flex-1">{c.id === "all" ? t("allCategories") : categoryLabel(c.id, lang)}</span>
+                              <span className="ml-3 text-xs tabular-nums text-muted-foreground">{c.n}</span>
+                            </DropdownMenuRadioItem>
+                          ))}
+                        </DropdownMenuRadioGroup>
+                      ) : null}
                     </DropdownMenuContent>
                   </DropdownMenu>
                   <Button
@@ -663,7 +689,7 @@ export function ExhibitionCalendar({ events, className }: Props) {
                   {dayList.map((e, i) => (
                     <Fragment key={e.id}>
                       {/* By category: a small heading where each group starts. */}
-                      {sort === "category" && (i === 0 || dayList[i - 1].category !== e.category) ? (
+                      {sort === "category" && cat === "all" && (i === 0 || dayList[i - 1].category !== e.category) ? (
                         <li className="pb-1 pt-4 text-xs font-medium uppercase tracking-wide text-muted-foreground first:pt-1" aria-hidden>
                           {categoryLabel(e.category, lang)}
                         </li>
