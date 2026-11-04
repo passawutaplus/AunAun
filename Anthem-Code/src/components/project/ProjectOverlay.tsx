@@ -14,8 +14,13 @@ import { cn } from "@/lib/utils";
 
 const ProjectDetailPage = lazy(() => import("@/pages/ProjectDetailPage"));
 
-const ZOOM_MS = 380;
-const EASE = "cubic-bezier(0.2, 0.8, 0.2, 1)";
+const OPEN_MS = 440;
+const CLOSE_MS = 320;
+/** easeOutQuint for the zoom out of the card; a softer ease-in-out for the way back. */
+const EASE_OPEN = "cubic-bezier(0.22, 1, 0.36, 1)";
+const EASE_CLOSE = "cubic-bezier(0.4, 0, 0.2, 1)";
+/** Longest wait for the work to render before zooming anyway. */
+const READY_TIMEOUT_MS = 700;
 /** Width the sheet zooms to (overlay sheet max, 72rem). */
 const SHEET_W = 1152;
 
@@ -44,6 +49,11 @@ export default function ProjectOverlay() {
   const closing = useRef(false);
   // Zoom pivot = middle of what is on screen (the overlay may have been scrolled before closing).
   const [pivotY, setPivotY] = useState("50vh");
+  const wrapRef = useRef<HTMLDivElement>(null);
+  // Hint the compositor only while moving; a permanent will-change would blur text and cost memory.
+  const [animating, setAnimating] = useState(true);
+  // The backdrop fades in right away, even while the work is still loading, so the tap feels answered.
+  const [dimmed, setDimmed] = useState(false);
 
   const leave = useCallback(() => {
     const idx = (window.history.state as { idx?: number } | null)?.idx ?? 0;
@@ -63,24 +73,62 @@ export default function ProjectOverlay() {
     }
     const top = document.getElementById("project-overlay-scroll")?.scrollTop ?? 0;
     setPivotY(`${top + window.innerHeight / 2}px`);
+    setAnimating(true);
     setPhase("leave");
-    window.setTimeout(leave, ZOOM_MS);
+    window.setTimeout(leave, CLOSE_MS);
   }, [leave]);
 
+  // Lock the page underneath; pad for the vanished scrollbar so the feed does not jump sideways.
   useEffect(() => {
-    // Two frames: the first paints the start state, the second starts the transition.
-    let raf2 = 0;
-    const raf1 = requestAnimationFrame(() => {
-      raf2 = requestAnimationFrame(() => setPhase("open"));
-    });
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const body = document.body;
+    const prev = { overflow: body.style.overflow, paddingRight: body.style.paddingRight };
+    const gutter = window.innerWidth - document.documentElement.clientWidth;
+    body.style.overflow = "hidden";
+    if (gutter > 0) body.style.paddingRight = `${gutter}px`;
+    const raf = requestAnimationFrame(() => setDimmed(true));
     return () => {
-      cancelAnimationFrame(raf1);
-      cancelAnimationFrame(raf2);
-      document.body.style.overflow = prev;
+      cancelAnimationFrame(raf);
+      body.style.overflow = prev.overflow;
+      body.style.paddingRight = prev.paddingRight;
     };
   }, []);
+
+  // Start the zoom once the work itself has rendered (not the loader), so nothing swaps mid-flight.
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    let raf1 = 0;
+    let raf2 = 0;
+    let started = false;
+    const start = () => {
+      if (started) return;
+      started = true;
+      observer.disconnect();
+      window.clearTimeout(timer);
+      // Two frames: the first paints the start state, the second runs the transition.
+      raf1 = requestAnimationFrame(() => {
+        raf2 = requestAnimationFrame(() => setPhase("open"));
+      });
+    };
+    const isReady = () => !!wrap?.querySelector(".work-paper");
+    const observer = new MutationObserver(() => {
+      if (isReady()) start();
+    });
+    const timer = window.setTimeout(start, READY_TIMEOUT_MS);
+    if (wrap) observer.observe(wrap, { childList: true, subtree: true });
+    if (isReady()) start();
+    return () => {
+      observer.disconnect();
+      window.clearTimeout(timer);
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (phase !== "open") return;
+    const t = window.setTimeout(() => setAnimating(false), OPEN_MS + 50);
+    return () => window.clearTimeout(t);
+  }, [phase]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -105,12 +153,17 @@ export default function ProjectOverlay() {
   const open = phase === "open";
   // While open, no transform at all: a transformed ancestor would break the sticky rail.
   const zoom: CSSProperties = open
-    ? { transition: `transform ${ZOOM_MS}ms ${EASE}, opacity ${ZOOM_MS}ms ${EASE}` }
+    ? // Content becomes visible early in the zoom, so the card seems to grow into the work.
+      { transition: `transform ${OPEN_MS}ms ${EASE_OPEN}, opacity 180ms linear` }
     : {
         transform: origin ? originTransform(origin) : "scale(0.96)",
         opacity: 0,
-        transition: phase === "leave" ? `transform ${ZOOM_MS}ms ${EASE}, opacity ${ZOOM_MS}ms ${EASE}` : "none",
+        transition:
+          phase === "leave"
+            ? `transform ${CLOSE_MS}ms ${EASE_CLOSE}, opacity 200ms linear ${CLOSE_MS - 200}ms`
+            : "none",
       };
+  if (animating) zoom.willChange = "transform, opacity";
 
   return (
     <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label="ผลงาน">
@@ -118,7 +171,7 @@ export default function ProjectOverlay() {
         aria-hidden
         className={cn(
           "absolute inset-0 bg-black/90 backdrop-blur-md transition-opacity duration-300 ease-out motion-reduce:transition-none",
-          open ? "opacity-100" : "opacity-0",
+          dimmed && phase !== "leave" ? "opacity-100" : "opacity-0",
         )}
       />
       <div

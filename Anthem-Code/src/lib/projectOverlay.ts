@@ -53,6 +53,11 @@ if (typeof document !== "undefined") {
     (e) => {
       const card = cardFor(e.target);
       lastOrigin = card ? { rect: card.getBoundingClientRect(), at: Date.now() } : null;
+      // Warm the work page chunk while the finger is still down, so the zoom does not wait on it.
+      if (card) {
+        void import("@/components/project/ProjectOverlay");
+        void import("@/pages/ProjectDetailPage");
+      }
     },
     { capture: true, passive: true },
   );
