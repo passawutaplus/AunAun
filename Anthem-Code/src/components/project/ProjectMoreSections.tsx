@@ -10,11 +10,13 @@ import { stripCategorySubTags } from "@/data/categoryTaxonomy";
 import { isCommerceEnabled } from "@/lib/aplus1Launch";
 import { useBlockedUserIds } from "@/hooks/useBlockedUserIds";
 import { withoutBlocked } from "@/lib/blockedUsers";
+import { useProjectOverlayState } from "@/lib/projectOverlay";
 
 /** Either a view count (works, shown with an eye like "ผลงานอื่นของ…") or a short price label. */
 type Tile = { id: string; href: string; title: string; image: string; meta?: string; views?: number; ownerId?: string };
 
 function TileRow({ title, tiles, moreHref, moreLabel }: { title: string; tiles: Tile[]; moreHref?: string; moreLabel?: string }) {
+  const overlayState = useProjectOverlayState();
   if (!tiles.length) return null;
   return (
     <section className="space-y-3 pt-2">
@@ -31,6 +33,7 @@ function TileRow({ title, tiles, moreHref, moreLabel }: { title: string; tiles: 
           <Link
             key={t.id}
             to={t.href}
+            state={t.href.startsWith("/showcase/") ? overlayState : undefined}
             className="group min-w-0 overflow-hidden rounded-xl glass-panel transition-shadow hover:shadow-md"
           >
             <div className="relative aspect-[4/3] overflow-hidden bg-muted">

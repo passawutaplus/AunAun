@@ -57,7 +57,9 @@ const ProjectGallery = ({
         ) : null}
       </Carousel>
 
-      <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+      {/* Centered row; w-max + mx-auto keeps it scrollable from the first thumb when it overflows. */}
+      <div className="overflow-x-auto scrollbar-hide pb-1">
+        <div className="mx-auto flex w-max gap-2">
         {images.map((src, i) => (
           <button
             key={i}
@@ -69,6 +71,7 @@ const ProjectGallery = ({
             <img loading="lazy" decoding="async" src={src} alt="" className="h-full w-full object-contain" />
           </button>
         ))}
+        </div>
       </div>
     </div>
   );

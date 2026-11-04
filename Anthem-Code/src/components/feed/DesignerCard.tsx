@@ -10,6 +10,7 @@ import { naturalFeedCoverUrl, thumbFeedCoverUrl } from "@/lib/feedProjectCover";
 import { displayProfileAddress } from "@/lib/profileAddress";
 import { cn } from "@/lib/utils";
 import { creatorStatus } from "@/lib/creatorStatus";
+import { useProjectOverlayState } from "@/lib/projectOverlay";
 
 interface Props {
   data: DesignerCardData;
@@ -32,6 +33,7 @@ const coverSrc = (p: Project | undefined) => (p ? p.cover_url || p.gallery_urls?
  * name + availability, role, short bio, work count + place, a strip of works and "View Profile".
  */
 const DesignerCard = ({ data, search = "", newWorkCount = 0 }: Props) => {
+  const overlayState = useProjectOverlayState();
   const { profile, projects } = data;
   const profileUserId = (profile as { user_id?: string; id?: string }).user_id ?? profile.id;
   const profilePath = search ? `/u/${profileUserId}?q=${encodeURIComponent(search)}` : `/u/${profileUserId}`;
@@ -133,6 +135,7 @@ const DesignerCard = ({ data, search = "", newWorkCount = 0 }: Props) => {
                 <li key={p.id} className="relative">
                   <Link
                     to={`/showcase/${p.id}`}
+                    state={overlayState}
                     className="block aspect-[4/3] overflow-hidden rounded bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground"
                     aria-label={p.title}
                   >

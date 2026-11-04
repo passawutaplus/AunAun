@@ -1,9 +1,10 @@
-import { Suspense } from "react";
+import { Suspense, type ReactNode } from "react";
 import { lazyWithRetry as lazy } from "@/lib/lazyWithRetry";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/hooks/useAuth";
 import { SensitiveActionReauthProvider } from "@/components/legal/SensitiveActionReauthProvider";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { getBackgroundLocation } from "@/lib/projectOverlay";
 import { isInspireEnabled } from "@/lib/aplus1Launch";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -62,6 +63,7 @@ const ExhibitionDetailPage = lazy(() => import("./pages/exhibition/ExhibitionDet
 const DashboardDocumentsPage = lazy(() => import("./pages/DashboardDocumentsPage.tsx"));
 const DashboardPayoutPage = lazy(() => import("./pages/DashboardPayoutPage.tsx"));
 const ProjectDetailPage = lazy(() => import("./pages/ProjectDetailPage.tsx"));
+const ProjectOverlay = lazy(() => import("./components/project/ProjectOverlay.tsx"));
 const ServiceDetailPage = lazy(() => import("./pages/ServiceDetailPage.tsx"));
 const ObjectDetailPage = lazy(() => import("./pages/ObjectDetailPage.tsx"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage.tsx"));
@@ -207,6 +209,23 @@ const HireCancelPreviewPage = lazy(() => import("./pages/dev/HireCancelPreviewPa
 const OfferDialogPreviewPage = lazy(() => import("./pages/dev/OfferDialogPreviewPage.tsx"));
 const BillingPreviewPage = lazy(() => import("./pages/dev/BillingPreviewPage.tsx"));
 
+/** Routes render the page underneath; a work opened with router state `backgroundLocation` sits on top as an overlay. */
+const BackgroundAwareRoutes = ({ children }: { children: ReactNode }) => {
+  const location = useLocation();
+  const background = getBackgroundLocation(location.state);
+  return (
+    <>
+      <Routes location={background ?? location}>{children}</Routes>
+      {background ? (
+        <Routes>
+          <Route path="/showcase/:id" element={<ProjectOverlay />} />
+          <Route path="*" element={null} />
+        </Routes>
+      ) : null}
+    </>
+  );
+};
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -237,7 +256,7 @@ const App = () => (
           <ReferralAttribution />
           <DesktopTopNav />
           <Suspense fallback={<RouteFallback />}>
-            <Routes>
+            <BackgroundAwareRoutes>
               <Route element={<LaunchMinimalGate />}>
               <Route element={<PageTransition />}>
               <Route path="/" element={<Index />} />
@@ -461,7 +480,7 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
               </Route>
               </Route>
-            </Routes>
+            </BackgroundAwareRoutes>
           </Suspense>
           <OfflineBanner />
           <CookieConsent />

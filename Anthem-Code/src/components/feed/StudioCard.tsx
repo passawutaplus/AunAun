@@ -6,6 +6,7 @@ import StudioFollowButton from "@/components/StudioFollowButton";
 import { useStudioFollowState } from "@/hooks/useStudioFollow";
 import { useProjectLike } from "@/hooks/useProjectInteractions";
 import type { StudioCardData } from "@/hooks/usePublicStudios";
+import { useOpenProject } from "@/lib/projectOverlay";
 
 interface Props {
   data: StudioCardData;
@@ -13,6 +14,7 @@ interface Props {
 
 const StudioCard = ({ data }: Props) => {
   const navigate = useNavigate();
+  const openProject = useOpenProject();
   const { studio, memberAvatars, projectCovers } = data;
   const { followers } = useStudioFollowState(studio.id);
   const featuredProjectId = projectCovers[0]?.id?.startsWith("_") ? undefined : projectCovers[0]?.id;
@@ -61,7 +63,7 @@ const StudioCard = ({ data }: Props) => {
         {tiles.map((t, i) => (
           <button
             key={t.id + i}
-            onClick={() => t.cover && navigate(`/showcase/${t.id}`)}
+            onClick={() => t.cover && openProject(t.id)}
             disabled={!t.cover}
             className="relative aspect-[4/3] rounded-xl overflow-hidden bg-muted group"
           >

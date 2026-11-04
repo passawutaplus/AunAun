@@ -81,7 +81,7 @@ const ProjectActionRail = ({
   const pill = (
     <div
       className={cn(
-        "flex items-center gap-1 rounded-full bg-card p-1 shadow-sm ring-1 ring-border/60",
+        "flex items-center gap-1 rounded-full bg-background/65 p-1 ring-1 ring-foreground/15 backdrop-blur-xl backdrop-saturate-150 dark:bg-card/50",
         rail && "flex-col",
       )}
     >

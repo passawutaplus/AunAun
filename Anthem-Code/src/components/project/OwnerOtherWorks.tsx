@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { fetchFeedCardRows } from "@/lib/fetchProjectRow";
 import AiDisclosureBadge from "@/components/license/AiDisclosureBadge";
+import { useProjectOverlayState } from "@/lib/projectOverlay";
 
 type OwnerWorkThumb = {
   id: string;
@@ -33,6 +34,7 @@ export function OwnerOtherWorks({
   ownerName,
   className,
 }: Props) {
+  const overlayState = useProjectOverlayState();
   const { data: works = [] } = useQuery({
     queryKey: ["owner-other-works", ownerId, excludeProjectId],
     enabled: !!ownerId,
@@ -70,6 +72,7 @@ export function OwnerOtherWorks({
             <Link
               key={p.id}
               to={`/showcase/${p.id}`}
+              state={overlayState}
               className="group min-w-0 rounded-xl overflow-hidden glass-panel hover:shadow-md transition-shadow"
             >
               <div className="relative aspect-[4/3] bg-muted overflow-hidden">

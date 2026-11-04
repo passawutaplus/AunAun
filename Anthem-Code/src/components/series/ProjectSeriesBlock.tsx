@@ -2,6 +2,7 @@
 import CatalogIcon from "@/components/icons/CatalogIcon";
 import { useSeriesForProject } from "@/hooks/useProjectSeries";
 import { cn } from "@/lib/utils";
+import { useProjectOverlayState } from "@/lib/projectOverlay";
 
 const MAX_SIBLINGS = 4;
 
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export function ProjectSeriesBlock({ projectId, className, compact = false }: Props) {
+  const overlayState = useProjectOverlayState();
   const { data } = useSeriesForProject(projectId);
 
   if (!data?.series || !projectId) return null;
@@ -69,6 +71,7 @@ export function ProjectSeriesBlock({ projectId, className, compact = false }: Pr
                 <Link
                   key={item.project_id}
                   to={`/showcase/${p.id}`}
+                  state={overlayState}
                   className={cn("group", compact ? "min-w-0" : "shrink-0 w-24")}
                 >
                   <div className="aspect-square rounded-xl overflow-hidden bg-muted border border-border/50 group-hover:border-primary/50 transition-colors">

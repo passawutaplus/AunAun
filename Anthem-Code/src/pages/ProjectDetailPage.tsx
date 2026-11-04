@@ -73,7 +73,7 @@ import {
 } from "@/components/project/ProjectMoreSections";
 import { isVideoUrl } from "@/lib/videoAccept";
 
-const ProjectDetailPage = () => {
+const ProjectDetailPage = ({ overlay = false }: { overlay?: boolean } = {}) => {
   const { id } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const sponsorAdId = searchParams.get("sponsor");
@@ -427,7 +427,11 @@ const ProjectDetailPage = () => {
   };
 
   return (
-    <main id="main-content" className="min-h-screen bg-app-ambient">
+    <main
+      id={overlay ? undefined : "main-content"}
+      className={overlay ? "min-h-full" : "min-h-screen bg-app-ambient"}
+      data-overlay-backdrop={overlay || undefined}
+    >
       <SeoHead
         title={project.title}
         description={truncateDescription(
@@ -449,7 +453,12 @@ const ProjectDetailPage = () => {
           breadcrumbJsonLd(crumbs),
         ]}
       />
-      <div className="sticky top-0 z-20 bg-background border-b border-border">
+      <div
+        className={cn(
+          "sticky top-0 z-20 bg-background border-b border-border",
+          overlay && "hidden",
+        )}
+      >
         <div
           className={cn(
             "max-w-[1920px] mx-auto px-3 sm:px-[calc(1rem+25px)] lg:px-[calc(1.5rem+25px)] 2xl:px-[calc(2.5rem+25px)] py-3 flex items-center justify-between gap-3",
@@ -481,7 +490,13 @@ const ProjectDetailPage = () => {
         ) : null}
       </div>
 
-      <div className="max-w-[1920px] mx-auto px-3 sm:px-[calc(1rem+25px)] lg:px-[calc(1.5rem+25px)] 2xl:px-[calc(2.5rem+25px)] py-6 lg:py-10">
+      <div
+        className={cn(
+          "max-w-[1920px] mx-auto px-3 sm:px-[calc(1rem+25px)] lg:px-[calc(1.5rem+25px)] 2xl:px-[calc(2.5rem+25px)] py-6 lg:py-10",
+          overlay && "pt-16 lg:pt-10",
+        )}
+        data-overlay-backdrop={overlay || undefined}
+      >
         {dbProject?.id && user?.id && user.id !== dbProject.owner_id ? (
           <ProjectCollabInviteBanner
             projectId={dbProject.id}
@@ -529,8 +544,19 @@ const ProjectDetailPage = () => {
           </div>
         ) : null}
         {/* Work on a paper canvas with a floating action rail beside it (lg+); details sit under the work. */}
-        <div className="mx-auto grid w-full max-w-[64rem] grid-cols-1 gap-6 lg:grid-cols-[minmax(0,58rem)_3.5rem] lg:justify-center lg:gap-x-5">
-          <div className="min-w-0 w-full space-y-4 overflow-x-clip lg:col-start-1 lg:row-start-1">
+        <div
+          className={cn(
+            "mx-auto grid w-full max-w-[64rem] grid-cols-1 gap-6 lg:grid-cols-[minmax(0,58rem)_3.5rem] lg:justify-center lg:gap-x-5",
+            overlay && "gap-y-0 lg:gap-y-0",
+          )}
+          data-overlay-backdrop={overlay || undefined}
+        >
+          <div
+            className={cn(
+              "min-w-0 w-full space-y-4 overflow-x-clip lg:col-start-1 lg:row-start-1",
+              overlay && "rounded-t-2xl bg-background p-3 sm:p-5 lg:p-6",
+            )}
+          >
             <ProjectActionRail
               variant="row"
               className="lg:hidden"
@@ -569,7 +595,10 @@ const ProjectDetailPage = () => {
           </div>
 
           {/* Right: floating rail — profile + follow, then collection / share / message. */}
-          <div className="hidden lg:block lg:col-start-2 lg:row-span-2 lg:row-start-1">
+          <div
+            className="hidden lg:block lg:col-start-2 lg:row-span-2 lg:row-start-1"
+            data-overlay-backdrop={overlay || undefined}
+          >
             <ProjectActionRail
               variant="rail"
               className="sticky top-[35vh]"
@@ -577,7 +606,13 @@ const ProjectDetailPage = () => {
             />
           </div>
 
-          <div className="min-w-0 w-full space-y-6 pt-2 lg:col-start-1 lg:row-start-2">
+          <div
+            className={cn(
+              "min-w-0 w-full space-y-6 pt-2 lg:col-start-1 lg:row-start-2",
+              overlay &&
+                "rounded-b-2xl bg-background px-3 pb-8 pt-6 sm:px-5 lg:px-10 lg:pb-12",
+            )}
+          >
             <FadeUp className="w-full min-w-0" delay={0.06}>
               <ProjectSidePanel
                 wide
