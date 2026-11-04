@@ -30,7 +30,7 @@ export default function CreatorReviewPage() {
     refetchOnWindowFocus: false,
   });
   const [lang, setLang] = useState<PageLang | null>(null);
-  const l: PageLang = lang ?? q.data?.invite.language ?? "th";
+  const l: PageLang = lang ?? "en";
   const t = inviteCopy(l);
   const [dialog, setDialog] = useState<"changes" | "decline" | null>(null);
   const [note, setNote] = useState("");
