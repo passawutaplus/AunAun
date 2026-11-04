@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
-import { Crop, ImagePlus } from "lucide-react";
+import { Copy, Crop, ImagePlus, Trash2 } from "lucide-react";
+import { PhoneMoreMenu, type PhoneMoreItem } from "@/components/project/canvas/PhoneMoreMenu";
 import {
   endCanvasImageSlotDrag,
   isCanvasImageSlotDrag,
@@ -24,6 +25,8 @@ type Props = {
   dragSlot?: CanvasImageSlotRef | null;
   /** Drop another canvas image onto this slot. */
   onSlotDrop?: (from: CanvasImageSlotRef) => void;
+  /** Phones: module-level actions shown in the "⋯" menu next to crop. */
+  blockActions?: { onDuplicate?: () => void; canDuplicate?: boolean; onRemove?: () => void };
 };
 
 /** Phones: 40px dark glass chips readable on any image. Desktop (lg+): unchanged. */
@@ -46,10 +49,24 @@ export function ModuleImageWithCrop({
   imgClassName,
   dragSlot,
   onSlotDrop,
+  blockActions,
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dropOver, setDropOver] = useState(false);
-  const showToolbar = !disabled && (!!onCrop || !!onReplace);
+  const phoneItems: PhoneMoreItem[] = disabled
+    ? []
+    : [
+        ...(onReplace
+          ? [{ key: "replace", label: replaceLabel, icon: <ImagePlus className="h-4 w-4" />, onSelect: () => inputRef.current?.click() }]
+          : []),
+        ...(blockActions?.onDuplicate
+          ? [{ key: "dup", label: "ทำซ้ำบล็อก", icon: <Copy className="h-4 w-4" />, onSelect: blockActions.onDuplicate, disabled: !blockActions.canDuplicate }]
+          : []),
+        ...(blockActions?.onRemove
+          ? [{ key: "remove", label: "ลบบล็อก", icon: <Trash2 className="h-4 w-4" />, onSelect: blockActions.onRemove, danger: true }]
+          : []),
+      ];
+  const showToolbar = !disabled && (!!onCrop || !!onReplace || phoneItems.length > 0);
   const canDrag = !disabled && !!dragSlot?.url;
   const canDrop = !disabled && !!onSlotDrop;
 
@@ -95,7 +112,7 @@ export function ModuleImageWithCrop({
               type="button"
               aria-label={replaceLabel}
               title={replaceLabel}
-              className={TOOL_BTN}
+              className={cn(TOOL_BTN, "max-lg:hidden")}
               onClick={(e) => {
                 e.stopPropagation();
                 inputRef.current?.click();
@@ -120,6 +137,7 @@ export function ModuleImageWithCrop({
               <Crop className="h-4 w-4 lg:h-3.5 lg:w-3.5" />
             </button>
           ) : null}
+          <PhoneMoreMenu items={phoneItems} />
         </div>
       ) : null}
       {onReplace && !disabled ? (

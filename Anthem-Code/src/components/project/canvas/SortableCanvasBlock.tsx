@@ -109,6 +109,13 @@ export function SortableCanvasBlock({
       ? { onTouchStart: listeners.onTouchStart as TouchEventHandler<HTMLDivElement> }
       : {};
   const isMediaOnly = block.type === "image" || block.type === "video";
+  const blockActions = disabled
+    ? undefined
+    : { onDuplicate, canDuplicate, onRemove };
+  // Phones: when the module shows an image, its "⋯" menu carries duplicate / delete.
+  const phoneActionsOnImage =
+    (block.type === "image" && blockImageUrls(block).some((u) => u.trim())) ||
+    (block.type === "image_text" && !!block.url?.trim());
 
   const clearHoverHideTimer = () => {
     if (hoverHideTimerRef.current) {
@@ -269,6 +276,7 @@ export function SortableCanvasBlock({
                 {block.url?.trim() ? (
                   <div className="min-w-0 overflow-hidden rounded-none bg-transparent">
                     <ModuleImageWithCrop
+                      blockActions={blockActions}
                       src={block.url}
                       disabled={disabled}
                       onCrop={onCrop ? () => onCrop(block.url!, undefined) : undefined}
@@ -333,6 +341,7 @@ export function SortableCanvasBlock({
               onReplaceAt={(index, file) => onUpload?.(file, index)}
               onCropAt={(index, url) => onCrop?.(url, index)}
               onReorder={(next) => onPatch({ mediaLayout: "gallery", urls: next, url: next[0] ?? "" })}
+              blockActions={blockActions}
             />
           ) : block.mediaLayout === "grid" && isMosaicPhotoGridLayout(block.gridLayout) ? (
             (() => {
@@ -359,6 +368,7 @@ export function SortableCanvasBlock({
                       >
                         {url.trim() ? (
                           <ModuleImageWithCrop
+                            blockActions={blockActions}
                             src={url}
                             disabled={disabled}
                             className="h-full"
@@ -392,6 +402,7 @@ export function SortableCanvasBlock({
                     {slots[0]?.trim() ? (
                       <div className="h-full min-w-0 overflow-hidden rounded-none bg-transparent">
                         <ModuleImageWithCrop
+                          blockActions={blockActions}
                           src={slots[0]}
                           disabled={disabled}
                           className="h-full"
@@ -416,6 +427,7 @@ export function SortableCanvasBlock({
                     slots[slotIndex]?.trim() ? (
                       <div key={slotIndex} className="min-h-0 min-w-0 overflow-hidden rounded-none bg-transparent">
                         <ModuleImageWithCrop
+                          blockActions={blockActions}
                           src={slots[slotIndex]}
                           disabled={disabled}
                           className="h-full"
@@ -450,6 +462,7 @@ export function SortableCanvasBlock({
                         )}
                       >
                         <ModuleImageWithCrop
+                          blockActions={blockActions}
                           src={slots[slotIndex]}
                           disabled={disabled}
                           className="h-full"
@@ -482,6 +495,7 @@ export function SortableCanvasBlock({
                     {slots[0]?.trim() ? (
                       <div className="h-full min-w-0 overflow-hidden rounded-none bg-transparent">
                         <ModuleImageWithCrop
+                          blockActions={blockActions}
                           src={slots[0]}
                           disabled={disabled}
                           className="h-full"
@@ -531,6 +545,7 @@ export function SortableCanvasBlock({
                     )}
                   >
                     <ModuleImageWithCrop
+                      blockActions={blockActions}
                       src={url}
                       disabled={disabled}
                       onCrop={onCrop ? () => onCrop(url, multi ? slotIndex : undefined) : undefined}
@@ -612,7 +627,8 @@ export function SortableCanvasBlock({
         isFirst={index === 0}
         isLast={index === total - 1}
         visible={showRail}
-        phoneBelowTools={!isTextBlockType(block.type)}
+        phoneHidden={phoneActionsOnImage}
+        phoneBelowTools={block.type === "video"}
         canDuplicate={canDuplicate}
         dragAttributes={attributes as unknown as Record<string, unknown>}
         dragListeners={listeners as unknown as Record<string, unknown>}

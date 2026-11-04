@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ComponentProps } from "react";
 import { ChevronLeft, ChevronRight, Loader2, Plus } from "lucide-react";
 import {
   DndContext,
@@ -35,6 +35,8 @@ type Props = {
   onReplaceAt?: (index: number, file: File) => void;
   onCropAt?: (index: number, url: string) => void;
   onReorder?: (urls: string[]) => void;
+  /** Phones: module duplicate / delete inside each slide's "⋯" menu. */
+  blockActions?: ComponentProps<typeof ModuleImageWithCrop>["blockActions"];
 };
 
 function pickImageFiles(list: FileList | File[] | null | undefined): File[] {
@@ -104,6 +106,7 @@ export function GallerySlideBlockEditor({
   onReplaceAt,
   onCropAt,
   onReorder,
+  blockActions,
 }: Props) {
   const filled = urls.map((u) => u.trim()).filter(Boolean);
   const [api, setApi] = useState<CarouselApi>();
@@ -186,6 +189,7 @@ export function GallerySlideBlockEditor({
                     onCrop={onCropAt ? () => onCropAt(i, src) : undefined}
                     onReplace={onReplaceAt ? (file) => onReplaceAt(i, file) : undefined}
                     imgClassName="max-h-[min(80vh,720px)] w-full object-contain"
+                    blockActions={blockActions}
                   />
                 </div>
               </CarouselItem>

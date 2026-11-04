@@ -1,5 +1,6 @@
 import { ArrowDown, ArrowUp, Copy, GripVertical, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PhoneMoreMenu } from "@/components/project/canvas/PhoneMoreMenu";
 
 /** Per-block side rail actions (move, duplicate, delete). */
 export function BlockSideRail({
@@ -8,6 +9,7 @@ export function BlockSideRail({
   isLast,
   visible,
   phoneBelowTools = false,
+  phoneHidden = false,
   canDuplicate,
   dragListeners,
   dragAttributes,
@@ -22,6 +24,8 @@ export function BlockSideRail({
   visible?: boolean;
   /** Phones (< lg): start the column under the image's replace / crop chips (top-right). */
   phoneBelowTools?: boolean;
+  /** Phones: the image's own "⋯" menu already carries these actions. */
+  phoneHidden?: boolean;
   canDuplicate?: boolean;
   dragListeners: Record<string, unknown>;
   dragAttributes: Record<string, unknown>;
@@ -41,7 +45,8 @@ export function BlockSideRail({
     <div
       className={cn(
         "absolute right-2 z-30 flex flex-col gap-1.5 transition-opacity duration-150",
-        phoneBelowTools ? "top-[6.125rem]" : "top-2",
+        phoneBelowTools ? "top-[3.375rem]" : "top-2",
+        phoneHidden && "max-lg:hidden",
         "lg:left-full lg:right-auto lg:top-1/2 lg:z-20 lg:-translate-y-1/2 lg:gap-0.5 lg:pl-2",
         visible ? "opacity-100" : "pointer-events-none opacity-0",
       )}
@@ -65,7 +70,7 @@ export function BlockSideRail({
       </button>
       <button
         type="button"
-        className={btn}
+        className={cn(btn, "max-lg:hidden")}
         aria-label="ทำซ้ำบล็อก"
         disabled={disabled || !canDuplicate}
         onClick={onDuplicate}
@@ -74,13 +79,23 @@ export function BlockSideRail({
       </button>
       <button
         type="button"
-        className={cn(btn, "text-red-300 lg:text-red-500 lg:hover:bg-red-500/15 lg:hover:text-red-600 lg:dark:hover:text-red-400")}
+        className={cn(btn, "max-lg:hidden text-red-300 lg:text-red-500 lg:hover:bg-red-500/15 lg:hover:text-red-600 lg:dark:hover:text-red-400")}
         aria-label="ลบบล็อก"
         disabled={disabled}
         onClick={onRemove}
       >
         <Trash2 className={icon} />
       </button>
+      <PhoneMoreMenu
+        items={
+          disabled
+            ? []
+            : [
+                { key: "dup", label: "ทำซ้ำบล็อก", icon: <Copy className="h-4 w-4" />, onSelect: onDuplicate, disabled: !canDuplicate },
+                { key: "remove", label: "ลบบล็อก", icon: <Trash2 className="h-4 w-4" />, onSelect: onRemove, danger: true },
+              ]
+        }
+      />
     </div>
   );
 }
