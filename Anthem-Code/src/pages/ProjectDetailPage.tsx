@@ -625,6 +625,8 @@ const ProjectDetailPage = ({ overlay = false }: { overlay?: boolean } = {}) => {
                 "rounded-b-2xl bg-background px-3 pb-8 pt-6 sm:px-5 lg:px-10 lg:pb-12",
             )}
           >
+            {/* Marks where the work ends and its details begin. */}
+            <hr className="border-t border-foreground/25" />
             <FadeUp className="w-full min-w-0" delay={0.06}>
               <ProjectSidePanel
                 wide
