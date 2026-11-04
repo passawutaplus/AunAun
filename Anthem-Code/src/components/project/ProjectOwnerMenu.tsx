@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { DeleteConfirmDialog } from "@/components/ui/DeleteConfirmDialog";
 import { useDeleteProject } from "@/hooks/useProjects";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -17,9 +18,11 @@ type Props = {
   projectTitle: string;
   className?: string;
   triggerClassName?: string;
+  /** "buttons": visible แก้ไขผลงาน button + icon-only delete instead of the ⋯ menu. */
+  variant?: "menu" | "buttons";
 };
 
-export function ProjectOwnerMenu({ projectId, projectTitle, className, triggerClassName }: Props) {
+export function ProjectOwnerMenu({ projectId, projectTitle, className, triggerClassName, variant = "menu" }: Props) {
   const navigate = useNavigate();
   const deleteProject = useDeleteProject();
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -35,6 +38,42 @@ export function ProjectOwnerMenu({ projectId, projectTitle, className, triggerCl
       toast.error(err instanceof Error ? err.message : "ลบไม่สำเร็จ");
     }
   };
+
+  const confirm = (
+    <DeleteConfirmDialog
+      open={deleteOpen}
+      onOpenChange={setDeleteOpen}
+      title="ลบผลงานนี้?"
+      description={<>「{label}」จะถูกลบถาวรและไม่สามารถกู้คืนได้ ต้องการลบจริงหรือไม่?</>}
+      onConfirm={handleConfirmDelete}
+      loading={deleteProject.isPending}
+    />
+  );
+
+  if (variant === "buttons") {
+    return (
+      <div className={cn("flex shrink-0 items-center gap-1.5", className)}>
+        <Button asChild size="sm" variant="outline" className="h-8 rounded-full">
+          <Link to={`/portfolio/${projectId}/edit`}>
+            <Pencil className="mr-1.5 h-3.5 w-3.5" aria-hidden /> แก้ไขผลงาน
+          </Link>
+        </Button>
+        <Button
+          type="button"
+          size="icon"
+          variant="outline"
+          className="h-8 w-8 rounded-full text-destructive hover:bg-destructive/10 hover:text-destructive"
+          onClick={() => setDeleteOpen(true)}
+          disabled={deleteProject.isPending}
+          aria-label="ลบผลงาน"
+          title="ลบผลงาน"
+        >
+          <Trash2 className="h-3.5 w-3.5" aria-hidden />
+        </Button>
+        {confirm}
+      </div>
+    );
+  }
 
   return (
     <>

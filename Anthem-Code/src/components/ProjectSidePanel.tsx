@@ -5,14 +5,12 @@ import {
   Sparkles,
   Calendar,
   Hash,
-  Pencil,
   Users,
   Wrench,
   Copyright,
 } from "lucide-react";
 import UserAvatar from "@/components/UserAvatar";
 import { useProfilesByIds } from "@/core/profiles";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import ToolsGrid from "@/components/ToolsGrid";
 import VerifiedBadge from "@/components/profile/VerifiedBadge";
@@ -171,14 +169,7 @@ const ProjectSidePanel = (p: Props) => {
         <div className="flex items-start justify-between gap-2">
           {category}
           {ownerView && p.projectId ? (
-            <div className="flex shrink-0 items-center gap-1">
-              <Button asChild size="sm" variant="outline" className="h-8 rounded-full">
-                <Link to={`/portfolio/${p.projectId}/edit`}>
-                  <Pencil className="mr-1.5 h-3.5 w-3.5" aria-hidden /> แก้ไขผลงาน
-                </Link>
-              </Button>
-              <ProjectOwnerMenu projectId={p.projectId} projectTitle={p.title} />
-            </div>
+            <ProjectOwnerMenu variant="buttons" projectId={p.projectId} projectTitle={p.title} />
           ) : !p.isOwner && p.projectId && p.ownerId ? (
             <ProjectViewerMenu
               projectId={p.projectId}
