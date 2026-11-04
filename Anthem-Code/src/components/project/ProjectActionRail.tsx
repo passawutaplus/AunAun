@@ -29,8 +29,8 @@ type Props = {
 const iconBtn =
   "inline-flex h-11 w-11 items-center justify-center rounded-full text-current transition-colors hover:bg-foreground/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
-/** Rail geometry: avatar disc diameter = pill width (h-11 button + p-1), gap between disc and pill. */
-const RAIL_W = 52;
+/** Rail geometry: disc diameter = pill width (wider than the 48px avatar so the follow badge stays inside), gap between disc and pill. */
+const RAIL_W = 60;
 const RAIL_GAP = 12;
 
 /**
@@ -160,6 +160,7 @@ const ProjectActionRail = ({
   const pill = (
     <div
       ref={rail ? setPillEl : undefined}
+      style={rail ? { width: RAIL_W } : undefined}
       className={cn(
         "relative flex items-center gap-1 rounded-full p-1",
         rail
