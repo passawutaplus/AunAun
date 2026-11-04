@@ -8,7 +8,7 @@
 --   highlights   ไฮไลต์ (art fairs)                                   ≤ 6 × 140
 --   capacity     e.g. "รับ 12 คน"                                     ≤ 80
 --   deadline     YYYY-MM-DD, closing date when it differs from ends_on
---   links        [{label ≤ 100, url (https, no shorteners), kind}] ≤ 6,
+--   links        [{label (short: what it is, e.g. "ใบสมัคร (.docx)"), url (https, no shorteners), kind}] ≤ 6,
 --                kind ∈ download · form · rules · register · tickets · info
 -- Unknown keys are dropped. URLs must come from the organiser's own page.
 
@@ -83,29 +83,25 @@ REVOKE ALL ON FUNCTION anthem.event_insights_clean(jsonb) FROM PUBLIC, anon, aut
 -- PAP 2027 (BACC): https://www.bacc.or.th/en/events/95963
 UPDATE anthem.events SET insights = anthem.event_insights_clean(coalesce(insights, '{}'::jsonb) || $j${
   "steps": [
-    "กรอกใบสมัครและเขียนข้อเสนอโครงการไม่เกิน 20 หน้า A4 (อยู่ในไฟล์เดียวกัน)",
-    "ขอจดหมายรับรองจากผู้ทำงานศิลปวัฒนธรรมหรือองค์กรด้านวัฒนธรรม",
-    "รวมเอกสารทั้งหมดเป็น PDF ไฟล์เดียว",
-    "ส่งใบสมัครภายใน 6 ธ.ค. 2569 ทางอีเมลที่ระบุในหน้าของ BACC",
-    "ผู้ผ่านรอบแรกสัมภาษณ์ออนไลน์ 19–20 ธ.ค. 2569"
+    "กรอกใบสมัคร + ข้อเสนอโครงการ ≤ 20 หน้า และขอจดหมายรับรอง",
+    "รวมเป็น PDF ไฟล์เดียว ส่งทางอีเมลภายใน 6 ธ.ค. 2569",
+    "สัมภาษณ์ออนไลน์ 19–20 ธ.ค. · ประกาศผล 26 ธ.ค. 2569"
   ],
   "eligibility": [
-    "ศิลปินศิลปะการแสดงทุกแขนง ทั้งเดี่ยวและกลุ่ม",
-    "ทำงานศิลปะการแสดงมาแล้วอย่างน้อย 4 ปี",
-    "งานใหม่ที่ยังไม่เคยแสดงต่อสาธารณะ ตอบธีม Spiritual และทำงานข้ามสาขา",
-    "ส่งได้คนละหรือกลุ่มละ 1 ข้อเสนอ"
+    "ศิลปินศิลปะการแสดง เดี่ยวหรือกลุ่ม ทำงานมาแล้ว ≥ 4 ปี",
+    "งานใหม่ไม่เคยแสดง ตอบธีม Spiritual และข้ามสาขา",
+    "ส่งได้คนละ / กลุ่มละ 1 ข้อเสนอ"
   ],
   "benefits": [
     "ทุนผลิตงาน 70,000 บาท",
-    "ใช้ Studio ชั้น 4 BACC 25 วัน ตั้งแต่เข้าโรงถึงรื้อถอน",
-    "ช่วยด้านเทคนิคบางส่วน: แสง เสียง โปรเจกเตอร์",
-    "ช่วยประชาสัมพันธ์และถ่ายภาพการแสดง"
+    "ใช้ Studio ชั้น 4 BACC 25 วัน + ช่วยแสง เสียง บางส่วน",
+    "ช่วยโปรโมตและถ่ายภาพการแสดง"
   ],
   "deadline": "2026-12-06",
   "links": [
-    {"kind": "download", "label": "โครงการสนับสนุนพื้นที่สำหรับศิลปินสาขาศิลปะการแสดง 2027 (ใบสมัคร .docx)",
+    {"kind": "download", "label": "ใบสมัคร + ข้อเสนอโครงการ (.docx)",
      "url": "https://www.bacc.or.th/wp-content/uploads/2026/09/โครงการสนับสนุนพื้นที่สำหรับศิลปินสาขาศิลปะการแสดง2027.docx"},
-    {"kind": "download", "label": "FAQ PAP Open call 2027 (.pdf)",
+    {"kind": "download", "label": "FAQ (.pdf)",
      "url": "https://www.bacc.or.th/wp-content/uploads/2026/09/FAQ-PAP-Open-call-2027.pdf"}
   ]
 }$j$::jsonb) WHERE id = 'f6f2a350-9f68-43c6-a554-915aff5d8c4f';
@@ -114,36 +110,35 @@ UPDATE anthem.events SET insights = anthem.event_insights_clean(coalesce(insight
 -- Its application link is a kmutt.me shortener, so only the announcement page is linked.
 UPDATE anthem.events SET insights = anthem.event_insights_clean(coalesce(insights, '{}'::jsonb) || $j${
   "steps": [
-    "อ่านรายละเอียดและกรอกแบบฟอร์มสมัครจากลิงก์ในประกาศ",
-    "ส่งผลงานภายใน 30 พ.ย. 2569",
-    "คณะกรรมการตัดสิน 25 ธ.ค. 2569 แล้วเปิดโหวต 28 ธ.ค. 2569 – 15 ม.ค. 2570",
+    "กรอกแบบฟอร์มจากลิงก์ในประกาศ ส่งผลงานภายใน 30 พ.ย. 2569",
+    "ตัดสิน 25 ธ.ค. แล้วเปิดโหวต 28 ธ.ค. 2569 – 15 ม.ค. 2570",
     "ประกาศผล 22 ม.ค. 2570"
   ],
   "eligibility": ["นักเรียน นิสิต นักศึกษา นักวิจัย และบุคคลทั่วไป"],
   "benefits": [
-    "ชนะเลิศ 1 รางวัล 25,000 บาท พร้อมถ้วยและเกียรติบัตร",
-    "ชมเชย 2 รางวัล รางวัลละ 10,000 บาท พร้อมเกียรติบัตร"
+    "ชนะเลิศ 25,000 บาท + ถ้วยและเกียรติบัตร",
+    "ชมเชย 2 รางวัล รางวัลละ 10,000 บาท + เกียรติบัตร"
   ],
   "links": [
-    {"kind": "info", "label": "ประกาศประกวด Mascot มหกรรมงานวิจัยแห่งชาติ 2570",
+    {"kind": "info", "label": "ประกาศรับสมัคร",
      "url": "https://ripo.kmutt.ac.th/2026/11/21041/"}
   ]
 }$j$::jsonb) WHERE id = 'ab2eb664-3374-432b-9d98-a4086acfda58';
 
 -- Dib Bangkok workshop: https://dibbangkok.org/exhibition-home/post/still-life-still-painting-a-landscape-painting-workshop-part-2.html
 UPDATE anthem.events SET insights = anthem.event_insights_clean(coalesce(insights, '{}'::jsonb) || $j${
-  "steps": ["กด จองตั๋ว ในหน้าของ Dib Bangkok", "มาถึงก่อนเวลา 30 นาที ลงทะเบียน 15:30"],
+  "steps": ["กด จองตั๋ว (1,250 บาท ไม่รวมบัตรพิพิธภัณฑ์)", "มาก่อน 30 นาที ลงทะเบียน 15:30"],
   "schedule": ["15:30–16:00 ลงทะเบียน", "16:00–18:00 เวิร์กช็อปเพนต์ภาพ"],
   "capacity": "รับ 12 คน",
   "links": [
-    {"kind": "tickets", "label": "Still Life, Still Painting Part 2 (Dib Bangkok)",
+    {"kind": "tickets", "label": "จองตั๋ว",
      "url": "https://dibbangkok.org/still-life-still-painting-2.html"}
   ]
 }$j$::jsonb) WHERE id = 'd2dba830-001f-4678-b6de-de3543deaf38';
 
 -- C-IDEA 2026 (Burapha): https://fineart.buu.ac.th/?p=11561 — no speakers / schedule published yet.
 UPDATE anthem.events SET insights = anthem.event_insights_clean(coalesce(insights, '{}'::jsonb) || $j${
-  "links": [{"kind": "info", "label": "C-IDEA Association (ข้อมูลเพิ่มเติม)", "url": "https://cideaassociation.com/"}]
+  "links": [{"kind": "info", "label": "เว็บไซต์ C-IDEA", "url": "https://cideaassociation.com/"}]
 }$j$::jsonb) WHERE id = '80a9a629-f13e-42c7-957f-f61532a0598a';
 
 -- Rollback: re-run anthem.event_insights_clean from 20261106100000_event_insights.sql

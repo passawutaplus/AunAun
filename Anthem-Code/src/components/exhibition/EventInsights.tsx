@@ -68,6 +68,8 @@ const CATEGORY_BLOCKS: Partial<Record<ExhibitionEvent["category"], Array<Partial
   workshop: [{ key: "steps", title: "ขั้นตอนการจอง" }, { key: "bring" }, { key: "schedule" }],
   talk_forum: [{ key: "speakers" }, { key: "schedule" }, { key: "steps", title: "ขั้นตอนการลงทะเบียน" }],
   art_fair: [{ key: "highlights" }, { key: "schedule", title: "รอบ / บัตร" }, { key: "steps", title: "ขั้นตอนการซื้อบัตร" }],
+  exhibition: [{ key: "who_for" }, { key: "takeaways" }, { key: "know_before" }],
+  other: [{ key: "who_for" }, { key: "takeaways" }, { key: "know_before" }],
 };
 
 const GENERIC_ORDER: ListKey[] = [
@@ -100,9 +102,12 @@ function insightBlocks(insights: EventInsights, category: string): Block[] {
   return [...first, ...rest].filter((b) => insights[b.key].length > 0);
 }
 
-function BlockList({ block, items }: { block: Block; items: string[] }) {
+/** On the page each block shows at most this many short items (write them merged, one line each). */
+const SHOWN_ITEMS = 3;
+
+function BlockList({ block, items: all }: { block: Block; items: string[] }) {
   const Icon = block.icon;
-  const ordered = block.key === "steps" || block.key === "schedule";
+  const items = all.slice(0, SHOWN_ITEMS);
   return (
     <div>
       <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
@@ -110,7 +115,7 @@ function BlockList({ block, items }: { block: Block; items: string[] }) {
         {block.title}
       </h3>
       {block.key === "steps" ? (
-        <ol className="mt-3 space-y-2.5">
+        <ol className="mt-2.5 space-y-1.5">
           {items.map((item, i) => (
             <li key={item} className="flex gap-3 text-sm leading-relaxed text-foreground/85">
               <span
@@ -119,16 +124,16 @@ function BlockList({ block, items }: { block: Block; items: string[] }) {
               >
                 {i + 1}
               </span>
-              <span>{item}</span>
+              <span className="line-clamp-2">{item}</span>
             </li>
           ))}
         </ol>
       ) : (
-        <ul className={cn("mt-3", ordered ? "space-y-1.5" : "space-y-2.5")}>
+        <ul className="mt-2.5 space-y-1.5">
           {items.map((item) => (
             <li key={item} className="flex gap-2.5 text-sm leading-relaxed text-foreground/85">
               <span className="mt-[0.6em] h-1 w-1 shrink-0 rounded-full bg-foreground/40" aria-hidden />
-              <span>{item}</span>
+              <span className="line-clamp-2">{item}</span>
             </li>
           ))}
         </ul>
@@ -137,7 +142,7 @@ function BlockList({ block, items }: { block: Block; items: string[] }) {
   );
 }
 
-/** Buttons that say exactly what they open, e.g. "ดาวน์โหลด: ใบสมัคร …". */
+/** Short buttons (icon + what it is, e.g. "ใบสมัคร (.docx)"); the full meaning is in the tooltip / label. */
 export function EventLinkButtons({ links, className }: { links: EventInsightLink[]; className?: string }) {
   if (!links.length) return null;
   return (
@@ -148,12 +153,13 @@ export function EventLinkButtons({ links, className }: { links: EventInsightLink
           <Button
             key={`${l.url}-${i}`}
             asChild
-            variant={i === 0 && l.kind !== "info" ? "default" : "outline"}
-            className="h-auto min-h-10 max-w-full whitespace-normal rounded-full py-2 text-left"
+            size="sm"
+            variant="outline"
+            className="h-auto min-h-9 max-w-full whitespace-normal rounded-full py-1.5 text-left"
           >
-            <a href={l.url} target="_blank" rel="noopener noreferrer nofollow">
+            <a href={l.url} target="_blank" rel="noopener noreferrer nofollow" title={eventLinkText(l)} aria-label={eventLinkText(l)}>
               <Icon className="h-4 w-4 shrink-0" aria-hidden />
-              <span>{eventLinkText(l)}</span>
+              <span>{l.label}</span>
             </a>
           </Button>
         );
@@ -179,12 +185,11 @@ export function EventInsightsPanel({
   const deadline = isOpenCall ? (insights.deadline ?? event.ends_on) : insights.deadline;
   const countdown = deadlineLabel(deadline);
   const organiserPage = [event.source_url, event.website_url].find((u): u is string => !!u && isSafeEventLink(u));
-  if (!blocks.length && !insights.links.length && !insights.capacity && !countdown) return null;
+  if (!blocks.length && !insights.capacity && !countdown) return null;
 
-  // Category blocks first row (up to 3), the rest below.
+  // One row: the category's three most useful blocks; overlapping generic lists are left out.
   const lead = blocks.slice(0, 3);
-  const more = blocks.slice(3);
-  const grid = (n: number) => cn("grid grid-cols-1 gap-x-10 gap-y-8", n === 2 && "md:grid-cols-2", n >= 3 && "md:grid-cols-3");
+  const grid = (n: number) => cn("grid grid-cols-1 gap-x-10 gap-y-6", n === 2 && "md:grid-cols-2", n >= 3 && "md:grid-cols-3");
 
   return (
     <section aria-labelledby="insights-heading" className={cn("border-t border-border pt-6", className)}>
@@ -212,18 +217,8 @@ export function EventInsightsPanel({
       ) : null}
 
       {lead.length ? (
-        <div className={cn("mt-5", grid(lead.length))}>
+        <div className={cn("mt-4", grid(lead.length))}>
           {lead.map((b) => (
-            <BlockList key={b.key} block={b} items={insights[b.key]} />
-          ))}
-        </div>
-      ) : null}
-
-      <EventLinkButtons links={insights.links} className="mt-6" />
-
-      {more.length ? (
-        <div className={cn("mt-8", grid(more.length))}>
-          {more.map((b) => (
             <BlockList key={b.key} block={b} items={insights[b.key]} />
           ))}
         </div>
@@ -234,7 +229,7 @@ export function EventInsightsPanel({
           href={organiserPage}
           target="_blank"
           rel="noopener noreferrer nofollow"
-          className="mt-6 inline-flex items-center gap-1.5 text-sm text-muted-foreground underline decoration-foreground/30 underline-offset-4 hover:text-foreground hover:decoration-foreground"
+          className="mt-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground underline decoration-foreground/30 underline-offset-4 hover:text-foreground hover:decoration-foreground"
         >
           อ่านรายละเอียดเต็มได้ที่เว็บไซต์ผู้จัด <ArrowRight className="h-3.5 w-3.5" aria-hidden />
         </a>
@@ -348,7 +343,7 @@ export function EventInsightsEditor({ eventId }: { eventId: string }) {
       <div>
         <h2 className="font-display text-xl font-semibold text-foreground">สรุปโดย SAMECOR</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          บรรทัดละ 1 ข้อ เขียนจากข้อมูลของผู้จัดเท่านั้น · ช่องไหนว่าง หน้าเว็บจะไม่แสดงหัวข้อนั้น · หัวข้อบนหน้างานเปลี่ยนตามหมวดของงาน
+          บรรทัดละ 1 ข้อ สั้น ๆ รวบให้เหลือไม่เกิน 3 ข้อ (หน้าเว็บแสดง 3 ข้อแรก) · เขียนจากข้อมูลของผู้จัดเท่านั้น · หน้างานแสดง 3 หัวข้อที่เหมาะกับหมวดของงาน ช่องว่างจะไม่แสดง
         </p>
       </div>
       <div className="grid gap-4 md:grid-cols-3">
@@ -386,7 +381,7 @@ export function EventInsightsEditor({ eventId }: { eventId: string }) {
       <fieldset className="space-y-2">
         <legend className="text-sm font-medium text-foreground">ปุ่มเอกสาร / ลิงก์ (สูงสุด 6)</legend>
         <p className="text-xs text-muted-foreground">
-          ใช้เฉพาะลิงก์จากหน้าของผู้จัด · https:// เท่านั้น ห้ามลิงก์ย่อ · ชื่อปุ่มบอกให้ชัดว่าเปิดอะไร เช่น “ใบสมัคร PAP 2027 (.docx)”
+          ใช้เฉพาะลิงก์จากหน้าของผู้จัด · https:// เท่านั้น ห้ามลิงก์ย่อ · ชื่อปุ่มสั้น ๆ บอกแค่ว่าคืออะไร เช่น “ใบสมัคร (.docx)”, “กติกา (.pdf)”, “จองตั๋ว” · แสดงในแถบขวาเหนือ Organizer
         </p>
         {links.map((l, i) => (
           <div key={i} className="grid gap-2 sm:grid-cols-[9rem_minmax(0,1fr)_minmax(0,1.3fr)_auto]">
@@ -402,7 +397,7 @@ export function EventInsightsEditor({ eventId }: { eventId: string }) {
                 </option>
               ))}
             </select>
-            <Input aria-label="ชื่อปุ่ม" maxLength={100} value={l.label} placeholder="ชื่อเอกสาร / หน้า" onChange={(e) => setLink(i, { label: e.target.value })} />
+            <Input aria-label="ชื่อปุ่ม" maxLength={40} value={l.label} placeholder="ใบสมัคร (.docx)" onChange={(e) => setLink(i, { label: e.target.value })} />
             <Input
               aria-label="ลิงก์"
               value={l.url}

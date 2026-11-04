@@ -35,7 +35,7 @@ SELECT public.scout_event_draft($j$
     "know_before": ["…"],
     "related_categories": ["Graphic / Branding", "Architecture / Interior"],
     "steps": ["…"],
-    "links": [{ "kind": "download", "label": "ใบสมัคร Open Call 2027 (.pdf)", "url": "https://…" }]
+    "links": [{ "kind": "download", "label": "ใบสมัคร (.pdf)", "url": "https://…" }]
   }
 }
 $j$::jsonb);
@@ -70,9 +70,12 @@ hides empty ones — fill them whenever the organiser's page states them):
 | `deadline` | open call closing date `YYYY-MM-DD` when it differs from `ends_on` | date |
 | `links` | buttons `{ "kind", "label", "url" }`, kind ∈ download · form · rules · register · tickets · info | ≤ 6 |
 
+**Keep it short:** the page shows one row of three blocks and at most **3 items per block**, each
+about one line (≤ 80 characters) — merge related facts into one item instead of listing them.
+
 **The weekly scout should fill `steps` and `links` for every open call, workshop and talk** whose page
 gives them. Links must be copied exactly from the organiser's page (application forms, rule PDFs,
 booking pages) — never guessed or built, `https://` only, no shorteners (if the page only gives a
-shortener, link the announcement page itself as `info`). Labels say exactly what the button opens,
-e.g. `"label": "โครงการสนับสนุนพื้นที่สำหรับศิลปินสาขาศิลปะการแสดง 2027 (ใบสมัคร .docx)"` with
-`"kind": "download"`. Anything the page doesn't state is left out.
+shortener, link the announcement page itself as `info`). Labels are short — just what it is, ≤ 30
+characters, e.g. `"ใบสมัคร (.docx)"`, `"กติกา (.pdf)"`, `"FAQ (.pdf)"`, `"จองตั๋ว"` (the buttons sit in the
+event page's side rail above Organizer). Anything the page doesn't state is left out.

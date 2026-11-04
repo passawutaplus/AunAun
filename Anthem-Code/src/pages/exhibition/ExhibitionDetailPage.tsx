@@ -31,7 +31,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import QueryStatusPanel from "@/components/ui/QueryStatusPanel";
 import { Button } from "@/components/ui/button";
 import { recordEventRegistration, useEvent, useEventInsights, useEventProjects, useEventStats, useMyEventInterests, useRecordEventView } from "@/hooks/useExhibitionEvents";
-import { EventInsightsPanel, EventRelatedWorks } from "@/components/exhibition/EventInsights";
+import { EventInsightsPanel, EventLinkButtons, EventRelatedWorks } from "@/components/exhibition/EventInsights";
 import { EventActions } from "@/components/exhibition/EventActions";
 import { EventVenuesSection, VenueOpenBadge } from "@/components/exhibition/EventVenuesSection";
 import { useEventVenues, useParentEvent } from "@/hooks/useEventVenues";
@@ -308,6 +308,14 @@ export default function ExhibitionDetailPage() {
 
         {/* Thin rules between the side sections; on phones the first one also separates them from About. */}
         <aside className="divide-y divide-border border-t border-border lg:border-t-0 [&>*]:py-6 lg:[&>*:first-child]:pt-0">
+          {insights?.links.length ? (
+            <section aria-labelledby="documents-heading">
+              <h2 id="documents-heading" className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                เอกสาร &amp; ลิงก์
+              </h2>
+              <EventLinkButtons links={insights.links} className="mt-3" />
+            </section>
+          ) : null}
           <section aria-labelledby="organizer-heading">
             <h2 id="organizer-heading" className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
               Organizer
