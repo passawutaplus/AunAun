@@ -243,10 +243,14 @@ export default function ExhibitionDetailPage() {
                   href={gcalHref}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-1 inline-flex items-center gap-1.5 text-xs text-muted-foreground underline decoration-foreground/30 underline-offset-4 hover:text-foreground hover:decoration-foreground"
+                  className="group mt-1 inline-flex items-center gap-1.5 text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:underline focus-visible:outline-none"
                 >
                   <GoogleCalendarIcon className="h-3.5 w-3.5 shrink-0" />
-                  เพิ่มลง Google Calendar <ExternalLink className="h-3 w-3" aria-hidden />
+                  เพิ่มลง Google Calendar
+                  <ArrowUpRight
+                    className="h-3.5 w-3.5 shrink-0 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-focus-visible:-translate-y-0.5 group-focus-visible:translate-x-0.5 motion-reduce:transition-none"
+                    aria-hidden
+                  />
                 </a>
               ) : null}
             </InfoRow>
