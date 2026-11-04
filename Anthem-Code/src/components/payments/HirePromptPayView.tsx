@@ -9,6 +9,7 @@ import type { HireChargeResult } from "@/hooks/useHireCharge";
 import type { PaymentMethod } from "@/lib/payments/types";
 import { cn } from "@/lib/utils";
 
+import { copyText } from "@/lib/copyText";
 type Props = {
   charge: HireChargeResult;
   /** Non-prod affordance to simulate a paid webhook. */
@@ -46,7 +47,7 @@ export default function HirePromptPayView({
 
   const copyRef = async () => {
     try {
-      await navigator.clipboard.writeText(charge.reference);
+      await copyText(charge.reference);
       toast.success("คัดลอกเลขอ้างอิงแล้ว");
     } catch {
       toast.error("คัดลอกไม่สำเร็จ");

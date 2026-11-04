@@ -30,6 +30,7 @@ import { ABOUT_ME_EDIT_HREF } from "@/lib/settingsNav";
 import { STUDIO_COLLAB_PATH, STUDIO_HIRE_PATH, STUDIO_INSIGHTS_PATH, STUDIO_PROJECTS_PATH } from "@/lib/studioNav";
 import { cn } from "@/lib/utils";
 
+import { copyText } from "@/lib/copyText";
 type Props = {
   userId: string;
 };
@@ -141,7 +142,7 @@ export default function StudioHomePanel({ userId }: Props) {
         await navigator.share({ title: name || "โปรไฟล์ของฉัน", url });
         return;
       }
-      await navigator.clipboard.writeText(url);
+      await copyText(url);
       toast.success("คัดลอกลิงก์โปรไฟล์แล้ว");
     } catch {
       /* share cancelled */

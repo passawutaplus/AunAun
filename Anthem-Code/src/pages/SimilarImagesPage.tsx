@@ -21,6 +21,7 @@ import { toHexColor } from "@/lib/imagePalette";
 import { thumbFeedCoverUrl } from "@/lib/feedProjectCover";
 import { cn } from "@/lib/utils";
 
+import { copyText } from "@/lib/copyText";
 const ASPECT_ICONS: Record<SimilarAspect, typeof Palette> = {
   color: Palette,
   style: Sparkles,
@@ -69,7 +70,7 @@ function SourcePalette({ src }: { src: string }) {
   const palette = [...new Set(raw.map(toHexColor))];
   const copy = async (hex: string) => {
     try {
-      await navigator.clipboard.writeText(hex.toUpperCase());
+      await copyText(hex.toUpperCase());
       toast.success(`คัดลอก ${hex.toUpperCase()} แล้ว`);
     } catch {
       toast.error("คัดลอกไม่สำเร็จ");

@@ -133,6 +133,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+import { copyText } from "@/lib/copyText";
 function isForwardedOut(req: HiringRow): boolean {
   return (
     !!(req as { forwarded_to_user_id?: string | null }).forwarded_to_user_id ||
@@ -500,7 +501,7 @@ export function ProfileHiringRequestsSection({
   const copyOrderCode = async (requestId: string, code: string) => {
     if (!code || code === "—") return;
     try {
-      await navigator.clipboard.writeText(code);
+      await copyText(code);
       setCopiedOrderId(requestId);
       toast.success("คัดลอกเลขคำสั่งซื้อแล้ว");
       window.setTimeout(() => {
