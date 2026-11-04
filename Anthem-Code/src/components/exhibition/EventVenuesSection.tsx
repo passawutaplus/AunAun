@@ -226,8 +226,8 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
           {groups.map((g) => (
             <div key={g.area ?? "-"}>
               {g.area ? (
-                <h3 className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  {g.area} <span className="font-normal">· {g.venues.length} ที่</span>
+                <h3 className="mb-2 text-sm font-semibold text-foreground">
+                  {g.area} <span className="font-normal text-muted-foreground">· {g.venues.length} ที่</span>
                 </h3>
               ) : null}
               <ol className="divide-y divide-border border-y border-border">
