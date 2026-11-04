@@ -9,6 +9,7 @@ import {
   MessageCircle,
   MapPin,
   Ticket,
+  TrainFront,
 } from "lucide-react";
 import SeoHead from "@/components/SeoHead";
 import SeoBreadcrumb from "@/components/seo/SeoBreadcrumb";
@@ -32,6 +33,9 @@ import { Button } from "@/components/ui/button";
 import { recordEventRegistration, useEvent, useEventInsights, useEventProjects, useEventStats, useMyEventInterests, useRecordEventView } from "@/hooks/useExhibitionEvents";
 import { EventInsightsPanel, EventRelatedWorks } from "@/components/exhibition/EventInsights";
 import { EventActions } from "@/components/exhibition/EventActions";
+import { EventVenuesSection, VenueOpenBadge } from "@/components/exhibition/EventVenuesSection";
+import { useEventVenues, useParentEvent } from "@/hooks/useEventVenues";
+import { venueMapsUrl, venueOpenState } from "@/lib/eventVenues";
 import { useAuth } from "@/hooks/useAuth";
 import { navigateToAuth } from "@/lib/authRedirect";
 import {
@@ -97,6 +101,11 @@ export default function ExhibitionDetailPage() {
   useRecordEventView(event?.id, event?.status === "published");
   const { data: works = [] } = useEventProjects(event?.project_ids);
   const { data: insights } = useEventInsights(event?.id);
+  // Main event → its venues; venue page → its main event (and this venue's own details).
+  const { data: venues = [] } = useEventVenues(event?.id);
+  const { data: parent } = useParentEvent(event?.id);
+  const { data: siblings = [] } = useEventVenues(parent?.id);
+  const venue = siblings.find((v) => v.id === event?.id) ?? null;
   const [contactOpen, setContactOpen] = useState(false);
   const [sponsorOpen, setSponsorOpen] = useState(false);
 
@@ -187,7 +196,11 @@ export default function ExhibitionDetailPage() {
 
       {/* Same columns as a work page: wide media, narrow info rail. */}
       <div className="mx-auto grid w-full max-w-[84rem] grid-cols-1 lg:grid-cols-[minmax(0,56rem)_22.5rem] lg:justify-center lg:gap-x-10 xl:grid-cols-[minmax(0,56rem)_24rem] xl:gap-x-12 gap-8">
-        <EventGallery images={eventImages(event)} title={event.title} aspect="aspect-[4/3]" />
+        <EventGallery
+          images={eventImages(event).length ? eventImages(event) : parent?.cover_url ? [parent.cover_url] : []}
+          title={event.title}
+          aspect="aspect-[4/3]"
+        />
 
         <div className="flex flex-col gap-5">
           <div className="flex flex-wrap items-center gap-2">
@@ -195,9 +208,18 @@ export default function ExhibitionDetailPage() {
             <CategoryTag category={event.category} />
             <OriginTag origin={event.origin} />
           </div>
+          {parent ? (
+            <Link
+              to={`/exhibition/${parent.id}#venues`}
+              className="-mb-2 text-sm text-muted-foreground underline decoration-foreground/30 underline-offset-4 hover:text-foreground"
+            >
+              สถานที่หนึ่งของ {parent.title}
+            </Link>
+          ) : null}
           <h1 className="font-display text-4xl font-semibold leading-[1.05] tracking-tight text-foreground sm:text-5xl">
             {event.title}
           </h1>
+          {venue?.name_en ? <p className="-mt-3 text-sm text-muted-foreground">{venue.name_en}</p> : null}
           <EventActions
             event={event}
             stats={stats?.[event.id]}
@@ -208,10 +230,11 @@ export default function ExhibitionDetailPage() {
 
           <div className="space-y-3 border-t border-border pt-5">
             <InfoRow icon={CalendarDays}>
-              {event.starts_on ? formatEventDates(event.starts_on, event.ends_on) : NOT_SPECIFIED}
+              {event.starts_on ? formatEventDates(event.starts_on, event.ends_on) : venue?.date_note ?? NOT_SPECIFIED}
               <span className="block text-muted-foreground">
-                เวลา: {event.time_note ?? NOT_SPECIFIED}
+                เวลา: {venue?.hours_note ?? event.time_note ?? NOT_SPECIFIED}
               </span>
+              {venue ? <VenueOpenBadge state={venueOpenState(venue)} className="mt-1" /> : null}
               {gcalHref ? (
                 <a
                   href={gcalHref}
@@ -226,7 +249,7 @@ export default function ExhibitionDetailPage() {
             <InfoRow icon={MapPin}>
               {event.location_name ? (
                 <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location_name)}`}
+                  href={venue ? venueMapsUrl(venue) : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location_name)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="underline decoration-foreground/30 underline-offset-4 hover:decoration-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground"
@@ -239,7 +262,8 @@ export default function ExhibitionDetailPage() {
               )}
               {event.location_note ? <span className="block text-muted-foreground">{event.location_note}</span> : null}
             </InfoRow>
-            <InfoRow icon={Ticket}>{feeLabel(event)}</InfoRow>
+            {venue?.transit_note ? <InfoRow icon={TrainFront}>{venue.transit_note}</InfoRow> : null}
+            <InfoRow icon={Ticket}>{venue?.admission_note ?? feeLabel(event)}</InfoRow>
             {isEventEnded(event) ? (
               <p className="text-sm font-medium text-muted-foreground">งานนี้จบแล้ว</p>
             ) : null}
@@ -264,6 +288,10 @@ export default function ExhibitionDetailPage() {
           />
         </div>
       </div>
+
+      {venues.length ? (
+        <EventVenuesSection parent={event} venues={venues} className="mx-auto mt-12 w-full max-w-[84rem]" />
+      ) : null}
 
       <div className="mt-12 mx-auto grid w-full max-w-[84rem] grid-cols-1 lg:grid-cols-[minmax(0,56rem)_22.5rem] lg:justify-center lg:gap-x-10 xl:grid-cols-[minmax(0,56rem)_24rem] xl:gap-x-12 gap-y-10">
         <section aria-labelledby="about-heading">

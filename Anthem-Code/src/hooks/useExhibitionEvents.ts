@@ -28,16 +28,25 @@ const eventsTable = () => supabase.from("events" as never);
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const rpc = (fn: string, args: Record<string, unknown>) => (supabase.rpc as any)(fn, args);
 
+type ListResult = { data: unknown[] | null; error: { code?: string } | null };
+/**
+ * Lists show main events only (venues are listed on their event's page). On a database without the venues
+ * migration yet, `parent_id` doesn't exist (42703) — there are no venues then, so list everything.
+ */
+async function topLevelOnly(run: (onlyTop: boolean) => PromiseLike<ListResult>): Promise<ListResult> {
+  const first = await run(true);
+  return first.error?.code === "42703" ? run(false) : first;
+}
+
 export function usePublishedEvents() {
   return useQuery({
     queryKey: ["events", "public"],
     staleTime: 60_000,
     queryFn: async () => {
-      const { data, error } = await eventsTable()
-        .select(EVENT_SELECT)
-        .eq("status", "published")
-        .order("starts_on", { ascending: true })
-        .limit(120);
+      const { data, error } = await topLevelOnly((onlyTop) => {
+        const q = eventsTable().select(EVENT_SELECT).eq("status", "published");
+        return (onlyTop ? q.is("parent_id", null) : q).order("starts_on", { ascending: true }).limit(120);
+      });
       if (error && !useDevDemo) throw error;
       return sortPublicEvents(withDevDemo(data as ExhibitionEvent[] | null, !!error));
     },
@@ -63,10 +72,10 @@ export function useMyEvents() {
     queryKey: ["events", "mine", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const { data, error } = await eventsTable()
-        .select(EVENT_SELECT)
-        .eq("owner_id", user!.id)
-        .order("updated_at", { ascending: false });
+      const { data, error } = await topLevelOnly((onlyTop) => {
+        const q = eventsTable().select(EVENT_SELECT).eq("owner_id", user!.id);
+        return (onlyTop ? q.is("parent_id", null) : q).order("updated_at", { ascending: false });
+      });
       if (error && !useDevDemo) throw error;
       if (useDevDemo && (error || !data?.length)) {
         // Show one of each owner state so the list can be reviewed.
@@ -85,12 +94,13 @@ export function useAdminEvents() {
   return useQuery({
     queryKey: ["admin", "events"],
     queryFn: async () => {
-      const { data, error } = await eventsTable()
-        .select(EVENT_SELECT)
+      const { data, error } = await topLevelOnly((onlyTop) => {
         // Creators' private drafts stay hidden; the team's own drafts are listed.
-        .or("status.neq.draft,origin.neq.community")
-        .order("submitted_at", { ascending: false, nullsFirst: false })
-        .limit(200);
+        const q = eventsTable().select(EVENT_SELECT).or("status.neq.draft,origin.neq.community");
+        return (onlyTop ? q.is("parent_id", null) : q)
+          .order("submitted_at", { ascending: false, nullsFirst: false })
+          .limit(200);
+      });
       if (error && !useDevDemo) throw error;
       if (useDevDemo && (error || !data?.length)) {
         return DEMO_EVENTS.map((e, i) => ({ ...e, status: i === 0 ? "published" : "pending" }) as ExhibitionEvent);
@@ -196,7 +206,7 @@ export function useMyPublishedProjects() {
   });
 }
 
-function invalidateEvents(qc: ReturnType<typeof useQueryClient>) {
+export function invalidateEvents(qc: ReturnType<typeof useQueryClient>) {
   void qc.invalidateQueries({ queryKey: ["events"] });
   void qc.invalidateQueries({ queryKey: ["admin", "events"] });
 }

@@ -1,0 +1,163 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { mapWriteFlowError } from "@/lib/writeFlowErrors";
+import { EVENT_SELECT, isDemoEventId, type ExhibitionEvent } from "@/lib/exhibitionEvents";
+import { featureActive, VENUE_SELECT, type EventVenue, type VenueDraft } from "@/lib/eventVenues";
+import { invalidateEvents } from "@/hooks/useExhibitionEvents";
+
+const eventsTable = () => supabase.from("events" as never);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const rpc = (fn: string, args: Record<string, unknown>) => (supabase.rpc as any)(fn, args);
+
+export type FeaturedEvent = ExhibitionEvent & { featured_until: string | null; interest_count: number };
+
+/** The one pinned event for the top of /exhibition, or null (also null before the venues migration). */
+export function useFeaturedEvent() {
+  return useQuery({
+    queryKey: ["events", "featured"],
+    staleTime: 60_000,
+    retry: false,
+    queryFn: async (): Promise<FeaturedEvent | null> => {
+      const { data, error } = await eventsTable()
+        .select(`${EVENT_SELECT}, is_featured, featured_until, interest_count`)
+        .eq("is_featured", true)
+        .eq("status", "published")
+        .maybeSingle();
+      if (error || !data) return null;
+      const row = data as FeaturedEvent & { is_featured: boolean };
+      return featureActive(row) ? row : null;
+    },
+  });
+}
+
+/** Featured flag of one event, for the team editor. */
+export function useEventFeature(id: string | null | undefined) {
+  return useQuery({
+    queryKey: ["events", "feature", id],
+    enabled: !!id && !isDemoEventId(id),
+    retry: false,
+    queryFn: async () => {
+      const { data, error } = await eventsTable().select("is_featured, featured_until").eq("id", id!).maybeSingle();
+      if (error) return null;
+      return data as { is_featured: boolean; featured_until: string | null } | null;
+    },
+  });
+}
+
+/** Venues (sub-events) of a main event, in list order. Empty before the venues migration. */
+export function useEventVenues(parentId: string | null | undefined) {
+  return useQuery({
+    queryKey: ["events", "venues", parentId],
+    enabled: !!parentId && !isDemoEventId(parentId),
+    staleTime: 60_000,
+    retry: false,
+    queryFn: async (): Promise<EventVenue[]> => {
+      const { data, error } = await eventsTable()
+        .select(VENUE_SELECT)
+        .eq("parent_id", parentId!)
+        .order("sort_order", { ascending: true });
+      if (error) return [];
+      return ((data ?? []) as EventVenue[]).map((v) => ({
+        ...v,
+        opening_hours: Array.isArray(v.opening_hours) ? v.opening_hours : [],
+      }));
+    },
+  });
+}
+
+/** For a venue page: its main event (id + title), or null for a main event. */
+export function useParentEvent(id: string | null | undefined) {
+  return useQuery({
+    queryKey: ["events", "parent-of", id],
+    enabled: !!id && !isDemoEventId(id),
+    staleTime: 5 * 60_000,
+    retry: false,
+    queryFn: async () => {
+      const { data, error } = await eventsTable().select("parent_id").eq("id", id!).maybeSingle();
+      const parentId = (data as { parent_id: string | null } | null)?.parent_id;
+      if (error || !parentId) return null;
+      const { data: p } = await eventsTable().select("id, title, cover_url").eq("id", parentId).maybeSingle();
+      return (p as { id: string; title: string; cover_url: string | null } | null) ?? null;
+    },
+  });
+}
+
+/** "สนใจทั้งหมด" / "เลิกสนใจทั้งหมด" for every venue of a main event. */
+export function useSetAllVenuesInterest() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (v: { parentId: string; on: boolean }) => {
+      const { error } = await rpc("set_event_venues_interest", { _parent_id: v.parentId, _on: v.on });
+      if (error) throw error;
+    },
+    onSuccess: (_d, v) => {
+      void qc.invalidateQueries({ queryKey: ["events", "my-interests"] });
+      void qc.invalidateQueries({ queryKey: ["events", "venues"] });
+      void qc.invalidateQueries({ queryKey: ["events", "stats"] });
+      void qc.invalidateQueries({ queryKey: ["events", "my-list"] });
+      toast.success(v.on ? "สนใจทุกสถานที่แล้ว — จะเตือนก่อนแต่ละที่เริ่ม" : "เลิกสนใจทุกสถานที่แล้ว");
+    },
+    onError: () => toast.error("บันทึกไม่สำเร็จ ลองอีกครั้ง"),
+  });
+}
+
+// ── Team ─────────────────────────────────────────────────────────────────────
+
+export function useSetEventFeatured() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (v: { id: string; on: boolean; until: string | null }) => {
+      const { error } = await rpc("admin_set_event_featured", { _id: v.id, _on: v.on, _until: v.until });
+      if (error) throw error;
+    },
+    onSuccess: (_d, v) => {
+      invalidateEvents(qc);
+      toast.success(v.on ? "ปักหมุดเป็นอีเวนต์เด่นแล้ว" : "เลิกปักหมุดแล้ว");
+    },
+    onError: (err: unknown) => toast.error(mapWriteFlowError(err, "อัปเดตไม่สำเร็จ")),
+  });
+}
+
+export function useSaveVenue() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (v: { parentId: string; id: string | null; draft: VenueDraft }) => {
+      const { data, error } = await rpc("admin_event_venue_save", { _parent_id: v.parentId, _id: v.id, _data: v.draft });
+      if (error) throw error;
+      return data as string;
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["events", "venues"] });
+      toast.success("บันทึกสถานที่แล้ว");
+    },
+    onError: (err: unknown) => toast.error(mapWriteFlowError(err, "บันทึกไม่สำเร็จ")),
+  });
+}
+
+export function useDeleteVenue() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await rpc("admin_event_venue_delete", { _id: id });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["events", "venues"] });
+      toast.success("ลบสถานที่แล้ว");
+    },
+    onError: (err: unknown) => toast.error(mapWriteFlowError(err, "ลบไม่สำเร็จ")),
+  });
+}
+
+export function useReorderVenues() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (v: { parentId: string; ids: string[] }) => {
+      const { error } = await rpc("admin_event_venues_reorder", { _parent_id: v.parentId, _ids: v.ids });
+      if (error) throw error;
+    },
+    onSettled: () => void qc.invalidateQueries({ queryKey: ["events", "venues"] }),
+    onError: (err: unknown) => toast.error(mapWriteFlowError(err, "เรียงลำดับไม่สำเร็จ")),
+  });
+}

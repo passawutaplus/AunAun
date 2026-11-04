@@ -39,6 +39,7 @@ import {
 import { uploadProjectImage } from "@/lib/uploadImage";
 import { cn } from "@/lib/utils";
 import { EventInsightsEditor } from "@/components/exhibition/EventInsights";
+import TeamEventVenuesPanel from "@/components/exhibition/TeamEventVenuesPanel";
 
 const ACCEPT = "image/jpeg,image/png,image/webp,image/heic,image/heif";
 
@@ -309,6 +310,13 @@ export default function ExhibitionEditorPage({ team = false }: { team?: boolean 
             onApply={applyExtracted}
           />
           {eventId ? <EventInsightsEditor eventId={eventId} /> : null}
+          {eventId ? (
+            <TeamEventVenuesPanel
+              eventId={eventId}
+              parent={{ starts_on: draft.starts_on, ends_on: draft.ends_on }}
+              published={existing?.status === "published"}
+            />
+          ) : null}
         </div>
       ) : null}
 
