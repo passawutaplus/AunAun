@@ -482,7 +482,9 @@ export function ExhibitionCalendar({ events, className }: Props) {
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[calc(100dvh-1.5rem)] max-w-5xl gap-0 overflow-y-auto overscroll-contain rounded-2xl p-0 max-sm:w-[calc(100vw-1.5rem)]">
+        <DialogContent className="flex max-h-[calc(100dvh-1.5rem)] max-w-5xl flex-col gap-0 overflow-hidden rounded-2xl p-0 max-sm:w-[calc(100vw-1.5rem)] [&>button:last-child]:right-3 [&>button:last-child]:top-3 [&>button:last-child]:z-10 [&>button:last-child]:flex [&>button:last-child]:h-8 [&>button:last-child]:w-8 [&>button:last-child]:items-center [&>button:last-child]:justify-center [&>button:last-child]:rounded-full [&>button:last-child]:border [&>button:last-child]:border-border [&>button:last-child]:bg-card [&>button:last-child]:opacity-100 [&>button:last-child]:shadow-sm">
+          {/* Only the middle scrolls: the close button (top corner) and the footer stay put. */}
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
           <DialogHeader className="px-4 pb-3 pt-5 text-left sm:px-6 sm:pb-4 sm:pt-6">
             <DialogTitle className="text-2xl font-semibold tracking-tight sm:text-3xl">
               Event Calendar
@@ -710,7 +712,8 @@ export function ExhibitionCalendar({ events, className }: Props) {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-6 py-4">
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border shrink-0 px-4 py-3 sm:px-6 sm:py-4">
             <AddToGoogle events={dayList} />
             <Button
               type="button"
