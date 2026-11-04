@@ -1134,7 +1134,7 @@ export function ProjectEditorToolsSidebar({
             </div>
           </div>
         ) : (
-          <div className="pointer-events-none fixed left-2 top-[calc(50%+1.5rem)] z-30 flex -translate-y-1/2 flex-col items-center gap-1 sm:left-3 lg:top-1/2">
+          <div className="pointer-events-none fixed left-2 top-[calc(50%+1.5rem)] z-30 hidden -translate-y-1/2 flex-col items-center gap-1 sm:left-3 lg:top-1/2 lg:flex">
             <div className="pointer-events-auto flex flex-col items-center gap-1">
               <CollapsedRailButton
                 label="ข้อความ"

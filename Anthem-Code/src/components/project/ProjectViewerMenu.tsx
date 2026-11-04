@@ -14,6 +14,7 @@ import { useBlockUser, useUserBlocks } from "@/hooks/useCommunityPostInteraction
 import { hideProjectId } from "@/lib/hiddenProjects";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useProjectT } from "@/lib/i18n/project";
 
 type Props = {
   projectId: string;
@@ -33,12 +34,13 @@ export function ProjectViewerMenu({
   className,
 }: Props) {
   const { user } = useAuth();
+  const { t } = useProjectT();
   const openSignup = useAuthDialog((s) => s.openSignup);
   const blockMut = useBlockUser();
   const { data: blockedSet } = useUserBlocks(user?.id);
   const [reportOpen, setReportOpen] = useState(false);
   const alreadyBlocked = !!blockedSet?.has(ownerId);
-  const name = ownerName.trim() || "ผู้ใช้นี้";
+  const name = ownerName.trim() || t("thisUser");
 
   const requireUser = () => {
     if (user) return true;
@@ -52,7 +54,7 @@ export function ProjectViewerMenu({
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            aria-label="ตัวเลือกผลงาน"
+            aria-label={t("optionsAria")}
             className={cn(
               "rounded-md p-2 min-h-11 min-w-11 text-muted-foreground hover:bg-muted/30 hover:text-foreground transition-colors",
               className,
@@ -66,12 +68,12 @@ export function ProjectViewerMenu({
             className="cursor-pointer gap-2 py-2.5"
             onClick={() => {
               hideProjectId(projectId);
-              toast.success("ซ่อนผลงานนี้แล้ว");
+              toast.success(t("hidden"));
               onHidden?.();
             }}
           >
             <EyeOff className="h-4 w-4 shrink-0" aria-hidden />
-            ซ่อนผลงานนี้
+            {t("hideWork")}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
@@ -83,15 +85,15 @@ export function ProjectViewerMenu({
                 .mutateAsync(ownerId)
                 .then(() => onBlocked?.())
                 .catch((err) => {
-                  toast.error(err instanceof Error ? err.message : "บล็อกไม่สำเร็จ");
+                  toast.error(err instanceof Error ? err.message : t("blockFailed"));
                 });
             }}
           >
             <UserX className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
             <span className="flex min-w-0 flex-col gap-0.5 text-left">
-              <span>{alreadyBlocked ? `บล็อก ${name} แล้ว` : `บล็อก ${name}`}</span>
+              <span>{alreadyBlocked ? t("blocked", { name }) : t("block", { name })}</span>
               <span className="text-xs font-normal text-muted-foreground whitespace-normal">
-                คุณจะไม่สามารถมองเห็นหรือติดต่อกันได้
+                {t("blockHint")}
               </span>
             </span>
           </DropdownMenuItem>
@@ -104,7 +106,7 @@ export function ProjectViewerMenu({
             }}
           >
             <Flag className="h-4 w-4 shrink-0" aria-hidden />
-            รายงาน
+            {t("report")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

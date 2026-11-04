@@ -1,7 +1,22 @@
 /** Settings page panels — click switches content (not scroll-spy). */
 
 import type { LucideIcon } from "lucide-react";
-import { LayoutDashboard, LifeBuoy, SlidersHorizontal, UserRound } from "lucide-react";
+import {
+  Bell,
+  Database,
+  Eye,
+  FileText,
+  LayoutDashboard,
+  LifeBuoy,
+  MessageCircle,
+  MessageSquareWarning,
+  MonitorCog,
+  ShieldCheck,
+  UserCog,
+  SlidersHorizontal,
+  Smartphone,
+  UserRound,
+} from "lucide-react";
 import { isCommerceEnabled } from "@/lib/aplus1Launch";
 import { isNativeApp } from "@/lib/appShell";
 
@@ -21,6 +36,7 @@ export type SettingsPanelId =
 export type SettingsNavItem = {
   id: SettingsPanelId;
   label: string;
+  icon: LucideIcon;
 };
 
 export type SettingsNavGroup = {
@@ -36,9 +52,9 @@ export const SETTINGS_NAV_GROUPS: SettingsNavGroup[] = [
     label: "บัญชีของฉัน",
     icon: UserRound,
     items: [
-      { id: "profile", label: "โปรไฟล์" },
-      { id: "account", label: "บัญชีและความปลอดภัย" },
-      { id: "billing", label: "เอกสาร & Billing" },
+      { id: "profile", label: "โปรไฟล์", icon: UserRound },
+      { id: "account", label: "บัญชีและความปลอดภัย", icon: ShieldCheck },
+      { id: "billing", label: "เอกสาร & Billing", icon: FileText },
     ],
   },
   {
@@ -46,10 +62,10 @@ export const SETTINGS_NAV_GROUPS: SettingsNavGroup[] = [
     label: "การใช้งาน",
     icon: SlidersHorizontal,
     items: [
-      { id: "notifications", label: "การแจ้งเตือน" },
-      { id: "chat", label: "แชท" },
-      { id: "visibility", label: "การมองเห็น & แท็ก" },
-      { id: "preferences", label: "การแสดงผล" },
+      { id: "notifications", label: "การแจ้งเตือน", icon: Bell },
+      { id: "chat", label: "แชท", icon: MessageCircle },
+      { id: "visibility", label: "การมองเห็น & แท็ก", icon: Eye },
+      { id: "preferences", label: "การแสดงผล", icon: MonitorCog },
     ],
   },
   {
@@ -57,9 +73,9 @@ export const SETTINGS_NAV_GROUPS: SettingsNavGroup[] = [
     label: "ข้อมูลและความช่วยเหลือ",
     icon: LifeBuoy,
     items: [
-      { id: "data", label: "ข้อมูลของฉัน" },
-      { id: "feedback", label: "ฟีดแบ็ก & รายงาน" },
-      { id: "app", label: "ดาวน์โหลดแอป" },
+      { id: "data", label: "ข้อมูลของฉัน", icon: Database },
+      { id: "feedback", label: "ฟีดแบ็ก & รายงาน", icon: MessageSquareWarning },
+      { id: "app", label: "ดาวน์โหลดแอป", icon: Smartphone },
     ],
   },
 ];
@@ -184,7 +200,7 @@ export function buildSettingsNavGroups(isAdmin?: boolean): SettingsNavGroup[] {
       id: "group-admin",
       label: "ระบบ",
       icon: LayoutDashboard,
-      items: [{ id: "admin", label: "ผู้ดูแลระบบ" }],
+      items: [{ id: "admin", label: "ผู้ดูแลระบบ", icon: UserCog }],
     },
   ];
 }

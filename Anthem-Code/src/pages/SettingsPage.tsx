@@ -439,9 +439,10 @@ function MobileSettingsList({
                 <button
                   type="button"
                   onClick={() => onPick(item.id)}
-                  className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left text-sm text-foreground active:bg-accent"
+                  className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-foreground active:bg-accent"
                 >
-                  {item.label}
+                  <item.icon className="h-[18px] w-[18px] shrink-0 text-muted-foreground" strokeWidth={1.8} aria-hidden />
+                  <span className="min-w-0 flex-1">{item.label}</span>
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 </button>
               </li>

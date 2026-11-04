@@ -88,7 +88,7 @@ export default function SettingsSideNav({
 }
 
 const itemBase =
-  "relative block w-full text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset";
+  "relative flex w-full items-center gap-2.5 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset";
 
 function NavGroup({
   group,
@@ -118,7 +118,7 @@ function NavGroup({
                 onClick={() => onSelect(item.id)}
                 className={cn(
                   itemBase,
-                  "py-2.5 pl-9 pr-3.5",
+                  "py-2.5 pl-5 pr-3.5",
                   active
                     ? "bg-primary/10 font-medium text-primary"
                     : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground",
@@ -130,6 +130,7 @@ function NavGroup({
                     aria-hidden
                   />
                 ) : null}
+                <item.icon className="h-4 w-4 shrink-0" strokeWidth={1.8} aria-hidden />
                 {item.label}
               </button>
             </li>

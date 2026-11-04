@@ -1,5 +1,5 @@
 import { UploadProgressCard } from "@/components/project/UploadProgressCard";
-import { useEffect, useRef, useState, type DragEvent } from "react";
+import { useEffect, useRef, useState, type DragEvent, type TouchEventHandler } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { ProjectRichTextField } from "@/components/project/ProjectRichTextField";
@@ -23,6 +23,23 @@ import { InsertEdge, isToolDrag, InsertDropZone } from "@/components/project/can
 import { ModuleVideoWithReplace } from "@/components/project/canvas/ModuleVideoWithReplace";
 import { EmptyVideoTile, EmptyImageTile } from "@/components/project/canvas/CanvasEmptyTiles";
 import { BlockSideRail } from "@/components/project/canvas/BlockSideRail";
+
+const PHONE_QUERY = "(max-width: 1023.98px)";
+
+/** True below the editor's desktop breakpoint (Tailwind `lg`). */
+function useIsPhoneLayout() {
+  const [phone, setPhone] = useState(
+    () => typeof window !== "undefined" && window.matchMedia(PHONE_QUERY).matches,
+  );
+  useEffect(() => {
+    const mql = window.matchMedia(PHONE_QUERY);
+    const onChange = () => setPhone(mql.matches);
+    mql.addEventListener("change", onChange);
+    onChange();
+    return () => mql.removeEventListener("change", onChange);
+  }, []);
+  return phone;
+}
 
 /** One sortable block of the casual canvas editor. */
 export function SortableCanvasBlock({
@@ -85,6 +102,20 @@ export function SortableCanvasBlock({
   const hoverHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [hovered, setHovered] = useState(false);
   const showRail = selected || hovered;
+  const phone = useIsPhoneLayout();
+  // Phones: press and hold anywhere on the module to drag it (TouchSensor delay in ProjectCanvasEditor).
+  const longPressListeners: { onTouchStart?: TouchEventHandler<HTMLDivElement> } =
+    phone && !disabled && listeners?.onTouchStart
+      ? { onTouchStart: listeners.onTouchStart as TouchEventHandler<HTMLDivElement> }
+      : {};
+  const isMediaOnly = block.type === "image" || block.type === "video";
+  const blockActions = disabled
+    ? undefined
+    : { onDuplicate, canDuplicate, onRemove };
+  // Phones: when the module shows an image, its "⋯" menu carries duplicate / delete.
+  const phoneActionsOnImage =
+    (block.type === "image" && blockImageUrls(block).some((u) => u.trim())) ||
+    (block.type === "image_text" && !!block.url?.trim());
 
   const clearHoverHideTimer = () => {
     if (hoverHideTimerRef.current) {
@@ -158,7 +189,8 @@ export function SortableCanvasBlock({
   const slotDnD = (slotIndex: number, url: string) => {
     const trimmed = url.trim();
     return {
-      dragSlot: !disabled && trimmed ? { blockId: block.id, slotIndex, url: trimmed } : null,
+      // Phones use long-press for module reorder, so native image-slot drag stays desktop-only.
+      dragSlot: !disabled && !phone && trimmed ? { blockId: block.id, slotIndex, url: trimmed } : null,
       onSlotDrop: onImageSlotDrop
         ? (from: CanvasImageSlotRef) => onImageSlotDrop(from, { blockId: block.id, slotIndex })
         : undefined,
@@ -169,7 +201,18 @@ export function SortableCanvasBlock({
     <div
       ref={setRefs}
       style={style}
-      className={cn("relative flex flex-col gap-2", isDragging && "z-10 opacity-90")}
+      className={cn(
+        "relative flex flex-col gap-2",
+        isDragging && "z-10 opacity-90",
+        phone && "[-webkit-touch-callout:none]",
+        phone && isMediaOnly && "select-none",
+        phone && isDragging && "z-30 scale-[0.98] opacity-95 shadow-2xl",
+      )}
+      {...longPressListeners}
+      onContextMenu={(e) => {
+        // Long-press on phones must not open the image / link context menu.
+        if (phone && !disabled) e.preventDefault();
+      }}
       onClick={(e) => {
         e.stopPropagation();
         onSelect();
@@ -203,7 +246,7 @@ export function SortableCanvasBlock({
       >
       <div
         className={cn(
-          "absolute -left-1 top-2 z-10 -translate-x-full rounded-none px-2 py-1 text-[11px] font-medium whitespace-nowrap",
+          "absolute -left-1 top-2 z-10 hidden -translate-x-full rounded-none px-2 py-1 text-[11px] font-medium whitespace-nowrap lg:block",
           selected || hovered ? "bg-foreground text-background" : "bg-muted text-muted-foreground",
         )}
       >
@@ -233,6 +276,7 @@ export function SortableCanvasBlock({
                 {block.url?.trim() ? (
                   <div className="min-w-0 overflow-hidden rounded-none bg-transparent">
                     <ModuleImageWithCrop
+                      blockActions={blockActions}
                       src={block.url}
                       disabled={disabled}
                       onCrop={onCrop ? () => onCrop(block.url!, undefined) : undefined}
@@ -297,6 +341,7 @@ export function SortableCanvasBlock({
               onReplaceAt={(index, file) => onUpload?.(file, index)}
               onCropAt={(index, url) => onCrop?.(url, index)}
               onReorder={(next) => onPatch({ mediaLayout: "gallery", urls: next, url: next[0] ?? "" })}
+              blockActions={blockActions}
             />
           ) : block.mediaLayout === "grid" && isMosaicPhotoGridLayout(block.gridLayout) ? (
             (() => {
@@ -323,6 +368,7 @@ export function SortableCanvasBlock({
                       >
                         {url.trim() ? (
                           <ModuleImageWithCrop
+                            blockActions={blockActions}
                             src={url}
                             disabled={disabled}
                             className="h-full"
@@ -356,6 +402,7 @@ export function SortableCanvasBlock({
                     {slots[0]?.trim() ? (
                       <div className="h-full min-w-0 overflow-hidden rounded-none bg-transparent">
                         <ModuleImageWithCrop
+                          blockActions={blockActions}
                           src={slots[0]}
                           disabled={disabled}
                           className="h-full"
@@ -380,6 +427,7 @@ export function SortableCanvasBlock({
                     slots[slotIndex]?.trim() ? (
                       <div key={slotIndex} className="min-h-0 min-w-0 overflow-hidden rounded-none bg-transparent">
                         <ModuleImageWithCrop
+                          blockActions={blockActions}
                           src={slots[slotIndex]}
                           disabled={disabled}
                           className="h-full"
@@ -414,6 +462,7 @@ export function SortableCanvasBlock({
                         )}
                       >
                         <ModuleImageWithCrop
+                          blockActions={blockActions}
                           src={slots[slotIndex]}
                           disabled={disabled}
                           className="h-full"
@@ -446,6 +495,7 @@ export function SortableCanvasBlock({
                     {slots[0]?.trim() ? (
                       <div className="h-full min-w-0 overflow-hidden rounded-none bg-transparent">
                         <ModuleImageWithCrop
+                          blockActions={blockActions}
                           src={slots[0]}
                           disabled={disabled}
                           className="h-full"
@@ -495,6 +545,7 @@ export function SortableCanvasBlock({
                     )}
                   >
                     <ModuleImageWithCrop
+                      blockActions={blockActions}
                       src={url}
                       disabled={disabled}
                       onCrop={onCrop ? () => onCrop(url, multi ? slotIndex : undefined) : undefined}
@@ -576,6 +627,8 @@ export function SortableCanvasBlock({
         isFirst={index === 0}
         isLast={index === total - 1}
         visible={showRail}
+        phoneHidden={phoneActionsOnImage}
+        phoneBelowTools={block.type === "video"}
         canDuplicate={canDuplicate}
         dragAttributes={attributes as unknown as Record<string, unknown>}
         dragListeners={listeners as unknown as Record<string, unknown>}

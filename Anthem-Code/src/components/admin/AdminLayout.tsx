@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { ChevronRight, LogOut, Menu, Search } from "lucide-react";
 import AdminGuard from "./AdminGuard";
@@ -17,8 +17,13 @@ function isTypingTarget(el: EventTarget | null): boolean {
   return el.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName);
 }
 
-export default function AdminLayout() {
-  const { pathname } = useLocation();
+/** `preview` (DEV only): render the admin chrome without the admin check, for sample-data screens under /dev. */
+export default function AdminLayout({ preview = false }: { preview?: boolean } = {}) {
+  const { pathname: realPath } = useLocation();
+  const skipGuard = preview && import.meta.env.DEV;
+  // Sample-data screens live under /dev/…; map them to their real admin path for titles and the active menu item
+  const pathname = skipGuard ? realPath.replace(/^\/dev\//, "/admin/") : realPath;
+  const Guard = skipGuard ? Fragment : AdminGuard;
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const meta = adminPageMeta(pathname);
@@ -44,7 +49,7 @@ export default function AdminLayout() {
   };
 
   return (
-    <AdminGuard>
+    <Guard>
       <div className="admin-theme min-h-screen bg-admin-bg text-admin-fg">
         <div className="flex">
           <AdminSidebar onOpenSearch={openSearch} />
@@ -119,6 +124,6 @@ export default function AdminLayout() {
         </div>
         <AdminCommandMenu open={searchOpen} onOpenChange={setSearchOpen} />
       </div>
-    </AdminGuard>
+    </Guard>
   );
 }

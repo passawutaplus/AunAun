@@ -36,6 +36,9 @@ export const NAV = {
   forumAdmin: { th: "แอดมินฟอรัม", en: "Forum admin", zh: "论坛管理" },
   theme: { th: "Theme", en: "Theme", zh: "主题" },
   gridFeed: { th: "Grid Feed", en: "Grid Feed", zh: "网格布局" },
+  appearance: { th: "Appearance", en: "Appearance", zh: "外观" },
+  contact: { th: "Contact", en: "Contact", zh: "联系" },
+  language: { th: "Language", en: "Language", zh: "语言" },
   settings: { th: "Setting", en: "Settings", zh: "设置" },
   logOut: { th: "Log Out", en: "Log Out", zh: "退出登录" },
 } satisfies Dict;

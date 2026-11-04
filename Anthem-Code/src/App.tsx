@@ -1,9 +1,10 @@
-import { Suspense } from "react";
+import { Suspense, type ReactNode } from "react";
 import { lazyWithRetry as lazy } from "@/lib/lazyWithRetry";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/hooks/useAuth";
 import { SensitiveActionReauthProvider } from "@/components/legal/SensitiveActionReauthProvider";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { getBackgroundLocation } from "@/lib/projectOverlay";
 import { isInspireEnabled } from "@/lib/aplus1Launch";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -36,6 +37,7 @@ import DemoModeBanner from "./components/DemoModeBanner.tsx";
 import AvatarPoolBootstrap from "./components/AvatarPoolBootstrap.tsx";
 import { ErrorBoundary } from "./components/ErrorBoundary.tsx";
 import { ReferralAttribution } from "./components/referral/ReferralAttribution.tsx";
+import { CreatorInviteAccountGuards } from "./components/invite/CreatorInviteAccountGuards";
 import { ScrollToTop } from "./components/ScrollToTop.tsx";
 import { OAuthErrorGate } from "./components/auth/OAuthErrorGate.tsx";
 import { ProductEventTracker } from "./components/ProductEventTracker.tsx";
@@ -62,6 +64,7 @@ const ExhibitionDetailPage = lazy(() => import("./pages/exhibition/ExhibitionDet
 const DashboardDocumentsPage = lazy(() => import("./pages/DashboardDocumentsPage.tsx"));
 const DashboardPayoutPage = lazy(() => import("./pages/DashboardPayoutPage.tsx"));
 const ProjectDetailPage = lazy(() => import("./pages/ProjectDetailPage.tsx"));
+const ProjectOverlay = lazy(() => import("./components/project/ProjectOverlay.tsx"));
 const ServiceDetailPage = lazy(() => import("./pages/ServiceDetailPage.tsx"));
 const ObjectDetailPage = lazy(() => import("./pages/ObjectDetailPage.tsx"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage.tsx"));
@@ -177,6 +180,12 @@ const AdminCompliancePage = lazy(() => import("./pages/admin/AdminCompliancePage
 const AdminCopyrightReportsPage = lazy(() => import("./pages/admin/AdminCopyrightReportsPage"));
 const AdminPrivacyRequestsPage = lazy(() => import("./pages/admin/AdminPrivacyRequestsPage"));
 const AdminEventsPage = lazy(() => import("./pages/admin/AdminEventsPage"));
+const AdminCreatorInvitationsPage = lazy(() => import("./pages/admin/AdminCreatorInvitationsPage"));
+const AdminCreatorInvitationNewPage = lazy(() => import("./pages/admin/AdminCreatorInvitationNewPage"));
+const AdminCreatorInvitationDetailPage = lazy(() => import("./pages/admin/AdminCreatorInvitationDetailPage"));
+const CreatorInvitePage = lazy(() => import("./pages/invite/CreatorInvitePage"));
+const CreatorReviewPage = lazy(() => import("./pages/invite/CreatorReviewPage"));
+const SetFirstPasswordPage = lazy(() => import("./pages/invite/SetFirstPasswordPage"));
 const ExploreProjectsPage = lazy(() => import("./pages/ExploreProjectsPage.tsx"));
 const EarningsPage = lazy(() => import("./pages/EarningsPage.tsx"));
 const WithdrawPage = lazy(() => import("./pages/WithdrawPage.tsx"));
@@ -207,6 +216,23 @@ const HireCancelPreviewPage = lazy(() => import("./pages/dev/HireCancelPreviewPa
 const OfferDialogPreviewPage = lazy(() => import("./pages/dev/OfferDialogPreviewPage.tsx"));
 const BillingPreviewPage = lazy(() => import("./pages/dev/BillingPreviewPage.tsx"));
 
+/** Routes render the page underneath; a work opened with router state `backgroundLocation` sits on top as an overlay. */
+const BackgroundAwareRoutes = ({ children }: { children: ReactNode }) => {
+  const location = useLocation();
+  const background = getBackgroundLocation(location.state);
+  return (
+    <>
+      <Routes location={background ?? location}>{children}</Routes>
+      {background ? (
+        <Routes>
+          <Route path="/showcase/:id" element={<ProjectOverlay />} />
+          <Route path="*" element={null} />
+        </Routes>
+      ) : null}
+    </>
+  );
+};
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -235,9 +261,10 @@ const App = () => (
           <DemoModeBanner />
           <AvatarPoolBootstrap />
           <ReferralAttribution />
+          <CreatorInviteAccountGuards />
           <DesktopTopNav />
           <Suspense fallback={<RouteFallback />}>
-            <Routes>
+            <BackgroundAwareRoutes>
               <Route element={<LaunchMinimalGate />}>
               <Route element={<PageTransition />}>
               <Route path="/" element={<Index />} />
@@ -266,6 +293,12 @@ const App = () => (
                   <Route path="/dev/hire-cancel" element={<HireCancelPreviewPage />} />
                   <Route path="/dev/offer-dialog" element={<OfferDialogPreviewPage />} />
                   <Route path="/dev/billing" element={<BillingPreviewPage />} />
+                  {/* Creator invitation admin screens with sample data (no login, no edge functions) */}
+                  <Route path="/dev/creator-invitations" element={<AdminLayout preview />}>
+                    <Route index element={<AdminCreatorInvitationsPage />} />
+                    <Route path="new" element={<AdminCreatorInvitationNewPage />} />
+                    <Route path=":id" element={<AdminCreatorInvitationDetailPage />} />
+                  </Route>
                 </>
               ) : null}
               <Route path="/research" element={<ResearchPage />} />
@@ -274,6 +307,11 @@ const App = () => (
               <Route path="/auth/forgot" element={<AuthForgotPage />} />
               <Route path="/auth/callback" element={<AuthCallbackPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
+              {/* Creator Invitation V1 — private, token-gated, noindex */}
+              <Route path="/invite/creator/:token" element={<CreatorInvitePage />} />
+              <Route path="/invite/creator/:token/form" element={<CreatorInvitePage />} />
+              <Route path="/invite/review/:token" element={<CreatorReviewPage />} />
+              <Route path="/account/set-password" element={<RequireAuth><SetFirstPasswordPage /></RequireAuth>} />
               <Route path="/portfolio" element={<RequireAuth><PortfolioProfilePage /></RequireAuth>} />
               <Route path="/portfolio/saved" element={<RequireAuth><SavedPostsPage /></RequireAuth>} />
               <Route path="/portfolio/manage" element={<RequireAuth><PortfolioManagePage /></RequireAuth>} />
@@ -409,6 +447,9 @@ const App = () => (
                 <Route path="compliance/copyright" element={<AdminCopyrightReportsPage />} />
                 <Route path="compliance/privacy" element={<AdminPrivacyRequestsPage />} />
                 <Route path="events" element={<AdminEventsPage />} />
+                <Route path="creator-invitations" element={<AdminCreatorInvitationsPage />} />
+                <Route path="creator-invitations/new" element={<AdminCreatorInvitationNewPage />} />
+                <Route path="creator-invitations/:id" element={<AdminCreatorInvitationDetailPage />} />
                 <Route path="events/new" element={<ExhibitionEditorPage team />} />
                 <Route path="events/:id/edit" element={<ExhibitionEditorPage team />} />
                 <Route path="feedback" element={<AdminFeedbackPage />} />
@@ -461,7 +502,7 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
               </Route>
               </Route>
-            </Routes>
+            </BackgroundAwareRoutes>
           </Suspense>
           <OfflineBanner />
           <CookieConsent />

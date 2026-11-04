@@ -44,6 +44,7 @@ Disallow: /me/
 Disallow: /studio/manage
 Disallow: /studio/new
 Disallow: /studio/invites
+Disallow: /invite/
 Disallow: /api/
 Disallow: /reset-password
 Disallow: /forum/admin

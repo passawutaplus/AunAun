@@ -23,6 +23,7 @@ import VerifiedBadge from "@/components/profile/VerifiedBadge";
 import { extractSearchSnippet, highlight } from "@/lib/highlight";
 import { useQuickView } from "@/stores/quickViewStore";
 import { profilePublicPath } from "@/lib/profileRoutes";
+import { useOpenProject, useProjectOverlayState } from "@/lib/projectOverlay";
 
 interface ProjectCardProps {
   project: Project;
@@ -51,6 +52,8 @@ const ProjectCard = ({
   searchQuery = "",
 }: ProjectCardProps) => {
   const navigate = useNavigate();
+  const openProject = useOpenProject();
+  const overlayState = useProjectOverlayState();
   const { user } = useAuth();
   const { data: savedProjectIds = [] } = useSavedProjectIds(user?.id);
   const isDbProject = /^[0-9a-f]{8}-/.test(project.id);
@@ -179,7 +182,7 @@ const ProjectCard = ({
         }
         const open = () => {
           if (boostId) void logBoostEvent(boostId, "click");
-          navigate(`/showcase/${project.id}`);
+          openProject(project.id);
         };
         if (!gallery || lastPointer.current !== "touch") {
           open();
@@ -204,6 +207,7 @@ const ProjectCard = ({
       {/* The card opens on pointer click; this link is the keyboard and screen-reader way in. */}
       <Link
         to={`/showcase/${project.id}`}
+        state={overlayState}
         className="peer sr-only"
         onClick={(event) => {
           event.stopPropagation();

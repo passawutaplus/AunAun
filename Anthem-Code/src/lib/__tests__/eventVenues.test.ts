@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import {
   emptyVenueDraft,
   featureActive,
@@ -13,6 +13,11 @@ import {
   venueOpenState,
   type EventVenue,
 } from "../eventVenues";
+
+// These assert the Thai labels; new visitors now default to English, so pin Thai.
+beforeEach(() => {
+  localStorage.setItem("aplus1:locale-prefs", JSON.stringify({ locale: "th", timezone: "Asia/Bangkok" }));
+});
 
 /** Bangkok wall-clock time → Date (Bangkok = UTC+7). */
 const bkk = (iso: string) => new Date(`${iso}+07:00`);

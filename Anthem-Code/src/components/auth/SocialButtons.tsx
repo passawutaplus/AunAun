@@ -65,7 +65,7 @@ export function SocialButtons({
   );
 }
 
-export function AuthEmailSeparator() {
+export function AuthEmailSeparator({ label = "หรือเข้าด้วยอีเมล" }: { label?: string } = {}) {
   if (isWebViewApp()) return null;
   return (
     <div className="relative my-1">
@@ -73,7 +73,7 @@ export function AuthEmailSeparator() {
         <span className="w-full border-t border-border/60" />
       </div>
       <div className="relative flex justify-center text-[11px]">
-        <span className="bg-background px-3 text-muted-foreground">หรือเข้าด้วยอีเมล</span>
+        <span className="bg-background px-3 text-muted-foreground">{label}</span>
       </div>
     </div>
   );

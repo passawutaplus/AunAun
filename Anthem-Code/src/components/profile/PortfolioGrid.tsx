@@ -10,6 +10,7 @@ import type { Tables } from "@/integrations/supabase/types";
 import { cn } from "@/lib/utils";
 import { projectHasDrillTag } from "@/lib/drillProject";
 import type { SeriesWorksDensity } from "@/lib/seriesGridDensity";
+import { useProjectOverlayState } from "@/lib/projectOverlay";
 
 type Project = Tables<"projects">;
 
@@ -25,6 +26,7 @@ function ProjectThumb({
   project: Project;
   list?: boolean;
 }) {
+  const overlayState = useProjectOverlayState();
   const tags = (project.tags as string[] | null) ?? null;
   const category = project.category?.trim() || "";
 
@@ -32,6 +34,7 @@ function ProjectThumb({
     return (
       <Link
         to={`/showcase/${project.id}`}
+        state={overlayState}
         className="group flex items-center gap-3 rounded-xl border border-border/60 bg-card/40 p-2 hover:bg-card/80 transition-colors"
       >
         <div className="h-16 w-20 shrink-0 overflow-hidden rounded-lg bg-muted">
@@ -57,7 +60,8 @@ function ProjectThumb({
   }
 
   return (
-    <Link to={`/showcase/${project.id}`} className="group block">
+    <Link to={`/showcase/${project.id}`}
+        state={overlayState} className="group block">
       <div className="relative w-full overflow-hidden rounded-[6px] bg-muted">
         {project.cover_url ? (
           <img

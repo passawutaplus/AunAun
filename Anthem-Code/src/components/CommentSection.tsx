@@ -15,7 +15,7 @@ import {
 import { commentSchema } from "@/lib/validators";
 import { mapWriteFlowError } from "@/lib/writeFlowErrors";
 import { toast } from "sonner";
-import { formatThaiDate } from "@/lib/format";
+import { useProjectT } from "@/lib/i18n/project";
 import { useAuthDialog } from "@/stores/authDialogStore";
 import ModerationBanBanner from "@/components/moderation/ModerationBanBanner";
 import { countThread, filterCommentTree } from "@/lib/commentTree";
@@ -62,10 +62,11 @@ function CommentRow({
   const [draft, setDraft] = useState(c.content);
   const updateMut = useUpdateComment();
   const deleteMut = useDeleteComment();
+  const { t, date } = useProjectT();
 
   return (
     <div className={cn(depth > 0 && "ml-4 md:ml-8 border-l-2 border-border/60 pl-3")}>
-      <div className="flex gap-3 rounded-2xl border border-border bg-card p-4">
+      <div className="flex gap-3 rounded-2xl bg-card/60 p-3.5">
         <UserAvatar
           src={c.profile?.avatar_url}
           name={c.profile?.display_name ?? "?"}
@@ -75,8 +76,8 @@ function CommentRow({
         <div className="min-w-0 flex-1">
           <div className="flex items-start gap-2">
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-foreground">{c.profile?.display_name ?? "ผู้ใช้"}</p>
-              <span className="text-xs text-muted-foreground">{formatThaiDate(c.created_at)}</span>
+              <p className="truncate text-sm font-semibold text-foreground">{c.profile?.display_name ?? t("user")}</p>
+              <span className="text-xs text-muted-foreground">{date(c.created_at)}</span>
             </div>
             {mine ? (
               <CommentOwnerMenu
@@ -88,9 +89,9 @@ function CommentRow({
                 onDelete={async () => {
                   try {
                     await deleteMut.mutateAsync({ id: c.id, project_id: projectId });
-                    toast.success("ลบความคิดเห็นแล้ว");
+                    toast.success(t("cDeleted"));
                   } catch (err) {
-                    toast.error(mapWriteFlowError(err, "ลบไม่สำเร็จ"));
+                    toast.error(mapWriteFlowError(err, t("deleteFailed")));
                   }
                 }}
               />
@@ -98,7 +99,7 @@ function CommentRow({
               <CommentViewerMenu
                 commentId={c.id}
                 authorId={c.user_id}
-                authorName={c.profile?.display_name ?? "ผู้ใช้นี้"}
+                authorName={c.profile?.display_name ?? t("thisUser")}
                 reportType="comment"
               />
             )}
@@ -118,16 +119,16 @@ function CommentRow({
                       .then(
                         () => {
                           setEditing(false);
-                          toast.success("แก้ไขความคิดเห็นแล้ว");
+                          toast.success(t("cEdited"));
                         },
-                        (err) => toast.error(mapWriteFlowError(err, "บันทึกไม่สำเร็จ")),
+                        (err) => toast.error(mapWriteFlowError(err, t("saveFailed"))),
                       );
                   }}
                 >
-                  บันทึก
+                  {t("save")}
                 </Button>
                 <Button type="button" size="sm" variant="ghost" className="rounded-full" onClick={() => setEditing(false)}>
-                  ยกเลิก
+                  {t("cancel")}
                 </Button>
               </div>
             </div>
@@ -146,7 +147,7 @@ function CommentRow({
                   onClick={() => onReply(c)}
                   className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 >
-                  <Reply className="h-3.5 w-3.5" aria-hidden /> ตอบกลับ
+                  <Reply className="h-3.5 w-3.5" aria-hidden /> {t("reply")}
                 </button>
               ) : null}
             </div>
@@ -178,6 +179,7 @@ function CommentRow({
 
 const CommentSection = ({ projectId }: Props) => {
   const { user } = useAuth();
+  const { t } = useProjectT();
   const openAuth = useAuthDialog((s) => s.openSignup);
   const [text, setText] = useState("");
   const [replyText, setReplyText] = useState("");
@@ -210,7 +212,7 @@ const CommentSection = ({ projectId }: Props) => {
     if (!user || !projectId) return;
     const parsed = commentSchema.safeParse({ content });
     if (!parsed.success) {
-      toast.error(parsed.error.issues[0]?.message ?? "ข้อความไม่ถูกต้อง");
+      toast.error(parsed.error.issues[0]?.message ?? t("invalidText"));
       return;
     }
     const depth = parent ? Math.min((parent.depth ?? 0) + 1, 2) : 0;
@@ -229,7 +231,7 @@ const CommentSection = ({ projectId }: Props) => {
         setText("");
       }
     } catch (err) {
-      toast.error(mapWriteFlowError(err, "คอมเมนต์ไม่สำเร็จ"));
+      toast.error(mapWriteFlowError(err, t("cFailed")));
     }
   };
 
@@ -245,10 +247,10 @@ const CommentSection = ({ projectId }: Props) => {
   };
 
   const replyForm = replyTo ? (
-    <form onSubmit={handleReplySubmit} className="rounded-2xl glass-panel p-4 space-y-3">
+    <form onSubmit={handleReplySubmit} className="rounded-2xl bg-background ring-1 ring-border/60 p-3 sm:p-4 space-y-3">
       <div className="flex items-center justify-between text-xs bg-muted/60 rounded-lg px-3 py-2">
         <span>
-          ตอบกลับ <strong>{replyTo.profile?.display_name ?? "ผู้ใช้"}</strong>
+          {t("replyingTo", { name: "" }).trim()} <strong>{replyTo.profile?.display_name ?? t("user")}</strong>
         </span>
         <button
           type="button"
@@ -258,17 +260,17 @@ const CommentSection = ({ projectId }: Props) => {
           }}
           className="text-primary hover:underline"
         >
-          ยกเลิก
+          {t("cancel")}
         </button>
       </div>
       <div className="relative">
         <Textarea
           ref={replyInputRef}
           id="project-comment-reply-input"
-          aria-label="เขียนคำตอบความคิดเห็น"
+          aria-label={t("replyAria")}
           value={replyText}
           onChange={(e) => setReplyText(e.target.value)}
-          placeholder="เขียนคำตอบ... พิมพ์ @ เพื่อกล่าวถึงเพื่อนหรือผลงาน"
+          placeholder={t("replyPh")}
           rows={3}
           maxLength={800}
           className="resize-none"
@@ -290,12 +292,12 @@ const CommentSection = ({ projectId }: Props) => {
           type="submit"
           disabled={createMut.isPending || !replyText.trim()}
           aria-disabled={createMut.isPending || !replyText.trim()}
-          title={!replyText.trim() ? "พิมพ์ข้อความก่อนส่ง" : undefined}
+          title={!replyText.trim() ? t("typeFirst") : undefined}
           className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
           size="sm"
         >
           <Send className="w-4 h-4 mr-1" />
-          {createMut.isPending ? "กำลังส่ง..." : "ส่งคำตอบ"}
+          {createMut.isPending ? t("sending") : t("sendReply")}
         </Button>
       </div>
     </form>
@@ -303,30 +305,30 @@ const CommentSection = ({ projectId }: Props) => {
 
   return (
     <section className="space-y-4">
-      <h2 className="text-xl font-medium text-foreground flex items-center gap-2">
-        <MessageSquareText className="w-5 h-5 text-primary" />
-        ความคิดเห็น {totalCount > 0 && <span className="text-muted-foreground text-sm font-normal">({totalCount})</span>}
+      <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+        <MessageSquareText className="w-5 h-5 text-muted-foreground" />
+        {t("comments")} <span className="text-muted-foreground text-sm font-normal">({totalCount})</span>
       </h2>
 
       {!user ? (
-        <div className="rounded-2xl glass-panel p-6 text-center space-y-3">
-          <p className="text-sm text-muted-foreground">เข้าสู่ระบบเพื่อร่วมแสดงความคิดเห็น</p>
+        <div className="rounded-2xl bg-background ring-1 ring-border/60 p-3 sm:p-4 text-center space-y-3">
+          <p className="text-sm text-muted-foreground">{t("signInToComment")}</p>
           <Button onClick={() => openAuth()} className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90">
-            เข้าสู่ระบบ
+            {t("signIn")}
           </Button>
         </div>
       ) : (
         <>
           <ModerationBanBanner />
-          <form onSubmit={handleNewSubmit} className="rounded-2xl glass-panel p-4 space-y-3">
+          <form onSubmit={handleNewSubmit} className="rounded-2xl bg-background ring-1 ring-border/60 p-3 sm:p-4 space-y-3">
             <div className="relative">
               <Textarea
                 ref={inputRef}
                 id="project-comment-input"
-                aria-label="เขียนความคิดเห็นเกี่ยวกับผลงาน"
+                aria-label={t("commentAria")}
                 value={text}
                 onChange={(e) => setText(e.target.value)}
-                placeholder="แชร์ความคิดเห็นเกี่ยวกับผลงานนี้... พิมพ์ @ เพื่อกล่าวถึงเพื่อนหรือผลงาน"
+                placeholder={t("commentPh")}
                 rows={3}
                 maxLength={800}
                 className="resize-none"
@@ -346,12 +348,12 @@ const CommentSection = ({ projectId }: Props) => {
                 type="submit"
                 disabled={createMut.isPending || !text.trim()}
                 aria-disabled={createMut.isPending || !text.trim()}
-                title={!text.trim() ? "พิมพ์ข้อความก่อนส่ง" : undefined}
+                title={!text.trim() ? t("typeFirst") : undefined}
                 className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
                 size="sm"
               >
                 <Send className="w-4 h-4 mr-1" />
-                {createMut.isPending ? "กำลังส่ง..." : "ส่งคอมเมนต์"}
+                {createMut.isPending ? t("sending") : t("sendComment")}
               </Button>
             </div>
           </form>
@@ -361,7 +363,7 @@ const CommentSection = ({ projectId }: Props) => {
       <div className="space-y-3">
         {isLoading && <InlineLoader className="py-6" />}
         {!isLoading && visibleTree.length === 0 && (
-          <p className="text-sm text-muted-foreground text-center py-6">ยังไม่มีคอมเมนต์ — มาเป็นคนแรกกันเถอะ</p>
+          <p className="text-sm text-muted-foreground text-center py-6">{t("noComments")}</p>
         )}
         {projectId
           ? visibleTree.map((node) => (

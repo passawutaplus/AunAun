@@ -3,6 +3,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { CheckCircle2, FileText, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LEGAL_APP_NAME } from "@/lib/legalConfig";
+import { authCopy, type AuthCopy } from "@/lib/authCopy";
+import type { PageLang } from "@/lib/creatorInvite";
 
 export interface LegalSignupConsentState {
   terms: boolean;
@@ -13,49 +15,54 @@ interface Props {
   value: LegalSignupConsentState;
   onChange: (next: LegalSignupConsentState) => void;
   compact?: boolean;
+  /** Sign-up page language (TH default). */
+  lang?: PageLang;
 }
 
 export function isLegalSignupComplete(value: LegalSignupConsentState): boolean {
   return value.terms && value.privacy;
 }
 
-const STEPS = [
-  {
-    key: "terms" as const,
-    icon: FileText,
-    title: "ข้อกำหนดการใช้งาน",
-    body: (
-      <>
-        ยอมรับ{" "}
-        <Link to="/legal/terms" target="_blank" className="text-primary hover:underline font-medium">
-          ข้อกำหนด
-        </Link>
-        {" "}— เข้าใจว่า {LEGAL_APP_NAME} ช่วยให้ผลงานถูกค้นพบและเริ่มคุยเรื่องโอกาส
-        <strong className="font-medium text-foreground"> ไม่ใช่</strong> ตัวแทนจัดหางานหรือผู้รับประกันการจ้าง
-      </>
-    ),
-  },
-  {
-    key: "privacy" as const,
-    icon: Shield,
-    title: "ความเป็นส่วนตัว",
-    body: (
-      <>
-        รับทราบ{" "}
-        <Link to="/legal/privacy" target="_blank" className="text-primary hover:underline font-medium">
-          นโยบาย PDPA
-        </Link>
-        {" "}และ{" "}
-        <Link to="/legal/cookies" target="_blank" className="text-primary hover:underline font-medium">
-          คุกกี้
-        </Link>
-        {" "}— เราใช้ข้อมูลเพื่อบัญชี โปรไฟล์ ผลงาน และความปลอดภัย
-      </>
-    ),
-  },
-];
+function steps(t: AuthCopy) {
+  return [
+    {
+      key: "terms" as const,
+      icon: FileText,
+      title: t.termsTitle,
+      body: (
+        <>
+          {t.termsAccept}{" "}
+          <Link to="/legal/terms" target="_blank" className="text-primary hover:underline font-medium">
+            {t.terms}
+          </Link>
+          {" "}— {t.termsBody.replace("SAMECOR", LEGAL_APP_NAME)}
+          <strong className="font-medium text-foreground"> {t.termsNot}</strong> {t.termsBody2}
+        </>
+      ),
+    },
+    {
+      key: "privacy" as const,
+      icon: Shield,
+      title: t.privacyTitle,
+      body: (
+        <>
+          {t.privacyAck}{" "}
+          <Link to="/legal/privacy" target="_blank" className="text-primary hover:underline font-medium">
+            {t.pdpa}
+          </Link>
+          {" "}{t.and}{" "}
+          <Link to="/legal/cookies" target="_blank" className="text-primary hover:underline font-medium">
+            {t.cookies}
+          </Link>
+          {" "}— {t.privacyBody}
+        </>
+      ),
+    },
+  ];
+}
 
-const LegalSignupConsents = ({ value, onChange, compact }: Props) => {
+const LegalSignupConsents = ({ value, onChange, compact, lang = "th" }: Props) => {
+  const STEPS = steps(authCopy(lang));
   return (
     <div className="rounded-xl border border-border/60 bg-muted/30 px-3 py-3 space-y-2.5">
       {STEPS.map(({ key, icon: Icon, title, body }) => {

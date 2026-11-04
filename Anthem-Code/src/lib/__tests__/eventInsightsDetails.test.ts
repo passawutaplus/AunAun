@@ -1,5 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { deadlineLabel, eventLinkText, isSafeEventLink, parseEventInsights } from "../exhibitionEvents";
+
+// These assert the Thai labels; new visitors now default to English, so pin Thai.
+beforeEach(() => {
+  localStorage.setItem("aplus1:locale-prefs", JSON.stringify({ locale: "th", timezone: "Asia/Bangkok" }));
+});
 
 const bkk = (iso: string) => new Date(`${iso}+07:00`);
 
