@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { mapWriteFlowError } from "@/lib/writeFlowErrors";
 import { EVENT_SELECT, isDemoEventId, type ExhibitionEvent } from "@/lib/exhibitionEvents";
 import { roundCoord } from "@/lib/routeStart";
+import { COMMON, tr } from "@/lib/i18n";
+import { VENUES } from "@/lib/i18n/exhibition/venues";
 import { featureActive, VENUE_SELECT, type EventVenue, type VenueDraft } from "@/lib/eventVenues";
 import { invalidateEvents } from "@/hooks/useExhibitionEvents";
 
@@ -98,9 +100,9 @@ export function useSetAllVenuesInterest() {
       void qc.invalidateQueries({ queryKey: ["events", "venues"] });
       void qc.invalidateQueries({ queryKey: ["events", "stats"] });
       void qc.invalidateQueries({ queryKey: ["events", "my-list"] });
-      toast.success(v.on ? "สนใจทุกสถานที่แล้ว — จะเตือนก่อนแต่ละที่เริ่ม" : "เลิกสนใจทุกสถานที่แล้ว");
+      toast.success(tr(v.on ? VENUES.allInterestedOn : VENUES.allInterestedOff));
     },
-    onError: () => toast.error("บันทึกไม่สำเร็จ ลองอีกครั้ง"),
+    onError: () => toast.error(tr(COMMON.saveFailed)),
   });
 }
 

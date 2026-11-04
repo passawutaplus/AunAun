@@ -1,4 +1,6 @@
 /** Venues of a main Exhibition event (rows of anthem.events with parent_id), the featured banner, and map helpers. */
+import { getLang, tr, type Lang } from "@/lib/i18n";
+import { EXHIBITION_SHARED as S } from "@/lib/i18n/exhibition/shared";
 
 export type OpeningHoursRule = { d: number[]; o: string; c: string };
 
@@ -82,6 +84,8 @@ const toMinutes = (hhmm: string) => {
   return h * 60 + m;
 };
 const dot = (hhmm: string) => hhmm.replace(":", ".");
+/** Thai writes 16.00; en / zh keep 16:00. */
+const clock = (hhmm: string, lang: Lang) => (lang === "th" ? dot(hhmm) : hhmm);
 
 export type VenueOpenState =
   | { kind: "open"; label: string }
@@ -96,20 +100,22 @@ export type VenueOpenState =
 export function venueOpenState(
   v: Pick<EventVenue, "opening_hours" | "starts_on" | "ends_on" | "date_note">,
   now: Date = new Date(),
+  lang: Lang = getLang(),
 ): VenueOpenState {
   const { day, minutes, iso } = bangkokNow(now);
-  if (v.ends_on && v.ends_on < iso) return { kind: "ended", label: "จบแล้ว" };
-  if (v.starts_on && v.starts_on > iso) return { kind: "not_started", label: "ยังไม่เริ่ม" };
-  if (!v.starts_on && v.date_note) return { kind: "not_started", label: "รอประกาศวันเปิด" };
+  const L = (e: (typeof S)[keyof typeof S], vars?: Record<string, string>) => tr(e, vars, lang);
+  if (v.ends_on && v.ends_on < iso) return { kind: "ended", label: L(S.venueEnded) };
+  if (v.starts_on && v.starts_on > iso) return { kind: "not_started", label: L(S.venueNotStarted) };
+  if (!v.starts_on && v.date_note) return { kind: "not_started", label: L(S.venueDateTba) };
   const rules = Array.isArray(v.opening_hours) ? v.opening_hours : [];
   if (rules.length === 0) return { kind: "unknown", label: "" };
   const today = rules.filter((r) => r.d.includes(day));
-  if (today.length === 0) return { kind: "closed_today", label: "ปิดวันนี้" };
+  if (today.length === 0) return { kind: "closed_today", label: L(S.venueClosedToday) };
   const open = today.find((r) => minutes >= toMinutes(r.o) && minutes < toMinutes(r.c));
-  if (open) return { kind: "open", label: `เปิดอยู่ · ถึง ${dot(open.c)}` };
+  if (open) return { kind: "open", label: L(S.venueOpenUntil, { time: clock(open.c, lang) }) };
   const next = today.filter((r) => minutes < toMinutes(r.o)).sort((a, b) => toMinutes(a.o) - toMinutes(b.o))[0];
-  if (next) return { kind: "later", label: `เปิด ${dot(next.o)}` };
-  return { kind: "closed_now", label: "ปิดแล้ววันนี้" };
+  if (next) return { kind: "later", label: L(S.venueOpensAt, { time: clock(next.o, lang) }) };
+  return { kind: "closed_now", label: L(S.venueClosedNow) };
 }
 
 // ── Grouping, counts, links ──────────────────────────────────────────────────
@@ -152,18 +158,53 @@ export function venueMapsUrl(v: Pick<EventVenue, "title" | "name_en" | "address"
 const DAY_MS = 86_400_000;
 const isoDays = (iso: string) => Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10)) / DAY_MS;
 
-/** "กำลังจัด · เหลือ 116 วัน", "เริ่มใน 3 วัน", "วันสุดท้าย" — null once ended. */
-export function featuredCountdown(starts: string | null, ends: string | null, now: Date = new Date()): string | null {
+export type FeaturedCountdownState =
+  | { kind: "startsIn"; n: number }
+  | { kind: "running" }
+  | { kind: "lastDay" }
+  | { kind: "left"; n: number };
+
+function featuredCountdownState(starts: string | null, ends: string | null, now: Date): FeaturedCountdownState | null {
   const today = isoDays(bangkokNow(now).iso);
-  if (starts && isoDays(starts) > today) {
-    const n = isoDays(starts) - today;
-    return n === 1 ? "เริ่มพรุ่งนี้" : `เริ่มใน ${n} วัน`;
-  }
-  if (!ends) return starts ? "กำลังจัด" : null;
+  if (starts && isoDays(starts) > today) return { kind: "startsIn", n: isoDays(starts) - today };
+  if (!ends) return starts ? { kind: "running" } : null;
   const left = isoDays(ends) - today;
   if (left < 0) return null;
-  if (left === 0) return "กำลังจัด · วันสุดท้าย";
-  return `กำลังจัด · เหลือ ${left} วัน`;
+  if (left === 0) return { kind: "lastDay" };
+  return { kind: "left", n: left };
+}
+
+/** "กำลังจัด · เหลือ 116 วัน", "เริ่มใน 3 วัน", "วันสุดท้าย" — null once ended. */
+export function featuredCountdown(
+  starts: string | null,
+  ends: string | null,
+  now: Date = new Date(),
+  lang: Lang = getLang(),
+): string | null {
+  const s = featuredCountdownState(starts, ends, now);
+  if (!s) return null;
+  switch (s.kind) {
+    case "startsIn":
+      return s.n === 1 ? tr(S.cdStartsTomorrow, undefined, lang) : tr(S.cdStartsIn, { n: s.n }, lang);
+    case "running":
+      return tr(S.cdOnNow, undefined, lang);
+    case "lastDay":
+      return tr(S.cdLastDay, undefined, lang);
+    case "left":
+      return s.n === 1 ? tr(S.cdLeftOne, undefined, lang) : tr(S.cdLeft, { n: s.n }, lang);
+  }
+}
+
+/** The day count for the banner's round badge: days left while running, or days until it starts (2+). Null otherwise. */
+export function featuredCountdownParts(
+  starts: string | null,
+  ends: string | null,
+  now: Date = new Date(),
+): { kind: "left" | "startsIn"; n: number } | null {
+  const s = featuredCountdownState(starts, ends, now);
+  if (s?.kind === "left") return { kind: "left", n: s.n };
+  if (s?.kind === "startsIn" && s.n > 1) return { kind: "startsIn", n: s.n };
+  return null;
 }
 
 /** Whether a featured pin is still in force (no end date = until unpinned). */
@@ -251,14 +292,18 @@ export function googleMapsRouteUrl(stops: RoutePoint[], origin?: { lat: number; 
 }
 
 /** "18.2 กม." / "800 ม." */
-export function formatDistance(meters: number): string {
-  return meters >= 1000 ? `${(meters / 1000).toFixed(1)} กม.` : `${Math.round(meters)} ม.`;
+export function formatDistance(meters: number, lang: Lang = getLang()): string {
+  return meters >= 1000
+    ? tr(S.distKm, { n: (meters / 1000).toFixed(1) }, lang)
+    : tr(S.distM, { n: Math.round(meters) }, lang);
 }
 
 /** "5.2 กม. · เดิน ~1 ชม. 25 นาที" */
-export function routeSummary(meters: number, seconds: number): string {
-  const km = formatDistance(meters);
+export function routeSummary(meters: number, seconds: number, opts?: { walk?: boolean; lang?: Lang }): string {
+  const lang = opts?.lang ?? getLang();
+  const km = formatDistance(meters, lang);
   const min = Math.max(1, Math.round(seconds / 60));
-  const time = min >= 60 ? `${Math.floor(min / 60)} ชม.${min % 60 ? ` ${min % 60} นาที` : ""}` : `${min} นาที`;
-  return `${km} · เดิน ~${time}`;
+  const mins = (n: number) => tr(S.durMinutes, { n }, lang);
+  const time = min >= 60 ? `${tr(S.durHours, { n: Math.floor(min / 60) }, lang)}${min % 60 ? ` ${mins(min % 60)}` : ""}` : mins(min);
+  return tr(opts?.walk === false ? S.routeAny : S.routeWalk, { km, time }, lang);
 }

@@ -1,4 +1,6 @@
 import { demoImageUrl } from "@/lib/demoImages";
+import { COMMON, formatDateRange, getLang, tr, type Entry, type Lang } from "@/lib/i18n";
+import { EXHIBITION_SHARED as S } from "@/lib/i18n/exhibition/shared";
 
 /** Exhibition & events (anthem.events). Writes go through the event_* RPCs; see the migration for the rules. */
 export const EVENT_CATEGORIES = [
@@ -23,14 +25,31 @@ export type EventFeeType = "free" | "paid" | "unspecified";
 /** Who put the event on SameCor: our own event, a member's submission, or one the team found elsewhere. */
 export type EventOrigin = "original" | "community" | "curated";
 
+/** Team panel text (Thai UI shows these English names). Public UI: use originLabel(). */
 export const EVENT_ORIGIN_LABEL: Record<EventOrigin, string> = {
   original: "Organized by SAMECOR",
   community: "Submitted by Community",
   curated: "Curated by SAMECOR",
 };
 
-/** Shown wherever a curated source did not state a value. We never guess. */
+const ORIGIN_ENTRY: Record<EventOrigin, Entry> = {
+  original: S.originOriginal,
+  community: S.originCommunity,
+  curated: S.originCurated,
+};
+
+/** Origin tag in the UI language. */
+export function originLabel(origin: EventOrigin, lang: Lang = getLang()): string {
+  return tr(ORIGIN_ENTRY[origin] ?? S.originCommunity, undefined, lang);
+}
+
+/** Shown wherever a curated source did not state a value. We never guess. Thai constant; UI: notSpecified(). */
 export const NOT_SPECIFIED = "ไม่ระบุ";
+
+/** "ไม่ระบุ" / "Not specified" / "未注明" in the UI language. */
+export function notSpecified(lang: Lang = getLang()): string {
+  return tr(COMMON.notSpecified, undefined, lang);
+}
 
 export type ExhibitionEvent = {
   id: string;
@@ -130,7 +149,15 @@ export function emptyEventDraft(): EventDraft {
   };
 }
 
-export type EventAction = { label: string; url: string };
+export type EventActionKind = "tickets" | "apply" | "workshop" | "register";
+export type EventAction = { label: string; url: string; kind: EventActionKind };
+
+const ACTION_ENTRY: Record<EventActionKind, Entry> = {
+  tickets: S.ctaTickets,
+  apply: S.ctaApply,
+  workshop: S.ctaWorkshop,
+  register: S.ctaRegister,
+};
 
 /**
  * The main button on an event page: buy tickets for paid events with a ticket page, Apply for open calls,
@@ -138,25 +165,37 @@ export type EventAction = { label: string; url: string };
  */
 export function eventPrimaryAction(
   e: Pick<ExhibitionEvent, "category" | "fee_type" | "registration_url" | "ticket_url" | "registration_open">,
+  lang: Lang = getLang(),
 ): EventAction | null {
-  if (e.ticket_url && e.fee_type !== "free") return { label: "ซื้อบัตร / Get Tickets", url: e.ticket_url };
+  const act = (kind: EventActionKind, url: string): EventAction => ({ kind, url, label: tr(ACTION_ENTRY[kind], undefined, lang) });
+  if (e.ticket_url && e.fee_type !== "free") return act("tickets", e.ticket_url);
   if (e.registration_url && e.registration_open) {
-    if (e.category === "open_call") return { label: "Apply Now", url: e.registration_url };
-    if (e.category === "workshop") return { label: "ลงทะเบียน Workshop", url: e.registration_url };
-    return { label: "ลงทะเบียนเข้าร่วม", url: e.registration_url };
+    if (e.category === "open_call") return act("apply", e.registration_url);
+    if (e.category === "workshop") return act("workshop", e.registration_url);
+    return act("register", e.registration_url);
   }
-  if (e.ticket_url) return { label: "ซื้อบัตร / Get Tickets", url: e.ticket_url };
+  if (e.ticket_url) return act("tickets", e.ticket_url);
   return null;
 }
 
-export function feeLabel(e: Pick<ExhibitionEvent, "fee_type" | "fee_note">): string {
-  if (e.fee_type === "free") return "เข้าชมฟรี";
-  if (e.fee_type === "paid") return e.fee_note ? `มีค่าใช้จ่าย · ${e.fee_note}` : "มีค่าใช้จ่าย";
-  return `ค่าเข้าชม: ${NOT_SPECIFIED}`;
+export function feeLabel(e: Pick<ExhibitionEvent, "fee_type" | "fee_note">, lang: Lang = getLang()): string {
+  if (e.fee_type === "free") return tr(S.feeFree, undefined, lang);
+  if (e.fee_type === "paid") return e.fee_note ? tr(S.feePaidNote, { note: e.fee_note }, lang) : tr(S.feePaid, undefined, lang);
+  return tr(S.feeUnspecified, { ns: notSpecified(lang) }, lang);
 }
 
-export function categoryLabel(id: string): string {
-  return EVENT_CATEGORIES.find((c) => c.id === id)?.label ?? "Event";
+const CATEGORY_ENTRY: Record<EventCategory, Entry> = {
+  exhibition: S.catExhibition,
+  workshop: S.catWorkshop,
+  art_fair: S.catArtFair,
+  talk_forum: S.catTalkForum,
+  open_call: S.catOpenCall,
+  other: S.catOther,
+};
+
+/** Category name in the UI language ("Event" for an unknown id). Thai keeps the English names shown today. */
+export function categoryLabel(id: string, lang: Lang = getLang()): string {
+  return tr(CATEGORY_ENTRY[id as EventCategory] ?? S.catEvent, undefined, lang);
 }
 
 function todayIso(): string {
@@ -188,22 +227,10 @@ export const EVENT_STATUS_LABEL: Record<EventDisplayStatus, { label: string; th:
   ended: { label: "Ended", th: "งานจบแล้ว", dot: "bg-foreground/40" },
 };
 
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-function parts(iso: string) {
-  const [y, m, d] = iso.split("-").map(Number);
-  return { y, m: MONTHS[m - 1], d };
-}
-
-/** "15 Nov – 28 Dec 2026", "8 Dec 2026", "1 – 15 Dec 2026". */
-export function formatEventDates(starts?: string | null, ends?: string | null): string {
+/** "15 – 28 พ.ย. 2569" / "15 Nov – 28 Dec 2026" / "2026年11月15日 – 12月28日", in the UI language. "" without a start. */
+export function formatEventDates(starts?: string | null, ends?: string | null, lang: Lang = getLang()): string {
   if (!starts) return "";
-  const a = parts(starts);
-  if (!ends || ends === starts) return `${a.d} ${a.m} ${a.y}`;
-  const b = parts(ends);
-  if (a.y !== b.y) return `${a.d} ${a.m} ${a.y} – ${b.d} ${b.m} ${b.y}`;
-  if (a.m !== b.m) return `${a.d} ${a.m} – ${b.d} ${b.m} ${b.y}`;
-  return `${a.d} – ${b.d} ${b.m} ${b.y}`;
+  return formatDateRange(starts, ends, lang);
 }
 
 /** Published events for the public list: picks first, then running/upcoming by start date, ended last. */
@@ -376,6 +403,20 @@ export const EVENT_LINK_KINDS: Record<EventLinkKind, string> = {
   info: "รายละเอียด",
 };
 
+const LINK_KIND_ENTRY: Record<EventLinkKind, Entry> = {
+  download: S.linkDownload,
+  form: S.linkForm,
+  rules: S.linkRules,
+  register: S.linkRegister,
+  tickets: S.linkTickets,
+  info: S.linkInfo,
+};
+
+/** Link kind name in the UI language (EVENT_LINK_KINDS stays the Thai list for the team editor). */
+export function linkKindLabel(kind: EventLinkKind, lang: Lang = getLang()): string {
+  return tr(LINK_KIND_ENTRY[kind] ?? S.linkInfo, undefined, lang);
+}
+
 const LINK_KINDS = Object.keys(EVENT_LINK_KINDS) as EventLinkKind[];
 const SHORTENERS = /^(bit\.ly|bitly\.com|tinyurl\.com|t\.co|goo\.gl|ow\.ly|is\.gd|buff\.ly|rebrand\.ly|cutt\.ly|shorturl\.at|tiny\.cc|rb\.gy|lnkd\.in|s\.id|v\.gd|clck\.ru|adf\.ly|bc\.vc)$/i;
 
@@ -389,10 +430,9 @@ export function isSafeEventLink(url: string): boolean {
   }
 }
 
-/** Button text: "ดาวน์โหลด: <label>" unless the label already says it. */
-export function eventLinkText(l: Pick<EventInsightLink, "label" | "kind">): string {
-  const prefix = EVENT_LINK_KINDS[l.kind];
-  return l.label.startsWith(prefix.split(" ")[0]) ? l.label : `${prefix}: ${l.label}`;
+/** Accessible button text: "ดาวน์โหลด: <label>" — the kind in the UI language, then the organiser's label. */
+export function eventLinkText(l: Pick<EventInsightLink, "label" | "kind">, lang: Lang = getLang()): string {
+  return tr(S.linkText, { kind: linkKindLabel(l.kind, lang), label: l.label }, lang);
 }
 
 export function parseEventInsights(raw: unknown): EventInsights | null {
@@ -424,13 +464,13 @@ export function parseEventInsights(raw: unknown): EventInsights | null {
 }
 
 /** "ปิดรับใน 32 วัน" / "ปิดรับพรุ่งนี้" / "ปิดรับวันนี้" / "ปิดรับแล้ว", by Bangkok date. Null without a date. */
-export function deadlineLabel(iso: string | null | undefined, now: Date = new Date()): string | null {
+export function deadlineLabel(iso: string | null | undefined, now: Date = new Date(), lang: Lang = getLang()): string | null {
   if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
   const day = (s: string) => Date.UTC(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10)) / 86_400_000;
   const today = new Date(now.getTime() + 7 * 3_600_000).toISOString().slice(0, 10);
   const n = day(iso) - day(today);
-  if (n < 0) return "ปิดรับแล้ว";
-  if (n === 0) return "ปิดรับวันนี้";
-  if (n === 1) return "ปิดรับพรุ่งนี้";
-  return `ปิดรับใน ${n} วัน`;
+  if (n < 0) return tr(S.deadlineClosed, undefined, lang);
+  if (n === 0) return tr(S.deadlineToday, undefined, lang);
+  if (n === 1) return tr(S.deadlineTomorrow, undefined, lang);
+  return tr(S.deadlineInDays, { n }, lang);
 }

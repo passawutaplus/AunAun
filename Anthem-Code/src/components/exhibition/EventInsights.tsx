@@ -41,33 +41,35 @@ import {
   type ExhibitionEvent,
 } from "@/lib/exhibitionEvents";
 import { cn } from "@/lib/utils";
+import { tr, useLang, useT, type Entry } from "@/lib/i18n";
+import { DETAIL } from "@/lib/i18n/exhibition/detail";
 
 type ListKey = Exclude<EventInsightListKey, "related_categories">;
-type Block = { key: ListKey; title: string; icon: LucideIcon };
+type Block = { key: ListKey; title: Entry; icon: LucideIcon };
 
 const DEFAULT_BLOCKS: Record<ListKey, Block> = {
-  steps: { key: "steps", title: "ขั้นตอน", icon: ListOrdered },
-  eligibility: { key: "eligibility", title: "ใครสมัครได้", icon: UserCheck },
-  benefits: { key: "benefits", title: "รางวัล / สิ่งที่ได้", icon: Gift },
-  bring: { key: "bring", title: "สิ่งที่ต้องเตรียม", icon: Wrench },
-  speakers: { key: "speakers", title: "วิทยากร", icon: Mic },
-  schedule: { key: "schedule", title: "กำหนดการ", icon: CalendarClock },
-  highlights: { key: "highlights", title: "ไฮไลต์", icon: Sparkles },
-  who_for: { key: "who_for", title: "เหมาะกับใคร", icon: Users },
-  takeaways: { key: "takeaways", title: "จะได้อะไรกลับไป", icon: Lightbulb },
-  know_before: { key: "know_before", title: "ก่อนไปควรรู้", icon: Info },
+  steps: { key: "steps", title: DETAIL.blockSteps, icon: ListOrdered },
+  eligibility: { key: "eligibility", title: DETAIL.blockEligibility, icon: UserCheck },
+  benefits: { key: "benefits", title: DETAIL.blockBenefits, icon: Gift },
+  bring: { key: "bring", title: DETAIL.blockBring, icon: Wrench },
+  speakers: { key: "speakers", title: DETAIL.blockSpeakers, icon: Mic },
+  schedule: { key: "schedule", title: DETAIL.blockSchedule, icon: CalendarClock },
+  highlights: { key: "highlights", title: DETAIL.blockHighlights, icon: Sparkles },
+  who_for: { key: "who_for", title: DETAIL.blockWhoFor, icon: Users },
+  takeaways: { key: "takeaways", title: DETAIL.blockTakeaways, icon: Lightbulb },
+  know_before: { key: "know_before", title: DETAIL.blockKnowBefore, icon: Info },
 };
 
 /** Category first: what matters most for that kind of event, with category-specific headings. */
 const CATEGORY_BLOCKS: Partial<Record<ExhibitionEvent["category"], Array<Partial<Block> & { key: ListKey }>>> = {
   open_call: [
-    { key: "steps", title: "ขั้นตอนการสมัคร" },
+    { key: "steps", title: DETAIL.stepsApply },
     { key: "eligibility" },
     { key: "benefits" },
   ],
-  workshop: [{ key: "steps", title: "ขั้นตอนการจอง" }, { key: "bring" }, { key: "schedule" }],
-  talk_forum: [{ key: "speakers" }, { key: "schedule" }, { key: "steps", title: "ขั้นตอนการลงทะเบียน" }],
-  art_fair: [{ key: "highlights" }, { key: "schedule", title: "รอบ / บัตร" }, { key: "steps", title: "ขั้นตอนการซื้อบัตร" }],
+  workshop: [{ key: "steps", title: DETAIL.stepsBook }, { key: "bring" }, { key: "schedule" }],
+  talk_forum: [{ key: "speakers" }, { key: "schedule" }, { key: "steps", title: DETAIL.stepsRegister }],
+  art_fair: [{ key: "highlights" }, { key: "schedule", title: DETAIL.scheduleTickets }, { key: "steps", title: DETAIL.stepsTickets }],
   exhibition: [{ key: "who_for" }, { key: "takeaways" }, { key: "know_before" }],
   other: [{ key: "who_for" }, { key: "takeaways" }, { key: "know_before" }],
 };
@@ -106,13 +108,14 @@ function insightBlocks(insights: EventInsights, category: string): Block[] {
 const SHOWN_ITEMS = 3;
 
 function BlockList({ block, items: all }: { block: Block; items: string[] }) {
+  const lang = useLang();
   const Icon = block.icon;
   const items = all.slice(0, SHOWN_ITEMS);
   return (
     <div>
       <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
         <Icon className="h-4 w-4 text-brand" aria-hidden />
-        {block.title}
+        {tr(block.title, undefined, lang)}
       </h3>
       {block.key === "steps" ? (
         <ol className="mt-2.5 space-y-1.5">
@@ -180,6 +183,7 @@ export function EventInsightsPanel({
   event: PanelEvent;
   className?: string;
 }) {
+  const t = useT(DETAIL);
   const blocks = insightBlocks(insights, event.category);
   const isOpenCall = event.category === "open_call";
   const deadline = isOpenCall ? (insights.deadline ?? event.ends_on) : insights.deadline;
@@ -194,7 +198,7 @@ export function EventInsightsPanel({
   return (
     <section aria-labelledby="insights-heading" className={className}>
       <h2 id="insights-heading" className="font-display text-2xl font-semibold text-foreground">
-        สรุปโดย SAMECOR
+        {t("summaryBy")}
       </h2>
 
       {countdown || insights.capacity ? (
@@ -231,7 +235,7 @@ export function EventInsightsPanel({
           rel="noopener noreferrer nofollow"
           className="mt-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground underline decoration-foreground/30 underline-offset-4 hover:text-foreground hover:decoration-foreground"
         >
-          อ่านรายละเอียดเต็มได้ที่เว็บไซต์ผู้จัด <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+          {t("readFullDetails")} <ArrowRight className="h-3.5 w-3.5" aria-hidden />
         </a>
       ) : null}
     </section>

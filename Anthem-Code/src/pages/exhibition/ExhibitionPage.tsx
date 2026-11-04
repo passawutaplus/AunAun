@@ -24,7 +24,9 @@ import { OPEN_PHONE_SEARCH_EVENT } from "@/lib/phoneSearch";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { isBetaFeedbackEnabled } from "@/lib/aplus1Launch";
-import { EVENT_CATEGORIES, eventTiming, type EventCategory } from "@/lib/exhibitionEvents";
+import { EVENT_CATEGORIES, categoryLabel, eventTiming, type EventCategory } from "@/lib/exhibitionEvents";
+import { COMMON, useT } from "@/lib/i18n";
+import { LIST } from "@/lib/i18n/exhibition/list";
 import { BRAND_NAME } from "@/lib/brandConfig";
 import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
 import { smoothEase } from "@/lib/motion";
@@ -78,24 +80,30 @@ export default function ExhibitionPage() {
   const [filterOpen, setFilterOpen] = useState(false);
   const { hidden: mobileBarHidden, scrolled: mobileBarScrolled } = useHideOnScroll(mobileBarRef);
   const reduceMotion = useReducedMotion();
+  const t = useT(LIST);
+  const tc = useT(COMMON);
+  const categoryOptions = [
+    { id: "all" as const, label: t("all") },
+    ...EVENT_CATEGORIES.map((c) => ({ id: c.id, label: categoryLabel(c.id) })),
+  ];
 
   const toggle = <FeedModeToggle value="showcase" exhibitionActive onChange={(m) => navigate(`/?mode=${m}`)} />;
   const searchBar = (compact?: boolean) => (
     <SearchBar
       value={search}
       onChange={setSearch}
-      placeholder="ค้นหางาน สถานที่ ผู้จัด"
+      placeholder={t("searchPlaceholder")}
       expandable
       expandAnchor="end"
       compact={compact}
     />
   );
   const timingSwitch = (
-    <div className="flex shrink-0 rounded-full bg-muted/60 p-0.5" role="group" aria-label="ช่วงเวลา">
+    <div className="flex shrink-0 rounded-full bg-muted/60 p-0.5" role="group" aria-label={t("timing")}>
       {(
         [
-          ["now", "Now"],
-          ["done", "Done"],
+          ["now", t("now")],
+          ["done", t("done")],
         ] as const
       ).map(([id, label]) => (
         <button
@@ -119,7 +127,7 @@ export default function ExhibitionPage() {
       <div className="min-w-0 flex-1 lg:flex-none">
         <FilterChips
           align={isMobile ? "start" : "center"}
-          options={[{ id: "all", label: "All" }, ...EVENT_CATEGORIES]}
+          options={categoryOptions}
           selected={category}
           onSelect={(id) => setCategory(id as EventCategory | "all")}
         />
@@ -131,7 +139,7 @@ export default function ExhibitionPage() {
     <main id="main-content" className={cn("relative min-h-screen bg-app-ambient", MOBILE_PAGE_BOTTOM_CLASS)}>
       <SeoHead
         title="Exhibition & Events"
-        description="นิทรรศการ เวิร์กช็อป และอีเวนต์สร้างสรรค์จากครีเอเตอร์บน SAMECOR — ทีมงานตรวจทุกงานก่อนเผยแพร่"
+        description={t("seoDescription")}
         path="/exhibition"
       />
 
@@ -151,7 +159,7 @@ export default function ExhibitionPage() {
               <Link
                 to="/"
                 className="relative z-10 shrink-0 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                aria-label={`${BRAND_NAME} หน้าแรก`}
+                aria-label={`${BRAND_NAME} ${tc("home")}`}
               >
                 <BrandLogo beta size="sm" tone="theme" />
               </Link>
@@ -186,7 +194,7 @@ export default function ExhibitionPage() {
           <div className="flex items-center gap-2">
           <Link
             to="/"
-            aria-label={`${BRAND_NAME} หน้าแรก`}
+            aria-label={`${BRAND_NAME} ${tc("home")}`}
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <BrandLogo showWordmark={false} size="md" />
@@ -215,16 +223,16 @@ export default function ExhibitionPage() {
 
         <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
           <SheetContent side="bottom" className="rounded-t-3xl pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
-            <SheetTitle className="text-base">ตัวกรอง Exhibition</SheetTitle>
+            <SheetTitle className="text-base">{t("filterTitle")}</SheetTitle>
             <div className="mt-4 space-y-5">
               <div className="space-y-2">
-                <p className="text-xs font-medium text-muted-foreground">ช่วงเวลา</p>
+                <p className="text-xs font-medium text-muted-foreground">{t("timing")}</p>
                 <div className="flex">{timingSwitch}</div>
               </div>
               <div className="space-y-2">
-                <p className="text-xs font-medium text-muted-foreground">ประเภทงาน</p>
+                <p className="text-xs font-medium text-muted-foreground">{t("eventType")}</p>
                 <div className="flex flex-wrap gap-2">
-                  {[{ id: "all" as const, label: "All" }, ...EVENT_CATEGORIES].map((c) => (
+                  {categoryOptions.map((c) => (
                     <button
                       key={c.id}
                       type="button"
@@ -243,7 +251,7 @@ export default function ExhibitionPage() {
                 </div>
               </div>
               <Button type="button" className="w-full rounded-full" onClick={() => setFilterOpen(false)}>
-                ดู {rows.length} งาน
+                {t("showN", { n: rows.length })}
               </Button>
             </div>
           </SheetContent>
@@ -282,13 +290,13 @@ export default function ExhibitionPage() {
           isLoading={isLoading}
           isError={isError}
           onRetry={() => void refetch()}
-          errorTitle="โหลด Exhibition ไม่สำเร็จ"
+          errorTitle={t("loadFailed")}
         />
       ) : rows.length === 0 ? (
         <EmptyState
           icon={CalendarX2}
-          title={when === "done" ? "ยังไม่มีงานที่จบแล้วในหมวดนี้" : "ยังไม่มีงานที่กำลังจัดหรือกำลังจะมาในหมวดนี้"}
-          description="ลงงานของคุณได้จากปุ่ม + บนหน้าโปรไฟล์ — ทีมงานตรวจภายใน 1–3 วันทำการ"
+          title={when === "done" ? t("emptyDone") : t("emptyNow")}
+          description={t("emptyHint")}
           className="py-16"
         />
       ) : (

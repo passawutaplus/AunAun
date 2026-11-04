@@ -42,8 +42,9 @@ import { useEventVenues, useParentEvent } from "@/hooks/useEventVenues";
 import { venueMapsUrl, venueOpenState } from "@/lib/eventVenues";
 import { useAuth } from "@/hooks/useAuth";
 import { navigateToAuth } from "@/lib/authRedirect";
+import { COMMON, useT } from "@/lib/i18n";
+import { DETAIL } from "@/lib/i18n/exhibition/detail";
 import {
-  NOT_SPECIFIED,
   eventPrimaryAction,
   feeLabel,
   formatEventDates,
@@ -111,6 +112,9 @@ export default function ExhibitionDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const t = useT(DETAIL);
+  const tc = useT(COMMON);
+  const NOT_SPECIFIED = tc("notSpecified");
   const { data: event, isLoading, isError, refetch } = useEvent(id);
   const statIds = useMemo(() => (id ? [id] : []), [id]);
   const { data: stats } = useEventStats(statIds);
@@ -131,7 +135,7 @@ export default function ExhibitionDetailPage() {
   if (isLoading || isError) {
     return (
       <div className="container mx-auto max-w-6xl px-4 py-10">
-        <QueryStatusPanel isLoading={isLoading} isError={isError} onRetry={() => void refetch()} errorTitle="โหลดงานนี้ไม่สำเร็จ" />
+        <QueryStatusPanel isLoading={isLoading} isError={isError} onRetry={() => void refetch()} errorTitle={t("loadFailed")} />
       </div>
     );
   }
@@ -140,11 +144,11 @@ export default function ExhibitionDetailPage() {
     return (
       <div className="container mx-auto max-w-6xl px-4 py-16">
         <EmptyState
-          title="ไม่พบงานนี้"
-          description="งานอาจถูกถอน หรือยังไม่ผ่านการตรวจ"
+          title={t("notFound")}
+          description={t("notFoundHint")}
           action={
             <Button asChild variant="outline" className="rounded-full">
-              <Link to="/exhibition">ดู Exhibition ทั้งหมด</Link>
+              <Link to="/exhibition">{t("seeAllExhibition")}</Link>
             </Button>
           }
         />
@@ -204,26 +208,26 @@ export default function ExhibitionDetailPage() {
                   rel="noopener noreferrer nofollow"
                   className="group inline-flex items-center gap-1 underline-offset-4 hover:underline focus-visible:underline focus-visible:outline-none"
                 >
-                  {event.organizer_name ?? "เว็บไซต์ผู้จัด"}
+                  {event.organizer_name ?? t("organizerWebsite")}
                   <ArrowUpRight
                     className="h-4 w-4 shrink-0 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-focus-visible:-translate-y-0.5 group-focus-visible:translate-x-0.5 motion-reduce:transition-none"
                     aria-hidden
                   />
                 </a>
               ) : (
-                (event.organizer_name ?? (event.origin === "community" ? "ผู้จัดงาน" : NOT_SPECIFIED))
+                (event.organizer_name ?? (event.origin === "community" ? t("organizerFallback") : NOT_SPECIFIED))
               )}
             </p>
             <div className="mt-2 flex flex-wrap gap-2 empty:hidden">
               {/* Team events are owned by an admin account; that profile is not the organiser. */}
               {!isDemoEventId(event.id) && event.origin === "community" ? (
                 <Button asChild size="sm" variant="outline" className="rounded-full">
-                  <Link to={`/u/${event.owner_id}`}>View Profile</Link>
+                  <Link to={`/u/${event.owner_id}`}>{t("viewProfile")}</Link>
                 </Button>
               ) : null}
               {canChat ? (
                 <Button type="button" size="sm" className="rounded-full" onClick={contactOrganizer}>
-                  <MessageCircle className="mr-1.5 h-4 w-4" aria-hidden /> Message
+                  <MessageCircle className="mr-1.5 h-4 w-4" aria-hidden /> {t("message")}
                 </Button>
               ) : null}
             </div>
@@ -239,7 +243,7 @@ export default function ExhibitionDetailPage() {
                   {event.sponsors.map((s, i) => (
                     <li key={`${s.name}-${i}`} className="flex items-center gap-3">
                       {s.logo_url ? (
-                        <img src={s.logo_url} alt={`โลโก้ ${s.name}`} className="h-10 w-10 rounded-md border border-border bg-background object-contain" loading="lazy" />
+                        <img src={s.logo_url} alt={t("sponsorLogo", { name: s.name })} className="h-10 w-10 rounded-md border border-border bg-background object-contain" loading="lazy" />
                       ) : (
                         <span className="flex h-10 w-10 items-center justify-center rounded-md border border-border bg-muted text-sm font-semibold text-foreground" aria-hidden>
                           {s.name.slice(0, 1).toUpperCase()}
@@ -260,13 +264,13 @@ export default function ExhibitionDetailPage() {
                 <div className="mt-4 flex items-start gap-3 rounded-lg bg-muted/50 p-4">
                   <Handshake className="mt-0.5 h-5 w-5 shrink-0 text-foreground" aria-hidden />
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-foreground">Open for Sponsorship</p>
+                    <p className="text-sm font-semibold text-foreground">{t("openForSponsorship")}</p>
                     <p className="text-xs text-muted-foreground">
-                      {event.sponsors.length ? "ยังรับผู้สนับสนุนเพิ่ม" : "งานนี้กำลังหาผู้สนับสนุน"} — คุยกับผู้จัดได้โดยตรง
+                      {event.sponsors.length ? t("sponsorMoreWanted") : t("sponsorWanted")} — {t("talkToOrganizer")}
                     </p>
                     {canSponsor ? (
                       <Button type="button" size="sm" className="mt-3 rounded-full" onClick={offerSponsorship}>
-                        <Handshake className="mr-1.5 h-4 w-4" aria-hidden /> เสนอเป็นผู้สนับสนุน
+                        <Handshake className="mr-1.5 h-4 w-4" aria-hidden /> {t("offerSponsorship")}
                       </Button>
                     ) : null}
                   </div>
@@ -279,7 +283,7 @@ export default function ExhibitionDetailPage() {
             <div>
               <ReportDialog targetType="event" targetId={event.id} targetOwnerId={event.owner_id}>
                 <Button type="button" size="sm" variant="ghost" className="-ml-3 rounded-full text-muted-foreground">
-                  <Flag className="mr-1.5 h-4 w-4" aria-hidden /> รายงานงานนี้
+                  <Flag className="mr-1.5 h-4 w-4" aria-hidden /> {t("reportEvent")}
                 </Button>
               </ReportDialog>
             </div>
@@ -288,7 +292,7 @@ export default function ExhibitionDetailPage() {
   );
 
   const crumbs = [
-    { name: "หน้าแรก", path: "/" },
+    { name: tc("home"), path: "/" },
     { name: "Exhibition", path: "/exhibition" },
     { name: event.title, path },
   ];
@@ -321,7 +325,7 @@ export default function ExhibitionDetailPage() {
       {event.status !== "published" ? (
         <div className="mb-5 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm">
           <EventStatusBadge event={event} />
-          <span className="text-muted-foreground">หน้านี้มีแค่คุณและทีมงานที่เห็นจนกว่าจะเผยแพร่</span>
+          <span className="text-muted-foreground">{t("draftNotice")}</span>
         </div>
       ) : null}
 
@@ -348,7 +352,7 @@ export default function ExhibitionDetailPage() {
               to={`/exhibition/${parent.id}#venues`}
               className="-mb-2 text-sm text-muted-foreground underline decoration-foreground/30 underline-offset-4 hover:text-foreground"
             >
-              สถานที่หนึ่งของ {parent.title}
+              {t("venueOf", { title: parent.title })}
             </Link>
           ) : null}
           <h1 className="font-display text-4xl font-semibold leading-[1.05] tracking-tight text-foreground sm:text-5xl">
@@ -367,7 +371,7 @@ export default function ExhibitionDetailPage() {
             <InfoRow icon={CalendarDays}>
               {event.starts_on ? formatEventDates(event.starts_on, event.ends_on) : venue?.date_note ?? NOT_SPECIFIED}
               <span className="block text-muted-foreground">
-                เวลา: {venue?.hours_note ?? event.time_note ?? NOT_SPECIFIED}
+                {t("timeLabel", { time: venue?.hours_note ?? event.time_note ?? NOT_SPECIFIED })}
               </span>
               {venue ? <VenueOpenBadge state={venueOpenState(venue)} className="mt-1" /> : null}
               {gcalHref ? (
@@ -378,7 +382,7 @@ export default function ExhibitionDetailPage() {
                   className="group mt-1 inline-flex items-center gap-1.5 text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:underline focus-visible:outline-none"
                 >
                   <GoogleCalendarIcon className="h-3.5 w-3.5 shrink-0" />
-                  เพิ่มลง Google Calendar
+                  {t("addToGoogleCalendar")}
                   <ArrowUpRight
                     className="h-3.5 w-3.5 shrink-0 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-focus-visible:-translate-y-0.5 group-focus-visible:translate-x-0.5 motion-reduce:transition-none"
                     aria-hidden
@@ -393,7 +397,7 @@ export default function ExhibitionDetailPage() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="underline decoration-foreground/30 underline-offset-4 hover:decoration-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground"
-                  title="เปิดใน Google Maps"
+                  title={tc("openInGoogleMaps")}
                 >
                   {event.location_name}
                 </a>
@@ -405,7 +409,7 @@ export default function ExhibitionDetailPage() {
             {venue?.transit_note ? <InfoRow icon={TrainFront}>{venue.transit_note}</InfoRow> : null}
             <InfoRow icon={Ticket}>{venue?.admission_note ?? feeLabel(event)}</InfoRow>
             {isEventEnded(event) ? (
-              <p className="text-sm font-medium text-muted-foreground">งานนี้จบแล้ว</p>
+              <p className="text-sm font-medium text-muted-foreground">{t("eventEnded")}</p>
             ) : null}
             {sourcePage ? (
               <InfoRow icon={Globe}>
@@ -422,7 +426,7 @@ export default function ExhibitionDetailPage() {
             {/* Documents / links from the organiser's page, right under the facts (no heading — the icon says it). */}
             {insights?.links.length ? (
               <InfoRow icon={Paperclip}>
-                <span className="sr-only">เอกสารและลิงก์</span>
+                <span className="sr-only">{t("docsAndLinks")}</span>
                 <EventLinkButtons links={insights.links} className="-mt-1" />
               </InfoRow>
             ) : null}
@@ -489,9 +493,9 @@ export default function ExhibitionDetailPage() {
           open={contactOpen}
           onOpenChange={setContactOpen}
           recipientId={event.owner_id}
-          recipientName={event.organizer_name ?? "ผู้จัดงาน"}
+          recipientName={event.organizer_name ?? t("organizerFallback")}
           appendText={`${window.location.origin}${path}`}
-          description="ถามรายละเอียดงาน การเข้าร่วม หรือชวนคุยกับผู้จัดได้เลย — การ์ดงานนี้จะแนบไปกับข้อความ"
+          description={t("contactDescription")}
         />
       ) : null}
       {canSponsor ? <SponsorOfferDialog open={sponsorOpen} onOpenChange={setSponsorOpen} event={event} /> : null}

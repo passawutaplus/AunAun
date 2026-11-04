@@ -1,4 +1,4 @@
-export type AppLocale = "th" | "en";
+export type AppLocale = "th" | "en" | "zh";
 
 export type LocalePrefs = {
   locale: AppLocale;
@@ -15,7 +15,11 @@ const DEFAULT: LocalePrefs = {
 export const APP_LOCALE_OPTIONS: { value: AppLocale; label: string }[] = [
   { value: "th", label: "ไทย" },
   { value: "en", label: "English" },
+  { value: "zh", label: "中文" },
 ];
+
+/** Fired on window after the locale is saved, so open views can re-render. */
+export const LOCALE_CHANGE_EVENT = "samecor:locale-change";
 
 export function detectTimezones(): string[] {
   const common = [
@@ -45,7 +49,7 @@ export function loadLocalePrefs(): LocalePrefs {
     if (!raw) return { ...DEFAULT };
     const parsed = JSON.parse(raw) as Partial<LocalePrefs>;
     return {
-      locale: parsed.locale === "en" ? "en" : "th",
+      locale: parsed.locale === "en" || parsed.locale === "zh" ? parsed.locale : "th",
       timezone: parsed.timezone?.trim() || DEFAULT.timezone,
     };
   } catch {
@@ -56,4 +60,5 @@ export function loadLocalePrefs(): LocalePrefs {
 export function saveLocalePrefs(prefs: LocalePrefs): void {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(KEY, JSON.stringify(prefs));
+  window.dispatchEvent(new Event(LOCALE_CHANGE_EVENT));
 }

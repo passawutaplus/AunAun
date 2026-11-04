@@ -6,6 +6,7 @@ export type HttpErrorCopy = {
   code: number
   titleTh: string
   titleEn: string
+  titleZh: string
   descTh: string
   descEn: string
   taglineTh: string
@@ -19,6 +20,7 @@ export const HTTP_ERROR_COPY: Record<HttpErrorKind, HttpErrorCopy> = {
     code: 400,
     titleTh: 'อ่านคำขอนี้ไม่ได้',
     titleEn: 'Could not read this.',
+    titleZh: '无法读取此请求。',
     descTh: 'คำขอมาในรูปแบบที่อ่านไม่ได้',
     descEn: 'The request did not arrive in a form we can use.',
     taglineTh: '',
@@ -28,6 +30,7 @@ export const HTTP_ERROR_COPY: Record<HttpErrorKind, HttpErrorCopy> = {
     code: 403,
     titleTh: 'หน้านี้ไม่เปิด',
     titleEn: 'Not open.',
+    titleZh: '此页面未开放。',
     descTh: 'หน้านี้ไม่เปิดให้เข้า',
     descEn: 'This page is closed.',
     taglineTh: '',
@@ -37,6 +40,7 @@ export const HTTP_ERROR_COPY: Record<HttpErrorKind, HttpErrorCopy> = {
     code: 404,
     titleTh: 'ไม่พบหน้านี้',
     titleEn: 'Page not found.',
+    titleZh: '找不到此页面。',
     descTh: 'หน้านี้ย้ายไปแล้ว หรือไม่เคยมี',
     descEn: 'It may have moved, or it was never here.',
     taglineTh: '',
@@ -48,6 +52,7 @@ export const HTTP_ERROR_COPY: Record<HttpErrorKind, HttpErrorCopy> = {
     code: 405,
     titleTh: 'วิธีนี้ใช้ไม่ได้',
     titleEn: 'Not that way.',
+    titleZh: '无法这样操作。',
     descTh: 'วิธีนี้ใช้กับหน้านี้ไม่ได้',
     descEn: 'This action is not available here.',
     taglineTh: '',
@@ -57,6 +62,7 @@ export const HTTP_ERROR_COPY: Record<HttpErrorKind, HttpErrorCopy> = {
     code: 500,
     titleTh: 'ทำให้ไม่สำเร็จ',
     titleEn: 'Could not finish.',
+    titleZh: '未能完成。',
     descTh: 'ทำหน้านี้ไม่สำเร็จ ลองใหม่ในอีกสักครู่',
     descEn: 'This page could not be completed. Try again in a moment.',
     taglineTh: '',
@@ -68,6 +74,7 @@ export const HTTP_ERROR_COPY: Record<HttpErrorKind, HttpErrorCopy> = {
     code: 502,
     titleTh: 'ไม่มีคำตอบกลับ',
     titleEn: 'No reply.',
+    titleZh: '没有响应。',
     descTh: 'บริการที่หน้านี้ใช้ไม่ตอบกลับ',
     descEn: 'A service this page needs did not answer.',
     taglineTh: '',
@@ -77,6 +84,7 @@ export const HTTP_ERROR_COPY: Record<HttpErrorKind, HttpErrorCopy> = {
     code: 503,
     titleTh: 'ปิดชั่วครู่',
     titleEn: 'Briefly closed.',
+    titleZh: '暂时关闭。',
     descTh: `${BRAND_NAME} ไม่พร้อมชั่วครู่`,
     descEn: `${BRAND_NAME} is unavailable for a moment.`,
     taglineTh: '',
@@ -86,6 +94,7 @@ export const HTTP_ERROR_COPY: Record<HttpErrorKind, HttpErrorCopy> = {
     code: 0,
     titleTh: 'โหลดไม่ได้',
     titleEn: 'Could not load.',
+    titleZh: '无法加载。',
     descTh: 'อาจเป็นเน็ตชั่วคราว ลองใหม่',
     descEn: 'This may be a connection issue. Try again.',
     taglineTh: '',
@@ -95,6 +104,7 @@ export const HTTP_ERROR_COPY: Record<HttpErrorKind, HttpErrorCopy> = {
     code: 404,
     titleTh: 'ลิงก์หมดอายุ',
     titleEn: 'Link expired.',
+    titleZh: '链接已过期。',
     descTh: 'หมดอายุ หรือพิมพ์ไม่ครบ',
     descEn: 'It has expired, or it was not complete.',
     taglineTh: '',

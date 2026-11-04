@@ -3,6 +3,8 @@
  * Kept only in this browser (localStorage) — never sent to SAMECOR. Coordinates sent to the routing service
  * are rounded to ~100 m.
  */
+import { getLang, tr, type Entry, type Lang } from "@/lib/i18n";
+import { VENUES } from "@/lib/i18n/exhibition/venues";
 
 export type RouteStartKind = "here" | "home" | "work" | "place" | "map";
 export type RouteStart = { lat: number; lng: number; label: string; kind: RouteStartKind };
@@ -46,13 +48,20 @@ export const saveRoutePresets = (p: RoutePresets) => write(PRESETS_KEY, p);
 /** ~100 m precision for anything sent to a third-party routing service. */
 export const roundCoord = (n: number) => Math.round(n * 1000) / 1000;
 
-export const START_LABEL: Record<RouteStartKind, string> = {
-  here: "ตำแหน่งปัจจุบัน",
-  home: "บ้าน",
-  work: "ที่ทำงาน",
-  place: "สถานที่",
-  map: "จุดบนแผนที่",
-};
+const START_KEYS = {
+  here: VENUES.startHere,
+  home: VENUES.startHome,
+  work: VENUES.startWork,
+  place: VENUES.startPlace,
+  map: VENUES.startMap,
+} satisfies Record<RouteStartKind, Entry>;
+
+/** "ตำแหน่งปัจจุบัน" / "Current location"… in the UI language. */
+export const startLabel = (kind: RouteStartKind, lang: Lang = getLang()) => tr(START_KEYS[kind], undefined, lang);
+
+/** Label to show for a start: searched places keep their own name; the rest follow the UI language (stored label is ignored). */
+export const startDisplayLabel = (s: RouteStart, lang: Lang = getLang()) =>
+  s.kind === "place" && s.label ? s.label : startLabel(s.kind, lang);
 
 export type PlaceResult = { label: string; detail: string; lat: number; lng: number };
 
@@ -71,7 +80,7 @@ export async function searchPlaces(q: string, signal?: AbortSignal): Promise<Pla
   };
   return (json.features ?? []).map((f) => {
     const p = f.properties;
-    const label = p.name || [p.housenumber, p.street].filter(Boolean).join(" ") || p.city || "ไม่มีชื่อ";
+    const label = p.name || [p.housenumber, p.street].filter(Boolean).join(" ") || p.city || tr(VENUES.unnamedPlace);
     const detail = [p.street && p.name ? p.street : null, p.district || p.locality, p.city].filter(Boolean).join(" · ");
     return { label, detail, lat: f.geometry.coordinates[1], lng: f.geometry.coordinates[0] };
   });
@@ -81,11 +90,11 @@ export async function searchPlaces(q: string, signal?: AbortSignal): Promise<Pla
 export function currentPosition(): Promise<{ lat: number; lng: number }> {
   return new Promise((resolve, reject) => {
     if (!("geolocation" in navigator)) {
-      reject(new Error("อุปกรณ์นี้หาตำแหน่งไม่ได้ ลองค้นหาที่อยู่หรือแตะบนแผนที่แทน"));
+      reject(new Error(tr(VENUES.geoUnsupported)));
       return;
     }
     if (typeof window !== "undefined" && window.isSecureContext === false) {
-      reject(new Error("หาตำแหน่งได้เฉพาะหน้าเว็บ https ลองค้นหาที่อยู่หรือแตะบนแผนที่แทน"));
+      reject(new Error(tr(VENUES.geoHttpsOnly)));
       return;
     }
     navigator.geolocation.getCurrentPosition(
@@ -94,8 +103,8 @@ export function currentPosition(): Promise<{ lat: number; lng: number }> {
         reject(
           new Error(
             err.code === err.PERMISSION_DENIED
-              ? "ไม่ได้รับอนุญาตให้ใช้ตำแหน่ง เปิดสิทธิ์ตำแหน่งให้ samecor.com ในการตั้งค่าเบราว์เซอร์/แอป หรือค้นหาที่อยู่แทน"
-              : "หาตำแหน่งไม่สำเร็จ ลองอีกครั้ง",
+              ? tr(VENUES.geoDenied)
+              : tr(VENUES.geoFailed),
           ),
         ),
       { enableHighAccuracy: false, timeout: 10_000, maximumAge: 60_000 },

@@ -43,7 +43,7 @@ describe("links", () => {
   });
   it("says what the button opens", () => {
     expect(eventLinkText({ kind: "download", label: "FAQ PAP 2027" })).toBe("ดาวน์โหลด: FAQ PAP 2027");
-    expect(eventLinkText({ kind: "download", label: "ดาวน์โหลดใบสมัคร" })).toBe("ดาวน์โหลดใบสมัคร");
+    expect(eventLinkText({ kind: "download", label: "ดาวน์โหลดใบสมัคร" })).toBe("ดาวน์โหลด: ดาวน์โหลดใบสมัคร"); // kind is structured; no label matching
     expect(eventLinkText({ kind: "tickets", label: "รอบ 7 พ.ย." })).toBe("ซื้อบัตร / จอง: รอบ 7 พ.ย.");
   });
 });

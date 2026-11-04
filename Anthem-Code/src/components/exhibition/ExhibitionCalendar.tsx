@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { addDays, addMonths, format, startOfWeek } from "date-fns";
+import { enUS, th, zhCN } from "date-fns/locale";
 import {
   ArrowRight,
   CalendarDays,
@@ -35,6 +36,10 @@ import {
   type ExhibitionEvent,
 } from "@/lib/exhibitionEvents";
 import { cn } from "@/lib/utils";
+import { formatDate, formatDateRange, tr, useLang, useT } from "@/lib/i18n";
+import { LIST } from "@/lib/i18n/exhibition/list";
+
+const DAY_PICKER_LOCALE = { th, en: enUS, zh: zhCN } as const;
 
 type Props = {
   events: ExhibitionEvent[];
@@ -113,6 +118,7 @@ function EventRow({
   onToggle: (() => void) | null;
 }) {
   const on = !!color;
+  const t = useT(LIST);
   return (
     <li className="flex items-center gap-3 py-3">
       {onToggle ? (
@@ -120,7 +126,7 @@ function EventRow({
           type="button"
           role="checkbox"
           aria-checked={on}
-          aria-label={`${on ? "เอาออกจาก" : "แสดง"}ช่วงวันบนปฏิทิน: ${event.title}`}
+          aria-label={t(on ? "hideRangeOf" : "showRangeOf", { title: event.title })}
           onClick={onToggle}
           disabled={!event.starts_on}
           className={cn(
@@ -184,7 +190,7 @@ function EventRow({
       </div>
       <Link
         to={`/exhibition/${event.id}`}
-        aria-label={`เปิด ${event.title}`}
+        aria-label={t("openEvent", { title: event.title })}
         className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border text-foreground transition-colors hover:bg-foreground hover:text-background"
       >
         <ArrowRight className="h-4 w-4" aria-hidden />
@@ -198,6 +204,7 @@ function AddToGoogle({ events }: { events: ExhibitionEvent[] }) {
   const withLink = events
     .map((e) => ({ e, href: gcalFor(e) }))
     .filter((x): x is { e: ExhibitionEvent; href: string } => !!x.href);
+  const t = useT(LIST);
   const cls =
     "inline-flex items-center gap-2 text-sm font-medium text-foreground underline-offset-4 hover:underline disabled:opacity-50";
   if (withLink.length === 0) {
@@ -205,8 +212,7 @@ function AddToGoogle({ events }: { events: ExhibitionEvent[] }) {
       <span
         className={cn(cls, "cursor-default text-muted-foreground no-underline")}
       >
-        <GoogleCalendarIcon className="h-4 w-4 opacity-50" /> Add to Google
-        Calendar
+        <GoogleCalendarIcon className="h-4 w-4 opacity-50" /> {t("addToGoogleCalendar")}
       </span>
     );
   }
@@ -218,7 +224,7 @@ function AddToGoogle({ events }: { events: ExhibitionEvent[] }) {
         rel="noopener noreferrer"
         className={cls}
       >
-        <GoogleCalendarIcon className="h-4 w-4" /> Add to Google Calendar{" "}
+        <GoogleCalendarIcon className="h-4 w-4" /> {t("addToGoogleCalendar")}{" "}
         <ExternalLink className="h-3.5 w-3.5" aria-hidden />
       </a>
     );
@@ -227,7 +233,7 @@ function AddToGoogle({ events }: { events: ExhibitionEvent[] }) {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button type="button" className={cls}>
-          <GoogleCalendarIcon className="h-4 w-4" /> Add to Google Calendar
+          <GoogleCalendarIcon className="h-4 w-4" /> {t("addToGoogleCalendar")}
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
@@ -264,6 +270,8 @@ function AddToGoogle({ events }: { events: ExhibitionEvent[] }) {
  * (month grid → the picked day's events → add to Google Calendar).
  */
 export function ExhibitionCalendar({ events, className }: Props) {
+  const t = useT(LIST);
+  const lang = useLang();
   const today = useMemo(() => new Date(), []);
   const weekStart = startOfWeek(today, { weekStartsOn: 1 });
   const week = useMemo(
@@ -303,7 +311,7 @@ export function ExhibitionCalendar({ events, className }: Props) {
   const toggleTracked = (id: string) =>
     setTracked((cur) => {
       if (!cur.includes(id) && cur.length >= TRACK_COLORS.length) {
-        toast.info(`เลือกดูได้สูงสุด ${TRACK_COLORS.length} รายการ`);
+        toast.info(tr(LIST.maxTracked, { n: TRACK_COLORS.length }, lang));
         return cur;
       }
       const next = cur.includes(id)
@@ -360,10 +368,8 @@ export function ExhibitionCalendar({ events, className }: Props) {
     [events, week],
   );
   const weekEnd = week[6];
-  const weekLabel =
-    weekStart.getMonth() === weekEnd.getMonth()
-      ? `${format(weekStart, "d")} – ${format(weekEnd, "d MMM yyyy")}`
-      : `${format(weekStart, "d MMM")} – ${format(weekEnd, "d MMM yyyy")}`;
+  // formatRange drops the repeated month / year ("3 – 9 Nov 2026").
+  const weekLabel = formatDateRange(isoDay(weekStart), isoDay(weekEnd), lang);
 
   const dayList = eventsOn(events, selected);
   const openOn = (d: Date) => {
@@ -403,7 +409,7 @@ export function ExhibitionCalendar({ events, className }: Props) {
             {weekLabel} <span aria-hidden>·</span>{" "}
             <span
               className="inline-flex items-center gap-0.5"
-              aria-label={`${weekCount} งาน`}
+              aria-label={t("nEventsAria", { n: weekCount })}
             >
               <MapPin className="h-3.5 w-3.5" aria-hidden />
               {weekCount}
@@ -416,10 +422,10 @@ export function ExhibitionCalendar({ events, className }: Props) {
           size="sm"
           className="shrink-0 rounded-full px-2.5 sm:pl-3.5"
           onClick={() => openOn(today)}
-          aria-label="Full Calendar"
+          aria-label={t("fullCalendar")}
         >
           <CalendarDays className="h-4 w-4 sm:mr-1.5" aria-hidden />
-          <span className="hidden sm:inline">Full Calendar</span>
+          <span className="hidden sm:inline">{t("fullCalendar")}</span>
           <ChevronRight className="h-4 w-4 sm:ml-1.5" aria-hidden />
         </Button>
       </div>
@@ -431,7 +437,7 @@ export function ExhibitionCalendar({ events, className }: Props) {
               Event Calendar
             </DialogTitle>
             <DialogDescription>
-              Explore upcoming creative events
+              {t("exploreUpcoming")}
             </DialogDescription>
           </DialogHeader>
 
@@ -443,18 +449,18 @@ export function ExhibitionCalendar({ events, className }: Props) {
                   <button
                     type="button"
                     onClick={() => setMonth(addMonths(month, -1))}
-                    aria-label="เดือนก่อน"
+                    aria-label={t("prevMonth")}
                     className="flex h-8 w-8 items-center justify-center rounded-full bg-muted hover:bg-muted/70"
                   >
                     <ChevronLeft className="h-4 w-4" aria-hidden />
                   </button>
                   <span className="min-w-[10rem] text-center text-lg font-semibold text-foreground">
-                    {format(month, "MMMM yyyy")}
+                    {formatDate(month, { month: "long", year: "numeric" }, lang)}
                   </span>
                   <button
                     type="button"
                     onClick={() => setMonth(addMonths(month, 1))}
-                    aria-label="เดือนถัดไป"
+                    aria-label={t("nextMonth")}
                     className="flex h-8 w-8 items-center justify-center rounded-full bg-muted hover:bg-muted/70"
                   >
                     <ChevronRight className="h-4 w-4" aria-hidden />
@@ -463,6 +469,7 @@ export function ExhibitionCalendar({ events, className }: Props) {
               </div>
               <Calendar
                 mode="single"
+                locale={DAY_PICKER_LOCALE[lang]}
                 required
                 weekStartsOn={1}
                 month={month}
@@ -530,10 +537,19 @@ export function ExhibitionCalendar({ events, className }: Props) {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-2xl font-semibold text-foreground">
-                    {format(selected, "EEE, d MMM yyyy")}
+                    {formatDate(
+                      selected,
+                      {
+                        weekday: "short",
+                        day: "numeric",
+                        month: lang === "zh" ? "long" : "short",
+                        year: "numeric",
+                      },
+                      lang,
+                    )}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    {dayList.length} Events
+                    {t("nEvents", { n: dayList.length })}
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
@@ -548,12 +564,12 @@ export function ExhibitionCalendar({ events, className }: Props) {
                     )}
                     aria-pressed={rangeMode}
                     aria-label={
-                      rangeMode ? "ปิดการดูช่วงวัน" : "ดูช่วงวันของงานบนปฏิทิน"
+                      rangeMode ? t("rangeOff") : t("rangeOnAria")
                     }
                     title={
                       rangeMode
-                        ? "ปิดการดูช่วงวัน"
-                        : "ดูช่วงวัน (เลือกได้ 3 งาน)"
+                        ? t("rangeOff")
+                        : t("rangeOnTitle", { n: TRACK_COLORS.length })
                     }
                     onClick={() => setRangeMode(!rangeMode)}
                   >
@@ -566,7 +582,7 @@ export function ExhibitionCalendar({ events, className }: Props) {
                     className="h-8 rounded-full"
                     onClick={goToday}
                   >
-                    Today
+                    {t("today")}
                   </Button>
                 </div>
               </div>
@@ -583,7 +599,7 @@ export function ExhibitionCalendar({ events, className }: Props) {
                 </ul>
               ) : (
                 <p className="mt-3 rounded-xl border border-dashed border-border px-3 py-8 text-center text-sm text-muted-foreground">
-                  ไม่มีงานในวันนี้
+                  {t("noEventsThisDay")}
                 </p>
               )}
             </div>
@@ -596,7 +612,7 @@ export function ExhibitionCalendar({ events, className }: Props) {
               className="rounded-full bg-foreground text-background hover:bg-foreground/90"
               onClick={viewAll}
             >
-              View All Events{" "}
+              {t("viewAllEvents")}{" "}
               <ArrowRight className="ml-1.5 h-4 w-4" aria-hidden />
             </Button>
           </div>

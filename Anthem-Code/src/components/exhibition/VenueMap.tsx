@@ -4,7 +4,9 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import "./venueMap.css";
 import type { EventVenue } from "@/lib/eventVenues";
 import type { VenueRoute, VenueRoutePlan } from "@/hooks/useEventVenues";
-import type { RouteStart } from "@/lib/routeStart";
+import { startDisplayLabel, type RouteStart } from "@/lib/routeStart";
+import { useT } from "@/lib/i18n";
+import { VENUES } from "@/lib/i18n/exhibition/venues";
 
 type PinnedVenue = Pick<EventVenue, "id" | "title" | "lat" | "lng"> & { pin: number };
 
@@ -77,7 +79,7 @@ const START_ICON: Record<RouteStart["kind"], string> = {
 function startElement(start: RouteStart): HTMLDivElement {
   const el = document.createElement("div");
   el.className = "venue-start";
-  el.title = start.label;
+  el.title = startDisplayLabel(start);
   el.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${START_ICON[start.kind]}</svg>`;
   return el;
 }
@@ -112,6 +114,7 @@ function quietStyle(map: maplibregl.Map) {
 
 /** Pin-shaped numbered markers: brand red = สนใจ, grey = not. Loaded lazily (only on event pages with venues). */
 export default function VenueMap({ venues, interested, activeId, onSelect, picked, route, start, pickMode, onPick, className }: Props) {
+  const t = useT(VENUES);
   const box = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const markers = useRef(new Map<string, { marker: maplibregl.Marker; el: HTMLDivElement; pin: HTMLButtonElement }>());
@@ -247,7 +250,7 @@ export default function VenueMap({ venues, interested, activeId, onSelect, picke
 
   return (
     <div className={`venue-map isolate overflow-hidden rounded-lg border border-border ${className ?? ""}`}>
-      <div ref={box} className="h-full w-full" role="region" aria-label="แผนที่สถานที่จัดงาน" />
+      <div ref={box} className="h-full w-full" role="region" aria-label={t("mapAria")} />
     </div>
   );
 }

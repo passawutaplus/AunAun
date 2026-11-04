@@ -4,7 +4,9 @@ import { Bookmark, Check, MapPin, ChevronDown, ExternalLink, Map as MapIcon, Nav
 import { Button } from "@/components/ui/button";
 import { GoogleCalendarIcon } from "@/components/icons/GoogleCalendarIcon";
 import { RouteStartPicker } from "./RouteStartPicker";
-import { START_LABEL, loadRouteStart, saveRouteStart, type RouteStart } from "@/lib/routeStart";
+import { loadRouteStart, saveRouteStart, startDisplayLabel, startLabel, type RouteStart } from "@/lib/routeStart";
+import { COMMON, useLang, useT } from "@/lib/i18n";
+import { VENUES } from "@/lib/i18n/exhibition/venues";
 import { useAuth } from "@/hooks/useAuth";
 import { useMyEventInterests, useToggleEventInterest } from "@/hooks/useExhibitionEvents";
 import { useSetAllVenuesInterest, useVenueRoute } from "@/hooks/useEventVenues";
@@ -50,6 +52,9 @@ export function VenueOpenBadge({ state, className }: { state: VenueOpenState; cl
 
 /** Venues of a main event: pinned map (left / top) and the list grouped by area (right / below). */
 export function EventVenuesSection({ parent, venues, className }: { parent: Parent; venues: EventVenue[]; className?: string }) {
+  const lang = useLang();
+  const t = useT(VENUES);
+  const tc = useT(COMMON);
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -141,7 +146,7 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
       onClick={() => requireUser() && setAll.mutate({ parentId: parent.id, on: !allOn })}
     >
       <Bookmark className={cn("h-4 w-4", allOn && "fill-current")} aria-hidden />
-      {allOn ? "สนใจทุกที่แล้ว" : "สนใจทั้งหมด"}
+      {allOn ? t("interestedAll") : t("markAllInterested")}
     </Button>
   );
 
@@ -157,7 +162,7 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
             <span className="ml-2 inline-flex items-center gap-1 align-middle text-base font-normal text-muted-foreground">
               {counts.main}
               <MapPin className="h-4 w-4" aria-hidden />
-              <span className="sr-only">สถานที่</span>
+              <span className="sr-only">{t("venuesSr")}</span>
             </span>
           </h2>
         </div>
@@ -170,15 +175,15 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
             className="rounded-full"
             aria-expanded={mapOpen}
             aria-controls="venues-body"
-            aria-label={mapOpen ? "ซ่อนแผนที่และรายการสถานที่" : undefined}
-            title={mapOpen ? "ซ่อน" : undefined}
+            aria-label={mapOpen ? t("hideMapAria") : undefined}
+            title={mapOpen ? t("hide") : undefined}
             onClick={() => setMapOpen((o) => !o)}
           >
             <MapIcon className="h-4 w-4" aria-hidden />
             {mapOpen ? null : (
               <>
-                <span className="sm:hidden">แสดง</span>
-                <span className="hidden sm:inline">ดูแผนที่และ {venues.length} สถานที่</span>
+                <span className="sm:hidden">{t("show")}</span>
+                <span className="hidden sm:inline">{t(venues.length === 1 ? "showMapCountOne" : "showMapCount", { n: venues.length })}</span>
               </>
             )}
             <ChevronDown className={cn("h-4 w-4 transition-transform", mapOpen && "rotate-180")} aria-hidden />
@@ -206,7 +211,7 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
               pickMode={picking}
               onPick={(p) => {
                 setPicking(false);
-                setStart({ ...p, kind: "map", label: START_LABEL.map });
+                setStart({ ...p, kind: "map", label: startLabel("map") });
               }}
               className="h-64 sm:h-80 lg:h-[34rem]"
             />
@@ -220,9 +225,9 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
             <RouteStartPicker start={start} onChange={setStart} onPickOnMap={() => setPicking(true)} />
             {picking ? (
               <p className="mt-2 flex items-center gap-2 text-xs text-brand">
-                แตะบนแผนที่ตรงจุดที่จะเริ่ม
+                {t("tapMapToStart")}
                 <button type="button" onClick={() => setPicking(false)} className="text-muted-foreground underline underline-offset-4">
-                  ยกเลิก
+                  {tc("cancel")}
                 </button>
               </p>
             ) : null}
@@ -230,33 +235,33 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
               {stops.length === 0 || (stops.length === 1 && !start) ? (
                 <p className="flex items-start gap-2 text-muted-foreground">
                   <Route className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-                  {start ? "ติ๊กสถานที่ที่จะไป แล้วเส้นทางจะขึ้นบนแผนที่" : "ติ๊กสถานที่ที่จะไป 2 ที่ขึ้นไป แล้วเส้นทางจะขึ้นบนแผนที่"}
+                  {start ? t("tickHint") : t("tickHintTwo")}
                 </p>
               ) : (
                 <>
                   <p className="flex items-center gap-2 font-semibold text-foreground">
                     <Route className="h-4 w-4 shrink-0 text-brand" aria-hidden />
-                    เส้นทางของคุณ · {stops.length} ที่
+                    {t(stops.length === 1 ? "yourRouteOne" : "yourRoute", { n: stops.length })}
                   </p>
                   {routing ? (
-                    <p className="mt-1.5 text-muted-foreground">กำลังคำนวณเส้นทาง…</p>
+                    <p className="mt-1.5 text-muted-foreground">{t("calculatingRoute")}</p>
                   ) : (
                     <dl className="mt-1.5 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1 text-muted-foreground">
                       {start && lead ? (
                         <>
-                          <dt>จาก{start.label}</dt>
+                          <dt>{t("fromStart", { place: startDisplayLabel(start, lang) })}</dt>
                           <dd className="text-right text-foreground">
-                            {lead.meters != null ? `~${formatDistance(lead.meters)}` : "เส้นตรงโดยประมาณ"}
+                            {lead.meters != null ? `~${formatDistance(lead.meters)}` : t("straightLine")}
                           </dd>
                         </>
                       ) : null}
                       {inner ? (
                         <>
-                          <dt>{start ? "ในงาน (เดิน)" : "ระยะเดิน"}</dt>
+                          <dt>{start ? t("inEventWalk") : t("walkDistance")}</dt>
                           <dd className="text-right text-foreground">
                             {inner.meters != null && inner.seconds != null
-                              ? routeSummary(inner.meters, inner.seconds).replace(" · เดิน ", " · ")
-                              : "เส้นตรงโดยประมาณ"}
+                              ? routeSummary(inner.meters, inner.seconds, { walk: false })
+                              : t("straightLine")}
                           </dd>
                         </>
                       ) : null}
@@ -265,11 +270,11 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
                   <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1">
                     {routeUrl ? (
                       <a href={routeUrl} target="_blank" rel="noopener noreferrer" className={linkCls}>
-                        <Navigation className="h-3.5 w-3.5" aria-hidden /> เปิดใน Google Maps
+                        <Navigation className="h-3.5 w-3.5" aria-hidden /> {tc("openInGoogleMaps")}
                       </a>
                     ) : null}
                     <button type="button" onClick={clearPicks} className={linkCls}>
-                      <X className="h-3.5 w-3.5" aria-hidden /> ล้างที่ติ๊ก
+                      <X className="h-3.5 w-3.5" aria-hidden /> {t("clearTicks")}
                     </button>
                   </div>
                 </>
@@ -280,7 +285,7 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
             <div key={g.area ?? "-"}>
               {g.area ? (
                 <h3 className="mb-2 text-sm font-semibold text-foreground">
-                  {g.area} <span className="font-normal text-muted-foreground">· {g.venues.length} ที่</span>
+                  {g.area} <span className="font-normal text-muted-foreground">· {t(g.venues.length === 1 ? "venueCountOne" : "venueCount", { n: g.venues.length })}</span>
                 </h3>
               ) : null}
               <ol className="divide-y divide-border border-y border-border">
@@ -317,7 +322,7 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
                           type="button"
                           role="checkbox"
                           aria-checked={picked.has(v.id)}
-                          aria-label={`${picked.has(v.id) ? "เอาออกจาก" : "เพิ่มใน"}เส้นทางของฉัน: ${v.title}`}
+                          aria-label={t(picked.has(v.id) ? "removeFromRoute" : "addToRoute", { title: v.title })}
                           onClick={() => togglePick(v.id)}
                           className={cn(
                             "mt-1 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground",
@@ -354,7 +359,7 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
                               <span className="font-medium text-foreground">{v.title}</span>
                               {v.is_special ? (
                                 <span className="rounded-full border border-border px-1.5 text-[10px] text-muted-foreground">
-                                  โปรเจกต์พิเศษ
+                                  {t("specialProject")}
                                 </span>
                               ) : null}
                             </span>
@@ -373,8 +378,8 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
                           onClick={() => requireUser() && toggle.mutate(v.id)}
                           disabled={toggle.isPending}
                           aria-pressed={on}
-                          aria-label={on ? `เลิกสนใจ ${v.title}` : `สนใจ ${v.title} (เตือนก่อนเริ่ม)`}
-                          title={on ? "สนใจแล้ว" : "สนใจ — เตือนก่อนเริ่ม 3 วันและ 1 วัน"}
+                          aria-label={t(on ? "uninterestAria" : "interestAria", { title: v.title })}
+                          title={on ? t("interestedTitle") : t("interestTitle")}
                           className={cn(
                             "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground disabled:opacity-50",
                             on && "text-brand hover:text-brand",
@@ -395,12 +400,12 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
                           ) : null}
                           {v.admission_note || v.fee_type === "free" ? (
                             <p className="flex items-center gap-1.5">
-                              <Ticket className="h-3.5 w-3.5 shrink-0" aria-hidden /> {v.admission_note ?? "เข้าชมฟรี"}
+                              <Ticket className="h-3.5 w-3.5 shrink-0" aria-hidden /> {v.admission_note ?? t("freeEntry")}
                             </p>
                           ) : null}
                           <div className="flex flex-wrap gap-x-4 pt-1">
                             <a href={venueMapsUrl(v)} target="_blank" rel="noopener noreferrer" className={linkCls}>
-                              <Navigation className="h-3.5 w-3.5" aria-hidden /> เปิดใน Google Maps
+                              <Navigation className="h-3.5 w-3.5" aria-hidden /> {tc("openInGoogleMaps")}
                             </a>
                             {gcal ? (
                               <a href={gcal} target="_blank" rel="noopener noreferrer" className={linkCls}>
@@ -409,7 +414,7 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
                             ) : null}
                             {v.source_url ? (
                               <a href={v.source_url} target="_blank" rel="noopener noreferrer nofollow" className={linkCls}>
-                                <ExternalLink className="h-3.5 w-3.5" aria-hidden /> แหล่งข้อมูล
+                                <ExternalLink className="h-3.5 w-3.5" aria-hidden /> {t("source")}
                               </a>
                             ) : null}
                           </div>
@@ -421,7 +426,7 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
                                   type="button"
                                   onClick={() => setPhotos({ images: v.gallery_urls, index: i, title: v.title })}
                                   className="relative aspect-square overflow-hidden rounded-md bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground"
-                                  aria-label={`ดูรูป ${i + 1} ของ ${v.title}`}
+                                  aria-label={t("viewPhoto", { n: i + 1, title: v.title })}
                                 >
                                   <img src={url} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-300 hover:scale-105" />
                                   {i === 2 && v.gallery_urls.length > 3 ? (

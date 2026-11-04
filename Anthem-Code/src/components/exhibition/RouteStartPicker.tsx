@@ -4,15 +4,18 @@ import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import {
-  START_LABEL,
   currentPosition,
   loadRoutePresets,
   saveRoutePresets,
   searchPlaces,
   type PlaceResult,
   type RoutePresets,
+  startDisplayLabel,
+  startLabel,
   type RouteStart,
 } from "@/lib/routeStart";
+import { COMMON, useLang, useT } from "@/lib/i18n";
+import { VENUES } from "@/lib/i18n/exhibition/venues";
 import { cn } from "@/lib/utils";
 
 const row =
@@ -72,6 +75,10 @@ function PlaceResults({ results, onPick }: { results: PlaceResult[]; onPick: (r:
 
 /** "เริ่มจาก": current location, home, work, an address search, or a tap on the map. Saved on this device only. */
 export function RouteStartPicker({ start, onChange, onPickOnMap }: Props) {
+  const lang = useLang();
+  const t = useT(VENUES);
+  const tc = useT(COMMON);
+  const label = (kind: RouteStart["kind"]) => startLabel(kind, lang);
   const [open, setOpen] = useState(false);
   const [presets, setPresets] = useState<RoutePresets>(() => loadRoutePresets());
   const [q, setQ] = useState("");
@@ -92,17 +99,17 @@ export function RouteStartPicker({ start, onChange, onPickOnMap }: Props) {
   }, [saveAs]);
 
   const savePreset = (kind: "home" | "work", p: RouteStart) => {
-    const next = { ...presets, [kind]: { ...p, kind, label: START_LABEL[kind] } };
+    const next = { ...presets, [kind]: { ...p, kind, label: label(kind) } };
     setPresets(next);
     saveRoutePresets(next);
-    toast.success(`บันทึกเป็น${START_LABEL[kind]}แล้ว · จำไว้แค่ในเครื่องนี้`);
+    toast.success(t("savedAs", { place: label(kind) }));
   };
 
   /** `as` set: the place is saved as home / work and used as the start. */
   const choose = (p: RouteStart, as?: "home" | "work") => {
     if (as) {
       savePreset(as, p);
-      onChange({ ...p, kind: as, label: START_LABEL[as] });
+      onChange({ ...p, kind: as, label: label(as) });
     } else onChange(p);
     setSaveAs(null);
     setQ("");
@@ -114,9 +121,9 @@ export function RouteStartPicker({ start, onChange, onPickOnMap }: Props) {
     setLocating(true);
     try {
       const pos = await currentPosition();
-      choose({ ...pos, kind: "here", label: START_LABEL.here }, as);
+      choose({ ...pos, kind: "here", label: label("here") }, as);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "หาตำแหน่งไม่สำเร็จ");
+      toast.error(e instanceof Error ? e.message : t("locateFailed"));
     } finally {
       setLocating(false);
     }
@@ -135,19 +142,19 @@ export function RouteStartPicker({ start, onChange, onPickOnMap }: Props) {
     saveRoutePresets(next);
     if (start?.kind === kind) onChange(null);
     setSaveAs(null);
-    toast.success(`ลบ${START_LABEL[kind]}ที่บันทึกไว้แล้ว`);
+    toast.success(t("presetDeleted", { place: label(kind) }));
   };
 
   const Icon = start?.kind === "home" ? Home : start?.kind === "work" ? Briefcase : start?.kind === "here" ? LocateFixed : MapPin;
 
   const shortcuts: Array<{ key: string; icon: typeof Home; label: string; active: boolean; hint?: string; onClick: () => void; onEdit?: () => void }> = [
-    { key: "here", icon: LocateFixed, label: START_LABEL.here, active: start?.kind === "here", onClick: () => void locateHere() },
+    { key: "here", icon: LocateFixed, label: label("here"), active: start?.kind === "here", onClick: () => void locateHere() },
     ...(["home", "work"] as const).map((kind) => ({
       key: kind,
       icon: kind === "home" ? Home : Briefcase,
-      label: START_LABEL[kind],
+      label: label(kind),
       active: start?.kind === kind,
-      hint: presets[kind] ? undefined : "ตั้งค่า",
+      hint: presets[kind] ? undefined : t("setUp"),
       onClick: () => preset(kind),
       // Saved: "แก้ไข" opens set-again / delete. Not saved: the whole row starts setting it.
       onEdit: presets[kind] ? () => toggleSaveAs(kind) : undefined,
@@ -155,7 +162,7 @@ export function RouteStartPicker({ start, onChange, onPickOnMap }: Props) {
     {
       key: "map",
       icon: Crosshair,
-      label: "เลือกบนแผนที่",
+      label: t("pickOnMap"),
       active: start?.kind === "map",
       onClick: () => {
         setOpen(false);
@@ -167,7 +174,7 @@ export function RouteStartPicker({ start, onChange, onPickOnMap }: Props) {
 
   return (
     <div className="flex min-w-0 items-center gap-2 text-sm">
-      <span className="shrink-0 text-muted-foreground">เริ่มจาก</span>
+      <span className="shrink-0 text-muted-foreground">{t("startFrom")}</span>
       <Popover open={open} onOpenChange={(o) => (setOpen(o), o ? null : setSaveAs(null))}>
         <PopoverTrigger asChild>
           <button
@@ -175,7 +182,7 @@ export function RouteStartPicker({ start, onChange, onPickOnMap }: Props) {
             className="inline-flex min-h-8 min-w-0 max-w-full items-center gap-1.5 rounded-full border border-foreground/25 px-3 text-sm text-foreground hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground"
           >
             <Icon className="h-3.5 w-3.5 shrink-0 text-brand" aria-hidden />
-            <span className="truncate">{start ? start.label : "เลือกจุดเริ่มต้น"}</span>
+            <span className="truncate">{start ? startDisplayLabel(start, lang) : t("chooseStart")}</span>
             <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-60" aria-hidden />
           </button>
         </PopoverTrigger>
@@ -187,9 +194,9 @@ export function RouteStartPicker({ start, onChange, onPickOnMap }: Props) {
               <Input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="ค้นหาที่อยู่ สถานที่ หรือสถานี"
+                placeholder={t("searchPlaceholder")}
                 className="h-9 border-0 bg-muted/60 pl-8 focus-visible:ring-1"
-                aria-label="ค้นหาจุดเริ่มต้น"
+                aria-label={t("searchStartAria")}
               />
             </div>
             {searching ? <Loader2 className="mx-auto mt-2 h-4 w-4 animate-spin text-muted-foreground" /> : null}
@@ -228,12 +235,12 @@ export function RouteStartPicker({ start, onChange, onPickOnMap }: Props) {
                     {x.onEdit ? (
                       <button
                         type="button"
-                        aria-label={`แก้ไข${x.label}`}
+                        aria-label={t("editPreset", { place: x.label })}
                         aria-expanded={expanded}
                         className="mr-1 shrink-0 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
                         onClick={x.onEdit}
                       >
-                        {expanded ? "ปิด" : "แก้ไข"}
+                        {expanded ? tc("close") : tc("edit")}
                       </button>
                     ) : null}
                   </div>
@@ -253,9 +260,9 @@ export function RouteStartPicker({ start, onChange, onPickOnMap }: Props) {
                               ref={expanded ? subInput : undefined}
                               value={expanded ? subQ : ""}
                               onChange={(e) => setSubQ(e.target.value)}
-                              placeholder={`ค้นหาที่อยู่${START_LABEL[kind]}`}
+                              placeholder={t("searchPresetAddress", { place: label(kind) })}
                               className="h-9 border-0 bg-background pl-8 focus-visible:ring-1"
-                              aria-label={`ค้นหาที่อยู่${START_LABEL[kind]}`}
+                              aria-label={t("searchPresetAddress", { place: label(kind) })}
                             />
                           </div>
                           {expanded && sub.searching ? <Loader2 className="mx-auto mt-2 h-4 w-4 animate-spin text-muted-foreground" /> : null}
@@ -270,7 +277,7 @@ export function RouteStartPicker({ start, onChange, onPickOnMap }: Props) {
                               disabled={locating}
                             >
                               {locating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <LocateFixed className="h-3.5 w-3.5" />}
-                              ใช้ตำแหน่งปัจจุบัน
+                              {t("useCurrentLocation")}
                             </button>
                             {presets[kind] ? (
                               <button
@@ -278,7 +285,7 @@ export function RouteStartPicker({ start, onChange, onPickOnMap }: Props) {
                                 className="text-destructive underline-offset-4 hover:underline"
                                 onClick={() => clearPreset(kind)}
                               >
-                                ลบ{START_LABEL[kind]}
+                                {t("deletePreset", { place: label(kind) })}
                               </button>
                             ) : null}
                             <button
@@ -286,7 +293,7 @@ export function RouteStartPicker({ start, onChange, onPickOnMap }: Props) {
                               className="ml-auto text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
                               onClick={() => setSaveAs(null)}
                             >
-                              ยกเลิก
+                              {tc("cancel")}
                             </button>
                           </div>
                         </div>
@@ -303,12 +310,12 @@ export function RouteStartPicker({ start, onChange, onPickOnMap }: Props) {
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border px-3 py-2 text-xs text-muted-foreground">
               {canSave ? (
                 <span className="flex items-center gap-1.5">
-                  บันทึกเป็น
+                  {t("saveAs")}
                   <button type="button" className="rounded-full border border-border px-2 py-0.5 text-foreground hover:border-foreground" onClick={() => savePreset("home", start!)}>
-                    บ้าน
+                    {label("home")}
                   </button>
                   <button type="button" className="rounded-full border border-border px-2 py-0.5 text-foreground hover:border-foreground" onClick={() => savePreset("work", start!)}>
-                    ที่ทำงาน
+                    {label("work")}
                   </button>
                 </span>
               ) : null}
@@ -321,14 +328,14 @@ export function RouteStartPicker({ start, onChange, onPickOnMap }: Props) {
                     setOpen(false);
                   }}
                 >
-                  ไม่ใช้จุดเริ่มต้น
+                  {t("noStart")}
                 </button>
               ) : null}
             </div>
           ) : null}
           <p className="flex items-start gap-1.5 border-t border-border px-3 py-2 text-xs text-muted-foreground">
             <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
-            SAMECOR ไม่เก็บที่อยู่ของคุณ จำไว้แค่ในมือถือหรือคอมเครื่องนี้ ลบเมื่อไหร่ก็ได้
+            {t("privacyNote")}
           </p>
         </PopoverContent>
       </Popover>
