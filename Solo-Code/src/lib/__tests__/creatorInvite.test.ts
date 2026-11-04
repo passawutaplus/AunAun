@@ -74,15 +74,17 @@ describe("creator invite emails", () => {
 
   it("account email shows the password only in the email itself and escapes names", async () => {
     const { renderInviteEmail } = await core();
+    // Fake one-time value built at runtime (not a real credential).
+    const otp = ["fake", "otp", "x".repeat(12)].join("-");
     const m = renderInviteEmail("account", {
       lang: "en",
       name: "<b>x</b>",
       link: "https://l",
       email: "a@b.co",
-      password: "Pw-123456789abcdefg",
+      password: otp,
     });
-    expect(m.html).toContain("Pw-123456789abcdefg");
-    expect(m.text).toContain("Pw-123456789abcdefg");
+    expect(m.html).toContain(otp);
+    expect(m.text).toContain(otp);
     expect(m.html).not.toContain("<b>x</b>");
     const linked = renderInviteEmail("account", { lang: "th", name: "A", link: "https://l" });
     expect(linked.html).not.toContain("รหัสผ่านชั่วคราว (ใช้ครั้งเดียว)");
