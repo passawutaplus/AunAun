@@ -159,8 +159,8 @@ export default function AdminCreatorInvitationNewPage() {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="ci-note">ข้อความส่วนตัว (แสดงบนหน้าคำเชิญและในอีเมล)</Label>
-            <Textarea id="ci-note" rows={3} maxLength={600} value={f.personal_note} placeholder="เช่น ได้เห็นงานโปสเตอร์ชุดล่าสุดของคุณแล้วชอบมากครับ เลยอยากชวนมาร่วมเป็นหนึ่งในครีเอเตอร์กลุ่มแรกของ SAMECOR" onChange={(e) => set("personal_note", e.target.value)} />
-            <p className="text-xs text-admin-muted">เว้นว่างได้ ระบบใส่ข้อความมาตรฐานให้ · ถ้าเขียนเอง บอกว่าชอบงานชิ้นไหน และอย่าอ้างว่าติดตามมานานถ้าไม่จริง</p>
+            <Textarea id="ci-note" rows={3} maxLength={600} value={f.personal_note} placeholder="เว้นว่างเพื่อใช้ข้อความมาตรฐาน: เราชื่นชอบผลงานของคุณ และอยากชวนคุณมาร่วมเป็นหนึ่งในครีเอเตอร์กลุ่มแรกของ SAMECOR" onChange={(e) => set("personal_note", e.target.value)} />
+            <p className="text-xs text-admin-muted">ปกติเว้นว่างไว้ ทุกคนจะได้ข้อความกลางเดียวกัน · ใส่เองเฉพาะกรณีพิเศษ</p>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="ci-url">ผลงานที่ทำให้สนใจ (ภายใน · ไม่แสดงต่อศิลปิน)</Label>

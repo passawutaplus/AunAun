@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Bell, ChevronDown, Layers, Search, ShieldCheck, User } from "lucide-react";
+import { ArrowRight, ChevronDown, Layers, Search, ShieldCheck, User } from "lucide-react";
 import { BrandLogo } from "@/components/brand/BrandLogo";
+import { CATEGORY_PARENTS } from "@/data/categoryTaxonomy";
 import { Button } from "@/components/ui/button";
 import { publicInviteApi, rememberSelfSignup, type PublicInvite } from "@/lib/creatorInvite";
 import type { InviteCopy } from "@/lib/creatorInviteCopy";
@@ -58,9 +59,7 @@ export default function InviteLanding({ token, t, invite }: { token: string; t: 
                 <p className="mt-0.5 text-muted-foreground">{t.founderRole}</p>
               </div>
             </div>
-            {invite.personal_note?.trim() ? (
-              <p className="mt-4 max-w-xl whitespace-pre-line text-sm italic text-foreground/80">“{invite.personal_note.trim()}”</p>
-            ) : null}
+            <p className="mt-4 max-w-xl whitespace-pre-line text-sm italic text-foreground/80">“{invite.personal_note?.trim() || t.defaultNote}”</p>
           </section>
 
           <section className="flex flex-col gap-3" aria-label={t.cardA}>
@@ -145,14 +144,22 @@ export default function InviteLanding({ token, t, invite }: { token: string; t: 
           </div>
           <div aria-hidden className="pointer-events-none select-none overflow-hidden rounded-xl border border-border bg-background shadow-2xl">
             <div className="flex items-center gap-3 border-b border-border px-4 py-2.5">
-              <BrandLogo tone="theme" size="sm" />
-              <span className="ml-auto hidden gap-4 text-[11px] text-muted-foreground sm:flex">
-                <span>Explore</span>
-                <span>Creators</span>
-                <span>Events</span>
+              <BrandLogo tone="theme" size="sm" className="shrink-0" />
+              <span className="ml-auto flex min-w-0 gap-1.5 overflow-hidden">
+                {CATEGORY_PARENTS.slice(0, 5).map((c, i) => (
+                  <span
+                    key={c.id}
+                    className={cn(
+                      "shrink-0 rounded-full px-2.5 py-1 text-[10px] font-medium",
+                      i === 0 ? "bg-foreground text-background" : "border border-border text-muted-foreground",
+                      i >= 3 && "hidden sm:inline",
+                    )}
+                  >
+                    {c.label}
+                  </span>
+                ))}
               </span>
-              <Search className="h-3.5 w-3.5 text-muted-foreground" />
-              <Bell className="h-3.5 w-3.5 text-muted-foreground" />
+              <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
             </div>
             <img src={SAMPLE.cover} alt="" className="h-28 w-full object-cover sm:h-36" loading="lazy" />
             <div className="px-4 pb-4">
