@@ -29,7 +29,8 @@ import {
 import EmptyState from "@/components/ui/EmptyState";
 import QueryStatusPanel from "@/components/ui/QueryStatusPanel";
 import { Button } from "@/components/ui/button";
-import { recordEventRegistration, useEvent, useEventProjects, useEventStats, useMyEventInterests, useRecordEventView } from "@/hooks/useExhibitionEvents";
+import { recordEventRegistration, useEvent, useEventInsights, useEventProjects, useEventStats, useMyEventInterests, useRecordEventView } from "@/hooks/useExhibitionEvents";
+import { EventInsightsPanel, EventRelatedWorks } from "@/components/exhibition/EventInsights";
 import { EventActions } from "@/components/exhibition/EventActions";
 import { useAuth } from "@/hooks/useAuth";
 import { navigateToAuth } from "@/lib/authRedirect";
@@ -95,6 +96,7 @@ export default function ExhibitionDetailPage() {
   const { data: myInterests } = useMyEventInterests(statIds);
   useRecordEventView(event?.id, event?.status === "published");
   const { data: works = [] } = useEventProjects(event?.project_ids);
+  const { data: insights } = useEventInsights(event?.id);
   const [contactOpen, setContactOpen] = useState(false);
   const [sponsorOpen, setSponsorOpen] = useState(false);
 
@@ -196,7 +198,6 @@ export default function ExhibitionDetailPage() {
           <h1 className="font-display text-4xl font-semibold leading-[1.05] tracking-tight text-foreground sm:text-5xl">
             {event.title}
           </h1>
-          <p className="text-base text-foreground/80">{lead}</p>
           <EventActions
             event={event}
             stats={stats?.[event.id]}
@@ -384,6 +385,12 @@ export default function ExhibitionDetailPage() {
             ))}
           </div>
         </section>
+      ) : null}
+
+      {insights ? <EventInsightsPanel insights={insights} className="mx-auto mt-14 w-full max-w-[84rem]" /> : null}
+
+      {insights?.related_categories.length ? (
+        <EventRelatedWorks categories={insights.related_categories} className="mx-auto mt-14 w-full max-w-[84rem]" />
       ) : null}
 
       {canChat ? (

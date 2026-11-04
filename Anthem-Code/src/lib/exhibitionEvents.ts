@@ -320,3 +320,28 @@ export const DEMO_EVENTS: ExhibitionEvent[] = [
 export function isDemoEventId(id: string | undefined): boolean {
   return !!id && id.startsWith("demo-");
 }
+
+/** "สรุปโดย SAMECOR": short lists written from the organiser's page; null when not prepared yet. */
+export type EventInsights = {
+  who_for: string[];
+  takeaways: string[];
+  know_before: string[];
+  /** SAMECOR work categories (projects.category) for the related-works row. */
+  related_categories: string[];
+};
+
+export const EVENT_INSIGHT_KEYS = ["who_for", "takeaways", "know_before"] as const;
+
+export function parseEventInsights(raw: unknown): EventInsights | null {
+  if (!raw || typeof raw !== "object") return null;
+  const r = raw as Record<string, unknown>;
+  const list = (v: unknown, max: number) =>
+    Array.isArray(v) ? v.filter((x): x is string => typeof x === "string" && x.trim() !== "").map((x) => x.trim()).slice(0, max) : [];
+  const out: EventInsights = {
+    who_for: list(r.who_for, 5),
+    takeaways: list(r.takeaways, 4),
+    know_before: list(r.know_before, 5),
+    related_categories: list(r.related_categories, 4),
+  };
+  return out.who_for.length || out.takeaways.length || out.know_before.length || out.related_categories.length ? out : null;
+}

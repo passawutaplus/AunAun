@@ -28,7 +28,13 @@ SELECT public.scout_event_draft($j$
   "fee_note": "",
   "open_for_sponsors": false,
   "source_name": "Creative Economy Agency (ข่าวประกาศ)",
-  "source_url": "https://www.cea.or.th/en/news-updates/Bangkok-Design-Week-2027-en/"
+  "source_url": "https://www.cea.or.th/en/news-updates/Bangkok-Design-Week-2027-en/",
+  "insights": {
+    "who_for": ["นักออกแบบที่อยากเห็นงานออกแบบเมืองจริงในย่านเก่า", "…"],
+    "takeaways": ["…"],
+    "know_before": ["…"],
+    "related_categories": ["Graphic / Branding", "Architecture / Interior"]
+  }
 }
 $j$::jsonb);
 ```
@@ -40,3 +46,8 @@ open_call · other, `fee_type` ∈ free · paid · unspecified, links must be `h
 shorteners. A draft is skipped (returns NULL) when the same `source_url` already exists or a
 very similar title is already in the table. No images are ever copied: `cover_url` and
 `gallery_urls` stay empty.
+
+`insights` ("สรุปโดย SAMECOR" on the event page) is optional: `who_for` ≤ 5, `takeaways` ≤ 4,
+`know_before` ≤ 5 short lines (≤ 140 chars, Thai, written only from the organiser's page — skip a
+list rather than guess), `related_categories` ≤ 4 values from SAMECOR's work categories
+(`Anthem-Code/src/data/projectTypes.ts` PROJECT_CATEGORIES). Never mention AI in these texts.
