@@ -12,7 +12,8 @@ export type PageLang = InviteLang | "zh";
 export type ProjectSlot = "p1" | "p2" | "p3";
 export const PROJECT_SLOTS: ProjectSlot[] = ["p1", "p2", "p3"];
 export const MAX_PROJECTS = 3;
-export type MediaSlot = "avatar" | "cover" | ProjectSlot;
+/** "extra" = images attached to a change request from the review page. */
+export type MediaSlot = "avatar" | "cover" | ProjectSlot | "extra";
 
 export type InviteStatus =
   | "draft"
@@ -313,6 +314,10 @@ export const publicInviteApi = {
           data,
           consent: true,
         }),
+  reviewRemoveMedia: (token: string, mediaId: string) =>
+    demo(token)
+      ? Promise.resolve({})
+      : inviteCall("creator-invite", { action: "review_media_remove", token, media_id: mediaId }),
   removeMedia: (token: string, mediaId: string) =>
     demo(token)
       ? Promise.resolve({})
@@ -364,7 +369,9 @@ export async function uploadInviteImage(
   token: string,
   slot: MediaSlot,
   file: File,
+  via: "invite" | "review" = "invite",
 ): Promise<InviteMedia> {
+  const prefix = via === "review" ? "review_" : "";
   if (!(ACCEPTED_IMAGE_TYPES as readonly string[]).includes(file.type))
     throw new InviteApiError("file_type", 400);
   const maxMb = slot === "avatar" ? MAX_AVATAR_MB : MAX_IMAGE_MB;
@@ -377,7 +384,7 @@ export async function uploadInviteImage(
     path: string;
     token: string;
   }>("creator-invite", {
-    action: "upload_url",
+    action: `${prefix}upload_url`,
     token,
     slot,
     mime: file.type,
@@ -392,7 +399,7 @@ export async function uploadInviteImage(
   const done = await inviteCall<{ scan_status: "clean"; url: string | null }>(
     "creator-invite",
     {
-      action: "upload_done",
+      action: `${prefix}upload_done`,
       token,
       media_id: signed.media_id,
     },

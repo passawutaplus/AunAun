@@ -4,7 +4,16 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { enUS, th as thLocale, zhCN } from "date-fns/locale";
 import { toast } from "sonner";
-import { Check, Loader2, ScanEye } from "lucide-react";
+import {
+  Check,
+  ImagePlus,
+  Loader2,
+  PencilLine,
+  ScanEye,
+  TriangleAlert,
+  X,
+} from "lucide-react";
+import SadBuddy from "@/components/invite/SadBuddy";
 import SeoHead from "@/components/SeoHead";
 import InviteProfilePreview from "@/components/invite/InviteProfilePreview";
 import InviteProjectPreview from "@/components/invite/InviteProjectPreview";
@@ -20,11 +29,14 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   InviteApiError,
   isTokenShape,
   normalizeSubmission,
   publicInviteApi,
+  uploadInviteImage,
+  type InviteMedia,
   type PageLang,
 } from "@/lib/creatorInvite";
 import { inviteCopy } from "@/lib/creatorInviteCopy";
@@ -49,6 +61,10 @@ export default function CreatorReviewPage() {
   const t = inviteCopy(l);
   const [dialog, setDialog] = useState<"changes" | "decline" | null>(null);
   const [note, setNote] = useState("");
+  // Request changes: which parts (profile card / project slots) and what to change in each
+  const [parts, setParts] = useState<Record<string, string | undefined>>({});
+  const [attach, setAttach] = useState<Record<string, InviteMedia[]>>({});
+  const [uploadingPart, setUploadingPart] = useState<string | null>(null);
   const [busy, setBusy] = useState<Decision | null>(null);
   const [done, setDone] = useState<Decision | null>(null);
 
@@ -89,13 +105,67 @@ export default function CreatorReviewPage() {
   const status = q.data.invite.status;
   const decidable = status === "preparing" || status === "needs_changes";
 
+  const partList = [
+    { key: "profile", label: t.partProfile },
+    ...profile.projects.map((p, i) => ({
+      key: p.slot,
+      label: `Project ${i + 1}${p.title ? ` · ${p.title}` : ""}`,
+    })),
+  ];
+  const changesNote = () =>
+    [
+      ...partList
+        .filter(
+          (x) =>
+            parts[x.key] !== undefined &&
+            (parts[x.key]!.trim() || attach[x.key]?.length),
+        )
+        .map((x) => {
+          const n = attach[x.key]?.length ?? 0;
+          return `• ${x.label}: ${parts[x.key]!.trim()}${n ? ` [${t.attachedCount(n)}]` : ""}`;
+        }),
+      ...(note.trim() ? [`${t.extraNote}: ${note.trim()}`] : []),
+    ].join("\n");
+  const canSendChanges = !!changesNote().trim() && !uploadingPart;
+
+  async function addAttachments(key: string, files: FileList | null) {
+    if (!files?.length) return;
+    setUploadingPart(key);
+    try {
+      for (const f of Array.from(files).slice(
+        0,
+        4 - (attach[key]?.length ?? 0),
+      )) {
+        try {
+          const m = await uploadInviteImage(token, "extra", f, "review");
+          setAttach((prev) => ({ ...prev, [key]: [...(prev[key] ?? []), m] }));
+        } catch (err) {
+          const code = err instanceof InviteApiError ? err.code : "generic";
+          toast.error(
+            `${f.name}: ${(t.err as Record<string, string>)[code] ?? t.err.generic}`,
+          );
+        }
+      }
+    } finally {
+      setUploadingPart(null);
+    }
+  }
+
+  function removeAttachment(key: string, id: string) {
+    void publicInviteApi.reviewRemoveMedia(token, id).catch(() => undefined);
+    setAttach((prev) => ({
+      ...prev,
+      [key]: (prev[key] ?? []).filter((m) => m.id !== id),
+    }));
+  }
+
   async function decide(decision: Decision) {
     setBusy(decision);
     try {
       await publicInviteApi.reviewDecide(
         token,
         decision,
-        note.trim() || undefined,
+        (decision === "changes" ? changesNote() : note.trim()) || undefined,
       );
       setDone(decision);
       setDialog(null);
@@ -140,10 +210,6 @@ export default function CreatorReviewPage() {
     );
   }
 
-  const images = profile.projects.reduce(
-    (a, p) => a + p.media.filter((m) => media.get(m)?.url).length,
-    0,
-  );
   const expires = q.data.invite.review_expires_at
     ? format(new Date(q.data.invite.review_expires_at), "d MMM yyyy", {
         locale: l === "en" ? enUS : l === "zh" ? zhCN : thLocale,
@@ -168,7 +234,12 @@ export default function CreatorReviewPage() {
         variant="outline"
         className="w-full sm:w-auto"
         disabled={!!busy}
-        onClick={() => (setNote(""), setDialog("changes"))}
+        onClick={() => (
+          setNote(""),
+          setParts({}),
+          setAttach({}),
+          setDialog("changes")
+        )}
       >
         {t.changes}
       </Button>
@@ -200,24 +271,7 @@ export default function CreatorReviewPage() {
         </h1>
         <p className="mt-3 text-sm text-muted-foreground">{t.reviewBody}</p>
 
-        <div className="mt-6 rounded-xl border border-border bg-card p-5">
-          <h2 className="text-sm font-semibold">{t.willPublish}</h2>
-          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-foreground/85">
-            {t
-              .willPublishItems(
-                profile.about.name,
-                profile.about.links,
-                profile.projects.length,
-                images,
-              )
-              .map((x) => (
-                <li key={x} className="break-words">
-                  {x}
-                </li>
-              ))}
-          </ul>
-          <div className="mt-5 border-t border-border pt-5">{actions}</div>
-        </div>
+        <div className="mt-6">{actions}</div>
 
         <InviteProfilePreview
           className="mt-6"
@@ -245,34 +299,163 @@ export default function CreatorReviewPage() {
       </div>
 
       <Dialog open={!!dialog} onOpenChange={(o) => !o && setDialog(null)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              {dialog === "decline" ? (
+                <TriangleAlert
+                  className="h-5 w-5 shrink-0 text-destructive"
+                  aria-hidden
+                />
+              ) : (
+                <PencilLine
+                  className="h-5 w-5 shrink-0 text-brand"
+                  aria-hidden
+                />
+              )}
               {dialog === "decline" ? t.declineTitle : t.changesTitle}
             </DialogTitle>
             <DialogDescription>
               {dialog === "decline" ? t.declineBody : t.changesHint}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-1.5">
-            <Label htmlFor="review-note">
-              {dialog === "decline" ? t.declineNote : t.changesTitle}
-            </Label>
-            <Textarea
-              id="review-note"
-              rows={4}
-              maxLength={1000}
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-            />
-          </div>
+
+          {dialog === "changes" ? (
+            <div className="space-y-4">
+              <p className="text-sm font-medium">{t.partsLabel}</p>
+              <div className="space-y-2">
+                {partList.map((x) => {
+                  const on = parts[x.key] !== undefined;
+                  return (
+                    <div
+                      key={x.key}
+                      className={
+                        on
+                          ? "rounded-xl border border-brand/50 p-3"
+                          : "rounded-xl border border-border p-3"
+                      }
+                    >
+                      <label className="flex items-center gap-2.5 text-sm font-medium">
+                        <Checkbox
+                          checked={on}
+                          onCheckedChange={(v) =>
+                            setParts((prev) => {
+                              const next = { ...prev };
+                              if (v === true) next[x.key] = next[x.key] ?? "";
+                              else delete next[x.key];
+                              return next;
+                            })
+                          }
+                        />
+                        <span className="min-w-0 truncate">{x.label}</span>
+                      </label>
+                      {on ? (
+                        <Textarea
+                          aria-label={x.label}
+                          className="mt-2"
+                          rows={2}
+                          maxLength={400}
+                          placeholder={t.partPlaceholder}
+                          value={parts[x.key] ?? ""}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            setParts((prev) => ({ ...prev, [x.key]: v }));
+                          }}
+                        />
+                      ) : null}
+                      {on ? (
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          {(attach[x.key] ?? []).map((m) => (
+                            <span
+                              key={m.id}
+                              className="relative h-14 w-14 overflow-hidden rounded bg-muted"
+                            >
+                              {m.url ? (
+                                <img
+                                  src={m.url}
+                                  alt=""
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : null}
+                              <button
+                                type="button"
+                                aria-label={t.remove}
+                                onClick={() => removeAttachment(x.key, m.id)}
+                                className="absolute right-0.5 top-0.5 rounded-full bg-background/90 p-0.5"
+                              >
+                                <X className="h-3 w-3" aria-hidden />
+                              </button>
+                            </span>
+                          ))}
+                          {(attach[x.key]?.length ?? 0) < 4 ? (
+                            <label className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-full border border-dashed border-border px-3 text-xs text-muted-foreground hover:text-foreground">
+                              {uploadingPart === x.key ? (
+                                <Loader2
+                                  className="h-3.5 w-3.5 animate-spin"
+                                  aria-hidden
+                                />
+                              ) : (
+                                <ImagePlus
+                                  className="h-3.5 w-3.5"
+                                  aria-hidden
+                                />
+                              )}
+                              {t.attachImage}
+                              <input
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp"
+                                multiple
+                                className="sr-only"
+                                onChange={(e) => {
+                                  void addAttachments(x.key, e.target.files);
+                                  e.target.value = "";
+                                }}
+                              />
+                            </label>
+                          ) : null}
+                        </div>
+                      ) : null}
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="space-y-1.5 border-t border-border pt-4">
+                <Label htmlFor="review-note">
+                  {t.extraNote}{" "}
+                  <span className="font-normal text-muted-foreground">
+                    · {t.extraNoteHint}
+                  </span>
+                </Label>
+                <Textarea
+                  id="review-note"
+                  rows={3}
+                  maxLength={600}
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              <SadBuddy className="mx-auto mb-2 h-24 w-24 text-foreground" />
+              <Label htmlFor="review-note">{t.declineNote}</Label>
+              <Textarea
+                id="review-note"
+                rows={4}
+                maxLength={1000}
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+              />
+            </div>
+          )}
+
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setDialog(null)}>
               {t.cancel}
             </Button>
             <Button
               variant={dialog === "decline" ? "destructive" : "default"}
-              disabled={!!busy || (dialog === "changes" && !note.trim())}
+              disabled={!!busy || (dialog === "changes" && !canSendChanges)}
               onClick={() =>
                 void decide(dialog === "decline" ? "decline" : "changes")
               }

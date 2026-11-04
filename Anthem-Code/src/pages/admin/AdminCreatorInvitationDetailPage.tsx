@@ -234,8 +234,8 @@ export default function AdminCreatorInvitationDetailPage() {
               : "ศิลปินขอแก้ไข — แก้ Draft แล้วส่งลิงก์ตรวจใหม่"}
           </p>
           {inv.change_request_note ? (
-            <p className="mt-2 rounded-sm bg-admin-surface p-2 text-sm">
-              “{inv.change_request_note}”
+            <p className="mt-2 whitespace-pre-line rounded-sm bg-admin-surface p-2 text-sm">
+              {inv.change_request_note}
             </p>
           ) : null}
           <div className="mt-3 flex flex-wrap gap-2">
@@ -513,6 +513,23 @@ export default function AdminCreatorInvitationDetailPage() {
                     </div>
                   </div>
                 ))}
+                {data.media.some((m) => m.slot === "extra") ? (
+                  <div className="mt-4 border-t border-admin-border pt-3 text-sm">
+                    <p className="font-medium">รูปที่ศิลปินแนบมาตอนขอแก้</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {data.media
+                        .filter((m) => m.slot === "extra")
+                        .map((m) => {
+                          const u = urls.data?.[m.id];
+                          return u ? (
+                            <a key={m.id} href={u} target="_blank" rel="noopener noreferrer">
+                              <img src={u} alt="" className="h-20 w-20 rounded-sm object-cover" />
+                            </a>
+                          ) : null;
+                        })}
+                    </div>
+                  </div>
+                ) : null}
                 <p className="mt-3 text-xs text-admin-muted">
                   {data.media.length} ไฟล์ ·{" "}
                   {data.media.filter((m) => m.scan_status === "clean").length}{" "}

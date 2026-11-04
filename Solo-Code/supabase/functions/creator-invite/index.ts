@@ -41,6 +41,7 @@ const EXT: Record<string, string> = {
   "image/webp": "webp",
 };
 const EDITABLE = new Set(["draft", "sent", "opened", "started", "submitted"]);
+const REVIEWABLE = new Set(["preparing", "needs_changes"]);
 
 /** Per-IP limits [requests, window seconds]. */
 const LIMITS: Record<string, [number, number]> = {
@@ -54,6 +55,9 @@ const LIMITS: Record<string, [number, number]> = {
   unsubscribe: [10, 3600],
   review_load: [60, 600],
   review_decide: [10, 3600],
+  review_upload_url: [40, 3600],
+  review_upload_done: [40, 3600],
+  review_media_remove: [40, 3600],
 };
 
 const Body = z.object({
@@ -68,17 +72,21 @@ const Body = z.object({
     "unsubscribe",
     "review_load",
     "review_decide",
+    // images the artist attaches to a change request (slot "extra"), via the review link
+    "review_upload_url",
+    "review_upload_done",
+    "review_media_remove",
   ]),
   token: z.string(),
   data: z.unknown().optional(),
   mode: z.enum(["full", "quick"]).optional(),
-  slot: z.enum(["avatar", "cover", "p1", "p2", "p3"]).optional(),
+  slot: z.enum(["avatar", "cover", "p1", "p2", "p3", "extra"]).optional(),
   mime: z.string().optional(),
   size: z.number().int().positive().optional(),
   media_id: z.string().uuid().optional(),
   consent: z.boolean().optional(),
   decision: z.enum(["approve", "changes", "decline"]).optional(),
-  note: z.string().max(1000).optional(),
+  note: z.string().max(2000).optional(),
 });
 type BodyT = z.infer<typeof Body>;
 
@@ -243,9 +251,18 @@ async function actSave(ctx: Ctx) {
   return json(req, { ok: true, saved_at: new Date().toISOString() });
 }
 
+/** Invite link: the artist's own form (while editable). Review link: change-request attachments only. */
+function canUpload(ctx: Ctx): boolean {
+  return ctx.body.action.startsWith("review_")
+    ? REVIEWABLE.has(ctx.inv.status)
+    : EDITABLE.has(ctx.inv.status);
+}
+
 async function actUploadUrl(ctx: Ctx) {
   const { admin, inv, req, body } = ctx;
-  if (!EDITABLE.has(inv.status)) return json(req, { error: "locked" }, 409);
+  if (!canUpload(ctx)) return json(req, { error: "locked" }, 409);
+  const reviewMode = body.action.startsWith("review_");
+  if (reviewMode !== (body.slot === "extra")) return json(req, { error: "file_type" }, 400);
   const slot = body.slot;
   const mime = body.mime ?? "";
   const size = body.size ?? 0;
@@ -356,7 +373,7 @@ async function actUploadDone(ctx: Ctx) {
 
 async function actMediaRemove(ctx: Ctx) {
   const { admin, inv, req, body } = ctx;
-  if (!EDITABLE.has(inv.status)) return json(req, { error: "locked" }, 409);
+  if (!canUpload(ctx)) return json(req, { error: "locked" }, 409);
   const anthem = admin.schema("anthem");
   const { data: m } = await anthem
     .from("invite_media")
@@ -500,7 +517,7 @@ async function actReviewDecide(ctx: Ctx) {
     return json(req, { error: "already_decided", status: inv.status }, 409);
   const anthem = admin.schema("anthem");
   const now = new Date();
-  const note = (body.note ?? "").trim().slice(0, 1000) || null;
+  const note = (body.note ?? "").trim().slice(0, 2000) || null;
   let patch: Record<string, unknown>;
   if (body.decision === "approve") {
     patch = { status: "approved", approved_at: now.toISOString(), change_request_note: null };
@@ -581,10 +598,13 @@ Deno.serve(async (req) => {
       case "save":
         return await actSave(ctx);
       case "upload_url":
+      case "review_upload_url":
         return await actUploadUrl(ctx);
       case "upload_done":
+      case "review_upload_done":
         return await actUploadDone(ctx);
       case "media_remove":
+      case "review_media_remove":
         return await actMediaRemove(ctx);
       case "submit":
         return await actSubmit(ctx);

@@ -3,6 +3,13 @@ import type { PageLang } from "@/lib/creatorInvite";
 
 const th = {
   getInTouch: "รู้จัก SAMECOR",
+  attachImage: "แนบรูป",
+  attachedCount: (n: number) => `แนบรูป ${n} รูป`,
+  partsLabel: "เลือกส่วนที่อยากให้แก้",
+  partProfile: "ข้อมูลการ์ดโปรไฟล์",
+  partPlaceholder: "บอกสิ่งที่อยากแก้ เช่น เปลี่ยนรูปปก หรือแก้คำอธิบาย",
+  extraNote: "หมายเหตุเพิ่มเติม",
+  extraNoteHint: "ไม่บังคับ",
   cardCover: "หน้าปก",
   dragHint: "ลากเพื่อสลับลำดับ (มือถือ: กดค้างแล้วลาก) · รูปแรกเป็นหน้าปกการ์ดเสมอ",
   s3sub: "โปรดตรวจสอบข้อมูลก่อนส่งให้ทีม SAMECOR จัดทำโปรไฟล์ แล้วเราจะส่งให้คุณตรวจอีกครั้ง",
@@ -215,6 +222,13 @@ export type InviteCopy = { [K in keyof typeof th]: (typeof th)[K] extends (...a:
 
 const en: InviteCopy = {
   getInTouch: "Get in touch",
+  attachImage: "Attach image",
+  attachedCount: (n: number) => `${n} image${n > 1 ? "s" : ""} attached`,
+  partsLabel: "Choose what to change",
+  partProfile: "Profile card details",
+  partPlaceholder: "What should we change? e.g. swap the cover, edit the description",
+  extraNote: "Other notes",
+  extraNoteHint: "Optional",
   cardCover: "Cover",
   dragHint: "Drag to reorder (on phones, press and hold) · The first image is the cover",
   s3sub: "Please check your details before sending them to the SAMECOR team. We'll send the profile back for your review.",
@@ -424,6 +438,13 @@ const en: InviteCopy = {
 
 const zh: InviteCopy = {
   getInTouch: "了解 SAMECOR",
+  attachImage: "添加图片",
+  attachedCount: (n: number) => `已附 ${n} 张图片`,
+  partsLabel: "选择需要修改的部分",
+  partProfile: "主页卡片资料",
+  partPlaceholder: "请说明需要修改的内容，例如更换封面或修改描述",
+  extraNote: "其他备注",
+  extraNoteHint: "可选",
   cardCover: "封面",
   dragHint: "拖动调整顺序（手机：长按后拖动）· 第一张图始终是卡片封面",
   s3sub: "提交给 SAMECOR 团队前请确认资料，我们会把主页发回给您再次审核。",

@@ -71,7 +71,7 @@ CREATE TABLE IF NOT EXISTS anthem.invite_submissions (
 CREATE TABLE IF NOT EXISTS anthem.invite_media (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   invitation_id uuid NOT NULL REFERENCES anthem.creator_invitations (id) ON DELETE CASCADE,
-  slot text NOT NULL CHECK (slot IN ('avatar', 'cover', 'p1', 'p2', 'p3')),
+  slot text NOT NULL CHECK (slot IN ('avatar', 'cover', 'p1', 'p2', 'p3', 'extra')),
   storage_path text NOT NULL UNIQUE,
   mime text NOT NULL CHECK (mime IN ('image/jpeg', 'image/png', 'image/webp')),
   size_bytes integer NOT NULL CHECK (size_bytes > 0 AND size_bytes <= 20971520),
