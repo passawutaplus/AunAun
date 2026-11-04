@@ -917,10 +917,10 @@
 
   }
 
-  /* Work canvas on /showcase/:id — always Studio White paper, also in dark mode, so text blocks stay readable. */
+  /* Work canvas on /showcase/:id — always plain white, also in dark mode, so the work reads on its own layer and text blocks stay readable. */
   .work-paper,
   .dark .work-paper {
-    --background: 50 30% 96%;
+    --background: 0 0% 100%;
     --foreground: 0 0% 7%;
     --muted-foreground: 0 0% 40%;
     --card: 0 0% 100%;

@@ -556,7 +556,7 @@ const ProjectDetailPage = ({ overlay = false }: { overlay?: boolean } = {}) => {
             className={cn(
               "min-w-0 w-full space-y-4 overflow-x-clip lg:col-start-1 lg:row-start-1",
               overlay && "lg:col-start-2",
-              overlay && "rounded-t-2xl bg-background p-3 sm:p-5 lg:p-6",
+              overlay && "work-paper rounded-t-2xl p-3 sm:p-5 lg:p-6",
             )}
           >
             <ProjectActionRail
@@ -625,8 +625,6 @@ const ProjectDetailPage = ({ overlay = false }: { overlay?: boolean } = {}) => {
                 "rounded-b-2xl bg-background px-3 pb-8 pt-6 sm:px-5 lg:px-10 lg:pb-12",
             )}
           >
-            {/* Marks where the work ends and its details begin. */}
-            <hr className="border-t border-foreground/25" />
             <FadeUp className="w-full min-w-0" delay={0.06}>
               <ProjectSidePanel
                 wide
