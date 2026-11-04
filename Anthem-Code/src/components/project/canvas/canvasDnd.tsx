@@ -1,4 +1,5 @@
-import type { DragEvent } from "react";
+import type { DragEvent, TouchEvent as ReactTouchEvent } from "react";
+import { TouchSensor, type TouchSensorOptions } from "@dnd-kit/core";
 import { Plus } from "lucide-react";
 import { CANVAS_TOOL_MIME } from "@/lib/canvasToolDrag";
 import type { BlockGapAfter } from "@/lib/projectContentBlocks";
@@ -74,4 +75,29 @@ export function BlockGapToggle({
       </div>
     </div>
   );
+}
+
+/** Elements where a long-press means "edit / tap", not "pick the module up". */
+const LONG_PRESS_IGNORE =
+  'input, textarea, select, button:not([data-drag-handle]), a, video, [contenteditable="true"], [role="slider"], [data-no-module-drag]';
+
+/**
+ * Touch sensor for module reorder: press and hold a module to drag it.
+ * Skips touches that start on text fields / buttons / video controls, and touches
+ * already claimed by a nested sortable (e.g. slide thumbnails inside a gallery module).
+ */
+export class CanvasTouchSensor extends TouchSensor {
+  static activators = [
+    {
+      eventName: "onTouchStart" as const,
+      handler: ({ nativeEvent: event }: ReactTouchEvent, { onActivation }: TouchSensorOptions) => {
+        if (event.touches.length > 1) return false;
+        if ((event as TouchEvent & { dndKit?: unknown }).dndKit) return false;
+        const target = event.target as Element | null;
+        if (target?.closest?.(LONG_PRESS_IGNORE)) return false;
+        onActivation?.({ event });
+        return true;
+      },
+    },
+  ];
 }

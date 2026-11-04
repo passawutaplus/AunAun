@@ -4,7 +4,6 @@ import {
   closestCenter,
   KeyboardSensor,
   PointerSensor,
-  TouchSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -31,7 +30,7 @@ import { CanvasImageSlotDropDialog } from "@/components/project/CanvasImageSlotD
 import { cn } from "@/lib/utils";
 import { MascotCharacter } from "@/components/project/TourMascot";
 import { UploadProgressCard } from "@/components/project/UploadProgressCard";
-import { InsertHint, isToolDrag, edgeFromPointer, BlockGapToggle } from "@/components/project/canvas/canvasDnd";
+import { InsertHint, isToolDrag, edgeFromPointer, BlockGapToggle, CanvasTouchSensor } from "@/components/project/canvas/canvasDnd";
 import { SortableCanvasBlock } from "@/components/project/canvas/SortableCanvasBlock";
 
 type Props = {
@@ -115,7 +114,7 @@ export function ProjectCanvasEditor({
   const prevBlockIdsRef = useRef<string[]>(blocks.map((b) => b.id));
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 8 } }),
+    useSensor(CanvasTouchSensor, { activationConstraint: { delay: 300, tolerance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
@@ -445,7 +444,15 @@ export function ProjectCanvasEditor({
         toolDragOver && !insertHint && "ring-2 ring-primary/20 ring-offset-2 ring-offset-background",
       )}
     >
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={() => {
+          // Small haptic tick when a long-press picks a module up (Android; ignored elsewhere).
+          if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate?.(12);
+        }}
+        onDragEnd={handleDragEnd}
+      >
         <SortableContext items={blocks.map((b) => b.id)} strategy={verticalListSortingStrategy}>
           <div className="flex flex-col">
             {blocks.map((block, index) => (

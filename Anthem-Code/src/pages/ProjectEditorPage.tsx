@@ -3365,7 +3365,9 @@ const ProjectEditorPage = () => {
         <div className="min-w-0 flex-1">
           <div
             className={cn(
-              "mx-auto w-full space-y-5 px-3 py-5 pb-28 pl-12 sm:space-y-6 sm:px-4 sm:pl-14 sm:pr-4 lg:pb-6 lg:pl-4",
+              "mx-auto w-full space-y-5 px-3 py-5 pb-28 sm:space-y-6 sm:px-4 sm:pr-4 lg:pb-6 lg:pl-4",
+              // Phones: the canvas tool rail is hidden (AddModuleBar covers it), so no left gutter.
+              editorMode === "flex_grid" && "pl-12 sm:pl-14",
               editorMode === "flex_grid"
                 ? "max-w-[min(100%,calc(52rem+3.5rem))]"
                 : "max-w-[min(100%,calc(56rem+3.5rem))]",

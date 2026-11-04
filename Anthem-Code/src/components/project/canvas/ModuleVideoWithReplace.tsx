@@ -5,6 +5,7 @@ import { isAllowedPortfolioStillImage, PORTFOLIO_STILL_IMAGE_ACCEPT } from "@/li
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { isToolDrag } from "@/components/project/canvas/canvasDnd";
+import { MODULE_TOOL_BTN } from "@/components/project/ModuleImageWithCrop";
 
 /** Video module preview with replace / poster controls. */
 export function takeVideoFile(list: FileList | File[] | null | undefined): File | null {
@@ -95,13 +96,13 @@ export function ModuleVideoWithReplace({
             type="button"
             aria-label="เปลี่ยนวิดีโอ"
             title="เปลี่ยนวิดีโอ"
-            className="absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-md border border-border/60 bg-background/90 text-foreground opacity-100 shadow-sm backdrop-blur transition hover:bg-background sm:opacity-0 sm:group-hover/crop:opacity-100"
+            className={cn(MODULE_TOOL_BTN, "absolute right-2 top-2 z-10 opacity-100 lg:opacity-0 lg:group-hover/crop:opacity-100")}
             onClick={(e) => {
               e.stopPropagation();
               videoInputRef.current?.click();
             }}
           >
-            <ImagePlus className="h-3.5 w-3.5" />
+            <ImagePlus className="h-4 w-4 lg:h-3.5 lg:w-3.5" />
           </button>
           <input
             ref={videoInputRef}

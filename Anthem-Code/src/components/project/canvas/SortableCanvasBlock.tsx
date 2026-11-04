@@ -24,6 +24,23 @@ import { ModuleVideoWithReplace } from "@/components/project/canvas/ModuleVideoW
 import { EmptyVideoTile, EmptyImageTile } from "@/components/project/canvas/CanvasEmptyTiles";
 import { BlockSideRail } from "@/components/project/canvas/BlockSideRail";
 
+const PHONE_QUERY = "(max-width: 1023.98px)";
+
+/** True below the editor's desktop breakpoint (Tailwind `lg`). */
+function useIsPhoneLayout() {
+  const [phone, setPhone] = useState(
+    () => typeof window !== "undefined" && window.matchMedia(PHONE_QUERY).matches,
+  );
+  useEffect(() => {
+    const mql = window.matchMedia(PHONE_QUERY);
+    const onChange = () => setPhone(mql.matches);
+    mql.addEventListener("change", onChange);
+    onChange();
+    return () => mql.removeEventListener("change", onChange);
+  }, []);
+  return phone;
+}
+
 /** One sortable block of the casual canvas editor. */
 export function SortableCanvasBlock({
   block,
@@ -85,6 +102,11 @@ export function SortableCanvasBlock({
   const hoverHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [hovered, setHovered] = useState(false);
   const showRail = selected || hovered;
+  const phone = useIsPhoneLayout();
+  // Phones: press and hold anywhere on the module to drag it (TouchSensor delay in ProjectCanvasEditor).
+  const longPressListeners =
+    phone && !disabled && listeners?.onTouchStart ? { onTouchStart: listeners.onTouchStart } : {};
+  const isMediaOnly = block.type === "image" || block.type === "video";
 
   const clearHoverHideTimer = () => {
     if (hoverHideTimerRef.current) {
@@ -158,7 +180,8 @@ export function SortableCanvasBlock({
   const slotDnD = (slotIndex: number, url: string) => {
     const trimmed = url.trim();
     return {
-      dragSlot: !disabled && trimmed ? { blockId: block.id, slotIndex, url: trimmed } : null,
+      // Phones use long-press for module reorder, so native image-slot drag stays desktop-only.
+      dragSlot: !disabled && !phone && trimmed ? { blockId: block.id, slotIndex, url: trimmed } : null,
       onSlotDrop: onImageSlotDrop
         ? (from: CanvasImageSlotRef) => onImageSlotDrop(from, { blockId: block.id, slotIndex })
         : undefined,
@@ -169,7 +192,18 @@ export function SortableCanvasBlock({
     <div
       ref={setRefs}
       style={style}
-      className={cn("relative flex flex-col gap-2", isDragging && "z-10 opacity-90")}
+      className={cn(
+        "relative flex flex-col gap-2",
+        isDragging && "z-10 opacity-90",
+        phone && "[-webkit-touch-callout:none]",
+        phone && isMediaOnly && "select-none",
+        phone && isDragging && "z-30 scale-[0.98] opacity-95 shadow-2xl",
+      )}
+      {...longPressListeners}
+      onContextMenu={(e) => {
+        // Long-press on phones must not open the image / link context menu.
+        if (phone && !disabled) e.preventDefault();
+      }}
       onClick={(e) => {
         e.stopPropagation();
         onSelect();
@@ -203,7 +237,7 @@ export function SortableCanvasBlock({
       >
       <div
         className={cn(
-          "absolute -left-1 top-2 z-10 -translate-x-full rounded-none px-2 py-1 text-[11px] font-medium whitespace-nowrap",
+          "absolute -left-1 top-2 z-10 hidden -translate-x-full rounded-none px-2 py-1 text-[11px] font-medium whitespace-nowrap lg:block",
           selected || hovered ? "bg-foreground text-background" : "bg-muted text-muted-foreground",
         )}
       >
@@ -576,6 +610,7 @@ export function SortableCanvasBlock({
         isFirst={index === 0}
         isLast={index === total - 1}
         visible={showRail}
+        phoneSide={isTextBlockType(block.type) ? "right" : "left"}
         canDuplicate={canDuplicate}
         dragAttributes={attributes as unknown as Record<string, unknown>}
         dragListeners={listeners as unknown as Record<string, unknown>}

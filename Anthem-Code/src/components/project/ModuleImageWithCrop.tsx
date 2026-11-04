@@ -26,8 +26,12 @@ type Props = {
   onSlotDrop?: (from: CanvasImageSlotRef) => void;
 };
 
-const TOOL_BTN =
-  "flex h-8 w-8 items-center justify-center rounded-md border border-border/60 bg-background/90 text-foreground shadow-sm backdrop-blur transition hover:bg-background";
+/** Phones: 40px dark glass chips readable on any image. Desktop (lg+): unchanged. */
+export const MODULE_TOOL_BTN =
+  "flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-black/55 text-white shadow-sm backdrop-blur-md transition active:bg-black/70 " +
+  "lg:h-8 lg:w-8 lg:rounded-md lg:border-border/60 lg:bg-background/90 lg:text-foreground lg:backdrop-blur lg:hover:bg-background";
+
+const TOOL_BTN = MODULE_TOOL_BTN;
 
 /** Image with hover crop + replace controls for canvas modules. */
 export function ModuleImageWithCrop({
@@ -85,7 +89,7 @@ export function ModuleImageWithCrop({
     >
       <img loading="lazy" decoding="async" src={src} alt={alt} className={cn("w-full object-contain pointer-events-none", imgClassName)} draggable={false} />
       {showToolbar ? (
-        <div className="absolute right-2 top-2 z-10 flex gap-1 opacity-100 sm:opacity-0 sm:group-hover/crop:opacity-100">
+        <div className="absolute right-2 top-2 z-10 flex flex-col gap-1.5 opacity-100 lg:flex-row lg:gap-1 lg:opacity-0 lg:group-hover/crop:opacity-100">
           {onReplace ? (
             <button
               type="button"
@@ -98,7 +102,7 @@ export function ModuleImageWithCrop({
               }}
               onPointerDown={(e) => e.stopPropagation()}
             >
-              <ImagePlus className="h-3.5 w-3.5" />
+              <ImagePlus className="h-4 w-4 lg:h-3.5 lg:w-3.5" />
             </button>
           ) : null}
           {onCrop ? (
@@ -113,7 +117,7 @@ export function ModuleImageWithCrop({
               }}
               onPointerDown={(e) => e.stopPropagation()}
             >
-              <Crop className="h-3.5 w-3.5" />
+              <Crop className="h-4 w-4 lg:h-3.5 lg:w-3.5" />
             </button>
           ) : null}
         </div>
