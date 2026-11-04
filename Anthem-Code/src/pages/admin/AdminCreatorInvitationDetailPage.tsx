@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { th } from "date-fns/locale";
 import {
   Copy,
+  Download,
   ExternalLink,
   Loader2,
   MoreHorizontal,
@@ -95,12 +96,89 @@ function Row({ k, v }: { k: string; v: React.ReactNode }) {
   );
 }
 
+type Feedback = {
+  created_at: string;
+  note: string;
+  images: { id: string; url: string; at: string }[];
+};
+
 type DraftVersion = {
   key: string;
   label: string;
   at: string | null;
   data: InviteSubmission;
+  feedback?: Feedback | null;
+  outcome?: "changes" | "approved" | "declined" | "pending";
 };
+
+/** Save an attached image (signed URL) with a readable file name; falls back to opening it. */
+async function downloadImage(url: string, name: string) {
+  try {
+    const blob = await (await fetch(url)).blob();
+    const ext = blob.type.split("/")[1]?.replace("jpeg", "jpg") || "jpg";
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `${name}.${ext}`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  } catch {
+    window.open(url, "_blank", "noopener");
+  }
+}
+
+function FeedbackImages({
+  images,
+  prefix,
+}: {
+  images: Feedback["images"];
+  prefix: string;
+}) {
+  if (!images.length) return null;
+  return (
+    <div className="mt-3">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs text-admin-muted">
+          รูปที่ศิลปินแนบมา ({images.length})
+        </p>
+        {images.length > 1 ? (
+          <button
+            type="button"
+            className="inline-flex items-center gap-1 text-xs underline"
+            onClick={() =>
+              images.forEach(
+                (m, i) => void downloadImage(m.url, `${prefix}-${i + 1}`),
+              )
+            }
+          >
+            <Download className="h-3 w-3" aria-hidden />
+            โหลดทั้งหมด
+          </button>
+        ) : null}
+      </div>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {images.map((m, i) => (
+          <div key={m.id} className="relative">
+            <a href={m.url} target="_blank" rel="noopener noreferrer">
+              <img
+                src={m.url}
+                alt=""
+                className="h-20 w-20 rounded-sm object-cover"
+              />
+            </a>
+            <button
+              type="button"
+              aria-label="โหลดรูป"
+              className="absolute bottom-1 right-1 rounded-sm bg-black/70 p-1 text-white"
+              onClick={() => void downloadImage(m.url, `${prefix}-${i + 1}`)}
+            >
+              <Download className="h-3 w-3" aria-hidden />
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function AdminCreatorInvitationDetailPage() {
   const { id } = useParams();
@@ -529,16 +607,27 @@ export default function AdminCreatorInvitationDetailPage() {
     </Card>
   );
   const events = data.events ?? [];
-  const changeRounds = events
-    .filter((e) => e.kind === "review_changes")
-    .map((e) => ({
-      created_at: e.created_at,
-      note: typeof e.detail?.note === "string" ? e.detail.note : "",
-    }))
-    .reverse();
   const extraImages = data.media
     .filter((m) => m.slot === "extra" && urls.data?.[m.id])
-    .map((m) => ({ id: m.id, url: urls.data![m.id] }));
+    .map((m) => ({ id: m.id, url: urls.data![m.id], at: m.created_at }));
+  // Oldest first; each round carries the images the artist attached while writing it.
+  const changeRounds: Feedback[] = events
+    .filter((e) => e.kind === "review_changes")
+    .reverse()
+    .map((e, i, arr) => ({
+      created_at: e.created_at,
+      note: typeof e.detail?.note === "string" ? e.detail.note : "",
+      images: extraImages.filter(
+        (m) =>
+          m.at <= e.created_at && (i === 0 || m.at > arr[i - 1].created_at),
+      ),
+    }));
+  // Images that can't be matched to a round still show under the latest one.
+  const unmatched = extraImages.filter(
+    (m) => !changeRounds.some((c) => c.images.includes(m)),
+  );
+  if (unmatched.length && changeRounds.length)
+    changeRounds[changeRounds.length - 1].images.push(...unmatched);
   const sentRounds = events.filter((e) => e.kind === "review_link_created");
   const reviewRound = sentRounds.length + 1;
   const versions: DraftVersion[] = [
@@ -554,12 +643,29 @@ export default function AdminCreatorInvitationDetailPage() {
       : []),
     ...sentRounds
       .filter((e) => !!e.detail?.draft && typeof e.detail.draft === "object")
-      .map((e, i, arr) => ({
-        key: e.created_at,
-        label: `ส่ง Review รอบ ${typeof e.detail.round === "number" ? e.detail.round : arr.length - i}`,
-        at: e.created_at,
-        data: normalizeSubmission(e.detail.draft),
-      }))
+      .map((e, i, arr) => {
+        const next = i > 0 ? arr[i - 1].created_at : null; // arr is newest first
+        const fb = changeRounds.find(
+          (c) => c.created_at > e.created_at && (!next || c.created_at < next),
+        );
+        const outcome: DraftVersion["outcome"] = fb
+          ? "changes"
+          : next
+            ? undefined
+            : status === "approved" || status === "published"
+              ? "approved"
+              : status === "declined"
+                ? "declined"
+                : "pending";
+        return {
+          key: e.created_at,
+          label: `ส่ง Review รอบ ${typeof e.detail.round === "number" ? e.detail.round : arr.length - i}`,
+          at: e.created_at,
+          data: normalizeSubmission(e.detail.draft),
+          feedback: fb ?? null,
+          outcome,
+        };
+      })
       .reverse(),
   ];
   const editable =
@@ -722,32 +828,13 @@ export default function AdminCreatorInvitationDetailPage() {
                     <p className="mt-2 whitespace-pre-line text-sm text-admin-fg/90">
                       {r.note}
                     </p>
+                    <FeedbackImages
+                      images={r.images}
+                      prefix={`${inv.display_name}-round${i + 1}`}
+                    />
                   </details>
                 ))}
               </div>
-              {extraImages.length ? (
-                <div className="mt-3">
-                  <p className="text-xs text-admin-muted">
-                    รูปที่ศิลปินแนบมาตอนขอแก้
-                  </p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {extraImages.map((m) => (
-                      <a
-                        key={m.id}
-                        href={m.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <img
-                          src={m.url}
-                          alt=""
-                          className="h-20 w-20 rounded-sm object-cover"
-                        />
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
             </section>
           ) : null}
           {/* Same layout as the artist's form: live preview left, details / editing right */}
@@ -891,6 +978,36 @@ export default function AdminCreatorInvitationDetailPage() {
                             />
                             ใช้เวอร์ชันนี้
                           </Button>
+                        ) : null}
+                        {v.outcome ? (
+                          <div className="w-full">
+                            {v.feedback ? (
+                              <details className="rounded-sm bg-admin-surface p-2.5">
+                                <summary className="cursor-pointer text-xs font-medium text-admin-fg">
+                                  Feedback: ศิลปินขอแก้ ·{" "}
+                                  {when(v.feedback.created_at)}
+                                  {v.feedback.images.length
+                                    ? ` · ${v.feedback.images.length} รูป`
+                                    : ""}
+                                </summary>
+                                <p className="mt-2 whitespace-pre-line text-sm text-admin-fg/90">
+                                  {v.feedback.note}
+                                </p>
+                                <FeedbackImages
+                                  images={v.feedback.images}
+                                  prefix={`${inv.display_name}-${v.label}`}
+                                />
+                              </details>
+                            ) : (
+                              <p className="text-xs text-admin-muted">
+                                {v.outcome === "approved"
+                                  ? "ศิลปินอนุมัติแล้ว ✓"
+                                  : v.outcome === "declined"
+                                    ? "ศิลปินปฏิเสธ"
+                                    : "รอศิลปินตอบ"}
+                              </p>
+                            )}
+                          </div>
                         ) : null}
                       </li>
                     ))}

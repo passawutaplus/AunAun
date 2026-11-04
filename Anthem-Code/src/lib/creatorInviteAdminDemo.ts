@@ -130,6 +130,8 @@ export const DEMO_MEDIA_URLS: Record<string, string> = {
   [M(3)]: "/landing/works/riso.jpg",
   [M(4)]: "/landing/works/poster.jpg",
   [M(5)]: "/landing/works/market.jpg",
+  [M(6)]: "/landing/works/poster.jpg",
+  [M(7)]: "/landing/works/riso.jpg",
 };
 
 /** In-memory changes made by clicking actions in the preview (reset on reload). */
@@ -270,12 +272,12 @@ export function demoDetail(id: string | undefined): AdminInviteDetail | null {
     media: submitted
       ? Object.keys(DEMO_MEDIA_URLS).map((mid, i) => ({
           id: mid,
-          slot: ["avatar", "cover", "p1", "p1", "p2"][i],
+          slot: ["avatar", "cover", "p1", "p1", "p2", "extra", "extra"][i],
           mime: "image/jpeg",
           size_bytes: 1,
           scan_status: "clean",
           scan_note: "signature_ok",
-          created_at: ago(1),
+          created_at: i >= 5 ? ago(1.01) : ago(3),
         }))
       : [],
     consents: submitted
@@ -309,7 +311,7 @@ export function demoDetail(id: string | undefined): AdminInviteDetail | null {
               actor_type: "artist",
               actor: null,
               detail: {
-                note: "ข้อมูลการ์ดโปรไฟล์: ขอใช้รูปที่สองเป็นภาพปก\nProject 1: แก้ชื่อเป็น Riso Posters 2026",
+                note: "ข้อมูลการ์ดโปรไฟล์: ขอเปลี่ยนรูปปกเป็นรูปโปสเตอร์ที่แนบมา และแก้เมืองเป็น Chiang Mai\n\nProject 1 · Riso Poster Series: แก้ชื่อเป็น Riso Posters 2026 และใช้รูปช้างที่แนบเป็นภาพแรก\n\nเพิ่มเติม: ขอบคุณมากครับ",
               },
               created_at: ago(1),
             },
