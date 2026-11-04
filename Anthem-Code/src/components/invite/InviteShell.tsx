@@ -55,7 +55,10 @@ export function InviteShell({
           <BrandLogo tone="theme" className="shrink-0" />
         </a>
         <nav className="flex shrink-0 items-center gap-1 sm:gap-2" aria-label={t.getInTouch}>
-          {/* New tab so the invitation (and any form progress) stays open behind it */}
+          {/* New tabs so the invitation (and any form progress) stays open behind them */}
+          <a href="/" target="_blank" rel="noopener" className="inline-flex h-9 items-center gap-1 whitespace-nowrap rounded-full px-2 text-xs font-medium text-foreground hover:bg-secondary sm:px-3 sm:text-sm">
+            {t.home}
+          </a>
           <a
             href="/learn"
             target="_blank"

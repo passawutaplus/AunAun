@@ -3,6 +3,7 @@ import type { PageLang } from "@/lib/creatorInvite";
 
 const th = {
   getInTouch: "รู้จัก SAMECOR",
+  home: "Explore",
   headline: "มาร่วมเป็นหนึ่งในครีเอเตอร์กลุ่มแรกของ SAMECOR",
   subline: "เราอยากเชิญคุณมาร่วมสร้างคอมมูนิตี้ที่เชื่อมศิลปิน นักออกแบบ และโอกาสสร้างสรรค์จากประเทศไทยสู่ผู้คนทั่วโลก",
   inviteFrom: "คำเชิญจาก ภาสวุฒิ แซ่ล้อ (อั๋น)",
@@ -187,6 +188,7 @@ export type InviteCopy = { [K in keyof typeof th]: (typeof th)[K] extends (...a:
 
 const en: InviteCopy = {
   getInTouch: "Get in touch",
+  home: "Explore",
   headline: "Join SAMECOR's first creators",
   subline: "We'd love you to help build a community that connects artists, designers and creative opportunities from Thailand with people around the world.",
   inviteFrom: "Invitation from Passawut Saelore (Aun)",
@@ -368,6 +370,7 @@ const en: InviteCopy = {
 
 const zh: InviteCopy = {
   getInTouch: "了解 SAMECOR",
+  home: "Explore",
   headline: "成为 SAMECOR 首批创作者",
   subline: "我们诚邀你一起打造一个连接艺术家、设计师与创意机会的社区——从泰国走向世界。",
   inviteFrom: "邀请人：Passawut Saelore (Aun)",
