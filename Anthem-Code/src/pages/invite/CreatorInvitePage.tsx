@@ -936,7 +936,7 @@ function InviteForm({
                       <Button
                         type="button"
                         variant="outline"
-                        className="w-full sm:w-auto"
+                        className="w-full border-brand hover:bg-brand/10 sm:w-auto"
                         onClick={() =>
                           update((d) => ({
                             ...d,
@@ -951,7 +951,7 @@ function InviteForm({
                           }))
                         }
                       >
-                        + {t.addProject}
+                        <span className="text-brand">+</span> {t.addProject}
                       </Button>
                     ) : null}
                   </div>
