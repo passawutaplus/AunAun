@@ -1,5 +1,5 @@
 import { UploadProgressCard } from "@/components/project/UploadProgressCard";
-import { useEffect, useRef, useState, type DragEvent } from "react";
+import { useEffect, useRef, useState, type DragEvent, type TouchEventHandler } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { ProjectRichTextField } from "@/components/project/ProjectRichTextField";
@@ -104,8 +104,10 @@ export function SortableCanvasBlock({
   const showRail = selected || hovered;
   const phone = useIsPhoneLayout();
   // Phones: press and hold anywhere on the module to drag it (TouchSensor delay in ProjectCanvasEditor).
-  const longPressListeners =
-    phone && !disabled && listeners?.onTouchStart ? { onTouchStart: listeners.onTouchStart } : {};
+  const longPressListeners: { onTouchStart?: TouchEventHandler<HTMLDivElement> } =
+    phone && !disabled && listeners?.onTouchStart
+      ? { onTouchStart: listeners.onTouchStart as TouchEventHandler<HTMLDivElement> }
+      : {};
   const isMediaOnly = block.type === "image" || block.type === "video";
 
   const clearHoverHideTimer = () => {
