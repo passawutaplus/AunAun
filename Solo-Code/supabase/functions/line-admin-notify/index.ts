@@ -24,7 +24,12 @@ import {
   isIgnoredEmail,
 } from "../_shared/line-admin-format.ts";
 
-type OutboxRow = { id: number; kind: "member" | "feedback" | "report" | "digest" | "event" | "trend"; ref_id: string | null; attempts: number };
+type OutboxRow = {
+  id: number;
+  kind: "member" | "feedback" | "report" | "digest" | "event" | "trend";
+  ref_id: string | null;
+  attempts: number;
+};
 
 const MEMBER_BURST_AT = 4; // this many sign-ups in one run -> one summary message
 
@@ -56,7 +61,8 @@ async function pushToGroup(token: string, groupId: string, msgs: LineMessage[]) 
 }
 
 Deno.serve(async (req) => {
-  if (req.method !== "POST" && req.method !== "GET") return json({ error: "method not allowed" }, 405);
+  if (req.method !== "POST" && req.method !== "GET")
+    return json({ error: "method not allowed" }, 405);
 
   const token = Deno.env.get("LINE_SAMECOR_ADMIN_ACCESS_TOKEN");
   const groupId = Deno.env.get("LINE_SAMECOR_ADMIN_GROUP_ID");
@@ -83,7 +89,9 @@ Deno.serve(async (req) => {
   // New members: look everyone up at once; drop test accounts; burst -> one message.
   const memberRows = rows.filter((r) => r.kind === "member" && r.ref_id);
   if (memberRows.length > 0) {
-    const { data } = await admin.rpc("admin_line_member_info", { _ids: memberRows.map((r) => r.ref_id) });
+    const { data } = await admin.rpc("admin_line_member_info", {
+      _ids: memberRows.map((r) => r.ref_id),
+    });
     const byId = new Map(((data ?? []) as MemberInfo[]).map((m) => [m.id, m]));
     const members: MemberInfo[] = [];
     for (const r of memberRows) {
@@ -120,7 +128,11 @@ Deno.serve(async (req) => {
         sentIds.push(r.id);
       } else skippedIds.push(r.id);
     } else if (r.kind === "trend" && r.ref_id) {
-      const { data } = await admin.from("trend_reports").select("title, week_of, summary, doc_url").eq("id", r.ref_id).maybeSingle();
+      const { data } = await admin
+        .from("trend_reports")
+        .select("title, week_of, summary, doc_url")
+        .eq("id", r.ref_id)
+        .maybeSingle();
       if (data) {
         texts.push(flexTrend(data as TrendInfo));
         sentIds.push(r.id);
@@ -135,13 +147,20 @@ Deno.serve(async (req) => {
   }
 
   if (skippedIds.length > 0) {
-    await admin.from("admin_line_outbox").update({ status: "skipped", last_error: "ignored or not found" }).in("id", skippedIds);
+    await admin
+      .from("admin_line_outbox")
+      .update({ status: "skipped", last_error: "ignored or not found" })
+      .in("id", skippedIds);
   }
-  if (texts.length === 0) return json({ processed: rows.length, sent: 0, skipped: skippedIds.length });
+  if (texts.length === 0)
+    return json({ processed: rows.length, sent: 0, skipped: skippedIds.length });
 
   const result = await pushToGroup(token, groupId, texts);
   if (result.ok) {
-    await admin.from("admin_line_outbox").update({ status: "sent", sent_at: new Date().toISOString(), last_error: null }).in("id", sentIds);
+    await admin
+      .from("admin_line_outbox")
+      .update({ status: "sent", sent_at: new Date().toISOString(), last_error: null })
+      .in("id", sentIds);
     return json({ processed: rows.length, sent: texts.length, skipped: skippedIds.length });
   }
 
@@ -150,7 +169,15 @@ Deno.serve(async (req) => {
   const attemptsById = new Map(rows.map((r) => [r.id, r.attempts]));
   const exhausted = sentIds.filter((id) => (attemptsById.get(id) ?? 0) >= 5);
   const retry = sentIds.filter((id) => !exhausted.includes(id));
-  if (retry.length > 0) await admin.from("admin_line_outbox").update({ status: "pending", last_error: result.error }).in("id", retry);
-  if (exhausted.length > 0) await admin.from("admin_line_outbox").update({ status: "failed", last_error: result.error }).in("id", exhausted);
+  if (retry.length > 0)
+    await admin
+      .from("admin_line_outbox")
+      .update({ status: "pending", last_error: result.error })
+      .in("id", retry);
+  if (exhausted.length > 0)
+    await admin
+      .from("admin_line_outbox")
+      .update({ status: "failed", last_error: result.error })
+      .in("id", exhausted);
   return json({ error: "push failed", status: result.status }, 502);
 });

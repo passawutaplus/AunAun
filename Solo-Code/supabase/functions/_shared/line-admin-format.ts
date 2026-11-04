@@ -4,12 +4,18 @@
 export const ADMIN_SITE = "https://samecor.com";
 
 /** Accounts we never alert on (automated tests, the shared tester login, our own mailbox). */
-export function isIgnoredEmail(email: string | null | undefined, extraIgnore: string[] = []): boolean {
+export function isIgnoredEmail(
+  email: string | null | undefined,
+  extraIgnore: string[] = [],
+): boolean {
   const e = (email ?? "").trim().toLowerCase();
   if (!e) return false;
   if (/@example\.(com|test)$/.test(e)) return true;
   if (e === "tester@samecor.com") return true;
-  return extraIgnore.map((x) => x.trim().toLowerCase()).filter(Boolean).includes(e);
+  return extraIgnore
+    .map((x) => x.trim().toLowerCase())
+    .filter(Boolean)
+    .includes(e);
 }
 
 export type MemberInfo = {
@@ -132,7 +138,10 @@ function eventDates(e: EventInfo): string {
 /** Single line, trimmed, with an ellipsis; strips control characters and collapses whitespace. */
 export function clip(text: string | null | undefined, max: number): string {
   // eslint-disable-next-line no-control-regex
-  const flat = (text ?? "").replace(/[\u0000-\u001f\u007f]+/g, " ").replace(/\s+/g, " ").trim();
+  const flat = (text ?? "")
+    .replace(/[\u0000-\u001f\u007f]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
   return flat.length > max ? `${flat.slice(0, max - 1)}…` : flat;
 }
 
@@ -170,7 +179,9 @@ export function formatMember(m: MemberInfo): string {
 export function formatMembersBurst(members: MemberInfo[]): string {
   const lines = [`🆕 สมาชิกใหม่ ${members.length} คน`];
   for (const m of members.slice(0, 10)) {
-    lines.push(`• ${m.display_name || m.username || "(ไม่มีชื่อ)"} — ${m.email ?? "-"} (${m.provider === "google" ? "Google" : "อีเมล"})`);
+    lines.push(
+      `• ${m.display_name || m.username || "(ไม่มีชื่อ)"} — ${m.email ?? "-"} (${m.provider === "google" ? "Google" : "อีเมล"})`,
+    );
   }
   if (members.length > 10) lines.push(`…และอีก ${members.length - 10} คน`);
   return lines.join("\n");
@@ -180,7 +191,9 @@ export function formatMembersBurst(members: MemberInfo[]): string {
 export function formatMembersBatch(members: MemberInfo[], now: Date = new Date()): string {
   const lines = [`🆕 สมาชิกใหม่ ${members.length} คน (ช่วง ${batchWindow(now)})`];
   for (const m of members.slice(0, 15)) {
-    lines.push(`• ${m.display_name || m.username || "(ไม่มีชื่อ)"} — ${m.email ?? "-"} (${m.provider === "google" ? "Google" : "อีเมล"})`);
+    lines.push(
+      `• ${m.display_name || m.username || "(ไม่มีชื่อ)"} — ${m.email ?? "-"} (${m.provider === "google" ? "Google" : "อีเมล"})`,
+    );
   }
   if (members.length > 15) lines.push(`…และอีก ${members.length - 15} คน`);
   return lines.join("\n");
@@ -195,7 +208,11 @@ export function formatFeedback(f: FeedbackInfo): string {
   ];
   const msg = clip(f.message, 120);
   if (msg) lines.push(`"${msg}"`);
-  const meta = [f.username ? `โดย @${f.username}` : "", f.route ? `หน้า ${f.route}` : "", bkkTime(f.created_at)]
+  const meta = [
+    f.username ? `โดย @${f.username}` : "",
+    f.route ? `หน้า ${f.route}` : "",
+    bkkTime(f.created_at),
+  ]
     .filter(Boolean)
     .join(" · ");
   lines.push(meta);
@@ -206,10 +223,17 @@ export function formatFeedback(f: FeedbackInfo): string {
 export function formatReport(r: ReportInfo): string {
   const target = TARGET_LABEL[r.target_type ?? ""] ?? r.target_type ?? "เนื้อหา";
   const reason = REASON_LABEL[r.reason ?? ""] ?? r.reason ?? "-";
-  const lines = [`🚩 มีรายงานใหม่ — ${reason}`, `เป้าหมาย: ${target}${r.target_owner ? ` ของ @${r.target_owner}` : ""}`];
+  const lines = [
+    `🚩 มีรายงานใหม่ — ${reason}`,
+    `เป้าหมาย: ${target}${r.target_owner ? ` ของ @${r.target_owner}` : ""}`,
+  ];
   const details = clip(r.details, 120);
   if (details) lines.push(`"${details}"`);
-  lines.push([r.reporter ? `รายงานโดย @${r.reporter}` : "", bkkTime(r.created_at)].filter(Boolean).join(" · "));
+  lines.push(
+    [r.reporter ? `รายงานโดย @${r.reporter}` : "", bkkTime(r.created_at)]
+      .filter(Boolean)
+      .join(" · "),
+  );
   lines.push(`${ADMIN_SITE}/admin/reports`);
   return lines.join("\n");
 }
@@ -217,8 +241,14 @@ export function formatReport(r: ReportInfo): string {
 export function formatEvent(e: EventInfo): string {
   const lines = [
     `🖼 Exhibition ${e.resubmitted ? "ส่งตรวจใหม่" : "รอตรวจ"} — ${clip(e.title, 80)}`,
-    [EVENT_CATEGORY_LABEL[e.category ?? ""] ?? e.category, eventDates(e), clip(e.location_name, 60)].filter(Boolean).join(" · "),
-    [e.organizer_name ? `ผู้จัด ${clip(e.organizer_name, 60)}` : "", e.owner ? `@${e.owner}` : "", e.submitted_at ? bkkTime(e.submitted_at) : ""]
+    [EVENT_CATEGORY_LABEL[e.category ?? ""] ?? e.category, eventDates(e), clip(e.location_name, 60)]
+      .filter(Boolean)
+      .join(" · "),
+    [
+      e.organizer_name ? `ผู้จัด ${clip(e.organizer_name, 60)}` : "",
+      e.owner ? `@${e.owner}` : "",
+      e.submitted_at ? bkkTime(e.submitted_at) : "",
+    ]
       .filter(Boolean)
       .join(" · "),
     `${ADMIN_SITE}/admin/events`,
@@ -227,7 +257,11 @@ export function formatEvent(e: EventInfo): string {
 }
 
 export function formatDigest(d: DigestInfo, now: Date = new Date()): string {
-  const date = new Intl.DateTimeFormat("th-TH", { timeZone: "Asia/Bangkok", day: "numeric", month: "long" }).format(now);
+  const date = new Intl.DateTimeFormat("th-TH", {
+    timeZone: "Asia/Bangkok",
+    day: "numeric",
+    month: "long",
+  }).format(now);
   const lines = [
     `📊 สรุปประจำวัน ${date}`,
     `ผู้เข้าชม: ${d.sessions_24h} เซสชัน${d.views_24h !== undefined ? ` · ดู ${d.views_24h} หน้า` : ""}`,
@@ -261,7 +295,13 @@ const RULE = "#E6E4DE";
 
 type Box = Record<string, unknown>;
 
-const text = (t: string, o: Box = {}): Box => ({ type: "text", text: t, color: INK, wrap: true, ...o });
+const text = (t: string, o: Box = {}): Box => ({
+  type: "text",
+  text: t,
+  color: INK,
+  wrap: true,
+  ...o,
+});
 const icon = (name: string): Box => ({ type: "icon", url: `${ICON_BASE}/${name}.png`, size: "md" });
 const rule = (): Box => ({ type: "separator", margin: "lg", color: RULE });
 
@@ -280,7 +320,12 @@ function section(iconName: string, label: string, value: string, details: string
   return { type: "box", layout: "vertical", margin: "lg", contents };
 }
 
-function bubble(title: string, subtitle: string | null, blocks: Box[], link: { label: string; uri: string }): Box {
+function bubble(
+  title: string,
+  subtitle: string | null,
+  blocks: Box[],
+  link: { label: string; uri: string },
+): Box {
   const head: Box[] = [text(title, { size: "lg", weight: "bold" })];
   if (subtitle) head.push(text(subtitle, { size: "xs", color: MUTED, margin: "xs" }));
   return {
@@ -296,12 +341,24 @@ function bubble(title: string, subtitle: string | null, blocks: Box[], link: { l
       type: "box",
       layout: "vertical",
       paddingAll: "12px",
-      contents: [{ type: "button", style: "link", height: "sm", color: INK, action: { type: "uri", label: link.label, uri: link.uri } }],
+      contents: [
+        {
+          type: "button",
+          style: "link",
+          height: "sm",
+          color: INK,
+          action: { type: "uri", label: link.label, uri: link.uri },
+        },
+      ],
     },
   };
 }
 
-const flex = (altText: string, contents: Box): LineMessage => ({ type: "flex", altText: clip(altText, 400), contents });
+const flex = (altText: string, contents: Box): LineMessage => ({
+  type: "flex",
+  altText: clip(altText, 400),
+  contents,
+});
 
 const BRAND = "#EE3D29";
 const CREAM = "#F8F7F2";
@@ -316,14 +373,22 @@ const DEVICE_LABEL: [string, string][] = [
 ];
 
 /** "▲ 12%" / "▼ 8%" against the previous 24 h; null when there is nothing to compare with. */
-export function deltaText(now: number, prev: number | undefined): { text: string; color: string } | null {
+export function deltaText(
+  now: number,
+  prev: number | undefined,
+): { text: string; color: string } | null {
   if (prev === undefined || prev <= 0) return null;
   const pct = Math.round(((now - prev) / prev) * 100);
   if (pct === 0) return { text: "เท่าเมื่อวาน", color: MUTED };
   return pct > 0 ? { text: `▲ ${pct}%`, color: UP } : { text: `▼ ${Math.abs(pct)}%`, color: BRAND };
 }
 
-const tile = (label: string, value: string, delta: { text: string; color: string } | null, hint?: string): Box => ({
+const tile = (
+  label: string,
+  value: string,
+  delta: { text: string; color: string } | null,
+  hint?: string,
+): Box => ({
   type: "box",
   layout: "vertical",
   flex: 1,
@@ -333,7 +398,9 @@ const tile = (label: string, value: string, delta: { text: string; color: string
   contents: [
     text(label, { size: "xs", color: MUTED }),
     text(value, { size: "xxl", weight: "bold", margin: "xs" }),
-    delta ? text(delta.text, { size: "xs", color: delta.color, weight: "bold" }) : text(hint ?? " ", { size: "xs", color: MUTED }),
+    delta
+      ? text(delta.text, { size: "xs", color: delta.color, weight: "bold" })
+      : text(hint ?? " ", { size: "xs", color: MUTED }),
   ],
 });
 
@@ -350,7 +417,12 @@ function bar(label: string, n: number, total: number): Box {
         layout: "horizontal",
         contents: [
           text(label, { size: "sm", flex: 5 }),
-          text(`${n} · ${total > 0 ? Math.round((n / total) * 100) : 0}%`, { size: "sm", color: MUTED, align: "end", flex: 3 }),
+          text(`${n} · ${total > 0 ? Math.round((n / total) * 100) : 0}%`, {
+            size: "sm",
+            color: MUTED,
+            align: "end",
+            flex: 3,
+          }),
         ],
       },
       {
@@ -360,7 +432,17 @@ function bar(label: string, n: number, total: number): Box {
         height: "6px",
         cornerRadius: "3px",
         backgroundColor: RULE,
-        contents: [{ type: "box", layout: "vertical", width: `${pct}%`, height: "6px", cornerRadius: "3px", backgroundColor: BRAND, contents: [{ type: "filler" }] }],
+        contents: [
+          {
+            type: "box",
+            layout: "vertical",
+            width: `${pct}%`,
+            height: "6px",
+            cornerRadius: "3px",
+            backgroundColor: BRAND,
+            contents: [{ type: "filler" }],
+          },
+        ],
       },
     ],
   };
@@ -376,7 +458,12 @@ function card(iconName: string, label: string, contents: Box[]): Box {
     cornerRadius: "12px",
     backgroundColor: "#FFFFFF",
     contents: [
-      { type: "box", layout: "baseline", spacing: "sm", contents: [icon(iconName), text(label, { size: "sm", weight: "bold", flex: 0 })] },
+      {
+        type: "box",
+        layout: "baseline",
+        spacing: "sm",
+        contents: [icon(iconName), text(label, { size: "sm", weight: "bold", flex: 0 })],
+      },
       ...contents,
     ],
   };
@@ -386,21 +473,36 @@ const kv = (label: string, value: string): Box => ({
   type: "box",
   layout: "horizontal",
   margin: "sm",
-  contents: [text(label, { size: "sm", color: "#444444", flex: 5 }), text(value, { size: "sm", weight: "bold", align: "end", flex: 3 })],
+  contents: [
+    text(label, { size: "sm", color: "#444444", flex: 5 }),
+    text(value, { size: "sm", weight: "bold", align: "end", flex: 3 }),
+  ],
 });
 
 export function flexDigest(d: DigestInfo, now: Date = new Date()): LineMessage {
-  const date = new Intl.DateTimeFormat("th-TH", { timeZone: "Asia/Bangkok", day: "numeric", month: "long", year: "numeric" }).format(now);
+  const date = new Intl.DateTimeFormat("th-TH", {
+    timeZone: "Asia/Bangkok",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(now);
   const views = d.views_24h ?? 0;
   const devices = d.devices ?? {};
   const devTotal = Object.values(devices).reduce((a, b) => a + b, 0);
-  const devRows = DEVICE_LABEL.filter(([k]) => (devices[k] ?? 0) > 0).map(([k, label]) => bar(label, devices[k], devTotal));
-  const topWorks = (d.top_works ?? []).map((w, i) => kv(`${i + 1}. ${clip(w.title, 22)}${w.owner ? ` @${w.owner}` : ""}`, `${w.views} ครั้ง`));
+  const devRows = DEVICE_LABEL.filter(([k]) => (devices[k] ?? 0) > 0).map(([k, label]) =>
+    bar(label, devices[k], devTotal),
+  );
+  const topWorks = (d.top_works ?? []).map((w, i) =>
+    kv(`${i + 1}. ${clip(w.title, 22)}${w.owner ? ` @${w.owner}` : ""}`, `${w.views} ครั้ง`),
+  );
   const sources = d.sources ?? [];
   const srcTotal = sources.reduce((a, b) => a + b.n, 0);
   const conv = d.sessions_24h > 0 ? Math.round((d.new_members / d.sessions_24h) * 100) : 0;
-  const works = d.new_works_list.slice(0, 4).map((w) => kv(`• ${clip(w.title, 24)}`, w.owner ? `@${w.owner}` : ""));
-  if (d.new_works > 4) works.push(text(`…และอีก ${d.new_works - 4} ชิ้น`, { size: "xs", color: MUTED, margin: "sm" }));
+  const works = d.new_works_list
+    .slice(0, 4)
+    .map((w) => kv(`• ${clip(w.title, 24)}`, w.owner ? `@${w.owner}` : ""));
+  if (d.new_works > 4)
+    works.push(text(`…และอีก ${d.new_works - 4} ชิ้น`, { size: "xs", color: MUTED, margin: "sm" }));
 
   const blocks: Box[] = [
     {
@@ -412,9 +514,22 @@ export function flexDigest(d: DigestInfo, now: Date = new Date()): LineMessage {
         tile("ยอดดูหน้า", `${views}`, deltaText(views, d.views_prev)),
       ],
     },
-    card("users", "ผู้เข้าชมแยกตามอุปกรณ์", devRows.length > 0 ? devRows : [text("ยังไม่มีข้อมูล", { size: "sm", color: MUTED, margin: "sm" })]),
+    card(
+      "users",
+      "ผู้เข้าชมแยกตามอุปกรณ์",
+      devRows.length > 0
+        ? devRows
+        : [text("ยังไม่มีข้อมูล", { size: "sm", color: MUTED, margin: "sm" })],
+    ),
   ];
-  if (sources.length > 0) blocks.push(card("chart", "คนเข้ามาจากไหน", sources.map((s) => bar(s.label, s.n, srcTotal))));
+  if (sources.length > 0)
+    blocks.push(
+      card(
+        "chart",
+        "คนเข้ามาจากไหน",
+        sources.map((s) => bar(s.label, s.n, srcTotal)),
+      ),
+    );
   if (topWorks.length > 0) blocks.push(card("image", "ผลงานที่คนดูมากสุด", topWorks));
   blocks.push(
     card("user-plus", "สมาชิกและผลงาน", [
@@ -445,13 +560,27 @@ export function flexDigest(d: DigestInfo, now: Date = new Date()): LineMessage {
         text(`${date} · 24 ชม.ที่ผ่านมา`, { size: "xs", color: "#BDBDBD", margin: "xs" }),
       ],
     },
-    body: { type: "box", layout: "vertical", paddingAll: "14px", backgroundColor: CREAM, contents: blocks },
+    body: {
+      type: "box",
+      layout: "vertical",
+      paddingAll: "14px",
+      backgroundColor: CREAM,
+      contents: blocks,
+    },
     footer: {
       type: "box",
       layout: "vertical",
       paddingAll: "12px",
       backgroundColor: CREAM,
-      contents: [{ type: "button", style: "primary", height: "sm", color: INK, action: { type: "uri", label: "เปิดหน้าแอดมิน", uri: `${ADMIN_SITE}/admin` } }],
+      contents: [
+        {
+          type: "button",
+          style: "primary",
+          height: "sm",
+          color: INK,
+          action: { type: "uri", label: "เปิดหน้าแอดมิน", uri: `${ADMIN_SITE}/admin` },
+        },
+      ],
     },
   });
 }
@@ -463,15 +592,22 @@ export function flexMember(m: MemberInfo): LineMessage {
   if (m.works > 0) details.push(`ลงผลงานแล้ว ${m.works} ชิ้น`);
   return flex(
     formatMember(m),
-    bubble("สมาชิกใหม่", null, [section("user-plus", m.username ? `@${m.username}` : "สมาชิก", name, details)], {
-      label: m.username ? "ดูโปรไฟล์" : "เปิดหน้าแอดมิน",
-      uri: m.username ? `${ADMIN_SITE}/${m.username}` : `${ADMIN_SITE}/admin`,
-    }),
+    bubble(
+      "สมาชิกใหม่",
+      null,
+      [section("user-plus", m.username ? `@${m.username}` : "สมาชิก", name, details)],
+      {
+        label: m.username ? "ดูโปรไฟล์" : "เปิดหน้าแอดมิน",
+        uri: m.username ? `${ADMIN_SITE}/${m.username}` : `${ADMIN_SITE}/admin`,
+      },
+    ),
   );
 }
 
 export function flexMembersBurst(members: MemberInfo[]): LineMessage {
-  const lines = members.slice(0, 10).map((m) => `• ${m.display_name || m.username || "(ไม่มีชื่อ)"} — ${m.email ?? "-"}`);
+  const lines = members
+    .slice(0, 10)
+    .map((m) => `• ${m.display_name || m.username || "(ไม่มีชื่อ)"} — ${m.email ?? "-"}`);
   if (members.length > 10) lines.push(`…และอีก ${members.length - 10} คน`);
   return flex(
     formatMembersBurst(members),
@@ -484,7 +620,12 @@ export function flexMembersBurst(members: MemberInfo[]): LineMessage {
 
 /** Bangkok clock fields of a Date. */
 function bkkParts(d: Date): { h: number; m: number } {
-  const parts = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Bangkok", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(d);
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Bangkok",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(d);
   const get = (t: string) => Number(parts.find((p) => p.type === t)?.value ?? "0") % 24;
   return { h: get("hour"), m: get("minute") };
 }
@@ -517,16 +658,26 @@ export function flexMembersBatch(members: MemberInfo[], now: Date = new Date()):
           layout: "baseline",
           spacing: "sm",
           contents: [
-            text(m.display_name || m.username || "(ไม่มีชื่อ)", { size: "md", weight: "bold", flex: 0 }),
+            text(m.display_name || m.username || "(ไม่มีชื่อ)", {
+              size: "md",
+              weight: "bold",
+              flex: 0,
+            }),
             ...(m.username ? [text(`@${m.username}`, { size: "sm", color: MUTED, flex: 0 })] : []),
           ],
         },
         text(m.email ?? "-", { size: "sm", color: "#444444", margin: "xs" }),
-        text(`${m.provider === "google" ? "Google" : "อีเมล"} · สมัคร ${String(t.h).padStart(2, "0")}:${String(t.m).padStart(2, "0")} น.`, { size: "xs", color: MUTED, margin: "xs" }),
+        text(
+          `${m.provider === "google" ? "Google" : "อีเมล"} · สมัคร ${String(t.h).padStart(2, "0")}:${String(t.m).padStart(2, "0")} น.`,
+          { size: "xs", color: MUTED, margin: "xs" },
+        ),
       ],
     });
   });
-  if (members.length > 15) rows.push(text(`…และอีก ${members.length - 15} คน`, { size: "xs", color: MUTED, margin: "md" }));
+  if (members.length > 15)
+    rows.push(
+      text(`…และอีก ${members.length - 15} คน`, { size: "xs", color: MUTED, margin: "md" }),
+    );
   return flex(formatMembersBatch(members), {
     type: "bubble",
     size: "kilo",
@@ -538,7 +689,16 @@ export function flexMembersBatch(members: MemberInfo[], now: Date = new Date()):
         text("สมาชิกใหม่", { size: "lg", weight: "bold" }),
         text(`ช่วง ${batchWindow(now)}`, { size: "xs", color: MUTED, margin: "xs" }),
         rule(),
-        { type: "box", layout: "baseline", spacing: "sm", margin: "lg", contents: [icon("user-plus"), text(`${members.length} คน`, { size: "xl", weight: "bold", flex: 0 })] },
+        {
+          type: "box",
+          layout: "baseline",
+          spacing: "sm",
+          margin: "lg",
+          contents: [
+            icon("user-plus"),
+            text(`${members.length} คน`, { size: "xl", weight: "bold", flex: 0 }),
+          ],
+        },
         ...rows,
       ],
     },
@@ -546,7 +706,15 @@ export function flexMembersBatch(members: MemberInfo[], now: Date = new Date()):
       type: "box",
       layout: "vertical",
       paddingAll: "12px",
-      contents: [{ type: "button", style: "link", height: "sm", color: INK, action: { type: "uri", label: "เปิดหน้าแอดมิน", uri: `${ADMIN_SITE}/admin` } }],
+      contents: [
+        {
+          type: "button",
+          style: "link",
+          height: "sm",
+          color: INK,
+          action: { type: "uri", label: "เปิดหน้าแอดมิน", uri: `${ADMIN_SITE}/admin` },
+        },
+      ],
     },
   });
 }
@@ -555,13 +723,24 @@ export function flexFeedback(f: FeedbackInfo): LineMessage {
   const kind = KIND_LABEL[f.kind ?? ""] ?? f.kind ?? "ฟีดแบ็ก";
   const stars = f.rating ? ` ${"★".repeat(Math.max(0, Math.min(5, f.rating)))}` : "";
   const msg = clip(f.message, 120);
-  const meta = [f.username ? `โดย @${f.username}` : "", f.route ? `หน้า ${f.route}` : "", bkkTime(f.created_at)].filter(Boolean).join(" · ");
+  const meta = [
+    f.username ? `โดย @${f.username}` : "",
+    f.route ? `หน้า ${f.route}` : "",
+    bkkTime(f.created_at),
+  ]
+    .filter(Boolean)
+    .join(" · ");
   return flex(
     formatFeedback(f),
     bubble(
       "ฟีดแบ็กใหม่",
       f.ticket_number,
-      [section("message", f.from_app ? "จากแอป" : "จากเว็บ", `${kind}${stars}`, [...(msg ? [`"${msg}"`] : []), meta])],
+      [
+        section("message", f.from_app ? "จากแอป" : "จากเว็บ", `${kind}${stars}`, [
+          ...(msg ? [`"${msg}"`] : []),
+          meta,
+        ]),
+      ],
       { label: "เปิดหน้าฟีดแบ็ก", uri: `${ADMIN_SITE}/admin/feedback` },
     ),
   );
@@ -571,24 +750,35 @@ export function flexReport(r: ReportInfo): LineMessage {
   const target = TARGET_LABEL[r.target_type ?? ""] ?? r.target_type ?? "เนื้อหา";
   const reason = REASON_LABEL[r.reason ?? ""] ?? r.reason ?? "-";
   const details = clip(r.details, 120);
-  const meta = [r.reporter ? `รายงานโดย @${r.reporter}` : "", bkkTime(r.created_at)].filter(Boolean).join(" · ");
+  const meta = [r.reporter ? `รายงานโดย @${r.reporter}` : "", bkkTime(r.created_at)]
+    .filter(Boolean)
+    .join(" · ");
   return flex(
     formatReport(r),
     bubble(
       "มีรายงานใหม่",
       null,
-      [section("flag", `${target}${r.target_owner ? ` ของ @${r.target_owner}` : ""}`, reason, [...(details ? [`"${details}"`] : []), meta])],
+      [
+        section("flag", `${target}${r.target_owner ? ` ของ @${r.target_owner}` : ""}`, reason, [
+          ...(details ? [`"${details}"`] : []),
+          meta,
+        ]),
+      ],
       { label: "เปิดหน้ารายงาน", uri: `${ADMIN_SITE}/admin/reports` },
     ),
   );
 }
 
 export function flexEvent(e: EventInfo): LineMessage {
-  const what = [EVENT_CATEGORY_LABEL[e.category ?? ""] ?? e.category, eventDates(e)].filter(Boolean).join(" · ");
+  const what = [EVENT_CATEGORY_LABEL[e.category ?? ""] ?? e.category, eventDates(e)]
+    .filter(Boolean)
+    .join(" · ");
   const meta = [
     clip(e.location_name, 60),
     e.organizer_name ? `ผู้จัด ${clip(e.organizer_name, 60)}` : "",
-    [e.owner ? `@${e.owner}` : "", e.submitted_at ? bkkTime(e.submitted_at) : ""].filter(Boolean).join(" · "),
+    [e.owner ? `@${e.owner}` : "", e.submitted_at ? bkkTime(e.submitted_at) : ""]
+      .filter(Boolean)
+      .join(" · "),
   ].filter(Boolean);
   return flex(
     formatEvent(e),
@@ -613,10 +803,16 @@ export function flexTrend(t: TrendInfo): LineMessage {
     layout: "baseline",
     spacing: "sm",
     margin: i === 0 ? "lg" : "md",
-    contents: [text("•", { size: "sm", color: BRAND, flex: 0 }), text(clip(line, 160), { size: "sm", color: "#333333" })],
+    contents: [
+      text("•", { size: "sm", color: BRAND, flex: 0 }),
+      text(clip(line, 160), { size: "sm", color: "#333333" }),
+    ],
   }));
   return flex(
     [`Trend Report · ${week}`, ...shown.map((l) => `• ${l}`)].join("\n"),
-    bubble(clip(t.title, 60), week, lines, { label: "อ่านรายงานเต็ม (Google Docs)", uri: t.doc_url }),
+    bubble(clip(t.title, 60), week, lines, {
+      label: "อ่านรายงานเต็ม (Google Docs)",
+      uri: t.doc_url,
+    }),
   );
 }
