@@ -601,6 +601,7 @@ const ProjectDetailPage = ({ overlay = false }: { overlay?: boolean } = {}) => {
           >
             <ProjectActionRail
               variant="rail"
+              onDark={overlay}
               className="sticky top-[35vh]"
               {...railProps}
             />

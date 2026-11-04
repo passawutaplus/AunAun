@@ -20,11 +20,13 @@ type Props = {
   shareImageUrl?: string;
   /** "rail": floating vertical pill beside the work (desktop). "row": inline row above the work (phones). */
   variant?: "rail" | "row";
+  /** Rail sits on the dark overlay backdrop: frosted dark glass with white icons. */
+  onDark?: boolean;
   className?: string;
 };
 
 const iconBtn =
-  "inline-flex h-11 w-11 items-center justify-center rounded-full text-foreground transition-colors hover:bg-foreground/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+  "inline-flex h-11 w-11 items-center justify-center rounded-full text-current transition-colors hover:bg-foreground/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 /** Profile (+ follow badge) and one pill of icon-only actions: collection, share, message. */
 const ProjectActionRail = ({
@@ -38,12 +40,19 @@ const ProjectActionRail = ({
   shareUrl,
   shareImageUrl,
   variant = "rail",
+  onDark = false,
   className,
 }: Props) => {
   const { user } = useAuth();
   const { data: savedProjectIds = [] } = useSavedProjectIds(user?.id);
   const saved = !!projectId && savedProjectIds.includes(projectId);
   const rail = variant === "rail";
+  const avatarCls = cn(
+    rail ? "h-12 w-12" : "h-9 w-9",
+    "ring-2",
+    onDark ? "ring-white/25" : "ring-background",
+  );
+  const avatarFallback = "bg-muted text-foreground text-xs font-medium";
 
   const avatar = (
     <div className="relative shrink-0">
@@ -57,14 +66,16 @@ const ProjectActionRail = ({
           <UserAvatar
             src={ownerAvatar}
             name={ownerName}
-            className={rail ? "h-12 w-12" : "h-9 w-9"}
+            className={avatarCls}
+            fallbackClassName={avatarFallback}
           />
         </Link>
       ) : (
         <UserAvatar
           src={ownerAvatar}
           name={ownerName}
-          className={rail ? "h-12 w-12" : "h-9 w-9"}
+          className={avatarCls}
+          fallbackClassName={avatarFallback}
         />
       )}
       {!isOwner ? (
@@ -81,7 +92,10 @@ const ProjectActionRail = ({
   const pill = (
     <div
       className={cn(
-        "flex items-center gap-1 rounded-full bg-background/65 p-1 ring-1 ring-foreground/15 backdrop-blur-xl backdrop-saturate-150 dark:bg-card/50",
+        "flex items-center gap-1 rounded-full p-1 backdrop-blur-2xl backdrop-saturate-150",
+        onDark
+          ? "bg-white/[0.08] text-white [&_button:hover]:bg-white/15 ring-1 ring-inset ring-white/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.35),inset_0_-1px_0_rgba(255,255,255,0.06),0_10px_30px_rgba(0,0,0,0.45)]"
+          : "bg-background/55 text-foreground ring-1 ring-inset ring-foreground/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_8px_24px_rgba(0,0,0,0.12)] dark:bg-card/40 dark:ring-white/15 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_8px_24px_rgba(0,0,0,0.4)]",
         rail && "flex-col",
       )}
     >

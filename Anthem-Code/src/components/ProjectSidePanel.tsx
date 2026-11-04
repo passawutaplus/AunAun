@@ -170,8 +170,15 @@ const ProjectSidePanel = (p: Props) => {
       <div className="space-y-4 min-w-0">
         <div className="flex items-start justify-between gap-2">
           {category}
-          {p.isOwner && p.projectId ? (
-            <ProjectOwnerMenu projectId={p.projectId} projectTitle={p.title} />
+          {ownerView && p.projectId ? (
+            <div className="flex shrink-0 items-center gap-1">
+              <Button asChild size="sm" variant="outline" className="h-8 rounded-full">
+                <Link to={`/portfolio/${p.projectId}/edit`}>
+                  <Pencil className="mr-1.5 h-3.5 w-3.5" aria-hidden /> แก้ไขผลงาน
+                </Link>
+              </Button>
+              <ProjectOwnerMenu projectId={p.projectId} projectTitle={p.title} />
+            </div>
           ) : !p.isOwner && p.projectId && p.ownerId ? (
             <ProjectViewerMenu
               projectId={p.projectId}
@@ -256,14 +263,6 @@ const ProjectSidePanel = (p: Props) => {
               <span className="text-primary font-semibold">{p.price}</span>
             )}
           </p>
-        ) : null}
-
-        {ownerView && p.projectId ? (
-          <Button asChild variant="outline" className="rounded-full">
-            <Link to={`/portfolio/${p.projectId}/edit`}>
-              <Pencil className="mr-1.5 h-4 w-4" aria-hidden /> แก้ไขผลงาน
-            </Link>
-          </Button>
         ) : null}
       </div>
 
