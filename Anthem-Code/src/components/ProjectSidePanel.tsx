@@ -9,6 +9,7 @@ import {
   Pencil,
   Users,
   Wrench,
+  Copyright,
 } from "lucide-react";
 import UserAvatar from "@/components/UserAvatar";
 import { useProfilesByIds } from "@/core/profiles";
@@ -267,8 +268,7 @@ const ProjectSidePanel = (p: Props) => {
       </div>
 
       <div className="space-y-4 min-w-0">
-        {p.tools.length > 0 || visibleTags.length > 0 ? (
-          <dl className="grid grid-cols-[1.25rem_minmax(0,1fr)] gap-x-3 gap-y-3 text-sm">
+        <dl className="grid grid-cols-[1.25rem_minmax(0,1fr)] gap-x-3 gap-y-3 text-sm">
             {p.tools.length > 0 ? (
               <>
                 <dt className="pt-1.5 text-muted-foreground" title="เครื่องมือ">
@@ -305,21 +305,25 @@ const ProjectSidePanel = (p: Props) => {
                 </dd>
               </>
             ) : null}
+            <dt className="pt-1.5 text-muted-foreground" title="สิทธิ์การใช้งาน">
+              <Copyright className="h-4 w-4" aria-hidden />
+              <span className="sr-only">สิทธิ์การใช้งาน</span>
+            </dt>
+            <dd className="m-0 min-w-0">
+              <LicenseDetailBlock
+                bare
+                licenseType={p.licenseType}
+                licenseNote={p.licenseNote}
+                copyrightHolder={p.copyrightHolder}
+                ownerName={p.ownerName}
+                hasThirdPartyAssets={p.hasThirdPartyAssets}
+                thirdPartyNote={p.thirdPartyNote}
+                aiAssisted={p.aiAssisted}
+                aiDisclosureNote={p.aiDisclosureNote}
+                allowHire={p.allowHire}
+              />
+            </dd>
           </dl>
-        ) : null}
-
-        <LicenseDetailBlock
-          embedded
-          licenseType={p.licenseType}
-          licenseNote={p.licenseNote}
-          copyrightHolder={p.copyrightHolder}
-          ownerName={p.ownerName}
-          hasThirdPartyAssets={p.hasThirdPartyAssets}
-          thirdPartyNote={p.thirdPartyNote}
-          aiAssisted={p.aiAssisted}
-          aiDisclosureNote={p.aiDisclosureNote}
-          allowHire={p.allowHire}
-        />
 
         {p.projectId && (
           <ProjectAssetsSection

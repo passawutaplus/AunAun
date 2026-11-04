@@ -1,6 +1,6 @@
 import { useLayoutEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Bookmark, MessageCircle, Share } from "lucide-react";
+import { Bookmark, MessageCircle, Share2 } from "lucide-react";
 import UserAvatar from "@/components/UserAvatar";
 import FollowButton from "@/components/FollowButton";
 import SharePopover from "@/components/SharePopover";
@@ -196,7 +196,7 @@ const ProjectActionRail = ({
           aria-label="แชร์ผลงาน"
           title="Share"
         >
-          <Share className="h-5 w-5" strokeWidth={1.8} />
+          <Share2 className="h-5 w-5" strokeWidth={1.8} />
         </button>
       </SharePopover>
       {onChat && !isOwner ? (
