@@ -26,8 +26,8 @@ export default function InviteProjectPreview({
   return (
     <section aria-label={`${t.projectPv} ${index + 1}`} className={cn("overflow-hidden rounded-2xl border border-border bg-card", className)}>
       <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3 sm:px-5">
-        <h2 className="text-sm font-semibold text-foreground">
-          {t.projectPv} · {t.project(index + 1)}
+        <h2 className="font-display text-sm font-semibold text-foreground">
+          Project page preview · Project {index + 1}
         </h2>
         <span className="inline-flex items-center gap-1 rounded-full border border-border px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
           <Lock className="h-3 w-3" aria-hidden /> {badge}

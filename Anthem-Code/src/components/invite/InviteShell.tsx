@@ -48,7 +48,7 @@ export function InviteShell({
     <main
       id="main-content"
       lang={lang}
-      className={bleed ? "flex min-h-[100dvh] flex-col bg-background" : "min-h-[calc(100vh-4rem)] bg-background pb-12"}
+      className={bleed ? "flex min-h-[100dvh] flex-col bg-background" : "flex min-h-[calc(100vh-4rem)] flex-col bg-background"}
     >
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-2 pt-3 sm:gap-3 sm:px-6 sm:pt-5">
         <a href="/" target="_blank" rel="noopener" aria-label="SAMECOR">
@@ -71,7 +71,36 @@ export function InviteShell({
         </nav>
       </header>
       {children}
+      <InviteFooter />
     </main>
+  );
+}
+
+const FOOTER_LINKS = [
+  { href: "/legal/terms", label: "Terms" },
+  { href: "/legal/privacy", label: "PDPA" },
+  { href: "/legal", label: "Legal & Policy" },
+  { href: "/legal/copyright-report", label: "Report Infringement" },
+  { href: "/help", label: "Help Center" },
+  { href: "/learn", label: "About" },
+] as const;
+
+/** Same links as the site footer; they open in a new tab so the invitation stays open. */
+function InviteFooter() {
+  return (
+    <footer className="mt-auto border-t border-border px-4 py-6 text-center sm:px-6">
+      <nav aria-label="Footer" className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
+        {FOOTER_LINKS.map((l) => (
+          <a key={l.href} href={l.href} target="_blank" rel="noopener" className="text-foreground/85 transition-opacity hover:opacity-70">
+            {l.label}
+          </a>
+        ))}
+        <a href="mailto:support@samecor.com" className="text-foreground/85 transition-opacity hover:opacity-70">
+          support@samecor.com
+        </a>
+      </nav>
+      <p className="mt-3 text-xs text-muted-foreground">© {new Date().getFullYear()} SAMECOR · All rights reserved</p>
+    </footer>
   );
 }
 

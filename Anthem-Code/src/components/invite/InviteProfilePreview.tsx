@@ -1,5 +1,5 @@
 import { forwardRef, useState } from "react";
-import { ChevronDown, ImageIcon, Lock } from "lucide-react";
+import { ChevronDown, ImageIcon, Lock, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { InviteMedia, InviteSubmission } from "@/lib/creatorInvite";
@@ -25,7 +25,6 @@ const InviteProfilePreview = forwardRef<HTMLElement, Props>(function InviteProfi
   const cover = urlOf(data.about.cover) ?? data.projects.flatMap((p) => p.media).map(urlOf).find(Boolean) ?? null;
   const avatar = urlOf(data.about.avatar);
   const name = data.about.name.trim() || t.yourName;
-  const meta = [data.about.discipline, data.about.city].filter(Boolean).join(" · ");
 
   return (
     <section
@@ -34,7 +33,7 @@ const InviteProfilePreview = forwardRef<HTMLElement, Props>(function InviteProfi
       className={cn("scroll-mt-24 overflow-hidden rounded-2xl border border-border bg-card", className)}
     >
       <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3 sm:px-5">
-        <h2 className="text-sm font-semibold text-foreground">{t.pv}</h2>
+        <h2 className="font-display text-sm font-semibold text-foreground">Profile preview</h2>
         <span className="inline-flex items-center gap-1 rounded-full border border-border px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
           <Lock className="h-3 w-3" aria-hidden /> {badge}
         </span>
@@ -43,13 +42,13 @@ const InviteProfilePreview = forwardRef<HTMLElement, Props>(function InviteProfi
             type="button"
             variant="ghost"
             size="sm"
-            className="ml-auto h-8 gap-1 text-xs"
+            className="ml-auto h-8 w-8 p-0"
             aria-expanded={open}
             aria-controls="invite-preview-body"
+            aria-label={open ? t.collapse : t.expand}
             onClick={() => setOpen((v) => !v)}
           >
-            {open ? t.collapse : t.expand}
-            <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", open && "rotate-180")} aria-hidden />
+            <ChevronDown className={cn("h-4 w-4 transition-transform", open && "rotate-180")} aria-hidden />
           </Button>
         ) : null}
       </div>
@@ -71,7 +70,18 @@ const InviteProfilePreview = forwardRef<HTMLElement, Props>(function InviteProfi
             </span>
             <div className="min-w-0 flex-1 pb-1">
               <h3 className="truncate font-display text-xl font-semibold text-foreground sm:text-2xl">{name}</h3>
-              {meta ? <p className="truncate text-xs text-muted-foreground">{meta}</p> : null}
+              {data.about.discipline || data.about.city ? (
+                <p className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+                  {data.about.discipline ? <span className="truncate">{data.about.discipline}</span> : null}
+                  {data.about.discipline && data.about.city ? <span aria-hidden>·</span> : null}
+                  {data.about.city ? (
+                    <span className="inline-flex min-w-0 items-center gap-0.5">
+                      <MapPin className="h-3 w-3 shrink-0" aria-hidden />
+                      <span className="truncate">{data.about.city}</span>
+                    </span>
+                  ) : null}
+                </p>
+              ) : null}
             </div>
             <span aria-disabled="true" className="mb-1 hidden rounded-full border border-border px-4 py-1.5 text-xs font-medium text-muted-foreground sm:inline-flex">
               {t.follow}
@@ -98,12 +108,10 @@ const InviteProfilePreview = forwardRef<HTMLElement, Props>(function InviteProfi
                     )}
                   </div>
                   <p className="mt-1.5 truncate text-sm font-medium text-foreground">{p.title || t.projectTitle}</p>
-                  {p.role ? <p className="truncate text-xs text-muted-foreground">{p.role}</p> : null}
                 </div>
               );
             })}
           </div>
-          {collapsible ? <p className="mt-4 text-[11px] text-muted-foreground">{t.pvNote}</p> : null}
         </div>
       </div>
     </section>

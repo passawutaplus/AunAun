@@ -543,9 +543,9 @@ function InviteForm({
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
             <Link
               to={`/invite/creator/${token}`}
-              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+              className="inline-flex items-center gap-1 font-display text-xs text-muted-foreground hover:text-foreground"
             >
-              <ArrowLeft className="h-3.5 w-3.5" aria-hidden /> {t.private} ·{" "}
+              <ArrowLeft className="h-3.5 w-3.5" aria-hidden /> Private creator invitation ·{" "}
               {invite.display_name}
             </Link>
             {modeSwitch}
