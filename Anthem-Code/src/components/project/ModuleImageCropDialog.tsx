@@ -130,6 +130,9 @@ export function ModuleImageCropDialog({
   const [useOriginal, setUseOriginal] = useState(true);
   const [naturalRatio, setNaturalRatio] = useState<number | null>(null);
   const [zoomInput, setZoomInput] = useState("100");
+  /** Free ("original") crop frame in screen px; each edge drags on its own. */
+  const [freeFrame, setFreeFrame] = useState<{ w: number; h: number } | null>(null);
+  const [mediaDisp, setMediaDisp] = useState<{ w: number; h: number } | null>(null);
   const [flexAspect, setFlexAspect] = useState<FlexGridCropAspectKey>(DEFAULT_FLEX_GRID_CROP_ASPECT);
   const freeMeta = communityMediaAspectMeta(normalizeCommunityMediaAspect(aspect));
   const locked = !isFlexGrid && typeof lockedRatio === "number" && lockedRatio > 0;
@@ -150,6 +153,8 @@ export function ModuleImageCropDialog({
         ? { ratio: naturalRatio ?? 1, exportW: freeMeta.exportW, exportH: freeMeta.exportH }
         : freeMeta;
   const originalMode = !locked && !isFlexGrid && useOriginal;
+  /** Frame can be resized by dragging (flex grid, or the free "original" crop). */
+  const resizableFrame = isFlexGrid || originalMode;
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -211,7 +216,7 @@ export function ModuleImageCropDialog({
   }, [showApplyToAll]);
 
   useEffect(() => {
-    if (!open || !isFlexGrid) return;
+    if (!open || !resizableFrame) return;
     const el = cropHostRef.current;
     if (!el) return;
     const measure = () => {
@@ -222,7 +227,14 @@ export function ModuleImageCropDialog({
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [open, isFlexGrid, cropReady]);
+  }, [open, resizableFrame, cropReady]);
+
+  // Free crop starts as the whole image; the frame is then dragged to any shape.
+  useEffect(() => {
+    if (!originalMode) return;
+    setFreeFrame(mediaDisp ? { w: mediaDisp.w, h: mediaDisp.h } : null);
+    if (mediaDisp) setCrop({ x: 0, y: 0 });
+  }, [originalMode, mediaDisp]);
 
   // Keep the zoom number in step with pinch / slider changes.
   useEffect(() => {
@@ -247,7 +259,9 @@ export function ModuleImageCropDialog({
   }, []);
 
   const activeRatio =
-    isFlexGrid && flexAspect === "free"
+    originalMode && freeFrame
+      ? freeFrame.w / Math.max(1, freeFrame.h)
+      : isFlexGrid && flexAspect === "free"
       ? freeRatio
       : typeof meta.ratio === "number" && meta.ratio > 0
         ? meta.ratio
@@ -260,6 +274,7 @@ export function ModuleImageCropDialog({
         media.naturalHeight,
         activeRatio,
       );
+      setMediaDisp({ w: media.width, h: media.height });
       setMinZoom(nextMin);
       setZoom((z) => Math.max(nextMin, Math.min(MAX_ZOOM, z)));
     },
@@ -270,33 +285,43 @@ export function ModuleImageCropDialog({
     setCroppedAreaPixels(pixels);
   }, []);
 
-  const cropSize =
-    isFlexGrid && containerSize.w > 0 && containerSize.h > 0
+  const cropSize = originalMode
+    ? freeFrame
+      ? { width: freeFrame.w, height: freeFrame.h }
+      : undefined
+    : resizableFrame && containerSize.w > 0 && containerSize.h > 0
       ? computeCropSize(containerSize.w, containerSize.h, activeRatio, frameScale)
       : undefined;
 
-  /** Drag SE corner of the crop frame to shrink/grow (replaces size slider). */
-  const onFrameResizePointerDown = (e: ReactPointerEvent<HTMLButtonElement>) => {
-    if (!isFlexGrid || !cropHostRef.current || !cropSize) return;
+  type FrameHandle = "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw";
+
+  /**
+   * Drag an edge / corner of the crop frame. The frame stays centred (react-easy-crop),
+   * so dragging one side resizes symmetrically; free modes also change the ratio.
+   */
+  const onFrameResizePointerDown = (handle: FrameHandle) => (e: ReactPointerEvent<HTMLElement>) => {
+    if (!resizableFrame || !cropHostRef.current || !cropSize) return;
     e.preventDefault();
     e.stopPropagation();
     const host = cropHostRef.current;
     const startAspect = activeRatio;
-    const freeMode = flexAspect === "free";
+    const freeMode = originalMode || flexAspect === "free";
     const startHalfW = cropSize.width / 2;
     const startHalfH = cropSize.height / 2;
+    const movesX = handle.includes("e") || handle.includes("w");
+    const movesY = handle.includes("n") || handle.includes("s");
 
     const applyFromPointer = (clientX: number, clientY: number) => {
       const rect = host.getBoundingClientRect();
       const cx = rect.left + rect.width / 2;
       const cy = rect.top + rect.height / 2;
-      const halfW = Math.max(20, clientX - cx);
-      const halfH = Math.max(10, clientY - cy);
+      const halfW = movesX ? Math.max(20, Math.abs(clientX - cx)) : startHalfW;
+      const halfH = movesY ? Math.max(20, Math.abs(clientY - cy)) : startHalfH;
       let ratio = startAspect;
       let targetW: number;
 
       if (freeMode) {
-        ratio = Math.min(3, Math.max(0.3, (halfW * 2) / Math.max(1, halfH * 2)));
+        ratio = Math.min(5, Math.max(0.2, halfW / Math.max(1, halfH)));
         setFreeRatio(ratio);
         targetW = halfW * 2;
       } else if (Math.abs(halfW - startHalfW) >= Math.abs(halfH - startHalfH)) {
@@ -312,6 +337,52 @@ export function ModuleImageCropDialog({
     applyFromPointer(e.clientX, e.clientY);
 
     const onMove = (ev: PointerEvent) => applyFromPointer(ev.clientX, ev.clientY);
+    const onUp = () => {
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
+    };
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp);
+  };
+
+  /**
+   * Free crop: drag one edge / corner and only that side moves. react-easy-crop keeps the
+   * frame centred, so the image is panned by the same amount to pin the opposite side.
+   */
+  const onFreeEdgePointerDown = (handle: FrameHandle) => (e: ReactPointerEvent<HTMLElement>) => {
+    if (!originalMode || !freeFrame || !mediaDisp || !cropHostRef.current) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const rect = cropHostRef.current.getBoundingClientRect();
+    const start = { x: e.clientX, y: e.clientY, w: freeFrame.w, h: freeFrame.h, cx: crop.x, cy: crop.y };
+    const sx = handle.includes("e") ? 1 : handle.includes("w") ? -1 : 0;
+    const sy = handle.includes("s") ? 1 : handle.includes("n") ? -1 : 0;
+    const imgHalfW = (mediaDisp.w * zoom) / 2;
+    const imgHalfH = (mediaDisp.h * zoom) / 2;
+    const MIN = 40;
+
+    const axis = (d: number, s: -1 | 0 | 1, size0: number, c0: number, imgHalf: number, boxMax: number) => {
+      if (s === 0) return { size: size0, c: c0 };
+      // Edge on the dragged side follows the finger; centre offset shifts by the same delta.
+      let size = size0 + 2 * s * d;
+      let c = c0 - d;
+      size = Math.max(MIN, Math.min(boxMax, size));
+      c = c0 - (s * (size - size0)) / 2;
+      // Keep the frame on the image.
+      const over = Math.abs(c) + size / 2 - imgHalf;
+      if (over > 0) {
+        size -= over;
+        c = c0 - (s * (size - size0)) / 2;
+      }
+      return { size: Math.max(MIN, size), c };
+    };
+
+    const onMove = (ev: PointerEvent) => {
+      const x = axis(ev.clientX - start.x, sx as -1 | 0 | 1, start.w, start.cx, imgHalfW, rect.width);
+      const y = axis(ev.clientY - start.y, sy as -1 | 0 | 1, start.h, start.cy, imgHalfH, rect.height);
+      setFreeFrame({ w: x.size, h: y.size });
+      setCrop({ x: x.c, y: y.c });
+    };
     const onUp = () => {
       document.removeEventListener("pointermove", onMove);
       document.removeEventListener("pointerup", onUp);
@@ -406,11 +477,11 @@ export function ModuleImageCropDialog({
               zoom={zoom}
               minZoom={minZoom}
               maxZoom={MAX_ZOOM}
-              aspect={isFlexGrid ? activeRatio : meta.ratio}
+              aspect={resizableFrame ? activeRatio : meta.ratio}
               cropSize={cropSize}
               cropShape="rect"
               showGrid
-              restrictPosition={zoom >= minZoom + 0.01}
+              restrictPosition={originalMode || zoom >= minZoom + 0.01}
               onMediaLoaded={onMediaLoaded}
               onCropChange={setCrop}
               onZoomChange={setZoom}
@@ -418,6 +489,13 @@ export function ModuleImageCropDialog({
               classes={{
                 cropAreaClassName: "module-crop-area-radius",
               }}
+            />
+          ) : null}
+          {originalMode && cropSize ? (
+            <FreeFrameHandles
+              width={cropSize.width}
+              height={cropSize.height}
+              onHandlePointerDown={onFreeEdgePointerDown}
             />
           ) : null}
           {isFlexGrid && cropSize ? (
@@ -430,7 +508,7 @@ export function ModuleImageCropDialog({
                 left: `calc(50% + ${cropSize.width / 2}px - 10px)`,
                 top: `calc(50% + ${cropSize.height / 2}px - 10px)`,
               }}
-              onPointerDown={onFrameResizePointerDown}
+              onPointerDown={onFrameResizePointerDown("se")}
             >
               <ArrowDownRight className="h-3.5 w-3.5" strokeWidth={2.5} />
             </button>
@@ -607,4 +685,56 @@ export async function urlToImageFile(url: string): Promise<File> {
   const ext = blob.type === "image/png" ? "png" : blob.type === "image/webp" ? "webp" : "jpg";
   const name = url.split("/").pop()?.split("?")[0]?.replace(/\.\w+$/, "") || "crop";
   return new File([blob], `${name}.${ext}`, { type: blob.type || "image/jpeg" });
+}
+
+const FRAME_HANDLES: { id: "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw"; x: -1 | 0 | 1; y: -1 | 0 | 1; cursor: string }[] = [
+  { id: "nw", x: -1, y: -1, cursor: "nwse-resize" },
+  { id: "n", x: 0, y: -1, cursor: "ns-resize" },
+  { id: "ne", x: 1, y: -1, cursor: "nesw-resize" },
+  { id: "e", x: 1, y: 0, cursor: "ew-resize" },
+  { id: "se", x: 1, y: 1, cursor: "nwse-resize" },
+  { id: "s", x: 0, y: 1, cursor: "ns-resize" },
+  { id: "sw", x: -1, y: 1, cursor: "nesw-resize" },
+  { id: "w", x: -1, y: 0, cursor: "ew-resize" },
+];
+
+/** Corner + edge grips around the centred crop frame (free crop). 32px touch targets. */
+function FreeFrameHandles({
+  width,
+  height,
+  onHandlePointerDown,
+}: {
+  width: number;
+  height: number;
+  onHandlePointerDown: (
+    handle: (typeof FRAME_HANDLES)[number]["id"],
+  ) => (e: ReactPointerEvent<HTMLElement>) => void;
+}) {
+  return (
+    <>
+      {FRAME_HANDLES.map((h) => {
+        const corner = h.x !== 0 && h.y !== 0;
+        return (
+          <span
+            key={h.id}
+            role="presentation"
+            className="absolute z-30 flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center touch-none"
+            style={{
+              left: `calc(50% + ${(h.x * width) / 2}px)`,
+              top: `calc(50% + ${(h.y * height) / 2}px)`,
+              cursor: h.cursor,
+            }}
+            onPointerDown={onHandlePointerDown(h.id)}
+          >
+            <span
+              className={cn(
+                "block bg-white shadow-[0_0_0_1px_rgba(0,0,0,0.35)]",
+                corner ? "h-3.5 w-3.5 rounded-[3px]" : h.x === 0 ? "h-1.5 w-6 rounded-full" : "h-6 w-1.5 rounded-full",
+              )}
+            />
+          </span>
+        );
+      })}
+    </>
+  );
 }
