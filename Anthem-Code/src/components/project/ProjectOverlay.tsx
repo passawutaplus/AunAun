@@ -117,7 +117,7 @@ export default function ProjectOverlay() {
       <div
         aria-hidden
         className={cn(
-          "absolute inset-0 bg-black/80 transition-opacity duration-300 ease-out motion-reduce:transition-none",
+          "absolute inset-0 bg-black/90 backdrop-blur-md transition-opacity duration-300 ease-out motion-reduce:transition-none",
           open ? "opacity-100" : "opacity-0",
         )}
       />
