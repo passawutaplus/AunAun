@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { adminInviteBase } from "@/lib/creatorInviteAdminDemo";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { format } from "date-fns";
 import { th } from "date-fns/locale";
@@ -356,7 +357,7 @@ export default function AdminCreatorInvitationDetailPage() {
   return (
     <div className="space-y-5">
       <p className="text-xs text-admin-muted">
-        <Link to="/admin/creator-invitations" className="hover:underline">
+        <Link to={adminInviteBase()} className="hover:underline">
           Creator invitations
         </Link>{" "}
         / {inv.display_name}
@@ -459,7 +460,7 @@ export default function AdminCreatorInvitationDetailPage() {
                       }
                     />
                   ) : null}
-                  <Row k="ติดต่อทาง" v={submission.contact_pref} />
+                  <Row k="ติดต่อทาง" v={[submission.contact_pref || "—", submission.contact_handle].filter(Boolean).join(" · ")} />
                   <Row k="Bio" v={submission.about.bio || "—"} />
                 </dl>
                 {submission.projects.map((p, i) => (
@@ -959,7 +960,7 @@ export default function AdminCreatorInvitationDetailPage() {
                   );
                 else
                   void run({ action: "delete_data" }, "ลบแล้ว").then(() =>
-                    navigate("/admin/creator-invitations"),
+                    navigate(adminInviteBase()),
                   );
               }}
             >

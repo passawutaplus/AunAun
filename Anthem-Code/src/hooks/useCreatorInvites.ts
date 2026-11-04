@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { InviteApiError, inviteCall, type InviteLang, type InviteStatus } from "@/lib/creatorInvite";
+import { DEMO_ROWS, demoAction, demoDetail, isAdminDemo } from "@/lib/creatorInviteAdminDemo";
 
 export interface AdminInviteRow {
   id: string;
@@ -81,6 +82,7 @@ export function useAdminInvites() {
   return useQuery({
     queryKey: ["admin-creator-invites"],
     queryFn: async () => {
+      if (isAdminDemo()) return DEMO_ROWS;
       const { data, error } = await rpc("admin_creator_invites_list");
       if (error) throw new Error(error.message);
       return (data ?? []) as AdminInviteRow[];
@@ -93,6 +95,7 @@ export function useAdminInvite(id: string | undefined) {
     queryKey: ["admin-creator-invite", id],
     enabled: !!id,
     queryFn: async () => {
+      if (isAdminDemo()) return demoDetail(id);
       const { data, error } = await rpc("admin_creator_invite_detail", { _id: id });
       if (error) throw new Error(error.message);
       return data as AdminInviteDetail | null;
@@ -105,14 +108,18 @@ export function useAdminInviteMediaUrls(id: string | undefined, enabled: boolean
     queryKey: ["admin-creator-invite-media", id],
     enabled: !!id && enabled,
     staleTime: 30 * 60_000,
-    queryFn: async () => (await inviteCall<{ urls: Record<string, string> }>("creator-invite-admin", { action: "media_urls", id })).urls,
+    queryFn: async () =>
+      isAdminDemo()
+        ? (demoAction({ action: "media_urls" }).urls as Record<string, string>)
+        : (await inviteCall<{ urls: Record<string, string> }>("creator-invite-admin", { action: "media_urls", id })).urls,
   });
 }
 
 export function useAdminInviteAction() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: Record<string, unknown>) => inviteCall<Record<string, unknown>>("creator-invite-admin", body),
+    mutationFn: async (body: Record<string, unknown>) =>
+      isAdminDemo() ? demoAction(body) : inviteCall<Record<string, unknown>>("creator-invite-admin", body),
     onSuccess: (_d, body) => {
       void qc.invalidateQueries({ queryKey: ["admin-creator-invites"] });
       if (typeof body.id === "string") void qc.invalidateQueries({ queryKey: ["admin-creator-invite", body.id] });

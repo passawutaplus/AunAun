@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { adminInviteBase } from "@/lib/creatorInviteAdminDemo";
 import { Link, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { th } from "date-fns/locale";
@@ -130,7 +131,7 @@ export default function AdminCreatorInvitationsPage() {
         description={`${data.length} คำเชิญ · ${waiting} รอทีมทำ Draft · ${changes} รอแก้`}
         actions={
           <Button asChild size="sm">
-            <Link to="/admin/creator-invitations/new">
+            <Link to={`${adminInviteBase()}/new`}>
               <Plus className="mr-1.5 h-4 w-4" aria-hidden /> สร้างคำเชิญ
             </Link>
           </Button>
@@ -183,7 +184,7 @@ export default function AdminCreatorInvitationsPage() {
         rowKey={(r) => r.id}
         loading={isLoading}
         empty={data.length ? "ไม่มีคำเชิญในแท็บนี้" : "ยังไม่มีคำเชิญ — กด “สร้างคำเชิญ”"}
-        onRowClick={(r) => navigate(`/admin/creator-invitations/${r.id}`)}
+        onRowClick={(r) => navigate(`${adminInviteBase()}/${r.id}`)}
       />
       <p className="mt-3 text-[11px] text-admin-muted">
         อีเมลคำเชิญ/เตือนส่งไม่เกิน 50 ฉบับต่อชั่วโมง ที่เหลือส่งรอบถัดไปอัตโนมัติ · คนที่มีแค่ handle จะถูกข้าม (ส่งเองทาง DM จากหน้ารายละเอียด)

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { adminInviteBase } from "@/lib/creatorInviteAdminDemo";
 import { Link, useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -71,7 +72,7 @@ export default function AdminCreatorInvitationNewPage() {
       else toast.warning("สร้างแล้ว แต่อีเมลยังไม่ออก — ดูผลส่งในหน้ารายละเอียด");
     } else if (effectiveMode === "scheduled") toast.success("สร้างแล้ว · ตั้งเวลาส่งไว้");
     else toast.success("สร้างแล้ว · คัดลอกลิงก์และข้อความไปส่งทาง DM");
-    navigate(`/admin/creator-invitations/${res.id}`, { state: { inviteLink: res.invite_link } });
+    navigate(`${adminInviteBase()}/${res.id}`, { state: { inviteLink: res.invite_link } });
   }
 
   const modeOption = (value: SendMode, title: string, sub: string, disabled = false) => (
@@ -90,7 +91,7 @@ export default function AdminCreatorInvitationNewPage() {
   return (
     <div>
       <p className="mb-2 text-xs text-admin-muted">
-        <Link to="/admin/creator-invitations" className="hover:underline">
+        <Link to={adminInviteBase()} className="hover:underline">
           Creator invitations
         </Link>{" "}
         / ใหม่

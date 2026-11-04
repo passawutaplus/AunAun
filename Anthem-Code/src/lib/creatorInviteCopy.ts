@@ -365,7 +365,7 @@ const en: InviteCopy = {
   thanksBadge: "Submitted",
   thanksTitle: "Welcome to SAMECOR",
   thanksBody: (name: string, email: string) =>
-    `Thank you, ${name}. We'll prepare a private draft and email a review link to ${email}, usually within 3 working days. Nothing goes public until you approve.`,
+    `Thank you, ${name.replace(/[.\s]+$/, "")}. We'll prepare a private draft and email a review link to ${email}, usually within 3 working days. Nothing goes public until you approve.`,
   steps: [
     ["Details sent", "Today"],
     ["We prepare the draft", "1–3 working days"],

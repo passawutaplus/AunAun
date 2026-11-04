@@ -3,7 +3,7 @@ import { lazyWithRetry as lazy } from "@/lib/lazyWithRetry";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/hooks/useAuth";
 import { SensitiveActionReauthProvider } from "@/components/legal/SensitiveActionReauthProvider";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Outlet, Route, Routes } from "react-router-dom";
 import { isInspireEnabled } from "@/lib/aplus1Launch";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -274,6 +274,12 @@ const App = () => (
                   <Route path="/dev/hire-cancel" element={<HireCancelPreviewPage />} />
                   <Route path="/dev/offer-dialog" element={<OfferDialogPreviewPage />} />
                   <Route path="/dev/billing" element={<BillingPreviewPage />} />
+                  {/* Creator invitation admin screens with sample data (no login, no edge functions) */}
+                  <Route path="/dev/creator-invitations" element={<div className="admin-theme min-h-screen bg-admin-bg p-4 text-admin-fg md:p-8"><Outlet /></div>}>
+                    <Route index element={<AdminCreatorInvitationsPage />} />
+                    <Route path="new" element={<AdminCreatorInvitationNewPage />} />
+                    <Route path=":id" element={<AdminCreatorInvitationDetailPage />} />
+                  </Route>
                 </>
               ) : null}
               <Route path="/research" element={<ResearchPage />} />

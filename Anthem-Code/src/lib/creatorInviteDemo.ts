@@ -42,13 +42,30 @@ export const devInviteApi = {
     media.set(m.id, m);
     return wait(m);
   },
-  review: () =>
-    wait({
+  review: () => {
+    // A fresh tab has no uploads in memory: show a complete sample draft built from public example images.
+    const sample = (id: string, slot: InviteMedia["slot"], url: string): InviteMedia => ({ id, slot, mime: "image/jpeg", size_bytes: 1, scan_status: "clean", url });
+    const sampleMedia = [
+      sample("00000000-0000-4000-8000-000000000001", "avatar", "/invite/aun.webp"),
+      sample("00000000-0000-4000-8000-000000000002", "cover", "/landing/works/painting.jpg"),
+      sample("00000000-0000-4000-8000-000000000003", "p1", "/landing/works/riso.jpg"),
+      sample("00000000-0000-4000-8000-000000000004", "p1", "/landing/works/poster.jpg"),
+      sample("00000000-0000-4000-8000-000000000005", "p2", "/landing/works/market.jpg"),
+      sample("00000000-0000-4000-8000-000000000006", "p3", "/landing/works/chrome.jpg"),
+      sample("00000000-0000-4000-8000-000000000007", "p3", "/landing/works/ring.jpg"),
+    ];
+    const id = (n: number) => `00000000-0000-4000-8000-00000000000${n}`;
+    return wait({
       invite: { display_name: invite.display_name, language: invite.language, status: "preparing" as const, review_expires_at: new Date(Date.now() + 14 * 86400_000).toISOString() },
       profile: submission ?? {
-        about: { name: "Tanawat K.", discipline: "Graphic / Branding", bio: "นักออกแบบที่เน้นงานแบรนด์และงานพิมพ์", city: "Bangkok, Thailand", email: "", links: "https://behance.net/example", avatar: null },
-        projects: [{ slot: "p1", title: "Identity system", description: "", role: "Lead designer", url: "", rights: true, media: [] }],
+        about: { name: "Tanawat K.", discipline: "Graphic / Branding", bio: "Graphic designer focused on branding, posters and print.", city: "Bangkok, Thailand", email: "tanawat@example.com", links: "https://behance.net/example", avatar: id(1), cover: id(2) },
+        projects: [
+          { slot: "p1", title: "Riso Poster Series", description: "A set of three risograph posters exploring pink and teal.", role: "Owner / creator", url: "https://behance.net/example/riso", rights: true, media: [id(3), id(4)] },
+          { slot: "p2", title: "Thai Market Illustrations", description: "Night-market scenes in warm lantern light.", role: "Owner / creator", url: "", rights: true, media: [id(5)] },
+          { slot: "p3", title: "Silver Chrome Objects", description: "3D still-life studies in liquid chrome.", role: "Part of the team", url: "", rights: true, media: [id(6), id(7)] },
+        ],
       },
-      media: [...media.values()],
-    }),
+      media: submission ? [...media.values()] : sampleMedia,
+    });
+  },
 };
