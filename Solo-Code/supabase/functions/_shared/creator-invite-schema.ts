@@ -6,6 +6,18 @@ const httpsUrl = z
   .trim()
   .max(500)
   .refine((v) => v === "" || /^https:\/\/[^\s]+\.[^\s]+$/i.test(v), "https_url");
+/** Up to 3 https links, one per line (quick submit portfolio links). */
+const httpsUrlLines = z
+  .string()
+  .trim()
+  .max(1600)
+  .refine((v) => {
+    const lines = v
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean);
+    return lines.length <= 3 && lines.every((l) => /^https:\/\/[^\s]+\.[^\s]+$/i.test(l));
+  }, "https_urls");
 
 export const ProjectSchema = z.object({
   slot: z.enum(["p1", "p2", "p3"]),
@@ -35,7 +47,7 @@ export const SubmissionSchema = z.object({
   /** IG / LINE / other handle when contact_pref is not email */
   contact_handle: text(120),
   quick: z
-    .object({ portfolio_url: httpsUrl.optional().default("") })
+    .object({ portfolio_url: httpsUrlLines.optional().default("") })
     .optional()
     .default({}),
 });

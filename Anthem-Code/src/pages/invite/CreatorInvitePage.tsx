@@ -24,6 +24,7 @@ import {
   FileText,
   Pencil,
   Trash2,
+  Link2,
 } from "lucide-react";
 import SeoHead from "@/components/SeoHead";
 import InviteProfilePreview from "@/components/invite/InviteProfilePreview";
@@ -573,7 +574,8 @@ function InviteForm({
           to={`/invite/creator/${token}`}
           className="inline-flex items-center gap-2 font-display text-base text-muted-foreground hover:text-foreground"
         >
-          <ArrowLeft className="h-4 w-4" aria-hidden /> Private creator invitation · {invite.display_name}
+          <ArrowLeft className="h-4 w-4" aria-hidden /> Private creator
+          invitation · {invite.display_name}
         </Link>
         {modeSwitch}
       </div>
@@ -936,7 +938,7 @@ function InviteForm({
                       <Button
                         type="button"
                         variant="outline"
-                        className="w-full border-brand hover:bg-brand/10 sm:w-auto"
+                        className="w-full sm:w-auto"
                         onClick={() =>
                           update((d) => ({
                             ...d,
@@ -951,7 +953,7 @@ function InviteForm({
                           }))
                         }
                       >
-                        <span className="text-brand">+</span> {t.addProject}
+                        + {t.addProject}
                       </Button>
                     ) : null}
                   </div>
@@ -1279,11 +1281,15 @@ function LinksInput({
   t,
   value,
   onChange,
+  max = 5,
+  invalid = false,
 }: {
   id: string;
   t: InviteCopy;
   value: string;
   onChange: (v: string) => void;
+  max?: number;
+  invalid?: boolean;
 }) {
   const rows = value.split(LINK_SEP);
   const setRow = (i: number, v: string) =>
@@ -1296,6 +1302,7 @@ function LinksInput({
         <div key={i} className="flex gap-2">
           <Input
             id={i === 0 ? id : `${id}.${i}`}
+            aria-invalid={invalid || undefined}
             aria-label={i === 0 ? undefined : `${t.links} ${i + 1}`}
             type="url"
             value={r}
@@ -1318,7 +1325,7 @@ function LinksInput({
           ) : null}
         </div>
       ))}
-      {rows.length < 5 ? (
+      {rows.length < max ? (
         <Button
           type="button"
           variant="ghost"
@@ -1695,7 +1702,8 @@ function QuickStep({
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-2xl font-semibold text-foreground">
+        <h2 className="flex items-center gap-2.5 text-2xl font-semibold text-foreground">
+          <Link2 className="h-6 w-6 shrink-0 text-brand" aria-hidden />
           {t.quickTitle}
         </h2>
         <p className="mt-1.5 text-sm text-muted-foreground">{t.quickSub}</p>
@@ -1743,14 +1751,13 @@ function QuickStep({
         required
         error={e("quick.portfolio_url", t.err.url)}
       >
-        <Input
-          {...aria("quick.portfolio_url", !!errors["quick.portfolio_url"])}
-          type="url"
-          placeholder="https://"
+        <LinksInput
+          id="quick.portfolio_url"
+          t={t}
+          max={3}
+          invalid={!!errors["quick.portfolio_url"]}
           value={data.quick.portfolio_url}
-          maxLength={500}
-          onChange={(ev) => {
-            const v = ev.target.value;
+          onChange={(v) => {
             update((d) => ({ ...d, quick: { portfolio_url: v } }));
             clearErr("quick.portfolio_url");
           }}

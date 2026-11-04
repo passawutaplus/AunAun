@@ -82,7 +82,11 @@ export const BIO_MAX = 300;
 export const MAX_IMAGES_PER_PROJECT = 8;
 export const MAX_IMAGE_MB = 20;
 export const MAX_AVATAR_MB = 10;
-export const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
+export const ACCEPTED_IMAGE_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+] as const;
 
 /** Disciplines = the platform's project categories, so a published project lands in the right feed. */
 export const INVITE_DISCIPLINES: ProjectCategory[] = [
@@ -110,14 +114,28 @@ export const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 export const HTTPS_RE = /^https:\/\/[^\s]+\.[^\s]+$/i;
 
 export function emptyProject(slot: ProjectSlot): InviteProject {
-  return { slot, title: "", description: "", role: "", url: "", rights: false, media: [] };
+  return {
+    slot,
+    title: "",
+    description: "",
+    role: "",
+    url: "",
+    rights: false,
+    media: [],
+  };
 }
 
-export function emptySubmission(invite?: Pick<PublicInvite, "display_name" | "discipline"> | null): InviteSubmission {
+export function emptySubmission(
+  invite?: Pick<PublicInvite, "display_name" | "discipline"> | null,
+): InviteSubmission {
   return {
     about: {
       name: invite?.display_name ?? "",
-      discipline: invite?.discipline && INVITE_DISCIPLINES.includes(invite.discipline as ProjectCategory) ? invite.discipline : "",
+      discipline:
+        invite?.discipline &&
+        INVITE_DISCIPLINES.includes(invite.discipline as ProjectCategory)
+          ? invite.discipline
+          : "",
       bio: "",
       city: "",
       email: "",
@@ -133,13 +151,23 @@ export function emptySubmission(invite?: Pick<PublicInvite, "display_name" | "di
 }
 
 /** Accepts whatever the server stored (older drafts, staff edits) and fills the gaps. */
-export function normalizeSubmission(raw: unknown, invite?: PublicInvite | null): InviteSubmission {
+export function normalizeSubmission(
+  raw: unknown,
+  invite?: PublicInvite | null,
+): InviteSubmission {
   const base = emptySubmission(invite);
   if (!raw || typeof raw !== "object") return base;
   const r = raw as Partial<InviteSubmission>;
-  const projects = Array.isArray(r.projects) && r.projects.length
-    ? r.projects.slice(0, MAX_PROJECTS).map((p, i) => ({ ...emptyProject(PROJECT_SLOTS[i]), ...p, media: Array.isArray(p?.media) ? p.media : [] }))
-    : base.projects;
+  const projects =
+    Array.isArray(r.projects) && r.projects.length
+      ? r.projects
+          .slice(0, MAX_PROJECTS)
+          .map((p, i) => ({
+            ...emptyProject(PROJECT_SLOTS[i]),
+            ...p,
+            media: Array.isArray(p?.media) ? p.media : [],
+          }))
+      : base.projects;
   return {
     about: { ...base.about, ...(r.about ?? {}) },
     projects,
@@ -152,7 +180,12 @@ export function normalizeSubmission(raw: unknown, invite?: PublicInvite | null):
 export type FieldErrors = Record<string, true>;
 
 /** Client-side checks for one step of the full form (the server repeats them on submit). */
-export function validateStep(step: 1 | 2 | 3, s: InviteSubmission, clean: Set<string>, consent: boolean): FieldErrors {
+export function validateStep(
+  step: 1 | 2 | 3,
+  s: InviteSubmission,
+  clean: Set<string>,
+  consent: boolean,
+): FieldErrors {
   const e: FieldErrors = {};
   if (step === 1) {
     if (!s.about.name.trim()) e["about.name"] = true;
@@ -173,16 +206,29 @@ export function validateStep(step: 1 | 2 | 3, s: InviteSubmission, clean: Set<st
   if (step === 3) {
     if (!consent) e.consent = true;
     if (!s.contact_pref) e.contact_pref = true;
-    else if (s.contact_pref !== "email" && !s.contact_handle.trim()) e.contact_handle = true;
+    else if (s.contact_pref !== "email" && !s.contact_handle.trim())
+      e.contact_handle = true;
   }
   return e;
 }
 
-export function validateQuick(s: InviteSubmission, consent: boolean): FieldErrors {
+export function validateQuick(
+  s: InviteSubmission,
+  consent: boolean,
+): FieldErrors {
   const e: FieldErrors = {};
   if (!s.about.name.trim()) e["about.name"] = true;
   if (!EMAIL_RE.test(s.about.email.trim())) e["about.email"] = true;
-  if (!HTTPS_RE.test(s.quick.portfolio_url.trim())) e["quick.portfolio_url"] = true;
+  const links = s.quick.portfolio_url
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+  if (
+    links.length === 0 ||
+    links.length > 3 ||
+    !links.every((l) => HTTPS_RE.test(l))
+  )
+    e["quick.portfolio_url"] = true;
   if (!consent) e.consent = true;
   return e;
 }
@@ -208,8 +254,15 @@ async function readError(error: unknown): Promise<InviteApiError> {
   const ctx = (error as { context?: Response })?.context;
   if (ctx && typeof ctx.json === "function") {
     try {
-      const body = (await ctx.clone().json()) as { error?: string; fields?: string[] };
-      return new InviteApiError(body.error ?? "server_error", ctx.status, body.fields);
+      const body = (await ctx.clone().json()) as {
+        error?: string;
+        fields?: string[];
+      };
+      return new InviteApiError(
+        body.error ?? "server_error",
+        ctx.status,
+        body.fields,
+      );
     } catch {
       return new InviteApiError("server_error", ctx.status ?? 500);
     }
@@ -217,69 +270,151 @@ async function readError(error: unknown): Promise<InviteApiError> {
   return new InviteApiError("network", 0);
 }
 
-export async function inviteCall<T = Record<string, unknown>>(fn: "creator-invite" | "creator-invite-admin", body: Record<string, unknown>): Promise<T> {
+export async function inviteCall<T = Record<string, unknown>>(
+  fn: "creator-invite" | "creator-invite-admin",
+  body: Record<string, unknown>,
+): Promise<T> {
   const { data, error } = await supabase.functions.invoke(fn, { body });
   if (error) throw await readError(error);
   return data as T;
 }
 
-const demo = (token: string) => import.meta.env.DEV && token === DEV_INVITE_TOKEN;
+const demo = (token: string) =>
+  import.meta.env.DEV && token === DEV_INVITE_TOKEN;
 
 export const publicInviteApi = {
   load: (token: string) =>
     demo(token)
       ? devInviteApi.load()
-      : inviteCall<{ invite: PublicInvite; submission: unknown; media: InviteMedia[] }>("creator-invite", { action: "load", token }),
-  open: (token: string) => (demo(token) ? devInviteApi.open() : inviteCall("creator-invite", { action: "open", token })),
+      : inviteCall<{
+          invite: PublicInvite;
+          submission: unknown;
+          media: InviteMedia[];
+        }>("creator-invite", { action: "load", token }),
+  open: (token: string) =>
+    demo(token)
+      ? devInviteApi.open()
+      : inviteCall("creator-invite", { action: "open", token }),
   save: (token: string, data: InviteSubmission) =>
-    demo(token) ? devInviteApi.save(data) : inviteCall<{ saved_at: string }>("creator-invite", { action: "save", token, data }),
+    demo(token)
+      ? devInviteApi.save(data)
+      : inviteCall<{ saved_at: string }>("creator-invite", {
+          action: "save",
+          token,
+          data,
+        }),
   submit: (token: string, mode: "full" | "quick", data: InviteSubmission) =>
-    demo(token) ? devInviteApi.submit(mode, data) : inviteCall("creator-invite", { action: "submit", token, mode, data, consent: true }),
+    demo(token)
+      ? devInviteApi.submit(mode, data)
+      : inviteCall("creator-invite", {
+          action: "submit",
+          token,
+          mode,
+          data,
+          consent: true,
+        }),
   removeMedia: (token: string, mediaId: string) =>
-    demo(token) ? Promise.resolve({}) : inviteCall("creator-invite", { action: "media_remove", token, media_id: mediaId }),
-  unsubscribe: (token: string) => (demo(token) ? Promise.resolve({}) : inviteCall("creator-invite", { action: "unsubscribe", token })),
+    demo(token)
+      ? Promise.resolve({})
+      : inviteCall("creator-invite", {
+          action: "media_remove",
+          token,
+          media_id: mediaId,
+        }),
+  unsubscribe: (token: string) =>
+    demo(token)
+      ? Promise.resolve({})
+      : inviteCall("creator-invite", { action: "unsubscribe", token }),
   reviewLoad: (token: string) =>
     demo(token)
       ? devInviteApi.review()
       : inviteCall<{
-          invite: { display_name: string; language: InviteLang; status: InviteStatus; review_expires_at: string | null };
+          invite: {
+            display_name: string;
+            language: InviteLang;
+            status: InviteStatus;
+            review_expires_at: string | null;
+          };
           profile: unknown;
           media: InviteMedia[];
         }>("creator-invite", { action: "review_load", token }),
-  reviewDecide: (token: string, decision: "approve" | "changes" | "decline", note?: string) =>
+  reviewDecide: (
+    token: string,
+    decision: "approve" | "changes" | "decline",
+    note?: string,
+  ) =>
     demo(token)
-      ? Promise.resolve({ status: (decision === "approve" ? "approved" : decision === "changes" ? "needs_changes" : "declined") as InviteStatus })
-      : inviteCall<{ status: InviteStatus }>("creator-invite", { action: "review_decide", token, decision, note }),
+      ? Promise.resolve({
+          status: (decision === "approve"
+            ? "approved"
+            : decision === "changes"
+              ? "needs_changes"
+              : "declined") as InviteStatus,
+        })
+      : inviteCall<{ status: InviteStatus }>("creator-invite", {
+          action: "review_decide",
+          token,
+          decision,
+          note,
+        }),
 };
 
 /** Signed upload into the private invite bucket, then a server-side type/size/malware check. */
-export async function uploadInviteImage(token: string, slot: MediaSlot, file: File): Promise<InviteMedia> {
-  if (!(ACCEPTED_IMAGE_TYPES as readonly string[]).includes(file.type)) throw new InviteApiError("file_type", 400);
+export async function uploadInviteImage(
+  token: string,
+  slot: MediaSlot,
+  file: File,
+): Promise<InviteMedia> {
+  if (!(ACCEPTED_IMAGE_TYPES as readonly string[]).includes(file.type))
+    throw new InviteApiError("file_type", 400);
   const maxMb = slot === "avatar" ? MAX_AVATAR_MB : MAX_IMAGE_MB;
-  if (file.size > maxMb * 1024 * 1024) throw new InviteApiError("file_too_large", 400);
+  if (file.size > maxMb * 1024 * 1024)
+    throw new InviteApiError("file_too_large", 400);
   if (demo(token)) return devInviteApi.upload(slot, file);
-  const signed = await inviteCall<{ media_id: string; bucket: string; path: string; token: string }>("creator-invite", {
+  const signed = await inviteCall<{
+    media_id: string;
+    bucket: string;
+    path: string;
+    token: string;
+  }>("creator-invite", {
     action: "upload_url",
     token,
     slot,
     mime: file.type,
     size: file.size,
   });
-  const { error } = await supabase.storage.from(signed.bucket).uploadToSignedUrl(signed.path, signed.token, file, { contentType: file.type });
+  const { error } = await supabase.storage
+    .from(signed.bucket)
+    .uploadToSignedUrl(signed.path, signed.token, file, {
+      contentType: file.type,
+    });
   if (error) throw new InviteApiError("upload_failed", 500);
-  const done = await inviteCall<{ scan_status: "clean"; url: string | null }>("creator-invite", {
-    action: "upload_done",
-    token,
-    media_id: signed.media_id,
-  });
-  return { id: signed.media_id, slot, mime: file.type, size_bytes: file.size, scan_status: done.scan_status, url: done.url };
+  const done = await inviteCall<{ scan_status: "clean"; url: string | null }>(
+    "creator-invite",
+    {
+      action: "upload_done",
+      token,
+      media_id: signed.media_id,
+    },
+  );
+  return {
+    id: signed.media_id,
+    slot,
+    mime: file.type,
+    size_bytes: file.size,
+    scan_status: done.scan_status,
+    url: done.url,
+  };
 }
 
 // "I'll create my profile": remember the invitation through sign-up, link it once signed in.
 const SELF_SIGNUP_KEY = "samecor.creatorInvite.pending";
 export function rememberSelfSignup(token: string) {
   try {
-    localStorage.setItem(SELF_SIGNUP_KEY, JSON.stringify({ token, at: Date.now() }));
+    localStorage.setItem(
+      SELF_SIGNUP_KEY,
+      JSON.stringify({ token, at: Date.now() }),
+    );
   } catch {
     /* storage blocked — the team can still link it by hand */
   }
