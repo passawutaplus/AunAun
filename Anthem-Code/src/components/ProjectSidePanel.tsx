@@ -2,7 +2,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { exploreProjectsUrl } from "@/lib/exploreRoutes";
 import {
   Eye,
-  Sparkles,
   Calendar,
   Hash,
   Users,
@@ -16,7 +15,7 @@ import ToolsGrid from "@/components/ToolsGrid";
 import VerifiedBadge from "@/components/profile/VerifiedBadge";
 import { ProjectOwnerMenu } from "@/components/project/ProjectOwnerMenu";
 import { ProjectViewerMenu } from "@/components/project/ProjectViewerMenu";
-import { formatThaiDate, formatCompact } from "@/lib/format";
+import { useProjectT } from "@/lib/i18n/project";
 import type { ProjectAsset } from "@/lib/projectAssets";
 import ProjectAssetsSection from "@/components/project/ProjectAssetsSection";
 import LicenseDetailBlock from "@/components/license/LicenseDetailBlock";
@@ -84,6 +83,7 @@ interface Props {
 /** Work details: title, creator, description, stats, then icon-labelled tools / tags, rights, assets and series. */
 const ProjectSidePanel = (p: Props) => {
   const navigate = useNavigate();
+  const { t, date, count } = useProjectT();
   const ownerView = !!p.isOwner;
   const collaboratorIds = (p.collaboratorIds ?? []).filter(
     (id) => id && id !== p.ownerId,
@@ -101,14 +101,13 @@ const ProjectSidePanel = (p: Props) => {
     const crumb =
       "rounded-sm hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary";
     return (
-      <Badge className="bg-primary/15 text-primary border-0 hover:bg-primary/15">
-        <Sparkles className="w-3 h-3 mr-1" aria-hidden />
+      <Badge className="bg-muted text-muted-foreground border-0 font-normal hover:bg-muted">
         {parent ? (
           <>
             <Link
               to={`/?cat=${parent.id}`}
               className={crumb}
-              title={`ดูผลงานหมวด ${parent.label}`}
+              title={t("viewCategory", { name: parent.label })}
             >
               {parent.label}
             </Link>
@@ -120,7 +119,7 @@ const ProjectSidePanel = (p: Props) => {
                 <Link
                   to={`/?cat=${parent.id}&sub=${found.sub.id}`}
                   className={crumb}
-                  title={`ดูผลงานหมวด ${found.sub.label}`}
+                  title={t("viewCategory", { name: found.sub.label })}
                 >
                   {found.sub.label}
                 </Link>
@@ -135,17 +134,17 @@ const ProjectSidePanel = (p: Props) => {
   })();
 
   const owner = (
-    <span className="flex items-center gap-2 min-w-0">
+    <span className="hidden lg:flex items-center gap-2 min-w-0">
       {p.ownerAvatar ? (
         <img
           loading="lazy"
           decoding="async"
           src={p.ownerAvatar}
           alt=""
-          className="w-8 h-8 rounded-full object-cover shrink-0"
+          className="w-6 h-6 rounded-full object-cover shrink-0"
         />
       ) : (
-        <span className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center text-xs font-medium text-primary shrink-0">
+        <span className="w-6 h-6 rounded-full bg-primary/15 flex items-center justify-center text-xs font-medium text-primary shrink-0">
           {p.ownerName[0]}
         </span>
       )}
@@ -158,7 +157,7 @@ const ProjectSidePanel = (p: Props) => {
 
   return (
     <section
-      aria-label="รายละเอียดผลงาน"
+      aria-label={t("detailsAria")}
       className={cn(
         "space-y-6",
         p.wide &&
@@ -166,7 +165,7 @@ const ProjectSidePanel = (p: Props) => {
       )}
     >
       <div className="space-y-4 min-w-0">
-        <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center justify-between gap-2">
           {category}
           {ownerView && p.projectId ? (
             <ProjectOwnerMenu variant="buttons" projectId={p.projectId} projectTitle={p.title} />
@@ -177,6 +176,7 @@ const ProjectSidePanel = (p: Props) => {
               ownerName={p.ownerName}
               onHidden={p.onHidden}
               onBlocked={p.onBlocked}
+              className="-mr-2"
             />
           ) : null}
         </div>
@@ -185,9 +185,9 @@ const ProjectSidePanel = (p: Props) => {
           <h1 className="text-2xl lg:text-3xl font-medium text-foreground leading-tight">
             {p.title}
           </h1>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
             {p.ownerId ? (
-              <Link to={`/u/${p.ownerId}`} className="group min-w-0">
+              <Link to={`/u/${p.ownerId}`} className="group hidden lg:inline-flex min-w-0">
                 {owner}
               </Link>
             ) : (
@@ -195,10 +195,10 @@ const ProjectSidePanel = (p: Props) => {
             )}
             <span className="flex items-center gap-1 text-xs">
               <Calendar className="w-3 h-3" aria-hidden />{" "}
-              {formatThaiDate(p.publishedDate)}
+              {date(p.publishedDate)}
             </span>
             <span className="flex items-center gap-1 text-xs">
-              <Eye className="w-3 h-3" aria-hidden /> {formatCompact(p.views)} วิว
+              <Eye className="w-3 h-3" aria-hidden /> {t("views", { count: count(p.views) })}
             </span>
           </div>
         </div>
@@ -206,7 +206,7 @@ const ProjectSidePanel = (p: Props) => {
         {collaborators.length > 0 ? (
           <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1">
-              <Users className="h-3.5 w-3.5" aria-hidden /> ทำร่วมกับ
+              <Users className="h-3.5 w-3.5" aria-hidden /> {t("collabWith")}
             </span>
             {collaborators.map((c) => (
               <Link
@@ -230,7 +230,7 @@ const ProjectSidePanel = (p: Props) => {
         ) : null}
 
         {p.description ? (
-          <p className="text-base text-muted-foreground leading-7 whitespace-pre-wrap max-w-[62ch]">
+          <p className="text-[15px] text-foreground/80 leading-relaxed whitespace-pre-wrap max-w-[62ch]">
             {p.description}
           </p>
         ) : null}
@@ -240,7 +240,7 @@ const ProjectSidePanel = (p: Props) => {
         {isCommerceEnabled() &&
         ((typeof p.priceThb === "number" && p.priceThb > 0) || p.price) ? (
           <p className="text-sm flex flex-wrap items-center gap-1">
-            <span className="text-muted-foreground">ราคาเริ่มต้นงานนี้ : </span>
+            <span className="text-muted-foreground">{t("startingPrice")}</span>
             {typeof p.priceThb === "number" && p.priceThb > 0 ? (
               <PriceCurrencyAmount amountThb={p.priceThb} />
             ) : (
@@ -254,9 +254,9 @@ const ProjectSidePanel = (p: Props) => {
         <dl className="grid grid-cols-[1.25rem_minmax(0,1fr)] gap-x-3 gap-y-3 text-sm">
             {p.tools.length > 0 ? (
               <>
-                <dt className="pt-1.5 text-muted-foreground" title="เครื่องมือ">
+                <dt className="flex h-7 items-center text-muted-foreground" title={t("tools")}>
                   <Wrench className="h-4 w-4" aria-hidden />
-                  <span className="sr-only">เครื่องมือ</span>
+                  <span className="sr-only">{t("tools")}</span>
                 </dt>
                 <dd className="m-0 min-w-0">
                   <ToolsGrid tools={p.tools} compact />
@@ -265,32 +265,32 @@ const ProjectSidePanel = (p: Props) => {
             ) : null}
             {visibleTags.length > 0 ? (
               <>
-                <dt className="pt-1 text-muted-foreground" title="แท็ก">
+                <dt className="flex h-7 items-center text-muted-foreground" title={t("tags")}>
                   <Hash className="h-4 w-4" aria-hidden />
-                  <span className="sr-only">แท็ก</span>
+                  <span className="sr-only">{t("tags")}</span>
                 </dt>
                 <dd className="m-0 flex flex-wrap gap-1.5">
-                  {visibleTags.map((t) => (
+                  {visibleTags.map((tag) => (
                     <button
-                      key={t}
+                      key={tag}
                       type="button"
-                      onClick={() => navigate(exploreProjectsUrl("tag", t))}
+                      onClick={() => navigate(exploreProjectsUrl("tag", tag))}
                       className="inline-flex"
                     >
                       <Badge
                         variant="secondary"
-                        className="rounded-full font-normal hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer"
+                        className="h-7 rounded-full px-2.5 text-xs font-normal hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer"
                       >
-                        #{t}
+                        #{tag}
                       </Badge>
                     </button>
                   ))}
                 </dd>
               </>
             ) : null}
-            <dt className="pt-1.5 text-muted-foreground" title="สิทธิ์การใช้งาน">
+            <dt className="flex h-7 items-center text-muted-foreground" title={t("license")}>
               <Copyright className="h-4 w-4" aria-hidden />
-              <span className="sr-only">สิทธิ์การใช้งาน</span>
+              <span className="sr-only">{t("license")}</span>
             </dt>
             <dd className="m-0 min-w-0">
               <LicenseDetailBlock

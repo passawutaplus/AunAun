@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { fetchFeedCardRows } from "@/lib/fetchProjectRow";
 import AiDisclosureBadge from "@/components/license/AiDisclosureBadge";
 import { useProjectOverlayState } from "@/lib/projectOverlay";
+import { useProjectT } from "@/lib/i18n/project";
 
 type OwnerWorkThumb = {
   id: string;
@@ -35,6 +36,7 @@ export function OwnerOtherWorks({
   className,
 }: Props) {
   const overlayState = useProjectOverlayState();
+  const { t } = useProjectT();
   const { data: works = [] } = useQuery({
     queryKey: ["owner-other-works", ownerId, excludeProjectId],
     enabled: !!ownerId,
@@ -59,11 +61,11 @@ export function OwnerOtherWorks({
 
   if (!ownerId || works.length === 0) return null;
 
-  const label = ownerName?.trim() ? `ผลงานอื่นของ ${ownerName.trim()}` : "ผลงานอื่น ๆ";
+  const label = ownerName?.trim() ? t("moreFrom", { name: ownerName.trim() }) : t("moreWorks");
 
   return (
-    <section className={cn("space-y-3 pt-2", className)}>
-      <h2 className="text-base font-semibold text-foreground">{label}</h2>
+    <section className={cn("space-y-3", className)}>
+      <h2 className="text-lg font-semibold text-foreground">{label}</h2>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
         {works.map((p) => {
           const thumb = p.cover_url || p.gallery_urls?.[0];
@@ -94,7 +96,7 @@ export function OwnerOtherWorks({
                 </p>
                 <span
                   className="inline-flex shrink-0 items-center gap-0.5 text-[10px] text-muted-foreground tabular-nums"
-                  aria-label={`${views.toLocaleString("th-TH")} วิว`}
+                  aria-label={t("views", { count: views.toLocaleString("th-TH") })}
                 >
                   <Eye className="h-2.5 w-2.5" aria-hidden />
                   {views.toLocaleString("th-TH")}

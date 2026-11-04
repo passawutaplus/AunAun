@@ -11,6 +11,7 @@ import {
 import { useLocation, useNavigate } from "react-router-dom";
 import { getBackgroundLocation, takeOverlayOrigin } from "@/lib/projectOverlay";
 import { cn } from "@/lib/utils";
+import { useProjectT } from "@/lib/i18n/project";
 
 const ProjectDetailPage = lazy(() => import("@/pages/ProjectDetailPage"));
 
@@ -44,6 +45,7 @@ const reducedMotion = () =>
 export default function ProjectOverlay() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useProjectT();
   const [origin] = useState(() => (reducedMotion() ? null : takeOverlayOrigin()));
   const [phase, setPhase] = useState<"enter" | "open" | "leave">("enter");
   const closing = useRef(false);
@@ -166,7 +168,7 @@ export default function ProjectOverlay() {
   if (animating) zoom.willChange = "transform, opacity";
 
   return (
-    <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label="ผลงาน">
+    <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label={t("overlayAria")}>
       <div
         aria-hidden
         className={cn(

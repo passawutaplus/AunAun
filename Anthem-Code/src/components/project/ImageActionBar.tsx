@@ -13,6 +13,7 @@ import SharePopover from "@/components/share/SharePopover";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { userFacingError } from "@/lib/userFacingError";
+import { useProjectT } from "@/lib/i18n/project";
 
 interface Props {
   projectId: string;
@@ -36,6 +37,7 @@ const ImageActionBar = ({
   className,
 }: Props) => {
   const navigate = useNavigate();
+  const { t } = useProjectT();
   const { user } = useAuth();
   const openAuth = useAuthDialog((s) => s.openLogin);
   const { data: liked = false } = useIsImageLiked(projectId, imageUrl);
@@ -60,7 +62,7 @@ const ImageActionBar = ({
     toggleLike.mutate(
       { projectId, imageUrl, liked },
       {
-        onSuccess: () => toast.success(liked ? "ยกเลิกแล้ว" : "ถูกใจแล้ว"),
+        onSuccess: () => toast.success(liked ? t("unliked") : t("liked")),
         onError: (e: Error) => toast.error(userFacingError(e)),
       },
     );
@@ -90,7 +92,7 @@ const ImageActionBar = ({
         count={likes}
         showCount={likes > 0}
         onClick={handleLike}
-        ariaLabel={liked ? "ยกเลิกถูกใจ" : "ถูกใจ"}
+        ariaLabel={liked ? t("unlike") : t("like")}
         className={cn(btn, "text-white hover:text-white hover:bg-black/45 [&_span]:text-white/90", liked && "[&_svg]:fill-brand [&_svg]:text-brand")}
       />
 
@@ -104,9 +106,9 @@ const ImageActionBar = ({
         projectId={projectId}
         imageUrl={imageUrl}
       >
-        <button type="button" className={btn} title="เก็บแรงบันดาลใจ">
+        <button type="button" className={btn} title={t("inspireTitle")}>
           <Sparkles className="w-3.5 h-3.5" />
-          <span className={labelClass}>Inspire</span>
+          <span className={labelClass}>{t("inspire")}</span>
         </button>
       </InspirePopover>
       ) : null}
@@ -119,10 +121,10 @@ const ImageActionBar = ({
         type="button"
         onClick={() => navigate(`/similar/${projectId}?img=${imageIndex}`)}
         className={btn}
-        title="ดูภาพคล้าย"
+        title={t("similar")}
       >
         <ImageIcon className="w-3.5 h-3.5" />
-        <span className={labelClass}>ภาพคล้าย</span>
+        <span className={labelClass}>{t("similarShort")}</span>
       </button>
 
       <SharePopover
@@ -133,7 +135,7 @@ const ImageActionBar = ({
         imageUrl={imageUrl}
         projectId={projectId}
       >
-        <button type="button" className={btn} title="แชร์" aria-label="แชร์">
+        <button type="button" className={btn} title={t("share")} aria-label={t("share")}>
           <Share2 className="w-3.5 h-3.5" />
         </button>
       </SharePopover>

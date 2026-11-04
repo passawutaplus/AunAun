@@ -12,6 +12,7 @@ import { useDeleteProject } from "@/hooks/useProjects";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useProjectT } from "@/lib/i18n/project";
 
 type Props = {
   projectId: string;
@@ -24,18 +25,19 @@ type Props = {
 
 export function ProjectOwnerMenu({ projectId, projectTitle, className, triggerClassName, variant = "menu" }: Props) {
   const navigate = useNavigate();
+  const { t } = useProjectT();
   const deleteProject = useDeleteProject();
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const label = projectTitle.trim() || "ผลงานนี้";
+  const label = projectTitle.trim() || t("thisWork");
 
   const handleConfirmDelete = async () => {
     try {
       await deleteProject.mutateAsync(projectId);
-      toast.success("ลบผลงานแล้ว");
+      toast.success(t("deleted"));
       setDeleteOpen(false);
       navigate("/portfolio", { replace: true });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "ลบไม่สำเร็จ");
+      toast.error(err instanceof Error ? err.message : t("deleteFailed"));
     }
   };
 
@@ -43,8 +45,8 @@ export function ProjectOwnerMenu({ projectId, projectTitle, className, triggerCl
     <DeleteConfirmDialog
       open={deleteOpen}
       onOpenChange={setDeleteOpen}
-      title="ลบผลงานนี้?"
-      description={<>「{label}」จะถูกลบถาวรและไม่สามารถกู้คืนได้ ต้องการลบจริงหรือไม่?</>}
+      title={t("deleteTitle")}
+      description={t("deleteDesc", { title: label })}
       onConfirm={handleConfirmDelete}
       loading={deleteProject.isPending}
     />
@@ -55,7 +57,7 @@ export function ProjectOwnerMenu({ projectId, projectTitle, className, triggerCl
       <div className={cn("flex shrink-0 items-center gap-1.5", className)}>
         <Button asChild size="sm" variant="outline" className="h-8 rounded-full">
           <Link to={`/portfolio/${projectId}/edit`}>
-            <Pencil className="mr-1.5 h-3.5 w-3.5" aria-hidden /> แก้ไขผลงาน
+            <Pencil className="mr-1.5 h-3.5 w-3.5" aria-hidden /> {t("editWork")}
           </Link>
         </Button>
         <Button
@@ -65,8 +67,8 @@ export function ProjectOwnerMenu({ projectId, projectTitle, className, triggerCl
           className="h-8 w-8 rounded-full text-destructive hover:bg-destructive/10 hover:text-destructive"
           onClick={() => setDeleteOpen(true)}
           disabled={deleteProject.isPending}
-          aria-label="ลบผลงาน"
-          title="ลบผลงาน"
+          aria-label={t("deleteWork")}
+          title={t("deleteWork")}
         >
           <Trash2 className="h-3.5 w-3.5" aria-hidden />
         </Button>
@@ -81,7 +83,7 @@ export function ProjectOwnerMenu({ projectId, projectTitle, className, triggerCl
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            aria-label="ตัวเลือกผลงาน"
+            aria-label={t("optionsAria")}
             className={
               triggerClassName ??
               cn(
@@ -96,7 +98,7 @@ export function ProjectOwnerMenu({ projectId, projectTitle, className, triggerCl
         <DropdownMenuContent align="end" className="rounded-xl w-48">
           <DropdownMenuItem asChild className="gap-2 cursor-pointer">
             <Link to={`/portfolio/${projectId}/edit`}>
-              <Pencil className="w-4 h-4" /> แก้ไขผลงาน
+              <Pencil className="w-4 h-4" /> {t("editWork")}
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem
@@ -104,7 +106,7 @@ export function ProjectOwnerMenu({ projectId, projectTitle, className, triggerCl
             onClick={() => setDeleteOpen(true)}
             disabled={deleteProject.isPending}
           >
-            <Trash2 className="w-4 h-4" /> ลบผลงาน
+            <Trash2 className="w-4 h-4" /> {t("deleteWork")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -112,12 +114,8 @@ export function ProjectOwnerMenu({ projectId, projectTitle, className, triggerCl
       <DeleteConfirmDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        title="ลบผลงานนี้?"
-        description={
-          <>
-            「{label}」จะถูกลบถาวรและไม่สามารถกู้คืนได้ ต้องการลบจริงหรือไม่?
-          </>
-        }
+        title={t("deleteTitle")}
+        description={t("deleteDesc", { title: label })}
         onConfirm={handleConfirmDelete}
         loading={deleteProject.isPending}
       />

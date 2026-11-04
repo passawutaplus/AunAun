@@ -8,6 +8,7 @@ import SaveToCollectionPopover from "@/components/collections/SaveToCollectionPo
 import { useAuth } from "@/hooks/useAuth";
 import { useSavedProjectIds } from "@/hooks/useCollections";
 import { cn } from "@/lib/utils";
+import { useProjectT } from "@/lib/i18n/project";
 
 type Props = {
   projectId?: string;
@@ -111,6 +112,7 @@ const ProjectActionRail = ({
   className,
 }: Props) => {
   const { user } = useAuth();
+  const { t } = useProjectT();
   const { data: savedProjectIds = [] } = useSavedProjectIds(user?.id);
   const saved = !!projectId && savedProjectIds.includes(projectId);
   const rail = variant === "rail";
@@ -127,7 +129,7 @@ const ProjectActionRail = ({
       {ownerId ? (
         <Link
           to={`/u/${ownerId}`}
-          aria-label={`ดูโปรไฟล์ ${ownerName}`}
+          aria-label={t("viewProfile", { name: ownerName })}
           title={ownerName}
           className="block rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
@@ -173,7 +175,7 @@ const ProjectActionRail = ({
     >
       {isOwner && projectId ? (
         // Own work: edit instead of saving it to a collection.
-        <Link to={`/portfolio/${projectId}/edit`} className={iconBtn} aria-label="แก้ไขผลงาน" title="แก้ไขผลงาน">
+        <Link to={`/portfolio/${projectId}/edit`} className={iconBtn} aria-label={t("editWork")} title={t("editWork")}>
           <Pencil className="h-5 w-5" strokeWidth={1.8} />
         </Link>
       ) : (
@@ -182,8 +184,8 @@ const ProjectActionRail = ({
             type="button"
             className={iconBtn}
             aria-pressed={saved}
-            aria-label={saved ? "เก็บเข้าคอลเลกชันแล้ว" : "เก็บเข้าคอลเลกชัน"}
-            title="Collection"
+            aria-label={saved ? t("savedToCollection") : t("saveToCollection")}
+            title={t("collectionTitle")}
           >
             <Bookmark
               className={cn("h-5 w-5", saved && "fill-brand text-brand")}
@@ -195,14 +197,14 @@ const ProjectActionRail = ({
       <SharePopover
         url={shareUrl}
         title={title}
-        label="แชร์"
+        label={t("share")}
         imageUrl={shareImageUrl}
       >
         <button
           type="button"
           className={iconBtn}
-          aria-label="แชร์ผลงาน"
-          title="Share"
+          aria-label={t("shareWork")}
+          title={t("share")}
         >
           <Share2 className="h-5 w-5" strokeWidth={1.8} />
         </button>
@@ -212,8 +214,8 @@ const ProjectActionRail = ({
           type="button"
           className={iconBtn}
           onClick={onChat}
-          aria-label="ส่งข้อความ"
-          title="Message"
+          aria-label={t("sendMessage")}
+          title={t("sendMessage")}
         >
           <MessageCircle className="h-5 w-5" strokeWidth={1.8} />
         </button>
@@ -224,7 +226,7 @@ const ProjectActionRail = ({
   if (rail) {
     return (
       <nav
-        aria-label="การกระทำกับผลงาน"
+        aria-label={t("actionsAria")}
         className={cn("relative flex flex-col items-center", className)}
         style={{ gap: RAIL_GAP }}
       >
@@ -239,7 +241,7 @@ const ProjectActionRail = ({
 
   return (
     <nav
-      aria-label="การกระทำกับผลงาน"
+      aria-label={t("actionsAria")}
       className={cn("flex items-center gap-3", className)}
     >
       {avatar}

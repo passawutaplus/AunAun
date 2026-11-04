@@ -416,6 +416,11 @@ const zh: Record<ProjectKey, string> = {
 
 const DICT: Record<AppLocale, Record<ProjectKey, string>> = { th, en, zh };
 
+/** True when `key` is a work-page copy key (for keys built from data, e.g. license ids). */
+export function isProjectKey(key: string): key is ProjectKey {
+  return Object.prototype.hasOwnProperty.call(th, key);
+}
+
 export type ProjectT = (key: ProjectKey, vars?: Record<string, string | number>) => string;
 
 export function translateProject(

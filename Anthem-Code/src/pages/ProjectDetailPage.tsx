@@ -72,6 +72,7 @@ import {
   SimilarWorksRow,
 } from "@/components/project/ProjectMoreSections";
 import { isVideoUrl } from "@/lib/videoAccept";
+import { useProjectT } from "@/lib/i18n/project";
 
 const ProjectDetailPage = ({ overlay = false }: { overlay?: boolean } = {}) => {
   const { id } = useParams();
@@ -79,6 +80,7 @@ const ProjectDetailPage = ({ overlay = false }: { overlay?: boolean } = {}) => {
   const sponsorAdId = searchParams.get("sponsor");
   const fromPackageId = searchParams.get("fromPackage");
   const navigate = useNavigate();
+  const { t } = useProjectT();
 
   useEffect(() => {
     // As an overlay the page underneath must keep its scroll; ProjectOverlay resets its own scroller.
@@ -240,7 +242,7 @@ const ProjectDetailPage = ({ overlay = false }: { overlay?: boolean } = {}) => {
               : [],
         category: dbProject.category,
         ownerId: dbProject.owner_id,
-        owner: ownerProfile?.display_name || "ฟรีแลนซ์",
+        owner: ownerProfile?.display_name || t("ownerFallback"),
         ownerAvatar: ownerProfile?.avatar_url ?? "",
         ownerVerified: !!(ownerProfile as { is_verified?: boolean } | null)
           ?.is_verified,
@@ -349,14 +351,14 @@ const ProjectDetailPage = ({ overlay = false }: { overlay?: boolean } = {}) => {
       return;
     }
     toggleLike(undefined, {
-      onError: (e) => toast.error(mapWriteFlowError(e, "ถูกใจไม่สำเร็จ")),
+      onError: (e) => toast.error(mapWriteFlowError(e, t("likeFailed"))),
     });
   };
 
   if (isLoading || (isFetching && !dbProject)) {
     return (
       <PageLoader
-        label="กำลังโหลดผลงาน… รอสักครู่"
+        label={t("loading")}
         className="bg-app-ambient"
       />
     );
@@ -366,13 +368,13 @@ const ProjectDetailPage = ({ overlay = false }: { overlay?: boolean } = {}) => {
       <div className="min-h-screen bg-app-ambient flex items-center justify-center px-4">
         <div className="text-center space-y-4 max-w-md">
           <p className="text-muted-foreground">
-            โหลดผลงานไม่สำเร็จ — อาจเป็นชั่วคราวหรือคุณไม่มีสิทธิ์ดูผลงานนี้
+            {t("loadError")}
           </p>
           <div className="flex flex-wrap justify-center gap-2">
             <Button variant="outline" onClick={() => void refetch()}>
-              ลองใหม่
+              {t("retry")}
             </Button>
-            <Button onClick={() => navigate("/")}>กลับหน้าหลัก</Button>
+            <Button onClick={() => navigate("/")}>{t("backHome")}</Button>
           </div>
         </div>
       </div>
@@ -383,9 +385,9 @@ const ProjectDetailPage = ({ overlay = false }: { overlay?: boolean } = {}) => {
       <div className="min-h-screen bg-app-ambient flex items-center justify-center">
         <div className="text-center">
           <p className="text-muted-foreground mb-4">
-            ไม่พบผลงานนี้ หรือยังไม่ได้เผยแพร่
+            {t("notFound")}
           </p>
-          <Button onClick={() => navigate("/")}>กลับหน้าหลัก</Button>
+          <Button onClick={() => navigate("/")}>{t("backHome")}</Button>
         </div>
       </div>
     );
@@ -409,8 +411,8 @@ const ProjectDetailPage = ({ overlay = false }: { overlay?: boolean } = {}) => {
 
   const projectPath = `/showcase/${project.id}`;
   const crumbs = [
-    { name: "หน้าแรก", path: "/" },
-    { name: "ผลงาน", path: "/" },
+    { name: t("crumbHome"), path: "/" },
+    { name: t("crumbWorks"), path: "/" },
     { name: project.title, path: projectPath },
   ];
   const authorUrl = project.ownerId
@@ -506,7 +508,7 @@ const ProjectDetailPage = ({ overlay = false }: { overlay?: boolean } = {}) => {
               ownerProfile?.display_name ||
               (ownerProfile as { username?: string | null } | null | undefined)
                 ?.username ||
-              "เจ้าของผลงาน"
+              t("ownerOfWork")
             }
             isCollaborator={(
               (dbProject as { collab_user_ids?: string[] | null })
@@ -520,7 +522,7 @@ const ProjectDetailPage = ({ overlay = false }: { overlay?: boolean } = {}) => {
               <Megaphone className="w-5 h-5 text-primary shrink-0 mt-0.5" />
               <div>
                 <p className="text-xs font-medium uppercase tracking-wide text-primary">
-                  Sponsored
+                  {t("sponsored")}
                 </p>
                 <p className="font-medium text-sm">{sponsorAd.title}</p>
                 {sponsorAd.tagline ? (
@@ -539,7 +541,7 @@ const ProjectDetailPage = ({ overlay = false }: { overlay?: boolean } = {}) => {
                   openSafeExternalUrl(sponsorAd.target_url);
                 }}
               >
-                {sponsorAd.cta_label || "เรียนรู้เพิ่มเติม"}
+                {sponsorAd.cta_label || t("learnMore")}
                 <ExternalLink className="w-3.5 h-3.5 ml-1" />
               </Button>
             ) : null}
@@ -597,7 +599,7 @@ const ProjectDetailPage = ({ overlay = false }: { overlay?: boolean } = {}) => {
                 />
               ) : (
                 <div className="aspect-video rounded-2xl bg-muted flex items-center justify-center text-muted-foreground">
-                  ยังไม่มีเนื้อหา
+                  {t("noContent")}
                 </div>
               )}
             </div>
@@ -621,7 +623,7 @@ const ProjectDetailPage = ({ overlay = false }: { overlay?: boolean } = {}) => {
 
           <div
             className={cn(
-              "min-w-0 w-full space-y-6 pt-2 lg:col-start-1 lg:row-start-2",
+              "min-w-0 w-full space-y-10 pt-4 lg:col-start-1 lg:row-start-2",
               overlay && "lg:col-start-2",
               overlay &&
                 "rounded-b-2xl bg-background px-3 pb-8 pt-6 sm:px-5 lg:px-10 lg:pb-12",
