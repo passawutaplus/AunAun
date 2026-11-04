@@ -879,62 +879,6 @@ export default function AdminCreatorInvitationDetailPage() {
               )}
             </div>
             <div className="min-w-0 space-y-5">
-              {editable && draft && editing ? (
-                <AdminDraftEditor
-                  invitationId={inv.id}
-                  draft={draft}
-                  setDraft={setDraft}
-                  media={mediaMap}
-                  addMedia={(m) =>
-                    setAddedMedia((prev) => new Map(prev).set(m.id, m))
-                  }
-                  saving={action.isPending}
-                  onSave={() =>
-                    void run(
-                      { action: "save_draft", draft },
-                      "บันทึก Draft แล้ว",
-                    ).then(() => setEditing(false))
-                  }
-                  onReset={() => {
-                    setDraft(staffDraft);
-                    setEditing(false);
-                  }}
-                />
-              ) : editable ? (
-                <section className="rounded-sm border border-admin-border p-4">
-                  <h2 className="text-sm font-semibold text-admin-fg">
-                    โปรไฟล์ร่าง
-                  </h2>
-                  <p className="mt-1 text-xs text-admin-muted">
-                    {status === "needs_changes"
-                      ? "แก้ตามที่ศิลปินขอด้านบน กดบันทึก แล้วส่ง Review รอบใหม่"
-                      : "ดูพรีวิวด้านซ้าย ถ้าไม่มีอะไรต้องแก้ ส่ง Review ให้ศิลปินได้เลย · ศิลปินกด Approve แล้วระบบสร้างโปรไฟล์และลงผลงานให้อัตโนมัติ"}
-                  </p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={action.isPending}
-                      onClick={() => void beginEdit()}
-                    >
-                      <Pencil className="mr-1.5 h-3.5 w-3.5" aria-hidden />
-                      แก้ไข
-                    </Button>
-                    <Button
-                      size="sm"
-                      disabled={action.isPending}
-                      onClick={() => void sendReview()}
-                    >
-                      <Send className="mr-1.5 h-3.5 w-3.5" aria-hidden />
-                      {status === "preparing" && inv.review_sent_at
-                        ? "ส่งลิงก์ Review ซ้ำ"
-                        : reviewRound > 1
-                          ? `ส่ง Review รอบ ${reviewRound}`
-                          : "ส่ง Review ให้ศิลปิน"}
-                    </Button>
-                  </div>
-                </section>
-              ) : null}
               {versions.length > 1 ? (
                 <section className="rounded-sm border border-admin-border p-4">
                   <h2 className="text-sm font-semibold text-admin-fg">
@@ -1012,6 +956,62 @@ export default function AdminCreatorInvitationDetailPage() {
                       </li>
                     ))}
                   </ul>
+                </section>
+              ) : null}
+              {editable && draft && editing ? (
+                <AdminDraftEditor
+                  invitationId={inv.id}
+                  draft={draft}
+                  setDraft={setDraft}
+                  media={mediaMap}
+                  addMedia={(m) =>
+                    setAddedMedia((prev) => new Map(prev).set(m.id, m))
+                  }
+                  saving={action.isPending}
+                  onSave={() =>
+                    void run(
+                      { action: "save_draft", draft },
+                      "บันทึก Draft แล้ว",
+                    ).then(() => setEditing(false))
+                  }
+                  onReset={() => {
+                    setDraft(staffDraft);
+                    setEditing(false);
+                  }}
+                />
+              ) : editable ? (
+                <section className="rounded-sm border border-admin-border p-4">
+                  <h2 className="text-sm font-semibold text-admin-fg">
+                    โปรไฟล์ร่าง
+                  </h2>
+                  <p className="mt-1 text-xs text-admin-muted">
+                    {status === "needs_changes"
+                      ? "แก้ตามที่ศิลปินขอด้านบน กดบันทึก แล้วส่ง Review รอบใหม่"
+                      : "ดูพรีวิวด้านซ้าย ถ้าไม่มีอะไรต้องแก้ ส่ง Review ให้ศิลปินได้เลย · ศิลปินกด Approve แล้วระบบสร้างโปรไฟล์และลงผลงานให้อัตโนมัติ"}
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={action.isPending}
+                      onClick={() => void beginEdit()}
+                    >
+                      <Pencil className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                      แก้ไข
+                    </Button>
+                    <Button
+                      size="sm"
+                      disabled={action.isPending}
+                      onClick={() => void sendReview()}
+                    >
+                      <Send className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                      {status === "preparing" && inv.review_sent_at
+                        ? "ส่งลิงก์ Review ซ้ำ"
+                        : reviewRound > 1
+                          ? `ส่ง Review รอบ ${reviewRound}`
+                          : "ส่ง Review ให้ศิลปิน"}
+                    </Button>
+                  </div>
                 </section>
               ) : null}
               {staffDraft ? (
