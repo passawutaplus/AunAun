@@ -141,10 +141,9 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
           <h2 id="venues-heading" className="font-display text-2xl font-semibold text-foreground">
             สถานที่จัดงาน
             <span className="ml-2 text-base font-normal text-muted-foreground">
-              {counts.main} สถานที่{counts.special ? ` · โปรเจกต์พิเศษ ${counts.special}` : ""}
+              {counts.main} สถานที่
             </span>
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">จัดกลุ่มตามย่าน เดินต่อกันได้ · หมุดเป็นตำแหน่งโดยประมาณ</p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {allButton("hidden sm:inline-flex")}
