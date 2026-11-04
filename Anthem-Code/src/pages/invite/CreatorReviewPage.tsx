@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { enUS, th as thLocale, zhCN } from "date-fns/locale";
 import { toast } from "sonner";
-import { Check, Loader2 } from "lucide-react";
+import { Check, Loader2, ScanEye } from "lucide-react";
 import SeoHead from "@/components/SeoHead";
 import InviteProfilePreview from "@/components/invite/InviteProfilePreview";
 import InviteProjectPreview from "@/components/invite/InviteProjectPreview";
@@ -91,7 +91,6 @@ export default function CreatorReviewPage() {
     );
   }
 
-  const images = profile.projects.reduce((a, p) => a + p.media.filter((m) => media.get(m)?.url).length, 0);
   const expires = q.data.invite.review_expires_at
     ? format(new Date(q.data.invite.review_expires_at), "d MMM yyyy", { locale: l === "en" ? enUS : l === "zh" ? zhCN : thLocale })
     : null;
@@ -104,24 +103,16 @@ export default function CreatorReviewPage() {
           {t.reviewBadge}
           {expires ? ` · ${t.expiresIn(expires)}` : ""}
         </span>
-        <h1 className="mt-4 font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">{t.reviewTitle}</h1>
+        <h1 className="mt-4 flex items-center gap-3 font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+          <ScanEye className="h-8 w-8 shrink-0 text-brand sm:h-9 sm:w-9" aria-hidden />
+          {t.reviewTitle}
+        </h1>
         <p className="mt-3 text-sm text-muted-foreground">{t.reviewBody}</p>
 
         <InviteProfilePreview className="mt-6" data={profile} media={media} t={t} badge={t.reviewDraftBadge} collapsible={false} />
         {profile.projects.map((p, i) => (
           <InviteProjectPreview key={p.slot} className="mt-6" project={p} index={i} name={profile.about.name} media={media} t={t} badge={t.reviewDraftBadge} />
         ))}
-
-        <div className="mt-6 rounded-xl border border-border bg-card p-5">
-          <h2 className="text-sm font-semibold">{t.willPublish}</h2>
-          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-foreground/85">
-            {t.willPublishItems(profile.about.name, profile.about.links, profile.projects.length, images).map((x) => (
-              <li key={x} className="break-words">
-                {x}
-              </li>
-            ))}
-          </ul>
-        </div>
 
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
           <Button className="w-full sm:w-auto" disabled={!!busy} onClick={() => void decide("approve")}>
