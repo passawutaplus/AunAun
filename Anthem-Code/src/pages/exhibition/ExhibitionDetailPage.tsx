@@ -8,6 +8,7 @@ import {
   Handshake,
   MessageCircle,
   MapPin,
+  Paperclip,
   Ticket,
   TrainFront,
 } from "lucide-react";
@@ -279,6 +280,13 @@ export default function ExhibitionDetailPage() {
                 </a>
               </InfoRow>
             ) : null}
+            {/* Documents / links from the organiser's page, right under the facts (no heading — the icon says it). */}
+            {insights?.links.length ? (
+              <InfoRow icon={Paperclip}>
+                <span className="sr-only">เอกสารและลิงก์</span>
+                <EventLinkButtons links={insights.links} className="-mt-1" />
+              </InfoRow>
+            ) : null}
           </div>
 
           <RegistrationCta
@@ -308,14 +316,6 @@ export default function ExhibitionDetailPage() {
 
         {/* Thin rules between the side sections; on phones the first one also separates them from About. */}
         <aside className="divide-y divide-border border-t border-border lg:border-t-0 [&>*]:py-6 lg:[&>*:first-child]:pt-0">
-          {insights?.links.length ? (
-            <section aria-labelledby="documents-heading">
-              <h2 id="documents-heading" className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                เอกสาร &amp; ลิงก์
-              </h2>
-              <EventLinkButtons links={insights.links} className="mt-3" />
-            </section>
-          ) : null}
           <section aria-labelledby="organizer-heading">
             <h2 id="organizer-heading" className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
               Organizer

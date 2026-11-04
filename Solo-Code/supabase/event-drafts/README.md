@@ -18,7 +18,7 @@ SELECT public.scout_event_draft($j$
   "time_note": "",
   "location_name": "เจริญกรุง–ตลาดน้อย และย่านอื่นทั่วกรุงเทพฯ",
   "location_note": "",
-  "description": "เขียนใหม่สั้น ๆ 2–4 ประโยค ไม่คัดลอกจากต้นทาง",
+  "description": "เขียนใหม่ 3–4 ย่อหน้าสั้น (~600–1,200 ตัวอักษร) อ่านง่าย ไม่คัดลอกจากต้นทาง",
   "organizer_name": "Creative Economy Agency (CEA)",
   "website_url": "https://www.bangkokdesignweek.com/en/bkkdw2027",
   "registration_url": "",
@@ -40,6 +40,10 @@ SELECT public.scout_event_draft($j$
 }
 $j$::jsonb);
 ```
+
+`description` is what "About This Event" shows: a readable retelling of the organiser's page — what
+it is, who it's for / who can apply, what you get, key dates — in 3–4 short paragraphs separated by a
+blank line (the first paragraph is also the link-preview text). Repeating the summary is fine.
 
 Rules the function enforces (same as the team editor): `title` ≤ 100, `description` ≤ 2000,
 `location_name` / `location_note` / `source_name` ≤ 120, `organizer_name` ≤ 100,
