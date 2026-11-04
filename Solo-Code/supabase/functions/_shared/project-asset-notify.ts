@@ -70,7 +70,9 @@ export async function notifyProjectAssetScan(
   const body = isClean
     ? `"${asset.label}" พร้อมให้คนอื่นดูแล้ว`
     : `"${asset.label}": ${asset.scan_reason ?? "ไม่ปลอดภัย"}`;
-  const link = isClean ? `${site}/showcase/${projectId}` : `${site}/portfolio/${projectId}/edit`;
+  const link = isClean
+    ? `${site}/showcase/${projectId}`
+    : `${site}/portfolio/${projectId}/edit`;
 
   const idempotencyKey = `asset-scan:${projectId}:${asset.id}:${asset.scan_status}`;
 

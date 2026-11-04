@@ -51,8 +51,7 @@ async function pollAnalysis(analysisId: string, maxAttempts = 12): Promise<VtSca
       const stats = json?.data?.attributes?.stats ?? {};
       const malicious = Number(stats.malicious ?? 0);
       const suspicious = Number(stats.suspicious ?? 0);
-      const total =
-        Number(stats.harmless ?? 0) + malicious + suspicious + Number(stats.undetected ?? 0);
+      const total = Number(stats.harmless ?? 0) + malicious + suspicious + Number(stats.undetected ?? 0);
       if (malicious > 0 || suspicious > 2) {
         return {
           clean: false,
