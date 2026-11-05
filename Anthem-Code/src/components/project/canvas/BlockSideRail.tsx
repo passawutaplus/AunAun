@@ -1,4 +1,5 @@
 import { ArrowDown, ArrowUp, Copy, GripVertical, Trash2 } from "lucide-react";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { PhoneMoreMenu } from "@/components/project/canvas/PhoneMoreMenu";
 
@@ -40,11 +41,14 @@ export function BlockSideRail({
     "lg:h-8 lg:w-8 lg:rounded-md lg:border-0 lg:bg-transparent lg:text-muted-foreground lg:shadow-none lg:backdrop-blur-none lg:hover:bg-foreground/10 lg:hover:text-foreground lg:disabled:opacity-30",
   );
   const icon = "h-4 w-4 lg:h-3.5 lg:w-3.5";
+  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <div
       className={cn(
-        "absolute right-2 z-30 flex flex-col gap-1.5 transition-opacity duration-150",
+        "absolute right-2 flex flex-col gap-1.5 transition-opacity duration-150",
+        // An open "⋯" menu can hang over the next module, so lift it above that module's chips.
+        menuOpen ? "z-[60]" : "z-30",
         phoneBelowTools ? "top-[3.375rem]" : "top-2",
         phoneHidden && "max-lg:hidden",
         "lg:left-full lg:right-auto lg:top-1/2 lg:z-20 lg:-translate-y-1/2 lg:gap-0.5 lg:pl-2",
@@ -87,6 +91,7 @@ export function BlockSideRail({
         <Trash2 className={icon} />
       </button>
       <PhoneMoreMenu
+        onOpenChange={setMenuOpen}
         items={
           disabled
             ? []

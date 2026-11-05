@@ -53,6 +53,7 @@ export function ModuleImageWithCrop({
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dropOver, setDropOver] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const phoneItems: PhoneMoreItem[] = disabled
     ? []
     : [
@@ -106,7 +107,7 @@ export function ModuleImageWithCrop({
     >
       <img loading="lazy" decoding="async" src={src} alt={alt} className={cn("w-full object-contain pointer-events-none", imgClassName)} draggable={false} />
       {showToolbar ? (
-        <div className="absolute right-2 top-2 z-10 flex flex-col gap-1.5 opacity-100 lg:flex-row lg:gap-1 lg:opacity-0 lg:group-hover/crop:opacity-100">
+        <div className={cn(menuOpen ? "z-[60]" : "z-10", "absolute right-2 top-2 flex flex-col gap-1.5 opacity-100 lg:flex-row lg:gap-1 lg:opacity-0 lg:group-hover/crop:opacity-100")}>
           {onReplace ? (
             <button
               type="button"
@@ -137,7 +138,7 @@ export function ModuleImageWithCrop({
               <Crop className="h-4 w-4 lg:h-3.5 lg:w-3.5" />
             </button>
           ) : null}
-          <PhoneMoreMenu items={phoneItems} />
+          <PhoneMoreMenu items={phoneItems} onOpenChange={setMenuOpen} />
         </div>
       ) : null}
       {onReplace && !disabled ? (

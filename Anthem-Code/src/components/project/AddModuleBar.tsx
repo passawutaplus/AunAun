@@ -91,7 +91,7 @@ export function AddModuleBar({ disabled, onPickImages, onPlace, onOpenTemplates,
                 onPlace(opt.payload);
                 setOpenKey(null);
               }}
-              className="group flex min-w-0 flex-col gap-1 rounded-xl border border-transparent p-1 text-left transition-colors hover:border-border hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="group flex min-w-0 flex-col gap-1 rounded-md border border-transparent p-1 text-left transition-colors hover:border-border hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <ModuleThumb payload={opt.payload} className="border border-border/60" />
               <span className="truncate px-0.5 text-[11px] font-medium text-foreground">{opt.label}</span>
@@ -111,7 +111,7 @@ export function AddModuleBar({ disabled, onPickImages, onPlace, onOpenTemplates,
         role="toolbar"
         data-tour="addbar"
         aria-label="เพิ่มโมดูล"
-        className="flex max-w-full items-center gap-1 overflow-x-auto rounded-full border border-border bg-background/95 p-1.5 backdrop-blur-md"
+        className="flex max-w-full items-center gap-1 overflow-x-auto rounded-full border border-white/10 bg-background/55 p-1.5 shadow-lg shadow-black/20 backdrop-blur-xl backdrop-saturate-150"
       >
         {showTemplates ? (
           <button
