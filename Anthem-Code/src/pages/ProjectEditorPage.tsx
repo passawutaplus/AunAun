@@ -3472,6 +3472,7 @@ const ProjectEditorPage = () => {
               onPlace={(payload) => handlePlaceTool(payload)}
               onOpenTemplates={() => setTemplatePickerOpen(true)}
               showTemplates={contentBlocks.length === 0}
+              onOpenTools={() => setToolsExpanded(true)}
             />
           )}
 
