@@ -57,13 +57,13 @@ const CookieConsent = () => {
           className={
             compactAuth
               ? "fixed bottom-3 right-3 z-40 max-w-[min(100vw-1.5rem,22rem)] pointer-events-none sm:bottom-4 sm:right-4"
-              : "fixed inset-x-0 bottom-0 z-40 pb-2 sm:pb-3 pointer-events-none"
+              : "fixed inset-x-4 bottom-[calc(env(safe-area-inset-bottom,0px)+5.5rem)] z-40 pointer-events-none sm:inset-x-6 lg:inset-x-0 lg:bottom-3"
           }
           role="dialog"
           aria-label="แบนเนอร์ความยินยอมคุกกี้"
         >
           {compactAuth ? (
-            <div className="pointer-events-auto rounded-2xl border border-border dark:border-border bg-background p-3 text-foreground shadow-sm">
+            <div className="pointer-events-auto rounded-2xl border border-white/40 dark:border-white/10 bg-background/60 backdrop-blur-2xl backdrop-saturate-150 p-3 text-foreground shadow-lg">
               <div className="flex items-start gap-2">
                 <div className="flex shrink-0 items-center justify-center text-foreground">
                   <Cookie className="h-4 w-4" strokeWidth={2.25} aria-hidden />
@@ -92,9 +92,9 @@ const CookieConsent = () => {
               </div>
             </div>
           ) : (
-            <div className="pointer-events-none mx-auto w-fit max-w-[calc(100%-1.5rem)] sm:max-w-[min(100%-2rem,52rem)]">
-              <div className="pointer-events-auto rounded-2xl border border-border dark:border-border bg-background px-4 py-3 text-foreground shadow-sm sm:px-5">
-              <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:gap-4">
+            <div className="pointer-events-none mx-auto w-full max-w-md lg:w-fit lg:max-w-[min(100%-2rem,52rem)]">
+              <div className="pointer-events-auto rounded-2xl border border-white/40 dark:border-white/10 bg-background/60 backdrop-blur-2xl backdrop-saturate-150 p-4 text-foreground shadow-lg lg:px-5 lg:py-3">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-4">
                 <div className="flex min-w-0 flex-1 items-start gap-2.5">
                   <Cookie className="mt-0.5 h-5 w-5 shrink-0 text-foreground" strokeWidth={2.25} aria-hidden />
                   <div className="min-w-0">
@@ -102,7 +102,6 @@ const CookieConsent = () => {
                       เราใช้คุกกี้ตาม พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล (PDPA)
                     </p>
                     <p className="mt-0.5 text-xs text-muted-foreground">
-                      คุกกี้ที่จำเป็นช่วยให้ใช้งานได้ ส่วนคุกกี้อื่นช่วยจดจำการตั้งค่าและวิเคราะห์การใช้งาน — อ่าน{" "}
                       <Link to="/legal/cookies" className="text-foreground underline underline-offset-2">
                         นโยบายคุกกี้
                       </Link>
@@ -117,11 +116,11 @@ const CookieConsent = () => {
                     </p>
                   </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 lg:shrink-0 lg:justify-end">
-                  <Button size="sm" onClick={acceptAll} className={acceptClass}>
+                <div className="grid grid-cols-2 gap-2 lg:flex lg:shrink-0 lg:justify-end">
+                  <Button size="sm" onClick={acceptAll} className={`${acceptClass} w-full lg:w-auto`}>
                     ยอมรับทั้งหมด
                   </Button>
-                  <Button size="sm" variant="outline" onClick={essentialOnly} className={declineClass}>
+                  <Button size="sm" variant="outline" onClick={essentialOnly} className={`${declineClass} w-full lg:w-auto`}>
                     ปฏิเสธที่ไม่จำเป็น
                   </Button>
                 </div>
