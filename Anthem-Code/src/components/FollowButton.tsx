@@ -7,6 +7,8 @@ import { FOLLOWED_DESIGNERS_PATH } from "@/hooks/useFollowedDesigners";
 import { toast } from "sonner";
 import { useAuthDialog } from "@/stores/authDialogStore";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n";
+import { FOLLOW } from "@/lib/i18n/social";
 
 interface Props {
   freelancerId?: string;
@@ -35,13 +37,17 @@ const FollowButton = ({
   showFollowerCount = true,
   className,
   visitorPreview = false,
-  followLabel = "ติดตาม",
-  followingLabel = "กำลังติดตาม",
-  unfollowLabel = "เลิกติดตาม",
+  followLabel: followLabelProp,
+  followingLabel: followingLabelProp,
+  unfollowLabel: unfollowLabelProp,
   showFollowingLabel = false,
   announceName,
 }: Props) => {
   const { user } = useAuth();
+  const t = useT(FOLLOW);
+  const followLabel = followLabelProp ?? t("follow");
+  const followingLabel = followingLabelProp ?? t("following");
+  const unfollowLabel = unfollowLabelProp ?? t("unfollow");
   const navigate = useNavigate();
   const openAuth = useAuthDialog((s) => s.openSignup);
   const { isFollowing, isSelf, toggle, isPending, followers } = useFollowState(freelancerId);
@@ -52,46 +58,46 @@ const FollowButton = ({
   const mutual = isFollowing && followsYou;
   const label = isFollowing
     ? mutual
-      ? "ติดตามกันแล้ว"
+      ? t("mutual")
       : followingLabel
     : followsYou
-      ? "ติดตามกลับ"
+      ? t("followBack")
       : followLabel;
   const hint = isFollowing
     ? mutual
-      ? "ติดตามกันทั้งคู่ — แท็กเป็นผู้ร่วมงานในผลงานได้ · กดเพื่อเลิกติดตาม"
+      ? t("mutualHint")
       : unfollowLabel
     : followsYou
-      ? "คนนี้ติดตามคุณอยู่ — ติดตามกลับเพื่อแท็กกันในผลงานได้"
+      ? t("followBackHint")
       : followLabel;
 
   const announce = (followed: boolean) => {
     if (!announceName) return;
     if (!followed) {
-      toast.success(`เลิกติดตาม ${announceName} แล้ว`);
+      toast.success(t("unfollowed", { name: announceName }));
       return;
     }
-    toast.success(followsYou ? `ติดตามกันแล้วกับ ${announceName}` : `ติดตาม ${announceName} แล้ว`, {
+    toast.success(followsYou ? t("nowMutual", { name: announceName }) : t("followed", { name: announceName }), {
       description: followsYou
-        ? "แท็กเป็นผู้ร่วมงานในผลงานได้แล้ว · ดูรวมได้ที่ Portfolio → Creators"
-        : `${announceName} จะได้รับแจ้งเตือน · ถ้าติดตามกลับ จะแท็กกันในผลงานได้`,
-      action: { label: "ดูทั้งหมด", onClick: () => navigate(FOLLOWED_DESIGNERS_PATH) },
+        ? t("mutualDesc")
+        : t("followedDesc", { name: announceName }),
+      action: { label: t("seeAll"), onClick: () => navigate(FOLLOWED_DESIGNERS_PATH) },
     });
   };
 
   const handle = () => {
     if (visitorPreview) {
-      toast.message("นี่คือมุมมองผู้เยี่ยมชม — ปุ่มนี้ใช้งานได้จริงเมื่อคนอื่นเปิดโปรไฟล์ของคุณ");
+      toast.message(t("visitorPreview"));
       return;
     }
     if (!user) {
-      toast.info("กรุณาเข้าสู่ระบบก่อนติดตาม");
+      toast.info(t("signInToFollow"));
       openAuth();
       return;
     }
     toggle(undefined, {
       onSuccess: (result) => announce(result.followed),
-      onError: () => toast.error("ทำรายการไม่สำเร็จ", { description: "ลองใหม่อีกครั้ง" }),
+      onError: () => toast.error(t("failed"), { description: t("tryAgain") }),
     });
   };
 

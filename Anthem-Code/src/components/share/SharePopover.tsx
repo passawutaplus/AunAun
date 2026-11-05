@@ -1,4 +1,6 @@
 import { ReactNode } from "react";
+import { useT } from "@/lib/i18n";
+import { SHARE } from "@/lib/i18n/social";
 import { useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import ShareDialogPanel from "@/components/share/ShareDialogPanel";
@@ -16,6 +18,7 @@ interface Props {
 }
 
 const SharePopover = ({ open, onOpenChange, title, url, imageUrl, projectId, children }: Props) => {
+  const t = useT(SHARE);
   const { user } = useAuth();
   const qc = useQueryClient();
 
@@ -40,9 +43,9 @@ const SharePopover = ({ open, onOpenChange, title, url, imageUrl, projectId, chi
         <ShareDialogPanel
           title={title}
           url={url}
-          label="แชร์ผลงาน"
+          label={t("shareWork")}
           imageUrl={imageUrl}
-          copySuccessMessage="คัดลอกลิงก์แล้ว — วางใน Instagram หรือที่อื่นได้เลย"
+          copySuccessMessage={t("copiedPaste")}
           onPlatform={(platform) => {
             void trackShare(platform);
           }}

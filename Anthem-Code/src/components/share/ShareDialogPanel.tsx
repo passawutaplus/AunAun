@@ -4,6 +4,8 @@ import { DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n";
+import { SHARE } from "@/lib/i18n/social";
 import { BRAND_ICON_SRC } from "@/components/share/brandMarks";
 import { BRAND_NAME } from "@/lib/brandConfig";
 import {
@@ -31,15 +33,18 @@ type Props = {
 const ShareDialogPanel = ({
   title,
   url,
-  label = "แชร์",
+  label: labelProp,
   imageUrl,
   subtitle,
-  copySuccessMessage = "คัดลอกลิงก์แล้ว",
+  copySuccessMessage: copySuccessProp,
   copyPayload,
   extraFooter,
   onPlatform,
   onDone,
 }: Props) => {
+  const t = useT(SHARE);
+  const label = labelProp ?? t("share");
+  const copySuccessMessage = copySuccessProp ?? t("copied");
   const [copied, setCopied] = useState(false);
   const canNativeShare = typeof navigator !== "undefined" && "share" in navigator;
   const host = sharePageHost(url);
@@ -51,7 +56,7 @@ const ShareDialogPanel = ({
       toast.success(successMessage);
       return true;
     } catch {
-      toast.error("คัดลอกไม่สำเร็จ");
+      toast.error(t("copyFailed"));
       return false;
     }
   };
@@ -85,13 +90,13 @@ const ShareDialogPanel = ({
           {label}
         </DialogTitle>
         <DialogDescription className="sr-only">
-          คัดลอกลิงก์หรือแชร์ไปยัง Facebook, Messenger, Instagram, LINE, WhatsApp, WeChat, X และอีเมล
+          {t("intro")}
         </DialogDescription>
       </div>
 
       <div className="px-5 pb-4">
         <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-          ตัวอย่างการ์ดที่เพื่อนจะเห็น
+          {t("preview")}
         </p>
         <div className="overflow-hidden rounded-xl border border-border/80 bg-background shadow-sm">
           <div className="relative aspect-[1.91/1] bg-neutral-950">
@@ -118,13 +123,13 @@ const ShareDialogPanel = ({
       </div>
 
       <div className="px-5 pb-4">
-        <p className="mb-1.5 text-xs font-medium text-muted-foreground">ลิงก์สำหรับการแชร์</p>
+        <p className="mb-1.5 text-xs font-medium text-muted-foreground">{t("linkLabel")}</p>
         <div className="flex items-center gap-2">
           <Input
             readOnly
             value={url}
             onFocus={(e) => e.currentTarget.select()}
-            aria-label="ลิงก์สำหรับการแชร์"
+            aria-label={t("linkLabel")}
             className="h-10 min-w-0 flex-1 truncate bg-muted/50 text-xs"
           />
           <button
@@ -132,7 +137,7 @@ const ShareDialogPanel = ({
             onClick={() => void handleCopy()}
             className="shrink-0 rounded-md px-2 py-2 text-sm font-medium text-primary hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            {copied ? "คัดลอกแล้ว" : "คัดลอกลิงก์"}
+            {copied ? t("copiedShort") : t("copyLink")}
           </button>
         </div>
       </div>
@@ -145,7 +150,7 @@ const ShareDialogPanel = ({
               href={item.href(url, title)}
               target="_blank"
               rel="noopener noreferrer"
-              title={item.copyHint ? `คัดลอกลิงก์แล้วเปิด ${item.label}` : `แชร์ไปยัง ${item.label}`}
+              title={item.copyHint ? t("copyThenOpen", { app: item.label }) : t("shareTo", { app: item.label })}
               onClick={() => handleTargetClick(item)}
               className="flex w-full min-w-0 flex-col items-center gap-1.5 rounded-xl px-1 py-1.5 text-foreground transition-colors hover:bg-background/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
@@ -180,7 +185,7 @@ const ShareDialogPanel = ({
             className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-border/70 bg-background text-sm font-medium text-foreground transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <Share2 className="h-4 w-4" aria-hidden />
-            แชร์ด้วยแอปอื่น
+            {t("otherApps")}
           </button>
         ) : null}
         {extraFooter}
