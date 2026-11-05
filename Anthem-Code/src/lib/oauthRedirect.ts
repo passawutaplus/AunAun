@@ -122,7 +122,7 @@ export function clearStaleOAuthPkceState(): void {
 
 export function formatOAuthCallbackError(message: string): string {
   if (/code verifier|pkce|invalid flow state|flow state|oauth state|bad_oauth_state/i.test(message)) {
-    return "เซสชันเข้าสู่ระบบหมดอายุแล้ว (มักเกิดเมื่อกดย้อนกลับ) — กลับไปหน้าเข้าสู่ระบบแล้วกด Google ใหม่";
+    return "เซสชันเข้าสู่ระบบหมดอายุแล้ว (มักเกิดเมื่อกดย้อนกลับ) — กลับไปหน้าเข้าสู่ระบบแล้วลองเข้าสู่ระบบใหม่";
   }
   return message;
 }

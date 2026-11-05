@@ -69,8 +69,14 @@ function waitForPopupAuth(popup: Window, timeoutMs: number): Promise<boolean> {
   });
 }
 
+/**
+ * Supabase provider ids. LINE has no built-in provider: it is a Supabase custom OAuth2
+ * provider named "custom:line" (Auth → Providers → New provider), see .env.example.
+ */
+export type OAuthProviderId = "google" | "facebook" | "apple" | "custom:line";
+
 export async function signInWithOAuth(
-  options?: { redirectTo?: string; popup?: Window | null },
+  options?: { redirectTo?: string; popup?: Window | null; provider?: OAuthProviderId },
 ): Promise<{ error?: Error; redirected?: boolean }> {
   const afterAuth = safeRelativePath(
     options?.redirectTo ?? (typeof window !== "undefined" ? currentAppPath() : undefined),
@@ -82,7 +88,8 @@ export async function signInWithOAuth(
   clearStaleOAuthPkceState();
 
   const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: "google",
+    // supabase-js types list only built-in providers; "custom:*" ids are accepted at runtime.
+    provider: (options?.provider ?? "google") as "google",
     options: {
       redirectTo: callbackUrl,
       skipBrowserRedirect: true,
