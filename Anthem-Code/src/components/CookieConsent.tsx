@@ -63,7 +63,7 @@ const CookieConsent = () => {
           aria-label="แบนเนอร์ความยินยอมคุกกี้"
         >
           {compactAuth ? (
-            <div className="pointer-events-auto rounded-2xl border border-border dark:border-border bg-background p-3 text-foreground shadow-sm">
+            <div className="pointer-events-auto rounded-2xl border border-white/40 dark:border-white/10 bg-background/60 backdrop-blur-2xl backdrop-saturate-150 p-3 text-foreground shadow-lg">
               <div className="flex items-start gap-2">
                 <div className="flex shrink-0 items-center justify-center text-foreground">
                   <Cookie className="h-4 w-4" strokeWidth={2.25} aria-hidden />
@@ -93,7 +93,7 @@ const CookieConsent = () => {
             </div>
           ) : (
             <div className="pointer-events-none mx-auto w-fit max-w-[calc(100%-1.5rem)] sm:max-w-[min(100%-2rem,52rem)]">
-              <div className="pointer-events-auto rounded-2xl border border-border dark:border-border bg-background px-4 py-3 text-foreground shadow-sm sm:px-5">
+              <div className="pointer-events-auto rounded-2xl border border-white/40 dark:border-white/10 bg-background/60 backdrop-blur-2xl backdrop-saturate-150 px-4 py-3 text-foreground shadow-lg sm:px-5">
               <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:gap-4">
                 <div className="flex min-w-0 flex-1 items-start gap-2.5">
                   <Cookie className="mt-0.5 h-5 w-5 shrink-0 text-foreground" strokeWidth={2.25} aria-hidden />
@@ -102,7 +102,6 @@ const CookieConsent = () => {
                       เราใช้คุกกี้ตาม พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล (PDPA)
                     </p>
                     <p className="mt-0.5 text-xs text-muted-foreground">
-                      คุกกี้ที่จำเป็นช่วยให้ใช้งานได้ ส่วนคุกกี้อื่นช่วยจดจำการตั้งค่าและวิเคราะห์การใช้งาน — อ่าน{" "}
                       <Link to="/legal/cookies" className="text-foreground underline underline-offset-2">
                         นโยบายคุกกี้
                       </Link>
