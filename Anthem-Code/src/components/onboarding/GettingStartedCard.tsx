@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Check, ChevronRight, ImagePlus, Sparkles, UserRound, Wand2 } from "lucide-react";
+import { Check, ChevronRight, ImagePlus, Rocket, UserRound, BriefcaseBusiness } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { trackProductEvent } from "@/lib/productEvents";
 import { cn } from "@/lib/utils";
@@ -52,7 +52,7 @@ export default function GettingStartedCard({ input, onEditProfile, onAvatar }: P
       title: "บอกว่าคุณทำอะไร",
       hint: "สายงาน แนะนำตัว และสถานะรับงาน",
       done: input.hasRole,
-      icon: Wand2,
+      icon: BriefcaseBusiness,
       action: onEditProfile,
     },
     {
@@ -74,7 +74,7 @@ export default function GettingStartedCard({ input, onEditProfile, onAvatar }: P
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 id="getting-started-title" className="flex items-center gap-1.5 text-sm font-semibold">
-            <Sparkles className="h-4 w-4 text-primary" aria-hidden />
+            <Rocket className="h-4 w-4 text-brand" aria-hidden />
             เริ่มต้นใช้งาน
           </h2>
           <p className="mt-0.5 text-xs text-muted-foreground">โปรไฟล์ที่ครบ ช่วยให้คนที่ใช่ค้นเจอคุณ</p>
@@ -82,7 +82,7 @@ export default function GettingStartedCard({ input, onEditProfile, onAvatar }: P
         <span className="shrink-0 text-sm font-semibold tabular-nums text-primary">{percent}%</span>
       </div>
       <div className="h-1.5 overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100}>
-        <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${percent}%` }} />
+        <div className="h-full rounded-full bg-brand transition-all duration-500" style={{ width: `${percent}%` }} />
       </div>
       <ol className="grid gap-2 sm:grid-cols-3">
         {steps.map((s, i) => {
