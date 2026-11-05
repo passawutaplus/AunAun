@@ -9,8 +9,8 @@
  *
  * Placeholders: {name} in any language; values are inserted as-is.
  */
-import { useCallback, useSyncExternalStore } from "react";
-import { LOCALE_CHANGE_EVENT, loadLocalePrefs, type AppLocale } from "@/lib/localePrefs";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
+import { LOCALE_CHANGE_EVENT, loadLocalePrefs, saveLocalePrefs, type AppLocale } from "@/lib/localePrefs";
 
 export type Lang = AppLocale;
 export type Entry = Record<Lang, string>;
@@ -30,9 +30,28 @@ function subscribe(cb: () => void) {
   };
 }
 
-/** Current UI language; components using it re-render when Settings changes it. */
+/** Save the UI language; every useLang / useT component re-renders. */
+export function setLang(next: Lang): void {
+  saveLocalePrefs({ ...loadLocalePrefs(), locale: next });
+}
+
+const ZH_FONT_HREF = "https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500&display=swap";
+
+/** Chinese glyphs are heavy: fetch them only once a reader picks the language. */
+function ensureZhFont(lang: Lang): void {
+  if (lang !== "zh" || typeof document === "undefined" || document.querySelector("link[data-app-zh]")) return;
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.href = ZH_FONT_HREF;
+  link.dataset.appZh = "";
+  document.head.append(link);
+}
+
+/** Current UI language; components using it re-render when Settings changes it. Server render: English (the new-visitor default). */
 export function useLang(): Lang {
-  return useSyncExternalStore(subscribe, getLang, () => "th" as Lang);
+  const lang = useSyncExternalStore(subscribe, getLang, () => "en" as Lang);
+  useEffect(() => ensureZhFont(lang), [lang]);
+  return lang;
 }
 
 export function fill(text: string, vars?: Vars): string {
@@ -74,6 +93,19 @@ export function formatDateRange(start: string, end?: string | null, lang: Lang =
     formatRange?: (from: Date, to: Date) => string;
   };
   return typeof fmt.formatRange === "function" ? fmt.formatRange(a, b) : `${fmt.format(a)} – ${fmt.format(b)}`;
+}
+
+/** "13 ก.ค. 2569" / "13 Jul 2026" / "2026年7月13日" (full timestamps keep their own time zone). */
+export function formatShortDate(iso: string | null | undefined, lang: Lang = getLang()): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleDateString(intlLocale(lang), { day: "numeric", month: "short", year: "numeric" });
+}
+
+/** Short counts: 1.2k (th/en), 1.2万 (zh). */
+export function formatCount(n: number, lang: Lang = getLang()): string {
+  return new Intl.NumberFormat(lang === "zh" ? "zh-CN" : "en", { notation: "compact", maximumFractionDigits: 1 }).format(n);
 }
 
 /** Shared words used across areas. */

@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { BRAND_NAME } from "@/lib/brandConfig";
-import { formatLocaleCount, formatLocaleDate, useAppLocale, type AppLocale } from "@/lib/i18n/locale";
+import { fill, formatCount, formatShortDate, useLang, type Lang as AppLocale } from "@/lib/i18n";
 
 /**
  * Copy for the work page (/showcase/:id and its overlay). Thai is the source; English and Chinese
@@ -428,16 +428,14 @@ export function translateProject(
   key: ProjectKey,
   vars?: Record<string, string | number>,
 ): string {
-  const text = DICT[locale][key] ?? th[key];
-  const all = { brand: BRAND_NAME, ...vars };
-  return text.replace(/\{(\w+)\}/g, (m, name: string) => (name in all ? String(all[name as keyof typeof all]) : m));
+  return fill(DICT[locale][key] ?? th[key], { brand: BRAND_NAME, ...vars });
 }
 
 /** `t` for the work page, plus locale-aware date and count formatting. */
 export function useProjectT() {
-  const { locale } = useAppLocale();
+  const locale = useLang();
   const t = useCallback<ProjectT>((key, vars) => translateProject(locale, key, vars), [locale]);
-  const date = useCallback((iso: string | null | undefined) => formatLocaleDate(iso, locale), [locale]);
-  const count = useCallback((n: number) => formatLocaleCount(n, locale), [locale]);
+  const date = useCallback((iso: string | null | undefined) => formatShortDate(iso, locale), [locale]);
+  const count = useCallback((n: number) => formatCount(n, locale), [locale]);
   return { t, locale, date, count };
 }
