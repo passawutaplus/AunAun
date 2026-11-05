@@ -23,6 +23,7 @@ None of this is **shared** in Play's sense: Supabase, Vercel, Google Sign-In and
 | Personal info → Email address | Yes | Required | Account management, Developer communications | sign-up / Google Sign-In |
 | Personal info → User IDs | Yes | Required | Account management, App functionality | account id, username |
 | Personal info → Address | Yes | Optional | App functionality | profile location (typed by the user) |
+| Location → Precise location | Yes (ephemeral, not shared) | Optional | App functionality | Exhibition route start: device position (permission asked only on tap, foreground only) or a picked place; kept in localStorage; rounded to ~100 m (3 decimals, still < 3 km² so "precise") and sent to routing.openstreetmap.de to draw the walking route. Never sent to SAMECOR servers. Added in app 1.1.0 (versionCode 4). |
 | Photos and videos → Photos | Yes | Optional | App functionality | project images, avatar |
 | Photos and videos → Videos | Yes | Optional | App functionality | project videos |
 | Messages → Other in-app messages | Yes | Optional | App functionality | chat |
@@ -33,7 +34,7 @@ None of this is **shared** in Play's sense: Supabase, Vercel, Google Sign-In and
 | App info and performance → Diagnostics | Yes | Optional | Analytics | in-app feedback diagnostics |
 | Device or other IDs | Yes | Optional | App functionality | push subscription endpoint + keys (`shared.push_subscriptions`) — only after the user turns on notifications; removed on turn-off / sign-out |
 
-**Not collected in the Android app:** identity documents, national ID, phone number, bank account (KYC is hidden in the app); precise or approximate device location, contacts, calendar, health, audio, files outside what the user uploads, web browsing history, purchase history (commerce is off in the Android app).
+**Not collected in the Android app:** identity documents, national ID, phone number, bank account (KYC is hidden in the app); contacts, calendar, health, audio, files outside what the user uploads, web browsing history, purchase history (commerce is off in the Android app).
 
 ## To confirm before submitting
 
