@@ -286,7 +286,7 @@ const FloatingNav = () => {
             <button
               type="button"
               aria-label={t("profileNav")}
-              onClick={() => openAuth("/portfolio")}
+              onClick={() => openAuth("/")}
               className="flex h-11 w-11 min-h-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
               <User className="w-5 h-5 shrink-0" strokeWidth={2} />
