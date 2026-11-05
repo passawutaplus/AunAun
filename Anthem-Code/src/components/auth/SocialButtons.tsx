@@ -33,23 +33,16 @@ const LineIcon = () => (
   </svg>
 );
 
-const AppleIcon = () => (
-  <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24" aria-hidden="true">
-    <path d="M16.37 12.62c-.02-2.3 1.88-3.4 1.96-3.46-1.07-1.56-2.73-1.77-3.32-1.8-1.41-.14-2.76.83-3.47.83-.72 0-1.82-.81-3-.79-1.54.02-2.96.9-3.76 2.28-1.6 2.78-.41 6.9 1.15 9.16.76 1.1 1.67 2.34 2.86 2.3 1.15-.05 1.58-.74 2.97-.74 1.38 0 1.77.74 2.98.72 1.23-.02 2.01-1.12 2.76-2.23.87-1.28 1.23-2.52 1.25-2.58-.03-.01-2.4-.92-2.42-3.65zM14.1 5.86c.63-.77 1.06-1.83.94-2.89-.91.04-2.01.61-2.66 1.37-.58.67-1.09 1.75-.96 2.79 1.02.08 2.05-.52 2.68-1.27z" />
-  </svg>
-);
-
 type ExtraProvider = { key: string; id: OAuthProviderId; name: string; icon: () => JSX.Element };
 
 const EXTRA_PROVIDERS: ExtraProvider[] = [
   { key: "line", id: "custom:line", name: "LINE", icon: LineIcon },
   { key: "facebook", id: "facebook", name: "Facebook", icon: FacebookIcon },
-  { key: "apple", id: "apple", name: "Apple", icon: AppleIcon },
 ];
 
 /**
  * Extra sign-in buttons are off until the provider is set up in Supabase.
- * VITE_AUTH_EXTRA_PROVIDERS="line,facebook,apple" (any subset, in this order).
+ * VITE_AUTH_EXTRA_PROVIDERS="line,facebook" (any subset, in this order).
  */
 function enabledExtraProviders(): ExtraProvider[] {
   const raw = String(import.meta.env.VITE_AUTH_EXTRA_PROVIDERS ?? "");
@@ -102,19 +95,10 @@ export function SocialButtons({
 
   return (
     <div className={cn(className)}>
-      <Button
-        type="button"
-        variant="outline"
-        disabled={!!busy}
-        onClick={() => void start("google", "Google")}
-        className={cn("h-11 w-full gap-2 rounded-xl bg-background/60 backdrop-blur", buttonClassName)}
-      >
-        {busy === "google" ? <Loader2 className="h-4 w-4 animate-spin" /> : <GoogleIcon />}
-        <span className="text-sm">{label}</span>
-      </Button>
       {extras.length ? (
-        <div className={cn("mt-2 grid gap-2", extras.length === 1 ? "grid-cols-1" : extras.length === 2 ? "grid-cols-2" : "grid-cols-3")}>
-          {extras.map((p) => {
+        // Several providers: logo-only buttons in one row (Google first).
+        <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${extras.length + 1}, minmax(0, 1fr))` }}>
+          {[{ key: "google", id: "google" as OAuthProviderId, name: "Google", icon: GoogleIcon }, ...extras].map((p) => {
             const Icon = p.icon;
             return (
               <Button
@@ -123,16 +107,27 @@ export function SocialButtons({
                 variant="outline"
                 disabled={!!busy}
                 aria-label={`เข้าสู่ระบบด้วย ${p.name}`}
+                title={p.name}
                 onClick={() => void start(p.id, p.name)}
-                className={cn("h-11 w-full gap-2 rounded-xl bg-background/60 backdrop-blur", buttonClassName)}
+                className={cn("h-11 w-full rounded-xl bg-background/60 backdrop-blur [&_svg]:h-5 [&_svg]:w-5", buttonClassName)}
               >
-                {busy === p.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Icon />}
-                <span className="text-sm">{p.name}</span>
+                {busy === p.id ? <Loader2 className="animate-spin" /> : <Icon />}
               </Button>
             );
           })}
         </div>
-      ) : null}
+      ) : (
+        <Button
+          type="button"
+          variant="outline"
+          disabled={!!busy}
+          onClick={() => void start("google", "Google")}
+          className={cn("h-11 w-full gap-2 rounded-xl bg-background/60 backdrop-blur", buttonClassName)}
+        >
+          {busy === "google" ? <Loader2 className="h-4 w-4 animate-spin" /> : <GoogleIcon />}
+          <span className="text-sm">{label}</span>
+        </Button>
+      )}
     </div>
   );
 }
