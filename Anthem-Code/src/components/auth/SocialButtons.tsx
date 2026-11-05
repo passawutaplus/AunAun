@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -116,7 +117,17 @@ export function SocialButtons({
             );
           })}
         </div>
-      ) : (
+      ) : null}
+      {extras.some((p) => p.key === "line") ? (
+        // Consent + purpose for the email LINE shares (required by LINE's email permission).
+        <p className="mt-2 text-center text-[11px] leading-relaxed text-muted-foreground">
+          เข้าสู่ระบบด้วย LINE เราขออีเมลของคุณ เพื่อสร้างบัญชีและแจ้งเรื่องบัญชีเท่านั้น ·{" "}
+          <Link to="/legal/privacy" className="underline underline-offset-2 hover:text-foreground">
+            นโยบายความเป็นส่วนตัว
+          </Link>
+        </p>
+      ) : null}
+      {extras.length ? null : (
         <Button
           type="button"
           variant="outline"
