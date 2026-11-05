@@ -1,8 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import SharePopover from "@/components/SharePopover";
 
 describe("SharePopover", () => {
+  // These assertions use the Thai copy; new visitors default to English.
+  beforeEach(() => {
+    localStorage.setItem("aplus1:locale-prefs", JSON.stringify({ locale: "th", timezone: "Asia/Bangkok" }));
+  });
+
   it("opens a share dialog with a 1.91 preview card and working destinations", () => {
     render(
       <SharePopover

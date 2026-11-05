@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Layers3, Plus, Check, Lock } from "lucide-react";
+import { useT } from "@/lib/i18n";
+import { SAVE } from "@/lib/i18n/social";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CompactLoader } from "@/components/ui/BanterLoader";
 import { Button } from "@/components/ui/button";
@@ -49,6 +51,7 @@ interface Props {
 }
 
 const SaveToCollectionPopover = ({ projectId, children, triggerClassName, align = "end", side = "bottom", onOpenChange }: Props) => {
+  const t = useT(SAVE);
   const { user } = useAuth();
   const openAuth = useAuthDialog((s) => s.openSignup);
   const [open, setOpen] = useState(false);
@@ -103,12 +106,12 @@ const SaveToCollectionPopover = ({ projectId, children, triggerClassName, align 
     e.stopPropagation();
     e.preventDefault();
     if (!user) {
-      toast.info("กรุณาเข้าสู่ระบบก่อน");
+      toast.info(t("signIn"));
       openAuth();
       return;
     }
     if (!projectId) {
-      toast.info("ผลงานนี้ยังไม่ได้เผยแพร่");
+      toast.info(t("unpublished"));
       return;
     }
     setOpen((v) => !v);
@@ -126,9 +129,9 @@ const SaveToCollectionPopover = ({ projectId, children, triggerClassName, align 
           { debounceMs: 1_000 },
         );
       }
-      toast.success(isIn ? "เอาออกจากคอลเลกชันแล้ว" : "เพิ่มเข้าคอลเลกชันแล้ว");
+      toast.success(isIn ? t("removed") : t("added"));
     } catch (e: unknown) {
-      toast.error(mapWriteFlowError(e, "ผิดพลาด"));
+      toast.error(mapWriteFlowError(e, t("error")));
     }
   };
 
@@ -146,11 +149,11 @@ const SaveToCollectionPopover = ({ projectId, children, triggerClassName, align 
         );
       }
       remember(created.id);
-      toast.success(`เพิ่มเข้า “${name}” แล้ว`);
+      toast.success(t("addedTo", { name }));
       setCreating(false);
       setNewName("");
     } catch (e: unknown) {
-      toast.error(mapWriteFlowError(e, "สร้างคอลเลกชันไม่สำเร็จ"));
+      toast.error(mapWriteFlowError(e, t("createFailed")));
     }
   };
 
@@ -159,8 +162,8 @@ const SaveToCollectionPopover = ({ projectId, children, triggerClassName, align 
   ) : (
     <button
       onClick={handleTriggerClick}
-      aria-label="เก็บเข้าคอลเลกชัน"
-      title="เก็บเข้าคอลเลกชัน"
+      aria-label={t("title")}
+      title={t("title")}
       className={cn(
         "p-2 rounded-md hover:bg-accent transition-colors",
         triggerClassName,
@@ -181,7 +184,7 @@ const SaveToCollectionPopover = ({ projectId, children, triggerClassName, align 
           onClick={(e) => e.stopPropagation()}
         >
           <div className="px-3 py-2.5 border-b border-border/60 flex items-center justify-between">
-            <p className="text-sm font-semibold">เก็บเข้าคอลเลกชัน</p>
+            <p className="text-sm font-semibold">{t("title")}</p>
             <Layers3 className="w-4 h-4 text-primary" />
           </div>
 
@@ -190,14 +193,14 @@ const SaveToCollectionPopover = ({ projectId, children, triggerClassName, align 
               <CompactLoader className="py-6 px-3" />
             ) : collectionsError ? (
               <div className="text-center py-6 px-3 space-y-2">
-                <p className="text-xs text-muted-foreground">โหลดรายการไม่สำเร็จ</p>
+                <p className="text-xs text-muted-foreground">{t("loadFailed")}</p>
                 <Button size="sm" variant="outline" className="rounded-full h-7 text-xs" onClick={() => refetchCollections()}>
-                  ลองใหม่
+                  {t("retry")}
                 </Button>
               </div>
             ) : ordered.length === 0 ? (
               <p className="text-xs text-muted-foreground text-center py-6 px-3">
-                ยังไม่มีคอลเลกชัน — สร้างอันแรกของคุณ
+                {t("empty")}
               </p>
             ) : (
               <ul className="py-1">
@@ -228,7 +231,8 @@ const SaveToCollectionPopover = ({ projectId, children, triggerClassName, align 
                             {!c.is_public && <Lock className="w-3 h-3 text-muted-foreground" />}
                           </p>
                           <p className="text-[11px] text-muted-foreground">
-                            {c.item_count} ผลงาน{c.id === lastUsedId ? " · ใช้ล่าสุด" : ""}
+                            {c.item_count === 1 ? t("itemCountOne") : t("itemCount", { n: c.item_count })}
+                            {c.id === lastUsedId ? t("lastUsed") : ""}
                           </p>
                         </div>
                         <div
@@ -260,8 +264,8 @@ const SaveToCollectionPopover = ({ projectId, children, triggerClassName, align 
                   ref={newNameRef}
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
-                  placeholder="ชื่อคอลเลกชันใหม่"
-                  aria-label="ชื่อคอลเลกชันใหม่"
+                  placeholder={t("newName")}
+                  aria-label={t("newName")}
                   maxLength={60}
                   className="h-9 flex-1"
                   onKeyDown={(e) => {
@@ -273,7 +277,7 @@ const SaveToCollectionPopover = ({ projectId, children, triggerClassName, align 
                   }}
                 />
                 <Button type="submit" size="sm" className="h-9 rounded-full" disabled={!newName.trim() || create.isPending}>
-                  {create.isPending ? "..." : "สร้าง"}
+                  {create.isPending ? "..." : t("create")}
                 </Button>
               </form>
             ) : (
@@ -282,12 +286,12 @@ const SaveToCollectionPopover = ({ projectId, children, triggerClassName, align 
                 className="w-full justify-start text-primary hover:text-primary hover:bg-primary/10"
                 onClick={() => setCreating(true)}
               >
-                <Plus className="w-4 h-4 mr-1.5" /> สร้างคอลเลกชันใหม่
+                <Plus className="w-4 h-4 mr-1.5" /> {t("createNew")}
               </Button>
             )}
             {creating ? (
               <p className="px-1 pt-1.5 text-[11px] text-muted-foreground">
-                เริ่มเป็นส่วนตัว — ตั้งเป็นสาธารณะได้ทีหลัง และผลงานนี้จะถูกเพิ่มเข้าให้ทันที
+                {t("createHint")}
               </p>
             ) : null}
           </div>

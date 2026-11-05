@@ -1,5 +1,7 @@
 import { SlidersHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n";
+import { FILTER } from "@/lib/i18n/social";
 
 /** Round filter button in the one-row phone bar, left of the mode pill. Shows how many filters are on. */
 export default function MobileFilterButton({
@@ -11,11 +13,12 @@ export default function MobileFilterButton({
   onClick: () => void;
   className?: string;
 }) {
+  const t = useT(FILTER);
   return (
     <button
       type="button"
       onClick={onClick}
-      aria-label={count > 0 ? `ตัวกรอง (เปิดอยู่ ${count})` : "ตัวกรอง"}
+      aria-label={count > 0 ? t("filtersOn", { n: count }) : t("filters")}
       className={cn(
         "relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-foreground transition-opacity hover:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         className,

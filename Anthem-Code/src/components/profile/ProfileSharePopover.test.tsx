@@ -1,8 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import ProfileSharePopover from "@/components/profile/ProfileSharePopover";
 
 describe("ProfileSharePopover", () => {
+  // These assertions use the Thai copy; new visitors default to English.
+  beforeEach(() => {
+    localStorage.setItem("aplus1:locale-prefs", JSON.stringify({ locale: "th", timezone: "Asia/Bangkok" }));
+  });
+
   it("opens a centered share dialog like other share actions", () => {
     render(
       <ProfileSharePopover
