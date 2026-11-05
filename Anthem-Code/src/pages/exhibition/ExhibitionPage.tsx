@@ -86,7 +86,15 @@ export default function ExhibitionPage() {
     return [...rows].sort((a, b) => {
       if (view === "ending") return end(a).localeCompare(end(b));
       if (view === "done") return end(b).localeCompare(end(a)); // most recently ended first
-      if (view === "newest") return (b.starts_on ?? "").localeCompare(a.starts_on ?? "");
+      if (view === "newest") {
+        // Opened events first (latest opening on top); upcoming ones after, soonest first.
+        const oa = eventTiming(a) === "now";
+        const ob = eventTiming(b) === "now";
+        if (oa !== ob) return oa ? -1 : 1;
+        const sa = a.starts_on ?? "9999-12-31";
+        const sb = b.starts_on ?? "9999-12-31";
+        return oa ? sb.localeCompare(sa) : sa.localeCompare(sb);
+      }
       const sa = stats?.[a.id];
       const sb = stats?.[b.id];
       return (sb?.interest_count ?? 0) - (sa?.interest_count ?? 0) || (sb?.view_count ?? 0) - (sa?.view_count ?? 0);
