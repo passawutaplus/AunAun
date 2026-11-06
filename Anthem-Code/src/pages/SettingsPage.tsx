@@ -36,6 +36,7 @@ import { CollabTagSettingsSection } from "@/components/settings/CollabTagSetting
 import { AppDownloadSection } from "@/components/settings/AppDownloadSection";
 import { SettingsCard, useSaveStatus } from "@/components/settings/SettingsCard";
 import { ChangePasswordSection } from "@/components/settings/ChangePasswordSection";
+import { LinkedAccountsSection } from "@/components/settings/LinkedAccountsSection";
 import { isCommerceEnabled } from "@/lib/aplus1Launch";
 import { AccountSecurityIntro } from "@/components/settings/AccountSecurityIntro";
 import { WithdrawPinSettingsSection } from "@/components/settings/WithdrawPinSettingsSection";
@@ -346,6 +347,7 @@ const SettingsPage = () => {
             {panel === "account" ? (
               <div className="space-y-6">
                 {user ? <ChangePasswordSection user={user} /> : null}
+                {user ? <LinkedAccountsSection user={user} /> : null}
                 {user && isCommerceEnabled() ? (
                   <>
                     <AccountSecurityIntro showWithdrawPin />
