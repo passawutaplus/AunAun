@@ -19,9 +19,23 @@ export const PHONE_CHIP =
  * Phone-only "⋯" chip that slides open a vertical stack of extra module tools
  * (replace image, duplicate, delete). Hidden from lg up.
  */
-export function PhoneMoreMenu({ items, className }: { items: PhoneMoreItem[]; className?: string }) {
+export function PhoneMoreMenu({
+  items,
+  className,
+  onOpenChange,
+}: {
+  items: PhoneMoreItem[];
+  className?: string;
+  /** Lets the parent lift its stacking order while the menu hangs over the next module. */
+  onOpenChange?: (open: boolean) => void;
+}) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const onOpenChangeRef = useRef(onOpenChange);
+  onOpenChangeRef.current = onOpenChange;
+  useEffect(() => {
+    onOpenChangeRef.current?.(open);
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;

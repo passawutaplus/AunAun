@@ -1,5 +1,6 @@
-import { useRef, useState, type ReactNode } from "react";
-import { AlignLeft, Film, GalleryHorizontal, ImagePlus, LayoutGrid, LayoutTemplate, PanelLeft } from "lucide-react";
+import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { AlignLeft, Film, GalleryHorizontal, ImagePlus, LayoutGrid, LayoutTemplate, PanelLeft, PanelLeftOpen } from "lucide-react";
+import { liquidGlassOutline } from "@/lib/liquidGlass";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { setCanvasToolDragData, type CanvasToolPayload } from "@/lib/canvasToolDrag";
@@ -13,6 +14,8 @@ type Props = {
   onOpenTemplates: () => void;
   /** The Template shortcut only makes sense on an empty artboard. */
   showTemplates?: boolean;
+  /** Phones: round button left of the bar that opens the full tools sidebar. */
+  onOpenTools?: () => void;
 };
 
 type Option = { label: string; hint?: string; payload: CanvasToolPayload };
@@ -43,7 +46,42 @@ const IMAGE_TEXT_OPTIONS: Option[] = [
 ];
 
 /** Quick drop's one-tap module bar. Modules with several layouts open a short picker. */
-export function AddModuleBar({ disabled, onPickImages, onPlace, onOpenTemplates, showTemplates = true }: Props) {
+const TOOLS_BTN = 44;
+const TOOLS_GAP = 8;
+
+/** Phones: one frosted shape for the tools button + the bar (mirrors the bottom nav's search join). */
+function BarGlass({ bar }: { bar: HTMLDivElement | null }) {
+  const [size, setSize] = useState<{ w: number; h: number } | null>(null);
+  useLayoutEffect(() => {
+    if (!bar) return;
+    const measure = () => setSize({ w: bar.offsetWidth, h: bar.offsetHeight });
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(bar);
+    return () => ro.disconnect();
+  }, [bar]);
+  if (!size || size.w === 0) return null;
+  const width = size.w + TOOLS_GAP + TOOLS_BTN;
+  const d = liquidGlassOutline(size.w, size.h, TOOLS_GAP, TOOLS_BTN);
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none absolute left-0 top-0 -scale-x-100 lg:hidden"
+      style={{ width, height: size.h }}
+    >
+      <div
+        className="absolute inset-0 bg-background/65 backdrop-blur-xl backdrop-saturate-150 dark:bg-card/50"
+        style={{ clipPath: `path('${d}')` }}
+      />
+      <svg className="absolute inset-0 overflow-visible" width={width} height={size.h}>
+        <path d={d} fill="none" className="stroke-foreground/15" strokeWidth={1} />
+      </svg>
+    </div>
+  );
+}
+
+export function AddModuleBar({ disabled, onPickImages, onPlace, onOpenTemplates, showTemplates = true, onOpenTools }: Props) {
+  const [barEl, setBarEl] = useState<HTMLDivElement | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [openKey, setOpenKey] = useState<string | null>(null);
 
@@ -91,7 +129,7 @@ export function AddModuleBar({ disabled, onPickImages, onPlace, onOpenTemplates,
                 onPlace(opt.payload);
                 setOpenKey(null);
               }}
-              className="group flex min-w-0 flex-col gap-1 rounded-xl border border-transparent p-1 text-left transition-colors hover:border-border hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="group flex min-w-0 flex-col gap-1 rounded-md border border-transparent p-1 text-left transition-colors hover:border-border hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <ModuleThumb payload={opt.payload} className="border border-border/60" />
               <span className="truncate px-0.5 text-[11px] font-medium text-foreground">{opt.label}</span>
@@ -107,11 +145,33 @@ export function AddModuleBar({ disabled, onPickImages, onPlace, onOpenTemplates,
 
   return (
     <div className="sticky bottom-24 z-20 flex justify-center px-3 lg:bottom-4">
+      <div className="relative flex min-w-0 max-w-full items-center" style={{ gap: onOpenTools ? TOOLS_GAP : 0 }}>
+      {onOpenTools ? (
+        <>
+          <BarGlass bar={barEl} />
+          <button
+            type="button"
+            aria-label="เปิดแถบเครื่องมือทั้งหมด"
+            onClick={onOpenTools}
+            className="relative flex shrink-0 items-center justify-center rounded-full text-foreground transition-colors active:bg-foreground/10 lg:hidden"
+            style={{ width: TOOLS_BTN, height: TOOLS_BTN }}
+          >
+            <PanelLeftOpen className="h-4 w-4" aria-hidden />
+          </button>
+        </>
+      ) : null}
       <div
+        ref={setBarEl}
         role="toolbar"
         data-tour="addbar"
         aria-label="เพิ่มโมดูล"
-        className="flex max-w-full items-center gap-1 overflow-x-auto rounded-full border border-border bg-background/95 p-1.5 backdrop-blur-md"
+        className={cn(
+          "relative flex min-w-0 max-w-full items-center gap-1 overflow-x-auto rounded-full p-1.5",
+          // Phones with the tools button: the shared BarGlass is the background.
+          onOpenTools
+            ? "lg:border lg:border-white/10 lg:bg-background/55 lg:shadow-lg lg:shadow-black/20 lg:backdrop-blur-xl lg:backdrop-saturate-150"
+            : "border border-white/10 bg-background/55 shadow-lg shadow-black/20 backdrop-blur-xl backdrop-saturate-150",
+        )}
       >
         {showTemplates ? (
           <button
@@ -170,6 +230,7 @@ export function AddModuleBar({ disabled, onPickImages, onPlace, onOpenTemplates,
             e.target.value = "";
           }}
         />
+      </div>
       </div>
     </div>
   );

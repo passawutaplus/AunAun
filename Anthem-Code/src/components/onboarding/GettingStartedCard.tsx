@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
-import { Check, ChevronRight, ImagePlus, Sparkles, UserRound, Wand2 } from "lucide-react";
+import { useState } from "react";
+import { Check, ChevronDown, ChevronRight, Compass, ImagePlus, Rocket, UserRound, BriefcaseBusiness } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { trackProductEvent } from "@/lib/productEvents";
 import { cn } from "@/lib/utils";
@@ -35,7 +36,36 @@ type Props = {
   onAvatar: () => void;
 };
 
-type Step = { id: string; title: string; hint: string; done: boolean; icon: LucideIcon; action: () => void; href?: string };
+type Step = {
+  id: string;
+  title: string;
+  hint: string;
+  done: boolean;
+  icon: LucideIcon;
+  action: () => void;
+  href?: string;
+  /** Several small destinations shown under the step instead of one tap target. */
+  links?: { to: string; label: string; key: string }[];
+};
+
+const EXPLORE_LINKS = [
+  { key: "showcase", label: "Showcase", to: "/?mode=showcase" },
+  { key: "creators", label: "Creators", to: "/?mode=creators" },
+  { key: "exhibition", label: "Exhibition", to: "/exhibition" },
+  { key: "studio", label: "My Studio", to: "/dashboard" },
+];
+const EXPLORED_KEY = "samecor:onboarding-explored";
+const COLLAPSED_KEY = "samecor:onboarding-collapsed";
+
+function readExplored(): string[] {
+  try {
+    const raw = localStorage.getItem(EXPLORED_KEY);
+    const list = raw ? (JSON.parse(raw) as unknown) : [];
+    return Array.isArray(list) ? list.filter((v): v is string => typeof v === "string") : [];
+  } catch {
+    return [];
+  }
+}
 
 /**
  * First three things to do after signing up — photo, role, first work (publish first, polish later) —
@@ -43,7 +73,34 @@ type Step = { id: string; title: string; hint: string; done: boolean; icon: Luci
  */
 export default function GettingStartedCard({ input, onEditProfile, onAvatar }: Props) {
   const percent = profileCompletion(input);
+  const [explored, setExplored] = useState<string[]>(readExplored);
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem(COLLAPSED_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+  const toggleCollapsed = () => {
+    const nextValue = !collapsed;
+    setCollapsed(nextValue);
+    try {
+      localStorage.setItem(COLLAPSED_KEY, nextValue ? "1" : "0");
+    } catch {
+      /* private mode */
+    }
+  };
   if (percent >= 100) return null;
+
+  const markExplored = (key: string) => {
+    const next = Array.from(new Set([...explored, key]));
+    setExplored(next);
+    try {
+      localStorage.setItem(EXPLORED_KEY, JSON.stringify(next));
+    } catch {
+      /* private mode */
+    }
+  };
 
   const steps: Step[] = [
     { id: "avatar", title: "ใส่รูปโปรไฟล์", hint: "ให้คนจำหน้าคุณได้", done: input.hasAvatar, icon: UserRound, action: onAvatar },
@@ -52,7 +109,7 @@ export default function GettingStartedCard({ input, onEditProfile, onAvatar }: P
       title: "บอกว่าคุณทำอะไร",
       hint: "สายงาน แนะนำตัว และสถานะรับงาน",
       done: input.hasRole,
-      icon: Wand2,
+      icon: BriefcaseBusiness,
       action: onEditProfile,
     },
     {
@@ -64,6 +121,15 @@ export default function GettingStartedCard({ input, onEditProfile, onAvatar }: P
       action: () => undefined,
       href: "/portfolio/new",
     },
+    {
+      id: "explore",
+      title: "สำรวจ SAMECOR",
+      hint: "Showcase · Creators · Exhibition · My Studio",
+      done: EXPLORE_LINKS.every((l) => explored.includes(l.key)),
+      icon: Compass,
+      action: () => undefined,
+      links: EXPLORE_LINKS,
+    },
   ];
   const next = steps.find((s) => !s.done);
 
@@ -74,18 +140,37 @@ export default function GettingStartedCard({ input, onEditProfile, onAvatar }: P
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 id="getting-started-title" className="flex items-center gap-1.5 text-sm font-semibold">
-            <Sparkles className="h-4 w-4 text-primary" aria-hidden />
+            <Rocket className="h-4 w-4 text-brand" aria-hidden />
             เริ่มต้นใช้งาน
           </h2>
           <p className="mt-0.5 text-xs text-muted-foreground">โปรไฟล์ที่ครบ ช่วยให้คนที่ใช่ค้นเจอคุณ</p>
         </div>
-        <span className="shrink-0 text-sm font-semibold tabular-nums text-primary">{percent}%</span>
+        <div className="flex shrink-0 items-center gap-1">
+          <span className="text-sm font-semibold tabular-nums text-primary">{percent}%</span>
+          <button
+            type="button"
+            onClick={toggleCollapsed}
+            aria-expanded={!collapsed}
+            aria-controls="getting-started-steps"
+            aria-label={collapsed ? "แสดงทุกขั้นตอน" : "หุบการ์ด"}
+            className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <ChevronDown className={cn("h-4 w-4 transition-transform duration-200", !collapsed && "rotate-180")} />
+          </button>
+        </div>
       </div>
       <div className="h-1.5 overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100}>
-        <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${percent}%` }} />
+        <div className="h-full rounded-full bg-brand transition-all duration-500" style={{ width: `${percent}%` }} />
       </div>
-      <ol className="grid gap-2 sm:grid-cols-3">
-        {steps.map((s, i) => {
+      <ol
+        id="getting-started-steps"
+        className={cn("grid gap-2", collapsed ? "grid-cols-1" : "sm:grid-cols-2 lg:grid-cols-4")}
+      >
+        {/* Still-to-do steps float to the top; finished ones drop below (numbers stay put). */}
+        {[...steps.filter((x) => !x.done), ...steps.filter((x) => x.done)].map((s) => {
+          const i = steps.indexOf(s);
+          // Collapsed: only the next thing to do.
+          if (collapsed && s.id !== next?.id) return null;
           const Icon = s.done ? Check : s.icon;
           const body = (
             <>
@@ -103,7 +188,7 @@ export default function GettingStartedCard({ input, onEditProfile, onAvatar }: P
                 </span>
                 <span className="block truncate text-[11px] text-muted-foreground">{s.hint}</span>
               </span>
-              {!s.done ? <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden /> : null}
+              {!s.done && !s.links ? <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden /> : null}
             </>
           );
           const cls = cn(
@@ -113,7 +198,35 @@ export default function GettingStartedCard({ input, onEditProfile, onAvatar }: P
           );
           return (
             <li key={s.id}>
-              {s.done ? (
+              {s.links && !s.done ? (
+                <div className={cn(cls, "flex-wrap hover:bg-transparent")}>
+                  {body}
+                  <span className="flex w-full flex-wrap gap-1.5 pl-[2.625rem]">
+                    {s.links.map((l) => {
+                      const seen = explored.includes(l.key);
+                      return (
+                        <Link
+                          key={l.key}
+                          to={l.to}
+                          onClick={() => {
+                            track(`${s.id}_${l.key}`);
+                            markExplored(l.key);
+                          }}
+                          className={cn(
+                            "inline-flex h-8 items-center gap-1 rounded-full border px-3 text-xs font-medium transition-colors",
+                            seen
+                              ? "border-transparent bg-muted/60 text-muted-foreground"
+                              : "border-border text-foreground hover:bg-muted",
+                          )}
+                        >
+                          {seen ? <Check className="h-3 w-3" aria-hidden /> : null}
+                          {l.label}
+                        </Link>
+                      );
+                    })}
+                  </span>
+                </div>
+              ) : s.done ? (
                 <div className={cls}>{body}</div>
               ) : s.href ? (
                 <Link to={s.href} className={cls} onClick={() => track(s.id)}>

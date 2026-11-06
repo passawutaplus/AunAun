@@ -1,3 +1,4 @@
+import { requestAvatarPick } from "@/lib/profileAvatarPick";
 import { useMemo, useEffect, useRef, useState } from "react";
 import { CircleHelp } from "lucide-react";
 import { ProfileTour } from "@/components/profile/ProfileTour";
@@ -311,6 +312,19 @@ const PortfolioProfilePage = () => {
 
       <div className={cn(PAGE_SHELL, "pt-2 pb-8 space-y-4")}>
         <main className="min-w-0 space-y-4">
+          {/* Above the tabs so it stays put while switching tabs. */}
+          <GettingStartedCard
+            input={{
+              hasAvatar: !!profile.avatar_url,
+              hasRole: !!profile.role?.trim() || disciplines.length > 0,
+              bioLength: (profile.bio ?? "").trim().length,
+              skillsCount: skills.length,
+              hasAvailability: !!(profile as { opportunity_status?: string | null }).opportunity_status,
+              publishedCount: published.length,
+            }}
+            onEditProfile={() => setOpportunityOpen(true)}
+            onAvatar={requestAvatarPick}
+          />
           <div className="flex items-center gap-1 border-b border-border/70">
             <nav
               data-tour="profile-tabs"
@@ -369,18 +383,6 @@ const PortfolioProfilePage = () => {
               isLoading={projectsLoading}
               afterHeading={
                 <>
-                  <GettingStartedCard
-                    input={{
-                      hasAvatar: !!profile.avatar_url,
-                      hasRole: !!profile.role?.trim() || disciplines.length > 0,
-                      bioLength: (profile.bio ?? "").trim().length,
-                      skillsCount: skills.length,
-                      hasAvailability: !!(profile as { opportunity_status?: string | null }).opportunity_status,
-                      publishedCount: published.length,
-                    }}
-                    onEditProfile={() => setOpportunityOpen(true)}
-                    onAvatar={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                  />
                   {isCommerceEnabled() ? <OnboardingChecklist variant="compact" /> : null}
                 </>
               }

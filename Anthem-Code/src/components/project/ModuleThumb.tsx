@@ -1,4 +1,4 @@
-import { ImageIcon, Play } from "lucide-react";
+import { Play } from "lucide-react";
 import type { CanvasToolPayload } from "@/lib/canvasToolDrag";
 import { PHOTO_GRID_LAYOUTS } from "@/lib/photoGridLayouts";
 import { cn } from "@/lib/utils";
@@ -11,7 +11,6 @@ const Photo = ({ className }: { className?: string }) => (
       className,
     )}
   >
-    <ImageIcon className="h-3 w-3" aria-hidden />
   </div>
 );
 
@@ -158,7 +157,7 @@ function Mock({ payload }: { payload: CanvasToolPayload }) {
 /** A small grey-on-grey mockup of what a module looks like once placed. */
 export function ModuleThumb({ payload, className }: { payload: CanvasToolPayload; className?: string }) {
   return (
-    <div className={cn("aspect-[5/3] w-full overflow-hidden rounded-lg bg-muted p-1.5", className)} aria-hidden>
+    <div className={cn("aspect-[5/3] w-full overflow-hidden rounded-[4px] bg-muted p-1.5", className)} aria-hidden>
       <Mock payload={payload} />
     </div>
   );

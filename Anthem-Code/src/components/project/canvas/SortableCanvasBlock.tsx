@@ -626,7 +626,7 @@ export function SortableCanvasBlock({
         disabled={disabled}
         isFirst={index === 0}
         isLast={index === total - 1}
-        visible={showRail}
+        visible={phone ? !!selected : showRail}
         phoneHidden={phoneActionsOnImage}
         phoneBelowTools={block.type === "video"}
         canDuplicate={canDuplicate}

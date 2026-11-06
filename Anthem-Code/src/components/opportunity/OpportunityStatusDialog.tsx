@@ -84,7 +84,7 @@ const OpportunityStatusDialog = ({ open, onOpenChange }: Props) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto gap-0 p-0">
+      <DialogContent className="w-[calc(100vw-1.5rem)] max-w-lg rounded-2xl max-h-[calc(100dvh-3rem)] overflow-y-auto gap-0 p-0">
         <DialogHeader className="px-5 pt-5 pb-4 space-y-2 text-left border-b border-border/50">
           <DialogTitle className="text-lg font-semibold leading-snug pr-8">
             แก้ไขโปรไฟล์
@@ -165,7 +165,7 @@ const OpportunityStatusDialog = ({ open, onOpenChange }: Props) => {
           </div>
         )}
 
-        <DialogFooter className="px-5 py-4 gap-2 sm:justify-end border-t border-border/50">
+        <DialogFooter className="sticky bottom-0 z-10 gap-2 border-t border-border/50 bg-card px-5 py-4 sm:justify-end">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             ยกเลิก
           </Button>

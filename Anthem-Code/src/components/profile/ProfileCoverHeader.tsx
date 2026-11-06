@@ -1,4 +1,5 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { PICK_AVATAR_EVENT } from "@/lib/profileAvatarPick";
 import { Camera, Crop, Loader2, Pencil, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -97,6 +98,12 @@ export default function ProfileCoverHeader({
   const updateMedia = useUpdateProfileMedia(userId);
   const coverInput = useRef<HTMLInputElement>(null);
   const avatarInput = useRef<HTMLInputElement>(null);
+  // "ใส่รูปโปรไฟล์" in the getting-started card opens the avatar picker directly.
+  useEffect(() => {
+    const pick = () => avatarInput.current?.click();
+    window.addEventListener(PICK_AVATAR_EVENT, pick);
+    return () => window.removeEventListener(PICK_AVATAR_EVENT, pick);
+  }, []);
   const [coverBusy, setCoverBusy] = useState(false);
   const [avatarBusy, setAvatarBusy] = useState(false);
   const [coverMenuOpen, setCoverMenuOpen] = useState(false);

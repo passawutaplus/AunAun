@@ -24,7 +24,7 @@ export function TourInvite({ label, title, body, onStart, onClose, onNeverAgain 
         role="region"
         aria-label={label}
         style={{ bottom: mobileFabBottom("0.5rem") }}
-        className="fixed inset-x-3 z-[70] mx-auto flex max-w-md items-center gap-2.5 rounded-2xl bg-surface-strong p-2 pr-2.5 text-white shadow-sm lg:hidden"
+        className="fixed inset-x-3 z-40 mx-auto flex max-w-md items-center gap-2.5 rounded-2xl bg-surface-strong p-2 pr-2.5 text-white shadow-sm lg:hidden"
       >
         <MascotCharacter className="h-10 w-12 shrink-0" />
         <button type="button" onClick={onStart} className="min-w-0 flex-1 text-left outline-none focus-visible:underline">
@@ -52,7 +52,7 @@ export function TourInvite({ label, title, body, onStart, onClose, onNeverAgain 
       <div
         role="region"
         aria-label={label}
-        className="fixed bottom-6 right-6 z-[70] hidden w-[280px] rounded-2xl border border-border bg-card p-3 text-left shadow-sm lg:block"
+        className="fixed bottom-6 right-6 z-40 hidden w-[280px] rounded-2xl border border-border bg-card p-3 text-left shadow-sm lg:block"
       >
         <div className="flex items-start gap-2">
           <MascotCharacter className="h-10 w-12 shrink-0" />
