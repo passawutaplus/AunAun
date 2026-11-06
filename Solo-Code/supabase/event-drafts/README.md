@@ -53,8 +53,11 @@ shorteners. A draft is skipped (returns NULL) when the same `source_url` already
 very similar title is already in the table. No images are ever copied: `cover_url` and
 `gallery_urls` stay empty.
 
-`insights` ("สรุปโดย SAMECOR" on the event page) is optional: `who_for` ≤ 5, `takeaways` ≤ 4,
-`know_before` ≤ 5 short lines (≤ 140 chars, Thai, written only from the organiser's page — skip a
+`insights` ("สรุปโดย SAMECOR" on the event page) is optional: exactly the best **2** lines each for
+`who_for`, `takeaways` and `know_before` (the page shows two; more reads as repetition). `know_before`
+must not repeat what the page already shows (dates, opening hours in `time_note`, venue, price):
+put prices in `fee_type` / `fee_note`, never only in `know_before`, so the Admission row and the
+summary never disagree. Short lines (≤ 140 chars, Thai, written only from the organiser's page — skip a
 list rather than guess), `related_categories` ≤ 4 values from SAMECOR's work categories
 (`Anthem-Code/src/data/projectTypes.ts` PROJECT_CATEGORIES). Never mention AI in these texts.
 
