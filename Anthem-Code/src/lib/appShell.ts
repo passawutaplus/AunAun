@@ -13,7 +13,7 @@ const ANDROID_SOURCE_PARAM = "android";
 const ANDROID_REFERRER_PREFIX = "android-app://com.samecor.twa";
 
 /** Status bar / theme-color per theme — matches --background in index.css. */
-const THEME_COLOR = { light: "#F8F7F2", dark: "#201F1E" } as const;
+const THEME_COLOR = { light: "#F2F2F0", dark: "#201F1E" } as const;
 
 function readSession(key: string): string | null {
   try {
