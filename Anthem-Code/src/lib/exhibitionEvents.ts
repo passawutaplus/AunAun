@@ -378,11 +378,14 @@ export type EventInsights = {
 
 export const EVENT_INSIGHT_KEYS = ["who_for", "takeaways", "know_before"] as const;
 
-/** List keys with their limits (mirrors anthem.event_insights_clean). */
+/**
+ * List keys with their limits. The three summary lists show two lines each (owner, 2026-11-06: more read as
+ * repetition); the database still accepts up to 5 / 4 / 5 (anthem.event_insights_clean), extra lines are hidden.
+ */
 export const EVENT_INSIGHT_LISTS = {
-  who_for: 5,
-  takeaways: 4,
-  know_before: 5,
+  who_for: 2,
+  takeaways: 2,
+  know_before: 2,
   related_categories: 4,
   steps: 8,
   eligibility: 5,
