@@ -11,6 +11,31 @@ export function isChunkLoadError(err: unknown): boolean {
 }
 
 /**
+ * Vite fires `vite:preloadError` when any dynamic import 404s (stale tab after a deploy, e.g. Sentry
+ * "Failed to fetch dynamically imported module .../CollabDialog-*.js"). Reload once to pick up the new build.
+ */
+export function installChunkReload() {
+  // A page that stays up 30 s after loading is healthy: allow one more reload for the next deploy.
+  window.setTimeout(() => {
+    try {
+      sessionStorage.removeItem(RELOAD_KEY);
+    } catch {
+      /* ignore */
+    }
+  }, 30_000);
+  window.addEventListener("vite:preloadError", (event) => {
+    try {
+      if (sessionStorage.getItem(RELOAD_KEY)) return; // already reloaded once: let the error surface
+      sessionStorage.setItem(RELOAD_KEY, "1");
+    } catch {
+      return;
+    }
+    event.preventDefault();
+    window.location.reload();
+  });
+}
+
+/**
  * Like React.lazy, but one hard reload when a chunk 404s after deploy
  * (old index still in memory requesting a deleted hashed asset).
  */

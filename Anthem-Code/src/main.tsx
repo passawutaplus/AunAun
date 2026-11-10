@@ -1,3 +1,4 @@
+import "./lib/runtimePolyfills"; // first: randomUUID / storage gaps on old phones and in-app browsers
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
@@ -9,7 +10,9 @@ import { loadBrandFonts } from "./lib/loadBrandFonts";
 import { registerPwa } from "./lib/pwa";
 import { installAppShell } from "./lib/appShell";
 import { installBootGate } from "./lib/bootGate";
+import { installChunkReload } from "./lib/lazyWithRetry";
 
+installChunkReload();
 installCspReporter();
 installFeedbackDiagnostics();
 installReportableErrorToasts();

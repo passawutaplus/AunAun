@@ -2,6 +2,7 @@
  * /go — landing page behind the NFC business card (`/go?src=card`) and printed QR codes
  * (`?src=qr|poster|flyer|booth`). Kept outside the React app so it stays tiny (no app bundle).
  */
+import "../lib/runtimePolyfills";
 import "./go.css";
 import { joinedPillPath } from "./shape";
 
