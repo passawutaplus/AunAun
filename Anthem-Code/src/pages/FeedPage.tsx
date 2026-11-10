@@ -1,3 +1,4 @@
+import { TOUR_UI } from "@/lib/i18n/tour";
 import { Suspense, useState, useMemo, useEffect, useRef } from "react";
 import { lazyWithRetry as lazy } from "@/lib/lazyWithRetry";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
@@ -1129,7 +1130,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
       {/* Desktop only — on phones it sat on top of the feed; Settings → ทัวร์แนะนำ replays it there */}
       <TourHelpButton onClick={homeTour.start} className="fixed bottom-6 left-4 z-30 hidden shadow-sm lg:inline-flex" />
       <Suspense fallback={null}>
-        <GuideTour tourId="home" label="ทัวร์แนะนำหน้าแรก" steps={HOME_TOUR} open={homeTour.open} intro={homeTour.intro} onClose={homeTour.close} />
+        <GuideTour tourId="home" label={TOUR_UI.labelHome} steps={HOME_TOUR} open={homeTour.open} intro={homeTour.intro} onClose={homeTour.close} />
       </Suspense>
     </main>
   );

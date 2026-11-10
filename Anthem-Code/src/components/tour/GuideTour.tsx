@@ -1,3 +1,5 @@
+import { tr, useLang, useT, type Entry } from "@/lib/i18n";
+import { TOUR_UI } from "@/lib/i18n/tour";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { ChevronLeft, X } from "lucide-react";
@@ -12,9 +14,10 @@ import { cn } from "@/lib/utils";
 
 export type GuideTourStep = {
   id: string;
-  /** Short English label (Agrandir); the explanation goes in `body` (Thai). */
+  /** Short English label (display font); the explanation goes in `body`. */
   title: string;
-  body: string;
+  /** Plain text, or th / en / zh (shown in the reader's language). */
+  body: string | Entry;
   /** `data-tour` value of the element to spotlight; none = centred card. */
   target?: string;
   /** Skipped when the target is not on screen (desktop-only rails, features that are off…). */
@@ -27,8 +30,8 @@ export type GuideTourStep = {
 
 type Props = {
   tourId: GuideTourId;
-  /** Accessible name, e.g. "ทัวร์แนะนำหน้าแรก". */
-  label: string;
+  /** Accessible name, e.g. TOUR_UI.labelHome. */
+  label: string | Entry;
   steps: GuideTourStep[];
   open: boolean;
   /** Opened by itself: ask first with TourInvite instead of taking over the page. */
@@ -76,7 +79,11 @@ function placeCard(rect: DOMRect | null, wide: boolean, cardH: number): React.CS
  * Look-only page walkthrough: spotlight + card, next / back / keyboard, steps whose target is missing are skipped.
  * Finishing marks the tour done; ✕ / Esc closes for this visit; "ไม่ต้องแสดงอีก" switches it off.
  */
-export function GuideTour({ tourId, label, steps: allSteps, open, intro = false, onClose }: Props) {
+export function GuideTour({ tourId, label: labelProp, steps: allSteps, open, intro = false, onClose }: Props) {
+  const lang = useLang();
+  const t = useT(TOUR_UI);
+  const label = typeof labelProp === "string" ? labelProp : tr(labelProp, undefined, lang);
+  const bodyOf = (s: GuideTourStep) => (typeof s.body === "string" ? s.body : tr(s.body, undefined, lang));
   const { user } = useAuth();
   const [index, setIndex] = useState(0);
   const [accepted, setAccepted] = useState(false);
@@ -196,7 +203,7 @@ export function GuideTour({ tourId, label, steps: allSteps, open, intro = false,
 
   if (inviting) {
     if (cookieBannerPending) return null;
-    return <TourInvite label={label} title={step.title} body={step.body} onStart={startFromInvite} onClose={close} onNeverAgain={neverAgain} />;
+    return <TourInvite label={label} title={step.title} body={bodyOf(step)} onStart={startFromInvite} onClose={close} onNeverAgain={neverAgain} />;
   }
 
   const wide = !!step.scene;
@@ -221,16 +228,16 @@ export function GuideTour({ tourId, label, steps: allSteps, open, intro = false,
             <button
               type="button"
               onClick={close}
-              aria-label="ปิดทัวร์"
+              aria-label={t("close")}
               className="-mr-1 -mt-1 rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
             >
               <X className="h-3.5 w-3.5" />
             </button>
           </div>
-          <p className="whitespace-pre-line text-[13px] leading-relaxed text-muted-foreground">{step.body}</p>
+          <p className="whitespace-pre-line text-[13px] leading-relaxed text-muted-foreground">{bodyOf(step)}</p>
           {step.scene ? <div className="mt-3 overflow-hidden rounded-xl border border-border bg-background">{step.scene}</div> : null}
           <div className="mt-3 flex items-center gap-2">
-            <span className="mr-auto flex items-center gap-1" aria-label={`ขั้นที่ ${index + 1} จาก ${steps.length}`}>
+            <span className="mr-auto flex items-center gap-1" aria-label={t("stepOf", { n: index + 1, total: steps.length })}>
               {steps.map((s, i) => (
                 <span
                   key={s.id}
@@ -243,11 +250,11 @@ export function GuideTour({ tourId, label, steps: allSteps, open, intro = false,
             </span>
             {index > 0 ? (
               <Button type="button" size="sm" variant="ghost" className="rounded-full" onClick={back}>
-                <ChevronLeft className="mr-0.5 h-3.5 w-3.5" aria-hidden /> ย้อนกลับ
+                <ChevronLeft className="mr-0.5 h-3.5 w-3.5" aria-hidden /> {t("back")}
               </Button>
             ) : null}
             <Button type="button" size="sm" className="rounded-full" onClick={next}>
-              {index === 0 ? "เริ่มเลย" : last ? "จบทัวร์" : "ถัดไป"}
+              {index === 0 ? t("go") : last ? t("finish") : t("next")}
             </Button>
           </div>
           {!last ? (
@@ -256,10 +263,10 @@ export function GuideTour({ tourId, label, steps: allSteps, open, intro = false,
               onClick={neverAgain}
               className="mt-2 text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
             >
-              ไม่ต้องแสดงอีก
+              {t("neverAgain")}
             </button>
           ) : (
-            <p className="mt-2 text-[11px] text-muted-foreground">ดูทัวร์นี้อีกครั้งได้จากปุ่ม ? ในหน้านี้ หรือในตั้งค่า</p>
+            <p className="mt-2 text-[11px] text-muted-foreground">{t("replayHint")}</p>
           )}
         </div>,
         document.body,

@@ -1,3 +1,4 @@
+import { TOUR_UI } from "@/lib/i18n/tour";
 import { useEffect, useState } from "react";
 import { GuideTour } from "@/components/tour/GuideTour";
 import { CHAT_TOUR } from "@/components/tour/tours";
@@ -296,7 +297,7 @@ const ChatInboxPage = () => {
           </>
         )}
       </AnimatePresence>
-      <GuideTour tourId="chat" label="ทัวร์แนะนำแชท" steps={CHAT_TOUR} open={chatTour.open} intro={chatTour.intro} onClose={chatTour.close} />
+      <GuideTour tourId="chat" label={TOUR_UI.labelChat} steps={CHAT_TOUR} open={chatTour.open} intro={chatTour.intro} onClose={chatTour.close} />
     </main>
   );
 };

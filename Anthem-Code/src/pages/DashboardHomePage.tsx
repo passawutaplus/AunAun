@@ -1,3 +1,4 @@
+import { TOUR_UI } from "@/lib/i18n/tour";
 import { useEffect } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
@@ -51,7 +52,7 @@ export default function DashboardHomePage() {
       ) : (
         <StudioHomePanel userId={user.id} />
       )}
-      <GuideTour tourId="studio" label="ทัวร์แนะนำ My Studio" steps={STUDIO_TOUR} open={tour.open} intro={tour.intro} onClose={tour.close} />
+      <GuideTour tourId="studio" label={TOUR_UI.labelStudio} steps={STUDIO_TOUR} open={tour.open} intro={tour.intro} onClose={tour.close} />
     </StudioLayout>
   );
 }
