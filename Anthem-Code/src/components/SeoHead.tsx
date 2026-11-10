@@ -70,7 +70,10 @@ function upsertJsonLd(id: string, data: Record<string, unknown> | Record<string,
     el.type = "application/ld+json";
     document.head.appendChild(el);
   }
-  el.textContent = JSON.stringify(data);
+  // Always one top-level object with @context: in-app browsers read data["@context"] and crash on an array
+  // (Sentry: undefined is not an object (evaluating 'r["@context"].toLowerCase')).
+  const doc = Array.isArray(data) ? { "@context": "https://schema.org", "@graph": data } : { "@context": "https://schema.org", ...data };
+  el.textContent = JSON.stringify(doc);
 }
 
 function removeJsonLd(id: string) {
