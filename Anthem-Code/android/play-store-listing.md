@@ -28,64 +28,54 @@ only features that exist in the build. Brand: Guidelines v1.0, not a job board, 
 
 ### Short description (≤80)
 
-- **TH (73):** โชว์พอร์ตโฟลิโอ เจอคนคอเดียวกัน ไม่พลาดนิทรรศการ เวิร์กช็อป และ Open Call
-- **EN (78):** Show your portfolio, meet creators like you, and find art events & open calls.
+- **TH (78):** แกลเลอรีของคนคอเดียวกัน แขวนผลงานฟรี ไม่พลาดนิทรรศการ เวิร์กช็อป และ Open Call
+- **EN (77):** A gallery with an open door. Show your work, find art events across Thailand.
 
 ### Full description (≤4000)
 
-#### TH (1151 characters)
+Voice: warm and quiet, opens with the brand line "ทุกคนควรได้ยืนอยู่ใต้แสงสักครั้ง" (Business Model doc), short story-led sections instead of a feature list.
 
-SAMECOR คือแกลเลอรีออนไลน์ของครีเอเตอร์ไทย ที่ให้ผลงานของคุณถูกเห็น และพาคุณไปเจอคนคอเดียวกัน
+#### TH (989 characters)
 
-ศิลปิน นักออกแบบกราฟิก นักวาดภาพประกอบ ช่างภาพ นักออกแบบ 3D สถาปนิก และฟรีแลนซ์สายสร้างสรรค์ ลงผลงานได้ฟรี ทุกคนได้ยืนอยู่ใต้แสงเท่ากัน ไม่ต้องจ่ายเพื่อให้คนเห็น
+ทุกคนควรได้ยืนอยู่ใต้แสงสักครั้ง
 
-ลงพอร์ตโฟลิโอให้สวย
-• ลงโปรเจกต์พร้อมรูปภาพ วิดีโอ และเรื่องราวเบื้องหลังงาน
-• จัดหน้าผลงานเองได้บนมือถือ เรียงส่วนต่างๆ ด้วยการกดค้าง
-• มีโปรไฟล์ครีเอเตอร์พร้อมผลงานคัดสรรและสาขาที่ถนัด
+SAMECOR คือแกลเลอรีออนไลน์ที่เปิดประตูไว้ให้ครีเอเตอร์ไทยทุกคน ไม่ว่าคุณจะเป็นศิลปิน นักออกแบบกราฟิก นักวาดภาพประกอบ ช่างภาพ นักออกแบบ 3D สถาปนิก หรือฟรีแลนซ์สายสร้างสรรค์ ที่นี่ผลงานของคุณได้แสงเท่ากับทุกคน ไม่ต้องจ่ายเพื่อให้ใครเห็น
 
-ค้นพบผลงานและคนคอเดียวกัน
-• Showcase: ไล่ดูผลงานตามหมวด ค้นหาด้วยคำหรือด้วยสี
-• Creators: ทำเนียบครีเอเตอร์ ดูงานแล้วกดติดตามได้ทันที
-• เก็บแรงบันดาลใจไว้เป็นคอลเลกชัน และแชร์ผลงานให้เพื่อนได้ในคลิกเดียว
-• ทักแชทกับครีเอเตอร์จากผลงานที่ชอบ
+แขวนผลงานให้สวยอย่างที่มันควรเป็น
+ลงโปรเจกต์พร้อมภาพ วิดีโอ และเรื่องเล่าเบื้องหลัง จัดหน้าเองได้จากมือถือ แล้วปล่อยให้งานพูดแทนตัวคุณ
 
-Exhibition & Events
-• รวมนิทรรศการศิลปะ เวิร์กช็อป Art Fair ทอล์ก และ Open Call ทั่วไทย คัดและตรวจลิงก์โดยทีม SAMECOR
-• ปฏิทินงานรายสัปดาห์ กดสนใจเพื่อรับการเตือน และเพิ่มลง Google Calendar
-• แผนที่สถานที่จัดและเส้นทางเดินไปงาน
-• สรุปโดย SAMECOR: งานนี้เหมาะกับใคร จะได้อะไรกลับไป และควรรู้อะไรก่อนไป
+เจอคนที่มองโลกแบบเดียวกัน
+เดินชมผลงานใน Showcase ตามหมวด ค้นด้วยคำ หรือแม้แต่ด้วยสี เจอใครที่ใช่ก็กดติดตาม เก็บงานที่ชอบไว้ในคอลเลกชัน หรือทักคุยได้ทันที
 
-ใช้ได้สามภาษา ไทย / English / 中文 เปลี่ยนได้ที่เมนูโปรไฟล์
+ไม่พลาดงานศิลปะดีๆ รอบตัว
+Exhibition & Events รวมนิทรรศการ เวิร์กช็อป Art Fair ทอล์ก และ Open Call ทั่วไทย ที่ทีมเราคัดและตรวจลิงก์ทุกสัปดาห์ กดสนใจเพื่อรับการเตือน เพิ่มลง Google Calendar ดูแผนที่และเส้นทางเดิน พร้อมสรุปสั้นๆ ว่างานนี้เหมาะกับใคร และควรรู้อะไรก่อนไป
 
-SAMECOR ไม่ใช่เว็บหางานและไม่หักค่าคอมมิชชัน เราเป็นพื้นที่ให้ผลงานพูดแทนคุณ ลงผลงานชิ้นแรกได้ฟรีวันนี้
+ใช้ได้ทั้งภาษาไทย English และ 中文
 
-#### EN (1453 characters)
+SAMECOR ไม่ใช่เว็บหางาน และไม่หักค่าคอมมิชชันจากใคร เราแค่อยากให้ผลงานดีๆ ได้เจอคนที่ใช่
 
-SAMECOR is an online gallery for Thai creators: a place where your work gets seen and you meet people who see the world the way you do.
+แขวนผลงานชิ้นแรกของคุณได้ฟรี วันนี้
 
-Artists, graphic designers, illustrators, photographers, 3D artists, architects and creative freelancers post their work for free. Everyone gets the same light; nobody pays to be seen.
+#### EN (1165 characters)
 
-Build a portfolio that looks its best
-• Publish projects with images, video and the story behind the work
-• Lay out your project page on your phone; long-press to reorder sections
-• A creator profile with selected works and the disciplines you practise
+Everyone deserves a moment in the light.
 
-Discover work and people like you
-• Showcase: browse work by category, search by keyword or by colour
-• Creators: a directory of creators you can follow in one tap
-• Save inspiration in collections and share any work with friends
-• Message a creator straight from a project you like
+SAMECOR is an online gallery with an open door for Thai creators. Artists, graphic designers, illustrators, photographers, 3D artists, architects and creative freelancers all get the same light here. Nobody pays to be seen.
 
-Exhibition & Events
-• Art exhibitions, workshops, art fairs, talks and open calls across Thailand, curated and link-checked by the SAMECOR team
-• A weekly calendar, reminders for events you are interested in, and Add to Google Calendar
-• Venue maps and walking routes to the event
-• Summary by SAMECOR: who each event suits, what you will take away and what to know before you go
+Hang your work the way it deserves
+Publish projects with images, video and the story behind them. Lay out the page right from your phone, then let the work speak for you.
 
-Available in Thai, English and Chinese; switch from the profile menu.
+Find people who see the world like you do
+Wander the Showcase by category, by keyword, or even by colour. Follow the creators who move you, keep favourite pieces in collections, and start a conversation when something clicks.
 
-SAMECOR is not a job board and takes no commission. It is a space that lets your work speak for you. Post your first project for free today.
+Never miss what's on
+Exhibition & Events gathers exhibitions, workshops, art fairs, talks and open calls across Thailand, picked and link-checked by our team every week. Get reminders, add events to Google Calendar, follow the walking route, and read a short summary of who each event is for and what to know before you go.
+
+In Thai, English and Chinese.
+
+SAMECOR is not a job board and takes no commission. We simply want good work to find the right people.
+
+Hang your first piece today. It's free.
 
 ## Graphics checklist
 
