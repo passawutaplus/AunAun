@@ -3,6 +3,8 @@ import { Link, useLocation } from "react-router-dom";
 import { isAuthRoute } from "@/lib/onboardingRoutes";
 import { Cookie, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useT } from "@/lib/i18n";
+import { CONSENT } from "@/lib/i18n/consent";
 import CookiePreferencesDialog from "@/components/CookiePreferencesDialog";
 import {
   acceptAllCookies,
@@ -17,6 +19,7 @@ const declineClass =
   "min-h-10 rounded-full border-border dark:border-border bg-white dark:bg-card text-foreground shadow-none hover:border-border dark:border-border hover:bg-background hover:text-foreground";
 
 const CookieConsent = () => {
+  const t = useT(CONSENT);
   const { pathname } = useLocation();
   const compactAuth = isAuthRoute(pathname);
   const [bannerOpen, setBannerOpen] = useState(false);
@@ -60,7 +63,7 @@ const CookieConsent = () => {
               : "fixed inset-x-4 bottom-[calc(env(safe-area-inset-bottom,0px)+5.5rem)] z-40 pointer-events-none sm:inset-x-6 lg:inset-x-0 lg:bottom-3"
           }
           role="dialog"
-          aria-label="แบนเนอร์ความยินยอมคุกกี้"
+          aria-label={t("region")}
         >
           {compactAuth ? (
             <div className="pointer-events-auto rounded-2xl border border-white/40 dark:border-white/10 bg-background/60 backdrop-blur-2xl backdrop-saturate-150 p-3 text-foreground shadow-lg">
@@ -70,20 +73,20 @@ const CookieConsent = () => {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-medium text-foreground">
-                    เราใช้คุกกี้ตาม พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล (PDPA)
+                    {t("title")}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     <Button size="sm" onClick={acceptAll} className={`${acceptClass} min-h-11`}>
-                      ยอมรับทั้งหมด
+                      {t("acceptAll")}
                     </Button>
                     <Button size="sm" variant="outline" onClick={essentialOnly} className={`${declineClass} min-h-11`}>
-                      ปฏิเสธที่ไม่จำเป็น
+                      {t("essentialOnly")}
                     </Button>
                   </div>
                 </div>
                 <button
                   type="button"
-                  aria-label="ปิดและใช้คุกกี้จำเป็นเท่านั้น"
+                  aria-label={t("closeEssential")}
                   onClick={essentialOnly}
                   className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-foreground/8 hover:text-foreground"
                 >
@@ -99,29 +102,29 @@ const CookieConsent = () => {
                   <Cookie className="mt-0.5 h-5 w-5 shrink-0 text-foreground" strokeWidth={2.25} aria-hidden />
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-foreground">
-                      เราใช้คุกกี้ตาม พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล (PDPA)
+                      {t("title")}
                     </p>
                     <p className="mt-0.5 text-xs text-muted-foreground">
                       <Link to="/legal/cookies" className="text-foreground underline underline-offset-2">
-                        นโยบายคุกกี้
+                        {t("cookiePolicy")}
                       </Link>
                       {" · "}
                       <Link to="/legal/privacy" className="text-foreground underline underline-offset-2">
-                        ความเป็นส่วนตัว
+                        {t("privacy")}
                       </Link>
                       {" · "}
                       <Link to="/legal/terms" className="text-foreground underline underline-offset-2">
-                        ข้อกำหนด
+                        {t("terms")}
                       </Link>
                     </p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2 lg:flex lg:shrink-0 lg:justify-end">
                   <Button size="sm" onClick={acceptAll} className={`${acceptClass} w-full lg:w-auto`}>
-                    ยอมรับทั้งหมด
+                    {t("acceptAll")}
                   </Button>
                   <Button size="sm" variant="outline" onClick={essentialOnly} className={`${declineClass} w-full lg:w-auto`}>
-                    ปฏิเสธที่ไม่จำเป็น
+                    {t("essentialOnly")}
                   </Button>
                 </div>
               </div>

@@ -3,6 +3,8 @@ import { ChevronRight, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MascotCharacter } from "@/components/project/TourMascot";
 import { mobileFabBottom } from "@/lib/mobileLayout";
+import { useT } from "@/lib/i18n";
+import { TOUR_UI } from "@/lib/i18n/tour";
 
 type Props = {
   label: string;
@@ -18,6 +20,7 @@ type Props = {
  * Below lg it is a bar above the floating nav; from lg up, a small card in the bottom right corner.
  */
 export function TourInvite({ label, title, body, onStart, onClose, onNeverAgain }: Props) {
+  const t = useT(TOUR_UI);
   return createPortal(
     <>
       <div
@@ -29,12 +32,12 @@ export function TourInvite({ label, title, body, onStart, onClose, onNeverAgain 
         <MascotCharacter className="h-10 w-12 shrink-0" />
         <button type="button" onClick={onStart} className="min-w-0 flex-1 text-left outline-none focus-visible:underline">
           <span className="block truncate font-display text-sm font-light tracking-tight">{title}</span>
-          <span className="block truncate text-xs text-white/70">ดูทัวร์สั้น ๆ ของหน้านี้</span>
+          <span className="block truncate text-xs text-white/70">{t("invite")}</span>
         </button>
         <button
           type="button"
           onClick={onStart}
-          aria-label="เริ่มทัวร์"
+          aria-label={t("start")}
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-[#111111]"
         >
           <ChevronRight className="h-4 w-4" aria-hidden />
@@ -42,7 +45,7 @@ export function TourInvite({ label, title, body, onStart, onClose, onNeverAgain 
         <button
           type="button"
           onClick={onClose}
-          aria-label="ปิดทัวร์"
+          aria-label={t("close")}
           className="flex h-9 w-7 shrink-0 items-center justify-center text-white/70 hover:text-white"
         >
           <X className="h-4 w-4" aria-hidden />
@@ -63,7 +66,7 @@ export function TourInvite({ label, title, body, onStart, onClose, onNeverAgain 
           <button
             type="button"
             onClick={onClose}
-            aria-label="ปิดทัวร์"
+            aria-label={t("close")}
             className="-mr-1 -mt-1 rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
           >
             <X className="h-3.5 w-3.5" aria-hidden />
@@ -75,10 +78,10 @@ export function TourInvite({ label, title, body, onStart, onClose, onNeverAgain 
             onClick={onNeverAgain}
             className="text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
           >
-            ไม่ต้องแสดงอีก
+            {t("neverAgain")}
           </button>
           <Button type="button" size="sm" className="rounded-full" onClick={onStart}>
-            เริ่มทัวร์
+            {t("start")}
           </Button>
         </div>
       </div>
