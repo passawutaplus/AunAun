@@ -10,7 +10,7 @@ export const brand = {
   body: '#4A4A4A',
   mute: '#666666',
   border: '#E6E6E3',
-  surface: '#F8F7F2',
+  surface: '#F2F2F0',
   white: '#FFFFFF',
   success: '#18794E',
   warning: '#8A5A00',

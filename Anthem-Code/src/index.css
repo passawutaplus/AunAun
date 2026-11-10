@@ -39,17 +39,17 @@
   :root {
     /* Type: IBM Plex Sans for English, IBM Plex Sans Thai for Thai (per-glyph fallback), Agrandir Wide Light for English headings. */
     --font-body: "IBM Plex Sans", "IBM Plex Sans Thai", "Sarabun", "IBM Plex Sans Thai Looped", ui-sans-serif, system-ui, sans-serif;
-    --font-heading: "Agrandir Wide", "IBM Plex Sans Thai", "IBM Plex Sans", "Sarabun", ui-sans-serif, system-ui, sans-serif;
+    --font-heading: "Elms Sans", "IBM Plex Sans Thai", "IBM Plex Sans", "Sarabun", ui-sans-serif, system-ui, sans-serif;
 
-    /* Brand Book Ver.0.1: Studio White canvas #F8F7F2, Gallery Black ink #111111, hairline #E6E6E3, white cards. */
-    --background: 50 30% 96%;
-    --foreground: 0 0% 7%;
+    /* Brand Guidelines v1.0: Gallery Grey canvas #F2F2F0, Ink #282929, white cards (v0.1 hairline #E6E6E3 kept). */
+    --background: 60 7.1% 94.5%;
+    --foreground: 180 1% 16%;
 
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 7%;
+    --card-foreground: 180 1% 16%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 7%;
+    --popover-foreground: 180 1% 16%;
 
     /* Primary stays ink (black pills, owner decision 2026-10-17). Brand red lives in --brand. */
     --primary: 40 3% 18%;
@@ -109,12 +109,12 @@
 
   /* Learn / Get in Touch — paper field from the studio home, including when the app is dark. */
   html.learn-paper {
-    --background: 50 30% 96%;
-    --foreground: 0 0% 7%;
+    --background: 60 7.1% 94.5%;
+    --foreground: 180 1% 16%;
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 7%;
+    --card-foreground: 180 1% 16%;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 7%;
+    --popover-foreground: 180 1% 16%;
     --primary: 40 3% 18%;
     --primary-foreground: 0 0% 96%;
     --primary-bright: 40 3% 18%;
@@ -2566,7 +2566,7 @@ html [data-feed-sheet] [data-feed-catalog-head] .gap-y-1 {
 .brand-loader-ghost { fill: #dadad7; }
 .brand-loader-reveal { fill: #282929; }
 .dark .brand-loader-ghost { fill: #4a4b4b; }
-.dark .brand-loader-reveal { fill: #f8f7f2; }
+.dark .brand-loader-reveal { fill: #f2f2f0; }
 .brand-loader-spot {
   transform-box: fill-box;
   transform-origin: 50% 50%;
