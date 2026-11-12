@@ -59,6 +59,11 @@ export function thumbUrlFor(url: string | null | undefined): string {
   return `${parsed.origin}${parsed.pathname}.w${thumbWidthFor(path)}.webp`;
 }
 
+/** `src` for an image shown small (card, grid cell, list row): the small copy when there is one. */
+export function cardImageSrc(url: string | null | undefined): string | undefined {
+  return thumbUrlFor(url) || undefined;
+}
+
 /** Full-size URL behind a small-copy URL, or null when `url` is not one. */
 export function originalUrlFromThumb(url: string | null | undefined): string | null {
   const trimmed = url?.trim();

@@ -1,3 +1,4 @@
+import { cardImageSrc } from "@/lib/mediaThumb";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
@@ -354,7 +355,7 @@ export default function PackageManageStatsDialog({
                     >
                       {r.coverUrl ? (
                         <img loading="lazy" decoding="async"
-                          src={r.coverUrl}
+                          src={cardImageSrc(r.coverUrl)}
                           alt=""
                           className="h-12 w-12 rounded-lg object-cover shrink-0"
                         />

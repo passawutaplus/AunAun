@@ -1,3 +1,4 @@
+import { cardImageSrc } from "@/lib/mediaThumb";
 import { Link } from "react-router-dom";
 import { Bookmark, CalendarDays, Ticket } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -15,7 +16,7 @@ function EventMiniCard({ event }: { event: ExhibitionEvent }) {
       <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-muted group-focus-visible:ring-2 group-focus-visible:ring-foreground">
         {event.cover_url ? (
           <img
-            src={event.cover_url}
+            src={cardImageSrc(event.cover_url)}
             alt=""
             className={cn("h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]", ended && "grayscale")}
             loading="lazy"

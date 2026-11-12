@@ -34,17 +34,21 @@ function canSkipCompression(file: File): boolean {
   return file.size <= SKIP_RECOMPRESS_MAX_BYTES && file.type.startsWith("image/") && file.type !== "image/png";
 }
 
+/** An avatar is never shown larger than a profile header: no need to keep a 1920px file. */
+const AVATAR_MAX_PX = 512;
+
 async function compressForUpload(
   file: File,
   skipCompression: boolean | undefined,
   reporter: UploadStageReporter | undefined,
+  maxPx = 1920,
 ): Promise<File> {
-  if (skipCompression && canSkipCompression(file)) return file;
+  if (skipCompression && canSkipCompression(file) && maxPx >= 1920) return file;
 
   reporter?.onStage?.(UPLOAD_STAGE.compressingImage);
   return imageCompression(file, {
     maxSizeMB: 1.0,
-    maxWidthOrHeight: 1920,
+    maxWidthOrHeight: maxPx,
     useWebWorker: true,
     fileType: "image/webp",
     initialQuality: 0.85,
@@ -71,7 +75,12 @@ export async function uploadProjectImage(
 
   await assertRealImage(normalized);
 
-  const compressed = await compressForUpload(normalized, options?.skipCompression, options?.reporter);
+  const compressed = await compressForUpload(
+    normalized,
+    options?.skipCompression,
+    options?.reporter,
+    folder === "avatar" ? AVATAR_MAX_PX : 1920,
+  );
 
   const isPng = compressed.type === "image/png";
   const url = await uploadAnthemMedia({

@@ -1,3 +1,4 @@
+import { cardImageSrc } from "@/lib/mediaThumb";
 import { formatShortDate, getLang, useT } from "@/lib/i18n";
 import { CHAT } from "@/lib/i18n/chat";
 import { useState } from "react";
@@ -784,7 +785,7 @@ const MessageBubble = ({
                   )}
                 >
                   {project.cover_url ? (
-                    <img loading="lazy" decoding="async" src={project.cover_url} alt="" className="w-full max-h-40 object-cover" />
+                    <img loading="lazy" decoding="async" src={cardImageSrc(project.cover_url)} alt="" className="w-full max-h-40 object-cover" />
                   ) : (
                     <div className="h-24 bg-muted flex items-center justify-center text-xs text-muted-foreground">
                       {tChat("noCover")}
@@ -856,7 +857,7 @@ const MessageBubble = ({
                   className={cn("block overflow-hidden border hover:opacity-95 transition-opacity rounded-xl", mine ? "border-white/20" : "border-border")}
                 >
                   {objectCard.cover_url ? (
-                    <img src={objectCard.cover_url} alt="" className="h-36 w-full object-cover" />
+                    <img src={cardImageSrc(objectCard.cover_url)} alt="" className="h-36 w-full object-cover" />
                   ) : (
                     <div className="flex h-16 items-center justify-center bg-muted text-xs text-muted-foreground">{tChat("product")}</div>
                   )}
@@ -892,7 +893,7 @@ const MessageBubble = ({
                 >
                   {(serviceCard.cover_url || serviceCard.gallery_urls?.[0]) ? (
                     <img loading="lazy" decoding="async"
-                      src={serviceCard.cover_url || serviceCard.gallery_urls![0]}
+                      src={cardImageSrc(serviceCard.cover_url || serviceCard.gallery_urls![0])}
                       alt=""
                       className="w-full max-h-40 object-cover"
                     />

@@ -1,3 +1,4 @@
+import { cardImageSrc } from "@/lib/mediaThumb";
 import { Link } from "react-router-dom";
 import { CalendarDays, Handshake } from "lucide-react";
 import { useEvent } from "@/hooks/useExhibitionEvents";
@@ -17,7 +18,7 @@ export function ChatEventCard({ eventId, mine, sponsor }: { eventId: string; min
       )}
     >
       {event.cover_url ? (
-        <img src={event.cover_url} alt="" className="h-14 w-14 shrink-0 rounded-xl object-cover" loading="lazy" />
+        <img src={cardImageSrc(event.cover_url)} alt="" className="h-14 w-14 shrink-0 rounded-xl object-cover" loading="lazy" />
       ) : (
         <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-muted" aria-hidden>
           <CalendarDays className="h-5 w-5 text-muted-foreground" />

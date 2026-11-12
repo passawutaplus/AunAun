@@ -1,3 +1,4 @@
+import { cardImageSrc } from "@/lib/mediaThumb";
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Check, X } from "lucide-react";
@@ -155,7 +156,7 @@ function CollectionWorkCard({
           <div className="relative h-14 w-20 shrink-0 overflow-hidden rounded-md bg-muted">
             {project.cover_url ? (
               <img
-                src={project.cover_url}
+                src={cardImageSrc(project.cover_url)}
                 alt=""
                 className="absolute inset-0 h-full w-full object-cover"
                 loading="lazy"
@@ -201,7 +202,7 @@ function CollectionWorkCard({
         >
           {project.cover_url ? (
             <img
-              src={project.cover_url}
+              src={cardImageSrc(project.cover_url)}
               alt={title}
               className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
               loading="lazy"

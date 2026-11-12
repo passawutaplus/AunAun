@@ -1,3 +1,4 @@
+import { cardImageSrc } from "@/lib/mediaThumb";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Eye } from "lucide-react";
@@ -39,7 +40,7 @@ function ProjectThumb({
       >
         <div className="h-16 w-20 shrink-0 overflow-hidden rounded-lg bg-muted">
           {project.cover_url ? (
-            <img src={project.cover_url} alt="" className="h-full w-full object-cover" loading="lazy" />
+            <img src={cardImageSrc(project.cover_url)} alt="" className="h-full w-full object-cover" loading="lazy" />
           ) : null}
         </div>
         <div className="min-w-0 flex-1">
@@ -65,7 +66,7 @@ function ProjectThumb({
       <div className="relative w-full overflow-hidden rounded-[6px] bg-muted">
         {project.cover_url ? (
           <img
-            src={project.cover_url}
+            src={cardImageSrc(project.cover_url)}
             alt={project.title}
             className="w-full h-auto block transition-transform duration-500 group-hover:scale-[1.04]"
             loading="lazy"
