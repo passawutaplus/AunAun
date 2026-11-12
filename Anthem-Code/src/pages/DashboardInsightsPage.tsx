@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Eye, Handshake, Heart, Loader2 } from "lucide-react";
 import SeoHead from "@/components/SeoHead";
+import { TITLES } from "@/lib/i18n/pageTitles";
 import StatsCard from "@/components/StatsCard";
 import StudioLayout from "@/components/dashboard/StudioLayout";
 import StudioIdentityCard from "@/components/dashboard/StudioIdentityCard";
@@ -26,7 +27,7 @@ export default function DashboardInsightsPage() {
   const { user, loading } = useAuth();
   return (
     <StudioLayout>
-      <SeoHead title="My Studio — สถิติ" path={STUDIO_INSIGHTS_PATH} noindex />
+      <SeoHead title={TITLES.studioInsights} path={STUDIO_INSIGHTS_PATH} noindex />
       {loading || !user ? (
         <div className="flex items-center justify-center gap-2 py-16 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" />

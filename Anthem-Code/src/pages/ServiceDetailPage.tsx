@@ -13,6 +13,7 @@ import {
   usePackageHireCount,
 } from "@/hooks/usePackageSignals";
 import SeoHead from "@/components/SeoHead";
+import { TITLES } from "@/lib/i18n/pageTitles";
 import { useAuth } from "@/hooks/useAuth";
 import { useCreatorService } from "@/hooks/useCreatorServices";
 import { useProfile } from "@/hooks/useProfile";
@@ -102,7 +103,7 @@ export default function ServiceDetailPage() {
   if (!visible) {
     return (
       <div className="min-h-screen bg-app-ambient flex items-center justify-center px-4">
-        <SeoHead title="ไม่พบแพ็กเกจ" description="แพ็กเกจนี้อาจถูกลบ หรือยังไม่เผยแพร่" path={`/service/${id ?? ""}`} noindex />
+        <SeoHead title={TITLES.packageNotFound} description={TITLES.packageNotFoundDesc} path={`/service/${id ?? ""}`} noindex />
         <div className="text-center space-y-3 max-w-sm">
           <p className="font-medium text-foreground">ไม่พบแพ็กเกจนี้</p>
           <p className="text-sm text-muted-foreground">อาจถูกลบ หรือยังไม่เผยแพร่</p>

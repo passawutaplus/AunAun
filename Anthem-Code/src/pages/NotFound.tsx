@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { HttpErrorPage } from '@/components/HttpErrorPage'
 import SeoHead from '@/components/SeoHead'
+import { TITLES } from "@/lib/i18n/pageTitles";
 
 const NotFound = () => {
   const location = useLocation()
@@ -15,7 +16,7 @@ const NotFound = () => {
       <SeoHead
         path={location.pathname}
         noindex
-        title="ไม่พบหน้า"
+        title={TITLES.notFound}
         description="หน้าที่คุณค้นหาไม่มีบน SAMECOR"
       />
       <HttpErrorPage kind="404" />

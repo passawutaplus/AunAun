@@ -8,12 +8,14 @@
  *   tr(L.daysLeft, { n: 3 })      // outside React: uses the saved language at call time
  *
  * Placeholders: {name} in any language; values are inserted as-is.
+ * Counts: English is the only language here with a singular form. Give it as `one`, used when {n} is 1:
+ *   { th: "ดู {n} งาน", en: "Show {n} events", one: "Show {n} event", zh: "查看 {n} 个活动" }
  */
 import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { LOCALE_CHANGE_EVENT, loadLocalePrefs, saveLocalePrefs, type AppLocale } from "@/lib/localePrefs";
 
 export type Lang = AppLocale;
-export type Entry = Record<Lang, string>;
+export type Entry = Record<Lang, string> & { /** English when {n} is 1. */ one?: string };
 export type Dict = Record<string, Entry>;
 export type Vars = Record<string, string | number>;
 
@@ -61,7 +63,8 @@ export function fill(text: string, vars?: Vars): string {
 
 /** Translate one entry with the saved language (or `lang`). */
 export function tr(entry: Entry, vars?: Vars, lang: Lang = getLang()): string {
-  return fill(entry[lang] ?? entry.th, vars);
+  const text = lang === "en" && entry.one && Number(vars?.n) === 1 ? entry.one : (entry[lang] ?? entry.th);
+  return fill(text, vars);
 }
 
 /** Hook: `t(key, vars)` bound to one dictionary and the live language. */

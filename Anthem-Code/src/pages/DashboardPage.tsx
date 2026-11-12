@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Briefcase, Handshake, Loader2 } from "lucide-react";
 import StatsCard from "@/components/StatsCard";
 import SeoHead from "@/components/SeoHead";
+import { TITLES } from "@/lib/i18n/pageTitles";
 import { useAuth } from "@/hooks/useAuth";
 import { useHiringRequests, type HiringRow } from "@/hooks/useHiringRequests";
 import { useReceivedCollabRequests } from "@/hooks/useCollabRequests";
@@ -172,12 +173,11 @@ export default function DashboardPage({ mode: modeProp }: Props) {
 
   const listLoading = mode === "hire" ? hireLoading : collabLoading;
   const stats = mode === "hire" ? hireStats : collabStats;
-  const pageTitle = mode === "hire" ? "จ้างงาน" : "คอลแลป";
   const pagePath = mode === "hire" ? "/dashboard/hire" : "/dashboard/collab";
 
   return (
     <StudioLayout>
-      <SeoHead title={`My Studio — ${pageTitle}`} path={pagePath} noindex />
+      <SeoHead title={mode === "hire" ? TITLES.studioHire : TITLES.studioCollab} path={pagePath} noindex />
 
       {authLoading || !user ? (
         <div className="flex items-center justify-center gap-2 py-16 text-sm text-muted-foreground">

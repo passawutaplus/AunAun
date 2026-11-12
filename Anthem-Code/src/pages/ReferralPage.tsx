@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { useReferralDashboard } from "@/hooks/useReferral";
 import { formatThaiDate } from "@/lib/format";
 import SeoHead from "@/components/SeoHead";
+import { TITLES } from "@/lib/i18n/pageTitles";
 import { isAplus1PxEnabled } from "@/lib/aplus1Launch";
 import LaunchUnavailablePage from "@/pages/LaunchUnavailablePage";
 
@@ -47,7 +48,7 @@ export default function ReferralPage() {
 
   return (
     <div className="min-h-screen bg-app-ambient">
-      <SeoHead title="ชวนเพื่อนรับ Pixel" path="/referrals" noindex />
+      <SeoHead title={TITLES.referral} path="/referrals" noindex />
       <header className="sticky top-0 z-20 border-b border-border bg-background">
         <div className="mx-auto flex h-14 max-w-4xl items-center justify-between px-4">
           <BackButton />

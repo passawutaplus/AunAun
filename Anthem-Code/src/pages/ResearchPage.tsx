@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { BRAND_NAME, BRAND_TAGLINE } from "@/lib/brandConfig";
 import { isDemoMode } from "@/lib/demoMode";
 import SeoHead from "@/components/SeoHead";
+import { TITLES } from "@/lib/i18n/pageTitles";
 import ResearchChecklistSection from "@/components/research/ResearchChecklistSection";
 import UxChecklistPdfDownload from "@/components/research/UxChecklistPdfDownload";
 import {
@@ -38,7 +39,7 @@ export default function ResearchPage() {
   return (
     <div className="min-h-screen bg-background">
       <SeoHead
-        title="คู่มือ UX Research"
+        title={TITLES.research}
         description={`คู่มือทดสอบ ${BRAND_NAME} สำหรับ UX/UI researcher — เช็คลิสครบทุกระบบ, journey ผู้ใช้ใหม่, Tasks T1–T11, Features A–W`}
         path="/research"
       />

@@ -10,6 +10,7 @@ import {
   type SeoProps,
 } from "@/lib/seo";
 import { organizationJsonLd, websiteJsonLd } from "@/lib/seoSchemas";
+import { tr, useLang, type Entry, type Lang } from "@/lib/i18n";
 
 const META_IDS = {
   description: "seo-description",
@@ -84,15 +85,25 @@ function removeJsonLd(id: string) {
  * Updates document title and meta tags for SPA SEO / social sharing.
  * Canonical always uses a query-stripped path.
  */
+/** Plain text passes through; an i18n entry is read in the UI language. */
+function textIn(value: string | Entry | undefined, lang: Lang): string | undefined {
+  if (typeof value === "string" || !value) return value as string | undefined;
+  return tr(value, undefined, lang);
+}
+
 const SeoHead = ({
-  title,
-  description,
+  title: titleProp,
+  description: descriptionProp,
   path = "/",
   image = DEFAULT_OG_IMAGE,
   type = "website",
   noindex = false,
   jsonLd,
 }: SeoProps) => {
+  const lang = useLang();
+  const title = textIn(titleProp, lang);
+  const description = textIn(descriptionProp, lang);
+
   useEffect(() => {
     const fullTitle = buildTitle(title);
     const desc = truncateDescription(description ?? SITE_DESCRIPTION);
@@ -101,7 +112,7 @@ const SeoHead = ({
     const img = image.startsWith("http") ? image : absoluteUrl(image);
 
     document.title = fullTitle;
-    document.documentElement.lang = "th";
+    document.documentElement.lang = lang === "zh" ? "zh-CN" : lang;
 
     upsertMeta(META_IDS.description, "name", "description", desc);
     upsertMeta(META_IDS.robots, "name", "robots", noindex ? "noindex, nofollow, noai, noimageai" : "index, follow, noai, noimageai");
@@ -130,7 +141,7 @@ const SeoHead = ({
     return () => {
       // Keep tags — next page SeoHead overwrites
     };
-  }, [title, description, path, image, type, noindex, jsonLd]);
+  }, [title, description, path, image, type, noindex, jsonLd, lang]);
 
   return null;
 };

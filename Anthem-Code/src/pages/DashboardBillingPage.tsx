@@ -1,5 +1,6 @@
 import { Loader2 } from "lucide-react";
 import SeoHead from "@/components/SeoHead";
+import { TITLES } from "@/lib/i18n/pageTitles";
 import StudioLayout from "@/components/dashboard/StudioLayout";
 import { BillingDashboard } from "@/components/dashboard/BillingDashboard";
 import { useAuth } from "@/hooks/useAuth";
@@ -13,7 +14,7 @@ export default function DashboardBillingPage() {
   return (
     <StudioLayout>
       <SeoHead
-        title="My Studio — เอกสารและรายรับ"
+        title={TITLES.studioBilling}
         path="/dashboard/billing"
         noindex
       />

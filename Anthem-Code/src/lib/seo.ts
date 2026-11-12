@@ -1,3 +1,4 @@
+import type { Entry } from "@/lib/i18n";
 import {
   BRAND_DESCRIPTION,
   BRAND_NAME,
@@ -70,8 +71,9 @@ export function truncateDescription(text: string, max = 160): string {
 }
 
 export interface SeoProps {
-  title?: string;
-  description?: string;
+  /** Plain text, or an i18n entry that follows the UI language. */
+  title?: string | Entry;
+  description?: string | Entry;
   path?: string;
   image?: string;
   type?: "website" | "article" | "profile";

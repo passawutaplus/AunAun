@@ -3,6 +3,7 @@ import { Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import EmptyState from "@/components/ui/EmptyState";
 import SeoHead from "@/components/SeoHead";
+import { TITLES } from "@/lib/i18n/pageTitles";
 import { BRAND_NAME } from "@/lib/brandConfig";
 import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
 import { cn } from "@/lib/utils";
@@ -11,7 +12,7 @@ import { cn } from "@/lib/utils";
 const JobsSeekingPage = () => (
   <main id="main-content" className={cn("min-h-screen bg-app-ambient lg:pb-12", MOBILE_PAGE_BOTTOM_CLASS)}>
     <SeoHead
-      title="โพสต์หางาน"
+      title={TITLES.jobsSeeking}
       description={`ครีเอเตอร์เปิดรับงานบน ${BRAND_NAME} — กำลังเตรียมหน้านี้`}
       path="/jobs"
       noindex

@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import type { EvidenceFile } from "@/hooks/useReports";
+import { tr, useT } from "@/lib/i18n";
+import { REPORT } from "@/lib/i18n/report";
 import {
   encodeReportEvidenceRef,
   signedReportEvidenceUrl,
@@ -52,24 +54,25 @@ function EvidencePreview({ file }: { file: EvidenceFile }) {
 
 const EvidenceUploader = ({ value, onChange }: Props) => {
   const { user } = useAuth();
+  const t = useT(REPORT);
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
   const handlePick = async (files: FileList | null) => {
     if (!files || !user) return;
     if (value.length + files.length > MAX_FILES) {
-      toast.warning(`แนบได้สูงสุด ${MAX_FILES} ไฟล์`);
+      toast.warning(tr(REPORT.maxFiles, { n: MAX_FILES }));
       return;
     }
     setUploading(true);
     const uploaded: EvidenceFile[] = [];
     for (const file of Array.from(files)) {
       if (file.size > MAX_SIZE) {
-        toast.warning(`${file.name} เกิน 10MB`);
+        toast.warning(tr(REPORT.tooLarge, { name: file.name }));
         continue;
       }
       if (!/^(image|video)\//.test(file.type)) {
-        toast.warning(`${file.name} ไม่ใช่รูปหรือวิดีโอ`);
+        toast.warning(tr(REPORT.notMedia, { name: file.name }));
         continue;
       }
       const safeName = file.name.replace(/[^\w.\-]/g, "_");
@@ -78,7 +81,7 @@ const EvidenceUploader = ({ value, onChange }: Props) => {
         .from("report-evidence")
         .upload(path, file, { cacheControl: "3600" });
       if (error) {
-        toast.error(`อัปโหลด ${file.name} ไม่สำเร็จ`);
+        toast.error(tr(REPORT.uploadFailed, { name: file.name }));
         continue;
       }
       uploaded.push({
@@ -123,7 +126,7 @@ const EvidenceUploader = ({ value, onChange }: Props) => {
         ) : (
           <Upload className="w-4 h-4 mr-1.5" />
         )}
-        แนบไฟล์หลักฐาน ({value.length}/{MAX_FILES})
+        {t("attachEvidence", { count: value.length, max: MAX_FILES })}
       </Button>
       {value.length > 0 && (
         <div className="grid grid-cols-3 gap-1.5">
@@ -134,7 +137,7 @@ const EvidenceUploader = ({ value, onChange }: Props) => {
                 type="button"
                 onClick={() => void removeAt(i)}
                 className="absolute top-1 right-1 bg-background/80 backdrop-blur-sm rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                aria-label="ลบไฟล์"
+                aria-label={t("removeFile")}
               >
                 <X className="w-3 h-3" />
               </button>
@@ -143,7 +146,7 @@ const EvidenceUploader = ({ value, onChange }: Props) => {
         </div>
       )}
       <p className="text-[10px] text-muted-foreground">
-        รองรับรูปและวิดีโอ ≤10MB/ไฟล์ สูงสุด {MAX_FILES} ไฟล์
+        {t("fileHint", { n: MAX_FILES })}
       </p>
     </div>
   );

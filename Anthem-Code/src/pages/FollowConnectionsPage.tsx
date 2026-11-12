@@ -4,6 +4,7 @@ import { BackButton } from "@/components/ui/BackButton";
 import { useAuth } from "@/hooks/useAuth";
 import FollowConnectionsPanel from "@/components/follow/FollowConnectionsPanel";
 import SeoHead from "@/components/SeoHead";
+import { TITLES } from "@/lib/i18n/pageTitles";
 import PageLoader from "@/components/ui/PageLoader";
 import { cn } from "@/lib/utils";
 import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
@@ -28,7 +29,7 @@ const FollowConnectionsPage = () => {
 
   return (
     <div className={cn("min-h-screen bg-app-ambient lg:pb-8", MOBILE_PAGE_BOTTOM_CLASS)}>
-      <SeoHead title="ผู้ติดตาม" path={isOwn ? "/portfolio/followers" : `/u/${subjectId}/followers`} noindex />
+      <SeoHead title={TITLES.followers} path={isOwn ? "/portfolio/followers" : `/u/${subjectId}/followers`} noindex />
       <header className="sticky top-0 z-20 bg-background border-b border-border/40">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
           <BackButton />

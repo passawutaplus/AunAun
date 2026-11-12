@@ -1,5 +1,6 @@
 import { Navigate, useSearchParams } from "react-router-dom";
 import SeoHead from "@/components/SeoHead";
+import { TITLES } from "@/lib/i18n/pageTitles";
 
 function continuePath(searchParams: URLSearchParams): string {
   const qs = new URLSearchParams();
@@ -13,7 +14,7 @@ export default function WithdrawPinPage() {
   const [searchParams] = useSearchParams();
   return (
     <>
-      <SeoHead title="My Studio — ถอนเงิน" path="/earnings/withdraw/pin" noindex />
+      <SeoHead title={TITLES.studioWithdraw} path="/earnings/withdraw/pin" noindex />
       <Navigate to={continuePath(searchParams)} replace />
     </>
   );

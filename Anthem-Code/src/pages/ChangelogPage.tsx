@@ -1,5 +1,6 @@
 import { Sparkles } from "lucide-react";
 import SeoHead from "@/components/SeoHead";
+import { TITLES } from "@/lib/i18n/pageTitles";
 import { Button } from "@/components/ui/button";
 import { InlineLoader } from "@/components/ui/BanterLoader";
 import { useOpenFeedbackTicket } from "@/hooks/useOpenFeedbackTicket";
@@ -33,7 +34,7 @@ export default function ChangelogPage() {
   return (
     <div className="container mx-auto max-w-2xl px-4 py-8 pb-24">
       <SeoHead
-        title="อัปเดตล่าสุด"
+        title={TITLES.changelog}
         description="ฟีเจอร์ใหม่ สิ่งที่ปรับปรุง และบั๊กที่แก้บน SAMECOR — หลายอย่างมาจากไอเดียของผู้ใช้"
         path="/changelog"
       />

@@ -5,6 +5,7 @@ import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/button";
 import { BRAND_NAME } from "@/lib/brandConfig";
 import SeoHead from "@/components/SeoHead";
+import { TITLES } from "@/lib/i18n/pageTitles";
 import UxResearchFeedbackForm from "@/components/research/UxResearchFeedbackForm";
 
 export default function UxResearchFeedbackPage() {
@@ -13,7 +14,7 @@ export default function UxResearchFeedbackPage() {
   return (
     <div className="min-h-screen bg-background">
       <SeoHead
-        title="ส่งผลการทดสอบ UX"
+        title={TITLES.uxFeedback}
         description={`ฟอร์มส่งผล UX research สำหรับ ${BRAND_NAME} — ไม่ต้องเข้าสู่ระบบ`}
         path="/research/feedback"
       />
