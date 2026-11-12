@@ -446,7 +446,7 @@ export default function ExhibitionEditorPage({ team = false }: { team?: boolean 
                 </p>
                 {draft.cover_url ? (
                   <div className="relative aspect-[4/3] overflow-hidden rounded-md bg-muted">
-                    <img src={cardImageSrc(draft.cover_url)} alt="รูปปก" className="h-full w-full object-cover" />
+                    <img loading="lazy" decoding="async" src={cardImageSrc(draft.cover_url)} alt="รูปปก" className="h-full w-full object-cover" />
                     <div className="absolute bottom-2 right-2">
                       <PickImage
                         label="เปลี่ยนรูปปก"
@@ -662,7 +662,7 @@ export default function ExhibitionEditorPage({ team = false }: { team?: boolean 
                         )}
                       >
                         <div className="aspect-[4/3] bg-muted">
-                          {w.cover_url ? <img src={cardImageSrc(w.cover_url)} alt="" className="h-full w-full object-cover" loading="lazy" /> : null}
+                          {w.cover_url ? <img decoding="async" src={cardImageSrc(w.cover_url)} alt="" className="h-full w-full object-cover" loading="lazy" /> : null}
                         </div>
                         <p className="line-clamp-1 px-1 py-1 text-xs text-foreground">{w.title}</p>
                         {on ? <CheckCircle2 className="absolute right-1 top-1 h-5 w-5 fill-foreground text-background" aria-hidden /> : null}

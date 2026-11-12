@@ -45,7 +45,7 @@ export function ProjectConnectProducts({ items, loading, selected, onToggle, pro
                     aria-label={`เชื่อมกับ ${item.title}`}
                   />
                   {item.coverUrl ? (
-                    <img src={cardImageSrc(item.coverUrl)} alt="" className="h-8 w-8 shrink-0 rounded-lg object-cover" />
+                    <img loading="lazy" decoding="async" src={cardImageSrc(item.coverUrl)} alt="" className="h-8 w-8 shrink-0 rounded-lg object-cover" />
                   ) : (
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted">
                       <Icon className="h-4 w-4 text-muted-foreground" aria-hidden />

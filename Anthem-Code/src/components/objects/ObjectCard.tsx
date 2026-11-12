@@ -33,7 +33,7 @@ export function ObjectStage({ item, className }: { item: CreatorObject; classNam
   return (
     <div className={cn("relative flex items-center justify-center overflow-hidden bg-[#f3f3f1]", className)}>
       {item.cover_url ? (
-        <img src={cardImageSrc(item.cover_url)} alt={item.title} className="absolute inset-0 h-full w-full object-cover" />
+        <img loading="lazy" decoding="async" src={cardImageSrc(item.cover_url)} alt={item.title} className="absolute inset-0 h-full w-full object-cover" />
       ) : (
         <div className={cn("flex h-[58%] w-[58%] items-center justify-center rounded-full", tone)} aria-hidden>
           <span className="h-10 w-10 rounded-sm" style={{ backgroundColor: accent }} />

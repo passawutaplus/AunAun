@@ -857,7 +857,7 @@ const MessageBubble = ({
                   className={cn("block overflow-hidden border hover:opacity-95 transition-opacity rounded-xl", mine ? "border-white/20" : "border-border")}
                 >
                   {objectCard.cover_url ? (
-                    <img src={cardImageSrc(objectCard.cover_url)} alt="" className="h-36 w-full object-cover" />
+                    <img loading="lazy" decoding="async" src={cardImageSrc(objectCard.cover_url)} alt="" className="h-36 w-full object-cover" />
                   ) : (
                     <div className="flex h-16 items-center justify-center bg-muted text-xs text-muted-foreground">{tChat("product")}</div>
                   )}

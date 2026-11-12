@@ -18,7 +18,7 @@ export function ChatEventCard({ eventId, mine, sponsor }: { eventId: string; min
       )}
     >
       {event.cover_url ? (
-        <img src={cardImageSrc(event.cover_url)} alt="" className="h-14 w-14 shrink-0 rounded-xl object-cover" loading="lazy" />
+        <img decoding="async" src={cardImageSrc(event.cover_url)} alt="" className="h-14 w-14 shrink-0 rounded-xl object-cover" loading="lazy" />
       ) : (
         <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-muted" aria-hidden>
           <CalendarDays className="h-5 w-5 text-muted-foreground" />

@@ -36,7 +36,7 @@ function EventRow({ event, onDelete }: { event: ExhibitionEvent; onDelete: (e: E
   return (
     <li className="flex flex-col gap-4 border-b border-border py-5 last:border-0 sm:flex-row">
       <div className="aspect-[4/3] w-full shrink-0 overflow-hidden rounded-md bg-muted sm:w-40">
-        {event.cover_url ? <img src={cardImageSrc(event.cover_url)} alt="" className="h-full w-full object-cover" loading="lazy" /> : null}
+        {event.cover_url ? <img decoding="async" src={cardImageSrc(event.cover_url)} alt="" className="h-full w-full object-cover" loading="lazy" /> : null}
       </div>
       <div className="min-w-0 flex-1 space-y-2">
         <EventStatusBadge event={event} />

@@ -89,7 +89,7 @@ From : ${about.title}` : appendText ? `${text.trim()}\n\n${appendText}` : text;
         {about ? (
           <div className="flex items-center gap-3 rounded-xl border border-border/70 bg-muted/40 p-2">
             {about.coverUrl ? (
-              <img src={cardImageSrc(about.coverUrl)} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" />
+              <img loading="lazy" decoding="async" src={cardImageSrc(about.coverUrl)} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" />
             ) : null}
             <div className="min-w-0">
               <p className="text-[11px] text-muted-foreground">{tChat("attachedWork")}</p>

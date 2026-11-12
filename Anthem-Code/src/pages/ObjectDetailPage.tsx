@@ -368,7 +368,7 @@ function ObjectProjectRefs({ ids }: { ids: string[] }) {
           <li key={project.id}>
             <Link to={`/showcase/${project.id}`} className="flex items-center gap-3 text-sm underline-offset-2 hover:underline">
               {project.cover_url ? (
-                <img src={cardImageSrc(project.cover_url)} alt="" className="h-12 w-12 rounded object-cover" />
+                <img loading="lazy" decoding="async" src={cardImageSrc(project.cover_url)} alt="" className="h-12 w-12 rounded object-cover" />
               ) : null}
               {project.title}
             </Link>
