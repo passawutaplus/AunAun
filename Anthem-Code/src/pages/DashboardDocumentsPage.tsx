@@ -1,6 +1,7 @@
 import { useSearchParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import SeoHead from "@/components/SeoHead";
+import { TITLES } from "@/lib/i18n/pageTitles";
 import StudioLayout from "@/components/dashboard/StudioLayout";
 import DashboardHireDocumentsPanel from "@/components/dashboard/DashboardHireDocumentsPanel";
 import { HireTaxOverview } from "@/components/earnings/HireTaxOverview";
@@ -16,7 +17,7 @@ export default function DashboardDocumentsPage() {
 
   return (
     <StudioLayout>
-      <SeoHead title="My Studio — เอกสาร / ภาษี" path="/dashboard/documents" noindex />
+      <SeoHead title={TITLES.studioDocuments} path="/dashboard/documents" noindex />
       {authLoading || !user ? (
         <div className="flex items-center justify-center gap-2 py-16 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" />

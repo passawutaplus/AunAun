@@ -17,6 +17,7 @@ import TopUpDialog from "@/components/gifting/TopUpDialog";
 import DailyPxClaimCard from "@/components/gifting/DailyPxClaimCard";
 import WalletEarnMoreSection from "@/components/gifting/WalletEarnMoreSection";
 import SeoHead from "@/components/SeoHead";
+import { TITLES } from "@/lib/i18n/pageTitles";
 import { toast } from "sonner";
 import { notifyAnthem } from "@/lib/notifyAnthem";
 import { useCreatorEligibility } from "@/hooks/useCreatorEligibility";
@@ -120,7 +121,7 @@ const EarningsPage = () => {
 
   return (
     <StudioLayout>
-      <SeoHead title="My Studio — ธุรกรรม" path="/earnings" noindex />
+      <SeoHead title={TITLES.studioTransactions} path="/earnings" noindex />
 
       {pxOn ? (
         <EarningsHeroCard

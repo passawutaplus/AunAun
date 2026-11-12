@@ -1,5 +1,6 @@
 import { useSearchParams } from "react-router-dom";
 import SeoHead from "@/components/SeoHead";
+import { TITLES } from "@/lib/i18n/pageTitles";
 import StudioLayout from "@/components/dashboard/StudioLayout";
 import { HireWithdrawForm } from "@/components/earnings/HireWithdrawForm";
 import { useAuth } from "@/hooks/useAuth";
@@ -16,7 +17,7 @@ const WithdrawPage = () => {
 
   return (
     <StudioLayout backTo={backTo} backLabel="กลับธุรกรรม" padForBottomNav={false} showFooter={false}>
-      <SeoHead title="My Studio — ถอนเงิน" path="/earnings/withdraw" noindex />
+      <SeoHead title={TITLES.studioWithdraw} path="/earnings/withdraw" noindex />
       <div className="mx-auto max-w-lg">
         <HireWithdrawForm
           view={view}

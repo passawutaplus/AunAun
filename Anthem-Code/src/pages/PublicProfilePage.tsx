@@ -58,6 +58,7 @@ import {
   type SeriesWorksDensity,
 } from "@/lib/seriesGridDensity";
 import SeoHead from "@/components/SeoHead";
+import { TITLES } from "@/lib/i18n/pageTitles";
 import { BRAND_NAME } from "@/lib/brandConfig";
 import { absoluteUrl, isThinProfile, truncateDescription } from "@/lib/seo";
 import {
@@ -396,7 +397,7 @@ const PublicProfilePage = () => {
   if (!profile) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center px-4">
-        <SeoHead title="ไม่พบโปรไฟล์" path="/u/not-found" noindex />
+        <SeoHead title={TITLES.profileNotFound} path="/u/not-found" noindex />
         <EmptyState
           icon={UserX}
           title="ไม่พบโปรไฟล์นี้"
@@ -414,7 +415,7 @@ const PublicProfilePage = () => {
   if (hiddenByBlock) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center px-4">
-        <SeoHead title="โปรไฟล์ไม่พร้อมใช้งาน" path="/u/not-found" noindex />
+        <SeoHead title={TITLES.profileUnavailable} path="/u/not-found" noindex />
         <EmptyState
           icon={UserX}
           title="โปรไฟล์นี้ไม่พร้อมใช้งาน"

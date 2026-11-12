@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Camera, CheckCircle2, Clock, Eye, ImagePlus, Loader2, Plus, Send, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import SeoHead from "@/components/SeoHead";
+import { TITLES } from "@/lib/i18n/pageTitles";
 import {
   CategoryTag,
   EventGallery,
@@ -286,7 +287,7 @@ export default function ExhibitionEditorPage({ team = false }: { team?: boolean 
 
   return (
     <div className="container mx-auto max-w-6xl px-4 pb-32 pt-6">
-      <SeoHead title={id ? "แก้ไข Exhibition" : "Add New Event"} path={backTo} noindex />
+      <SeoHead title={id ? TITLES.editExhibition : "Add New Event"} path={backTo} noindex />
       <Link to={backTo} className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeft className="h-4 w-4" aria-hidden /> {team ? "Back to Events (Admin)" : "Back to My Exhibition"}
       </Link>

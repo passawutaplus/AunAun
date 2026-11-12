@@ -7,6 +7,7 @@ import { useNotifications } from "@/core/notifications";
 import NotificationsPanel from "@/components/notifications/NotificationsPanel";
 import { PushOptInCard } from "@/components/settings/PushNotificationSection";
 import SeoHead from "@/components/SeoHead";
+import { TITLES } from "@/lib/i18n/pageTitles";
 import PageLoader from "@/components/ui/PageLoader";
 import { cn } from "@/lib/utils";
 import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
@@ -39,7 +40,7 @@ const NotificationsPage = () => {
 
   return (
     <main id="main-content" className={cn("min-h-screen bg-app-ambient lg:pb-8", MOBILE_PAGE_BOTTOM_CLASS)}>
-      <SeoHead title="การแจ้งเตือน" path="/notifications" noindex />
+      <SeoHead title={TITLES.notifications} path="/notifications" noindex />
       <header className="sticky top-0 z-20 bg-background border-b border-border/40">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
           <BackButton />

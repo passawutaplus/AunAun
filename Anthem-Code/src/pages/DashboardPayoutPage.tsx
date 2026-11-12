@@ -1,6 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import SeoHead from "@/components/SeoHead";
+import { TITLES } from "@/lib/i18n/pageTitles";
 import StudioLayout from "@/components/dashboard/StudioLayout";
 import BillingSettingsPanel from "@/components/settings/BillingSettingsPanel";
 import { useAuth } from "@/hooks/useAuth";
@@ -14,7 +15,7 @@ export default function DashboardPayoutPage() {
 
   return (
     <StudioLayout>
-      <SeoHead title="My Studio — บัญชีรับเงิน" path="/dashboard/payout" noindex />
+      <SeoHead title={TITLES.studioPayout} path="/dashboard/payout" noindex />
       {authLoading || !user || profileLoading ? (
         <div className="flex items-center justify-center gap-2 py-16 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" />

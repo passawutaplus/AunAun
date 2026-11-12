@@ -18,6 +18,7 @@ import FeedHero from "@/components/feed/FeedHero";
 import FeedToolbar from "@/components/feed/FeedToolbar";
 import HomeHeroWash from "@/components/feed/HomeHeroWash";
 import SeoHead from "@/components/SeoHead";
+import { TITLES } from "@/lib/i18n/pageTitles";
 import { shouldNoindexSearchParams } from "@/lib/seo";
 import { COLOR_MATCH_MIN, normalizeColorList } from "@/lib/colorSearch";
 import { similarSearchSuggestions } from "@/lib/searchSuggestions";
@@ -848,7 +849,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
       className={cn("relative min-h-screen bg-app-ambient", MOBILE_PAGE_BOTTOM_CLASS)}
     >
       {(shouldNoindexSearchParams(searchParams) || search.trim().length > 0 || Boolean(colorQuery)) && (
-        <SeoHead path="/" noindex title="ค้นหาผลงาน" description="ผลการค้นหาบน SAMECOR" />
+        <SeoHead path="/" noindex title={TITLES.searchWorks} description={TITLES.searchWorksDesc} />
       )}
       {studioHome && <HomeHeroWash hideBottomBlur={mode === "showcase"} />}
       <div

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import SeoHead from "@/components/SeoHead";
+import { TITLES } from "@/lib/i18n/pageTitles";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { PasswordField } from "@/components/ui/PasswordField";
@@ -43,7 +44,7 @@ export default function SetFirstPasswordPage() {
 
   return (
     <main id="main-content" className="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center px-4 py-12">
-      <SeoHead title="ตั้งรหัสผ่าน" path="/account/set-password" noindex />
+      <SeoHead title={TITLES.setPassword} path="/account/set-password" noindex />
       <h1 className="font-display text-3xl font-semibold tracking-tight">ตั้งรหัสผ่านของคุณ</h1>
       <p className="mt-2 text-sm text-muted-foreground">
         คุณเข้าด้วยรหัสผ่านชั่วคราวจากอีเมล ตั้งรหัสใหม่ที่จำได้ก่อนใช้งานต่อ
