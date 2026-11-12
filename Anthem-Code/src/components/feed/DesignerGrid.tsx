@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { COMMON, tr } from "@/lib/i18n";
 import { LogIn, SearchX, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useDesigners, type DesignerCardData } from "@/hooks/useDesigners";
@@ -124,7 +125,7 @@ const DesignerGrid = ({
         isError={isError}
         isSlow={slow}
         onRetry={() => void refetch()}
-        loadingLabel="กำลังโหลดครีเอเตอร์..."
+        loadingLabel={tr(COMMON.loadingCreators)}
         errorTitle="โหลดครีเอเตอร์ไม่สำเร็จ"
         errorDescription="กดลองใหม่ หรือเปลี่ยนตัวกรอง"
       />

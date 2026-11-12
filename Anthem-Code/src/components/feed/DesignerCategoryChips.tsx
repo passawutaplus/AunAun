@@ -44,7 +44,7 @@ const DesignerCategoryChips = ({
     <SlidingChip
       key={cat}
       layoutGroupId={GROUP_ID}
-      label={cat === "All" ? "ทั้งหมด" : cat}
+      label={cat}
       active={selected === cat}
       onClick={() => onSelect(cat)}
     />

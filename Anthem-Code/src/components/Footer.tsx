@@ -7,6 +7,8 @@ import {
   BRAND_SUPPORT_EMAIL,
 } from "@/lib/brandConfig";
 import { cn } from "@/lib/utils";
+import { setLang, useLang } from "@/lib/i18n";
+import { APP_LOCALE_OPTIONS } from "@/lib/localePrefs";
 
 const EXPLORE_LINKS = [
   { to: "/help", label: "Help Center" },
@@ -28,6 +30,7 @@ type Props = {
 };
 
 const Footer = ({ className }: Props) => {
+  const lang = useLang();
   // The Android app has no website footer: a post-your-work prompt instead; legal links live in Settings.
   if (isNativeApp()) return <AppFooterCta />;
   const year = new Date().getFullYear();
@@ -55,6 +58,29 @@ const Footer = ({ className }: Props) => {
       <p className="mt-4 px-[6vw] text-center text-[13px] text-background/70">
         © {year} {BRAND_NAME} · All rights reserved
       </p>
+
+      {/* The only language switch a signed-out visitor can reach (signed-in users also have Settings). */}
+      <div
+        role="group"
+        aria-label="ภาษา · Language · 语言"
+        className="mt-4 flex items-center justify-center gap-1 px-[6vw] text-[13px]"
+      >
+        {APP_LOCALE_OPTIONS.map((opt) => (
+          <button
+            key={opt.value}
+            type="button"
+            lang={opt.value === "zh" ? "zh-CN" : opt.value}
+            aria-pressed={lang === opt.value}
+            onClick={() => setLang(opt.value)}
+            className={cn(
+              "min-h-9 rounded-full px-3 transition-opacity",
+              lang === opt.value ? "bg-background/15 text-background" : "text-background/70 hover:opacity-70",
+            )}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
 
       <div className="mt-10 flex select-none justify-center px-[6vw] pb-[6vh]" aria-hidden>
         {/* Footer is the inverse of the page: white lockup on the dark light-mode footer, black lockup on the light dark-mode footer. */}

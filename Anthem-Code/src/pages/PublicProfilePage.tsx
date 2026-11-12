@@ -510,8 +510,13 @@ const PublicProfilePage = () => {
   ];
 
   const statItems = [
-    { key: "works", label: "Projects", value: projects.length },
-    { key: "followers", label: "Followers", value: followers, href: `/u/${resolvedUserId}/followers` },
+    { key: "works", label: projects.length === 1 ? "Project" : "Projects", value: projects.length },
+    {
+      key: "followers",
+      label: followers === 1 ? "Follower" : "Followers",
+      value: followers,
+      href: `/u/${resolvedUserId}/followers`,
+    },
   ];
 
   // Header lines: role, place and availability (cards use the same status labels).

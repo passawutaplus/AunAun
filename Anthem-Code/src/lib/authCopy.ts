@@ -4,6 +4,7 @@
  */
 import { useSyncExternalStore } from "react";
 import type { PageLang } from "@/lib/creatorInvite";
+import { getLang } from "@/lib/i18n";
 
 const KEY = "samecor.uiLang";
 const EVENT = "samecor-ui-lang";
@@ -11,10 +12,13 @@ const EVENT = "samecor-ui-lang";
 export function getUiLang(): PageLang {
   try {
     const v = localStorage.getItem(KEY);
-    return v === "en" || v === "zh" ? v : "th";
+    if (v === "th" || v === "en" || v === "zh") return v;
   } catch {
-    return "th";
+    /* private mode */
   }
+  // Nothing picked on this screen yet: follow the app's language, so the login dialog and /auth
+  // match the page the visitor was just reading instead of always opening in Thai.
+  return getLang();
 }
 
 export function setUiLang(lang: PageLang) {

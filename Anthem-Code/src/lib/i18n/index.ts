@@ -118,6 +118,12 @@ export const COMMON = {
   edit: { th: "แก้ไข", en: "Edit", zh: "编辑" },
   notSpecified: { th: "ไม่ระบุ", en: "Not specified", zh: "未注明" },
   home: { th: "หน้าแรก", en: "Home", zh: "首页" },
+  skipToContent: { th: "ข้ามไปเนื้อหาหลัก", en: "Skip to main content", zh: "跳到主要内容" },
+  loading: { th: "กำลังโหลด...", en: "Loading...", zh: "加载中..." },
+  loadingWorks: { th: "กำลังโหลดผลงาน...", en: "Loading works...", zh: "正在加载作品..." },
+  loadingCreators: { th: "กำลังโหลดครีเอเตอร์...", en: "Loading creators...", zh: "正在加载创作者..." },
+  noBio: { th: "ยังไม่มีคำแนะนำตัว", en: "No intro yet", zh: "暂无简介" },
+  viewLarger: { th: "ดูภาพขนาดใหญ่", en: "View larger image", zh: "查看大图" },
   saveFailed: { th: "บันทึกไม่สำเร็จ ลองอีกครั้ง", en: "Couldn't save. Please try again.", zh: "保存失败，请重试" },
   openInGoogleMaps: { th: "เปิดใน Google Maps", en: "Open in Google Maps", zh: "在 Google 地图中打开" },
 } satisfies Dict;

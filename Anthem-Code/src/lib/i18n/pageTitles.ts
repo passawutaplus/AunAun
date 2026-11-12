@@ -10,6 +10,8 @@ export const TITLES = {
   editExhibition: { th: "แก้ไข Exhibition", en: "Edit Exhibition", zh: "编辑 Exhibition" },
   notFound: { th: "ไม่พบหน้า", en: "Page not found", zh: "找不到页面" },
   notifications: { th: "การแจ้งเตือน", en: "Notifications", zh: "通知" },
+  settings: { th: "ตั้งค่า", en: "Settings", zh: "设置" },
+  chat: { th: "แชท", en: "Chat", zh: "聊天" },
   followers: { th: "ผู้ติดตาม", en: "Followers", zh: "粉丝" },
   setPassword: { th: "ตั้งรหัสผ่าน", en: "Set your password", zh: "设置密码" },
   jobsSeeking: { th: "โพสต์หางาน", en: "Looking for work", zh: "求职帖" },
