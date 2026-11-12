@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import {
+  cardImageSrc,
   hasThumb,
   installThumbFallback,
   originalPathFromThumb,
@@ -50,6 +51,13 @@ describe("small-copy urls", () => {
       expect(thumbUrlFor(url)).toBe(url);
     }
     expect(thumbUrlFor(null)).toBe("");
+  });
+
+  it("card src: small copy for our images, untouched for others, no empty src", () => {
+    expect(cardImageSrc(`${BASE}/${WORK}`)).toBe(`${BASE}/${WORK}.w640.webp`);
+    expect(cardImageSrc("https://example.com/a.png")).toBe("https://example.com/a.png");
+    expect(cardImageSrc(null)).toBeUndefined();
+    expect(cardImageSrc("  ")).toBeUndefined();
   });
 
   it("finds the original behind a small copy", () => {
