@@ -10,9 +10,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { DeleteConfirmDialog } from "@/components/ui/DeleteConfirmDialog";
+import { BlockConfirmDialog } from "@/components/report/BlockConfirmDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { useDeleteCommunityPost } from "@/hooks/useCommunityPosts";
-import { useBlockUser } from "@/hooks/useCommunityPostInteractions";
 import { toast } from "sonner";
 
 type Props = {
@@ -26,9 +26,9 @@ type Props = {
 const CommunityPostMenu = ({ postId, authorId, title, className, onDeleted }: Props) => {
   const { user } = useAuth();
   const deleteMut = useDeleteCommunityPost();
-  const blockMut = useBlockUser();
   const isOwner = user?.id === authorId;
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [blockOpen, setBlockOpen] = useState(false);
   const label = title?.trim() || "โพสต์นี้";
 
   const handleConfirmDelete = async () => {
@@ -39,16 +39,6 @@ const CommunityPostMenu = ({ postId, authorId, title, className, onDeleted }: Pr
       onDeleted?.();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "ลบไม่สำเร็จ");
-    }
-  };
-
-  const handleBlock = async () => {
-    if (!user) return;
-    if (!window.confirm("บล็อกผู้ใช้นี้? คุณจะไม่เห็นโพสต์จากพวกเขาอีก")) return;
-    try {
-      await blockMut.mutateAsync(authorId);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "บล็อกไม่สำเร็จ");
     }
   };
 
@@ -96,7 +86,7 @@ const CommunityPostMenu = ({ postId, authorId, title, className, onDeleted }: Pr
                 className="gap-2 cursor-pointer"
                 onClick={(e) => {
                   e.stopPropagation();
-                  void handleBlock();
+                  setBlockOpen(true);
                 }}
               >
                 <UserX className="w-4 h-4" /> บล็อกผู้ใช้
@@ -116,6 +106,8 @@ const CommunityPostMenu = ({ postId, authorId, title, className, onDeleted }: Pr
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <BlockConfirmDialog open={blockOpen} onOpenChange={setBlockOpen} userId={authorId} />
 
       <DeleteConfirmDialog
         open={deleteOpen}

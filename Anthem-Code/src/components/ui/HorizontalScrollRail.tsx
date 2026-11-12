@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { COMMON, useT } from "@/lib/i18n";
 
 type Props = {
   children: ReactNode;
@@ -14,6 +15,7 @@ type Props = {
  * Horizontal chip/row scroller: swipe on mobile; subtle left/right arrows on desktop when overflowed.
  */
 export function HorizontalScrollRail({ children, className, wrapperClassName }: Props) {
+  const t = useT(COMMON);
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [canLeft, setCanLeft] = useState(false);
   const [canRight, setCanRight] = useState(false);
@@ -59,7 +61,7 @@ export function HorizontalScrollRail({ children, className, wrapperClassName }: 
       />
       <button
         type="button"
-        aria-label="เลื่อนหมวดไปทางซ้าย"
+        aria-label={t("scrollCategoriesLeft")}
         disabled={!canLeft}
         onClick={() => scrollByDir(-1)}
         className={cn(
@@ -84,7 +86,7 @@ export function HorizontalScrollRail({ children, className, wrapperClassName }: 
       />
       <button
         type="button"
-        aria-label="เลื่อนหมวดไปทางขวา"
+        aria-label={t("scrollCategoriesRight")}
         disabled={!canRight}
         onClick={() => scrollByDir(1)}
         className={cn(

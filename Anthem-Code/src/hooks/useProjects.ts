@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { TablesInsert, TablesUpdate, Tables } from "@/integrations/supabase/types";
 import { PROJECT_FEED_CARD_SELECT, PROJECT_FEED_CARD_SELECT_WITH_AI } from "@/lib/dbSelects";
 import { fetchProjectRow, fetchProjectRows, fetchFeedCardRows } from "@/lib/fetchProjectRow";
+import { removeUnreferencedProjectFiles, snapshotProjectFiles } from "@/lib/projectMediaCleanup";
 import {
   blendPersonalizedProjects,
   buildCategoryWeights,
@@ -459,8 +460,11 @@ export const useDeleteProject = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
+      const files = await snapshotProjectFiles(id);
       const { error } = await supabase.from("projects").delete().eq("id", id);
       if (error) throw error;
+      // The row is gone; its images and attachments must not stay reachable by URL.
+      if (files) void removeUnreferencedProjectFiles(files);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["my-projects"] });

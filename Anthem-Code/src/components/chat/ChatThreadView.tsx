@@ -41,6 +41,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
+import { useBlockedUserIds } from "@/hooks/useBlockedUserIds";
+import { useUserBlocks } from "@/hooks/useCommunityPostInteractions";
+import { useT } from "@/lib/i18n";
+import { REPORT } from "@/lib/i18n/report";
 import { loadHideReadReceipts } from "@/lib/chatReadReceipts";
 import {
   isGroupConversation,
@@ -71,6 +75,7 @@ import { parseAttachmentUrlsFromMessage, stripAttachmentBlock } from "@/lib/hire
 import {
   isHireCancelledStatus,
   isHireCompletedStatus,
+  isPendingHireStatus,
   labelHireStatus,
 } from "@/lib/hiringStatus";
 import {
@@ -113,6 +118,7 @@ import {
 import RequestCancelDialog from "@/components/requests/RequestCancelDialog";
 import CollabEndRequestDialog from "@/components/collab/CollabEndRequestDialog";
 import {
+  useCancelHireRequest,
   useForwardHireRequest,
   type HiringRow,
 } from "@/hooks/useHiringRequests";
@@ -197,6 +203,7 @@ const ChatThreadView = ({
   const rejectHire = useRejectRequest();
   const forwardHire = useForwardHireRequest();
   const cancelCollab = useCancelCollabRequest();
+  const cancelHire = useCancelHireRequest();
   const submitHireCancel = useSubmitHireCancelRequest();
   const editHireCancel = useEditHireCancelRequest();
   const withdrawHireCancel = useWithdrawHireCancelRequest();
@@ -207,6 +214,9 @@ const ChatThreadView = ({
   const { tier } = useSubscription();
 
   const isGroup = isGroupConversation(conv);
+  const blockedEitherWay = useBlockedUserIds();
+  const { data: myBlocks } = useUserBlocks(user?.id);
+  const tReport = useT(REPORT);
   const isStudio = isStudioConversation(conv);
   const isHire = conv.kind === "hire";
   const isCollab = conv.kind === "collab";
@@ -512,6 +522,7 @@ const ChatThreadView = ({
 
   const outcomeBusy =
     cancelCollab.isPending ||
+    cancelHire.isPending ||
     submitHireCancel.isPending ||
     editHireCancel.isPending ||
     withdrawHireCancel.isPending ||
@@ -538,9 +549,14 @@ const ChatThreadView = ({
     !collabRejectReason &&
     isCollabContactedNewStatus(collabStatus);
   const composerLocked = isHire && isHireChatComposerLocked(effectivePostRejectChat);
-  const composerLockedHint = composerLocked ? hireChatLockHint("locked") : null;
-
   const otherId = otherParticipantId(conv, user?.id ?? "");
+  // A block (either direction) closes a 1:1 chat; only the person who blocked is told why.
+  const chatBlocked = !isGroup && !!otherId && blockedEitherWay.has(otherId);
+  const composerLockedHint = composerLocked
+    ? hireChatLockHint("locked")
+    : chatBlocked
+      ? tReport(myBlocks?.has(otherId) ? "chatBlockedByMe" : "chatBlocked")
+      : null;
   const { data: other } = useQuery({
     queryKey: ["chat-other", otherId],
     enabled: !!otherId && !isGroup,
@@ -591,6 +607,10 @@ const ChatThreadView = ({
     !isHireCancelledStatus(hireStatus) &&
     !isHireCompletedStatus(hireStatus);
 
+  /** The person who asked can take a hire request back while the creator has not answered yet. */
+  const canWithdrawHireRequest =
+    hirePendingForClient && !!conv.request_id && !hireWorkStarted && isPendingHireStatus(hireStatus);
+
   const canWithdrawCollabRequest =
     isCollab &&
     isClient &&
@@ -608,7 +628,8 @@ const ChatThreadView = ({
     !isCollabCompletedStatus(collabStatus) &&
     !isCollabEndOpenStatus(activeCollabEnd?.status);
 
-  const canCancelRequest = canRequestHireCancel || canWithdrawCollabRequest || canRequestCollabEnd;
+  const canCancelRequest =
+    canRequestHireCancel || canWithdrawHireRequest || canWithdrawCollabRequest || canRequestCollabEnd;
 
   const useCollabGroupExpandFlow =
     isCollab &&
@@ -1319,7 +1340,9 @@ const ChatThreadView = ({
                     disabled={outcomeBusy}
                     className="text-destructive focus:text-destructive"
                     onClick={() => {
-                      if (isHire) {
+                      if (canWithdrawHireRequest) {
+                        setCancelOpen(true);
+                      } else if (isHire) {
                         setHireCancelEditRow(null);
                         setHireCancelDialogOpen(true);
                       } else if (canRequestCollabEnd) {
@@ -1331,7 +1354,13 @@ const ChatThreadView = ({
                     }}
                   >
                     <Ban className="w-4 h-4 mr-2" />
-                    {isHire ? "ขอยกเลิกงาน" : canRequestCollabEnd ? "ถอนตัว" : "ยกเลิกคำขอ"}
+                    {canWithdrawHireRequest
+                      ? "ยกเลิกคำขอ"
+                      : isHire
+                        ? "ขอยกเลิกงาน"
+                        : canRequestCollabEnd
+                          ? "ถอนตัว"
+                          : "ยกเลิกคำขอ"}
                   </DropdownMenuItem>
                 )}
                 {isGroup && !isStudio && (
@@ -1755,14 +1784,14 @@ const ChatThreadView = ({
       <RequestCancelDialog
         open={cancelOpen}
         onOpenChange={setCancelOpen}
-        title="ยกเลิกคำขอร่วมงาน?"
+        title={isHire ? "ยกเลิกคำขอจ้างงาน?" : "ยกเลิกคำขอร่วมงาน?"}
         description="แจ้งเหตุผลให้อีกฝ่ายทราบ — สถานะจะเป็นยกเลิก (ก่อนตอบรับ)"
         busy={outcomeBusy}
         onConfirm={async ({ reason, note }) => {
-          if (!conv.request_id || !isCollab) return;
+          if (!conv.request_id || !(isCollab || canWithdrawHireRequest)) return;
           try {
             const reasonLabel = note || requestCancelReasonLabel(reason);
-            await cancelCollab.mutateAsync({
+            await (isHire ? cancelHire : cancelCollab).mutateAsync({
               requestId: conv.request_id,
               reason,
               note: note || null,

@@ -4,6 +4,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import ColorSearchButton from "@/components/feed/ColorSearchButton";
 import { HideAiToggle } from "@/components/icons/NoAiIcon";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n";
+import { NAV } from "@/lib/i18n/nav";
 
 interface SearchBarProps {
   placeholder?: string;
@@ -88,6 +90,7 @@ const SearchBar = ({
   onColorQueryChange,
 }: SearchBarProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
+  const tNav = useT(NAV);
   const [expanded, setExpanded] = useState(() => value.length > 0);
   const [focused, setFocused] = useState(false);
   const sheetMode = Boolean(onExpandClick);
@@ -229,7 +232,7 @@ const SearchBar = ({
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => setExpanded(false)}
               className="rounded-lg p-1.5 hover:bg-background/60"
-              aria-label="ปิดค้นหา"
+              aria-label={tNav("closeSearch")}
               tabIndex={isOpen ? 0 : -1}
             >
               <X className="h-3.5 w-3.5 text-muted-foreground" />
@@ -240,7 +243,7 @@ const SearchBar = ({
         </div>
         <button
           type="button"
-          aria-label={isOpen && value.length === 0 ? "ปิดค้นหา" : placeholder}
+          aria-label={isOpen && value.length === 0 ? tNav("closeSearch") : placeholder}
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => {
             if (!isOpen) {
@@ -337,7 +340,7 @@ const SearchBar = ({
               type="button"
               onClick={() => setExpanded(false)}
               className="p-1.5 rounded-lg hover:bg-secondary transition-colors"
-              aria-label="ปิดค้นหา"
+              aria-label={tNav("closeSearch")}
             >
               <X className="w-3.5 h-3.5 text-muted-foreground" />
             </button>
