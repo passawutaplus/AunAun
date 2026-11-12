@@ -1,3 +1,5 @@
+import { tr, useT } from "@/lib/i18n";
+import { CHAT } from "@/lib/i18n/chat";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -94,6 +96,7 @@ const ChatSidebar = ({
   onTour,
   className,
 }: Props) => {
+  const tChat = useT(CHAT);
   const navigate = useNavigate();
   const { user } = useAuth();
   const { tier } = useSubscription();
@@ -133,7 +136,7 @@ const ChatSidebar = ({
       const map: Record<string, { name: string; avatar: string }> = {};
       (data ?? []).forEach((p) => {
         const uid = p.user_id ?? (p as { id?: string }).id;
-        if (uid) map[uid] = { name: p.display_name || "ผู้ใช้", avatar: p.avatar_url || "" };
+        if (uid) map[uid] = { name: p.display_name || tr(CHAT.user), avatar: p.avatar_url || "" };
       });
       return map;
     },
@@ -161,7 +164,7 @@ const ChatSidebar = ({
         if (map[m.conversation_id]) return;
         if (m.deleted_at) {
           map[m.conversation_id] = {
-            preview: "ข้อความถูกยกเลิก",
+            preview: tr(CHAT.messageUnsent),
             mine: m.sender_id === user?.id,
             created_at: m.created_at,
           };
@@ -247,13 +250,13 @@ const ChatSidebar = ({
 
   const handleCreateGroup = () => {
     if (!isAplus1SubscriptionsEnabled()) {
-      toast.message("สร้างกลุ่มแชทจะเปิดให้ใช้เร็ว ๆ นี้");
+      toast.message(tChat("groupSoon"));
       return;
     }
     const canCreate = tier === "pro" || tier === "pro_plus" || tier === "inhouse";
     if (!canCreate) {
-      toast.error("สร้างกลุ่มแชทได้เฉพาะสมาชิก Pro ขึ้นไป", {
-        action: { label: "อัปเกรด", onClick: () => navigate("/upgrade") },
+      toast.error(tChat("groupProOnly"), {
+        action: { label: tChat("upgrade"), onClick: () => navigate("/upgrade") },
       });
       return;
     }
@@ -265,8 +268,8 @@ const ChatSidebar = ({
     togglePin.mutate(
       { conversationId: convId, pinned: wasPinned },
       {
-        onSuccess: () => toast.success(wasPinned ? "เลิกปักหมุดแล้ว" : "ปักหมุดแล้ว"),
-        onError: (err: Error) => toast.error(userFacingError(err, "ปักหมุดไม่สำเร็จ")),
+        onSuccess: () => toast.success(tChat(wasPinned ? "unpinned" : "pinned")),
+        onError: (err: Error) => toast.error(userFacingError(err, tChat("pinFailed"))),
       },
     );
   };
@@ -280,11 +283,11 @@ const ChatSidebar = ({
     const id = deleteTargetId;
     hideConversation.mutate(id, {
       onSuccess: () => {
-        toast.success("ลบแชทออกจากรายการแล้ว");
+        toast.success(tChat("chatRemoved"));
         setDeleteTargetId(null);
         if (selectedId === id) navigate("/chat");
       },
-      onError: (err: Error) => toast.error(userFacingError(err, "ลบแชทไม่สำเร็จ")),
+      onError: (err: Error) => toast.error(userFacingError(err, tChat("chatRemoveFailed"))),
     });
   };
 
@@ -305,7 +308,7 @@ const ChatSidebar = ({
             <Input
               value={search}
               onChange={(e) => onSearchChange(e.target.value)}
-              placeholder="ค้นหาชื่อหรืองาน…"
+              placeholder={tChat("searchPlaceholder")}
               className="h-9 rounded-full border border-border bg-background pl-8 text-sm shadow-none"
             />
           </div>
@@ -315,7 +318,7 @@ const ChatSidebar = ({
               variant="ghost"
               size="icon"
               className="h-8 w-8 shrink-0 rounded-full"
-              aria-label="สร้างกลุ่มแชท"
+              aria-label={tChat("createGroup")}
               onClick={handleCreateGroup}
             >
               <Plus className="h-4 w-4" />
@@ -330,9 +333,9 @@ const ChatSidebar = ({
         {isError && (
           // No raw error text: it can be English or internal. A retry is enough to recover.
           <div className="flex flex-col items-center gap-3 px-4 py-12 text-center text-sm">
-            <p className="text-foreground">โหลดรายการแชทไม่สำเร็จ</p>
+            <p className="text-foreground">{tChat("listLoadFailed")}</p>
             <Button type="button" size="sm" variant="outline" className="rounded-full" onClick={() => void refetch()}>
-              ลองใหม่
+              {tChat("retry")}
             </Button>
           </div>
         )}
@@ -341,13 +344,13 @@ const ChatSidebar = ({
             <MessageCircle className="w-10 h-10 mx-auto mb-2 opacity-40" />
             {search.trim() ? (
               <>
-                <p className="font-medium text-foreground">ไม่พบบทสนทนาจากการค้นหา</p>
-                <p className="text-sm mt-1">ลองคำอื่น หรือล้างช่องค้นหาเพื่อดูรายการทั้งหมด</p>
+                <p className="font-medium text-foreground">{tChat("noSearchResults")}</p>
+                <p className="text-sm mt-1">{tChat("noSearchResultsHint")}</p>
               </>
             ) : (
               <>
-                <p className="font-medium text-foreground">ยังไม่มีบทสนทนา</p>
-                <p className="text-sm mt-1">คำขอจ้างและคอลแลปจะอยู่ที่นี่ — เปิดแชทตอบได้เลย</p>
+                <p className="font-medium text-foreground">{tChat("empty")}</p>
+                <p className="text-sm mt-1">{tChat("emptyHint")}</p>
               </>
             )}
             {isDemoMode() && !search.trim() && (
@@ -407,18 +410,18 @@ const ChatSidebar = ({
               : isHire
                 ? "bg-[hsl(var(--chat-hire-soft))] text-[hsl(var(--chat-hire))]"
                 : "bg-[hsl(var(--chat-collab-soft))] text-[hsl(var(--chat-collab))]";
-            const listName = isGroup ? c.title || c.project_title || "กลุ่มแชท" : p?.name ?? "ผู้ใช้";
+            const listName = isGroup ? c.title || c.project_title || tChat("groupChat") : p?.name ?? tChat("user");
             const listBadge = isGroup
               ? groupTag === "hire"
-                ? "กลุ่มจ้าง"
+                ? tChat("badgeGroupHire")
                 : groupTag === "collab"
-                  ? "กลุ่มคอลแลป"
-                  : "กลุ่ม"
+                  ? tChat("badgeGroupCollab")
+                  : tChat("badgeGroup")
               : isHire
-                ? "จ้าง"
+                ? tChat("badgeHire")
                 : isConnect
                   ? null
-                  : "คอลแลป";
+                  : tChat("badgeCollab");
 
             return (
               <li key={c.id} className="relative">
@@ -479,12 +482,12 @@ const ChatSidebar = ({
                         {isLocked
                           ? HIRE_CHAT_LOCKED_HINT
                           : last
-                            ? (last.mine ? "คุณ: " : "") + last.preview
+                            ? (last.mine ? tChat("youPrefix") : "") + last.preview
                             : isGroup
-                              ? "เริ่มแชทกลุ่มได้เลย"
+                              ? tChat("startGroup")
                               : isHire
-                                ? "เริ่มพูดคุยเรื่องงานได้เลย"
-                                : "เริ่มคุยคอลแลปได้เลย"}
+                                ? tChat("startHire")
+                                : tChat("startCollab")}
                       </p>
                       {unread > 0 && (
                         <span className="shrink-0 min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[10px] font-semibold rounded-full bg-destructive text-destructive-foreground">
@@ -509,7 +512,7 @@ const ChatSidebar = ({
                         type="button"
                         onClick={(e) => e.stopPropagation()}
                         className="p-1 rounded-full hover:bg-background/80 text-muted-foreground hover:text-foreground"
-                        aria-label="เมนูแชท"
+                        aria-label={tChat("chatMenu")}
                       >
                         <MoreVertical className="w-4 h-4" />
                       </button>
@@ -521,7 +524,7 @@ const ChatSidebar = ({
                         ) : (
                           <Pin className="w-4 h-4 mr-2" />
                         )}
-                        {isPinned ? "เลิกปักหมุด" : "ปักหมุด"}
+                        {tChat(isPinned ? "unpin" : "pin")}
                       </DropdownMenuItem>
                       {reportUserId ? (
                         <DropdownMenuItem
@@ -533,7 +536,7 @@ const ChatSidebar = ({
                           }
                         >
                           <Flag className="w-4 h-4 mr-2" />
-                          รายงานแชท
+                          {tChat("reportChat")}
                         </DropdownMenuItem>
                       ) : null}
                       <DropdownMenuSeparator />
@@ -542,7 +545,7 @@ const ChatSidebar = ({
                         onClick={() => handleAskDelete(c.id)}
                       >
                         <Trash2 className="w-4 h-4 mr-2" />
-                        ลบแชท
+                        {tChat("removeChat")}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -556,13 +559,13 @@ const ChatSidebar = ({
       <AlertDialog open={!!deleteTargetId} onOpenChange={(open) => !open && setDeleteTargetId(null)}>
         <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>ลบแชทนี้ออกจากรายการ?</AlertDialogTitle>
+            <AlertDialogTitle>{tChat("removeChatTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              แชทจะหายจากรายการของคุณเท่านั้น คู่สนทนายังเห็นอยู่ และจะกลับมาอีกครั้งถ้ามีข้อความใหม่
+              {tChat("removeChatBody")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={hideConversation.isPending}>ยกเลิก</AlertDialogCancel>
+            <AlertDialogCancel disabled={hideConversation.isPending}>{tChat("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               disabled={hideConversation.isPending}
               onClick={(e) => {
@@ -571,7 +574,7 @@ const ChatSidebar = ({
               }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {hideConversation.isPending ? "กำลังลบ…" : "ลบแชท"}
+              {tChat(hideConversation.isPending ? "removing" : "removeChat")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

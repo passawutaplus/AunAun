@@ -1,3 +1,5 @@
+import { useT } from "@/lib/i18n";
+import { CHAT } from "@/lib/i18n/chat";
 import { useEffect, useState } from "react";
 import { TourHelpButton } from "@/components/tour/TourHelpButton";
 import { ChevronDown } from "lucide-react";
@@ -13,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 /** Full-width chat shell header — matches works-page top nav height (`h-14`). */
 export function ChatInboxTopBar({ onTour }: { onTour?: () => void } = {}) {
+  const tChat = useT(CHAT);
   const navigate = useNavigate();
   const { user } = useAuth();
   const [profile, setProfile] = useState<{
@@ -38,7 +41,7 @@ export function ChatInboxTopBar({ onTour }: { onTour?: () => void } = {}) {
     // Phones: hidden — the list and the thread each carry their own one-row header, and
     // My Studio / notifications / profile live in the bottom nav.
     <header className="hidden h-14 shrink-0 items-center gap-2 border-b border-border bg-card px-3 sm:px-4 md:flex">
-      <BackButton label="กลับหน้าก่อนหน้า" />
+      <BackButton label={tChat("back")} />
       <h1 className="text-2xl font-semibold tracking-tight text-foreground">Chat</h1>
       {onTour ? <TourHelpButton onClick={onTour} className="h-8 w-8" /> : null}
       <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-4">
@@ -59,7 +62,7 @@ export function ChatInboxTopBar({ onTour }: { onTour?: () => void } = {}) {
               trigger={
                 <button
                   type="button"
-                  aria-label="โปรไฟล์"
+                  aria-label={tChat("profile")}
                   className="flex items-center gap-1.5 rounded-full py-0.5 pl-0.5 pr-1 transition-colors hover:bg-accent/60"
                 >
                   <UserAvatar

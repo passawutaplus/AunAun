@@ -1,3 +1,5 @@
+import { useT } from "@/lib/i18n";
+import { CHAT } from "@/lib/i18n/chat";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Loader2, MessageCircle, Send } from "lucide-react";
@@ -34,6 +36,7 @@ export default function ConnectMessageDialog({
   appendText,
   description,
 }: Props) {
+  const tChat = useT(CHAT);
   const navigate = useNavigate();
   const { user } = useAuth();
   const [text, setText] = useState("");
@@ -60,7 +63,7 @@ From : ${about.title}` : appendText ? `${text.trim()}\n\n${appendText}` : text;
       onOpenChange(false);
       navigate(`/chat/${conversationId}`);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "ส่งข้อความไม่สำเร็จ");
+      toast.error(e instanceof Error ? e.message : tChat("connectSendFailed"));
     } finally {
       setBusy(false);
     }
@@ -72,13 +75,13 @@ From : ${about.title}` : appendText ? `${text.trim()}\n\n${appendText}` : text;
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <MessageCircle className="h-4 w-4 text-primary" aria-hidden />
-            {about ? "ทักแชทเรื่องผลงานนี้" : `ทักแชทหา ${recipientName}`}
+            {about ? tChat("connectTitleWork") : tChat("connectTitleUser", { name: recipientName })}
           </DialogTitle>
           <DialogDescription>
             {description ??
               (about
-              ? `ถาม ${recipientName} เรื่องผลงานชิ้นนี้ได้เลย — ลิงก์ผลงานจะแนบไปกับข้อความให้อัตโนมัติ`
-              : "ทักทาย ถามเรื่องผลงาน หรือชวนคุยได้เลย — ถ้าจะจ้างหรือคอลแลป ใช้ปุ่มบนโปรไฟล์จะได้ส่งบรีฟไปพร้อมกัน")}
+              ? tChat("connectDescWork", { name: recipientName })
+              : tChat("connectDescUser"))}
           </DialogDescription>
         </DialogHeader>
 
@@ -88,7 +91,7 @@ From : ${about.title}` : appendText ? `${text.trim()}\n\n${appendText}` : text;
               <img src={about.coverUrl} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" />
             ) : null}
             <div className="min-w-0">
-              <p className="text-[11px] text-muted-foreground">แนบผลงาน</p>
+              <p className="text-[11px] text-muted-foreground">{tChat("attachedWork")}</p>
               <p className="truncate text-sm font-medium">{about.title}</p>
             </div>
           </div>
@@ -106,8 +109,8 @@ From : ${about.title}` : appendText ? `${text.trim()}\n\n${appendText}` : text;
           }}
           placeholder={
             about
-              ? "เช่น ชอบงานนี้มาก อยากรู้ว่าใช้เวลาทำนานไหม / รับงานสไตล์นี้ไหม…"
-              : `สวัสดีครับ/ค่ะ ชอบผลงานของ ${recipientName} มาก…`
+              ? tChat("connectPlaceholderWork")
+              : tChat("connectPlaceholderUser", { name: recipientName })
           }
           className="resize-none rounded-xl"
           disabled={busy}
@@ -116,7 +119,7 @@ From : ${about.title}` : appendText ? `${text.trim()}\n\n${appendText}` : text;
         <div className="flex justify-end">
           <Button type="button" className="rounded-full gap-1.5" disabled={busy || !text.trim()} onClick={() => void send()}>
             {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Send className="h-4 w-4" aria-hidden />}
-            ส่งข้อความ
+            {tChat("sendMessage")}
           </Button>
         </div>
       </DialogContent>
