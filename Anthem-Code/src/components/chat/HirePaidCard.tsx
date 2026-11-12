@@ -7,6 +7,8 @@ import {
   chatCardAccent,
 } from "@/components/chat/ChatCardShell";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n";
+import { CHAT_HIRE } from "@/lib/i18n/chatHire";
 
 type Props = {
   payload: HirePaidChatPayload;
@@ -17,6 +19,7 @@ type Props = {
 
 /** Accept + payment escrow confirmation card in hire chat. */
 export default function HirePaidCard({ payload, onOpenOrderDetail }: Props) {
+  const tHire = useT(CHAT_HIRE);
   const offerLabel = formatOfferAmount(payload.offerAmountThb);
   const paidLabel = formatOfferAmount(payload.paidAmountThb);
   const isPartial =
@@ -28,7 +31,7 @@ export default function HirePaidCard({ payload, onOpenOrderDetail }: Props) {
     <ChatCardShell
       tone="success"
       icon={CheckCircle2}
-      title="ยอมรับข้อเสนอและชำระแล้ว"
+      title={tHire("paidTitle")}
       action={
         onOpenOrderDetail ? (
           <ChatCardOrderMenu
@@ -39,11 +42,11 @@ export default function HirePaidCard({ payload, onOpenOrderDetail }: Props) {
     >
       <div>
         <p className="text-sm font-semibold leading-snug">«{payload.offerTitle}»</p>
-        <p className="text-xs mt-0.5 text-muted-foreground">มูลค่างาน {offerLabel}</p>
+        <p className="text-xs mt-0.5 text-muted-foreground">{tHire("jobValue", { amount: offerLabel })}</p>
       </div>
       <div className="rounded-xl px-3 py-2 bg-emerald-500/10">
         <p className="text-[10px] font-medium text-muted-foreground">
-          {isPartial ? "ยอดที่ชำระ (มัดจำ)" : "ยอดที่ชำระ"}
+          {isPartial ? tHire("paidAmountDeposit") : tHire("paidAmount")}
         </p>
         <p className={cn("text-lg font-semibold tabular-nums", chatCardAccent("success"))}>
           {paidLabel}
@@ -52,7 +55,7 @@ export default function HirePaidCard({ payload, onOpenOrderDetail }: Props) {
       <div className="flex gap-2 rounded-xl px-2.5 py-2 text-[11px] leading-relaxed bg-muted/60 text-muted-foreground">
         <ShieldCheck className="w-4 h-4 shrink-0 mt-0.5 text-emerald-600 dark:text-emerald-400" />
         <p>
-          SAMECOR พักเงินไว้ในฐานะตัวกลาง และจะโอนให้ผู้รับงานหลังอนุมัติงานตามเงื่อนไขแพลตฟอร์ม
+          {tHire("escrowNote")}
         </p>
       </div>
     </ChatCardShell>

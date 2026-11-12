@@ -22,6 +22,8 @@ import { encodeHireForwardMessage } from "@/lib/hireForwardChat";
 import { hireForwardClientNotice, hireRejectReasonLabel } from "@/lib/hireBrief";
 import { encodeHireRejectChoiceMessage } from "@/lib/hireRejectChat";
 import type { OfferPartyInfo } from "@/lib/chatOffer";
+import { useT } from "@/lib/i18n";
+import { CHAT_HIRE } from "@/lib/i18n/chatHire";
 
 type HireMeta = {
   client_name?: string | null;
@@ -108,6 +110,7 @@ export function ChatHireDialogs({
   postSystemEvent,
   qc,
 }: Props) {
+  const tHire = useT(CHAT_HIRE);
   /** Forward the request to another creator and post the client notice + forward card. */
   const forwardHireTo = async (pick: {
     toUserId: string;
@@ -186,7 +189,7 @@ export function ChatHireDialogs({
         partner={
           other
             ? {
-                name: other.display_name || other.username || "ผู้ใช้",
+                name: other.display_name || other.username || tHire("user"),
                 avatarUrl: other.avatar_url,
                 role: other.role ?? null,
               }
@@ -210,10 +213,10 @@ export function ChatHireDialogs({
               rejectReason: pick.reason,
               clientMessage: pick.clientMessage,
             });
-            toast.success("ส่งต่องานแล้ว — แจ้งเพื่อนแล้ว (ส่งต่อคนอื่นได้จากปุ่มส่งต่อ)");
+            toast.success(tHire("forwardedNotifiedMore"));
             setForwardOpen(false);
           } catch (e: unknown) {
-            toast.error(e instanceof Error ? e.message : "ส่งต่องานไม่สำเร็จ");
+            toast.error(e instanceof Error ? e.message : tHire("forwardFailed"));
           }
         }}
       />
@@ -235,7 +238,7 @@ export function ChatHireDialogs({
                 rejectReason: reason,
                 clientMessage: note,
               });
-              toast.success("ส่งต่องานแล้ว — แจ้งเพื่อนแล้ว");
+              toast.success(tHire("forwardedNotified"));
               setRejectOpen(false);
               return;
             }
@@ -256,7 +259,7 @@ export function ChatHireDialogs({
                   "สวัสดีครับ/ค่ะ — ตอนนี้ยังไม่พร้อมรับงานจากเวลาและงบที่แจ้งมา แต่อยากคุยรายละเอียดก่อนได้ครับ/ค่ะ",
               });
               void qc.invalidateQueries({ queryKey: ["chat-hire-forward-src", conv.request_id] });
-              toast.success("บันทึกแล้ว — คุยต่อได้เลย");
+              toast.success(tHire("savedKeepTalking"));
               setRejectOpen(false);
               return;
             }
@@ -283,10 +286,10 @@ export function ChatHireDialogs({
             });
             void qc.invalidateQueries({ queryKey: ["chat-hire-forward-src", conv.request_id] });
             void qc.invalidateQueries({ queryKey: ["chat-hire-meta", conv.request_id] });
-            toast.success("ปฏิเสธคำขอแล้ว — รอผู้จ้างเลือก");
+            toast.success(tHire("requestDeclinedWaitClient"));
             setRejectOpen(false);
           } catch (e: unknown) {
-            toast.error(e instanceof Error ? e.message : "ดำเนินการไม่สำเร็จ");
+            toast.error(e instanceof Error ? e.message : tHire("actionFailed"));
           }
         }}
       />
@@ -332,7 +335,7 @@ export function ChatHireDialogs({
                 refId: hireCancelEditRow.id,
               });
               void updated;
-              toast.success("บันทึกการแก้ไขแล้ว");
+              toast.success(tHire("editSaved"));
             } else {
               const row = await submitHireCancel.mutateAsync({
                 hiringRequestId: conv.request_id,
@@ -354,12 +357,12 @@ export function ChatHireDialogs({
                   hiringRequestId: conv.request_id,
                 }),
               });
-              toast.success("ส่งคำขอยกเลิกแล้ว — รออีกฝ่ายตอบภายใน 48 ชม.");
+              toast.success(tHire("cancelRequestSent"));
             }
             setHireCancelDialogOpen(false);
             setHireCancelEditRow(null);
           } catch (e: unknown) {
-            toast.error(e instanceof Error ? e.message : "ส่งคำขอไม่สำเร็จ");
+            toast.error(e instanceof Error ? e.message : tHire("sendRequestFailed"));
           }
         }}
       />

@@ -7,6 +7,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useOpenHireCollabChat } from "@/hooks/useChat";
 import type { HireForwardChatPayload } from "@/lib/hireForwardChat";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n";
+import { CHAT_HIRE } from "@/lib/i18n/chatHire";
 
 type Props = {
   payload: HireForwardChatPayload;
@@ -19,10 +21,11 @@ const HireForwardCard = ({ payload, canOpenChat }: Props) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const openChat = useOpenHireCollabChat();
+  const tHire = useT(CHAT_HIRE);
 
   const openForwardedChat = async () => {
     if (!user?.id) {
-      toast.info("กรุณาเข้าสู่ระบบก่อน");
+      toast.info(tHire("loginFirst"));
       return;
     }
     try {
@@ -37,9 +40,9 @@ const HireForwardCard = ({ payload, canOpenChat }: Props) => {
         skipStatusUpdate: true,
       });
       navigate(`/chat/${convId}`);
-      toast.success("เปิดแชทแล้ว — รอครีเอเตอร์ตอบรับหรือไม่สนใจ");
+      toast.success(tHire("forwardChatOpened"));
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "เปิดแชทไม่สำเร็จ");
+      toast.error(e instanceof Error ? e.message : tHire("openChatFailed"));
     }
   };
 
@@ -47,7 +50,7 @@ const HireForwardCard = ({ payload, canOpenChat }: Props) => {
     <ChatCardShell
       tone="hire"
       icon={Share2}
-      title="ส่งต่องานให้ครีเอเตอร์คนอื่น"
+      title={tHire("forwardCardTitle")}
       footer={
         canOpenChat ? (
           <Button
@@ -58,10 +61,10 @@ const HireForwardCard = ({ payload, canOpenChat }: Props) => {
             className="w-full rounded-full h-9 gap-1.5 bg-[hsl(var(--chat-hire))] text-[hsl(var(--chat-hire-foreground))] hover:opacity-90"
           >
             <MessageCircle className="w-4 h-4" />
-            แชทกับ {payload.toName}
+            {tHire("chatWith", { name: payload.toName })}
           </Button>
         ) : (
-          <ChatCardStatus>รอผู้จ้างกดแชทกับคนที่ส่งต่อ</ChatCardStatus>
+          <ChatCardStatus>{tHire("waitClientOpenForward")}</ChatCardStatus>
         )
       }
     >

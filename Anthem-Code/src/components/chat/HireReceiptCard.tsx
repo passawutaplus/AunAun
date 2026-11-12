@@ -22,25 +22,28 @@ import { docKindLabelTh } from "@/lib/documents/numbering";
 import type { BusinessDocument } from "@/lib/documents/documentPayload";
 import { sharedDb } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n";
+import { CHAT_HIRE, type ChatHireKey } from "@/lib/i18n/chatHire";
 
 type Props = {
   payload: HireReceiptChatPayload;
   onOpenOrderDetail?: (orderId?: string | null) => void;
 };
 
-const METHOD_LABEL: Record<string, string> = {
-  promptpay: "พร้อมเพย์",
-  card: "บัตร",
-  bank_transfer: "โอนธนาคาร",
+const METHOD_LABEL: Record<string, ChatHireKey> = {
+  promptpay: "methodPromptpay",
+  card: "methodCard",
+  bank_transfer: "methodBankTransfer",
 };
 
 /** Deposit / payment receipt card posted after hire checkout. */
 export default function HireReceiptCard({ payload, onOpenOrderDetail }: Props) {
+  const tHire = useT(CHAT_HIRE);
   const [open, setOpen] = useState(false);
   const paidLabel = formatOfferAmount(payload.paidAmountThb);
-  const title = payload.isDeposit ? "ใบเสร็จมัดจำ" : "ใบเสร็จรับเงิน";
+  const title = payload.isDeposit ? tHire("receiptDeposit") : tHire("receipt");
   const methodLabel = payload.paymentMethod
-    ? METHOD_LABEL[payload.paymentMethod] || payload.paymentMethod
+    ? (METHOD_LABEL[payload.paymentMethod] ? tHire(METHOD_LABEL[payload.paymentMethod]) : payload.paymentMethod)
     : null;
 
   const { data: docRow, isFetching } = useQuery({
@@ -90,10 +93,10 @@ export default function HireReceiptCard({ payload, onOpenOrderDetail }: Props) {
               }}
             >
               <FileText className="w-3.5 h-3.5 mr-1" />
-              ดูใบเสร็จ
+              {tHire("viewReceipt")}
             </Button>
           ) : (
-            <ChatCardStatus>ออกใบเสร็จแล้ว</ChatCardStatus>
+            <ChatCardStatus>{tHire("receiptIssued")}</ChatCardStatus>
           )
         }
       >
@@ -101,19 +104,19 @@ export default function HireReceiptCard({ payload, onOpenOrderDetail }: Props) {
           <p className="text-sm font-semibold leading-snug">«{payload.offerTitle}»</p>
           <p className="text-xs mt-0.5 text-muted-foreground">
             {payload.isDeposit
-              ? `มัดจำ${payload.depositPercent ? ` ${payload.depositPercent}%` : ""} · มูลค่างาน ${formatOfferAmount(payload.offerAmountThb)}`
-              : `มูลค่างาน ${formatOfferAmount(payload.offerAmountThb)}`}
+              ? `${payload.depositPercent ? tHire("depositPct", { pct: payload.depositPercent }) : tHire("deposit")} · ${tHire("jobValue", { amount: formatOfferAmount(payload.offerAmountThb) })}`
+              : tHire("jobValue", { amount: formatOfferAmount(payload.offerAmountThb) })}
           </p>
         </div>
         <div className="rounded-xl px-3 py-2 bg-muted/60">
           <p className="text-[10px] font-medium text-muted-foreground">
-            {payload.isDeposit ? "ยอดมัดจำที่รับแล้ว" : "ยอดที่รับแล้ว"}
+            {payload.isDeposit ? tHire("depositReceived") : tHire("amountReceived")}
           </p>
           <p className={cn("text-lg font-semibold tabular-nums", chatCardAccent("success"))}>
             {paidLabel}
           </p>
           {methodLabel ? (
-            <p className="text-[10px] text-muted-foreground mt-0.5">ชำระผ่าน {methodLabel}</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">{tHire("paidVia", { method: methodLabel })}</p>
           ) : null}
         </div>
       </ChatCardShell>
@@ -125,20 +128,20 @@ export default function HireReceiptCard({ payload, onOpenOrderDetail }: Props) {
               {docRow ? docKindLabelTh(docRow.kind) : title}
             </DialogTitle>
             <DialogDescription>
-              {docRow?.doc_number || payload.docNumber || "ใบเสร็จรับเงิน"}
+              {docRow?.doc_number || payload.docNumber || tHire("receipt")}
             </DialogDescription>
           </DialogHeader>
           <div className="p-4">
             {isFetching && !docRow ? (
               <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                กำลังโหลดใบเสร็จ…
+                {tHire("loadingReceipt")}
               </div>
             ) : docRow?.snapshot ? (
               <PrintableDocumentPaper doc={docRow.snapshot} />
             ) : (
               <p className="text-sm text-muted-foreground text-center py-8">
-                ยังโหลดใบเสร็จไม่ได้ — ลองเปิดจากรายละเอียดออเดอร์
+                {tHire("receiptLoadFailed")}
               </p>
             )}
           </div>

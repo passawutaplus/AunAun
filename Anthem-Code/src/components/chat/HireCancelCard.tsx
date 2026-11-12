@@ -42,6 +42,8 @@ import {
 } from "@/hooks/useHireCancelRequest";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { intlLocale, useT } from "@/lib/i18n";
+import { CHAT_HIRE } from "@/lib/i18n/chatHire";
 
 type Props = {
   payload: HireCancelCardPayload;
@@ -61,6 +63,7 @@ export function HireCancelCard({
   withdrawBusy,
 }: Props) {
   const { user } = useAuth();
+  const tHire = useT(CHAT_HIRE);
   const uid = userId ?? user?.id ?? null;
   const { data: row, isLoading } = useHireCancelById(payload.cancelRequestId);
   const { data: history = [] } = useHireCancelHistory(payload.hiringRequestId);
@@ -82,7 +85,7 @@ export function HireCancelCard({
   if (isLoading || !row) {
     return (
       <div className="rounded-2xl border border-border bg-card px-3 py-3 text-xs text-muted-foreground min-w-[16rem]">
-        {isLoading ? "โหลดคำขอยกเลิก…" : "ไม่พบคำขอยกเลิก"}
+        {isLoading ? tHire("cancelLoading") : tHire("cancelNotFound")}
       </div>
     );
   }
@@ -116,18 +119,18 @@ export function HireCancelCard({
       });
       toast.success(
         action === "accept"
-          ? "อนุมัติการยกเลิกแล้ว"
+          ? tHire("cancelApproved")
           : action === "reject"
-            ? "ปฏิเสธการยกเลิกแล้ว"
+            ? tHire("cancelRejected")
             : action === "compensation_50"
-              ? "ส่งคำขอค่าชดเชย 50% แล้ว"
-              : "เสนอเงื่อนไขเงินแล้ว",
+              ? tHire("compensationSent")
+              : tHire("moneyTermsOffered"),
       );
       setRejectOpen(false);
       setCounterOpen(false);
       setCompOpen(false);
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "ดำเนินการไม่สำเร็จ");
+      toast.error(e instanceof Error ? e.message : tHire("actionFailed"));
     }
   };
 
@@ -143,7 +146,7 @@ export function HireCancelCard({
             className="w-full rounded-full h-8 text-xs"
             onClick={() => onEdit?.(row)}
           >
-            แก้ไขคำขอ
+            {tHire("editRequest")}
           </Button>
           <Button
             type="button"
@@ -154,7 +157,7 @@ export function HireCancelCard({
             onClick={() => onWithdraw?.(row)}
           >
             {withdrawBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : null}
-            ถอนคำขอ
+            {tHire("withdrawRequest")}
           </Button>
         </>
       )}
@@ -173,7 +176,7 @@ export function HireCancelCard({
             ) : (
               <Check className="w-3.5 h-3.5 mr-1" />
             )}
-            ยอมรับยกเลิก
+            {tHire("acceptCancel")}
           </Button>
           <Button
             type="button"
@@ -184,7 +187,7 @@ export function HireCancelCard({
             onClick={() => setRejectOpen(true)}
           >
             <X className="w-3.5 h-3.5 mr-1" />
-            ปฏิเสธการยกเลิก
+            {tHire("rejectCancel")}
           </Button>
           {row.initiated_by === "client" && row.status === "pending" && (
             <Button
@@ -195,7 +198,7 @@ export function HireCancelCard({
               className="w-full rounded-full h-8 text-xs"
               onClick={() => setCompOpen(true)}
             >
-              ขอค่าชดเชย 50%
+              {tHire("askCompensation")}
             </Button>
           )}
           {row.status === "pending" &&
@@ -213,7 +216,7 @@ export function HireCancelCard({
                   setCounterOpen(true);
                 }}
               >
-                เสนอเงื่อนไขเงินอื่น
+                {tHire("proposeOtherTerms")}
               </Button>
             )}
         </>
@@ -230,7 +233,7 @@ export function HireCancelCard({
       <ChatCardShell
         tone="hire"
         icon={Ban}
-        title={`คำขอยกเลิกงาน · ${row.initiated_by === "client" ? "ผู้จ้าง" : "ฟรีแลนซ์"}`}
+        title={tHire("cancelRequestTitle", { who: row.initiated_by === "client" ? tHire("roleClient") : tHire("roleFreelancer") })}
         meta={
           <button
             type="button"
@@ -238,7 +241,7 @@ export function HireCancelCard({
             className="inline-flex items-center gap-1 text-[10px] hover:opacity-80"
           >
             <History className="w-3 h-3" />
-            ประวัติ
+            {tHire("history")}
           </button>
         }
         footer={footer}
@@ -250,14 +253,14 @@ export function HireCancelCard({
             {row.reason_note ? `\n${row.reason_note}` : ""}
           </p>
           <p className="text-[11px] text-muted-foreground">
-            เงื่อนไขเงิน: {hireCancelMoneyLabel(row.money_terms)}
+            {tHire("moneyTermsLabel", { terms: hireCancelMoneyLabel(row.money_terms) })}
             {row.status === "countered" && row.response_money_terms
               ? ` → ${hireCancelMoneyLabel(row.response_money_terms)}`
               : ""}
           </p>
           <p className="text-[11px] text-muted-foreground">
-            พิจารณาถึง {formatRemaining(row.respond_deadline_at)}
-            {canEdit ? ` · แก้/ถอนได้ ${formatRemaining(row.edit_until_at)}` : ""}
+            {tHire("respondWindow", { time: formatRemaining(row.respond_deadline_at) })}
+            {canEdit ? ` · ${tHire("editWindow", { time: formatRemaining(row.edit_until_at) })}` : ""}
           </p>
           {row.evidence_urls && row.evidence_urls.length > 0 ? (
             <div className="flex flex-wrap gap-1 pt-1">
@@ -281,11 +284,11 @@ export function HireCancelCard({
       <AlertDialog open={rejectOpen} onOpenChange={setRejectOpen}>
         <AlertDialogContent className="rounded-2xl max-w-sm">
           <AlertDialogHeader>
-            <AlertDialogTitle>ปฏิเสธการยกเลิก?</AlertDialogTitle>
-            <AlertDialogDescription>งานจะดำเนินต่อ — แจ้งเหตุผลให้อีกฝ่ายทราบ</AlertDialogDescription>
+            <AlertDialogTitle>{tHire("rejectCancelTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>{tHire("rejectCancelBody")}</AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-2">
-            <Label>เหตุผล</Label>
+            <Label>{tHire("reason")}</Label>
             <Select value={rejectReason} onValueChange={(v) => setRejectReason(v as typeof rejectReason)}>
               <SelectTrigger className="rounded-xl">
                 <SelectValue />
@@ -303,11 +306,11 @@ export function HireCancelCard({
               onChange={(e) => setRejectNote(e.target.value)}
               rows={2}
               className="rounded-xl resize-none"
-              placeholder="รายละเอียด (ถ้ามี)"
+              placeholder={tHire("detailsOptional")}
             />
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-full">กลับ</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-full">{tHire("back")}</AlertDialogCancel>
             <AlertDialogAction
               className="rounded-full"
               onClick={(e) => {
@@ -318,7 +321,7 @@ export function HireCancelCard({
                 });
               }}
             >
-              ยืนยันปฏิเสธ
+              {tHire("confirmReject")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -327,9 +330,9 @@ export function HireCancelCard({
       <AlertDialog open={compOpen} onOpenChange={setCompOpen}>
         <AlertDialogContent className="rounded-2xl max-w-sm">
           <AlertDialogHeader>
-            <AlertDialogTitle>ขอค่าชดเชย 50%?</AlertDialogTitle>
+            <AlertDialogTitle>{tHire("askCompensationTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              บันทึกข้อตกลงในระบบ (ยังไม่โอนเงินอัตโนมัติ) — ผู้จ้างต้องยอมรับก่อนจึงยกเลิก
+              {tHire("askCompensationBody")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <Textarea
@@ -337,10 +340,10 @@ export function HireCancelCard({
             onChange={(e) => setCompNote(e.target.value)}
             rows={3}
             className="rounded-xl resize-none"
-            placeholder="อธิบายงานที่ทำไปแล้วสั้น ๆ"
+            placeholder={tHire("compensationPlaceholder")}
           />
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-full">กลับ</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-full">{tHire("back")}</AlertDialogCancel>
             <AlertDialogAction
               className="rounded-full"
               onClick={(e) => {
@@ -348,7 +351,7 @@ export function HireCancelCard({
                 void runRespond("compensation_50", { responseNote: compNote.trim() });
               }}
             >
-              ส่งคำขอ
+              {tHire("sendRequest")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -357,8 +360,8 @@ export function HireCancelCard({
       <AlertDialog open={counterOpen} onOpenChange={setCounterOpen}>
         <AlertDialogContent className="rounded-2xl max-w-sm">
           <AlertDialogHeader>
-            <AlertDialogTitle>เสนอเงื่อนไขเงิน</AlertDialogTitle>
-            <AlertDialogDescription>สลับระหว่างคืนเต็มกับคืน 50% (บันทึกในระบบ)</AlertDialogDescription>
+            <AlertDialogTitle>{tHire("proposeTermsTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>{tHire("proposeTermsBody")}</AlertDialogDescription>
           </AlertDialogHeader>
           <Select
             value={counterTerms}
@@ -368,12 +371,12 @@ export function HireCancelCard({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="full_refund">คืนเต็มจำนวน</SelectItem>
-              <SelectItem value="half_refund">คืน 50%</SelectItem>
+              <SelectItem value="full_refund">{tHire("refundFull")}</SelectItem>
+              <SelectItem value="half_refund">{tHire("refundHalf")}</SelectItem>
             </SelectContent>
           </Select>
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-full">กลับ</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-full">{tHire("back")}</AlertDialogCancel>
             <AlertDialogAction
               className="rounded-full"
               onClick={(e) => {
@@ -381,7 +384,7 @@ export function HireCancelCard({
                 void runRespond("counter", { responseMoneyTerms: counterTerms });
               }}
             >
-              ส่งข้อเสนอ
+              {tHire("sendProposal")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -391,8 +394,9 @@ export function HireCancelCard({
 }
 
 function HireCancelHistoryList({ events }: { events: HireCancelEventRow[] }) {
+  const tHire = useT(CHAT_HIRE);
   if (!events.length) {
-    return <p className="text-[11px] text-muted-foreground">ยังไม่มีประวัติ</p>;
+    return <p className="text-[11px] text-muted-foreground">{tHire("noHistory")}</p>;
   }
   return (
     <ul className="rounded-xl border border-border bg-background/60 px-2.5 py-2 space-y-1.5 max-h-36 overflow-y-auto">
@@ -401,7 +405,7 @@ function HireCancelHistoryList({ events }: { events: HireCancelEventRow[] }) {
           <span className="font-medium">{hireCancelEventLabel(e.event_type)}</span>
           {e.diff_summary ? ` — ${e.diff_summary}` : ""}
           <span className="block opacity-70 text-muted-foreground">
-            {new Date(e.created_at).toLocaleString("th-TH", {
+            {new Date(e.created_at).toLocaleString(intlLocale(), {
               dateStyle: "short",
               timeStyle: "short",
             })}

@@ -28,7 +28,8 @@ import { isAplus1ChatOffersEnabled } from "@/lib/aplus1Launch";
 import { hireForwardClientNotice, hireRejectReasonLabel } from "@/lib/hireBrief";
 import { encodeHireForwardMessage } from "@/lib/hireForwardChat";
 import { encodeHireRejectChoiceMessage } from "@/lib/hireRejectChat";
-import { CHAT_CARD_DECLINE_LABEL } from "@/components/chat/ChatCardShell";
+import { useT } from "@/lib/i18n";
+import { CHAT_HIRE } from "@/lib/i18n/chatHire";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -47,6 +48,7 @@ function isHirePendingStatus(status: string | null | undefined) {
 
 export function ChatQuoteActions({ conversation }: Props) {
   const navigate = useNavigate();
+  const tHire = useT(CHAT_HIRE);
   const qc = useQueryClient();
   const { user } = useAuth();
   const { tier } = useSubscription();
@@ -137,15 +139,15 @@ export function ChatQuoteActions({ conversation }: Props) {
         /* accept already succeeded */
       }
       invalidateHire();
-      toast.success("ตอบรับแล้ว — คุยต่อได้เลย");
+      toast.success(tHire("acceptedKeepTalking"));
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "ตอบรับไม่สำเร็จ");
+      toast.error(e instanceof Error ? e.message : tHire("acceptFailed"));
     }
   };
 
   const openStudioQuote = async () => {
     if (!studio) {
-      toast.error("ไม่พบข้อมูล Studio");
+      toast.error(tHire("studioNotFound"));
       return;
     }
     try {
@@ -165,7 +167,7 @@ export function ChatQuoteActions({ conversation }: Props) {
         onRequireInHouse: () => setUpsellOpen(true),
       });
     } catch {
-      toast.error("เปิด So1o ไม่สำเร็จ");
+      toast.error(tHire("openSo1oFailed"));
     }
   };
 
@@ -176,7 +178,7 @@ export function ChatQuoteActions({ conversation }: Props) {
         <>
           <Button type="button" variant="outline" size="sm" className="w-full rounded-xl" onClick={() => void openStudioQuote()}>
             <FileText className="w-3.5 h-3.5 mr-1.5" />
-            ใบเสนอราคารวม Studio
+            {tHire("studioCombinedQuote")}
           </Button>
           <StudioQuoteUpsellDialog
             open={upsellOpen}
@@ -191,7 +193,7 @@ export function ChatQuoteActions({ conversation }: Props) {
         <>
           <Button type="button" variant="outline" size="sm" className="w-full rounded-xl" onClick={() => setUpsellOpen(true)}>
             <FileText className="w-3.5 h-3.5 mr-1.5" />
-            ใบเสนอราคารวม Studio
+            {tHire("studioCombinedQuote")}
           </Button>
           <StudioQuoteUpsellDialog
             open={upsellOpen}
@@ -211,7 +213,7 @@ export function ChatQuoteActions({ conversation }: Props) {
       <div className="space-y-2 pt-1 border-t border-border">
         {canRespond && (
           <div className="space-y-1.5">
-            <p className="text-xs text-muted-foreground">ตอบคำของานจ้าง</p>
+            <p className="text-xs text-muted-foreground">{tHire("respondToHire")}</p>
             <div className="flex gap-2">
               <Button
                 type="button"
@@ -222,7 +224,7 @@ export function ChatQuoteActions({ conversation }: Props) {
                 onClick={() => setRejectOpen(true)}
               >
                 {busy ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <X className="w-3.5 h-3.5 mr-1" />}
-                {CHAT_CARD_DECLINE_LABEL}
+                {tHire("notInterested")}
               </Button>
               <Button
                 type="button"
@@ -232,17 +234,17 @@ export function ChatQuoteActions({ conversation }: Props) {
                 onClick={() => void handleAccept()}
               >
                 {busy ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Check className="w-3.5 h-3.5 mr-1" />}
-                ยอมรับ
+                {tHire("accept")}
               </Button>
             </div>
           </div>
         )}
 
         {hireAccepted && (
-          <p className="text-[11px] text-muted-foreground">ตอบรับแล้ว — คุยรายละเอียดต่อได้</p>
+          <p className="text-[11px] text-muted-foreground">{tHire("acceptedHint")}</p>
         )}
         {hireStatus === "ปฏิเสธ" && (
-          <p className="text-[11px] text-muted-foreground">ไม่สนใจคำขอนี้แล้ว</p>
+          <p className="text-[11px] text-muted-foreground">{tHire("declinedHint")}</p>
         )}
 
         {chatOffersOn && !quoteLocked && (
@@ -255,11 +257,11 @@ export function ChatQuoteActions({ conversation }: Props) {
               "transition-colors duration-200",
               "hover:bg-[hsl(var(--chat-hire))] hover:text-[hsl(var(--chat-hire-foreground))] hover:border-[hsl(var(--chat-hire))]",
             )}
-            title="เสนอราคาออเดอร์ใหม่ในแชทนี้"
+            title={tHire("newOrderQuoteTitle")}
             onClick={() => setOfferOpen(true)}
           >
             <Banknote className="w-3.5 h-3.5 mr-1.5" />
-            {latestOrder ? "เสนอราคาออเดอร์ใหม่" : "ทำใบเสนอราคา"}
+            {latestOrder ? tHire("newOrderQuote") : tHire("makeQuote")}
           </Button>
         )}
       </div>
@@ -322,7 +324,7 @@ export function ChatQuoteActions({ conversation }: Props) {
                 }),
               });
               invalidateHire();
-              toast.success("ส่งต่องานแล้ว — แจ้งเพื่อนแล้ว");
+              toast.success(tHire("forwardedNotified"));
               setRejectOpen(false);
               return;
             }
@@ -346,7 +348,7 @@ export function ChatQuoteActions({ conversation }: Props) {
                 });
               }
               invalidateHire();
-              toast.success("บันทึกแล้ว — คุยต่อในแชทได้");
+              toast.success(tHire("savedKeepChatting"));
               setRejectOpen(false);
               return;
             }
@@ -372,10 +374,10 @@ export function ChatQuoteActions({ conversation }: Props) {
               }),
             });
             invalidateHire();
-            toast.success("ปฏิเสธแล้ว — รอผู้จ้างเลือกในแชท");
+            toast.success(tHire("declinedWaitClientInChat"));
             setRejectOpen(false);
           } catch (e: unknown) {
-            toast.error(e instanceof Error ? e.message : "ดำเนินการไม่สำเร็จ");
+            toast.error(e instanceof Error ? e.message : tHire("actionFailed"));
           }
         }}
       />

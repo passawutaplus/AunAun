@@ -4,11 +4,12 @@ import {
   ChatCardShell,
   ChatCardStatus,
   CHAT_CARD_DECLINE_BTN,
-  CHAT_CARD_DECLINE_LABEL,
   CHAT_CARD_PRIMARY_BTN,
 } from "@/components/chat/ChatCardShell";
 import type { HireContinueAskPayload } from "@/lib/hireRejectChat";
 import { HIRE_CLIENT_ASK_CONTINUE_TEXT } from "@/lib/hireRejectChat";
+import { useT } from "@/lib/i18n";
+import { CHAT_HIRE } from "@/lib/i18n/chatHire";
 
 export type HireContinueAskActions = {
   canRespond: boolean;
@@ -25,11 +26,12 @@ type Props = {
 };
 
 const HireContinueAskCard = ({ actions }: Props) => {
+  const tHire = useT(CHAT_HIRE);
   return (
     <ChatCardShell
       tone="hire"
       icon={MessageCircle}
-      title="ผู้จ้างขอคุยต่อ"
+      title={tHire("clientAsksContinue")}
       footer={
         actions?.canRespond ? (
           <div className="flex gap-2">
@@ -46,7 +48,7 @@ const HireContinueAskCard = ({ actions }: Props) => {
               ) : (
                 <X className="w-3.5 h-3.5 mr-1" />
               )}
-              {CHAT_CARD_DECLINE_LABEL}
+              {tHire("notInterested")}
             </Button>
             <Button
               type="button"
@@ -60,7 +62,7 @@ const HireContinueAskCard = ({ actions }: Props) => {
               ) : (
                 <Check className="w-3.5 h-3.5 mr-1" />
               )}
-              ยอมรับ
+              {tHire("accept")}
             </Button>
           </div>
         ) : actions?.statusHint ? (

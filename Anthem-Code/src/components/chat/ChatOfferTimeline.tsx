@@ -1,12 +1,13 @@
 import { Circle, CircleDot, Flag, Repeat, Wallet } from "lucide-react";
 import {
-  formatOfferDateShort,
   offerDisplayMilestones,
   offerDurationDays,
   offerTimelineEvents,
   type ChatOfferPayload,
 } from "@/lib/chatOffer";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n";
+import { CHAT_HIRE, formatHireDate } from "@/lib/i18n/chatHire";
 
 type Props = {
   offer: Pick<
@@ -30,8 +31,9 @@ export function ChatOfferTimeline({
   compact,
   className,
   light,
-  title = "ไทม์ไลน์อัตโนมัติ",
+  title,
 }: Props) {
+  const tHire = useT(CHAT_HIRE);
   const events = offerTimelineEvents(offer);
   const days = offerDurationDays(offer.startDate, offer.endDate || offer.dueDate);
   const milestones = offerDisplayMilestones(offer).filter((m) => m.label);
@@ -71,7 +73,7 @@ export function ChatOfferTimeline({
           )}
         >
           <Repeat className={compact ? "h-2.5 w-2.5" : "h-3 w-3"} aria-hidden />
-          {title}
+          {title ?? tHire("timelineAuto")}
         </p>
         {days != null ? (
           <span
@@ -80,7 +82,7 @@ export function ChatOfferTimeline({
               compact ? "text-[10px]" : "text-[11px]",
             )}
           >
-            {days} วัน
+            {tHire("days", { n: days })}
           </span>
         ) : null}
       </div>
@@ -95,7 +97,7 @@ export function ChatOfferTimeline({
                 <span className={cn("truncate", compact ? "text-[11px]" : "text-xs")}>{e.label}</span>
               </span>
               <span className="tabular-nums text-muted-foreground shrink-0">
-                {e.date ? formatOfferDateShort(e.date) : "—"}
+                {e.date ? formatHireDate(e.date) : "—"}
               </span>
             </li>
           );

@@ -11,6 +11,8 @@ import {
 } from "@/lib/chatOffer";
 import { convertFxToThb, convertThbToFx, type PortfolioFxCurrency } from "@/lib/payments/fxDaily";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n";
+import { CHAT_HIRE } from "@/lib/i18n/chatHire";
 
 /** Draft types, amount formatting and small field components for the chat offer dialog. */
 /** YYYY-MM-DD in Asia/Bangkok (quotation “created today”). */
@@ -188,6 +190,7 @@ export function OfferUnitPriceInput({
   rates: Parameters<typeof convertThbToFx>[2];
   onCommitThb: (thb: number) => void;
 }) {
+  const tHire = useT(CHAT_HIRE);
   const focusedRef = useRef(false);
   const [display, setDisplay] = useState(() => thbUnitToDisplay(unitPriceThb, currency, rates));
 
@@ -203,7 +206,7 @@ export function OfferUnitPriceInput({
       autoComplete="off"
       value={display}
       placeholder="0"
-      aria-label="ราคาต่อหน่วย"
+      aria-label={tHire("unitPrice")}
       className="h-10 text-right tabular-nums sm:h-8 sm:text-sm"
       onFocus={() => {
         focusedRef.current = true;

@@ -2,6 +2,8 @@ import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { Clock, ReceiptText } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n";
+import { CHAT_HIRE } from "@/lib/i18n/chatHire";
 
 /** Semantic tone for hire/collab chat cards. */
 export type ChatCardTone = "hire" | "collab" | "success" | "danger" | "neutral";
@@ -182,12 +184,13 @@ export function ChatCardStatus({ children }: { children: ReactNode }) {
  * directly. Pass to `ChatCardShell`'s `action` slot on hire-flow cards.
  */
 export function ChatCardOrderMenu({ onOpenOrderDetail }: { onOpenOrderDetail: () => void }) {
+  const tHire = useT(CHAT_HIRE);
   return (
     <button
       type="button"
       className="inline-flex h-5 w-5 items-center justify-center rounded-full hover:bg-foreground/10 transition-colors"
-      aria-label="รายละเอียดออเดอร์"
-      title="รายละเอียดออเดอร์"
+      aria-label={tHire("orderDetail")}
+      title={tHire("orderDetail")}
       onClick={(e) => {
         e.stopPropagation();
         onOpenOrderDetail();
@@ -206,7 +209,7 @@ export const CHAT_CARD_PRIMARY_BTN =
 export const CHAT_CARD_DECLINE_BTN =
   "flex-1 border-destructive/40 text-destructive hover:bg-destructive/10";
 
-/** ปุ่มปฏิเสธคำขอจ้าง/คอลแลป — ใช้คำว่า「ไม่สนใจ」แทน「ปฏิเสธ」 */
-export const CHAT_CARD_DECLINE_LABEL = "ไม่สนใจ";
+/** Thai-only decline label ("ไม่สนใจ", never "ปฏิเสธ") for callers that are not translated yet; translated ones use CHAT_HIRE.notInterested. */
+export const CHAT_CARD_DECLINE_LABEL = CHAT_HIRE.notInterested.th;
 
 export default ChatCardShell;
