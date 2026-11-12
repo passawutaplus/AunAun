@@ -7,10 +7,11 @@ import {
 } from "@/components/chat/ChatCardShell";
 import {
   formatOfferAmount,
-  formatOfferDateShort,
   type ChatOfferPayload,
 } from "@/lib/chatOffer";
 import type { HireWorkStartChatPayload } from "@/lib/hireWorkStartChat";
+import { useT } from "@/lib/i18n";
+import { CHAT_HIRE, formatHireDate } from "@/lib/i18n/chatHire";
 
 type Props = {
   payload: HireWorkStartChatPayload;
@@ -34,6 +35,7 @@ function toTimelineOffer(payload: HireWorkStartChatPayload): Pick<
 
 /** Freelancer-facing work-start card after payment (timeline + line items). */
 export default function HireWorkStartCard({ payload, onOpenOrderDetail }: Props) {
+  const tHire = useT(CHAT_HIRE);
   const end = payload.endDate || payload.dueDate;
   const timelineOffer = toTimelineOffer(payload);
   const hasItems = payload.items.length > 0;
@@ -42,7 +44,7 @@ export default function HireWorkStartCard({ payload, onOpenOrderDetail }: Props)
     <ChatCardShell
       tone="hire"
       icon={PlayCircle}
-      title="เริ่มทำงาน"
+      title={tHire("workStartTitle")}
       action={
         onOpenOrderDetail ? (
           <ChatCardOrderMenu
@@ -57,7 +59,7 @@ export default function HireWorkStartCard({ payload, onOpenOrderDetail }: Props)
           <p className="text-sm font-semibold leading-snug">{payload.offerTitle}</p>
           <p className="text-xs mt-0.5 tabular-nums text-muted-foreground">
             {formatOfferAmount(payload.offerAmountThb)}
-            {end ? ` · ส่งมอบ ${formatOfferDateShort(end)}` : ""}
+            {end ? ` · ${tHire("deliverBy", { date: formatHireDate(end) })}` : ""}
           </p>
         </div>
       </div>
@@ -65,14 +67,14 @@ export default function HireWorkStartCard({ payload, onOpenOrderDetail }: Props)
       <ChatOfferTimeline
         offer={timelineOffer}
         compact
-        title={payload.showFullTimeline ? "ไทม์ไลน์งาน" : "วันส่งมอบ"}
+        title={payload.showFullTimeline ? tHire("timelineJob") : tHire("deliveryDate")}
       />
 
       {hasItems ? (
         <div className="space-y-1.5">
           <p className="text-[10px] font-semibold uppercase tracking-wide inline-flex items-center gap-1 text-muted-foreground">
             <ListChecks className="w-3 h-3" />
-            รายการงานที่ต้องทำ
+            {tHire("todoItems")}
           </p>
           <ul className="space-y-1">
             {payload.items.map((it, i) => (
@@ -86,8 +88,8 @@ export default function HireWorkStartCard({ payload, onOpenOrderDetail }: Props)
                   </span>
                   {it.quantity > 0 ? (
                     <span className="block text-[10px] text-muted-foreground">
-                      จำนวน {it.quantity}
-                      {it.unitPrice > 0 ? ` · ${formatOfferAmount(it.unitPrice)}/หน่วย` : ""}
+                      {tHire("qty", { n: it.quantity })}
+                      {it.unitPrice > 0 ? ` · ${tHire("amountPerUnit", { amount: formatOfferAmount(it.unitPrice) })}` : ""}
                     </span>
                   ) : null}
                 </span>

@@ -68,6 +68,8 @@ import { isCommerceEnabled } from "@/lib/aplus1Launch";
 import { trackProductEvent } from "@/lib/productEvents";
 import { todayOfferDateYmd, newMilestoneId, OfferFieldError, OFFER_FIELD_ORDER, OfferSectionId, DEFAULT_OPEN_SECTIONS, SECTION_FOR_FIELD, OFFER_NOTE_CHIPS_FREE, OFFER_NOTE_CHIPS_PAID, OfferDraft, offerDraftKey, initialOfferMilestones, fieldErrorClass, profileToBillingFields, IssuerField, OfferUnitPriceInput } from "@/components/chat/offer/offerDialogHelpers";
 import { OfferSection, formatOfferShortDate } from "@/components/chat/offer/OfferSection";
+import { useT } from "@/lib/i18n";
+import { CHAT_HIRE } from "@/lib/i18n/chatHire";
 
 type Props = {
   open: boolean;
@@ -98,6 +100,7 @@ export function ChatOfferDialog({
   defaultClientParty,
 }: Props) {
   const send = useSendMessage();
+  const tHire = useT(CHAT_HIRE);
   const { user } = useAuth();
   const { data: profile } = useProfile(user?.id);
   const { data: kycRequests = [] } = useMyKycRequests();
@@ -398,7 +401,7 @@ export function ChatOfferDialog({
         : clientParty.name;
     return {
       v: 4,
-      title: title.trim() || "ชื่องาน",
+      title: title.trim() || tHire("jobTitle"),
       amount: netTotal,
       currency: "THB",
       displayCurrency,
@@ -474,6 +477,7 @@ export function ChatOfferDialog({
     fxRate,
     fx?.source,
     fx?.asOf,
+    tHire,
   ]);
 
   const reset = () => {
@@ -648,7 +652,7 @@ export function ChatOfferDialog({
     } else {
       if (hasDraftContent) {
         writeDraft();
-        toast("เก็บร่างไว้ให้แล้ว", { description: "เปิดใบเสนอราคาในแชทนี้อีกครั้งเพื่อทำต่อ" });
+        toast(tHire("draftKept"), { description: tHire("draftKeptDesc") });
       }
       setPreviewOpen(false);
       setPreviewMode("view");
@@ -664,31 +668,31 @@ export function ChatOfferDialog({
     const errors: Partial<Record<OfferFieldError, string>> = {};
 
     if (!trimmedTitle) {
-      errors.title = "ใส่ชื่องานด้วย";
+      errors.title = tHire("errTitle");
     }
     if (named.length === 0) {
-      errors.items = "เพิ่มอย่างน้อย 1 รายการ";
+      errors.items = tHire("errItemsMin");
     } else if (itemsTotal <= 0) {
-      errors.items = "ใส่ราคาในรายการให้มียอดรวมมากกว่า 0";
+      errors.items = tHire("errItemsTotal");
     } else if (netTotal <= 0) {
-      errors.items = "ส่วนลดต้องน้อยกว่ายอดรวมรายการ";
+      errors.items = tHire("errDiscount");
     }
     if (!endDate) {
-      errors.endDate = "ใส่วันส่งมอบด้วย";
+      errors.endDate = tHire("errEndDate");
     } else if (endDate < effectiveStartDate) {
-      errors.endBeforeStart = "วันส่งมอบต้องไม่อยู่ก่อนวันเริ่มงาน";
+      errors.endBeforeStart = tHire("errEndBeforeStart");
     }
     if (!paid) {
       const sum = planPercentTotal(paymentPlan);
-      if (sum !== 100) errors.plan = `รวมทุกงวดต้องได้ 100% (ตอนนี้ ${sum}%)`;
-      else if (paymentPlan.some((p) => p.percent <= 0)) errors.plan = "แต่ละงวดต้องมากกว่า 0%";
+      if (sum !== 100) errors.plan = tHire("errPlanSum", { sum });
+      else if (paymentPlan.some((p) => p.percent <= 0)) errors.plan = tHire("errPlanZero");
     }
     if (clientType === "corporate") {
       if (!companyName.trim()) {
-        errors.companyName = "ใส่ชื่อบริษัท/นิติบุคคล";
+        errors.companyName = tHire("errCompany");
       }
       if (taxId.trim() && !isValidThaiTaxId(taxId)) {
-        errors.taxId = "เลขผู้เสียภาษีไม่ถูกต้อง (13 หลัก)";
+        errors.taxId = tHire("errTaxId");
       }
     }
 
@@ -755,8 +759,8 @@ export function ChatOfferDialog({
         const doc = await issueQuotation.mutateAsync({ offer: payload, conversationId });
         payload.docId = doc.id;
       } catch {
-        toast.warning("ส่งใบเสนอราคาได้ แต่ยังบันทึกลงหลังบ้านไม่สำเร็จ", {
-          description: "กด “เริ่มติดตามงวด” ในแผงงานนี้ภายหลังได้",
+        toast.warning(tHire("quoteSentNotRecorded"), {
+          description: tHire("quoteSentNotRecordedDesc"),
         });
       }
     }
@@ -799,7 +803,7 @@ export function ChatOfferDialog({
         content: encodeChatOffer({ ...payload, quoteId }),
         messageType: "text",
       });
-      toast.success("ส่งใบเสนอราคาในแชทแล้ว");
+      toast.success(tHire("quoteSent"));
       void trackProductEvent("proposal_send", { conversation_id: conversationId }, { debounceMs: 0 });
       clearDraft();
       setPreviewOpen(false);
@@ -808,7 +812,7 @@ export function ChatOfferDialog({
       setRestoredDraft(false);
       onOpenChange(false);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "ส่งไม่สำเร็จ");
+      toast.error(e instanceof Error ? e.message : tHire("sendFailed"));
     }
   };
 
@@ -830,22 +834,22 @@ export function ChatOfferDialog({
   const issuerSettingsHref = paid ? "/settings#billing" : "/settings#profile";
   const clientSummary = clientDone
     ? clientType === "corporate"
-      ? `${companyName.trim()} · นิติบุคคล`
+      ? `${companyName.trim()} · ${tHire("corporate")}`
       : clientName.trim()
-    : "ชื่อลูกค้าที่จะแสดงบนเอกสาร";
+    : tHire("clientSummaryEmpty");
   const itemsSummary = itemsDone
-    ? `${title.trim()} · ${namedItemCount} รายการ`
-    : "ชื่องาน รายการ และราคา";
+    ? `${title.trim()} · ${tHire("itemCount", { n: namedItemCount })}`
+    : tHire("itemsSummaryEmpty");
   const timelineSummary = timelineDone
-    ? `ส่งมอบ ${formatOfferShortDate(endDate)}`
-    : "ใส่วันส่งมอบงาน";
+    ? tHire("deliverBy", { date: formatOfferShortDate(endDate) })
+    : tHire("timelineSummaryEmpty");
   const noteLines = clientNotes
     .split("\n")
     .map((line) => line.replace(/^•\s*/, "").trim())
     .filter(Boolean);
   const notesSummary = noteLines.length
     ? `${noteLines[0]}${noteLines.length > 1 ? ` +${noteLines.length - 1}` : ""}`
-    : "เงื่อนไขที่ลูกค้าเห็น และโน้ตส่วนตัว";
+    : tHire("notesSummaryEmpty");
   const noteChips = paid ? OFFER_NOTE_CHIPS_PAID : OFFER_NOTE_CHIPS_FREE;
   const lastMilestoneIdx = milestones.length - 1;
   const planRows = offerInstallmentAmounts({
@@ -858,10 +862,10 @@ export function ChatOfferDialog({
   const planPreset = planPresetId(paymentPlan);
   const paymentDone = planTotal === 100 && paymentPlan.every((p) => p.percent > 0);
   const paymentSummary = !paymentDone
-    ? `รวม ${planTotal}% · ยังไม่ครบ 100%`
+    ? tHire("planIncomplete", { total: planTotal })
     : paymentPlan.length === 1
-      ? "จ่ายครั้งเดียว"
-      : `${paymentPlan.length} งวด · ${paymentPlan.map((p) => `${p.percent}%`).join(" / ")}`;
+      ? tHire("payOnce")
+      : `${tHire("installmentCount", { n: paymentPlan.length })} · ${paymentPlan.map((p) => `${p.percent}%`).join(" / ")}`;
   const updateInstallment = (id: string, patch: Partial<OfferInstallment>) => {
     setPaymentPlan((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
     clearFieldError("plan");
@@ -874,22 +878,22 @@ export function ChatOfferDialog({
           <DialogHeader className="border-b border-border px-4 py-3 pr-12 text-left sm:px-6 sm:py-4">
             <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
               <FileText className="h-5 w-5 text-primary" aria-hidden />
-              สร้างใบเสนอราคา
+              {tHire("createQuote")}
             </DialogTitle>
             <DialogDescription className="text-xs sm:text-sm">
               {paid
-                ? "กรอกข้อมูล เช็กพรีวิว แล้วส่งให้ลูกค้าในแชท"
-                : "ทำใบเสนอราคาส่งลูกค้าในแชทได้ในไม่กี่นาที · เลขที่เอกสารออกให้อัตโนมัติ"}
+                ? tHire("createQuoteDescPaid")
+                : tHire("createQuoteDescFree")}
               {restoredDraft ? (
                 <>
                   {" · "}
-                  <span className="text-foreground">ทำต่อจากร่างล่าสุด</span>{" "}
+                  <span className="text-foreground">{tHire("continuedDraft")}</span>{" "}
                   <button
                     type="button"
                     onClick={discardDraft}
                     className="underline underline-offset-2 hover:text-foreground"
                   >
-                    เริ่มใหม่
+                    {tHire("startOver")}
                   </button>
                 </>
               ) : null}
@@ -907,11 +911,11 @@ export function ChatOfferDialog({
                 <div className="flex items-center gap-2 px-3 py-2">
                   <Building2 className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
                   <p className="min-w-0 flex-1 truncate text-sm">
-                    <span className="text-muted-foreground">ออกในนาม </span>
-                    <span className="font-medium">{issuerName || "ยังไม่มีชื่อ"}</span>
+                    <span className="text-muted-foreground">{tHire("issuedBy")} </span>
+                    <span className="font-medium">{issuerName || tHire("noNameYet")}</span>
                     <span className="text-muted-foreground">
                       {" · "}
-                      {issuerParty.type === "corporate" ? "นิติบุคคล" : "บุคคลธรรมดา"}
+                      {issuerParty.type === "corporate" ? tHire("corporate") : tHire("individual")}
                     </span>
                   </p>
                   <CollapsibleTrigger asChild>
@@ -919,7 +923,7 @@ export function ChatOfferDialog({
                       type="button"
                       className="inline-flex min-h-9 shrink-0 items-center gap-1 rounded-md px-2 text-xs text-primary hover:underline"
                     >
-                      {issuerOpen ? "ซ่อน" : "ดูข้อมูล"}
+                      {issuerOpen ? tHire("hide") : tHire("viewInfo")}
                       <ChevronDown
                         className={cn("h-3.5 w-3.5 transition-transform", issuerOpen && "rotate-180")}
                         aria-hidden
@@ -931,14 +935,14 @@ export function ChatOfferDialog({
                   <p className="flex items-start gap-1.5 border-t border-border px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
                     <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
                     <span>
-                      ข้อมูลผู้ออกเอกสารยังไม่ครบ ช่องที่ว่างจะขึ้นเป็น “—” บนเอกสาร{" "}
+                      {tHire("issuerIncomplete")}{" "}
                       <Link
                         to={issuerSettingsHref}
                         target="_blank"
                         rel="noreferrer"
                         className="font-medium underline underline-offset-2"
                       >
-                        เติมข้อมูล
+                        {tHire("fillIn")}
                       </Link>
                     </span>
                   </p>
@@ -947,28 +951,28 @@ export function ChatOfferDialog({
                   <div className="grid gap-2.5 sm:grid-cols-2">
                     {issuerParty.type === "corporate" ? (
                       <>
-                        <IssuerField label="ชื่อบริษัท / นิติบุคคล" value={issuerParty.companyName} />
-                        <IssuerField label="ชื่อผู้มีอำนาจ / ชื่อที่แสดง" value={issuerParty.name} />
-                        <IssuerField label="สาขา" value={issuerParty.branch} />
-                        <IssuerField label="เลขผู้เสียภาษี" value={issuerParty.taxId} />
-                        <IssuerField label="ผู้ติดต่อ" value={issuerParty.contactPerson} />
-                        <IssuerField label="ตำแหน่ง" value={issuerParty.contactRole} />
+                        <IssuerField label={tHire("companyNameLabel")} value={issuerParty.companyName} />
+                        <IssuerField label={tHire("authorizedName")} value={issuerParty.name} />
+                        <IssuerField label={tHire("branch")} value={issuerParty.branch} />
+                        <IssuerField label={tHire("taxId")} value={issuerParty.taxId} />
+                        <IssuerField label={tHire("contactPerson")} value={issuerParty.contactPerson} />
+                        <IssuerField label={tHire("position")} value={issuerParty.contactRole} />
                       </>
                     ) : (
                       <>
-                        <IssuerField label="ชื่อ-นามสกุล" value={issuerParty.name} />
-                        <IssuerField label="เลขผู้เสียภาษี" value={issuerParty.taxId} />
+                        <IssuerField label={tHire("fullName")} value={issuerParty.name} />
+                        <IssuerField label={tHire("taxId")} value={issuerParty.taxId} />
                       </>
                     )}
-                    <IssuerField label="อีเมล" value={issuerParty.email} />
-                    <IssuerField label="โทร" value={issuerParty.phone} />
+                    <IssuerField label={tHire("email")} value={issuerParty.email} />
+                    <IssuerField label={tHire("phoneShort")} value={issuerParty.phone} />
                     <div className="sm:col-span-2">
-                      <IssuerField label="ที่อยู่" value={issuerParty.address} />
+                      <IssuerField label={tHire("address")} value={issuerParty.address} />
                     </div>
                     {issuerParty.type === "corporate" ? (
                       <IssuerField
-                        label="จดทะเบียน VAT"
-                        value={issuerParty.vatRegistered ? "ใช่" : "ไม่ใช่"}
+                        label={tHire("vatRegistered")}
+                        value={issuerParty.vatRegistered ? tHire("yes") : tHire("no")}
                       />
                     ) : null}
                   </div>
@@ -978,7 +982,7 @@ export function ChatOfferDialog({
                     rel="noreferrer"
                     className="mt-3 inline-block text-xs text-primary hover:underline"
                   >
-                    แก้ไขข้อมูลผู้ออกเอกสาร
+                    {tHire("editIssuer")}
                   </Link>
                 </CollapsibleContent>
               </Collapsible>
@@ -993,7 +997,7 @@ export function ChatOfferDialog({
                 <OfferSection
                   value="client"
                   step={1}
-                  title="ลูกค้า"
+                  title={tHire("client")}
                   summary={clientSummary}
                   done={clientDone}
                 >
@@ -1004,37 +1008,37 @@ export function ChatOfferDialog({
                       if (v === "individual" || v === "corporate") setClientType(v);
                     }}
                     className="inline-flex w-full rounded-full border border-border bg-background p-1"
-                    aria-label="ประเภทลูกค้า"
+                    aria-label={tHire("clientType")}
                   >
                     <ToggleGroupItem
                       value="individual"
                       className="min-h-9 flex-1 rounded-full px-3 text-sm data-[state=on]:bg-muted data-[state=on]:text-foreground"
                     >
-                      บุคคลธรรมดา
+                      {tHire("individual")}
                     </ToggleGroupItem>
                     <ToggleGroupItem
                       value="corporate"
                       className="min-h-9 flex-1 rounded-full px-3 text-sm data-[state=on]:bg-muted data-[state=on]:text-foreground"
                     >
-                      นิติบุคคล
+                      {tHire("corporate")}
                     </ToggleGroupItem>
                   </ToggleGroup>
 
                   {clientType === "individual" ? (
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div className="space-y-1.5 sm:col-span-2">
-                        <Label htmlFor="offer-client">ชื่อลูกค้า</Label>
+                        <Label htmlFor="offer-client">{tHire("clientName")}</Label>
                         <Input
                           id="offer-client"
                           value={clientName}
                           onChange={(e) => setClientName(e.target.value)}
-                          placeholder="ชื่อ-นามสกุล"
+                          placeholder={tHire("fullName")}
                           autoComplete="off"
                           maxLength={80}
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <Label htmlFor="offer-client-email">อีเมล</Label>
+                        <Label htmlFor="offer-client-email">{tHire("email")}</Label>
                         <Input
                           id="offer-client-email"
                           type="email"
@@ -1046,7 +1050,7 @@ export function ChatOfferDialog({
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <Label htmlFor="offer-client-phone">เบอร์โทร</Label>
+                        <Label htmlFor="offer-client-phone">{tHire("phone")}</Label>
                         <Input
                           id="offer-client-phone"
                           type="tel"
@@ -1059,13 +1063,13 @@ export function ChatOfferDialog({
                       </div>
                       <div className="space-y-1.5 sm:col-span-2">
                         <Label htmlFor="offer-client-address">
-                          ที่อยู่ <span className="font-normal text-muted-foreground">(ไม่บังคับ)</span>
+                          {tHire("address")} <span className="font-normal text-muted-foreground">{tHire("optionalParen")}</span>
                         </Label>
                         <Textarea
                           id="offer-client-address"
                           value={clientAddress}
                           onChange={(e) => setClientAddress(e.target.value)}
-                          placeholder="ที่อยู่สำหรับออกเอกสาร"
+                          placeholder={tHire("addressForDocs")}
                           rows={2}
                           maxLength={300}
                           className="resize-none text-base sm:text-sm"
@@ -1076,7 +1080,7 @@ export function ChatOfferDialog({
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div className="space-y-1.5 sm:col-span-2" ref={setFieldRef("companyName")}>
                         <Label htmlFor="offer-company">
-                          ชื่อบริษัท / นิติบุคคล <span className="text-brand">*</span>
+                          {tHire("companyNameLabel")} <span className="text-brand">*</span>
                         </Label>
                         <Input
                           id="offer-company"
@@ -1085,7 +1089,7 @@ export function ChatOfferDialog({
                             setCompanyName(e.target.value);
                             clearFieldError("companyName");
                           }}
-                          placeholder="ชื่อบริษัท"
+                          placeholder={tHire("companyNamePlaceholder")}
                           autoComplete="off"
                           maxLength={160}
                           className={cn(fieldErrors.companyName && fieldErrorClass)}
@@ -1100,8 +1104,8 @@ export function ChatOfferDialog({
                       </div>
                       <div className="space-y-1.5 sm:col-span-2" ref={setFieldRef("taxId")}>
                         <Label htmlFor="offer-corp-tax">
-                          เลขผู้เสียภาษี 13 หลัก{" "}
-                          <span className="font-normal text-muted-foreground">(ไม่บังคับ)</span>
+                          {tHire("taxId13")}{" "}
+                          <span className="font-normal text-muted-foreground">{tHire("optionalParen")}</span>
                         </Label>
                         <Input
                           id="offer-corp-tax"
@@ -1125,41 +1129,41 @@ export function ChatOfferDialog({
                         ) : null}
                       </div>
                       <div className="space-y-1.5 sm:col-span-2">
-                        <Label htmlFor="offer-corp-address">ที่อยู่</Label>
+                        <Label htmlFor="offer-corp-address">{tHire("address")}</Label>
                         <Textarea
                           id="offer-corp-address"
                           value={corpAddress}
                           onChange={(e) => setCorpAddress(e.target.value)}
-                          placeholder="ที่อยู่ตามหนังสือรับรองบริษัท"
+                          placeholder={tHire("addressPerCert")}
                           rows={2}
                           maxLength={300}
                           className="resize-none text-base sm:text-sm"
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <Label htmlFor="offer-contact-person">ผู้ติดต่อ</Label>
+                        <Label htmlFor="offer-contact-person">{tHire("contactPerson")}</Label>
                         <Input
                           id="offer-contact-person"
                           value={contactPerson}
                           onChange={(e) => setContactPerson(e.target.value)}
-                          placeholder="ชื่อผู้ติดต่อ"
+                          placeholder={tHire("contactNamePlaceholder")}
                           autoComplete="off"
                           maxLength={80}
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <Label htmlFor="offer-contact-role">ตำแหน่ง</Label>
+                        <Label htmlFor="offer-contact-role">{tHire("position")}</Label>
                         <Input
                           id="offer-contact-role"
                           value={contactRole}
                           onChange={(e) => setContactRole(e.target.value)}
-                          placeholder="เช่น ฝ่ายจัดซื้อ"
+                          placeholder={tHire("positionPlaceholder")}
                           autoComplete="off"
                           maxLength={80}
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <Label htmlFor="offer-corp-phone">เบอร์โทร</Label>
+                        <Label htmlFor="offer-corp-phone">{tHire("phone")}</Label>
                         <Input
                           id="offer-corp-phone"
                           type="tel"
@@ -1171,7 +1175,7 @@ export function ChatOfferDialog({
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <Label htmlFor="offer-corp-email">อีเมล</Label>
+                        <Label htmlFor="offer-corp-email">{tHire("email")}</Label>
                         <Input
                           id="offer-corp-email"
                           type="email"
@@ -1190,13 +1194,13 @@ export function ChatOfferDialog({
                 <OfferSection
                   value="items"
                   step={2}
-                  title="งานและราคา"
+                  title={tHire("jobAndPrice")}
                   summary={itemsSummary}
                   done={itemsDone}
                 >
                   <div className="space-y-1.5" ref={setFieldRef("title")}>
                     <Label htmlFor="offer-title">
-                      ชื่องาน <span className="text-brand">*</span>
+                      {tHire("jobTitle")} <span className="text-brand">*</span>
                     </Label>
                     <Input
                       id="offer-title"
@@ -1205,7 +1209,7 @@ export function ChatOfferDialog({
                         setTitle(e.target.value);
                         clearFieldError("title");
                       }}
-                      placeholder="เช่น ออกแบบโลโก้ + brand kit"
+                      placeholder={tHire("jobTitlePlaceholder")}
                       autoComplete="off"
                       maxLength={120}
                       className={cn(fieldErrors.title && fieldErrorClass)}
@@ -1222,10 +1226,10 @@ export function ChatOfferDialog({
                   <div className="space-y-2">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <Label>
-                        รายการ <span className="text-brand">*</span>
+                        {tHire("items")} <span className="text-brand">*</span>
                       </Label>
                       <div className="inline-flex items-center gap-1.5">
-                        <span className="text-xs text-muted-foreground">สกุลเงิน</span>
+                        <span className="text-xs text-muted-foreground">{tHire("currency")}</span>
                         <CurrencyMenu
                           value={displayCurrency}
                           onChange={pickDisplayCurrency}
@@ -1244,13 +1248,13 @@ export function ChatOfferDialog({
                     >
                       <div className="hidden grid-cols-[24px_minmax(0,1fr)_64px_104px_96px_32px] gap-1.5 bg-muted/50 px-2.5 py-1.5 text-xs font-medium text-muted-foreground sm:grid">
                         <span className="text-center">#</span>
-                        <span>รายละเอียด</span>
-                        <span className="text-center">จำนวน</span>
+                        <span>{tHire("description")}</span>
+                        <span className="text-center">{tHire("quantity")}</span>
                         <span className="text-right">
-                          ราคา/หน่วย
+                          {tHire("pricePerUnit")}
                           {displayCurrency !== "THB" ? ` (${currencySymbol(displayCurrency)})` : ""}
                         </span>
-                        <span className="text-right">รวม</span>
+                        <span className="text-right">{tHire("lineTotal")}</span>
                         <span />
                       </div>
 
@@ -1274,8 +1278,8 @@ export function ChatOfferDialog({
                                     updateItem(it.id, { name: e.target.value });
                                     clearFieldError("items");
                                   }}
-                                  placeholder={idx === 0 ? "เช่น ออกแบบโลโก้" : "ชื่อรายการ"}
-                                  aria-label={`ชื่อรายการที่ ${idx + 1}`}
+                                  placeholder={idx === 0 ? tHire("itemPlaceholderFirst") : tHire("itemNamePlaceholder")}
+                                  aria-label={tHire("itemNameAria", { n: idx + 1 })}
                                   autoComplete="off"
                                   maxLength={120}
                                   className="h-10 min-w-0 flex-1 font-medium sm:h-8 sm:text-sm"
@@ -1283,7 +1287,7 @@ export function ChatOfferDialog({
                                 <button
                                   type="button"
                                   className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-destructive disabled:opacity-30 sm:hidden"
-                                  aria-label={`ลบรายการที่ ${idx + 1}`}
+                                  aria-label={tHire("removeItemAria", { n: idx + 1 })}
                                   disabled={items.length <= 1}
                                   onClick={removeItem}
                                 >
@@ -1293,15 +1297,15 @@ export function ChatOfferDialog({
                               <Input
                                 value={it.description || ""}
                                 onChange={(e) => updateItem(it.id, { description: e.target.value })}
-                                placeholder="รายละเอียดเพิ่มเติม (ไม่บังคับ)"
-                                aria-label={`รายละเอียดรายการที่ ${idx + 1}`}
+                                placeholder={tHire("itemDetailPlaceholder")}
+                                aria-label={tHire("itemDetailAria", { n: idx + 1 })}
                                 autoComplete="off"
                                 maxLength={300}
                                 className="h-10 min-w-0 text-muted-foreground sm:col-span-4 sm:col-start-2 sm:row-start-2 sm:h-8 sm:text-xs"
                               />
                               <div className="grid grid-cols-2 gap-2 sm:contents">
                                 <label className="space-y-1 sm:contents">
-                                  <span className="text-xs text-muted-foreground sm:hidden">จำนวน</span>
+                                  <span className="text-xs text-muted-foreground sm:hidden">{tHire("quantity")}</span>
                                   <Input
                                     inputMode="numeric"
                                     value={it.quantity || ""}
@@ -1314,13 +1318,13 @@ export function ChatOfferDialog({
                                       })
                                     }
                                     placeholder="1"
-                                    aria-label={`จำนวน รายการที่ ${idx + 1}`}
+                                    aria-label={tHire("itemQtyAria", { n: idx + 1 })}
                                     className="h-10 text-center tabular-nums sm:h-8 sm:text-sm"
                                   />
                                 </label>
                                 <label className="space-y-1 sm:contents">
                                   <span className="text-xs text-muted-foreground sm:hidden">
-                                    ราคา/หน่วย
+                                    {tHire("pricePerUnit")}
                                     {displayCurrency !== "THB" ? ` (${currencySymbol(displayCurrency)})` : ""}
                                   </span>
                                   <OfferUnitPriceInput
@@ -1332,13 +1336,13 @@ export function ChatOfferDialog({
                                 </label>
                               </div>
                               <div className="flex items-center justify-between sm:justify-end">
-                                <span className="text-xs text-muted-foreground sm:hidden">รวม</span>
+                                <span className="text-xs text-muted-foreground sm:hidden">{tHire("lineTotal")}</span>
                                 <p className="text-sm font-semibold tabular-nums">{moneyLabel(rowTotal)}</p>
                               </div>
                               <button
                                 type="button"
                                 className="hidden h-8 w-8 items-center justify-center justify-self-end rounded-full text-muted-foreground hover:bg-muted hover:text-destructive disabled:opacity-30 sm:flex"
-                                aria-label={`ลบรายการที่ ${idx + 1}`}
+                                aria-label={tHire("removeItemAria", { n: idx + 1 })}
                                 disabled={items.length <= 1}
                                 onClick={removeItem}
                               >
@@ -1358,17 +1362,17 @@ export function ChatOfferDialog({
                           disabled={items.length >= 20}
                           onClick={() => setItems((prev) => [...prev, emptyOfferItem()])}
                         >
-                          <Plus className="mr-1 h-4 w-4" /> เพิ่มรายการ
+                          <Plus className="mr-1 h-4 w-4" /> {tHire("addItem")}
                         </Button>
 
                         <div className="space-y-2">
                           <div className="flex items-center justify-between gap-3 text-sm">
-                            <span className="text-muted-foreground">ยอดรวมรายการ</span>
+                            <span className="text-muted-foreground">{tHire("itemsSubtotal")}</span>
                             <span className="tabular-nums">{moneyLabel(itemsTotal)}</span>
                           </div>
                           <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
                             <Label htmlFor="offer-discount" className="font-normal text-muted-foreground">
-                              ส่วนลด
+                              {tHire("discount")}
                             </Label>
                             <div className="flex items-center gap-1.5">
                               {discountMode === "percent" && clampedDiscount > 0 ? (
@@ -1379,7 +1383,7 @@ export function ChatOfferDialog({
                               <div
                                 className="inline-flex h-9 items-stretch overflow-hidden rounded-full border border-border bg-background text-xs font-medium"
                                 role="group"
-                                aria-label="หน่วยส่วนลด"
+                                aria-label={tHire("discountUnit")}
                               >
                                 <button
                                   type="button"
@@ -1392,7 +1396,7 @@ export function ChatOfferDialog({
                                       ? "bg-muted text-foreground"
                                       : "text-muted-foreground hover:text-foreground",
                                   )}
-                                  aria-label={`ส่วนลดเป็นจำนวนเงิน (${currencySymbol(displayCurrency)})`}
+                                  aria-label={tHire("discountAmountAria", { symbol: currencySymbol(displayCurrency) })}
                                   aria-pressed={discountMode === "thb"}
                                 >
                                   {currencySymbol(displayCurrency)}
@@ -1408,7 +1412,7 @@ export function ChatOfferDialog({
                                       ? "bg-muted text-foreground"
                                       : "text-muted-foreground hover:text-foreground",
                                   )}
-                                  aria-label="ส่วนลดเป็นเปอร์เซ็นต์"
+                                  aria-label={tHire("discountPercentAria")}
                                   aria-pressed={discountMode === "percent"}
                                 >
                                   %
@@ -1427,7 +1431,7 @@ export function ChatOfferDialog({
                           {clientType === "corporate" ? (
                             <>
                               <div className="flex items-center justify-between gap-3 text-sm">
-                                <span className="text-muted-foreground">ยอดรวมก่อนภาษี</span>
+                                <span className="text-muted-foreground">{tHire("subtotalBeforeTax")}</span>
                                 <span className="tabular-nums">{moneyLabel(netTotal)}</span>
                               </div>
                               <div className="flex items-start justify-between gap-3 text-sm">
@@ -1440,10 +1444,10 @@ export function ChatOfferDialog({
                                   />
                                   <div className="space-y-0.5">
                                     <Label htmlFor="offer-wht" className="cursor-pointer font-normal">
-                                      หัก ณ ที่จ่าย 3%
+                                      {tHire("wht3")}
                                     </Label>
                                     <p className="text-xs text-muted-foreground">
-                                      นิติบุคคลมักหัก 3% เมื่อจ่ายค่าบริการ
+                                      {tHire("whtHint")}
                                     </p>
                                   </div>
                                 </div>
@@ -1454,7 +1458,7 @@ export function ChatOfferDialog({
                             </>
                           ) : null}
                           <div className="flex items-center justify-between gap-3 border-t border-border pt-2">
-                            <span className="text-sm font-semibold">รวมทั้งสิ้น</span>
+                            <span className="text-sm font-semibold">{tHire("grandTotal")}</span>
                             <span className="text-base font-semibold tabular-nums">
                               {moneyLabel(grandTotal)}
                             </span>
@@ -1462,15 +1466,15 @@ export function ChatOfferDialog({
                           {paid && depositAmount > 0 ? (
                             <div className="flex items-center justify-between gap-3 text-sm">
                               <span className="text-muted-foreground">
-                                มัดจำที่ต้องชำระ ({effectiveDepositPercent}%)
+                                {tHire("depositDue", { pct: effectiveDepositPercent })}
                               </span>
                               <span className="tabular-nums">{moneyLabel(depositAmount)}</span>
                             </div>
                           ) : null}
                           {displayCurrency !== "THB" ? (
                             <p className="text-xs leading-relaxed text-muted-foreground">
-                              พิมพ์ราคาเป็น {currencySymbol(displayCurrency)} ได้เลย ระบบจะแปลงเป็นบาทให้
-                              {fx?.asOf && fx.asOf !== "fallback" ? ` · อัตรา ${fx.asOf}` : ""}
+                              {tHire("fxHint", { symbol: currencySymbol(displayCurrency) })}
+                              {fx?.asOf && fx.asOf !== "fallback" ? ` · ${tHire("rateAsOf", { date: fx.asOf })}` : ""}
                             </p>
                           ) : null}
                         </div>
@@ -1485,7 +1489,7 @@ export function ChatOfferDialog({
 
                   {paid ? (
                     <div className="space-y-2">
-                      <Label>รูปแบบการชำระ</Label>
+                      <Label>{tHire("paymentMode")}</Label>
                       <div className="flex flex-wrap items-center gap-2">
                         <ToggleGroup
                           type="single"
@@ -1503,13 +1507,13 @@ export function ChatOfferDialog({
                             value="full"
                             className="min-h-9 rounded-full px-3 text-sm data-[state=on]:bg-muted data-[state=on]:text-foreground"
                           >
-                            เต็มจำนวน
+                            {tHire("fullAmount")}
                           </ToggleGroupItem>
                           <ToggleGroupItem
                             value="deposit"
                             className="min-h-9 rounded-full px-3 text-sm data-[state=on]:bg-muted data-[state=on]:text-foreground"
                           >
-                            มัดจำ %
+                            {tHire("depositPercentOption")}
                           </ToggleGroupItem>
                         </ToggleGroup>
 
@@ -1528,7 +1532,7 @@ export function ChatOfferDialog({
                               </Button>
                             ))}
                             <span className="whitespace-nowrap text-xs text-muted-foreground">
-                              หรือกำหนดเอง
+                              {tHire("orCustom")}
                             </span>
                             <Input
                               className={cn(
@@ -1538,7 +1542,7 @@ export function ChatOfferDialog({
                                   : "",
                               )}
                               inputMode="numeric"
-                              aria-label="มัดจำกำหนดเอง (เปอร์เซ็นต์)"
+                              aria-label={tHire("customDepositAria")}
                               value={customDeposit}
                               onChange={(e) => {
                                 const v = e.target.value.replace(/[^\d]/g, "");
@@ -1561,7 +1565,7 @@ export function ChatOfferDialog({
                 <OfferSection
                   value="timeline"
                   step={3}
-                  title={paid ? "ไทม์ไลน์และงวดงาน" : "ขั้นตอนและวันส่งมอบ"}
+                  title={paid ? tHire("timelineSectionPaid") : tHire("timelineSectionFree")}
                   summary={timelineSummary}
                   done={timelineDone}
                 >
@@ -1569,12 +1573,12 @@ export function ChatOfferDialog({
                     {milestones.map((m, i) => {
                       const isFirst = i === 0;
                       const isLast = i === lastMilestoneIdx;
-                      const role = isFirst ? "เริ่มงาน" : isLast ? "ส่งมอบ" : `ขั้นที่ ${i + 1}`;
+                      const role = isFirst ? tHire("roleStart") : isLast ? tHire("roleDelivery") : tHire("roleStep", { n: i + 1 });
                       const endError = isLast
                         ? fieldErrors.endDate ||
                           fieldErrors.endBeforeStart ||
                           (endDate && endDate < effectiveStartDate
-                            ? "วันส่งมอบต้องไม่อยู่ก่อนวันเริ่มงาน"
+                            ? tHire("errEndBeforeStart")
                             : "")
                         : "";
                       return (
@@ -1615,8 +1619,8 @@ export function ChatOfferDialog({
                                     ),
                                   )
                                 }
-                                aria-label={`ชื่อ${role}`}
-                                placeholder={paid ? "ชื่องวด" : "ชื่อขั้นตอน"}
+                                aria-label={tHire("stepNameAria", { role })}
+                                placeholder={paid ? tHire("installmentNamePlaceholder") : tHire("stepNamePlaceholder")}
                                 autoComplete="off"
                                 maxLength={80}
                                 className="min-w-0 flex-1 sm:h-9 sm:text-sm"
@@ -1625,7 +1629,7 @@ export function ChatOfferDialog({
                                   <button
                                     type="button"
                                     className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-destructive sm:hidden"
-                                    aria-label={`ลบ${role}`}
+                                    aria-label={tHire("removeStepAria", { role })}
                                     onClick={() => removeMilestone(m.id)}
                                   >
                                     <Trash2 className="h-4 w-4" />
@@ -1648,7 +1652,7 @@ export function ChatOfferDialog({
                                       clearFieldError("endBeforeStart");
                                     }
                                   }}
-                                  aria-label={`วันที่${role}`}
+                                  aria-label={tHire("stepDateAria", { role })}
                                   aria-invalid={isLast ? !!endError : undefined}
                                   className={cn(
                                     "min-w-0 tabular-nums sm:h-9 sm:text-sm",
@@ -1659,7 +1663,7 @@ export function ChatOfferDialog({
                                 <button
                                   type="button"
                                   className="hidden h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-destructive sm:flex"
-                                  aria-label={`ลบ${role}`}
+                                  aria-label={tHire("removeStepAria", { role })}
                                   onClick={() => removeMilestone(m.id)}
                                 >
                                   <Trash2 className="h-3.5 w-3.5" />
@@ -1669,7 +1673,7 @@ export function ChatOfferDialog({
                               )}
                             </div>
                             {isFirst && !m.date ? (
-                              <p className="text-xs text-muted-foreground">ไม่ใส่วันที่ = เริ่มวันนี้</p>
+                              <p className="text-xs text-muted-foreground">{tHire("noDateStartsToday")}</p>
                             ) : null}
                             {endError ? (
                               <p className="text-xs text-destructive" role="alert">
@@ -1689,7 +1693,7 @@ export function ChatOfferDialog({
                       className="h-10 w-full sm:h-9"
                       onClick={addMilestone}
                     >
-                      <Plus className="mr-1 h-4 w-4" /> {paid ? "เพิ่มงวด" : "เพิ่มขั้นตอน"}
+                      <Plus className="mr-1 h-4 w-4" /> {paid ? tHire("addInstallment") : tHire("addStep")}
                     </Button>
                   ) : null}
 
@@ -1702,10 +1706,10 @@ export function ChatOfferDialog({
                     />
                     <div className="space-y-0.5">
                       <Label htmlFor="offer-show-full-timeline" className="cursor-pointer font-medium">
-                        แสดงทุกขั้นตอนบนใบเสนอราคา
+                        {tHire("showAllSteps")}
                       </Label>
                       <p className="text-xs text-muted-foreground">
-                        ถ้าไม่เลือก เอกสารจะแสดงแค่วันส่งมอบ
+                        {tHire("showAllStepsHint")}
                       </p>
                     </div>
                   </div>
@@ -1716,15 +1720,15 @@ export function ChatOfferDialog({
                   <OfferSection
                     value="payment"
                     step={4}
-                    title="การชำระเงิน"
+                    title={tHire("payment")}
                     summary={paymentSummary}
                     done={paymentDone}
                   >
                     <div className="space-y-2" ref={setFieldRef("plan")}>
                       <p className="text-xs text-muted-foreground">
-                        แบ่งจ่ายเป็นงวดได้ ระบบคำนวณยอดแต่ละงวดให้ แล้วออกใบแจ้งหนี้/ใบเสร็จทีละงวดจากแชทได้เลย
+                        {tHire("planHint")}
                       </p>
-                      <div className="flex flex-wrap gap-1.5" role="group" aria-label="รูปแบบการแบ่งจ่าย">
+                      <div className="flex flex-wrap gap-1.5" role="group" aria-label={tHire("planPresetsAria")}>
                         {PAYMENT_PLAN_PRESETS.map((preset) => {
                           const on = planPreset === preset.id;
                           return (
@@ -1755,7 +1759,7 @@ export function ChatOfferDialog({
                               : "border-dashed border-border text-muted-foreground",
                           )}
                         >
-                          กำหนดเอง
+                          {tHire("custom")}
                         </span>
                       </div>
 
@@ -1779,8 +1783,8 @@ export function ChatOfferDialog({
                                 <Input
                                   value={inst.label}
                                   onChange={(e) => updateInstallment(inst.id, { label: e.target.value })}
-                                  aria-label={`ชื่องวดที่ ${i + 1}`}
-                                  placeholder="เช่น มัดจำก่อนเริ่มงาน"
+                                  aria-label={tHire("installmentNameAria", { n: i + 1 })}
+                                  placeholder={tHire("installmentNameExample")}
                                   autoComplete="off"
                                   maxLength={80}
                                   className="min-w-0 flex-1 sm:h-9 sm:text-sm"
@@ -1794,7 +1798,7 @@ export function ChatOfferDialog({
                                         percent: Math.min(100, Number(e.target.value.replace(/[^\d]/g, "")) || 0),
                                       })
                                     }
-                                    aria-label={`เปอร์เซ็นต์งวดที่ ${i + 1}`}
+                                    aria-label={tHire("installmentPercentAria", { n: i + 1 })}
                                     placeholder="0"
                                     className="pr-7 text-right tabular-nums sm:h-9 sm:text-sm"
                                   />
@@ -1806,7 +1810,7 @@ export function ChatOfferDialog({
                                   <button
                                     type="button"
                                     className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-destructive sm:h-9 sm:w-9"
-                                    aria-label={`ลบงวดที่ ${i + 1}`}
+                                    aria-label={tHire("removeInstallmentAria", { n: i + 1 })}
                                     onClick={() => {
                                       setPaymentPlan((prev) => prev.filter((p) => p.id !== inst.id));
                                       clearFieldError("plan");
@@ -1818,7 +1822,7 @@ export function ChatOfferDialog({
                               </div>
                               <div className="flex flex-wrap items-center justify-between gap-2 pl-9">
                                 <label className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
-                                  จ่ายเมื่อ
+                                  {tHire("payWhen")}
                                   <select
                                     value={inst.milestoneId || ""}
                                     onChange={(e) =>
@@ -1826,10 +1830,10 @@ export function ChatOfferDialog({
                                     }
                                     className="h-9 min-w-0 max-w-[12rem] rounded-full border border-input bg-card px-3 text-sm text-foreground"
                                   >
-                                    <option value="">ไม่ระบุ</option>
+                                    <option value="">{tHire("notSpecified")}</option>
                                     {milestones.map((m) => (
                                       <option key={m.id} value={m.id}>
-                                        {m.label || "ขั้นตอน"}
+                                        {m.label || tHire("stepFallback")}
                                       </option>
                                     ))}
                                   </select>
@@ -1838,7 +1842,7 @@ export function ChatOfferDialog({
                                   {amounts ? moneyLabel(amounts.net) : moneyLabel(0)}
                                   {amounts && amounts.wht > 0 ? (
                                     <span className="ml-1 text-xs font-normal text-muted-foreground">
-                                      (หัก ณ ที่จ่ายแล้ว)
+                                      {tHire("afterWhtShort")}
                                     </span>
                                   ) : null}
                                 </p>
@@ -1869,7 +1873,7 @@ export function ChatOfferDialog({
                               clearFieldError("plan");
                             }}
                           >
-                            <Plus className="mr-1 h-4 w-4" /> เพิ่มงวด
+                            <Plus className="mr-1 h-4 w-4" /> {tHire("addInstallment")}
                           </Button>
                         ) : (
                           <span />
@@ -1881,7 +1885,7 @@ export function ChatOfferDialog({
                           )}
                           aria-live="polite"
                         >
-                          รวม {planTotal}%{planTotal === 100 ? " ✓" : ` · ขาดอีก ${100 - planTotal}%`}
+                          {tHire("planTotalLabel", { total: planTotal })}{planTotal === 100 ? " ✓" : ` · ${tHire("planShort", { n: 100 - planTotal })}`}
                         </p>
                       </div>
                       {fieldErrors.plan ? (
@@ -1892,7 +1896,7 @@ export function ChatOfferDialog({
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label htmlFor="offer-valid-until">ใบเสนอราคามีผลถึง</Label>
+                      <Label htmlFor="offer-valid-until">{tHire("validUntil")}</Label>
                       <Input
                         id="offer-valid-until"
                         type="date"
@@ -1909,7 +1913,7 @@ export function ChatOfferDialog({
                 <OfferSection
                   value="notes"
                   step={paid ? 4 : 5}
-                  title="หมายเหตุ"
+                  title={tHire("notes")}
                   summary={notesSummary}
                   done={!!clientNotes.trim()}
                   optional
@@ -1917,9 +1921,9 @@ export function ChatOfferDialog({
                   <div className="space-y-1.5">
                     <Label htmlFor="offer-client-notes" className="inline-flex items-center gap-1.5">
                       <Eye className="h-3.5 w-3.5 text-primary" aria-hidden />
-                      เงื่อนไขที่ลูกค้าเห็น
+                      {tHire("clientTerms")}
                     </Label>
-                    <div className="flex flex-wrap gap-1.5" aria-label="เงื่อนไขที่ใช้บ่อย">
+                    <div className="flex flex-wrap gap-1.5" aria-label={tHire("commonTermsAria")}>
                       {noteChips.map((chip) => {
                         const on = clientNotes
                           .split("\n")
@@ -1947,7 +1951,7 @@ export function ChatOfferDialog({
                       id="offer-client-notes"
                       value={clientNotes}
                       onChange={(e) => setClientNotes(e.target.value)}
-                      placeholder="กดเลือกด้านบน หรือพิมพ์เงื่อนไขเอง"
+                      placeholder={tHire("clientTermsPlaceholder")}
                       rows={3}
                       maxLength={800}
                       className="resize-none text-base sm:text-sm"
@@ -1956,14 +1960,14 @@ export function ChatOfferDialog({
                   <div className="space-y-1.5 rounded-xl border border-dashed border-border/80 bg-muted/20 p-3">
                     <Label htmlFor="offer-internal-notes" className="inline-flex items-center gap-1.5">
                       <EyeOff className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
-                      โน้ตส่วนตัว
+                      {tHire("privateNote")}
                     </Label>
-                    <p className="text-xs text-muted-foreground">เห็นแค่คุณ ไม่แสดงบนเอกสาร</p>
+                    <p className="text-xs text-muted-foreground">{tHire("privateNoteHint")}</p>
                     <Textarea
                       id="offer-internal-notes"
                       value={internalNotes}
                       onChange={(e) => setInternalNotes(e.target.value)}
-                      placeholder="เช่น ต้นทุนจริง · คุยส่วนลดไว้ · นัดโอนมัดจำวันไหน"
+                      placeholder={tHire("privateNotePlaceholder")}
                       rows={2}
                       maxLength={800}
                       className="resize-none bg-background text-base sm:text-sm"
@@ -1976,11 +1980,11 @@ export function ChatOfferDialog({
             {/* Live paper preview (desktop) */}
             <aside
               className="relative hidden min-h-0 overflow-y-auto overscroll-contain border-l border-border bg-muted p-4 dark:bg-background lg:block"
-              aria-label="พรีวิวใบเสนอราคา"
+              aria-label={tHire("previewQuote")}
             >
               <p className="mb-2 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                 <Eye className="h-3.5 w-3.5" aria-hidden />
-                พรีวิว · ลูกค้าจะเห็นแบบนี้
+                {tHire("previewAsClient")}
               </p>
               <ChatOfferPreview offer={previewOffer} draft />
             </aside>
@@ -1991,7 +1995,7 @@ export function ChatOfferDialog({
             <div className="flex items-center gap-2 sm:gap-3">
               <div className="min-w-0 flex-1" aria-live="polite">
                 <p className="truncate text-xs text-muted-foreground">
-                  รวมทั้งสิ้น{whtAmount > 0 ? " (หลังหัก ณ ที่จ่าย)" : ""}
+                  {whtAmount > 0 ? tHire("grandTotalAfterWht") : tHire("grandTotal")}
                 </p>
                 <p className="truncate text-lg font-semibold leading-tight tabular-nums">
                   {moneyLabel(grandTotal)}
@@ -2002,10 +2006,10 @@ export function ChatOfferDialog({
                 variant="outline"
                 className="h-11 w-11 shrink-0 px-0 sm:w-auto sm:px-4 lg:hidden"
                 onClick={() => openPreview("view")}
-                aria-label="พรีวิวใบเสนอราคา"
+                aria-label={tHire("previewQuote")}
               >
                 <Eye className="h-4 w-4 sm:mr-1.5" aria-hidden />
-                <span className="hidden sm:inline">พรีวิว</span>
+                <span className="hidden sm:inline">{tHire("preview")}</span>
               </Button>
               <Button
                 type="button"
@@ -2013,7 +2017,7 @@ export function ChatOfferDialog({
                 className="hidden h-11 sm:inline-flex"
                 onClick={() => handleOpen(false)}
               >
-                ปิด
+                {tHire("close")}
               </Button>
               <Button
                 type="button"
@@ -2021,33 +2025,33 @@ export function ChatOfferDialog({
                 onClick={() => openPreview("confirm")}
                 disabled={send.isPending}
               >
-                ตรวจและส่ง
+                {tHire("reviewAndSend")}
               </Button>
             </div>
             <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
               {paid ? (
                 <>
-                  การส่งถือว่ายอมรับ{" "}
+                  {tHire("sendingMeansAccept")}{" "}
                   <Link
                     to="/legal/payment-refund"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="underline underline-offset-2 hover:text-foreground"
                   >
-                    นโยบายชำระเงิน/คืนเงิน
+                    {tHire("paymentPolicyShort")}
                   </Link>{" "}
-                  และ{" "}
+                  {tHire("and")}{" "}
                   <Link
                     to="/legal/service-agreement"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="underline underline-offset-2 hover:text-foreground"
                   >
-                    ข้อตกลงบริการ
+                    {tHire("serviceAgreementShort")}
                   </Link>
                 </>
               ) : (
-                "SAMECOR ช่วยทำเอกสาร ไม่ได้รับหรือถือเงิน ลูกค้าชำระกับคุณโดยตรงตามที่ตกลงในแชท"
+                tHire("freeLaunchNote")
               )}
             </p>
           </div>
@@ -2058,12 +2062,12 @@ export function ChatOfferDialog({
         <DialogContent className="max-h-[92dvh] overflow-y-auto rounded-2xl sm:max-w-3xl">
           <DialogHeader className="pr-8 text-left">
             <DialogTitle>
-              {previewMode === "confirm" ? "เช็กอีกครั้งก่อนส่ง" : "พรีวิวใบเสนอราคา"}
+              {previewMode === "confirm" ? tHire("checkBeforeSend") : tHire("previewQuote")}
             </DialogTitle>
             <DialogDescription>
               {previewMode === "confirm"
-                ? "ถ้าข้อมูลถูกต้อง กดส่งได้เลย ลูกค้าจะได้รับในแชทนี้"
-                : "หน้าตาเอกสารที่ลูกค้าจะเห็นในแชท"}
+                ? tHire("confirmSendDesc")
+                : tHire("previewDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="mx-auto w-full max-w-2xl space-y-3" ref={previewPaperRef}>
@@ -2072,7 +2076,7 @@ export function ChatOfferDialog({
               <div className="space-y-1 rounded-xl border border-dashed border-border bg-muted/30 p-3">
                 <p className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
                   <EyeOff className="h-3.5 w-3.5" aria-hidden />
-                  โน้ตส่วนตัว (ลูกค้าไม่เห็น)
+                  {tHire("privateNoteHidden")}
                 </p>
                 <p className="whitespace-pre-wrap text-sm">{internalNotes.trim()}</p>
               </div>
@@ -2087,26 +2091,26 @@ export function ChatOfferDialog({
                   onClick={() => setPreviewOpen(false)}
                   disabled={send.isPending}
                 >
-                  กลับไปแก้
+                  {tHire("backToEditShort")}
                 </Button>
                 <Button
                   type="button"
                   onClick={() => void confirmSend()}
                   disabled={send.isPending || allocatingNumber}
                 >
-                  {send.isPending || allocatingNumber ? "กำลังส่ง..." : "ส่งในแชท"}
+                  {send.isPending || allocatingNumber ? tHire("sending") : tHire("sendInChat")}
                 </Button>
               </>
             ) : (
               <>
                 <PrintButton
                   targetRef={previewPaperRef}
-                  docNumber="ร่าง"
+                  docNumber={tHire("draft")}
                   title={title}
                   size="default"
                 />
                 <Button type="button" variant="secondary" onClick={() => setPreviewOpen(false)}>
-                  กลับไปแก้ไข
+                  {tHire("backToEdit")}
                 </Button>
               </>
             )}

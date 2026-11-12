@@ -2,6 +2,8 @@ import { Check } from "lucide-react";
 import { AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { cn } from "@/lib/utils";
 import { OfferSectionId } from "@/components/chat/offer/offerDialogHelpers";
+import { useT } from "@/lib/i18n";
+import { CHAT_HIRE, formatHireDate } from "@/lib/i18n/chatHire";
 
 /** Collapsible section wrapper and date formatter for the chat offer dialog. */
 export function OfferSection({
@@ -21,6 +23,7 @@ export function OfferSection({
   optional?: boolean;
   children: React.ReactNode;
 }) {
+  const tHire = useT(CHAT_HIRE);
   return (
     <AccordionItem value={value} className="rounded-2xl border border-border bg-card px-3.5 sm:px-4">
       <AccordionTrigger className="gap-3 py-3 text-left hover:no-underline">
@@ -38,13 +41,13 @@ export function OfferSection({
             <span className="block text-sm font-semibold">
               {title}
               {optional ? (
-                <span className="ml-1.5 text-xs font-normal text-muted-foreground">ไม่บังคับ</span>
+                <span className="ml-1.5 text-xs font-normal text-muted-foreground">{tHire("optional")}</span>
               ) : null}
             </span>
             <span className="block truncate text-xs font-normal text-muted-foreground">{summary}</span>
           </span>
           {done || !optional ? (
-            <span className="sr-only">{done ? "กรอกครบแล้ว" : "ยังกรอกไม่ครบ"}</span>
+            <span className="sr-only">{done ? tHire("sectionDone") : tHire("sectionIncomplete")}</span>
           ) : null}
         </span>
       </AccordionTrigger>
@@ -56,5 +59,5 @@ export function OfferSection({
 export function formatOfferShortDate(ymd: string) {
   const d = new Date(`${ymd}T00:00:00`);
   if (Number.isNaN(d.getTime())) return ymd;
-  return d.toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "2-digit" });
+  return formatHireDate(ymd);
 }

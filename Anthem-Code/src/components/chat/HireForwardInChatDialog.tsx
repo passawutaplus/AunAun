@@ -22,6 +22,8 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useFollowingList } from "@/hooks/useFollowLists";
 import { HIRE_REJECT_REASONS, type HireRejectReasonId } from "@/lib/hireBrief";
+import { useT } from "@/lib/i18n";
+import { CHAT_HIRE } from "@/lib/i18n/chatHire";
 
 export type HireForwardPick = {
   userId: string;
@@ -51,6 +53,7 @@ const HireForwardInChatDialog = ({
   onConfirm,
 }: Props) => {
   const { user } = useAuth();
+  const tHire = useT(CHAT_HIRE);
   const { data: following = [], isLoading } = useFollowingList(open ? user?.id : undefined);
   const [forwardTo, setForwardTo] = useState<string | null>(null);
   const [reason, setReason] = useState<HireRejectReasonId>("queue_full");
@@ -81,30 +84,30 @@ const HireForwardInChatDialog = ({
         <DialogHeader className="text-left space-y-1">
           <DialogTitle className="flex items-center gap-2">
             <Share2 className="w-4 h-4 text-[hsl(var(--chat-hire))]" />
-            ส่งต่องาน
+            {tHire("forwardJob")}
           </DialogTitle>
           <DialogDescription>
-            เลือกเพื่อนที่ติดตามได้ทีละ 1 คน — ระบบจะแจ้งในแชทนี้ให้ผู้จ้างกดคุยต่อได้เลย
+            {tHire("forwardDesc")}
             {projectTitle ? (
-              <span className="block mt-1 text-foreground/80">งาน: {projectTitle}</span>
+              <span className="block mt-1 text-foreground/80">{tHire("jobLabel", { title: projectTitle })}</span>
             ) : null}
           </DialogDescription>
         </DialogHeader>
 
         <div>
-          <Label className="text-xs">ส่งต่อให้เพื่อน</Label>
+          <Label className="text-xs">{tHire("forwardToFriend")}</Label>
           {isLoading ? (
             <div className="flex items-center h-10 mt-1.5 text-muted-foreground">
               <Loader2 className="w-4 h-4 animate-spin" />
             </div>
           ) : following.length === 0 ? (
             <p className="text-sm text-muted-foreground mt-1.5">
-              ยังไม่ได้ติดตามใคร — ติดตามครีเอเตอร์ก่อนจึงจะส่งต่องานได้
+              {tHire("notFollowingAnyone")}
             </p>
           ) : (
             <Select value={forwardTo ?? undefined} onValueChange={setForwardTo}>
               <SelectTrigger className="mt-1.5 rounded-xl">
-                <SelectValue placeholder="เลือกเพื่อนที่ติดตาม" />
+                <SelectValue placeholder={tHire("pickFollowedFriend")} />
               </SelectTrigger>
               <SelectContent>
                 {following.map((f) => (
@@ -120,20 +123,20 @@ const HireForwardInChatDialog = ({
 
         <div>
           <Label htmlFor="hire-forward-chat-friend-note" className="text-xs">
-            ข้อความถึงเพื่อน
+            {tHire("messageToFriend")}
           </Label>
           <Textarea
             id="hire-forward-chat-friend-note"
             rows={2}
             value={friendNote}
             onChange={(e) => setFriendNote(e.target.value)}
-            placeholder="ข้อความถึงเพื่อน (ไม่บังคับ)"
+            placeholder={tHire("messageToFriendOptional")}
             className="rounded-xl mt-1.5"
           />
         </div>
 
         <div>
-          <Label className="text-xs">ข้อความถึงผู้จ้าง</Label>
+          <Label className="text-xs">{tHire("messageToClient")}</Label>
           <div className="flex flex-col gap-1.5 mt-2">
             {HIRE_REJECT_REASONS.map((r) => (
               <button
@@ -156,7 +159,7 @@ const HireForwardInChatDialog = ({
               rows={2}
               value={otherNote}
               onChange={(e) => setOtherNote(e.target.value)}
-              placeholder="รายละเอียดถึงผู้จ้าง *"
+              placeholder={tHire("detailsToClientRequired")}
               className="rounded-xl mt-2"
             />
           ) : null}
@@ -164,7 +167,7 @@ const HireForwardInChatDialog = ({
 
         <DialogFooter className="gap-2 sm:justify-end">
           <Button type="button" variant="ghost" disabled={busy} onClick={() => handleOpenChange(false)}>
-            ยกเลิก
+            {tHire("cancel")}
           </Button>
           <Button
             type="button"
@@ -183,7 +186,7 @@ const HireForwardInChatDialog = ({
               })
             }
           >
-            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "ส่งต่องาน"}
+            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : tHire("forwardJob")}
           </Button>
         </DialogFooter>
       </DialogContent>

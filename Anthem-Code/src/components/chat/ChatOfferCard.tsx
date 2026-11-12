@@ -19,7 +19,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSendMessage } from "@/hooks/useChat";
 import {
   formatOfferAmount,
-  formatOfferDateShort,
   offerDeclineWithReasonMessage,
   offerPaymentPlan,
   offerDepositAmount,
@@ -45,6 +44,8 @@ import { useClientRespondDoc } from "@/hooks/useStudioDocuments";
 import { isCommerceEnabled } from "@/lib/aplus1Launch";
 import { trackProductEvent } from "@/lib/productEvents";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n";
+import { CHAT_HIRE, formatHireDate } from "@/lib/i18n/chatHire";
 
 type Props = {
   offer: ChatOfferPayload;
@@ -70,6 +71,7 @@ export function ChatOfferCard({
   onOpenOrderDetail,
 }: Props) {
   const { user } = useAuth();
+  const tHire = useT(CHAT_HIRE);
   const send = useSendMessage();
   const markOfferAccepted = useMarkHireOfferAccepted();
   const respondDoc = useClientRespondDoc();
@@ -136,7 +138,7 @@ export function ChatOfferCard({
       resetQuoteDialog();
       setCheckoutOpen(true);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "ยอมรับไม่สำเร็จ");
+      toast.error(e instanceof Error ? e.message : tHire("agreeFailed"));
     } finally {
       setBusy(false);
     }
@@ -169,10 +171,10 @@ export function ChatOfferCard({
         content: offerDeclineWithReasonMessage(offer, declineReason, declineNote),
         messageType: "text",
       });
-      toast.success("ส่งการปฏิเสธแล้ว");
+      toast.success(tHire("declineSent"));
       handleQuoteOpenChange(false);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "ส่งไม่สำเร็จ");
+      toast.error(e instanceof Error ? e.message : tHire("sendFailed"));
     } finally {
       setBusy(false);
     }
@@ -197,11 +199,11 @@ export function ChatOfferCard({
         content: `ตอบรับข้อเสนอ «${offer.title}» แล้ว (${formatOfferAmount(offer.amount)}) — เริ่มงานได้เลย การชำระเงินตกลงกันเองนอก SAMECOR`,
         messageType: "text",
       });
-      toast.success("ตอบรับข้อเสนอแล้ว");
+      toast.success(tHire("offerAccepted"));
       void trackProductEvent("proposal_accept", { conversation_id: conversationId }, { debounceMs: 0 });
       handleQuoteOpenChange(false);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "ตอบรับไม่สำเร็จ");
+      toast.error(e instanceof Error ? e.message : tHire("acceptFailed"));
     } finally {
       setBusy(false);
     }
@@ -215,7 +217,7 @@ export function ChatOfferCard({
       <ChatCardShell
         tone="hire"
         icon={FileText}
-        title={paid ? "ข้อเสนอราคา" : "ข้อเสนอ"}
+        title={paid ? tHire("offerTitlePaid") : tHire("offerTitleFree")}
         meta={offer.number || undefined}
         action={
           onOpenOrderDetail ? (
@@ -225,7 +227,7 @@ export function ChatOfferCard({
         footer={
           settled ? (
             <p className={cn("text-[11px] font-medium", chatCardAccent("success"))}>
-              {paid ? "ชำระตามใบเสนอราคาแล้ว" : "ตอบรับข้อเสนอแล้ว"}
+              {paid ? tHire("paidPerQuote") : tHire("offerAccepted")}
             </p>
           ) : canRespond ? (
             <Button
@@ -236,10 +238,10 @@ export function ChatOfferCard({
               onClick={() => setQuoteOpen(true)}
             >
               <FileText className="w-3.5 h-3.5 mr-1" />
-              {paid ? "ดูใบเสนอราคา" : "ดูข้อเสนอ"}
+              {paid ? tHire("viewQuote") : tHire("viewOffer")}
             </Button>
           ) : mine ? (
-            <ChatCardStatus>รออีกฝ่ายตอบรับ</ChatCardStatus>
+            <ChatCardStatus>{tHire("waitingOtherAccept")}</ChatCardStatus>
           ) : null
         }
       >
@@ -252,23 +254,23 @@ export function ChatOfferCard({
         {!paid ? (
           plan.length > 1 ? (
             <p className="text-[11px] text-muted-foreground">
-              แบ่งจ่าย {plan.length} งวด ·{" "}
+              {tHire("splitInstallments", { n: plan.length })} ·{" "}
               {plan
                 .map((p) => `${p.percent}%`)
                 .join(" / ")}
             </p>
           ) : (
-            <p className="text-[11px] text-muted-foreground">จ่ายครั้งเดียว</p>
+            <p className="text-[11px] text-muted-foreground">{tHire("payOnce")}</p>
           )
         ) : deposit != null ? (
           <p className="text-[11px] text-muted-foreground">
-            มัดจำ {depositPct}% · {formatOfferAmount(deposit)}
+            {tHire("depositPct", { pct: depositPct })} · {formatOfferAmount(deposit)}
             {offer.depositDueDate
-              ? ` · ครบกำหนด ${formatOfferDateShort(offer.depositDueDate)}`
+              ? ` · ${tHire("due", { date: formatHireDate(offer.depositDueDate) })}`
               : ""}
           </p>
         ) : (
-          <p className="text-[11px] text-muted-foreground">จ่ายเต็มจำนวน</p>
+          <p className="text-[11px] text-muted-foreground">{tHire("payFull")}</p>
         )}
         {offer.items && offer.items.length > 0 ? (
           <ul className="text-xs space-y-1 text-muted-foreground">
@@ -284,7 +286,7 @@ export function ChatOfferCard({
               </li>
             ))}
             {offer.items.length > 4 ? (
-              <li className="text-[11px] opacity-70">+ อีก {offer.items.length - 4} รายการ</li>
+              <li className="text-[11px] opacity-70">{tHire("moreItems", { n: offer.items.length - 4 })}</li>
             ) : null}
           </ul>
         ) : offer.deliverables ? (
@@ -294,14 +296,14 @@ export function ChatOfferCard({
         ) : null}
         {offer.clientNotes?.trim() ? (
           <p className="text-[11px] whitespace-pre-wrap text-muted-foreground">
-            <span className="font-medium">หมายเหตุ: </span>
+            <span className="font-medium">{tHire("noteLabel")} </span>
             {offer.clientNotes.trim()}
           </p>
         ) : null}
         {mine && offer.internalNotes?.trim() ? (
           <div className="rounded-xl border border-dashed border-border bg-muted/40 p-2 space-y-0.5">
             <p className="text-[10px] font-semibold text-muted-foreground">
-              หมายเหตุภายใน (เห็นเฉพาะคุณ)
+              {tHire("internalNote")}
             </p>
             <p className="text-[11px] text-muted-foreground whitespace-pre-wrap">
               {offer.internalNotes.trim()}
@@ -309,20 +311,20 @@ export function ChatOfferCard({
           </div>
         ) : null}
         {hasTimeline ? (
-          <ChatOfferTimeline offer={offer} compact title="ไทม์ไลน์งาน" />
+          <ChatOfferTimeline offer={offer} compact title={tHire("timelineJob")} />
         ) : null}
       </ChatCardShell>
 
       <Dialog open={quoteOpen && !settled} onOpenChange={handleQuoteOpenChange}>
         <DialogContent className="rounded-2xl max-w-lg max-h-[92vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{declineMode ? "ปฏิเสธใบเสนอราคา" : "ใบเสนอราคา"}</DialogTitle>
+            <DialogTitle>{declineMode ? tHire("declineQuoteTitle") : tHire("quotation")}</DialogTitle>
             <DialogDescription>
               {declineMode
-                ? "เลือกเหตุผลให้อีกฝ่ายทราบ — สามารถส่งใบใหม่ได้"
+                ? tHire("declineQuoteDesc")
                 : paid
-                  ? "ตรวจสอบรายละเอียดและเงื่อนไขก่อนยืนยันชำระเงิน"
-                  : "ตรวจรายละเอียดก่อนตอบรับ — SAMECOR ไม่ได้รับหรือถือเงิน ตกลงการชำระกันเองในแชท"}
+                  ? tHire("reviewBeforePay")
+                  : tHire("reviewBeforeAccept")}
             </DialogDescription>
           </DialogHeader>
 
@@ -346,7 +348,7 @@ export function ChatOfferCard({
               </RadioGroup>
               <div className="space-y-1.5">
                 <Label htmlFor="decline-note">
-                  รายละเอียด{declineReason === "other" ? " (จำเป็น)" : " (ถ้ามี)"}
+                  {declineReason === "other" ? tHire("detailsRequired") : tHire("detailsOptional")}
                 </Label>
                 <Textarea
                   id="decline-note"
@@ -355,7 +357,7 @@ export function ChatOfferCard({
                   disabled={busy}
                   rows={3}
                   className="rounded-xl resize-none"
-                  placeholder="บอกอีกฝ่ายสั้น ๆ ได้"
+                  placeholder={tHire("declineNotePlaceholder")}
                 />
               </div>
             </div>
@@ -378,13 +380,13 @@ export function ChatOfferCard({
                     disabled={busy}
                   />
                   <span className="text-xs leading-relaxed text-muted-foreground">
-                    ยอมรับ{" "}
+                    {tHire("agreeTo")}{" "}
                     <Link
                       to="/legal/service-agreement"
                       target="_blank"
                       className="text-primary hover:underline font-medium"
                     >
-                      ข้อตกลงการให้บริการ/การจ้างงาน
+                      {tHire("serviceAgreementFull")}
                     </Link>
                   </span>
                 </label>
@@ -396,13 +398,13 @@ export function ChatOfferCard({
                     disabled={busy}
                   />
                   <span className="text-xs leading-relaxed text-muted-foreground">
-                    ยอมรับ{" "}
+                    {tHire("agreeTo")}{" "}
                     <Link
                       to="/legal/payment-refund"
                       target="_blank"
                       className="text-primary hover:underline font-medium"
                     >
-                      นโยบายการชำระเงินและการคืนเงิน
+                      {tHire("paymentPolicyFull")}
                     </Link>
                   </span>
                 </label>
@@ -421,7 +423,7 @@ export function ChatOfferCard({
                   disabled={busy}
                   onClick={() => setDeclineMode(false)}
                 >
-                  กลับ
+                  {tHire("back")}
                 </Button>
                 <Button
                   type="button"
@@ -431,7 +433,7 @@ export function ChatOfferCard({
                   onClick={() => void handleDecline()}
                 >
                   {busy ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
-                  ยืนยันปฏิเสธ
+                  {tHire("confirmReject")}
                 </Button>
               </>
             ) : (
@@ -444,7 +446,7 @@ export function ChatOfferCard({
                   onClick={() => setDeclineMode(true)}
                 >
                   <X className="w-3.5 h-3.5 mr-1" />
-                  ปฏิเสธ
+                  {tHire("decline")}
                 </Button>
                 {paid ? (
                   <Button
@@ -454,7 +456,7 @@ export function ChatOfferCard({
                     onClick={() => void handleAcceptAndPay()}
                   >
                     {busy ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
-                    ยืนยันและชำระเงิน
+                    {tHire("confirmAndPay")}
                   </Button>
                 ) : (
                   <Button
@@ -464,7 +466,7 @@ export function ChatOfferCard({
                     onClick={() => void handleAcceptFree()}
                   >
                     {busy ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
-                    ตอบรับข้อเสนอ
+                    {tHire("acceptOffer")}
                   </Button>
                 )}
               </>

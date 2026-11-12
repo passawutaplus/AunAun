@@ -6,12 +6,13 @@ import {
   ChatCardShell,
   ChatCardStatus,
   CHAT_CARD_DECLINE_BTN,
-  CHAT_CARD_DECLINE_LABEL,
   CHAT_CARD_PRIMARY_BTN,
 } from "@/components/chat/ChatCardShell";
 import ProjectReferencePreview from "@/components/opportunity/ProjectReferencePreview";
 import { hireInviteDisplay } from "@/lib/hireBrief";
 import { safeHttpUrl } from "@/lib/safeUrl";
+import { useT } from "@/lib/i18n";
+import { CHAT_HIRE } from "@/lib/i18n/chatHire";
 
 export type HireInviteActions = {
   canRespond: boolean;
@@ -31,6 +32,7 @@ type Props = {
 
 
 const HireInviteCard = ({ content, actions, projectTitle, projectCoverUrl }: Props) => {
+  const tHire = useT(CHAT_HIRE);
   const brief = hireInviteDisplay({ message: content });
   const title = (projectTitle ?? brief.projectTitle ?? "").trim();
   const cover =
@@ -42,10 +44,10 @@ const HireInviteCard = ({ content, actions, projectTitle, projectCoverUrl }: Pro
     <ChatCardShell
       tone="hire"
       icon={BriefIcon}
-      title="คำขอจ้างงาน"
+      title={tHire("hireRequestTitle")}
       footer={
         <div className="space-y-2">
-          <ChatCardStatus>{actions?.statusHint || "ดูรายละเอียดต่อได้"}</ChatCardStatus>
+          <ChatCardStatus>{actions?.statusHint || tHire("seeDetailsBelow")}</ChatCardStatus>
           {actions?.canRespond ? (
             <div className="flex gap-2">
               <Button
@@ -61,7 +63,7 @@ const HireInviteCard = ({ content, actions, projectTitle, projectCoverUrl }: Pro
                 ) : (
                   <X className="w-3.5 h-3.5 mr-1" />
                 )}
-                {CHAT_CARD_DECLINE_LABEL}
+                {tHire("notInterested")}
               </Button>
               <Button
                 type="button"
@@ -75,21 +77,21 @@ const HireInviteCard = ({ content, actions, projectTitle, projectCoverUrl }: Pro
                 ) : (
                   <Check className="w-3.5 h-3.5 mr-1" />
                 )}
-                ยอมรับ
+                {tHire("accept")}
               </Button>
             </div>
           ) : null}
         </div>
       }
     >
-      {title ? <ProjectReferencePreview title={title} coverUrl={cover} label="อ้างอิงผลงาน" /> : null}
+      {title ? <ProjectReferencePreview title={title} coverUrl={cover} label={tHire("workReference")} /> : null}
 
       <ChatCardRows
         rows={[
-          { label: "ประเภทงาน", value: brief.jobTypesLabel?.trim() || "—" },
-          { label: "กำหนดส่ง", value: brief.deadlineLabel?.trim() || "ยังไม่ระบุ" },
-          { label: "งบประมาณ", value: brief.budgetLabel?.trim() || "คุยในแชท" },
-          { label: "ไฟล์แนบ", value: attachments.length ? `${attachments.length} ไฟล์` : null },
+          { label: tHire("jobType"), value: brief.jobTypesLabel?.trim() || "—" },
+          { label: tHire("deadline"), value: brief.deadlineLabel?.trim() || tHire("notSetYet") },
+          { label: tHire("budget"), value: brief.budgetLabel?.trim() || tHire("discussInChat") },
+          { label: tHire("attachment"), value: attachments.length ? tHire("fileCount", { n: attachments.length }) : null },
         ]}
       />
 

@@ -18,7 +18,6 @@ import {
 } from "@/components/documents/StudioDocDialogs";
 import {
   formatOfferAmount,
-  formatOfferDateShort,
   parseChatOffer,
   type ChatOfferPayload,
 } from "@/lib/chatOffer";
@@ -31,6 +30,8 @@ import {
   type StudioDocumentRow,
 } from "@/lib/documents/studioDocuments";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n";
+import { CHAT_HIRE, formatHireDate } from "@/lib/i18n/chatHire";
 
 const KIND_ICON = {
   quotation: FileText,
@@ -68,6 +69,7 @@ function useLatestChatOffer(conversationId: string, enabled: boolean) {
 /** Data wrapper: side panel "งานนี้" for one chat. */
 export function ChatJobPanel({ conversationId }: { conversationId: string }) {
   const { user } = useAuth();
+  const tHire = useT(CHAT_HIRE);
   const { data: docs = [], isLoading } =
     useConversationStudioDocs(conversationId);
   const hasQuote = docs.some((d) => d.kind === "quotation");
@@ -91,9 +93,9 @@ export function ChatJobPanel({ conversationId }: { conversationId: string }) {
             conversationId,
             status: "accepted",
           });
-          toast.success("เริ่มติดตามงวดแล้ว");
+          toast.success(tHire("trackingStarted"));
         } catch (e) {
-          toast.error(e instanceof Error ? e.message : "เริ่มติดตามไม่สำเร็จ");
+          toast.error(e instanceof Error ? e.message : tHire("trackingFailed"));
         }
       }}
       trackingLegacy={issueQuotation.isPending}
@@ -122,6 +124,7 @@ export function JobPanelView({
   const [viewDoc, setViewDoc] = useState<StudioDocumentRow | null>(null);
   const [invoiceFor, setInvoiceFor] = useState<InstallmentTrack | null>(null);
   const [payFor, setPayFor] = useState<InstallmentTrack | null>(null);
+  const tHire = useT(CHAT_HIRE);
 
   const quotes = docs.filter((d) => d.kind === "quotation");
   const quote =
@@ -144,7 +147,7 @@ export function JobPanelView({
   const history = [...docs].reverse();
 
   if (loading) {
-    return <div className="p-4 text-sm text-muted-foreground">กำลังโหลด…</div>;
+    return <div className="p-4 text-sm text-muted-foreground">{tHire("loadingEllipsis")}</div>;
   }
 
   return (
@@ -154,14 +157,13 @@ export function JobPanelView({
           <section className="space-y-2 rounded-2xl border border-border bg-card p-3.5">
             <p className="text-sm font-semibold">{legacyOffer.offer.title}</p>
             <p className="text-xs text-muted-foreground">
-              ใบเสนอราคา {legacyOffer.offer.number || ""} ·{" "}
+              {tHire("quotation")} {legacyOffer.offer.number || ""} ·{" "}
               {formatOfferAmount(legacyOffer.offer.amount)}
             </p>
             {legacyOffer.senderId === viewerId ? (
               <>
                 <p className="text-xs text-muted-foreground">
-                  ใบนี้ส่งก่อนมีระบบติดตามงวด
-                  กดเพื่อเริ่มออกใบแจ้งหนี้และใบเสร็จจากใบนี้
+                  {tHire("legacyQuoteHint")}
                 </p>
                 <Button
                   type="button"
@@ -170,12 +172,12 @@ export function JobPanelView({
                   onClick={onTrackLegacy}
                   disabled={trackingLegacy}
                 >
-                  เริ่มติดตามงวด
+                  {tHire("startTracking")}
                 </Button>
               </>
             ) : (
               <p className="text-xs text-muted-foreground">
-                รอผู้รับงานเริ่มติดตามการชำระเงิน
+                {tHire("waitFreelancerTracking")}
               </p>
             )}
           </section>
@@ -185,9 +187,9 @@ export function JobPanelView({
               className="mx-auto mb-2 h-6 w-6 text-muted-foreground"
               aria-hidden
             />
-            <p className="text-sm font-medium">ยังไม่มีใบเสนอราคา</p>
+            <p className="text-sm font-medium">{tHire("noQuoteYet")}</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              ส่งใบเสนอราคาจากแชท แล้วติดตามงวด ใบแจ้งหนี้ และใบเสร็จได้ที่นี่
+              {tHire("noQuoteHint")}
             </p>
           </section>
         )
@@ -209,7 +211,7 @@ export function JobPanelView({
             <>
               <div>
                 <div className="flex items-baseline justify-between text-xs">
-                  <span className="text-muted-foreground">รับเงินแล้ว</span>
+                  <span className="text-muted-foreground">{tHire("received")}</span>
                   <span className="tabular-nums">
                     <span className="font-semibold text-foreground">
                       {formatOfferAmount(paidNet)}
@@ -226,7 +228,7 @@ export function JobPanelView({
                   aria-valuenow={pct}
                   aria-valuemin={0}
                   aria-valuemax={100}
-                  aria-label="ความคืบหน้าการรับเงิน"
+                  aria-label={tHire("paymentProgress")}
                 >
                   <div
                     className="h-full rounded-full bg-emerald-500 transition-all"
@@ -252,13 +254,13 @@ export function JobPanelView({
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <p className="text-sm font-medium">
-                            งวด {t.no} · {t.installment.label}
+                            {tHire("installmentNo", { n: t.no })} · {t.installment.label}
                           </p>
                           <p className="text-xs tabular-nums text-muted-foreground">
                             {t.installment.percent}% ·{" "}
                             {formatOfferAmount(t.net)}
                             {t.invoice?.due_date && t.state !== "paid"
-                              ? ` · ครบกำหนด ${formatOfferDateShort(t.invoice.due_date)}`
+                              ? ` · ${tHire("due", { date: formatHireDate(t.invoice.due_date) })}`
                               : ""}
                           </p>
                         </div>
@@ -273,7 +275,7 @@ export function JobPanelView({
                             className="h-9"
                             onClick={() => setInvoiceFor(t)}
                           >
-                            ส่งใบแจ้งหนี้
+                            {tHire("sendInvoice")}
                           </Button>
                         ) : null}
                         {isOwner && t.state !== "paid" ? (
@@ -288,7 +290,7 @@ export function JobPanelView({
                             className="h-9"
                             onClick={() => setPayFor(t)}
                           >
-                            บันทึกรับเงิน
+                            {tHire("recordPayment")}
                           </Button>
                         ) : null}
                         {t.invoice && t.state !== "paid" ? (
@@ -300,8 +302,8 @@ export function JobPanelView({
                             onClick={() => setViewDoc(t.invoice)}
                           >
                             {isOwner || t.state === "client_marked"
-                              ? "ดูใบแจ้งหนี้"
-                              : "ดู / แจ้งโอน"}
+                              ? tHire("viewInvoice")
+                              : tHire("viewOrNotifyTransfer")}
                           </Button>
                         ) : null}
                         {t.receipt ? (
@@ -312,7 +314,7 @@ export function JobPanelView({
                             className="h-9"
                             onClick={() => setViewDoc(t.receipt)}
                           >
-                            ใบเสร็จ
+                            {tHire("receiptShort")}
                           </Button>
                         ) : null}
                       </div>
@@ -328,7 +330,7 @@ export function JobPanelView({
       {history.length > 0 ? (
         <section>
           <p className="mb-1.5 px-1 text-xs font-medium text-muted-foreground">
-            เอกสารในแชทนี้
+            {tHire("docsInChat")}
           </p>
           <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
             {history.map((d) => {
@@ -347,7 +349,7 @@ export function JobPanelView({
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm">
                         {STUDIO_DOC_KIND_LABEL[d.kind]}
-                        {d.installment_no ? ` งวด ${d.installment_no}` : ""}
+                        {d.installment_no ? ` ${tHire("installmentNo", { n: d.installment_no })}` : ""}
                       </span>
                       <span className="block text-xs tabular-nums text-muted-foreground">
                         {d.doc_number} · {formatSatang(d.net_satang)}

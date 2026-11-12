@@ -1,0 +1,612 @@
+import { COMMON, formatDate, getLang, type Dict, type Lang } from "@/lib/i18n";
+import { CHAT } from "@/lib/i18n/chat";
+
+/**
+ * Hire part of chat: quotation dialog, offer / invite / receipt / cancel cards, job panel, forward dialog.
+ * Text that is saved as a message or inside a quotation is NOT here — stored content stays as it was written
+ * (default step names, note chips, auto-replies, reject reasons).
+ */
+export const CHAT_HIRE = {
+  // Shared with the chat shell
+  cancel: CHAT.cancel,
+  user: CHAT.user,
+  sendFailed: CHAT.sendFailed,
+  attachment: CHAT.attachment,
+  close: COMMON.close,
+  notSpecified: COMMON.notSpecified,
+
+  // Words used on several cards
+  accept: { th: "ยอมรับ", en: "Accept", zh: "接受" },
+  notInterested: { th: "ไม่สนใจ", en: "Not interested", zh: "不感兴趣" },
+  decline: { th: "ปฏิเสธ", en: "Decline", zh: "拒绝" },
+  back: { th: "กลับ", en: "Back", zh: "返回" },
+  confirmReject: { th: "ยืนยันปฏิเสธ", en: "Confirm decline", zh: "确认拒绝" },
+  actionFailed: { th: "ดำเนินการไม่สำเร็จ", en: "Couldn't complete that", zh: "操作失败" },
+  orderDetail: { th: "รายละเอียดออเดอร์", en: "Order details", zh: "订单详情" },
+  quotation: { th: "ใบเสนอราคา", en: "Quotation", zh: "报价单" },
+  jobValue: { th: "มูลค่างาน {amount}", en: "Job value {amount}", zh: "工作金额 {amount}" },
+  deposit: { th: "มัดจำ", en: "Deposit", zh: "定金" },
+  depositPct: { th: "มัดจำ {pct}%", en: "Deposit {pct}%", zh: "定金 {pct}%" },
+  due: { th: "ครบกำหนด {date}", en: "Due {date}", zh: "{date} 到期" },
+  deliverBy: { th: "ส่งมอบ {date}", en: "Delivery {date}", zh: "交付 {date}" },
+  payOnce: { th: "จ่ายครั้งเดียว", en: "One payment", zh: "一次付清" },
+  timelineJob: { th: "ไทม์ไลน์งาน", en: "Job timeline", zh: "工作时间线" },
+  deliveryDate: { th: "วันส่งมอบ", en: "Delivery date", zh: "交付日期" },
+  detailsOptional: { th: "รายละเอียด (ถ้ามี)", en: "Details (optional)", zh: "详情（选填）" },
+  detailsRequired: { th: "รายละเอียด (จำเป็น)", en: "Details (required)", zh: "详情（必填）" },
+  roleClient: { th: "ผู้จ้าง", en: "Client", zh: "雇主" },
+  roleFreelancer: { th: "ฟรีแลนซ์", en: "Freelancer", zh: "自由职业者" },
+
+  // Paid card
+  paidTitle: { th: "ยอมรับข้อเสนอและชำระแล้ว", en: "Offer accepted and paid", zh: "已接受报价并付款" },
+  paidAmount: { th: "ยอดที่ชำระ", en: "Amount paid", zh: "已付金额" },
+  paidAmountDeposit: { th: "ยอดที่ชำระ (มัดจำ)", en: "Amount paid (deposit)", zh: "已付金额（定金）" },
+  escrowNote: {
+    th: "SAMECOR พักเงินไว้ในฐานะตัวกลาง และจะโอนให้ผู้รับงานหลังอนุมัติงานตามเงื่อนไขแพลตฟอร์ม",
+    en: "SAMECOR holds the payment as an intermediary and releases it to the freelancer once the work is approved, under the platform terms",
+    zh: "SAMECOR 作为中间方暂时保管款项，并在工作通过确认后按平台条款转给接单方",
+  },
+
+  // Forward card
+  loginFirst: { th: "กรุณาเข้าสู่ระบบก่อน", en: "Please sign in first", zh: "请先登录" },
+  forwardChatOpened: {
+    th: "เปิดแชทแล้ว — รอครีเอเตอร์ตอบรับหรือไม่สนใจ",
+    en: "Chat opened — waiting for the creator to accept or decline",
+    zh: "已打开聊天 — 等待创作者接受或婉拒",
+  },
+  openChatFailed: { th: "เปิดแชทไม่สำเร็จ", en: "Couldn't open the chat", zh: "打开聊天失败" },
+  forwardCardTitle: { th: "ส่งต่องานให้ครีเอเตอร์คนอื่น", en: "Job forwarded to another creator", zh: "工作已转交给其他创作者" },
+  chatWith: { th: "แชทกับ {name}", en: "Chat with {name}", zh: "与 {name} 聊天" },
+  waitClientOpenForward: {
+    th: "รอผู้จ้างกดแชทกับคนที่ส่งต่อ",
+    en: "Waiting for the client to open a chat with the forwarded creator",
+    zh: "等待雇主与被转交的创作者开始聊天",
+  },
+
+  // Work-start card and timeline
+  workStartTitle: { th: "เริ่มทำงาน", en: "Start work", zh: "开始工作" },
+  todoItems: { th: "รายการงานที่ต้องทำ", en: "Work items to deliver", zh: "待完成的工作项目" },
+  qty: { th: "จำนวน {n}", en: "Qty {n}", zh: "数量 {n}" },
+  amountPerUnit: { th: "{amount}/หน่วย", en: "{amount}/unit", zh: "{amount}/单位" },
+  timelineAuto: { th: "ไทม์ไลน์อัตโนมัติ", en: "Automatic timeline", zh: "自动时间线" },
+  days: { th: "{n} วัน", en: "{n} days", one: "{n} day", zh: "{n} 天" },
+
+  // Invite card
+  hireRequestTitle: { th: "คำขอจ้างงาน", en: "Hire request", zh: "雇佣请求" },
+  seeDetailsBelow: { th: "ดูรายละเอียดต่อได้", en: "See the details below", zh: "可继续查看详情" },
+  workReference: { th: "อ้างอิงผลงาน", en: "Reference work", zh: "参考作品" },
+  jobType: { th: "ประเภทงาน", en: "Job type", zh: "工作类型" },
+  deadline: { th: "กำหนดส่ง", en: "Deadline", zh: "截止日期" },
+  notSetYet: { th: "ยังไม่ระบุ", en: "Not set yet", zh: "尚未注明" },
+  budget: { th: "งบประมาณ", en: "Budget", zh: "预算" },
+  discussInChat: { th: "คุยในแชท", en: "Discuss in chat", zh: "在聊天中商议" },
+  fileCount: { th: "{n} ไฟล์", en: "{n} files", one: "{n} file", zh: "{n} 个文件" },
+  clientAsksContinue: { th: "ผู้จ้างขอคุยต่อ", en: "The client would like to keep talking", zh: "雇主希望继续沟通" },
+  hireDeclinedTitle: { th: "ไม่สนใจคำขอจ้าง", en: "Not interested in the hire request", zh: "对此雇佣请求不感兴趣" },
+
+  // Receipt card
+  methodPromptpay: { th: "พร้อมเพย์", en: "PromptPay", zh: "PromptPay" },
+  methodCard: { th: "บัตร", en: "Card", zh: "银行卡" },
+  methodBankTransfer: { th: "โอนธนาคาร", en: "Bank transfer", zh: "银行转账" },
+  receiptDeposit: { th: "ใบเสร็จมัดจำ", en: "Deposit receipt", zh: "定金收据" },
+  receipt: { th: "ใบเสร็จรับเงิน", en: "Receipt", zh: "收据" },
+  viewReceipt: { th: "ดูใบเสร็จ", en: "View receipt", zh: "查看收据" },
+  receiptIssued: { th: "ออกใบเสร็จแล้ว", en: "Receipt issued", zh: "收据已开具" },
+  depositReceived: { th: "ยอดมัดจำที่รับแล้ว", en: "Deposit received", zh: "已收定金" },
+  amountReceived: { th: "ยอดที่รับแล้ว", en: "Amount received", zh: "已收金额" },
+  paidVia: { th: "ชำระผ่าน {method}", en: "Paid via {method}", zh: "通过 {method} 支付" },
+  loadingReceipt: { th: "กำลังโหลดใบเสร็จ…", en: "Loading receipt…", zh: "正在加载收据…" },
+  receiptLoadFailed: {
+    th: "ยังโหลดใบเสร็จไม่ได้ — ลองเปิดจากรายละเอียดออเดอร์",
+    en: "Couldn't load the receipt yet — try opening it from the order details",
+    zh: "暂时无法加载收据 — 请从订单详情中打开",
+  },
+
+  // Cancel request card
+  cancelLoading: { th: "โหลดคำขอยกเลิก…", en: "Loading cancellation request…", zh: "正在加载取消请求…" },
+  cancelNotFound: { th: "ไม่พบคำขอยกเลิก", en: "Cancellation request not found", zh: "未找到取消请求" },
+  cancelApproved: { th: "อนุมัติการยกเลิกแล้ว", en: "Cancellation approved", zh: "已同意取消" },
+  cancelRejected: { th: "ปฏิเสธการยกเลิกแล้ว", en: "Cancellation declined", zh: "已拒绝取消" },
+  compensationSent: { th: "ส่งคำขอค่าชดเชย 50% แล้ว", en: "50% compensation request sent", zh: "已发送 50% 补偿请求" },
+  moneyTermsOffered: { th: "เสนอเงื่อนไขเงินแล้ว", en: "Money terms proposed", zh: "已提出款项条件" },
+  editRequest: { th: "แก้ไขคำขอ", en: "Edit request", zh: "编辑请求" },
+  withdrawRequest: { th: "ถอนคำขอ", en: "Withdraw request", zh: "撤回请求" },
+  acceptCancel: { th: "ยอมรับยกเลิก", en: "Accept cancellation", zh: "同意取消" },
+  rejectCancel: { th: "ปฏิเสธการยกเลิก", en: "Decline cancellation", zh: "拒绝取消" },
+  askCompensation: { th: "ขอค่าชดเชย 50%", en: "Ask for 50% compensation", zh: "要求 50% 补偿" },
+  proposeOtherTerms: { th: "เสนอเงื่อนไขเงินอื่น", en: "Propose other money terms", zh: "提出其他款项条件" },
+  cancelRequestTitle: { th: "คำขอยกเลิกงาน · {who}", en: "Cancellation request · {who}", zh: "取消工作请求 · {who}" },
+  history: { th: "ประวัติ", en: "History", zh: "记录" },
+  moneyTermsLabel: { th: "เงื่อนไขเงิน: {terms}", en: "Money terms: {terms}", zh: "款项条件：{terms}" },
+  respondWindow: { th: "พิจารณาถึง {time}", en: "Time to respond: {time}", zh: "回复期限：{time}" },
+  editWindow: { th: "แก้/ถอนได้ {time}", en: "Edit / withdraw: {time}", zh: "可修改/撤回：{time}" },
+  rejectCancelTitle: { th: "ปฏิเสธการยกเลิก?", en: "Decline the cancellation?", zh: "拒绝取消？" },
+  rejectCancelBody: {
+    th: "งานจะดำเนินต่อ — แจ้งเหตุผลให้อีกฝ่ายทราบ",
+    en: "The job continues — tell the other side why",
+    zh: "工作将继续进行 — 请告知对方原因",
+  },
+  reason: { th: "เหตุผล", en: "Reason", zh: "原因" },
+  askCompensationTitle: { th: "ขอค่าชดเชย 50%?", en: "Ask for 50% compensation?", zh: "要求 50% 补偿？" },
+  askCompensationBody: {
+    th: "บันทึกข้อตกลงในระบบ (ยังไม่โอนเงินอัตโนมัติ) — ผู้จ้างต้องยอมรับก่อนจึงยกเลิก",
+    en: "The agreement is recorded in the system (no money moves automatically) — the client must accept before the job is cancelled",
+    zh: "协议将记录在系统中（不会自动转账）— 雇主接受后才会取消",
+  },
+  compensationPlaceholder: {
+    th: "อธิบายงานที่ทำไปแล้วสั้น ๆ",
+    en: "Briefly describe the work already done",
+    zh: "简要说明已完成的工作",
+  },
+  sendRequest: { th: "ส่งคำขอ", en: "Send request", zh: "发送请求" },
+  proposeTermsTitle: { th: "เสนอเงื่อนไขเงิน", en: "Propose money terms", zh: "提出款项条件" },
+  proposeTermsBody: {
+    th: "สลับระหว่างคืนเต็มกับคืน 50% (บันทึกในระบบ)",
+    en: "Switch between a full refund and a 50% refund (recorded in the system)",
+    zh: "在全额退款与退款 50% 之间切换（记录在系统中）",
+  },
+  refundFull: { th: "คืนเต็มจำนวน", en: "Full refund", zh: "全额退款" },
+  refundHalf: { th: "คืน 50%", en: "50% refund", zh: "退款 50%" },
+  sendProposal: { th: "ส่งข้อเสนอ", en: "Send proposal", zh: "发送提议" },
+  noHistory: { th: "ยังไม่มีประวัติ", en: "No history yet", zh: "暂无记录" },
+
+  // Hire actions in the side panel and the dialogs around the thread
+  acceptedKeepTalking: { th: "ตอบรับแล้ว — คุยต่อได้เลย", en: "Accepted — keep the conversation going", zh: "已接受 — 可以继续沟通" },
+  acceptFailed: { th: "ตอบรับไม่สำเร็จ", en: "Couldn't accept", zh: "接受失败" },
+  studioNotFound: { th: "ไม่พบข้อมูล Studio", en: "Studio not found", zh: "未找到 Studio 信息" },
+  openSo1oFailed: { th: "เปิด So1o ไม่สำเร็จ", en: "Couldn't open So1o", zh: "打开 So1o 失败" },
+  studioCombinedQuote: { th: "ใบเสนอราคารวม Studio", en: "Combined Studio quotation", zh: "Studio 合并报价单" },
+  respondToHire: { th: "ตอบคำของานจ้าง", en: "Respond to the hire request", zh: "回复雇佣请求" },
+  acceptedHint: { th: "ตอบรับแล้ว — คุยรายละเอียดต่อได้", en: "Accepted — go on to the details", zh: "已接受 — 可继续沟通细节" },
+  declinedHint: { th: "ไม่สนใจคำขอนี้แล้ว", en: "You passed on this request", zh: "已婉拒此请求" },
+  newOrderQuoteTitle: {
+    th: "เสนอราคาออเดอร์ใหม่ในแชทนี้",
+    en: "Quote a new order in this chat",
+    zh: "在此聊天中为新订单报价",
+  },
+  newOrderQuote: { th: "เสนอราคาออเดอร์ใหม่", en: "Quote a new order", zh: "为新订单报价" },
+  makeQuote: { th: "ทำใบเสนอราคา", en: "Make a quotation", zh: "制作报价单" },
+  forwardedNotified: {
+    th: "ส่งต่องานแล้ว — แจ้งเพื่อนแล้ว",
+    en: "Job forwarded — your friend has been notified",
+    zh: "已转交工作 — 已通知好友",
+  },
+  forwardedNotifiedMore: {
+    th: "ส่งต่องานแล้ว — แจ้งเพื่อนแล้ว (ส่งต่อคนอื่นได้จากปุ่มส่งต่อ)",
+    en: "Job forwarded — your friend has been notified (use the forward button to send it to someone else)",
+    zh: "已转交工作 — 已通知好友（可通过转交按钮转给其他人）",
+  },
+  forwardFailed: { th: "ส่งต่องานไม่สำเร็จ", en: "Couldn't forward the job", zh: "转交工作失败" },
+  savedKeepChatting: {
+    th: "บันทึกแล้ว — คุยต่อในแชทได้",
+    en: "Saved — you can keep talking in the chat",
+    zh: "已保存 — 可在聊天中继续沟通",
+  },
+  savedKeepTalking: { th: "บันทึกแล้ว — คุยต่อได้เลย", en: "Saved — keep the conversation going", zh: "已保存 — 可以继续沟通" },
+  declinedWaitClientInChat: {
+    th: "ปฏิเสธแล้ว — รอผู้จ้างเลือกในแชท",
+    en: "Declined — waiting for the client to choose in the chat",
+    zh: "已拒绝 — 等待雇主在聊天中选择",
+  },
+  requestDeclinedWaitClient: {
+    th: "ปฏิเสธคำขอแล้ว — รอผู้จ้างเลือก",
+    en: "Request declined — waiting for the client to choose",
+    zh: "已拒绝请求 — 等待雇主选择",
+  },
+  editSaved: { th: "บันทึกการแก้ไขแล้ว", en: "Changes saved", zh: "修改已保存" },
+  cancelRequestSent: {
+    th: "ส่งคำขอยกเลิกแล้ว — รออีกฝ่ายตอบภายใน 48 ชม.",
+    en: "Cancellation request sent — the other side has 48 hours to respond",
+    zh: "已发送取消请求 — 等待对方在 48 小时内回复",
+  },
+  sendRequestFailed: { th: "ส่งคำขอไม่สำเร็จ", en: "Couldn't send the request", zh: "请求发送失败" },
+
+  // Offer card
+  agreeFailed: { th: "ยอมรับไม่สำเร็จ", en: "Couldn't accept", zh: "接受失败" },
+  declineSent: { th: "ส่งการปฏิเสธแล้ว", en: "Decline sent", zh: "已发送拒绝" },
+  offerAccepted: { th: "ตอบรับข้อเสนอแล้ว", en: "Offer accepted", zh: "已接受提案" },
+  offerTitlePaid: { th: "ข้อเสนอราคา", en: "Price offer", zh: "报价" },
+  offerTitleFree: { th: "ข้อเสนอ", en: "Offer", zh: "提案" },
+  paidPerQuote: { th: "ชำระตามใบเสนอราคาแล้ว", en: "Paid as per the quotation", zh: "已按报价单付款" },
+  viewQuote: { th: "ดูใบเสนอราคา", en: "View quotation", zh: "查看报价单" },
+  viewOffer: { th: "ดูข้อเสนอ", en: "View offer", zh: "查看提案" },
+  waitingOtherAccept: { th: "รออีกฝ่ายตอบรับ", en: "Waiting for the other side to accept", zh: "等待对方接受" },
+  splitInstallments: { th: "แบ่งจ่าย {n} งวด", en: "{n} installments", one: "{n} installment", zh: "分 {n} 期付款" },
+  payFull: { th: "จ่ายเต็มจำนวน", en: "Full payment", zh: "全额支付" },
+  moreItems: { th: "+ อีก {n} รายการ", en: "+ {n} more items", one: "+ {n} more item", zh: "+ 另外 {n} 项" },
+  noteLabel: { th: "หมายเหตุ:", en: "Note:", zh: "备注：" },
+  internalNote: {
+    th: "หมายเหตุภายใน (เห็นเฉพาะคุณ)",
+    en: "Internal note (only you can see this)",
+    zh: "内部备注（仅自己可见）",
+  },
+  declineQuoteTitle: { th: "ปฏิเสธใบเสนอราคา", en: "Decline quotation", zh: "拒绝报价单" },
+  declineQuoteDesc: {
+    th: "เลือกเหตุผลให้อีกฝ่ายทราบ — สามารถส่งใบใหม่ได้",
+    en: "Pick a reason for the other side — they can send a new one",
+    zh: "选择原因告知对方 — 对方可以重新发送报价单",
+  },
+  reviewBeforePay: {
+    th: "ตรวจสอบรายละเอียดและเงื่อนไขก่อนยืนยันชำระเงิน",
+    en: "Check the details and terms before confirming payment",
+    zh: "确认付款前请核对详情和条款",
+  },
+  reviewBeforeAccept: {
+    th: "ตรวจรายละเอียดก่อนตอบรับ — SAMECOR ไม่ได้รับหรือถือเงิน ตกลงการชำระกันเองในแชท",
+    en: "Check the details before accepting — SAMECOR doesn't receive or hold money; agree on payment between yourselves in the chat",
+    zh: "接受前请核对详情 — SAMECOR 不收取也不保管款项，付款方式请在聊天中自行商定",
+  },
+  declineNotePlaceholder: { th: "บอกอีกฝ่ายสั้น ๆ ได้", en: "A short note for the other side", zh: "可以简单告诉对方" },
+  agreeTo: { th: "ยอมรับ", en: "I accept the", zh: "我接受" },
+  serviceAgreementFull: { th: "ข้อตกลงการให้บริการ/การจ้างงาน", en: "Service / Hire Agreement", zh: "服务/雇佣协议" },
+  paymentPolicyFull: { th: "นโยบายการชำระเงินและการคืนเงิน", en: "Payment and Refund Policy", zh: "付款与退款政策" },
+  confirmAndPay: { th: "ยืนยันและชำระเงิน", en: "Confirm and pay", zh: "确认并付款" },
+  acceptOffer: { th: "ตอบรับข้อเสนอ", en: "Accept offer", zh: "接受提案" },
+
+  // Job panel
+  trackingStarted: { th: "เริ่มติดตามงวดแล้ว", en: "Installment tracking started", zh: "已开始跟踪分期" },
+  trackingFailed: { th: "เริ่มติดตามไม่สำเร็จ", en: "Couldn't start tracking", zh: "开始跟踪失败" },
+  loadingEllipsis: { th: "กำลังโหลด…", en: "Loading…", zh: "加载中…" },
+  legacyQuoteHint: {
+    th: "ใบนี้ส่งก่อนมีระบบติดตามงวด กดเพื่อเริ่มออกใบแจ้งหนี้และใบเสร็จจากใบนี้",
+    en: "This quotation was sent before installment tracking existed. Tap to start issuing invoices and receipts from it.",
+    zh: "此报价单发送于分期跟踪功能上线之前。点击即可开始据此开具账单和收据。",
+  },
+  startTracking: { th: "เริ่มติดตามงวด", en: "Start tracking installments", zh: "开始跟踪分期" },
+  waitFreelancerTracking: {
+    th: "รอผู้รับงานเริ่มติดตามการชำระเงิน",
+    en: "Waiting for the freelancer to start tracking payments",
+    zh: "等待接单方开始跟踪付款",
+  },
+  noQuoteYet: { th: "ยังไม่มีใบเสนอราคา", en: "No quotation yet", zh: "还没有报价单" },
+  noQuoteHint: {
+    th: "ส่งใบเสนอราคาจากแชท แล้วติดตามงวด ใบแจ้งหนี้ และใบเสร็จได้ที่นี่",
+    en: "Send a quotation from the chat, then track installments, invoices and receipts here",
+    zh: "从聊天中发送报价单，然后在这里跟踪分期、账单和收据",
+  },
+  received: { th: "รับเงินแล้ว", en: "Received", zh: "已收款" },
+  paymentProgress: { th: "ความคืบหน้าการรับเงิน", en: "Payment progress", zh: "收款进度" },
+  installmentNo: { th: "งวด {n}", en: "Installment {n}", zh: "第 {n} 期" },
+  sendInvoice: { th: "ส่งใบแจ้งหนี้", en: "Send invoice", zh: "发送账单" },
+  recordPayment: { th: "บันทึกรับเงิน", en: "Record payment", zh: "记录收款" },
+  viewInvoice: { th: "ดูใบแจ้งหนี้", en: "View invoice", zh: "查看账单" },
+  viewOrNotifyTransfer: { th: "ดู / แจ้งโอน", en: "View / report transfer", zh: "查看 / 通知已转账" },
+  receiptShort: { th: "ใบเสร็จ", en: "Receipt", zh: "收据" },
+  docsInChat: { th: "เอกสารในแชทนี้", en: "Documents in this chat", zh: "此聊天中的文件" },
+
+  // Forward-in-chat dialog
+  forwardJob: { th: "ส่งต่องาน", en: "Forward job", zh: "转交工作" },
+  forwardDesc: {
+    th: "เลือกเพื่อนที่ติดตามได้ทีละ 1 คน — ระบบจะแจ้งในแชทนี้ให้ผู้จ้างกดคุยต่อได้เลย",
+    en: "Pick one person you follow at a time — the client is told in this chat and can continue with them right away",
+    zh: "每次可选择 1 位你关注的好友 — 系统会在此聊天中通知雇主，对方可直接继续沟通",
+  },
+  jobLabel: { th: "งาน: {title}", en: "Job: {title}", zh: "工作：{title}" },
+  forwardToFriend: { th: "ส่งต่อให้เพื่อน", en: "Forward to a friend", zh: "转交给好友" },
+  notFollowingAnyone: {
+    th: "ยังไม่ได้ติดตามใคร — ติดตามครีเอเตอร์ก่อนจึงจะส่งต่องานได้",
+    en: "You're not following anyone yet — follow a creator first to forward jobs",
+    zh: "你还没有关注任何人 — 需先关注创作者才能转交工作",
+  },
+  pickFollowedFriend: { th: "เลือกเพื่อนที่ติดตาม", en: "Choose someone you follow", zh: "选择你关注的好友" },
+  messageToFriend: { th: "ข้อความถึงเพื่อน", en: "Message to your friend", zh: "给好友的留言" },
+  messageToFriendOptional: {
+    th: "ข้อความถึงเพื่อน (ไม่บังคับ)",
+    en: "Message to your friend (optional)",
+    zh: "给好友的留言（选填）",
+  },
+  messageToClient: { th: "ข้อความถึงผู้จ้าง", en: "Message to the client", zh: "给雇主的留言" },
+  detailsToClientRequired: { th: "รายละเอียดถึงผู้จ้าง *", en: "Details for the client *", zh: "给雇主的说明 *" },
+
+  // Quotation dialog: toasts and checks
+  draftKept: { th: "เก็บร่างไว้ให้แล้ว", en: "Draft saved for you", zh: "已为你保存草稿" },
+  draftKeptDesc: {
+    th: "เปิดใบเสนอราคาในแชทนี้อีกครั้งเพื่อทำต่อ",
+    en: "Open the quotation in this chat again to continue",
+    zh: "在此聊天中再次打开报价单即可继续",
+  },
+  errTitle: { th: "ใส่ชื่องานด้วย", en: "Add a job title", zh: "请填写工作名称" },
+  errItemsMin: { th: "เพิ่มอย่างน้อย 1 รายการ", en: "Add at least 1 item", zh: "请至少添加 1 个项目" },
+  errItemsTotal: {
+    th: "ใส่ราคาในรายการให้มียอดรวมมากกว่า 0",
+    en: "Add prices so the total is more than 0",
+    zh: "请填写价格，使合计大于 0",
+  },
+  errDiscount: {
+    th: "ส่วนลดต้องน้อยกว่ายอดรวมรายการ",
+    en: "The discount must be less than the items total",
+    zh: "折扣必须小于项目合计",
+  },
+  errEndDate: { th: "ใส่วันส่งมอบด้วย", en: "Add a delivery date", zh: "请填写交付日期" },
+  errEndBeforeStart: {
+    th: "วันส่งมอบต้องไม่อยู่ก่อนวันเริ่มงาน",
+    en: "The delivery date can't be before the start date",
+    zh: "交付日期不能早于开始日期",
+  },
+  errPlanSum: {
+    th: "รวมทุกงวดต้องได้ 100% (ตอนนี้ {sum}%)",
+    en: "All installments must add up to 100% (now {sum}%)",
+    zh: "各期合计必须为 100%（目前 {sum}%）",
+  },
+  errPlanZero: { th: "แต่ละงวดต้องมากกว่า 0%", en: "Each installment must be more than 0%", zh: "每期必须大于 0%" },
+  errCompany: { th: "ใส่ชื่อบริษัท/นิติบุคคล", en: "Add the company / legal entity name", zh: "请填写公司/企业名称" },
+  errTaxId: { th: "เลขผู้เสียภาษีไม่ถูกต้อง (13 หลัก)", en: "Invalid tax ID (13 digits)", zh: "税号无效（13 位）" },
+  quoteSentNotRecorded: {
+    th: "ส่งใบเสนอราคาได้ แต่ยังบันทึกลงหลังบ้านไม่สำเร็จ",
+    en: "The quotation was sent, but it couldn't be recorded for tracking yet",
+    zh: "报价单已发送，但尚未成功记录到后台",
+  },
+  quoteSentNotRecordedDesc: {
+    th: "กด “เริ่มติดตามงวด” ในแผงงานนี้ภายหลังได้",
+    en: "You can tap “Start tracking installments” in the job panel later",
+    zh: "稍后可在工作面板中点击“开始跟踪分期”",
+  },
+  quoteSent: { th: "ส่งใบเสนอราคาในแชทแล้ว", en: "Quotation sent in the chat", zh: "报价单已发送到聊天" },
+
+  // Quotation dialog: section summaries
+  corporate: { th: "นิติบุคคล", en: "Company", zh: "企业" },
+  individual: { th: "บุคคลธรรมดา", en: "Individual", zh: "个人" },
+  clientSummaryEmpty: {
+    th: "ชื่อลูกค้าที่จะแสดงบนเอกสาร",
+    en: "The client name shown on the document",
+    zh: "显示在文件上的客户名称",
+  },
+  itemCount: { th: "{n} รายการ", en: "{n} items", one: "{n} item", zh: "{n} 项" },
+  itemsSummaryEmpty: { th: "ชื่องาน รายการ และราคา", en: "Job title, items and prices", zh: "工作名称、项目和价格" },
+  timelineSummaryEmpty: { th: "ใส่วันส่งมอบงาน", en: "Add the delivery date", zh: "填写交付日期" },
+  notesSummaryEmpty: {
+    th: "เงื่อนไขที่ลูกค้าเห็น และโน้ตส่วนตัว",
+    en: "Terms the client sees, and private notes",
+    zh: "客户可见的条款与私人备注",
+  },
+  planIncomplete: { th: "รวม {total}% · ยังไม่ครบ 100%", en: "Total {total}% · not 100% yet", zh: "合计 {total}% · 尚未达到 100%" },
+  installmentCount: { th: "{n} งวด", en: "{n} installments", one: "{n} installment", zh: "{n} 期" },
+
+  // Quotation dialog: header and issuer
+  createQuote: { th: "สร้างใบเสนอราคา", en: "Create a quotation", zh: "创建报价单" },
+  createQuoteDescPaid: {
+    th: "กรอกข้อมูล เช็กพรีวิว แล้วส่งให้ลูกค้าในแชท",
+    en: "Fill it in, check the preview, then send it to your client in the chat",
+    zh: "填写信息、查看预览，然后在聊天中发送给客户",
+  },
+  createQuoteDescFree: {
+    th: "ทำใบเสนอราคาส่งลูกค้าในแชทได้ในไม่กี่นาที · เลขที่เอกสารออกให้อัตโนมัติ",
+    en: "Make a quotation and send it to your client in the chat within minutes · the document number is issued automatically",
+    zh: "几分钟内即可制作报价单并在聊天中发送给客户 · 文件编号自动生成",
+  },
+  continuedDraft: { th: "ทำต่อจากร่างล่าสุด", en: "Continuing from your last draft", zh: "从上次的草稿继续" },
+  startOver: { th: "เริ่มใหม่", en: "Start over", zh: "重新开始" },
+  issuedBy: { th: "ออกในนาม", en: "Issued by", zh: "开具方" },
+  noNameYet: { th: "ยังไม่มีชื่อ", en: "No name yet", zh: "尚未填写名称" },
+  hide: { th: "ซ่อน", en: "Hide", zh: "收起" },
+  viewInfo: { th: "ดูข้อมูล", en: "View details", zh: "查看信息" },
+  issuerIncomplete: {
+    th: "ข้อมูลผู้ออกเอกสารยังไม่ครบ ช่องที่ว่างจะขึ้นเป็น “—” บนเอกสาร",
+    en: "Your issuer details are incomplete. Empty fields show as “—” on the document.",
+    zh: "开具方信息尚不完整，空白项在文件上将显示为“—”",
+  },
+  fillIn: { th: "เติมข้อมูล", en: "Add details", zh: "补充信息" },
+  companyNameLabel: { th: "ชื่อบริษัท / นิติบุคคล", en: "Company / legal entity name", zh: "公司 / 企业名称" },
+  authorizedName: { th: "ชื่อผู้มีอำนาจ / ชื่อที่แสดง", en: "Authorised person / display name", zh: "授权人 / 显示名称" },
+  branch: { th: "สาขา", en: "Branch", zh: "分支机构" },
+  taxId: { th: "เลขผู้เสียภาษี", en: "Tax ID", zh: "税号" },
+  contactPerson: { th: "ผู้ติดต่อ", en: "Contact person", zh: "联系人" },
+  position: { th: "ตำแหน่ง", en: "Position", zh: "职位" },
+  fullName: { th: "ชื่อ-นามสกุล", en: "Full name", zh: "姓名" },
+  email: { th: "อีเมล", en: "Email", zh: "电子邮箱" },
+  phoneShort: { th: "โทร", en: "Phone", zh: "电话" },
+  address: { th: "ที่อยู่", en: "Address", zh: "地址" },
+  vatRegistered: { th: "จดทะเบียน VAT", en: "VAT registered", zh: "已登记 VAT" },
+  yes: { th: "ใช่", en: "Yes", zh: "是" },
+  no: { th: "ไม่ใช่", en: "No", zh: "否" },
+  editIssuer: { th: "แก้ไขข้อมูลผู้ออกเอกสาร", en: "Edit issuer details", zh: "编辑开具方信息" },
+
+  // Quotation dialog: client
+  client: { th: "ลูกค้า", en: "Client", zh: "客户" },
+  clientType: { th: "ประเภทลูกค้า", en: "Client type", zh: "客户类型" },
+  clientName: { th: "ชื่อลูกค้า", en: "Client name", zh: "客户名称" },
+  phone: { th: "เบอร์โทร", en: "Phone number", zh: "电话号码" },
+  optionalParen: { th: "(ไม่บังคับ)", en: "(optional)", zh: "（选填）" },
+  addressForDocs: { th: "ที่อยู่สำหรับออกเอกสาร", en: "Address for the document", zh: "用于开具文件的地址" },
+  companyNamePlaceholder: { th: "ชื่อบริษัท", en: "Company name", zh: "公司名称" },
+  taxId13: { th: "เลขผู้เสียภาษี 13 หลัก", en: "13-digit tax ID", zh: "13 位税号" },
+  addressPerCert: {
+    th: "ที่อยู่ตามหนังสือรับรองบริษัท",
+    en: "Address as on the company certificate",
+    zh: "公司证明文件上的地址",
+  },
+  contactNamePlaceholder: { th: "ชื่อผู้ติดต่อ", en: "Contact name", zh: "联系人姓名" },
+  positionPlaceholder: { th: "เช่น ฝ่ายจัดซื้อ", en: "e.g. Purchasing", zh: "例如：采购部" },
+
+  // Quotation dialog: job and price
+  jobAndPrice: { th: "งานและราคา", en: "Job and price", zh: "工作与价格" },
+  jobTitle: { th: "ชื่องาน", en: "Job title", zh: "工作名称" },
+  jobTitlePlaceholder: {
+    th: "เช่น ออกแบบโลโก้ + brand kit",
+    en: "e.g. Logo design + brand kit",
+    zh: "例如：Logo 设计 + brand kit",
+  },
+  items: { th: "รายการ", en: "Items", zh: "项目" },
+  currency: { th: "สกุลเงิน", en: "Currency", zh: "货币" },
+  description: { th: "รายละเอียด", en: "Description", zh: "说明" },
+  quantity: { th: "จำนวน", en: "Qty", zh: "数量" },
+  pricePerUnit: { th: "ราคา/หน่วย", en: "Unit price", zh: "单价" },
+  unitPrice: { th: "ราคาต่อหน่วย", en: "Unit price", zh: "单价" },
+  lineTotal: { th: "รวม", en: "Total", zh: "合计" },
+  itemPlaceholderFirst: { th: "เช่น ออกแบบโลโก้", en: "e.g. Logo design", zh: "例如：Logo 设计" },
+  itemNamePlaceholder: { th: "ชื่อรายการ", en: "Item name", zh: "项目名称" },
+  itemNameAria: { th: "ชื่อรายการที่ {n}", en: "Name of item {n}", zh: "第 {n} 项名称" },
+  removeItemAria: { th: "ลบรายการที่ {n}", en: "Remove item {n}", zh: "删除第 {n} 项" },
+  itemDetailPlaceholder: {
+    th: "รายละเอียดเพิ่มเติม (ไม่บังคับ)",
+    en: "More details (optional)",
+    zh: "更多说明（选填）",
+  },
+  itemDetailAria: { th: "รายละเอียดรายการที่ {n}", en: "Details of item {n}", zh: "第 {n} 项说明" },
+  itemQtyAria: { th: "จำนวน รายการที่ {n}", en: "Quantity of item {n}", zh: "第 {n} 项数量" },
+  addItem: { th: "เพิ่มรายการ", en: "Add item", zh: "添加项目" },
+  itemsSubtotal: { th: "ยอดรวมรายการ", en: "Items total", zh: "项目合计" },
+  discount: { th: "ส่วนลด", en: "Discount", zh: "折扣" },
+  discountUnit: { th: "หน่วยส่วนลด", en: "Discount unit", zh: "折扣单位" },
+  discountAmountAria: {
+    th: "ส่วนลดเป็นจำนวนเงิน ({symbol})",
+    en: "Discount as an amount ({symbol})",
+    zh: "按金额折扣（{symbol}）",
+  },
+  discountPercentAria: { th: "ส่วนลดเป็นเปอร์เซ็นต์", en: "Discount as a percentage", zh: "按百分比折扣" },
+  subtotalBeforeTax: { th: "ยอดรวมก่อนภาษี", en: "Total before tax", zh: "税前合计" },
+  wht3: { th: "หัก ณ ที่จ่าย 3%", en: "3% withholding tax", zh: "预扣税 3%" },
+  whtHint: {
+    th: "นิติบุคคลมักหัก 3% เมื่อจ่ายค่าบริการ",
+    en: "Companies usually withhold 3% when paying for services",
+    zh: "企业支付服务费时通常预扣 3%",
+  },
+  grandTotal: { th: "รวมทั้งสิ้น", en: "Grand total", zh: "总计" },
+  grandTotalAfterWht: {
+    th: "รวมทั้งสิ้น (หลังหัก ณ ที่จ่าย)",
+    en: "Grand total (after withholding tax)",
+    zh: "总计（预扣税后）",
+  },
+  depositDue: { th: "มัดจำที่ต้องชำระ ({pct}%)", en: "Deposit to pay ({pct}%)", zh: "需支付的定金（{pct}%）" },
+  fxHint: {
+    th: "พิมพ์ราคาเป็น {symbol} ได้เลย ระบบจะแปลงเป็นบาทให้",
+    en: "Type prices in {symbol} — they are converted to baht for you",
+    zh: "可直接以 {symbol} 输入价格，系统会自动换算为泰铢",
+  },
+  rateAsOf: { th: "อัตรา {date}", en: "Rate {date}", zh: "汇率 {date}" },
+  paymentMode: { th: "รูปแบบการชำระ", en: "Payment type", zh: "付款方式" },
+  fullAmount: { th: "เต็มจำนวน", en: "Full amount", zh: "全额" },
+  depositPercentOption: { th: "มัดจำ %", en: "Deposit %", zh: "定金 %" },
+  orCustom: { th: "หรือกำหนดเอง", en: "or custom", zh: "或自定义" },
+  customDepositAria: {
+    th: "มัดจำกำหนดเอง (เปอร์เซ็นต์)",
+    en: "Custom deposit (percent)",
+    zh: "自定义定金（百分比）",
+  },
+
+  // Quotation dialog: timeline
+  timelineSectionPaid: { th: "ไทม์ไลน์และงวดงาน", en: "Timeline and installments", zh: "时间线与分期" },
+  timelineSectionFree: { th: "ขั้นตอนและวันส่งมอบ", en: "Steps and delivery date", zh: "步骤与交付日期" },
+  roleStart: { th: "เริ่มงาน", en: "Start", zh: "开始" },
+  roleDelivery: { th: "ส่งมอบ", en: "Delivery", zh: "交付" },
+  roleStep: { th: "ขั้นที่ {n}", en: "Step {n}", zh: "第 {n} 步" },
+  stepNameAria: { th: "ชื่อ{role}", en: "Name: {role}", zh: "{role}名称" },
+  removeStepAria: { th: "ลบ{role}", en: "Remove: {role}", zh: "删除{role}" },
+  stepDateAria: { th: "วันที่{role}", en: "Date: {role}", zh: "{role}日期" },
+  installmentNamePlaceholder: { th: "ชื่องวด", en: "Installment name", zh: "分期名称" },
+  stepNamePlaceholder: { th: "ชื่อขั้นตอน", en: "Step name", zh: "步骤名称" },
+  noDateStartsToday: { th: "ไม่ใส่วันที่ = เริ่มวันนี้", en: "No date = starts today", zh: "不填日期 = 今天开始" },
+  addInstallment: { th: "เพิ่มงวด", en: "Add installment", zh: "添加分期" },
+  addStep: { th: "เพิ่มขั้นตอน", en: "Add step", zh: "添加步骤" },
+  showAllSteps: {
+    th: "แสดงทุกขั้นตอนบนใบเสนอราคา",
+    en: "Show every step on the quotation",
+    zh: "在报价单上显示所有步骤",
+  },
+  showAllStepsHint: {
+    th: "ถ้าไม่เลือก เอกสารจะแสดงแค่วันส่งมอบ",
+    en: "If unticked, the document only shows the delivery date",
+    zh: "若不勾选，文件仅显示交付日期",
+  },
+
+  // Quotation dialog: payment plan
+  payment: { th: "การชำระเงิน", en: "Payment", zh: "付款" },
+  planHint: {
+    th: "แบ่งจ่ายเป็นงวดได้ ระบบคำนวณยอดแต่ละงวดให้ แล้วออกใบแจ้งหนี้/ใบเสร็จทีละงวดจากแชทได้เลย",
+    en: "Split the payment into installments. Each amount is worked out for you, and you can issue an invoice / receipt per installment from the chat.",
+    zh: "可分期付款。系统会计算每期金额，之后可在聊天中逐期开具账单/收据。",
+  },
+  planPresetsAria: { th: "รูปแบบการแบ่งจ่าย", en: "Payment split", zh: "分期方式" },
+  custom: { th: "กำหนดเอง", en: "Custom", zh: "自定义" },
+  installmentNameAria: { th: "ชื่องวดที่ {n}", en: "Name of installment {n}", zh: "第 {n} 期名称" },
+  installmentNameExample: { th: "เช่น มัดจำก่อนเริ่มงาน", en: "e.g. Deposit before starting", zh: "例如：开工前定金" },
+  installmentPercentAria: { th: "เปอร์เซ็นต์งวดที่ {n}", en: "Percentage of installment {n}", zh: "第 {n} 期百分比" },
+  removeInstallmentAria: { th: "ลบงวดที่ {n}", en: "Remove installment {n}", zh: "删除第 {n} 期" },
+  payWhen: { th: "จ่ายเมื่อ", en: "Pay at", zh: "付款时点" },
+  stepFallback: { th: "ขั้นตอน", en: "Step", zh: "步骤" },
+  afterWhtShort: { th: "(หัก ณ ที่จ่ายแล้ว)", en: "(after withholding tax)", zh: "（已预扣税）" },
+  planTotalLabel: { th: "รวม {total}%", en: "Total {total}%", zh: "合计 {total}%" },
+  planShort: { th: "ขาดอีก {n}%", en: "{n}% to go", zh: "还差 {n}%" },
+  validUntil: { th: "ใบเสนอราคามีผลถึง", en: "Quotation valid until", zh: "报价单有效期至" },
+
+  // Quotation dialog: notes, preview and footer
+  notes: { th: "หมายเหตุ", en: "Notes", zh: "备注" },
+  clientTerms: { th: "เงื่อนไขที่ลูกค้าเห็น", en: "Terms the client sees", zh: "客户可见的条款" },
+  commonTermsAria: { th: "เงื่อนไขที่ใช้บ่อย", en: "Common terms", zh: "常用条款" },
+  clientTermsPlaceholder: {
+    th: "กดเลือกด้านบน หรือพิมพ์เงื่อนไขเอง",
+    en: "Tap one above, or type your own terms",
+    zh: "点击上方选项，或自行输入条款",
+  },
+  privateNote: { th: "โน้ตส่วนตัว", en: "Private note", zh: "私人备注" },
+  privateNoteHint: {
+    th: "เห็นแค่คุณ ไม่แสดงบนเอกสาร",
+    en: "Only you see this. It isn't shown on the document.",
+    zh: "仅自己可见，不会显示在文件上",
+  },
+  privateNotePlaceholder: {
+    th: "เช่น ต้นทุนจริง · คุยส่วนลดไว้ · นัดโอนมัดจำวันไหน",
+    en: "e.g. Real cost · discount discussed · when the deposit is due",
+    zh: "例如：实际成本 · 已谈好的折扣 · 定金转账日期",
+  },
+  privateNoteHidden: {
+    th: "โน้ตส่วนตัว (ลูกค้าไม่เห็น)",
+    en: "Private note (your client can't see it)",
+    zh: "私人备注（客户不可见）",
+  },
+  previewQuote: { th: "พรีวิวใบเสนอราคา", en: "Quotation preview", zh: "报价单预览" },
+  previewAsClient: {
+    th: "พรีวิว · ลูกค้าจะเห็นแบบนี้",
+    en: "Preview · this is what your client sees",
+    zh: "预览 · 客户将看到的样子",
+  },
+  preview: { th: "พรีวิว", en: "Preview", zh: "预览" },
+  reviewAndSend: { th: "ตรวจและส่ง", en: "Review and send", zh: "检查并发送" },
+  sendingMeansAccept: { th: "การส่งถือว่ายอมรับ", en: "By sending you accept the", zh: "发送即表示接受" },
+  paymentPolicyShort: { th: "นโยบายชำระเงิน/คืนเงิน", en: "Payment / Refund Policy", zh: "付款/退款政策" },
+  and: { th: "และ", en: "and the", zh: "和" },
+  serviceAgreementShort: { th: "ข้อตกลงบริการ", en: "Service Agreement", zh: "服务协议" },
+  freeLaunchNote: {
+    th: "SAMECOR ช่วยทำเอกสาร ไม่ได้รับหรือถือเงิน ลูกค้าชำระกับคุณโดยตรงตามที่ตกลงในแชท",
+    en: "SAMECOR helps with the paperwork and doesn't receive or hold money. Your client pays you directly, as agreed in the chat.",
+    zh: "SAMECOR 仅协助制作文件，不收取也不保管款项。客户按聊天中的约定直接向你付款。",
+  },
+  checkBeforeSend: { th: "เช็กอีกครั้งก่อนส่ง", en: "Check once more before sending", zh: "发送前再检查一次" },
+  confirmSendDesc: {
+    th: "ถ้าข้อมูลถูกต้อง กดส่งได้เลย ลูกค้าจะได้รับในแชทนี้",
+    en: "If everything is right, send it. Your client gets it in this chat.",
+    zh: "信息无误即可发送，客户将在此聊天中收到",
+  },
+  previewDesc: {
+    th: "หน้าตาเอกสารที่ลูกค้าจะเห็นในแชท",
+    en: "How the document looks to your client in the chat",
+    zh: "客户在聊天中看到的文件样式",
+  },
+  backToEditShort: { th: "กลับไปแก้", en: "Back to edit", zh: "返回修改" },
+  backToEdit: { th: "กลับไปแก้ไข", en: "Back to editing", zh: "返回编辑" },
+  sending: { th: "กำลังส่ง...", en: "Sending...", zh: "发送中..." },
+  sendInChat: { th: "ส่งในแชท", en: "Send in chat", zh: "在聊天中发送" },
+  draft: { th: "ร่าง", en: "Draft", zh: "草稿" },
+
+  // Quotation section header
+  optional: { th: "ไม่บังคับ", en: "Optional", zh: "选填" },
+  sectionDone: { th: "กรอกครบแล้ว", en: "Complete", zh: "已填写完整" },
+  sectionIncomplete: { th: "ยังกรอกไม่ครบ", en: "Not complete yet", zh: "尚未填写完整" },
+} satisfies Dict;
+
+export type ChatHireKey = keyof typeof CHAT_HIRE;
+
+/**
+ * Dates on offer / hire cards (YYYY-MM-DD). Thai keeps the short Buddhist year it always had ("13 ก.ค. 69");
+ * English and Chinese show the full year ("13 Jul 2026", "2026年7月13日").
+ */
+export function formatHireDate(ymd?: string | null, lang: Lang = getLang()): string {
+  if (!ymd) return "—";
+  const d = new Date(`${ymd}T12:00:00`);
+  if (Number.isNaN(d.getTime())) return "—";
+  return formatDate(
+    d,
+    { day: "numeric", month: lang === "zh" ? "long" : "short", year: lang === "th" ? "2-digit" : "numeric" },
+    lang,
+  );
+}

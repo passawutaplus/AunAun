@@ -7,6 +7,8 @@ import {
   HIRE_CLIENT_ACCEPT_REJECT_TEXT,
   HIRE_CLIENT_ASK_CONTINUE_TEXT,
 } from "@/lib/hireRejectChat";
+import { useT } from "@/lib/i18n";
+import { CHAT_HIRE } from "@/lib/i18n/chatHire";
 
 export type HireRejectChoiceActions = {
   canRespond: boolean;
@@ -23,13 +25,14 @@ type Props = {
 };
 
 const HireRejectChoiceCard = ({ payload, actions }: Props) => {
+  const tHire = useT(CHAT_HIRE);
   const body = [payload.reasonLabel, payload.note?.trim()].filter(Boolean).join("\n\n");
 
   return (
     <ChatCardShell
       tone="danger"
       icon={XCircle}
-      title="ไม่สนใจคำขอจ้าง"
+      title={tHire("hireDeclinedTitle")}
       footer={
         actions?.canRespond ? (
           <div className="flex flex-col gap-2">
