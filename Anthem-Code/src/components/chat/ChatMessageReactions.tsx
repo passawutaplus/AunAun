@@ -1,3 +1,5 @@
+import { useT } from "@/lib/i18n";
+import { CHAT } from "@/lib/i18n/chat";
 import { useEffect, useState } from "react";
 import { SmilePlus } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -14,6 +16,7 @@ type Props = {
 };
 
 export function ChatMessageReactions({ messageId, userId }: Props) {
+  const tChat = useT(CHAT);
   const [tallies, setTallies] = useState<ReactionTally[]>([]);
   const [open, setOpen] = useState(false);
 
@@ -54,7 +57,7 @@ export function ChatMessageReactions({ messageId, userId }: Props) {
       <div className="relative">
         <button
           type="button"
-          aria-label="เพิ่มอีโมจิ"
+          aria-label={tChat("addEmoji")}
           onClick={() => setOpen((v) => !v)}
           className="rounded-full p-1 text-muted-foreground hover:text-foreground hover:bg-secondary"
         >

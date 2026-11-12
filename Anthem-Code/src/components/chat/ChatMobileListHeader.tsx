@@ -1,3 +1,5 @@
+import { useT } from "@/lib/i18n";
+import { CHAT } from "@/lib/i18n/chat";
 import { useEffect, useRef, useState } from "react";
 import { Check, ChevronDown, Plus, Search, X } from "lucide-react";
 import { BackButton } from "@/components/ui/BackButton";
@@ -26,9 +28,11 @@ const ICON_BTN =
 
 /** Phone chat list: one row — back, title, type filter, search icon (expands to a field), tour. */
 export function ChatMobileListHeader({ tab, onTabChange, search, onSearchChange, onTour, onCreateGroup }: Props) {
+  const tChat = useT(CHAT);
   const [searching, setSearching] = useState(() => search.trim().length > 0);
   const inputRef = useRef<HTMLInputElement>(null);
   const active = CHAT_FILTER_TABS.find((t) => t.key === tab) ?? CHAT_FILTER_TABS[0];
+  const activeLabel = active.labelKey ? tChat(active.labelKey) : active.label;
 
   useEffect(() => {
     if (searching) inputRef.current?.focus();
@@ -44,14 +48,14 @@ export function ChatMobileListHeader({ tab, onTabChange, search, onSearchChange,
             type="search"
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="ค้นหาชื่อหรืองาน…"
-            aria-label="ค้นหาแชท"
+            placeholder={tChat("searchPlaceholder")}
+            aria-label={tChat("searchChats")}
             className="h-10 w-full rounded-full border border-border bg-background pl-9 pr-3 text-base outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
         </div>
         <button
           type="button"
-          aria-label="ปิดการค้นหา"
+          aria-label={tChat("closeSearch")}
           className={ICON_BTN}
           onClick={() => {
             onSearchChange("");
@@ -66,36 +70,36 @@ export function ChatMobileListHeader({ tab, onTabChange, search, onSearchChange,
 
   return (
     <header className="flex h-14 shrink-0 items-center gap-1.5 border-b border-border bg-card px-3 md:hidden">
-      <BackButton label="กลับหน้าก่อนหน้า" />
+      <BackButton label={tChat("back")} />
       <h1 className="ml-1 text-2xl font-semibold tracking-tight text-foreground">Chat</h1>
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            aria-label={`ประเภทบทสนทนา: ${active.label}`}
+            aria-label={tChat("conversationTypeIs", { label: activeLabel })}
             className="ml-1 inline-flex h-8 shrink-0 items-center gap-1 rounded-full border border-border bg-background px-3 text-xs font-medium text-foreground transition-colors hover:bg-muted"
           >
             {active.icon ? <active.icon className="h-3.5 w-3.5" aria-hidden /> : null}
-            {active.label}
+            {activeLabel}
             <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-44 rounded-xl">
-          {CHAT_FILTER_TABS.map(({ key, label, icon: Icon }) => (
+          {CHAT_FILTER_TABS.map(({ key, label, labelKey, icon: Icon }) => (
             <DropdownMenuItem key={key} onClick={() => onTabChange(key)} className="gap-2 rounded-lg">
               {Icon ? <Icon className="h-4 w-4" aria-hidden /> : <span className="h-4 w-4" aria-hidden />}
-              <span className="flex-1">{label}</span>
+              <span className="flex-1">{labelKey ? tChat(labelKey) : label}</span>
               <Check className={cn("h-4 w-4", key === tab ? "opacity-100" : "opacity-0")} aria-hidden />
             </DropdownMenuItem>
           ))}
         </DropdownMenuContent>
       </DropdownMenu>
       <div className="ml-auto flex items-center gap-0.5">
-        <button type="button" aria-label="ค้นหาแชท" className={ICON_BTN} onClick={() => setSearching(true)}>
+        <button type="button" aria-label={tChat("searchChats")} className={ICON_BTN} onClick={() => setSearching(true)}>
           <Search className="h-5 w-5" aria-hidden />
         </button>
         {onCreateGroup ? (
-          <button type="button" aria-label="สร้างกลุ่มแชท" className={ICON_BTN} onClick={onCreateGroup}>
+          <button type="button" aria-label={tChat("createGroup")} className={ICON_BTN} onClick={onCreateGroup}>
             <Plus className="h-5 w-5" aria-hidden />
           </button>
         ) : null}

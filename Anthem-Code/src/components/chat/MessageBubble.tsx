@@ -1,3 +1,5 @@
+import { formatShortDate, getLang, useT } from "@/lib/i18n";
+import { CHAT } from "@/lib/i18n/chat";
 import { useState } from "react";
 import { ChatEventCard } from "@/components/chat/ChatEventCard";
 import { SPONSOR_OFFER_HEADER, parseEventLink, stripEventLinkLine } from "@/lib/chat/eventLink";
@@ -7,7 +9,6 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { format, isToday, isYesterday } from "date-fns";
-import { th } from "date-fns/locale";
 import {
   AlarmClock,
   CircleCheck,
@@ -124,8 +125,9 @@ function isImageAttachmentPath(refUrl: string): boolean {
 }
 
 function ChatAttachmentFile({ refUrl, fileName }: { refUrl: string; fileName: string }) {
+  const tChat = useT(CHAT);
   const src = useSignedStorageUrl(refUrl);
-  const label = fileName.trim() || refUrl.split("/").pop() || "ไฟล์แนบ";
+  const label = fileName.trim() || refUrl.split("/").pop() || tChat("attachment");
   return (
     <a
       href={src || undefined}
@@ -139,7 +141,7 @@ function ChatAttachmentFile({ refUrl, fileName }: { refUrl: string; fileName: st
       </span>
       <span className="min-w-0 flex-1">
         <span className="block truncate text-sm font-medium text-foreground">{label}</span>
-        <span className="block text-[11px] text-muted-foreground">แตะเพื่อเปิด / ดาวน์โหลด</span>
+        <span className="block text-[11px] text-muted-foreground">{tChat("tapToOpen")}</span>
       </span>
       <ExternalLink className="h-3.5 w-3.5 shrink-0 opacity-60" />
     </a>
@@ -256,6 +258,7 @@ const MessageBubble = ({
   onScrollToMessage,
   highlight = false,
 }: Props) => {
+  const tChat = useT(CHAT);
   const [reportOpen, setReportOpen] = useState(false);
   const { user } = useAuth();
   const hideReceipts = loadHideReadReceipts(user?.id);
@@ -622,7 +625,7 @@ const MessageBubble = ({
         )}
       >
         <span className={cn("block text-[10px] font-semibold truncate", mine ? "opacity-90" : "text-primary")}>
-          {getSenderLabel?.(replyTo.sender_id) ?? "ข้อความเดิม"}
+          {getSenderLabel?.(replyTo.sender_id) ?? tChat("originalMessage")}
         </span>
         <span className={cn("block text-[11px] truncate mt-0.5", mine ? "opacity-75" : "text-muted-foreground")}>
           {replyPreviewText(replyTo)}
@@ -633,15 +636,16 @@ const MessageBubble = ({
   const copyMessage = async () => {
     try {
       await copyToClipboard(copyText);
-      toast.success("คัดลอกแล้ว");
+      toast.success(tChat("copied"));
     } catch {
-      toast.error("คัดลอกไม่สำเร็จ");
+      toast.error(tChat("copyFailed"));
     }
   };
 
   const translateMessage = () => {
     const q = encodeURIComponent(copyText.slice(0, 900));
-    window.open(`https://translate.google.com/?sl=auto&tl=th&text=${q}`, "_blank", "noopener,noreferrer");
+    const target = getLang() === "zh" ? "zh-CN" : getLang();
+    window.open(`https://translate.google.com/?sl=auto&tl=${target}&text=${q}`, "_blank", "noopener,noreferrer");
   };
 
   // Legacy plain "ยอมรับข้อเสนอ …" bubbles — hide; paid + work-start cards replace them.
@@ -679,7 +683,7 @@ const MessageBubble = ({
             variant="ghost"
             size="icon"
             className="h-7 w-7 rounded-full shrink-0 text-muted-foreground hover:text-foreground"
-            aria-label="เมนูข้อความ"
+            aria-label={tChat("messageMenu")}
           >
             <MoreVertical className="w-4 h-4" />
           </Button>
@@ -688,41 +692,41 @@ const MessageBubble = ({
           {onReply ? (
             <DropdownMenuItem onClick={() => onReply(message)}>
               <Reply className="w-4 h-4 mr-2" />
-              ตอบกลับ
+              {tChat("reply")}
             </DropdownMenuItem>
           ) : null}
           {onAddTask && message.message_type === "text" && message.content?.trim() ? (
             <DropdownMenuItem onClick={() => onAddTask(message)}>
               <ListPlus className="w-4 h-4 mr-2" />
-              เพิ่มเป็น Task
+              {tChat("addAsTask")}
             </DropdownMenuItem>
           ) : null}
           <DropdownMenuItem onClick={() => void copyMessage()}>
             <Copy className="w-4 h-4 mr-2" />
-            คัดลอก
+            {tChat("copy")}
           </DropdownMenuItem>
           {showTranslate ? (
             <DropdownMenuItem onClick={translateMessage}>
               <Languages className="w-4 h-4 mr-2" />
-              แปลภาษา
+              {tChat("translate")}
             </DropdownMenuItem>
           ) : null}
           {onAnnounce ? (
             <DropdownMenuItem onClick={() => onAnnounce(message, copyText)}>
               <Megaphone className="w-4 h-4 mr-2" />
-              ประกาศ
+              {tChat("announce")}
             </DropdownMenuItem>
           ) : null}
           {mine && onUnsend && canUnsend ? (
             <DropdownMenuItem onClick={() => onUnsend(message)} className="text-destructive">
               <Undo2 className="w-4 h-4 mr-2" />
-              ยกเลิกการส่ง
+              {tChat("unsend")}
             </DropdownMenuItem>
           ) : null}
           {!mine ? (
             <DropdownMenuItem onClick={() => setReportOpen(true)}>
               <Flag className="w-4 h-4 mr-2" />
-              รายงาน
+              {tChat("report")}
             </DropdownMenuItem>
           ) : null}
         </DropdownMenuContent>
@@ -740,7 +744,7 @@ const MessageBubble = ({
       <div className={cn("max-w-[78%] md:max-w-[60%]")}>
         {deleted ? (
           <div className="px-3.5 py-2 rounded-2xl text-sm italic text-muted-foreground bg-muted/60">
-            ข้อความถูกยกเลิก
+            {tChat("messageUnsent")}
           </div>
         ) : (
           <>
@@ -783,7 +787,7 @@ const MessageBubble = ({
                     <img loading="lazy" decoding="async" src={project.cover_url} alt="" className="w-full max-h-40 object-cover" />
                   ) : (
                     <div className="h-24 bg-muted flex items-center justify-center text-xs text-muted-foreground">
-                      ไม่มีรูปปก
+                      {tChat("noCover")}
                     </div>
                   )}
                   <div className={cn("px-3 py-2 space-y-0.5", mine ? "bg-black/10" : "bg-card")}>
@@ -829,7 +833,7 @@ const MessageBubble = ({
                       </div>
                     )}
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold truncate">{profileCard.display_name ?? "ครีเอเตอร์"}</p>
+                      <p className="text-sm font-semibold truncate">{profileCard.display_name ?? tChat("creator")}</p>
                       {profileCard.role && (
                         <p className="text-xs text-muted-foreground truncate">{profileCard.role}</p>
                       )}
@@ -854,17 +858,17 @@ const MessageBubble = ({
                   {objectCard.cover_url ? (
                     <img src={objectCard.cover_url} alt="" className="h-36 w-full object-cover" />
                   ) : (
-                    <div className="flex h-16 items-center justify-center bg-muted text-xs text-muted-foreground">สินค้า</div>
+                    <div className="flex h-16 items-center justify-center bg-muted text-xs text-muted-foreground">{tChat("product")}</div>
                   )}
                   <div className={cn("space-y-0.5 px-3 py-2", mine ? "bg-black/10" : "bg-card")}>
-                    <p className={cn("text-[10px]", mine ? "opacity-75" : "text-muted-foreground")}>สินค้า</p>
+                    <p className={cn("text-[10px]", mine ? "opacity-75" : "text-muted-foreground")}>{tChat("product")}</p>
                     <div className="flex items-center justify-between gap-2">
                       <span className="truncate text-sm font-medium">{objectCard.title}</span>
                       <span className="shrink-0 text-sm">{formatBaht(objectCard.price_thb)}</span>
                     </div>
                     {objectCard.option || objectCard.qty ? (
                       <p className={cn("truncate text-xs", mine ? "opacity-80" : "text-muted-foreground")}>
-                        {[objectCard.option, objectCard.qty ? `${objectCard.qty} ชิ้น` : ""].filter(Boolean).join(" · ")}
+                        {[objectCard.option, objectCard.qty ? tChat("qtyPieces", { n: objectCard.qty }) : ""].filter(Boolean).join(" · ")}
                       </p>
                     ) : null}
                   </div>
@@ -1169,7 +1173,7 @@ const MessageBubble = ({
           <span className="inline-flex items-center gap-1">
             <span>{time}</span>
             {alignMine && !deleted && !hireWorkStart && !hideReceipts && (
-              <span>{message.read_at ? "อ่านแล้ว" : "ส่งแล้ว"}</span>
+              <span>{tChat(message.read_at ? "read" : "sent")}</span>
             )}
           </span>
           {!alignMine ? messageMenu : null}
@@ -1208,13 +1212,13 @@ const MessageBubble = ({
         {onReply && !deleted && (
           <ContextMenuItem onClick={() => onReply(message)}>
             <Reply className="w-4 h-4 mr-2" />
-            ตอบกลับ
+            {tChat("reply")}
           </ContextMenuItem>
         )}
         {onUnsend && canUnsend && (
           <ContextMenuItem onClick={() => onUnsend(message)} className="text-destructive">
             <Undo2 className="w-4 h-4 mr-2" />
-            ยกเลิกการส่ง
+            {tChat("unsend")}
           </ContextMenuItem>
         )}
       </ContextMenuContent>
@@ -1223,8 +1227,9 @@ const MessageBubble = ({
 };
 
 export const DateSeparator = ({ date }: { date: string }) => {
+  const tChat = useT(CHAT);
   const d = new Date(date);
-  const label = isToday(d) ? "วันนี้" : isYesterday(d) ? "เมื่อวาน" : format(d, "d MMM yyyy", { locale: th });
+  const label = isToday(d) ? tChat("today") : isYesterday(d) ? tChat("yesterday") : formatShortDate(date);
   return (
     <div className="flex justify-center my-3">
       <span className="text-[10px] text-muted-foreground bg-muted px-3 py-1 rounded-full">{label}</span>

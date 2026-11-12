@@ -1,3 +1,5 @@
+import { useT } from "@/lib/i18n";
+import { CHAT } from "@/lib/i18n/chat";
 import { useRef, useState, useEffect } from "react";
 import { Send, Image as ImageIcon, Loader2, X, Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -83,6 +85,7 @@ const ChatComposer = ({
   onClearReply,
   lockedHint = null,
 }: Props) => {
+  const tChat = useT(CHAT);
   const [text, setText] = useState("");
   const [uploading, setUploading] = useState<"image" | "file" | null>(null);
   const [dragOver, setDragOver] = useState(false);
@@ -100,10 +103,10 @@ const ChatComposer = ({
 
   const placeholder =
     kind === "hire"
-      ? "พิมพ์ข้อความถึงลูกค้าอย่างสุภาพ…"
+      ? tChat("placeholderHire")
       : kind === "group" || kind === "studio"
-        ? "ส่งข้อความถึงกลุ่ม…"
-        : "คุยเล่นไอเดียกันต่อได้เลย…";
+        ? tChat("placeholderGroup")
+        : tChat("placeholderCollab");
 
   const accentRing =
     kind === "hire"
@@ -126,7 +129,7 @@ const ChatComposer = ({
     if (hasProfanity) {
       toast.warning(PROFANITY_WARNING, {
         action: {
-          label: "กฎชุมชน",
+          label: tChat("communityRules"),
           onClick: () => {
             window.location.href = COMMUNITY_GUIDELINES_PATH;
           },
@@ -143,17 +146,17 @@ const ChatComposer = ({
       setText("");
       onClearReply?.();
     } catch (e: unknown) {
-      toast.error(userFacingError(e, "ส่งไม่สำเร็จ"));
+      toast.error(userFacingError(e, tChat("sendFailed")));
     }
   };
 
   const onAttachImage = async (file: File) => {
     if (!CHAT_IMAGE_ACCEPT.split(",").includes(file.type) && !HEIC_NAME.test(file.name)) {
-      toast.error("รองรับเฉพาะ JPG, PNG, WebP หรือ HEIC");
+      toast.error(tChat("imageTypes"));
       return;
     }
     if (file.size > CHAT_IMAGE_MAX_BYTES) {
-      toast.error(`รูปใหญ่เกินไป — สูงสุด ${IMAGE_UPLOAD_MAX_INPUT_MB} MB`);
+      toast.error(tChat("imageTooLarge", { mb: IMAGE_UPLOAD_MAX_INPUT_MB }));
       return;
     }
     abortRef.current?.abort();
@@ -187,7 +190,7 @@ const ChatComposer = ({
     } catch (e: unknown) {
       if (ac.signal.aborted) return;
       setFailedFile(file);
-      toast.error(userFacingError(e, "อัปโหลดไม่สำเร็จ"));
+      toast.error(userFacingError(e, tChat("uploadFailed")));
     } finally {
       if (!ac.signal.aborted) {
         setUploading(null);
@@ -198,16 +201,16 @@ const ChatComposer = ({
 
   const onAttachFile = async (file: File) => {
     if (file.type.startsWith("image/") || file.type.startsWith("video/")) {
-      toast.error("รูปและวิดีโอใช้ปุ่มรูปภาพทางขวา");
+      toast.error(tChat("useImageButton"));
       return;
     }
     const ext = fileExt(file.name);
     if (!ext || !CHAT_FILE_EXTS.has(ext)) {
-      toast.error("รองรับ PDF, ZIP, Word, Excel, PowerPoint, TXT, CSV, ฟอนต์");
+      toast.error(tChat("fileTypes"));
       return;
     }
     if (file.size > CHAT_FILE_MAX_BYTES) {
-      toast.error("ไฟล์ใหญ่เกินไป — สูงสุด 25 MB");
+      toast.error(tChat("fileTooLarge"));
       return;
     }
     abortRef.current?.abort();
@@ -237,12 +240,12 @@ const ChatComposer = ({
         replyToId: replyTo?.id,
       });
       onClearReply?.();
-      toast.success("ส่งไฟล์แล้ว");
+      toast.success(tChat("fileSent"));
       setUploadProgress(100);
     } catch (e: unknown) {
       if (ac.signal.aborted) return;
       setFailedFile(file);
-      toast.error(userFacingError(e, "อัปโหลดไฟล์ไม่สำเร็จ"));
+      toast.error(userFacingError(e, tChat("fileUploadFailed")));
     } finally {
       if (!ac.signal.aborted) {
         setUploading(null);
@@ -300,7 +303,7 @@ const ChatComposer = ({
           <div className="w-1 shrink-0 bg-primary" />
           <div className="flex-1 min-w-0 py-2 pr-1">
             <span className="text-[11px] font-semibold text-primary block truncate">
-              {replyToSenderName ?? "ตอบกลับ"}
+              {replyToSenderName ?? tChat("reply")}
             </span>
             <p className="text-xs text-muted-foreground truncate mt-0.5">
               {replyPreviewText(replyTo)}
@@ -341,8 +344,8 @@ const ChatComposer = ({
           className="rounded-full shrink-0"
           onClick={() => fileRef.current?.click()}
           disabled={busy}
-          aria-label="แนบไฟล์จากเครื่อง"
-          title="แนบไฟล์ (PDF, ZIP, เอกสาร · สูงสุด 25 MB)"
+          aria-label={tChat("attachFile")}
+          title={tChat("attachFileTitle")}
         >
           {uploading === "file" ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -357,8 +360,8 @@ const ChatComposer = ({
           className="rounded-full shrink-0"
           onClick={() => imageRef.current?.click()}
           disabled={busy}
-          aria-label="แนบรูป"
-          title={`แนบรูป JPG/PNG/WebP/HEIC · สูงสุด ${IMAGE_UPLOAD_MAX_INPUT_MB} MB (ย่อให้อัตโนมัติ)`}
+          aria-label={tChat("attachImage")}
+          title={tChat("attachImageTitle", { mb: IMAGE_UPLOAD_MAX_INPUT_MB })}
         >
           {uploading === "image" ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -389,7 +392,7 @@ const ChatComposer = ({
           onClick={() => void submit()}
           disabled={!text.trim() || busy}
           className={cn("rounded-full shrink-0", sendBtn)}
-          aria-label="ส่งข้อความ"
+          aria-label={tChat("sendMessage")}
         >
           <Send className="w-4 h-4" />
         </Button>
@@ -408,7 +411,7 @@ const ChatComposer = ({
               setUploadProgress(null);
             }}
           >
-            ยกเลิก
+            {tChat("cancel")}
           </button>
         </div>
       ) : null}
@@ -423,7 +426,7 @@ const ChatComposer = ({
             else void onAttachFile(f);
           }}
         >
-          อัปโหลดไม่สำเร็จ — ลองใหม่
+          {tChat("uploadFailedRetry")}
         </button>
       ) : null}
     </div>

@@ -1,3 +1,5 @@
+import { useT } from "@/lib/i18n";
+import { CHAT, type ChatKey } from "@/lib/i18n/chat";
 import { useMemo, useState } from "react";
 import { FileText, ImageIcon, Play } from "lucide-react";
 import { useSignedStorageUrl } from "@/hooks/useSignedStorageUrl";
@@ -22,16 +24,17 @@ function chatMediaKind(item: ChatMediaItem): MediaKind {
   return "file";
 }
 
-const FILTERS: { id: Filter; label: string }[] = [
-  { id: "all", label: "ทั้งหมด" },
-  { id: "image", label: "ภาพ" },
-  { id: "video", label: "วิดีโอ" },
-  { id: "file", label: "ไฟล์" },
+const FILTERS: { id: Filter; label: ChatKey }[] = [
+  { id: "all", label: "mediaAll" },
+  { id: "image", label: "mediaImage" },
+  { id: "video", label: "mediaVideo" },
+  { id: "file", label: "mediaFile" },
 ];
 
 function MediaTile({ item, kind }: { item: ChatMediaItem; kind: MediaKind }) {
+  const tChat = useT(CHAT);
   const src = useSignedStorageUrl(item.url);
-  const label = item.name?.trim() || item.url.split("/").pop()?.split("?")[0] || "ไฟล์แนบ";
+  const label = item.name?.trim() || item.url.split("/").pop()?.split("?")[0] || tChat("attachment");
   const base = "group relative block overflow-hidden rounded-lg bg-muted transition-opacity hover:opacity-90";
 
   if (kind === "file") {
@@ -71,6 +74,7 @@ function MediaTile({ item, kind }: { item: ChatMediaItem; kind: MediaKind }) {
 
 /** Every image, video and file sent in this chat, newest first, with type filters. */
 export function ChatMediaGallery({ items }: { items: ChatMediaItem[] }) {
+  const tChat = useT(CHAT);
   const [filter, setFilter] = useState<Filter>("all");
   const typed = useMemo(() => items.map((item) => ({ item, kind: chatMediaKind(item) })), [items]);
   const counts = useMemo(() => {
@@ -84,14 +88,14 @@ export function ChatMediaGallery({ items }: { items: ChatMediaItem[] }) {
     return (
       <div className="py-8 text-center text-muted-foreground">
         <ImageIcon className="mx-auto mb-2 h-8 w-8 opacity-40" aria-hidden />
-        <p className="text-sm">ยังไม่มีรูป วิดีโอ หรือไฟล์ในแชทนี้</p>
+        <p className="text-sm">{tChat("mediaEmpty")}</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap gap-1.5" role="group" aria-label="กรองมีเดีย">
+      <div className="flex flex-wrap gap-1.5" role="group" aria-label={tChat("mediaFilter")}>
         {FILTERS.filter((f) => f.id === "all" || counts[f.id] > 0).map((f) => (
           <button
             key={f.id}
@@ -105,7 +109,7 @@ export function ChatMediaGallery({ items }: { items: ChatMediaItem[] }) {
                 : "border-border text-muted-foreground hover:bg-muted",
             )}
           >
-            {f.label} <span className="tabular-nums opacity-70">{counts[f.id]}</span>
+            {tChat(f.label)} <span className="tabular-nums opacity-70">{counts[f.id]}</span>
           </button>
         ))}
       </div>

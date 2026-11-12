@@ -1,3 +1,5 @@
+import { useT } from "@/lib/i18n";
+import { CHAT } from "@/lib/i18n/chat";
 import { Handshake, Users, type LucideIcon } from "lucide-react";
 import BriefcaseIcon from "@/components/icons/BriefcaseIcon";
 import type { ChatKind } from "@/hooks/useChat";
@@ -6,12 +8,14 @@ import { cn } from "@/lib/utils";
 export const CHAT_FILTER_TABS: {
   key: "all" | ChatKind;
   label: string;
+  /** Translated label; "ALL" stays as written. */
+  labelKey?: "tabHire" | "tabCollab" | "tabGroup";
   icon?: LucideIcon;
 }[] = [
   { key: "all", label: "ALL" },
-  { key: "hire", label: "งานจ้าง", icon: BriefcaseIcon },
-  { key: "collab", label: "คอลแลป", icon: Handshake },
-  { key: "group", label: "กลุ่ม", icon: Users },
+  { key: "hire", label: "Hire", labelKey: "tabHire", icon: BriefcaseIcon },
+  { key: "collab", label: "Collab", labelKey: "tabCollab", icon: Handshake },
+  { key: "group", label: "Groups", labelKey: "tabGroup", icon: Users },
 ];
 
 type Props = {
@@ -22,13 +26,14 @@ type Props = {
 
 /** Conversation filters as a chip row under the chat search box. */
 export function ChatFilterRail({ tab, onTabChange, className }: Props) {
+  const tChat = useT(CHAT);
   return (
     <div
       role="group"
-      aria-label="ประเภทบทสนทนา"
+      aria-label={tChat("conversationType")}
       className={cn("flex items-center gap-1.5 overflow-x-auto scrollbar-hide", className)}
     >
-      {CHAT_FILTER_TABS.map(({ key, label, icon: Icon }) => {
+      {CHAT_FILTER_TABS.map(({ key, label, labelKey, icon: Icon }) => {
         const active = tab === key;
         const accent =
           key === "hire"
@@ -58,7 +63,7 @@ export function ChatFilterRail({ tab, onTabChange, className }: Props) {
             )}
           >
             {Icon ? <Icon className="h-3.5 w-3.5" aria-hidden /> : null}
-            {label}
+            {labelKey ? tChat(labelKey) : label}
           </button>
         );
       })}
