@@ -125,5 +125,7 @@ export const COMMON = {
   noBio: { th: "ยังไม่มีคำแนะนำตัว", en: "No intro yet", zh: "暂无简介" },
   viewLarger: { th: "ดูภาพขนาดใหญ่", en: "View larger image", zh: "查看大图" },
   saveFailed: { th: "บันทึกไม่สำเร็จ ลองอีกครั้ง", en: "Couldn't save. Please try again.", zh: "保存失败，请重试" },
+  scrollCategoriesLeft: { th: "เลื่อนหมวดไปทางซ้าย", en: "Scroll categories left", zh: "向左滚动分类" },
+  scrollCategoriesRight: { th: "เลื่อนหมวดไปทางขวา", en: "Scroll categories right", zh: "向右滚动分类" },
   openInGoogleMaps: { th: "เปิดใน Google Maps", en: "Open in Google Maps", zh: "在 Google 地图中打开" },
 } satisfies Dict;

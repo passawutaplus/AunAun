@@ -19,6 +19,7 @@ export const NAV = {
   notifications: { th: "แจ้งเตือน", en: "Notifications", zh: "通知" },
   withNew: { th: "{label} ({n} รายการใหม่)", en: "{label} ({n} new)", zh: "{label}（{n} 条新消息）" },
   searchWorks: { th: "ค้นหาผลงาน", en: "Search works", zh: "搜索作品" },
+  closeSearch: { th: "ปิดค้นหา", en: "Close search", zh: "关闭搜索" },
   sendFeedback: { th: "ฟีดแบ็ก", en: "Feedback", zh: "反馈" },
   feedView: { th: "Feed view", en: "Feed view", zh: "浏览模式" },
   modeView: { th: "{label} view", en: "{label} view", zh: "{label} 模式" },
