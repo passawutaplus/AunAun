@@ -22,6 +22,8 @@ import PolicyReconsentGate from "./components/legal/PolicyReconsentGate.tsx";
 import FloatingNav from "./components/FloatingNav.tsx";
 import DesktopTopNav from "./components/DesktopTopNav.tsx";
 import RequireAuth from "./components/RequireAuth.tsx";
+import SeoHead from "./components/SeoHead.tsx";
+import { TITLES } from "./lib/i18n/pageTitles.ts";
 import AdminGuard from "./components/admin/AdminGuard.tsx";
 import FeedbackTicketHost from "./components/feedback/FeedbackTicketHost.tsx";
 import PullToRefresh from "./components/PullToRefresh.tsx";
@@ -312,7 +314,7 @@ const App = () => (
               <Route path="/invite/creator/:token/form" element={<CreatorInvitePage />} />
               <Route path="/invite/review/:token" element={<CreatorReviewPage />} />
               <Route path="/account/set-password" element={<RequireAuth><SetFirstPasswordPage /></RequireAuth>} />
-              <Route path="/portfolio" element={<RequireAuth><PortfolioProfilePage /></RequireAuth>} />
+              <Route path="/portfolio" element={<RequireAuth><SeoHead title="My Studio" path="/portfolio" noindex /><PortfolioProfilePage /></RequireAuth>} />
               <Route path="/portfolio/saved" element={<RequireAuth><SavedPostsPage /></RequireAuth>} />
               <Route path="/portfolio/manage" element={<RequireAuth><PortfolioManagePage /></RequireAuth>} />
               <Route path="/dashboard" element={<RequireAuth><DashboardHomePage /></RequireAuth>} />
@@ -363,9 +365,9 @@ const App = () => (
               <Route path="/earnings/withdraw" element={<RequireAuth><WithdrawPage /></RequireAuth>} />
               <Route path="/referrals" element={<RequireAuth><ReferralPage /></RequireAuth>} />
 
-              <Route path="/settings" element={<RequireAuth><SettingsPage /></RequireAuth>} />
+              <Route path="/settings" element={<RequireAuth><SeoHead title={TITLES.settings} path="/settings" noindex /><SettingsPage /></RequireAuth>} />
               <Route path="/notifications" element={<RequireAuth><NotificationsPage /></RequireAuth>} />
-              <Route path="/chat/:id?" element={<RequireAuth><ChatInboxPage /></RequireAuth>} />
+              <Route path="/chat/:id?" element={<RequireAuth><SeoHead title={TITLES.chat} path="/chat" noindex /><ChatInboxPage /></RequireAuth>} />
               <Route path="/community/new" element={<RequireAuth><CommunityPostEditorPage /></RequireAuth>} />
               <Route path="/community/:id/edit" element={<RequireAuth><CommunityPostEditorPage /></RequireAuth>} />
               <Route path="/community" element={<CommunityFeedPage />} />

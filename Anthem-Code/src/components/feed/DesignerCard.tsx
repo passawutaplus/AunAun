@@ -9,6 +9,7 @@ import { highlight } from "@/lib/highlight";
 import { naturalFeedCoverUrl, thumbFeedCoverUrl } from "@/lib/feedProjectCover";
 import { displayProfileAddress } from "@/lib/profileAddress";
 import { cn } from "@/lib/utils";
+import { COMMON, useT } from "@/lib/i18n";
 import { creatorStatus } from "@/lib/creatorStatus";
 import { useProjectOverlayState } from "@/lib/projectOverlay";
 
@@ -33,6 +34,7 @@ const coverSrc = (p: Project | undefined) => (p ? p.cover_url || p.gallery_urls?
  * name + availability, role, short bio, work count + place, a strip of works and "View Profile".
  */
 const DesignerCard = ({ data, search = "", newWorkCount = 0 }: Props) => {
+  const tc = useT(COMMON);
   const overlayState = useProjectOverlayState();
   const { profile, projects } = data;
   const profileUserId = (profile as { user_id?: string; id?: string }).user_id ?? profile.id;
@@ -108,13 +110,13 @@ const DesignerCard = ({ data, search = "", newWorkCount = 0 }: Props) => {
 
         <div className="flex items-start gap-4">
           <p className="line-clamp-2 min-h-[2.5rem] min-w-0 flex-1 text-sm text-foreground/80">
-            {bio ? highlight(bio, search) : <span className="text-muted-foreground">ยังไม่มีคำแนะนำตัว</span>}
+            {bio ? highlight(bio, search) : <span className="text-muted-foreground">{tc("noBio")}</span>}
           </p>
           <dl className="flex shrink-0 divide-x divide-border text-center">
             <div className="px-3 first:pl-0">
               <dt className="sr-only">ผลงาน</dt>
               <dd className="text-base font-semibold leading-tight text-foreground tabular-nums">{workCount}</dd>
-              <dd className="text-[11px] text-muted-foreground">Projects</dd>
+              <dd className="text-[11px] text-muted-foreground">{workCount === 1 ? "Project" : "Projects"}</dd>
             </div>
             {place ? (
               <div className="max-w-[6.5rem] px-3 last:pr-0">

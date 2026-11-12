@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { COMMON, useT } from "@/lib/i18n";
 
 type Props = {
   href?: string;
@@ -7,6 +8,7 @@ type Props = {
 
 /** First Tab stop — skip chrome to main content (above cookie/dialog stacks). */
 export function SkipLink({ href = "#main-content", className }: Props) {
+  const t = useT(COMMON);
   return (
     <a
       href={href}
@@ -18,7 +20,7 @@ export function SkipLink({ href = "#main-content", className }: Props) {
         className,
       )}
     >
-      ข้ามไปเนื้อหาหลัก
+      {t("skipToContent")}
     </a>
   );
 }

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Briefcase, Handshake } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatCategoryBreadcrumb, stripCategorySubTags } from "@/data/categoryTaxonomy";
 
 type Props = {
   title: string;
@@ -28,7 +29,10 @@ export function ProjectDetailsPreview({
   coverControl,
   headingExtra,
 }: Props) {
-  const shownTags = tags.slice(0, 6);
+  // Same as the public work page: the sub-category lives in an internal `catsub:` tag, shown as
+  // "Graphic > Poster" next to the name and never as a tag chip.
+  const shownTags = stripCategorySubTags(tags).slice(0, 6);
+  const categoryLabel = category ? formatCategoryBreadcrumb(category, tags) : "";
   return (
     <div className="space-y-4">
       <p id="project-details-cover" className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
@@ -43,7 +47,7 @@ export function ProjectDetailsPreview({
           </h3>
           <p className="text-xs text-muted-foreground">
             {ownerName}
-            {category ? ` · ${category}` : ""}
+            {categoryLabel ? ` · ${categoryLabel}` : ""}
           </p>
           {shortDescription.trim() ? (
             <p className="line-clamp-3 text-sm leading-relaxed text-foreground/80">{shortDescription.trim()}</p>

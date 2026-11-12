@@ -38,6 +38,7 @@ import { ProjectQuickViewHost } from "@/components/feed/ProjectQuickView";
 import { useQuickView } from "@/stores/quickViewStore";
 import { FeedModeTransition } from "@/components/feed/FeedModeTransition";
 import { type FeedMode, parseFeedMode } from "@/components/feed/FeedModeToggle";
+import { COMMON, tr } from "@/lib/i18n";
 import { type DesignerSort } from "@/components/feed/DesignerToolbar";
 import type { DesignerFeedSource } from "@/components/feed/DesignerFeedDropdown";
 import type { StudioFeedSource } from "@/components/studio/StudioFilterPanel";
@@ -1024,7 +1025,7 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
               isError={projectsError}
               isSlow={projectsSlow}
               onRetry={refetchProjects}
-              loadingLabel="กำลังโหลดผลงาน..."
+              loadingLabel={tr(COMMON.loadingWorks)}
               errorTitle="โหลดผลงานไม่สำเร็จ"
               errorDescription="เน็ตอาจสะดุดชั่วคราว — กดลองใหม่ หรือเปลี่ยนโหมดฟีด"
               slowTitle="โหลดผลงานนานผิดปกติ"
