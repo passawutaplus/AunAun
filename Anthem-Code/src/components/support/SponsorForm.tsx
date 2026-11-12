@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useT } from "@/lib/i18n";
 import { SUPPORT } from "@/lib/i18n/support";
-import { SUPPORT_LINE_URL, isSupportDemo } from "@/lib/support/flags";
+import { BRAND_LINE_CONTACT_URL as SUPPORT_LINE_URL } from "@/lib/brandConfig";
+import { isSupportDemo } from "@/lib/support/flags";
 import { submitSponsorInquiry, type SponsorReceipt } from "@/server/mutations/sponsorInquiry";
 import {
   EMPTY_SPONSOR_INQUIRY,

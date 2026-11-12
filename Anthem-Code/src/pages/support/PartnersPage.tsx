@@ -6,7 +6,7 @@ import { Eyebrow, Lede, SupportShell, Title } from "@/components/support/Support
 import { Button } from "@/components/ui/button";
 import { useT } from "@/lib/i18n";
 import { SUPPORT } from "@/lib/i18n/support";
-import { SUPPORT_LINE_QR_URL, SUPPORT_LINE_URL } from "@/lib/support/flags";
+import { BRAND_LINE_CONTACT_URL as SUPPORT_LINE_URL, BRAND_LINE_QR_URL as SUPPORT_LINE_QR_URL } from "@/lib/brandConfig";
 
 const FORM_ID = "sponsor-form";
 

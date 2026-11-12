@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { useT } from "@/lib/i18n";
 import { SUPPORT } from "@/lib/i18n/support";
 import { listProducts, sortForShelf } from "@/lib/support/catalog";
-import { SUPPORT_LINE_URL, isSupportDemo } from "@/lib/support/flags";
+import { BRAND_LINE_CONTACT_URL as SUPPORT_LINE_URL } from "@/lib/brandConfig";
+import { isSupportDemo } from "@/lib/support/flags";
 
 /** /support: things to buy first, then Donate and Sponsor & Collaborate. No money goal here (owner, 2026-11-12). */
 export default function SupportPage() {

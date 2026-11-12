@@ -32,10 +32,6 @@ export function isSupportPath(pathname: string): boolean {
   return !isSupportSpaceEnabled() && SUPPORT_ROUTE_PATTERNS.some((re) => re.test(pathname));
 }
 
-/** LINE Official Account for sponsors and partners (owner, 2026-11-12). */
-export const SUPPORT_LINE_URL = "https://lin.ee/6JjkgOk";
-export const SUPPORT_LINE_QR_URL = "https://qr-official.line.me/gs/M_567rveid_GW.png?oat_content=qr";
-
 /** Monthly running cost the Donate page counts towards. */
 export const DONATE_GOAL_THB = 5000;
 export const DONATE_AMOUNTS_THB = [49, 99, 199, 499] as const;
