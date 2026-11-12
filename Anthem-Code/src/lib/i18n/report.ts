@@ -50,6 +50,26 @@ export const REPORT = {
     en: "Block this user too — they can't send you hire or collab requests until you unblock them",
     zh: "同时屏蔽该用户 — 在你解除屏蔽之前，对方无法再向你发送雇佣或合作请求",
   },
+  blockConfirmTitle: { th: "บล็อก {name}?", en: "Block {name}?", zh: "屏蔽 {name}？" },
+  blockConfirmBody: {
+    th: "คุณจะไม่เห็นผลงานและโพสต์ของกันและกัน และติดต่อกันไม่ได้ ปลดบล็อกได้ภายหลังที่หน้าโปรไฟล์ของผู้ใช้นี้",
+    en: "You won't see each other's works and posts, and you won't be able to contact each other. You can unblock later from this user's profile.",
+    zh: "你们将看不到彼此的作品和帖子，也无法互相联系。之后可在该用户的主页解除屏蔽。",
+  },
+  blockConfirm: { th: "บล็อก", en: "Block", zh: "屏蔽" },
+  blocking: { th: "กำลังบล็อก...", en: "Blocking...", zh: "正在屏蔽..." },
+  blockFailed: { th: "บล็อกไม่สำเร็จ", en: "Couldn't block", zh: "屏蔽失败" },
+  thisUser: { th: "ผู้ใช้นี้", en: "this user", zh: "该用户" },
+  chatBlockedByMe: {
+    th: "คุณบล็อกผู้ใช้นี้อยู่ จึงส่งข้อความไม่ได้ ปลดบล็อกได้ที่หน้าโปรไฟล์ของผู้ใช้นี้",
+    en: "You blocked this user, so you can't send messages. Unblock from this user's profile.",
+    zh: "你已屏蔽该用户，无法发送消息。可在该用户的主页解除屏蔽。",
+  },
+  chatBlocked: {
+    th: "ส่งข้อความถึงผู้ใช้นี้ไม่ได้ในขณะนี้",
+    en: "You can't message this user right now.",
+    zh: "目前无法向该用户发送消息。",
+  },
   send: { th: "ส่งรายงาน", en: "Send report", zh: "提交举报" },
   sendAndBlock: { th: "ส่งรายงานและบล็อก", en: "Send report and block", zh: "提交举报并屏蔽" },
 

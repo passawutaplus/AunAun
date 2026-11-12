@@ -8,9 +8,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import ReportDialog from "@/components/report/ReportDialog";
+import { BlockConfirmDialog } from "@/components/report/BlockConfirmDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuthDialog } from "@/stores/authDialogStore";
-import { useBlockUser, useUserBlocks } from "@/hooks/useCommunityPostInteractions";
+import { useUserBlocks } from "@/hooks/useCommunityPostInteractions";
 import { hideProjectId } from "@/lib/hiddenProjects";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -36,9 +37,9 @@ export function ProjectViewerMenu({
   const { user } = useAuth();
   const { t } = useProjectT();
   const openSignup = useAuthDialog((s) => s.openSignup);
-  const blockMut = useBlockUser();
   const { data: blockedSet } = useUserBlocks(user?.id);
   const [reportOpen, setReportOpen] = useState(false);
+  const [blockOpen, setBlockOpen] = useState(false);
   const alreadyBlocked = !!blockedSet?.has(ownerId);
   const name = ownerName.trim() || t("thisUser");
 
@@ -78,15 +79,10 @@ export function ProjectViewerMenu({
           <DropdownMenuSeparator />
           <DropdownMenuItem
             className="cursor-pointer items-start gap-2 py-2.5"
-            disabled={alreadyBlocked || blockMut.isPending}
+            disabled={alreadyBlocked}
             onClick={() => {
               if (!requireUser()) return;
-              void blockMut
-                .mutateAsync(ownerId)
-                .then(() => onBlocked?.())
-                .catch((err) => {
-                  toast.error(err instanceof Error ? err.message : t("blockFailed"));
-                });
+              setBlockOpen(true);
             }}
           >
             <UserX className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
@@ -110,6 +106,13 @@ export function ProjectViewerMenu({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      <BlockConfirmDialog
+        open={blockOpen}
+        onOpenChange={setBlockOpen}
+        userId={ownerId}
+        name={ownerName}
+        onBlocked={onBlocked}
+      />
       <ReportDialog
         targetType="project"
         targetId={projectId}

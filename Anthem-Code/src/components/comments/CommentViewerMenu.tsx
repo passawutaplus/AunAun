@@ -8,9 +8,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import ReportDialog from "@/components/report/ReportDialog";
+import { BlockConfirmDialog } from "@/components/report/BlockConfirmDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuthDialog } from "@/stores/authDialogStore";
-import { useBlockUser, useUserBlocks } from "@/hooks/useCommunityPostInteractions";
+import { useUserBlocks } from "@/hooks/useCommunityPostInteractions";
 import { hideCommentId } from "@/lib/hiddenComments";
 import type { ReportTargetType } from "@/hooks/useReports";
 import { toast } from "sonner";
@@ -27,9 +28,9 @@ type Props = {
 export function CommentViewerMenu({ commentId, authorId, authorName, reportType, className }: Props) {
   const { user } = useAuth();
   const openSignup = useAuthDialog((s) => s.openSignup);
-  const blockMut = useBlockUser();
   const { data: blockedSet } = useUserBlocks(user?.id);
   const [reportOpen, setReportOpen] = useState(false);
+  const [blockOpen, setBlockOpen] = useState(false);
   const alreadyBlocked = !!blockedSet?.has(authorId);
   const name = authorName.trim() || "ผู้ใช้นี้";
 
@@ -68,12 +69,10 @@ export function CommentViewerMenu({ commentId, authorId, authorName, reportType,
           <DropdownMenuSeparator />
           <DropdownMenuItem
             className="cursor-pointer items-start gap-2 py-2.5"
-            disabled={alreadyBlocked || blockMut.isPending}
+            disabled={alreadyBlocked}
             onClick={() => {
               if (!requireUser()) return;
-              void blockMut.mutateAsync(authorId).catch((err) => {
-                toast.error(err instanceof Error ? err.message : "บล็อกไม่สำเร็จ");
-              });
+              setBlockOpen(true);
             }}
           >
             <UserX className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
@@ -97,6 +96,7 @@ export function CommentViewerMenu({ commentId, authorId, authorName, reportType,
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      <BlockConfirmDialog open={blockOpen} onOpenChange={setBlockOpen} userId={authorId} name={authorName} />
       <ReportDialog
         targetType={reportType}
         targetId={commentId}
