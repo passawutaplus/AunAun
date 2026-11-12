@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import fs from "fs";
 import path from "path";
@@ -14,6 +14,32 @@ function resolveProjectRoot() {
 
 const projectRoot = resolveProjectRoot();
 const viteCacheDir = path.resolve(projectRoot, "..", ".vite-cache", "anthem-code");
+
+/**
+ * Open the connection to the API / storage host while the JS bundle is still downloading.
+ * The first API calls otherwise wait for DNS + TLS (about 1s on a phone) after the app has booted.
+ */
+function preconnectSupabase(): Plugin {
+  let origin = "";
+  return {
+    name: "preconnect-supabase",
+    configResolved(config) {
+      try {
+        origin = new URL(String(config.env.VITE_SUPABASE_URL ?? "")).origin;
+      } catch {
+        origin = "";
+      }
+    },
+    transformIndexHtml() {
+      if (!origin) return [];
+      return [
+        // fetch() (REST, auth) uses the CORS connection; <img> uses the plain one.
+        { tag: "link", attrs: { rel: "preconnect", href: origin, crossorigin: true }, injectTo: "head-prepend" },
+        { tag: "link", attrs: { rel: "preconnect", href: origin }, injectTo: "head-prepend" },
+      ];
+    },
+  };
+}
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -46,7 +72,7 @@ export default defineConfig({
       },
     },
   },
-  plugins: [react()],
+  plugins: [react(), preconnectSupabase()],
   resolve: {
     preserveSymlinks: true,
     alias: {
