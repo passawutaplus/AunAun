@@ -104,8 +104,8 @@ export async function uploadToSharedMedia(
   retries = 2,
   signal?: AbortSignal,
   onProgress?: (pct: number) => void,
-  /** Seconds browsers and the CDN may keep the file. File names are unique, so a year is safe. */
-  cacheSeconds = "3600",
+  /** Seconds browsers and the CDN may keep the file. Callers pass a unique path per file, so a year is safe. */
+  cacheSeconds = "31536000",
 ): Promise<void> {
   let lastErr: unknown;
   for (let attempt = 0; attempt <= retries; attempt++) {

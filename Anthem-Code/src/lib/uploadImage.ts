@@ -29,8 +29,9 @@ export type UploadProjectImageOptions = {
   signal?: AbortSignal;
 };
 
+/** PNG never skips: a cropped cover comes out as a ~1 MB PNG, and as webp it is a fraction of that. */
 function canSkipCompression(file: File): boolean {
-  return file.size <= SKIP_RECOMPRESS_MAX_BYTES && file.type.startsWith("image/");
+  return file.size <= SKIP_RECOMPRESS_MAX_BYTES && file.type.startsWith("image/") && file.type !== "image/png";
 }
 
 async function compressForUpload(
