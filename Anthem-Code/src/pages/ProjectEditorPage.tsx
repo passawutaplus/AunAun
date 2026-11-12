@@ -3,6 +3,7 @@ import { takeSharedMedia } from "@/lib/sharedMedia";
 import { InfoHint } from "@/components/tour/InfoHint";
 import { noteRatingMoment } from "@/lib/ratingPrompt";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { keepPageInstance } from "@/components/motion/PageTransition";
 import { BookOpenText, CircleHelp, Eye, FileText, Handshake, ImagePlus, Loader2, Paperclip, Save, Scale, Tags, X } from "lucide-react";
 import CatalogIcon from "@/components/icons/CatalogIcon";
 import { LayoutGroup, motion, useReducedMotion } from "framer-motion";
@@ -650,6 +651,11 @@ const ProjectEditorPage = () => {
 
   // Switching projects (or leaving edit) must allow a fresh hydrate.
   useEffect(() => {
+    // The first save of a new work only renames the URL; the form on screen is already the truth.
+    if (id && formHydratedForIdRef.current === id) {
+      seriesHydratedRef.current = true;
+      return;
+    }
     formHydratedForIdRef.current = null;
     seriesHydratedRef.current = false;
   }, [id]);
@@ -1112,6 +1118,9 @@ const ProjectEditorPage = () => {
         : collabRequestId
           ? `?collab_request_id=${encodeURIComponent(collabRequestId)}`
           : "";
+      // Same page, new address: keep it mounted and skip the loading screen (open sheets stay open).
+      queryClient.setQueryData(["project", created.id], created);
+      keepPageInstance(window.location.pathname, `/portfolio/${created.id}/edit`);
       navigate(`/portfolio/${created.id}/edit${collabQuery}`, { replace: true });
       return { id: created.id };
     },
@@ -1138,6 +1147,7 @@ const ProjectEditorPage = () => {
       collabRequestId,
       collabConversationId,
       navigate,
+      queryClient,
     ],
   );
 
