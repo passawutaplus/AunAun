@@ -166,7 +166,8 @@ const ReportDialog = ({
           )}
         </DialogTrigger>
       ) : null}
-      <DialogContent className="max-w-md">
+      {/* Taller than a phone screen: scroll inside the dialog so the title, close and send buttons stay reachable. */}
+      <DialogContent className="max-h-[calc(100dvh-1.5rem)] max-w-md overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Flag className="w-4 h-4 text-primary" />

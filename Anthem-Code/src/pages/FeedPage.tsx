@@ -84,6 +84,7 @@ import { MOBILE_PAGE_BOTTOM_CLASS } from "@/lib/mobileLayout";
 import { DESIGN_DRILL_CHIP } from "@/lib/drillProject";
 import { markOnboardingVisit, type OnboardingVisitId } from "@/lib/onboardingStorage";
 import { rankProjectsForSearch } from "@/lib/projectSearchRank";
+import { fuzzyMatchAll, tokenizeQuery } from "@/lib/fuzzyMatch";
 import { TourHelpButton } from "@/components/tour/TourHelpButton";
 import { HOME_TOUR } from "@/components/tour/tours";
 import { usePageTour } from "@/hooks/usePageTour";
@@ -751,14 +752,12 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
     ? heroRank.items
     : catalog.filter((p) => {
         const q = search.trim().toLowerCase();
-        return (
-          !q ||
-          p.title.toLowerCase().includes(q) ||
-          p.owner.toLowerCase().includes(q) ||
-          (p.description ?? "").toLowerCase().includes(q) ||
-          (p.tags ?? []).some((t) => t.toLowerCase().includes(q)) ||
-          (p.tools ?? []).some((t) => t.toLowerCase().includes(q))
-        );
+        if (!q) return true;
+        const fields = [p.title, p.owner, p.description ?? "", ...(p.tags ?? []), ...(p.tools ?? [])];
+        if (fields.some((f) => f.toLowerCase().includes(q))) return true;
+        // Several words: each one has to appear somewhere (any order, any field), so "QA test work"
+        // finds "[QA] Test work". The whole phrase no longer has to match letter for letter.
+        return tokenizeQuery(q).length > 1 && fuzzyMatchAll(q, fields.join(" "));
       });
 
   const colorMatch = useCoverColorScores(
