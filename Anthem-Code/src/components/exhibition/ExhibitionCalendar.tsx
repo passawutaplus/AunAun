@@ -39,6 +39,7 @@ import {
   categoryLabel,
   formatEventDates,
   type ExhibitionEvent,
+  eventPath,
 } from "@/lib/exhibitionEvents";
 import { cn } from "@/lib/utils";
 import { formatDate, formatDateRange, tr, useLang, useT } from "@/lib/i18n";
@@ -110,7 +111,7 @@ const gcalFor = (event: ExhibitionEvent) =>
     ...event,
     url:
       typeof window !== "undefined"
-        ? `${window.location.origin}/exhibition/${event.id}`
+        ? `${window.location.origin}${eventPath(event)}`
         : null,
   });
 
@@ -156,7 +157,7 @@ function EventRow({
         </button>
       ) : null}
       <Link
-        to={`/exhibition/${event.id}`}
+        to={eventPath(event)}
         className="shrink-0"
         tabIndex={-1}
         aria-hidden
@@ -181,7 +182,7 @@ function EventRow({
           {categoryLabel(event.category)}
         </p>
         <Link
-          to={`/exhibition/${event.id}`}
+          to={eventPath(event)}
           className="line-clamp-1 text-base font-semibold text-foreground hover:underline"
         >
           {event.title}
@@ -202,7 +203,7 @@ function EventRow({
         </p>
       </div>
       <Link
-        to={`/exhibition/${event.id}`}
+        to={eventPath(event)}
         aria-label={t("openEvent", { title: event.title })}
         className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border text-foreground transition-colors hover:bg-foreground hover:text-background"
       >

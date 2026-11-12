@@ -89,6 +89,223 @@ function isKnownPublicPath(pathname) {
   return false;
 }
 
+// ---------- Events (/exhibition) ----------
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const EVENT_COLS =
+  "id,title,category,starts_on,ends_on,time_note,location_name,location_note,address,area,lat,lng,description,organizer_name,website_url,ticket_url,registration_url,fee_type,fee_note,cover_url,gallery_urls,parent_id";
+
+/** URL segment → DB category, with SEO title/description (Thai + English). */
+const EVENT_CATEGORY_PAGES = {
+  exhibition: {
+    id: "exhibition",
+    title: "Exhibition — นิทรรศการศิลปะและดีไซน์",
+    description:
+      "รวมนิทรรศการศิลปะ ภาพถ่าย และดีไซน์ที่กำลังจัดและกำลังจะมา ทั้งในกรุงเทพฯ และทั่วไทย — วันเวลา สถานที่ และค่าเข้าชมครบในที่เดียว",
+  },
+  workshop: {
+    id: "workshop",
+    title: "Workshop — เวิร์กช็อปศิลปะ ดีไซน์ และงานคราฟต์",
+    description:
+      "เวิร์กช็อปสำหรับครีเอเตอร์ ตั้งแต่วาดภาพ ภาพพิมพ์ เซรามิก ไปจนถึงดีไซน์และงานคราฟต์ — ดูรอบ ค่าเรียน และลิงก์สมัครได้ทันที",
+  },
+  "art-fair": {
+    id: "art_fair",
+    title: "Art Fair — อาร์ตแฟร์และตลาดงานศิลปะ",
+    description:
+      "อาร์ตแฟร์ ตลาดงานศิลปะ และบุ๊กแฟร์สายสร้างสรรค์ในไทย — พบศิลปิน แกลเลอรี และผลงานที่ซื้อกลับบ้านได้",
+  },
+  "talk-forum": {
+    id: "talk_forum",
+    title: "Talk & Forum — ทอล์กและเสวนาสายสร้างสรรค์",
+    description:
+      "ทอล์ก เสวนา และฟอรัมด้านศิลปะ ดีไซน์ และอุตสาหกรรมสร้างสรรค์ — ฟังมุมมองจากคนทำงานจริง พร้อมรายละเอียดการลงทะเบียน",
+  },
+  "open-call": {
+    id: "open_call",
+    title: "Open Call — งานเปิดรับผลงานศิลปะและดีไซน์",
+    description:
+      "รวม Open Call ประกวด ทุน และโครงการเปิดรับผลงานศิลปะและดีไซน์ — เช็กเงื่อนไข เดดไลน์ และลิงก์ส่งผลงาน",
+  },
+  other: {
+    id: "other",
+    title: "Creative Events — อีเวนต์สร้างสรรค์อื่น ๆ",
+    description:
+      "อีเวนต์สายสร้างสรรค์อื่น ๆ ที่ไม่อยากให้พลาด ทั้งเทศกาล ตลาดงานคราฟต์ และกิจกรรมสำหรับครีเอเตอร์",
+  },
+};
+
+function absUrl(raw, base) {
+  if (!raw || typeof raw !== "string") return null;
+  return raw.startsWith("http") ? raw : `${base}${raw.startsWith("/") ? "" : "/"}${raw}`;
+}
+
+function eventPathOf(e) {
+  return `/exhibition/${e.slug ? encodeURIComponent(e.slug) : e.id}`;
+}
+
+function plainText(s) {
+  return String(s || "")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/[*_#>`~]+/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function eventImages(e, base) {
+  const list = [e.cover_url, ...(Array.isArray(e.gallery_urls) ? e.gallery_urls : [])]
+    .map((u) => absUrl(u, base))
+    .filter(Boolean);
+  return [...new Set(list)];
+}
+
+/**
+ * Fetch published events. The slug column may not exist yet (migration not applied):
+ * PostgREST answers 400 — retry without it. A slug filter can't match then → null.
+ */
+async function fetchEventRows(rest, headers, cols, filter, { needsSlug = false } = {}) {
+  const url = (c) => `${rest}/events?select=${c}&status=eq.published&${filter}`;
+  let res = await fetch(url(`${cols},slug`), { headers });
+  if (res.status === 400) {
+    if (needsSlug) return null;
+    res = await fetch(url(cols), { headers });
+  }
+  if (!res.ok) return null;
+  return res.json();
+}
+
+function eventPlace(e) {
+  const place = {
+    "@type": "Place",
+    name: e.location_name || e.title || undefined,
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: e.address || e.location_note || e.location_name || undefined,
+      addressLocality: e.area || undefined,
+      addressCountry: "TH",
+    },
+  };
+  const lat = Number(e.lat);
+  const lng = Number(e.lng);
+  if (e.lat != null && e.lng != null && Number.isFinite(lat) && Number.isFinite(lng)) {
+    place.geo = { "@type": "GeoCoordinates", latitude: lat, longitude: lng };
+  }
+  return place;
+}
+
+function isOnlineEvent(e) {
+  return /ออนไลน์|online/i.test(String(e.location_name || ""));
+}
+
+function eventOffers(e, pageUrl) {
+  if (e.fee_type === "free") {
+    return {
+      "@type": "Offer",
+      price: 0,
+      priceCurrency: "THB",
+      availability: "https://schema.org/InStock",
+      url: e.registration_url || e.website_url || pageUrl,
+    };
+  }
+  if (e.fee_type === "paid") {
+    const m = String(e.fee_note || "").match(/\d[\d,]*(?:\.\d+)?/);
+    const price = m ? Number(m[0].replace(/,/g, "")) : NaN;
+    return {
+      "@type": "Offer",
+      ...(Number.isFinite(price) ? { price } : {}),
+      priceCurrency: "THB",
+      availability: "https://schema.org/InStock",
+      url: e.ticket_url || e.registration_url || e.website_url || pageUrl,
+    };
+  }
+  return undefined;
+}
+
+/** schema.org Event per Google's event structured-data guidelines. */
+function buildEventJsonLd(e, { base, url, images, parent, venues }) {
+  const online = isOnlineEvent(e);
+  const desc = plainText(e.description).slice(0, 300);
+  const ld = {
+    "@context": "https://schema.org",
+    "@type": "Event",
+    name: e.title,
+    description: desc || undefined,
+    startDate: e.starts_on || undefined,
+    endDate: e.ends_on || e.starts_on || undefined,
+    // Past events stay "scheduled" — Google asks not to mark them cancelled.
+    eventStatus: "https://schema.org/EventScheduled",
+    eventAttendanceMode: online
+      ? "https://schema.org/OnlineEventAttendanceMode"
+      : "https://schema.org/OfflineEventAttendanceMode",
+    location: online
+      ? { "@type": "VirtualLocation", url: e.website_url || e.registration_url || url }
+      : eventPlace(e),
+    image: images.length ? images : undefined,
+    organizer: e.organizer_name
+      ? { "@type": "Organization", name: e.organizer_name, url: e.website_url || undefined }
+      : undefined,
+    offers: eventOffers(e, url),
+    url,
+  };
+  if (parent) {
+    ld.superEvent = { "@type": "Event", name: parent.title, url: `${base}${eventPathOf(parent)}` };
+  }
+  if (venues?.length) {
+    ld.subEvent = venues.map((v) => ({
+      "@type": "Event",
+      name: v.location_name || v.title,
+      startDate: v.starts_on || e.starts_on || undefined,
+      endDate: v.ends_on || v.starts_on || e.ends_on || undefined,
+      eventStatus: "https://schema.org/EventScheduled",
+      location: eventPlace(v),
+      url: `${base}${eventPathOf(v)}`,
+    }));
+  }
+  return ld;
+}
+
+/** /exhibition list + /exhibition/category/<cat>; null for anything else. */
+function resolveExhibitionStatic(pathname, base, defaultMeta) {
+  if (/^\/exhibition\/?$/i.test(pathname)) {
+    return {
+      ...defaultMeta,
+      title: "Exhibition & Events | SAMECOR",
+      description: "นิทรรศการ เวิร์กช็อป และโอกาสสร้างสรรค์รอบตัวคุณ — คัดมาให้ครีเอเตอร์โดยทีม SAMECOR",
+    };
+  }
+  const m = pathname.match(/^\/exhibition\/category(?:\/([^/]*))?\/?$/i);
+  if (!m) return null;
+  const page = EVENT_CATEGORY_PAGES[String(m[1] || "").toLowerCase()];
+  if (!page) {
+    return { ...defaultMeta, noindex: true, title: "ไม่พบหมวดงาน | SAMECOR", status: 404, jsonLd: null };
+  }
+  const url = `${base}/exhibition/category/${page.id.replace(/_/g, "-")}`;
+  return {
+    ...defaultMeta,
+    title: `${page.title} | SAMECOR`,
+    description: page.description,
+    url,
+    jsonLd: {
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      name: page.title,
+      description: page.description,
+      url,
+      inLanguage: ["th", "en"],
+      isPartOf: { "@type": "WebSite", name: "SAMECOR", url: `${base}/` },
+      breadcrumb: {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Exhibition & Events", item: `${base}/exhibition` },
+          { "@type": "ListItem", position: 2, name: page.title, item: url },
+        ],
+      },
+    },
+  };
+}
+
 async function resolveMeta(pathname, base) {
   const defaultMeta = {
     title: "SAMECOR — 1 โปรไฟล์ สู่ 100+ โอกาส",
@@ -136,6 +353,10 @@ async function resolveMeta(pathname, base) {
       status: 404,
     };
   }
+
+  // Event list + category pages need no database.
+  const exhibitionMeta = resolveExhibitionStatic(pathname, base, defaultMeta);
+  if (exhibitionMeta) return exhibitionMeta;
 
   const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
   const anonKey =
@@ -193,48 +414,56 @@ async function resolveMeta(pathname, base) {
     };
   }
 
-  if (/^\/exhibition\/?$/i.test(pathname)) {
-    return {
-      ...defaultMeta,
-      title: "Exhibition & Events | SAMECOR",
-      description: "นิทรรศการ เวิร์กช็อป และโอกาสสร้างสรรค์รอบตัวคุณ — คัดมาให้ครีเอเตอร์โดยทีม SAMECOR",
-    };
-  }
-
-  const eventMatch = pathname.match(/^\/exhibition\/([0-9a-f-]{36})$/i);
+  const eventMatch = pathname.match(/^\/exhibition\/([^/]+)\/?$/i);
   if (eventMatch) {
-    const id = eventMatch[1];
-    const rows = await fetchJson(
-      `${rest}/events?select=id,title,description,cover_url,gallery_urls,starts_on,ends_on,location_name&id=eq.${id}&status=eq.published&limit=1`,
+    let key = eventMatch[1];
+    try {
+      key = decodeURIComponent(key);
+    } catch {
+      /* keep raw */
+    }
+    const notFound = { ...defaultMeta, noindex: true, title: "ไม่พบงาน | SAMECOR", status: 404 };
+    const byId = UUID_RE.test(key);
+    const rows = await fetchEventRows(
+      rest,
       anthemHeaders,
+      EVENT_COLS,
+      byId ? `id=eq.${key}&limit=1` : `slug=eq.${encodeURIComponent(key)}&limit=1`,
+      { needsSlug: !byId },
     );
     const e = rows?.[0];
-    if (!e) {
-      return { ...defaultMeta, noindex: true, title: "ไม่พบงาน | SAMECOR", status: 404 };
+    if (!e) return notFound;
+
+    let parent = null;
+    let venues = [];
+    if (e.parent_id) {
+      const p = await fetchEventRows(rest, anthemHeaders, "id,title", `id=eq.${e.parent_id}&limit=1`);
+      parent = p?.[0] || null;
+    } else {
+      venues =
+        (await fetchEventRows(
+          rest,
+          anthemHeaders,
+          "id,title,starts_on,ends_on,location_name,location_note,address,area,lat,lng",
+          `parent_id=eq.${e.id}&order=starts_on.asc&limit=50`,
+        )) || [];
     }
-    const raw = e.cover_url || (Array.isArray(e.gallery_urls) ? e.gallery_urls[0] : null);
-    const image = raw ? (raw.startsWith("http") ? raw : `${base}${raw.startsWith("/") ? "" : "/"}${raw}`) : defaultMeta.image;
+
+    const url = `${base}${eventPathOf(e)}`;
+    const images = eventImages(e, base);
+    const image = images[0] || defaultMeta.image;
     const when = e.starts_on ? (e.ends_on && e.ends_on !== e.starts_on ? `${e.starts_on} – ${e.ends_on}` : e.starts_on) : "";
     const lead = [when, e.location_name].filter(Boolean).join(" · ");
-    const url = `${base}/exhibition/${e.id}`;
     return {
       title: `${e.title} | SAMECOR`,
-      description: [lead, e.description || ""].filter(Boolean).join(" — ").slice(0, 160),
+      description: [lead, plainText(e.description)].filter(Boolean).join(" — ").slice(0, 160),
       url,
       image,
+      // Ended events stay 200 + indexable (Google: don't mark past events cancelled).
       noindex: false,
       type: "article",
       status: 200,
-      jsonLd: {
-        "@context": "https://schema.org",
-        "@type": "Event",
-        name: e.title,
-        startDate: e.starts_on || undefined,
-        endDate: e.ends_on || undefined,
-        location: e.location_name ? { "@type": "Place", name: e.location_name } : undefined,
-        image,
-        url,
-      },
+      jsonLd: buildEventJsonLd(e, { base, url, images, parent, venues }),
     };
   }
 

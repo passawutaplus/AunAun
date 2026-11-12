@@ -26,6 +26,19 @@ export const STATIC_PATHS = [
   { loc: "/legal/copyright-report", priority: "0.2", changefreq: "monthly", group: "static" },
 ];
 
+/** Event categories (DB id → URL segment: "_" becomes "-"). */
+export const EVENT_CATEGORIES = ["exhibition", "workshop", "art_fair", "talk_forum", "open_call", "other"];
+
+export function eventCategorySlug(cat) {
+  return String(cat).replace(/_/g, "-");
+}
+
+/** Public path of one event: slug when set (URL-encoded, may be Thai), else the uuid. */
+export function eventPath(e) {
+  const key = e?.slug ? encodeURIComponent(String(e.slug)) : e?.id;
+  return `/exhibition/${key}`;
+}
+
 /** Seed studio slugs — only included when full-product sitemap mode is on. */
 export const STUDIO_SLUGS = [
   "doi-studio",
@@ -91,6 +104,7 @@ export function catalogProjectId(i) {
  *   serviceIds?: string[],
  *   objectIds?: string[],
  *   explorePaths?: string[],
+ *   events?: { id: string, slug?: string | null, updated_at?: string | null }[],
  *   images?: { loc: string, imageLoc: string, title?: string }[],
  * }} [opts]
  */
@@ -112,6 +126,7 @@ export function buildSitemapUrls(opts = {}) {
   const objectIds = opts.objectIds || [];
   const jobIds = hiringBoard ? opts.jobIds || [] : [];
   const explorePaths = opts.explorePaths || [];
+  const events = (opts.events || []).filter((e) => e && (e.slug || e.id));
 
   const staticPaths = STATIC_PATHS.map((p) => ({ ...p }));
   if (hiringBoard) {
@@ -177,6 +192,20 @@ export function buildSitemapUrls(opts = {}) {
       changefreq: "weekly",
       group: "explore",
     })),
+    { loc: "/exhibition", priority: "0.8", changefreq: "daily", group: "events" },
+    ...EVENT_CATEGORIES.map((cat) => ({
+      loc: `/exhibition/category/${eventCategorySlug(cat)}`,
+      priority: "0.6",
+      changefreq: "daily",
+      group: "events",
+    })),
+    ...events.map((e) => ({
+      loc: eventPath(e),
+      priority: "0.7",
+      changefreq: "weekly",
+      group: "events",
+      ...(e.updated_at ? { lastmod: toLastmod(e.updated_at) } : {}),
+    })),
     ...jobIds.map((id) => ({
       loc: `/hiring/${id}`,
       priority: "0.7",
@@ -220,8 +249,10 @@ ${urls
       ${img.title ? `<image:title>${escapeXml(img.title)}</image:title>` : ""}
     </image:image>`
       : "";
+    const lastmod = u.lastmod ? `
+    <lastmod>${escapeXml(u.lastmod)}</lastmod>` : "";
     return `  <url>
-    <loc>${normalizedBase}${u.loc}</loc>
+    <loc>${escapeXml(normalizedBase + u.loc)}</loc>${lastmod}
     <changefreq>${u.changefreq}</changefreq>
     <priority>${u.priority}</priority>${imageBlock}
   </url>`;
@@ -229,6 +260,12 @@ ${urls
   .join("\n")}
 </urlset>
 `;
+}
+
+/** W3C datetime for <lastmod>; null when unparsable. */
+function toLastmod(v) {
+  const d = new Date(v);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
 }
 
 function escapeXml(s) {
@@ -259,6 +296,7 @@ export function buildSitemapBundles(base, opts = {}) {
     objects: urls.filter((u) => u.group === "objects"),
     explore: urls.filter((u) => u.group === "explore"),
     jobs: urls.filter((u) => u.group === "jobs"),
+    events: urls.filter((u) => u.group === "events"),
     studios: urls.filter((u) => u.group === "studios"),
   };
 

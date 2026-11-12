@@ -11,7 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useMyEventInterests, useToggleEventInterest } from "@/hooks/useExhibitionEvents";
 import { useSetAllVenuesInterest, useVenueRoute } from "@/hooks/useEventVenues";
 import { googleCalendarLink } from "@/lib/googleCalendarLink";
-import { formatEventDates } from "@/lib/exhibitionEvents";
+import { eventPath, formatEventDates } from "@/lib/exhibitionEvents";
 import {
   groupVenuesByArea,
   venueCounts,
@@ -150,7 +150,7 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
     </Button>
   );
 
-  const pageUrl = (id: string) => (typeof window !== "undefined" ? `${window.location.origin}/exhibition/${id}` : null);
+  const pageUrl = (v: { id: string; slug?: string | null }) => (typeof window !== "undefined" ? `${window.location.origin}${eventPath(v)}` : null);
 
   return (
     <section ref={sectionRef} id="venues" aria-labelledby="venues-heading" className={cn("scroll-mt-20", className)}>
@@ -305,7 +305,7 @@ export function EventVenuesSection({ parent, venues, className }: { parent: Pare
                     description: v.hours_note,
                     location_name: v.name_en || v.title,
                     location_note: v.address,
-                    url: pageUrl(v.id),
+                    url: pageUrl(v),
                   });
                   return (
                     <li

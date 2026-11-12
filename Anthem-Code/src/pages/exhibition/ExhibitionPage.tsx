@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { CalendarCheck, CalendarX2, Check, ChevronDown, Clock, Compass, Flame, Hourglass, type LucideIcon } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import SeoHead from "@/components/SeoHead";
@@ -25,7 +25,14 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { isBetaFeedbackEnabled } from "@/lib/aplus1Launch";
-import { EVENT_CATEGORIES, categoryLabel, eventTiming, type EventCategory } from "@/lib/exhibitionEvents";
+import {
+  EVENT_CATEGORIES,
+  categoryFromSlug,
+  categoryLabel,
+  categoryPath,
+  eventTiming,
+  type EventCategory,
+} from "@/lib/exhibitionEvents";
 import { COMMON, useT } from "@/lib/i18n";
 import { LIST } from "@/lib/i18n/exhibition/list";
 import { BRAND_NAME } from "@/lib/brandConfig";
@@ -40,6 +47,16 @@ function matchesSearch(e: { title: string; location_name: string | null; organiz
   return [e.title, e.location_name, e.organizer_name].some((v) => v?.toLowerCase().includes(needle));
 }
 
+/** Meta descriptions for the category pages (Thai first: that's what people search here). */
+const CATEGORY_SEO: Record<EventCategory, string> = {
+  exhibition: "นิทรรศการศิลปะและดีไซน์ที่กำลังจัดในกรุงเทพฯ และทั่วไทย — วันเวลา สถานที่ ค่าเข้าชม และเส้นทาง รวมไว้ที่ SAMECOR",
+  workshop: "เวิร์กช็อปศิลปะ ดีไซน์ และงานคราฟต์ที่เปิดรับสมัคร — รายละเอียด วันเวลา ค่าใช้จ่าย และวิธีลงทะเบียน บน SAMECOR",
+  art_fair: "อาร์ตแฟร์และดีไซน์แฟร์ในไทย — วันจัดงาน สถานที่ บัตร และไฮไลต์ รวมไว้ที่ SAMECOR",
+  talk_forum: "ทอล์กและฟอรัมด้านศิลปะ ดีไซน์ และความคิดสร้างสรรค์ — วิทยากร กำหนดการ และการลงทะเบียน บน SAMECOR",
+  open_call: "Open Call ประกวดและเปิดรับผลงานศิลปะ ดีไซน์ ภาพถ่าย — คุณสมบัติ รางวัล ขั้นตอน และวันปิดรับ บน SAMECOR",
+  other: "อีเวนต์สร้างสรรค์อื่น ๆ ในไทย — ตลาดนัดศิลปะ เทศกาล และงานเปิดตัว รวมไว้ที่ SAMECOR",
+};
+
 /** One dropdown (like Creators' Discovery menu): what's on now, three sorts of it, or ended events. */
 type ListView = "now" | "ending" | "newest" | "popular" | "done";
 const LIST_VIEWS: ListView[] = ["now", "ending", "newest", "popular", "done"];
@@ -50,7 +67,14 @@ export default function ExhibitionPage() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { data = [], isLoading, isError, refetch } = usePublishedEvents();
-  const [category, setCategory] = useState<EventCategory | "all">("all");
+  // The category lives in the URL (/exhibition/category/open-call) so each one is its own indexable page.
+  const { cat } = useParams<{ cat?: string }>();
+  const category: EventCategory | "all" = categoryFromSlug(cat) ?? "all";
+  const setCategory = (c: EventCategory | "all") =>
+    navigate(`${c === "all" ? "/exhibition" : categoryPath(c)}${window.location.search}`, { replace: true });
+  useEffect(() => {
+    if (cat && !categoryFromSlug(cat)) navigate("/exhibition", { replace: true });
+  }, [cat, navigate]);
   const [view, setView] = useState<ListView>("now");
   const when: "now" | "done" = view === "done" ? "done" : "now";
   const [searchParams] = useSearchParams();
@@ -172,9 +196,9 @@ export default function ExhibitionPage() {
   return (
     <main id="main-content" className={cn("relative min-h-screen bg-app-ambient", MOBILE_PAGE_BOTTOM_CLASS)}>
       <SeoHead
-        title="Exhibition & Events"
-        description={t("seoDescription")}
-        path="/exhibition"
+        title={category === "all" ? "Exhibition & Events" : `${categoryLabel(category, "en")} — Exhibition & Events`}
+        description={category === "all" ? t("seoDescription") : CATEGORY_SEO[category]}
+        path={category === "all" ? "/exhibition" : categoryPath(category)}
       />
 
       {/* Desktop: the same bar the Showcase / Creators feed slides in once its title scrolls away. */}

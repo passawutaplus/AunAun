@@ -1,5 +1,6 @@
-import { useMemo, useState, useSyncExternalStore } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { eventJsonLd } from "@/lib/eventJsonLd";
 import {
   ArrowUpRight,
   CalendarDays,
@@ -51,6 +52,7 @@ import {
   isDemoEventId,
   isEventEnded,
   type ExhibitionEvent,
+  eventPath,
 } from "@/lib/exhibitionEvents";
 
 const isHttpUrl = (u: string | null | undefined): u is string => !!u && /^https?:\/\//i.test(u);
@@ -116,7 +118,16 @@ export default function ExhibitionDetailPage() {
   const tc = useT(COMMON);
   const NOT_SPECIFIED = tc("notSpecified");
   const { data: event, isLoading, isError, refetch } = useEvent(id);
-  const statIds = useMemo(() => (id ? [id] : []), [id]);
+  // The URL may hold a slug; stats / interests are keyed by the event's id.
+  const eventId = event?.id;
+  const statIds = useMemo(() => (eventId ? [eventId] : []), [eventId]);
+  // Old /exhibition/<uuid> links → the readable /exhibition/<slug> (same page, hash kept).
+  const location = useLocation();
+  useEffect(() => {
+    if (event?.slug && id && id !== event.slug && decodeURIComponent(id) !== event.slug) {
+      navigate(`${eventPath(event)}${location.hash}`, { replace: true });
+    }
+  }, [event, id, location.hash, navigate]);
   const { data: stats } = useEventStats(statIds);
   const { data: myInterests } = useMyEventInterests(statIds);
   useRecordEventView(event?.id, event?.status === "published");
@@ -162,7 +173,7 @@ export default function ExhibitionDetailPage() {
   const canChat = reachable && event.origin === "community";
   const openForSponsors = event.open_for_sponsors && !isEventEnded(event);
   const canSponsor = reachable && openForSponsors;
-  const path = `/exhibition/${event.id}`;
+  const path = eventPath(event);
   const gcalHref = googleCalendarLink({ ...event, url: typeof window !== "undefined" ? window.location.origin + path : null });
   const sourcePage = [event.source_url, event.website_url].find(isHttpUrl) ?? null;
   const [lead, ...rest] = event.description.split(/\n\s*\n/);
@@ -305,6 +316,14 @@ export default function ExhibitionDetailPage() {
         path={path}
         image={event.cover_url ?? undefined}
         noindex={event.status !== "published"}
+        jsonLd={
+          event.status === "published" && typeof window !== "undefined"
+            ? eventJsonLd(
+                { ...event, address: venue?.address, area: venue?.area, lat: venue?.lat, lng: venue?.lng },
+                { origin: window.location.origin, description: event.description || lead, venues, parent: parent ?? null },
+              )
+            : undefined
+        }
       />
 
       {/* Same top bar as a work page: back, breadcrumb, account. */}
@@ -349,7 +368,7 @@ export default function ExhibitionDetailPage() {
           </div>
           {parent ? (
             <Link
-              to={`/exhibition/${parent.id}#venues`}
+              to={`${eventPath(parent)}#venues`}
               className="-mb-2 text-sm text-muted-foreground underline decoration-foreground/30 underline-offset-4 hover:text-foreground"
             >
               {t("venueOf", { title: parent.title })}
@@ -494,7 +513,8 @@ export default function ExhibitionDetailPage() {
           onOpenChange={setContactOpen}
           recipientId={event.owner_id}
           recipientName={event.organizer_name ?? t("organizerFallback")}
-          appendText={`${window.location.origin}${path}`}
+          // Chat turns /exhibition/<uuid> links into event cards, so the id link (not the slug) goes here.
+          appendText={`${window.location.origin}/exhibition/${event.id}`}
           description={t("contactDescription")}
         />
       ) : null}

@@ -121,4 +121,24 @@ describe("sitemap-lib", () => {
     expect(files["sitemap-projects.xml"]).toContain("/showcase/p1");
     expect(files["sitemap-profiles.xml"]).toContain("/u/u1");
   });
+
+  it("lists events by slug (uuid fallback) with lastmod, plus list + category pages", () => {
+    const { files, indexEntries } = buildSitemapBundles("https://samecor.com", {
+      events: [
+        { id: "e1", slug: "bangkok-art-biennale", updated_at: "2026-11-01T10:00:00+07:00" },
+        { id: "e2", slug: null },
+      ],
+      images: [{ loc: "/exhibition/bangkok-art-biennale", imageLoc: "https://cdn/x.jpg" }],
+    });
+    expect(indexEntries).toContain("sitemap-events.xml");
+    const xml = files["sitemap-events.xml"];
+    expect(xml).toContain("<loc>https://samecor.com/exhibition</loc>");
+    expect(xml).toContain("<loc>https://samecor.com/exhibition/category/open-call</loc>");
+    expect(xml).toContain("<loc>https://samecor.com/exhibition/bangkok-art-biennale</loc>");
+    expect(xml).toContain("<lastmod>2026-11-01T03:00:00.000Z</lastmod>");
+    expect(xml).toContain("<loc>https://samecor.com/exhibition/e2</loc>");
+    expect(xml).toContain("<image:loc>https://cdn/x.jpg</image:loc>");
+    expect(files["sitemap.xml"]).toContain("/exhibition/bangkok-art-biennale");
+    expect(files["sitemap-static.xml"]).not.toContain("<lastmod>");
+  });
 });

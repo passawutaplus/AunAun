@@ -53,6 +53,8 @@ export function notSpecified(lang: Lang = getLang()): string {
 
 export type ExhibitionEvent = {
   id: string;
+  /** Readable URL key (20261113100000_event_slugs.sql); null before that migration / for demo rows. */
+  slug?: string | null;
   owner_id: string;
   title: string;
   category: EventCategory;
@@ -109,6 +111,22 @@ export type TeamEventDraft = EventDraft & {
   source_name: string | null;
   source_url: string | null;
 };
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export const isEventUuid = (s: string | null | undefined): boolean => !!s && UUID_RE.test(s);
+
+/** Public page of an event or venue: /exhibition/<slug>, or /exhibition/<id> until it has one. */
+export function eventPath(e: { id: string; slug?: string | null }): string {
+  return `/exhibition/${e.slug ? encodeURIComponent(e.slug) : e.id}`;
+}
+
+/** Event categories as URL segments: /exhibition/category/open-call. */
+export const categorySlug = (id: string): string => id.replace(/_/g, "-");
+export const categoryFromSlug = (slug: string | undefined): EventCategory | null => {
+  const id = (slug ?? "").replace(/-/g, "_");
+  return EVENT_CATEGORIES.some((c) => c.id === id) ? (id as EventCategory) : null;
+};
+export const categoryPath = (id: string): string => `/exhibition/category/${categorySlug(id)}`;
 
 export const EVENT_SELECT =
   "id, owner_id, title, category, starts_on, ends_on, time_note, location_name, location_note, description, organizer_name, cover_url, gallery_urls, website_url, registration_url, ticket_url, registration_open, fee_type, fee_note, sponsors, open_for_sponsors, project_ids, origin, source_name, source_url, source_checked_at, status, review_note, submitted_at, published_at, is_pick, updated_at";

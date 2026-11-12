@@ -11,7 +11,7 @@ import {
   useToggleEventInterest,
   type EventStats,
 } from "@/hooks/useExhibitionEvents";
-import { isDemoEventId, type ExhibitionEvent } from "@/lib/exhibitionEvents";
+import { eventPath, isDemoEventId, type ExhibitionEvent } from "@/lib/exhibitionEvents";
 import { cn } from "@/lib/utils";
 import { intlLocale, useLang, useT } from "@/lib/i18n";
 import { DETAIL } from "@/lib/i18n/exhibition/detail";
@@ -50,8 +50,8 @@ export function EventActions({
   const canInterest = event.status === "published" && !isDemoEventId(event.id);
   const url =
     typeof window !== "undefined"
-      ? `${window.location.origin}/exhibition/${event.id}`
-      : `/exhibition/${event.id}`;
+      ? `${window.location.origin}${eventPath(event)}`
+      : eventPath(event);
 
   const requireUser = () => {
     if (user) return true;

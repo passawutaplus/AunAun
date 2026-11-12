@@ -16,6 +16,7 @@ import {
   type EventDraft,
   type ExhibitionEvent,
   type TeamEventDraft,
+  isEventUuid,
 } from "@/lib/exhibitionEvents";
 
 /** Preview data only while developing, and only when the real table has nothing to show. */
@@ -29,6 +30,14 @@ function withDevDemo(rows: ExhibitionEvent[] | null, failed: boolean): Exhibitio
 const eventsTable = () => supabase.from("events" as never);
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const rpc = (fn: string, args: Record<string, unknown>) => (supabase.rpc as any)(fn, args);
+
+/**
+ * Adds `slug` to a select; on a database without the slug migration yet (42703) runs it again without.
+ */
+export async function withSlug<T extends { error: { code?: string } | null }>(run: (slugCol: string) => PromiseLike<T>): Promise<T> {
+  const first = await run(", slug");
+  return first.error?.code === "42703" ? run("") : first;
+}
 
 type ListResult = { data: unknown[] | null; error: { code?: string } | null };
 /**
@@ -45,23 +54,34 @@ export function usePublishedEvents() {
     queryKey: ["events", "public"],
     staleTime: 60_000,
     queryFn: async () => {
-      const { data, error } = await topLevelOnly((onlyTop) => {
-        const q = eventsTable().select(EVENT_SELECT).eq("status", "published");
-        return (onlyTop ? q.is("parent_id", null) : q).order("starts_on", { ascending: true }).limit(120);
-      });
+      const { data, error } = await withSlug((slugCol) =>
+        topLevelOnly((onlyTop) => {
+          const q = eventsTable().select(EVENT_SELECT + slugCol).eq("status", "published");
+          return (onlyTop ? q.is("parent_id", null) : q).order("starts_on", { ascending: true }).limit(120);
+        }),
+      );
       if (error && !useDevDemo) throw error;
       return sortPublicEvents(withDevDemo(data as ExhibitionEvent[] | null, !!error));
     },
   });
 }
 
+/** One event by id or by slug (the URL segment of /exhibition/:id). */
 export function useEvent(id: string | undefined) {
   return useQuery({
     queryKey: ["events", "one", id],
     enabled: !!id,
     queryFn: async () => {
       if (useDevDemo && isDemoEventId(id)) return DEMO_EVENTS.find((e) => e.id === id) ?? null;
-      const { data, error } = await eventsTable().select(EVENT_SELECT).eq("id", id!).maybeSingle();
+      const byId = isEventUuid(id);
+      const { data, error } = await withSlug((slugCol) =>
+        eventsTable()
+          .select(EVENT_SELECT + slugCol)
+          .eq(byId ? "id" : "slug", byId ? id! : decodeURIComponent(id!))
+          .maybeSingle(),
+      );
+      // A slug URL before the slug migration: nothing to find.
+      if (error && !byId && error.code === "42703") return null;
       if (error) throw error;
       return (data as ExhibitionEvent | null) ?? null;
     },
