@@ -1161,7 +1161,8 @@ export const useChatInboxBadgeCount = () => {
   const query = useQuery({
     queryKey: ["chat-inbox-badge", user?.id],
     enabled: !!user?.id,
-    refetchInterval: 30_000,
+    // Every signed-in tab runs this poll, so it sets the idle load per user; focus and realtime cover the rest.
+    refetchInterval: 60_000,
     refetchOnWindowFocus: true,
     queryFn: async (): Promise<number> => {
       const uid = user!.id;

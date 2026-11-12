@@ -25,6 +25,87 @@ function profileUserId(p: { user_id?: string; id?: string }) {
   return p.user_id ?? p.id;
 }
 
+type OwnerCounts = {
+  projectCountByOwner: Map<string, number>;
+  likeCountByOwner: Map<string, number>;
+  packageCountByOwner: Map<string, number>;
+  objectCountByOwner: Map<string, number>;
+};
+
+/** Set once the database answers that `creator_card_stats` does not exist, so we stop asking. */
+let statsRpcMissing = false;
+
+/**
+ * Work / like / package / object totals per creator.
+ * One aggregate call in the database; the row-by-row queries below are only the fallback for a
+ * database without the function (they stop being exact past PostgREST's 1,000-row page).
+ */
+async function loadOwnerCounts(ids: string[]): Promise<OwnerCounts> {
+  const out: OwnerCounts = {
+    projectCountByOwner: new Map(),
+    likeCountByOwner: new Map(),
+    packageCountByOwner: new Map(),
+    objectCountByOwner: new Map(),
+  };
+
+  if (!statsRpcMissing) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase.rpc as any)("creator_card_stats", { _ids: ids });
+    if (!error && Array.isArray(data)) {
+      for (const row of data as {
+        owner_id: string;
+        project_count: number;
+        like_count: number;
+        package_count: number;
+        object_count: number;
+      }[]) {
+        out.projectCountByOwner.set(row.owner_id, Number(row.project_count) || 0);
+        out.likeCountByOwner.set(row.owner_id, Number(row.like_count) || 0);
+        out.packageCountByOwner.set(row.owner_id, Number(row.package_count) || 0);
+        out.objectCountByOwner.set(row.owner_id, Number(row.object_count) || 0);
+      }
+      return out;
+    }
+    if (isOptionalQueryError(error) || isSchemaMismatchError(error) || error?.code === "PGRST202") {
+      statsRpcMissing = true;
+    }
+  }
+
+  const [countRes, servicesRes, objectsRes] = await Promise.all([
+    supabase.from("projects").select("owner_id, likes").in("owner_id", ids).eq("status", "Published"),
+    fromCreatorServices().select("owner_id").in("owner_id", ids).eq("status", "Published"),
+    fromCreatorObjects().select("owner_id").in("owner_id", ids).eq("status", "Published"),
+  ]);
+
+  for (const row of countRes.data ?? []) {
+    const { owner_id: oid, likes } = row as { owner_id: string; likes?: number | null };
+    out.projectCountByOwner.set(oid, (out.projectCountByOwner.get(oid) ?? 0) + 1);
+    out.likeCountByOwner.set(oid, (out.likeCountByOwner.get(oid) ?? 0) + (Number(likes) || 0));
+  }
+
+  if (!isOptionalQueryError(servicesRes.error) && !isSchemaMismatchError(servicesRes.error)) {
+    for (const row of servicesRes.data ?? []) {
+      const oid = (row as { owner_id?: string }).owner_id;
+      if (!oid) continue;
+      out.packageCountByOwner.set(oid, (out.packageCountByOwner.get(oid) ?? 0) + 1);
+    }
+  }
+
+  if (
+    !isOptionalQueryError(objectsRes.error) &&
+    !isSchemaMismatchError(objectsRes.error) &&
+    !isObjectsTableMissing(objectsRes.error)
+  ) {
+    for (const row of objectsRes.data ?? []) {
+      const oid = (row as { owner_id?: string }).owner_id;
+      if (!oid) continue;
+      out.objectCountByOwner.set(oid, (out.objectCountByOwner.get(oid) ?? 0) + 1);
+    }
+  }
+
+  return out;
+}
+
 /**
  * Turn profile rows into designer cards: latest published works, counts and a search haystack.
  * Shared by the Designers feed and the saved designers list on Portfolio.
@@ -38,7 +119,7 @@ export async function buildDesignerCards(
 
   // Hard cap so one prolific owner cannot pull unbounded rows for this feed.
   const projectCap = Math.min(ids.length * PROJECTS_PER_DESIGNER, DESIGNERS_PAGE * PROJECTS_PER_DESIGNER);
-  const [projectsRes, countRes, servicesRes, objectsRes] = await Promise.all([
+  const [projectsRes, counts] = await Promise.all([
     supabase
       .from("projects")
       .select(PROJECT_FEED_SELECT)
@@ -46,9 +127,7 @@ export async function buildDesignerCards(
       .eq("status", "Published")
       .order("created_at", { ascending: false })
       .limit(projectCap),
-    supabase.from("projects").select("owner_id, likes").in("owner_id", ids).eq("status", "Published"),
-    fromCreatorServices().select("owner_id").in("owner_id", ids).eq("status", "Published"),
-    fromCreatorObjects().select("owner_id").in("owner_id", ids).eq("status", "Published"),
+    loadOwnerCounts(ids),
   ]);
 
   const grouped = new Map<string, Tables<"projects">[]>();
@@ -58,35 +137,7 @@ export async function buildDesignerCards(
     grouped.set(p.owner_id, arr);
   });
 
-  const projectCountByOwner = new Map<string, number>();
-  const likeCountByOwner = new Map<string, number>();
-  for (const row of countRes.data ?? []) {
-    const { owner_id: oid, likes } = row as { owner_id: string; likes?: number | null };
-    projectCountByOwner.set(oid, (projectCountByOwner.get(oid) ?? 0) + 1);
-    likeCountByOwner.set(oid, (likeCountByOwner.get(oid) ?? 0) + (Number(likes) || 0));
-  }
-
-  const packageCountByOwner = new Map<string, number>();
-  if (!isOptionalQueryError(servicesRes.error) && !isSchemaMismatchError(servicesRes.error)) {
-    for (const row of servicesRes.data ?? []) {
-      const oid = (row as { owner_id?: string }).owner_id;
-      if (!oid) continue;
-      packageCountByOwner.set(oid, (packageCountByOwner.get(oid) ?? 0) + 1);
-    }
-  }
-
-  const objectCountByOwner = new Map<string, number>();
-  if (
-    !isOptionalQueryError(objectsRes.error) &&
-    !isSchemaMismatchError(objectsRes.error) &&
-    !isObjectsTableMissing(objectsRes.error)
-  ) {
-    for (const row of objectsRes.data ?? []) {
-      const oid = (row as { owner_id?: string }).owner_id;
-      if (!oid) continue;
-      objectCountByOwner.set(oid, (objectCountByOwner.get(oid) ?? 0) + 1);
-    }
-  }
+  const { projectCountByOwner, likeCountByOwner, packageCountByOwner, objectCountByOwner } = counts;
 
   return list
     .map((profile) => {
