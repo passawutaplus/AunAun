@@ -1,5 +1,6 @@
 import { isNativeApp } from "@/lib/appShell";
 import type { FeedMode } from "@/components/feed/FeedModeToggle";
+import { isSupportPath } from "@/lib/support/flags";
 
 /**
  * Launch scope: Projects + Designers + packages + hire/collab/chat + save/collections.
@@ -98,6 +99,8 @@ export const LAUNCH_ALLOWED_ROUTE_PATTERNS: readonly RegExp[] = [
   /^\/showcase\/[^/]+$/,
   /^\/project\/[^/]+$/,
   /^\/exhibition(\/[^/]+)?$/,
+  /^\/support(\/|$)/,
+  /^\/shop(\/|$)/,
   /^\/service\/[^/]+$/,
   /^\/object\/[^/]+$/,
   /^\/u\/[^/]+(\/followers)?$/,
@@ -190,6 +193,8 @@ export function isLaunchHiddenPath(pathname: string): boolean {
   // Keeps national-ID / bank-account collection out of the app (and its Play Data safety form).
   if (isNativeApp() && isKycPath(pathname)) return true;
   if (isCommercePath(pathname)) return true;
+  // Support Us (shop, donate, sponsor) stays closed until its own flag is on.
+  if (isSupportPath(pathname)) return true;
   if (isHiringBoardPath(pathname)) return !isAplus1HiringBoardEnabled();
   if (!isAplus1LaunchMinimal()) return false;
   if (isLaunchAllowedPath(pathname)) return false;

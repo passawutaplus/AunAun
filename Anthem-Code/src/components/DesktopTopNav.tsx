@@ -32,6 +32,7 @@ function shouldShowDesktopTopNav(pathname: string): boolean {
   return (
     pathname === "/" ||
     pathname === "/exhibition" ||
+    /^\/(support|shop)(\/|$)/.test(pathname) ||
     pathname.startsWith("/help") ||
     pathname.startsWith("/forum") ||
     // My Studio (/dashboard, /earnings) has its own back-office top bar

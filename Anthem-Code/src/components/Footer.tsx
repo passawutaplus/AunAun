@@ -14,6 +14,8 @@ const EXPLORE_LINKS = [
   { to: "/help", label: "Help Center" },
   { to: "/learn", label: "About" },
   { to: "/advertise", label: "Advertise" },
+  { to: "/support", label: "Support us" },
+  { to: "/shop", label: "Shop" },
 ] as const;
 
 const LEGAL_LINKS = [

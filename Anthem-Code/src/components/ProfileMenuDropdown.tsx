@@ -13,6 +13,7 @@ import {
   Mail,
   Palette,
   Headset,
+  HeartHandshake,
   ChevronDown,
 } from "lucide-react";
 import ManageWorkIcon from "@/components/icons/ManageWorkIcon";
@@ -37,6 +38,7 @@ import { cn } from "@/lib/utils";
 import { openBrandLineContact } from "@/lib/brandConfig";
 import LineMarkIcon from "@/components/icons/LineMarkIcon";
 import { isCommerceEnabled } from "@/lib/aplus1Launch";
+import { isSupportSpaceEnabled } from "@/lib/support/flags";
 import { toast } from "sonner";
 import { useT } from "@/lib/i18n";
 import { NAV } from "@/lib/i18n/nav";
@@ -198,6 +200,11 @@ export function ProfileMenuContent({ onNavigate, variant = "default" }: ProfileM
       ) : null}
       </MenuSection>
       <DropdownMenuSeparator />
+      {isSupportSpaceEnabled() ? (
+        <DropdownMenuItem onClick={() => go("/support")} className="rounded-lg">
+          <HeartHandshake className="w-4 h-4 mr-2" /> Support us
+        </DropdownMenuItem>
+      ) : null}
       <DropdownMenuItem onClick={() => go("/settings")} className="rounded-lg">
         <Settings className="w-4 h-4 mr-2" /> {t("settings")}
       </DropdownMenuItem>
