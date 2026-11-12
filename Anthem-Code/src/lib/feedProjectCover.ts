@@ -3,9 +3,13 @@
  * Demo seed often stores Unsplash with ?w=&h=&fit=crop; strip crop for masonry,
  * and always cap width + auto-format for PageSpeed (especially mobile).
  *
- * Supabase Storage Image Transformation is not applied here (requires Pro);
- * Unsplash + size caps cover the bulk of home-feed payload.
+ * Supabase Storage Image Transformation is not applied here (requires Pro). Our own uploads have a
+ * small copy next to the original instead (see lib/mediaThumb.ts) and cards load that one.
  */
+import { thumbUrlFor } from "@/lib/mediaThumb";
+
+/** Requests up to this width are served by the 640px small copy; wider ones get the original. */
+const THUMB_MAX_REQUEST_WIDTH = 800;
 
 export type FeedImageOpts = {
   /** Max display width in CSS px (device-independent). Default 800. */
@@ -68,6 +72,7 @@ export function optimizedFeedImageUrl(
       parsed.searchParams.set("quality", String(quality));
       return parsed.toString();
     }
+    if (width <= THUMB_MAX_REQUEST_WIDTH) return thumbUrlFor(trimmed);
   } catch {
     /* keep original */
   }

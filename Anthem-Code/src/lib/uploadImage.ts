@@ -1,6 +1,8 @@
 import imageCompression from "browser-image-compression";
 import type { Tier } from "@/core/subscription/useSubscription";
-import { uploadAnthemMedia } from "@/lib/sharedMediaUpload";
+import { uploadAnthemMedia, uploadToSharedMedia } from "@/lib/sharedMediaUpload";
+import { bumpAnthemStorageCache } from "@/lib/anthemStorageUsage";
+import { makeThumbBlob, thumbPathFor, thumbWidthFor, thumbablePath } from "@/lib/mediaThumb";
 import { assertRealImage } from "@/lib/imageSignature";
 import { normalizeImageForUpload } from "@/lib/normalizeImageUpload";
 import { UPLOAD_STAGE, type UploadStageReporter } from "@/lib/uploadProgress";
@@ -71,7 +73,7 @@ export async function uploadProjectImage(
   const compressed = await compressForUpload(normalized, options?.skipCompression, options?.reporter);
 
   const isPng = compressed.type === "image/png";
-  return uploadAnthemMedia({
+  const url = await uploadAnthemMedia({
     file: compressed,
     ext: isPng ? "png" : "webp",
     contentType: isPng ? "image/png" : "image/webp",
@@ -83,4 +85,25 @@ export async function uploadProjectImage(
     signal: options?.signal,
     fastQuotaCheck: options?.fastQuotaCheck,
   });
+  await uploadThumbFor(url, compressed, userId, options?.signal);
+  return url;
+}
+
+const ONE_YEAR_SECONDS = "31536000";
+
+/**
+ * Small copy for cards and grids, next to the file just uploaded. Never fails the upload:
+ * without it the image simply loads the original.
+ */
+async function uploadThumbFor(url: string, source: Blob, userId: string, signal?: AbortSignal): Promise<void> {
+  try {
+    const path = thumbablePath(url);
+    if (!path) return;
+    const thumb = await makeThumbBlob(source, thumbWidthFor(path));
+    if (!thumb || signal?.aborted) return;
+    await uploadToSharedMedia(thumbPathFor(path), thumb, "image/webp", 1, signal, undefined, ONE_YEAR_SECONDS);
+    bumpAnthemStorageCache(userId, thumb.size);
+  } catch (e) {
+    console.warn("[upload] small copy not created", e);
+  }
 }
