@@ -139,9 +139,13 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
   const [hideAi, setHideAi] = useState(false);
   const [mode, setMode] = useState<FeedMode>(() => {
     if (typeof window === "undefined") return "showcase";
-    if (!isCategoryAllowed("functional")) return "showcase";
+    // The address decides first, so a link to /?mode=creators opens in that view on the first paint.
+    // Starting in Showcase and switching a moment later left the panel stuck on the Showcase loader
+    // for visitors without functional cookies. Reading the address needs no consent; only the
+    // remembered choice below is functional storage.
     const urlMode = parseFeedMode(new URLSearchParams(window.location.search).get("mode"));
     if (urlMode) return coerceLaunchFeedMode(urlMode);
+    if (!isCategoryAllowed("functional")) return "showcase";
     const rawStored = localStorage.getItem("feed-mode");
     const stored = parseFeedMode(rawStored);
     // One-time migration of the pre-rename stored ids (projects/designers).
