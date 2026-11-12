@@ -12,7 +12,7 @@
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
-import { buildSitemapBundles, buildSitemapUrls } from "./sitemap-lib.mjs";
+import { buildSitemapBundles, buildSitemapUrls, eventPath } from "./sitemap-lib.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const base = (process.env.VITE_SITE_URL || process.env.SITE_URL || "https://samecor.com").replace(
@@ -39,6 +39,28 @@ function loadDotEnv() {
       val = val.slice(1, -1);
     }
     if (process.env[key] === undefined) process.env[key] = val;
+  }
+}
+
+/**
+ * Published events (main + venue rows). The slug column may not exist yet
+ * (migration 20261113100000 not applied) — PostgREST then answers 400, so retry without it.
+ */
+async function fetchEvents(rest, anthemHeaders) {
+  const q = (cols) =>
+    `${rest}/events?select=${cols}&status=eq.published&order=updated_at.desc&limit=500`;
+  try {
+    let res = await fetch(q("id,slug,cover_url,title,updated_at"), { headers: anthemHeaders });
+    if (!res.ok) res = await fetch(q("id,cover_url,title,updated_at"), { headers: anthemHeaders });
+    if (!res.ok) {
+      console.warn(`events fetch ${res.status} — skipping event URLs`);
+      return [];
+    }
+    const rows = await res.json();
+    return Array.isArray(rows) ? rows.filter((e) => e && e.id) : [];
+  } catch (err) {
+    console.warn(`events fetch failed — skipping event URLs (${err.message})`);
+    return [];
   }
 }
 
@@ -88,6 +110,7 @@ async function fetchLiveCatalog(supabaseUrl, anonKey) {
       { headers: anthemHeaders },
     ),
   ]);
+  const events = await fetchEvents(rest, anthemHeaders);
 
   if (!projectsRes.ok) {
     throw new Error(`projects fetch ${projectsRes.status}`);
@@ -158,7 +181,15 @@ async function fetchLiveCatalog(supabaseUrl, anonKey) {
     console.warn(`objects fetch ${objectsRes.status} — skipping object URLs`);
   }
 
-  return { projectIds, profileUserIds, vanityHandles, seriesIds, collectionIds, jobIds, serviceIds, objectIds, images };
+  for (const e of events) {
+    if (!e.cover_url) continue;
+    const imageLoc = e.cover_url.startsWith("http")
+      ? e.cover_url
+      : `${base}${e.cover_url.startsWith("/") ? "" : "/"}${e.cover_url}`;
+    images.push({ loc: eventPath(e), imageLoc, title: e.title || undefined });
+  }
+
+  return { projectIds, profileUserIds, vanityHandles, seriesIds, collectionIds, jobIds, serviceIds, objectIds, events, images };
 }
 
 loadDotEnv();
@@ -174,7 +205,7 @@ if (supabaseUrl && anonKey) {
   try {
     live = await fetchLiveCatalog(supabaseUrl, anonKey);
     console.log(
-      `Live catalog: ${live.projectIds.length} projects, ${live.profileUserIds.length} profiles, ${live.vanityHandles.length} @handles, ${live.seriesIds.length} series, ${live.collectionIds.length} collections, ${live.serviceIds.length} packages, ${live.objectIds.length} objects, ${live.jobIds.length} jobs`,
+      `Live catalog: ${live.projectIds.length} projects, ${live.profileUserIds.length} profiles, ${live.vanityHandles.length} @handles, ${live.seriesIds.length} series, ${live.collectionIds.length} collections, ${live.serviceIds.length} packages, ${live.objectIds.length} objects, ${live.jobIds.length} jobs, ${live.events.length} events`,
     );
   } catch (err) {
     console.warn(`Live catalog fetch failed — using seed catalog. (${err.message})`);

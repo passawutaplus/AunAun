@@ -3,7 +3,7 @@ import { MapPin, Route } from "lucide-react";
 import { EventActions } from "@/components/exhibition/EventActions";
 import { useEventStats, useMyEventInterests } from "@/hooks/useExhibitionEvents";
 import { useEventVenues, useFeaturedEvent } from "@/hooks/useEventVenues";
-import { formatEventDates } from "@/lib/exhibitionEvents";
+import { eventPath, formatEventDates } from "@/lib/exhibitionEvents";
 import { featuredCountdown, featuredCountdownParts, venueCounts } from "@/lib/eventVenues";
 import { useLang, useT } from "@/lib/i18n";
 import { EXHIBITION_SHARED } from "@/lib/i18n/exhibition/shared";
@@ -29,7 +29,7 @@ export function FeaturedEventBanner({ className }: { className?: string }) {
   // The badge carries the number, so the line beside "Featured Event" just says it's on.
   const status = days ? (days.kind === "left" ? t("cdOnNow") : null) : countdown;
   const { main } = venueCounts(venues);
-  const to = `/exhibition/${event.id}`;
+  const to = eventPath(event);
 
   return (
     <article

@@ -342,6 +342,7 @@ const App = () => (
               <Route path="/showcase/:id" element={<ProjectDetailPage />} />
               <Route path="/project/:id" element={<ProjectToShowcaseRedirect />} />
               <Route path="/exhibition" element={<ExhibitionPage />} />
+              <Route path="/exhibition/category/:cat" element={<ExhibitionPage />} />
               <Route path="/exhibition/:id" element={<ExhibitionDetailPage />} />
               <Route path="/service/:id" element={<ServiceDetailPage />} />
               <Route path="/object/:id" element={<ObjectDetailPage />} />

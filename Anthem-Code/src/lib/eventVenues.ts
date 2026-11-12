@@ -6,6 +6,7 @@ export type OpeningHoursRule = { d: number[]; o: string; c: string };
 
 export type EventVenue = {
   id: string;
+  slug?: string | null;
   parent_id: string;
   sort_order: number;
   title: string;

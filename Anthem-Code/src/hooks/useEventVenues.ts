@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { mapWriteFlowError } from "@/lib/writeFlowErrors";
 import { EVENT_SELECT, isDemoEventId, type ExhibitionEvent } from "@/lib/exhibitionEvents";
+import { withSlug } from "@/hooks/useExhibitionEvents";
 import { roundCoord } from "@/lib/routeStart";
 import { COMMON, tr } from "@/lib/i18n";
 import { VENUES } from "@/lib/i18n/exhibition/venues";
@@ -27,6 +28,11 @@ export function useFeaturedEvent() {
         .eq("is_featured", true)
         .eq("status", "published")
         .maybeSingle();
+      // Slug for the banner's links (separate so a database without the slug migration still shows the banner).
+      if (data && !error) {
+        const { data: s } = await eventsTable().select("slug").eq("id", (data as { id: string }).id).maybeSingle();
+        if (s) (data as { slug?: string | null }).slug = (s as { slug?: string | null }).slug ?? null;
+      }
       if (error || !data) return null;
       const row = data as FeaturedEvent & { is_featured: boolean };
       return featureActive(row) ? row : null;
@@ -56,10 +62,12 @@ export function useEventVenues(parentId: string | null | undefined) {
     staleTime: 60_000,
     retry: false,
     queryFn: async (): Promise<EventVenue[]> => {
-      const { data, error } = await eventsTable()
-        .select(VENUE_SELECT)
-        .eq("parent_id", parentId!)
-        .order("sort_order", { ascending: true });
+      const { data, error } = await withSlug((slugCol) =>
+        eventsTable()
+          .select(VENUE_SELECT + slugCol)
+          .eq("parent_id", parentId!)
+          .order("sort_order", { ascending: true }),
+      );
       if (error) return [];
       return ((data ?? []) as EventVenue[]).map((v) => ({
         ...v,
@@ -81,8 +89,10 @@ export function useParentEvent(id: string | null | undefined) {
       const { data, error } = await eventsTable().select("parent_id").eq("id", id!).maybeSingle();
       const parentId = (data as { parent_id: string | null } | null)?.parent_id;
       if (error || !parentId) return null;
-      const { data: p } = await eventsTable().select("id, title, cover_url").eq("id", parentId).maybeSingle();
-      return (p as { id: string; title: string; cover_url: string | null } | null) ?? null;
+      const { data: p } = await withSlug((slugCol) =>
+        eventsTable().select(`id, title, cover_url${slugCol}`).eq("id", parentId).maybeSingle(),
+      );
+      return (p as { id: string; slug?: string | null; title: string; cover_url: string | null } | null) ?? null;
     },
   });
 }

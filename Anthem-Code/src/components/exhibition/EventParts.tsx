@@ -13,6 +13,7 @@ import {
   eventDisplayStatus,
   formatEventDates,
   type ExhibitionEvent,
+  eventPath,
 } from "@/lib/exhibitionEvents";
 
 export function EventStatusBadge({ event, className }: { event: Pick<ExhibitionEvent, "status" | "ends_on">; className?: string }) {
@@ -211,7 +212,7 @@ export function EventListCard({
   interested?: boolean;
 }) {
   const t = useT(DETAIL);
-  const href = `/exhibition/${event.id}`;
+  const href = eventPath(event);
   return (
     <article className="grid gap-4 border-b border-border py-6 last:border-0 md:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] md:gap-8">
       {/* Phone: shorter frame, and no repeated title when there is no image (it sits right below). */}
