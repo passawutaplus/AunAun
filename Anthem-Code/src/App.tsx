@@ -63,6 +63,14 @@ const MyExhibitionPage = lazy(() => import("./pages/dashboard/MyExhibitionPage.t
 const ExhibitionEditorPage = lazy(() => import("./pages/dashboard/ExhibitionEditorPage.tsx"));
 const ExhibitionPage = lazy(() => import("./pages/exhibition/ExhibitionPage.tsx"));
 const ExhibitionDetailPage = lazy(() => import("./pages/exhibition/ExhibitionDetailPage.tsx"));
+const SupportPage = lazy(() => import("./pages/support/SupportPage.tsx"));
+const DonatePage = lazy(() => import("./pages/support/DonatePage.tsx"));
+const PartnersPage = lazy(() => import("./pages/support/PartnersPage.tsx"));
+const ShopPage = lazy(() => import("./pages/support/ShopPage.tsx"));
+const ShopProductPage = lazy(() => import("./pages/support/ShopProductPage.tsx"));
+const ShopBagPage = lazy(() => import("./pages/support/ShopBagPage.tsx"));
+const ShopOrderPage = lazy(() => import("./pages/support/ShopOrderPage.tsx"));
+const FoundingPickerPage = lazy(() => import("./pages/founding/FoundingPickerPage.tsx"));
 const DashboardDocumentsPage = lazy(() => import("./pages/DashboardDocumentsPage.tsx"));
 const DashboardPayoutPage = lazy(() => import("./pages/DashboardPayoutPage.tsx"));
 const ProjectDetailPage = lazy(() => import("./pages/ProjectDetailPage.tsx"));
@@ -346,6 +354,17 @@ const App = () => (
               <Route path="/exhibition" element={<ExhibitionPage />} />
               <Route path="/exhibition/category/:cat" element={<ExhibitionPage />} />
               <Route path="/exhibition/:id" element={<ExhibitionDetailPage />} />
+              {/* Support Us: hidden by LaunchMinimalGate until VITE_SUPPORT_SPACE_ENABLED=true */}
+              <Route path="/support" element={<SupportPage />} />
+              <Route path="/support/donate" element={<DonatePage />} />
+              <Route path="/support/partners" element={<PartnersPage />} />
+              <Route path="/shop" element={<ShopPage />} />
+              <Route path="/shop/bag" element={<ShopBagPage />} />
+              <Route path="/shop/order/:ref" element={<ShopOrderPage />} />
+              <Route path="/shop/:slug" element={<ShopProductPage />} />
+              {/* Founding Projects: hidden by LaunchMinimalGate until VITE_FOUNDING_ENABLED=true */}
+              <Route path="/founding" element={<Navigate to="/founding/picker" replace />} />
+              <Route path="/founding/:slug" element={<FoundingPickerPage />} />
               <Route path="/service/:id" element={<ServiceDetailPage />} />
               <Route path="/object/:id" element={<ObjectDetailPage />} />
               <Route path="/drill" element={<DrillGalleryPage />} />

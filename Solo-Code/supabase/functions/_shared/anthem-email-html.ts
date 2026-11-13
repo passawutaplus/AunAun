@@ -27,7 +27,7 @@ const LEGAL_ADDRESS = "90 เพชรเกษม 63/2 แขวงหลัก
 const FACEBOOK_URL = "https://www.facebook.com/samecor2026";
 
 // SAMECOR LINE OA (contact) — keep in sync with Anthem-Code/src/lib/brandConfig.ts
-const LINE_URL = "https://lin.ee/te9XZuh";
+const LINE_URL = "https://lin.ee/usLnwhN";
 const LINE_ID = "@567rveid";
 const FOOTER_NOTE = "ปิดการแจ้งเตือนทางอีเมลได้ที่ SAMECOR → ตั้งค่า → การแจ้งเตือน";
 

@@ -858,3 +858,186 @@ export function flexCreatorInvite(c: CreatorInviteInfo): LineMessage {
     ),
   );
 }
+
+// ---------------------------------------------------------------------------
+// Support Us: sponsor messages, shop orders, donation pledges
+// ---------------------------------------------------------------------------
+export type SponsorInfo = {
+  ref: string;
+  company: string;
+  contact: string;
+  email: string;
+  line_id: string | null;
+  interest: string;
+  budget: string;
+  message: string | null;
+  is_test: boolean;
+  created_at: string;
+};
+
+export type ShopOrderInfo = {
+  ref: string;
+  items: { name?: string; variant?: string; qty?: number; unit_thb?: number }[] | null;
+  item_count: number;
+  total_thb: number;
+  shipping_thb: number;
+  buyer_name: string;
+  buyer_phone: string;
+  is_test: boolean;
+  created_at: string;
+};
+
+export type DonationInfo = {
+  ref: string;
+  amount_thb: number;
+  show_name: boolean;
+  display_name: string | null;
+  is_test: boolean;
+  created_at: string;
+};
+
+const SPONSOR_INTEREST_LABEL: Record<string, string> = {
+  platform: "Sponsor SAMECOR",
+  first_connect: "FIRST CONNECT",
+  in_kind: "ของรางวัล / สิ่งของ",
+  invite_us: "ชวน SAMECOR ไปร่วมงาน",
+  event: "Workshop · Exhibition · Open Call",
+  unsure: "ยังไม่แน่ใจ",
+};
+
+const SPONSOR_BUDGET_LABEL: Record<string, string> = {
+  undecided: "ยังไม่กำหนดงบ",
+  under_5k: "ต่ำกว่า ฿5,000",
+  "5k_10k": "฿5,000 – ฿10,000",
+  "10k_30k": "฿10,000 – ฿30,000",
+  over_30k: "มากกว่า ฿30,000",
+  in_kind: "สนับสนุนเป็นสิ่งของ",
+};
+
+export const baht = (n: number): string => `฿${Math.round(n).toLocaleString("en-US")}`;
+/** Rows sent from the site's test mode say so in the card title. */
+const testTag = (isTest: boolean, title: string): string => (isTest ? `[ทดสอบ] ${title}` : title);
+const SUPPORT_LINK = { label: "เปิดหน้า Support", uri: `${ADMIN_SITE}/support` };
+
+export function formatSponsor(s: SponsorInfo): string {
+  return [
+    `${testTag(s.is_test, "Sponsor ทักมา")} · ${clip(s.company, 60)}`,
+    `${clip(s.contact, 40)} · ${s.email}${s.line_id ? ` · LINE ${clip(s.line_id, 30)}` : ""}`,
+    `${SPONSOR_INTEREST_LABEL[s.interest] ?? s.interest} · ${SPONSOR_BUDGET_LABEL[s.budget] ?? s.budget}`,
+    clip(s.message, 200),
+    `${s.ref} · ${bkkTime(s.created_at)}`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+export function flexSponsor(s: SponsorInfo): LineMessage {
+  const details = [
+    `${clip(s.contact, 40)} · ${s.email}`,
+    s.line_id ? `LINE ${clip(s.line_id, 30)}` : "",
+    SPONSOR_BUDGET_LABEL[s.budget] ?? s.budget,
+    clip(s.message, 240),
+    `${s.ref} · ${bkkTime(s.created_at)}`,
+  ].filter(Boolean);
+  return flex(
+    formatSponsor(s),
+    bubble(
+      testTag(s.is_test, "Sponsor ทักมา"),
+      SPONSOR_INTEREST_LABEL[s.interest] ?? s.interest,
+      [section("handshake", "แบรนด์ / บริษัท", clip(s.company, 60), details)],
+      // LINE buttons only open http(s), line: and tel: links, so no mailto here.
+      { label: "เปิดหน้า Sponsor", uri: `${ADMIN_SITE}/support/partners` },
+    ),
+  );
+}
+
+function orderLines(o: ShopOrderInfo): string[] {
+  return (o.items ?? []).slice(0, 8).map((it) => {
+    const name = [clip(it.name, 40), clip(it.variant, 24)].filter(Boolean).join(" · ");
+    return `${name} × ${it.qty ?? 1} · ${baht((it.unit_thb ?? 0) * (it.qty ?? 1))}`;
+  });
+}
+
+export function formatShopOrder(o: ShopOrderInfo): string {
+  return [
+    `${testTag(o.is_test, "ออเดอร์ใหม่")} · ${baht(o.total_thb)}`,
+    ...orderLines(o),
+    `ค่าส่ง ${baht(o.shipping_thb)}`,
+    `${clip(o.buyer_name, 40)} · ${clip(o.buyer_phone, 20)}`,
+    `${o.ref} · ${bkkTime(o.created_at)}`,
+  ].join("\n");
+}
+
+export function flexShopOrder(o: ShopOrderInfo): LineMessage {
+  return flex(
+    formatShopOrder(o),
+    bubble(
+      testTag(o.is_test, "ออเดอร์ใหม่"),
+      `${o.ref} · ${bkkTime(o.created_at)}`,
+      [
+        section("bag", `${o.item_count} ชิ้น`, baht(o.total_thb), [
+          ...orderLines(o),
+          `ค่าส่ง ${baht(o.shipping_thb)}`,
+          `${clip(o.buyer_name, 40)} · ${clip(o.buyer_phone, 20)}`,
+        ]),
+      ],
+      { label: "เปิดร้าน", uri: `${ADMIN_SITE}/shop` },
+    ),
+  );
+}
+
+export function formatDonation(d: DonationInfo): string {
+  const who = d.show_name && d.display_name ? clip(d.display_name, 40) : "ไม่ระบุชื่อ";
+  return [
+    `${testTag(d.is_test, "มีคนโดเนท")} · ${baht(d.amount_thb)}`,
+    who,
+    `${d.ref} · ${bkkTime(d.created_at)}`,
+  ].join("\n");
+}
+
+export function flexDonation(d: DonationInfo): LineMessage {
+  const who = d.show_name && d.display_name ? clip(d.display_name, 40) : "ไม่ระบุชื่อ";
+  return flex(
+    formatDonation(d),
+    bubble(
+      testTag(d.is_test, "มีคนโดเนท"),
+      `${d.ref} · ${bkkTime(d.created_at)}`,
+      [section("coffee", who, baht(d.amount_thb), ["รอยืนยันยอดโอน"])],
+      SUPPORT_LINK,
+    ),
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Founding Projects: waitlist sign-ups
+// ---------------------------------------------------------------------------
+export type WaitlistInfo = {
+  campaign: string;
+  email: string;
+  is_test: boolean;
+  created_at: string;
+  /** Real (non-test) sign-ups for this campaign so far. */
+  total: number;
+};
+
+const FOUNDING_CAMPAIGN_LABEL: Record<string, string> = { picker: "Picker · The First 30" };
+
+export function formatWaitlist(w: WaitlistInfo): string {
+  return [
+    `${testTag(w.is_test, "ลงชื่อ Waitlist")} · ${FOUNDING_CAMPAIGN_LABEL[w.campaign] ?? w.campaign}`,
+    w.email,
+    `รวม ${w.total} คน · ${bkkTime(w.created_at)}`,
+  ].join("\n");
+}
+
+export function flexWaitlist(w: WaitlistInfo): LineMessage {
+  return flex(
+    formatWaitlist(w),
+    bubble(
+      testTag(w.is_test, "ลงชื่อ Waitlist"),
+      FOUNDING_CAMPAIGN_LABEL[w.campaign] ?? w.campaign,
+      [section("user-plus", clip(w.email, 60), `รวม ${w.total} คน`, [bkkTime(w.created_at)])],
+      { label: "เปิดหน้าโครงการ", uri: `${ADMIN_SITE}/founding/${encodeURIComponent(w.campaign)}` },
+    ),
+  );
+}

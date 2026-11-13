@@ -10,25 +10,44 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import {
   type CreatorInviteInfo,
   type DigestInfo,
+  type DonationInfo,
   type EventInfo,
   type FeedbackInfo,
   type MemberInfo,
   type ReportInfo,
+  type ShopOrderInfo,
+  type SponsorInfo,
   type TrendInfo,
+  type WaitlistInfo,
   type LineMessage,
   flexCreatorInvite,
   flexDigest,
+  flexDonation,
   flexEvent,
   flexFeedback,
   flexMembersBatch,
   flexReport,
+  flexShopOrder,
+  flexSponsor,
   flexTrend,
+  flexWaitlist,
   isIgnoredEmail,
 } from "../_shared/line-admin-format.ts";
 
 type OutboxRow = {
   id: number;
-  kind: "member" | "feedback" | "report" | "digest" | "event" | "trend" | "creator_invite";
+  kind:
+    | "member"
+    | "feedback"
+    | "report"
+    | "digest"
+    | "event"
+    | "trend"
+    | "creator_invite"
+    | "sponsor"
+    | "shop_order"
+    | "donation"
+    | "waitlist";
   ref_id: string | null;
   attempts: number;
 };
@@ -144,6 +163,34 @@ Deno.serve(async (req) => {
       const ci = ((data ?? []) as CreatorInviteInfo[])[0];
       if (ci) {
         texts.push(flexCreatorInvite(ci));
+        sentIds.push(r.id);
+      } else skippedIds.push(r.id);
+    } else if (r.kind === "sponsor" && r.ref_id) {
+      const { data } = await admin.rpc("admin_line_sponsor_info", { _id: r.ref_id });
+      const sp = ((data ?? []) as SponsorInfo[])[0];
+      if (sp) {
+        texts.push(flexSponsor(sp));
+        sentIds.push(r.id);
+      } else skippedIds.push(r.id);
+    } else if (r.kind === "shop_order" && r.ref_id) {
+      const { data } = await admin.rpc("admin_line_shop_order_info", { _id: r.ref_id });
+      const order = ((data ?? []) as ShopOrderInfo[])[0];
+      if (order) {
+        texts.push(flexShopOrder(order));
+        sentIds.push(r.id);
+      } else skippedIds.push(r.id);
+    } else if (r.kind === "donation" && r.ref_id) {
+      const { data } = await admin.rpc("admin_line_donation_info", { _id: r.ref_id });
+      const don = ((data ?? []) as DonationInfo[])[0];
+      if (don) {
+        texts.push(flexDonation(don));
+        sentIds.push(r.id);
+      } else skippedIds.push(r.id);
+    } else if (r.kind === "waitlist" && r.ref_id) {
+      const { data } = await admin.rpc("admin_line_waitlist_info", { _id: r.ref_id });
+      const wl = ((data ?? []) as WaitlistInfo[])[0];
+      if (wl) {
+        texts.push(flexWaitlist(wl));
         sentIds.push(r.id);
       } else skippedIds.push(r.id);
     } else if (r.kind === "digest") {
