@@ -1,6 +1,8 @@
 import imageCompression from "browser-image-compression";
 import type { Tier } from "@/core/subscription/useSubscription";
-import { uploadAnthemMedia } from "@/lib/sharedMediaUpload";
+import { uploadAnthemMedia, uploadToSharedMedia } from "@/lib/sharedMediaUpload";
+import { bumpAnthemStorageCache } from "@/lib/anthemStorageUsage";
+import { makeThumbBlob, thumbPathFor, thumbWidthFor, thumbablePath } from "@/lib/mediaThumb";
 import { assertRealImage } from "@/lib/imageSignature";
 import { normalizeImageForUpload } from "@/lib/normalizeImageUpload";
 import { UPLOAD_STAGE, type UploadStageReporter } from "@/lib/uploadProgress";
@@ -27,21 +29,26 @@ export type UploadProjectImageOptions = {
   signal?: AbortSignal;
 };
 
+/** PNG never skips: a cropped cover comes out as a ~1 MB PNG, and as webp it is a fraction of that. */
 function canSkipCompression(file: File): boolean {
-  return file.size <= SKIP_RECOMPRESS_MAX_BYTES && file.type.startsWith("image/");
+  return file.size <= SKIP_RECOMPRESS_MAX_BYTES && file.type.startsWith("image/") && file.type !== "image/png";
 }
+
+/** An avatar is never shown larger than a profile header: no need to keep a 1920px file. */
+const AVATAR_MAX_PX = 512;
 
 async function compressForUpload(
   file: File,
   skipCompression: boolean | undefined,
   reporter: UploadStageReporter | undefined,
+  maxPx = 1920,
 ): Promise<File> {
-  if (skipCompression && canSkipCompression(file)) return file;
+  if (skipCompression && canSkipCompression(file) && maxPx >= 1920) return file;
 
   reporter?.onStage?.(UPLOAD_STAGE.compressingImage);
   return imageCompression(file, {
     maxSizeMB: 1.0,
-    maxWidthOrHeight: 1920,
+    maxWidthOrHeight: maxPx,
     useWebWorker: true,
     fileType: "image/webp",
     initialQuality: 0.85,
@@ -68,10 +75,15 @@ export async function uploadProjectImage(
 
   await assertRealImage(normalized);
 
-  const compressed = await compressForUpload(normalized, options?.skipCompression, options?.reporter);
+  const compressed = await compressForUpload(
+    normalized,
+    options?.skipCompression,
+    options?.reporter,
+    folder === "avatar" ? AVATAR_MAX_PX : 1920,
+  );
 
   const isPng = compressed.type === "image/png";
-  return uploadAnthemMedia({
+  const url = await uploadAnthemMedia({
     file: compressed,
     ext: isPng ? "png" : "webp",
     contentType: isPng ? "image/png" : "image/webp",
@@ -83,4 +95,25 @@ export async function uploadProjectImage(
     signal: options?.signal,
     fastQuotaCheck: options?.fastQuotaCheck,
   });
+  await uploadThumbFor(url, compressed, userId, options?.signal);
+  return url;
+}
+
+const ONE_YEAR_SECONDS = "31536000";
+
+/**
+ * Small copy for cards and grids, next to the file just uploaded. Never fails the upload:
+ * without it the image simply loads the original.
+ */
+async function uploadThumbFor(url: string, source: Blob, userId: string, signal?: AbortSignal): Promise<void> {
+  try {
+    const path = thumbablePath(url);
+    if (!path) return;
+    const thumb = await makeThumbBlob(source, thumbWidthFor(path));
+    if (!thumb || signal?.aborted) return;
+    await uploadToSharedMedia(thumbPathFor(path), thumb, "image/webp", 1, signal, undefined, ONE_YEAR_SECONDS);
+    bumpAnthemStorageCache(userId, thumb.size);
+  } catch (e) {
+    console.warn("[upload] small copy not created", e);
+  }
 }

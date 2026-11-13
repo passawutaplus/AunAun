@@ -133,23 +133,35 @@ describe("removeUnreferencedProjectFiles", () => {
     h.tables.community_posts = { data: [], error: null };
     await removeUnreferencedProjectFiles(snapshot());
     expect(h.removed).toEqual([
-      { bucket: "project-media", paths: expect.arrayContaining([cover, block]) },
+      { bucket: "project-media", paths: expect.arrayContaining([cover, block, `${cover}.w640.webp`, `${block}.w640.webp`]) },
       { bucket: "project-assets", paths: [attachment] },
     ]);
+    expect(h.removed[0].paths).toHaveLength(4);
   });
 
   it("keeps a file a community post still shows", async () => {
     h.tables.projects = { data: [], error: null };
     h.tables.community_posts = { data: [{ gallery_urls: [`${BASE}/${cover}`], video_urls: [] }], error: null };
     await removeUnreferencedProjectFiles(snapshot());
-    expect(h.removed[0]).toEqual({ bucket: "project-media", paths: [block] });
+    expect(h.removed[0]).toEqual({ bucket: "project-media", paths: [block, `${block}.w640.webp`] });
   });
 
   it("keeps a file another work still uses", async () => {
     h.tables.projects = { data: [{ content_blocks: [{ url: `${BASE}/${block}` }] }], error: null };
     h.tables.community_posts = { data: [], error: null };
     await removeUnreferencedProjectFiles(snapshot());
-    expect(h.removed[0]).toEqual({ bucket: "project-media", paths: [cover] });
+    expect(h.removed[0]).toEqual({ bucket: "project-media", paths: [cover, `${cover}.w640.webp`] });
+  });
+
+  it("keeps a small copy whose original is still shown, and does not list one twice", async () => {
+    h.tables.projects = { data: [], error: null };
+    h.tables.community_posts = { data: [{ gallery_urls: [`${BASE}/${cover}`], video_urls: [] }], error: null };
+    const snap = snapshot();
+    // The folder sweep found the small copies as plain files.
+    snap.media.add(`${cover}.w640.webp`);
+    snap.media.add(`${block}.w640.webp`);
+    await removeUnreferencedProjectFiles(snap);
+    expect(h.removed[0]).toEqual({ bucket: "project-media", paths: [block, `${block}.w640.webp`] });
   });
 
   it("removes nothing when the reference check fails", async () => {

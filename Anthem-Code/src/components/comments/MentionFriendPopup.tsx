@@ -1,3 +1,4 @@
+import { cardImageSrc } from "@/lib/mediaThumb";
 import { FolderOpen } from "lucide-react";
 import UserAvatar from "@/components/UserAvatar";
 import { useAuth } from "@/hooks/useAuth";
@@ -122,7 +123,7 @@ export function MentionFriendPopup({ query, text, onPick, className }: Props) {
             onClick={() => pickProject(p)}
           >
             {p.coverUrl ? (
-              <img loading="lazy" decoding="async" src={p.coverUrl} alt="" className="h-7 w-7 rounded-md object-cover shrink-0" />
+              <img loading="lazy" decoding="async" src={cardImageSrc(p.coverUrl)} alt="" className="h-7 w-7 rounded-md object-cover shrink-0" />
             ) : (
               <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-muted">
                 <FolderOpen className="h-3.5 w-3.5 text-muted-foreground" />

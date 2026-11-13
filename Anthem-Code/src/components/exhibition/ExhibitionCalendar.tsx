@@ -1,3 +1,4 @@
+import { cardImageSrc } from "@/lib/mediaThumb";
 import { Fragment, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -164,8 +165,8 @@ function EventRow({
       >
         <span className="block h-16 w-16 overflow-hidden rounded-[3px] bg-muted">
           {event.cover_url ? (
-            <img
-              src={event.cover_url}
+            <img decoding="async"
+              src={cardImageSrc(event.cover_url)}
               alt=""
               className="h-full w-full object-cover"
               loading="lazy"

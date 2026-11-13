@@ -1,3 +1,4 @@
+import { cardImageSrc } from "@/lib/mediaThumb";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { eventJsonLd } from "@/lib/eventJsonLd";
@@ -490,7 +491,7 @@ export default function ExhibitionDetailPage() {
               <Link key={w.id} to={`/showcase/${w.id}`} className="group block focus-visible:outline-none">
                 <div className="aspect-[4/3] overflow-hidden rounded-md bg-muted group-focus-visible:ring-2 group-focus-visible:ring-foreground">
                   {w.cover_url ? (
-                    <img src={w.cover_url} alt="" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" loading="lazy" />
+                    <img decoding="async" src={cardImageSrc(w.cover_url)} alt="" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" loading="lazy" />
                   ) : null}
                 </div>
                 <p className="mt-2 line-clamp-1 text-sm font-medium text-foreground">{w.title}</p>
