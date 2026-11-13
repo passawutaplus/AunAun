@@ -20,14 +20,11 @@ import {
   Search,
   Trash2,
   Pencil,
-  ExternalLink,
-  FileText,
   Star,
   Phone,
   Mail,
   Globe,
   Building2,
-  Share2,
   MapPin,
   Eye,
   User as UserIcon,
@@ -36,32 +33,15 @@ import { toast } from "sonner";
 import { PageFooterActions } from "./PageFooterActions";
 import { SUPPLIER_CATEGORIES, categoryIcon } from "./suppliers/categories";
 import { SupplierFormDialog } from "./suppliers/SupplierFormDialog";
-import { SupplierShareDialog } from "./suppliers/SupplierShareDialog";
 import { SupplierPreviewDialog } from "./suppliers/SupplierPreviewDialog";
 
 export function SuppliersTab() {
-  const {
-    suppliers,
-    files,
-    links,
-    isLoading,
-    create,
-    update,
-    remove,
-    uploadFile,
-    deleteFile,
-    addLink,
-    removeLink,
-    getSignedUrl,
-    enableShare,
-    disableShare,
-  } = useSuppliers();
+  const { suppliers, isLoading, create, update, remove } = useSuppliers();
   const [query, setQuery] = React.useState("");
   const [filterCat, setFilterCat] = React.useState<string>("all");
   const [editing, setEditing] = React.useState<Supplier | null>(null);
   const [creating, setCreating] = React.useState(false);
   const [confirmDel, setConfirmDel] = React.useState<Supplier | null>(null);
-  const [sharing, setSharing] = React.useState<Supplier | null>(null);
   const [previewing, setPreviewing] = React.useState<Supplier | null>(null);
 
   const filtered = React.useMemo(() => {
@@ -150,23 +130,15 @@ export function SuppliersTab() {
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-            {filtered.map((s) => {
-              const sFiles = files.filter((f) => f.supplierId === s.id);
-              const sLinks = links.filter((l) => l.supplierId === s.id);
-              return (
-                <SupplierCard
-                  key={s.id}
-                  s={s}
-                  files={sFiles}
-                  links={sLinks}
-                  onEdit={() => setEditing(s)}
-                  onDelete={() => setConfirmDel(s)}
-                  onShare={() => setSharing(s)}
-                  onPreview={() => setPreviewing(s)}
-                  onOpenFile={async (path) => window.open(await getSignedUrl(path), "_blank")}
-                />
-              );
-            })}
+            {filtered.map((s) => (
+              <SupplierCard
+                key={s.id}
+                s={s}
+                onEdit={() => setEditing(s)}
+                onDelete={() => setConfirmDel(s)}
+                onPreview={() => setPreviewing(s)}
+              />
+            ))}
           </div>
         </CardContent>
       </Card>
@@ -178,59 +150,17 @@ export function SuppliersTab() {
           setCreating(false);
           setEditing(null);
         }}
-        onSubmit={async (data, staged) => {
+        onSubmit={async (data) => {
           if (editing) {
             await update(editing.id, data);
             toast.success("บันทึกการแก้ไขแล้ว");
           } else {
-            const created = await create(data);
-            for (const l of staged.links) {
-              try {
-                await addLink(created.id, l.label, l.url);
-              } catch {
-                /* ignore */
-              }
-            }
-            for (const f of staged.files) {
-              try {
-                await uploadFile(created.id, f);
-              } catch {
-                /* ignore */
-              }
-            }
+            await create(data);
             toast.success("เพิ่ม Supplier แล้ว");
           }
           setCreating(false);
           setEditing(null);
         }}
-        files={editing ? files.filter((f) => f.supplierId === editing.id) : []}
-        linksList={editing ? links.filter((l) => l.supplierId === editing.id) : []}
-        onUpload={async (file) => {
-          if (editing) {
-            await uploadFile(editing.id, file);
-          }
-        }}
-        onDeleteFile={async (f) => {
-          await deleteFile(f as never);
-        }}
-        onAddLink={async (label, url) => {
-          if (editing) {
-            await addLink(editing.id, label, url);
-          }
-        }}
-        onRemoveLink={async (id) => {
-          await removeLink(id);
-        }}
-        getSignedUrl={getSignedUrl}
-      />
-
-      <SupplierShareDialog
-        open={!!sharing}
-        supplier={sharing}
-        onClose={() => setSharing(null)}
-        onEnable={enableShare}
-        onDisable={disableShare}
-        onUpdate={update}
       />
 
       <SupplierPreviewDialog
@@ -243,9 +173,7 @@ export function SuppliersTab() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>ลบ Supplier?</AlertDialogTitle>
-            <AlertDialogDescription>
-              "{confirmDel?.name}" จะถูกลบถาวรพร้อมไฟล์และลิงก์ทั้งหมด
-            </AlertDialogDescription>
+            <AlertDialogDescription>"{confirmDel?.name}" จะถูกลบถาวร</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
@@ -293,22 +221,14 @@ function Chip({
 
 function SupplierCard({
   s,
-  files,
-  links,
   onEdit,
   onDelete,
-  onShare,
   onPreview,
-  onOpenFile,
 }: {
   s: Supplier;
-  files: { id: string; fileName: string; storagePath: string; mimeType?: string }[];
-  links: { id: string; label: string; url: string }[];
   onEdit: () => void;
   onDelete: () => void;
-  onShare: () => void;
   onPreview: () => void;
-  onOpenFile: (path: string) => void;
 }) {
   return (
     <div className="rounded-xl border border-border/60 bg-card p-3.5 hover:shadow-elevated hover:-translate-y-0.5 transition-all flex flex-col gap-2.5 overflow-hidden">
@@ -337,12 +257,6 @@ function SupplierCard({
                 {s.rating}
               </span>
             )}
-            {s.isShared && (
-              <span className="inline-flex items-center gap-0.5 text-[10px] rounded-full bg-primary-soft text-primary px-1.5 py-0.5">
-                <Share2 className="h-2.5 w-2.5" />
-                Public
-              </span>
-            )}
           </div>
           {s.category &&
             (() => {
@@ -363,9 +277,6 @@ function SupplierCard({
             title="พรีวิว"
           >
             <Eye className="h-3.5 w-3.5" />
-          </Button>
-          <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={onShare} title="แชร์">
-            <Share2 className="h-3.5 w-3.5" />
           </Button>
           <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={onEdit} title="แก้ไข">
             <Pencil className="h-3.5 w-3.5" />
@@ -450,37 +361,6 @@ function SupplierCard({
             >
               #{t}
             </span>
-          ))}
-        </div>
-      )}
-
-      {(files.length > 0 || links.length > 0) && (
-        <div className="border-t border-border/40 pt-2 space-y-1">
-          {links.map((l) => {
-            const safe = safeHref(l.url);
-            if (!safe) return null;
-            return (
-              <a
-                key={l.id}
-                href={safe}
-                target="_blank"
-                rel="noopener"
-                className="flex items-center gap-1.5 text-[11px] text-primary hover:underline truncate"
-              >
-                <ExternalLink className="h-3 w-3 shrink-0" />
-                {l.label || l.url}
-              </a>
-            );
-          })}
-          {files.map((f) => (
-            <button
-              key={f.id}
-              onClick={() => onOpenFile(f.storagePath)}
-              className="flex items-center gap-1.5 text-[11px] text-foreground hover:text-primary truncate w-full text-left"
-            >
-              <FileText className="h-3 w-3 shrink-0" />
-              {f.fileName}
-            </button>
           ))}
         </div>
       )}

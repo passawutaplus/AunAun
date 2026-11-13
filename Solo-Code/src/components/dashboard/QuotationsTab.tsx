@@ -266,17 +266,6 @@ export function QuotationsTab() {
       .join("\n\n");
 
     const afterCreate = async (q: Quotation) => {
-      if (studioInit.members?.length) {
-        const rows = studioInit.members.map((m, i) => ({
-          quotation_id: q.id,
-          user_id: m.userId ?? null,
-          display_name: m.displayName,
-          role: i === 0 ? "lead" : "member",
-          revenue_percent: m.revenuePercent ?? null,
-          sort_order: i,
-        }));
-        await supabase.from("quotation_collaborators").insert(rows);
-      }
       setEditingId(q.id);
       toast.success("สร้างใบเสนอราคารวม Studio แล้ว");
     };
@@ -610,9 +599,9 @@ export function QuotationsTab() {
                     if (q) {
                       supabase.auth.getUser().then(({ data }) => {
                         const email = data.user?.email;
-                        const name = (data.user?.user_metadata as any)?.full_name as
-                          | string
-                          | undefined;
+                        const name = (
+                          data.user?.user_metadata as { full_name?: string } | undefined
+                        )?.full_name;
                         if (!email) return;
                         const totals = computeTotals(q);
                         sendTransactionalEmail({

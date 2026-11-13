@@ -9,19 +9,16 @@ import {
   Building2,
   User as UserIcon,
   Wallet,
-  FileText,
 } from "lucide-react";
 import { formatTHB } from "@/data/mockData";
 import type { SavedClient } from "@/store/clients";
 
 export function SavedClientCard({
   client,
-  fileCount = 0,
   onEdit,
   onDelete,
 }: {
   client: SavedClient;
-  fileCount?: number;
   onEdit: () => void;
   onDelete: () => void;
 }) {
@@ -86,7 +83,7 @@ export function SavedClientCard({
         )}
       </div>
 
-      {(client.paymentTerms || client.rate || fileCount > 0) && (
+      {(client.paymentTerms || client.rate) && (
         <div className="flex flex-wrap gap-1.5 pt-1 border-t border-border/40">
           {client.paymentTerms && (
             <Badge variant="secondary" className="text-[10px] rounded-full">
@@ -97,12 +94,6 @@ export function SavedClientCard({
           {client.rate && (
             <Badge variant="outline" className="text-[10px] rounded-full">
               ~฿{formatTHB(client.rate)}
-            </Badge>
-          )}
-          {fileCount > 0 && (
-            <Badge variant="outline" className="text-[10px] rounded-full">
-              <FileText className="h-2.5 w-2.5 mr-1" />
-              {fileCount} เอกสาร
             </Badge>
           )}
         </div>

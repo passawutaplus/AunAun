@@ -226,12 +226,6 @@ export function SupabaseConnectionSection() {
       status: "checking",
     },
     {
-      id: "inhouse_workspace",
-      label: "In-House Co-working (org + kanban + chat)",
-      migrationFile: "20260612120000_inhouse_workspace.sql",
-      status: "checking",
-    },
-    {
       id: "document_theme",
       label: "Custom Docs — profiles.document_theme",
       migrationFile: "20260616120000_profiles_document_theme.sql",
@@ -240,12 +234,6 @@ export function SupabaseConnectionSection() {
     {
       id: "quotation_collab",
       label: "In-House quotes — collaborators + kind/snapshots",
-      migrationFile: "20260616130000_quotation_collab_inhouse_branding.sql",
-      status: "checking",
-    },
-    {
-      id: "quotation_collaborators",
-      label: "ตาราง quotation_collaborators",
       migrationFile: "20260616130000_quotation_collab_inhouse_branding.sql",
       status: "checking",
     },
@@ -279,10 +267,8 @@ export function SupabaseConnectionSection() {
       feedbackFields,
       activityFeed,
       adminBusinessRls,
-      inhouse,
       documentTheme,
       quotationCollabCols,
-      quotationCollaborators,
       coeditRls,
     ] = await Promise.all([
       probeQuotationContractColumns(),
@@ -291,10 +277,8 @@ export function SupabaseConnectionSection() {
       probeFeedbackTicketFields(),
       probeActivityFeedRpc(),
       probeAdminBusinessRls(),
-      probeTable("inhouse_orgs"),
       probeProfilesDocumentTheme(),
       probeQuotationCollabColumns(),
-      probeTable("quotation_collaborators"),
       probeCoeditRlsHelpers(),
     ]);
 
@@ -358,12 +342,6 @@ export function SupabaseConnectionSection() {
         ...adminBusinessRls,
       },
       {
-        id: "inhouse_workspace",
-        label: "In-House Co-working (org + kanban + chat)",
-        migrationFile: "20260612120000_inhouse_workspace.sql",
-        ...inhouse,
-      },
-      {
         id: "document_theme",
         label: "Custom Docs — profiles.document_theme",
         migrationFile: "20260616120000_profiles_document_theme.sql",
@@ -374,12 +352,6 @@ export function SupabaseConnectionSection() {
         label: "In-House quotes — collaborators + kind/snapshots",
         migrationFile: "20260616130000_quotation_collab_inhouse_branding.sql",
         ...quotationCollabCols,
-      },
-      {
-        id: "quotation_collaborators",
-        label: "ตาราง quotation_collaborators",
-        migrationFile: "20260616130000_quotation_collab_inhouse_branding.sql",
-        ...quotationCollaborators,
       },
       {
         id: "coedit_rls",

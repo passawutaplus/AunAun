@@ -85,11 +85,7 @@ export const STORAGE_QUOTA_LABEL = SO1O_STORAGE_QUOTA_LABEL;
 export const USER_STORAGE_BUCKETS = [
   "brand-logos",
   "brief-references",
-  "job-tracker",
   "chat-images",
-  "supplier-files",
-  "supplier-covers",
-  "expense-receipts",
   "wht-certificates",
   "ticket-attachments",
 ] as const;

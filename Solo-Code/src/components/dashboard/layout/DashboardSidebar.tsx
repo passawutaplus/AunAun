@@ -4,16 +4,9 @@ import {
   Home,
   Lightbulb,
   FileText,
-  Workflow,
-  CalendarDays,
-  ListTodo,
-  MessageSquare,
-  Calculator,
   Coins,
-  CreditCard,
   Users,
   Truck,
-  FolderOpen,
   Settings,
   ChevronRight,
   Briefcase,
@@ -22,7 +15,6 @@ import {
   Kanban,
   Scale,
   Mic,
-  IdCard,
   FlaskConical,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
@@ -50,7 +42,6 @@ import { SupportSidebarButton } from "./SupportSidebarButton";
 import { SupportFab } from "@/components/support/SupportFab";
 import { SidebarUpgradeBadge } from "./SidebarUpgradeBadge";
 import { SidebarCreditAiStrip } from "./SidebarCreditAiStrip";
-import { InhouseSidebarNav } from "@/components/inhouse/InhouseSidebarNav";
 
 export type DashSection = "home" | "overview" | "finance" | "planner" | "mydata" | "settings";
 
@@ -82,35 +73,19 @@ const GROUPS: NavGroup[] = [
       { label: "Meeting", icon: Mic, section: "planner", sub: "meetings" },
       { label: "Smart Brief", icon: Lightbulb, section: "planner", sub: "briefs" },
       { label: "Quotation", icon: FileText, section: "finance", sub: "quotations" },
-      { label: "Job Tracker", icon: Workflow, section: "finance", sub: "jobs" },
     ],
   },
   {
     label: "Finance",
     icon: Wallet,
-    items: [
-      { label: "Income", icon: Coins, section: "finance", sub: "income" },
-      { label: "Tax", icon: Calculator, section: "finance", sub: "tax" },
-      { label: "Subscription", icon: CreditCard, section: "finance", sub: "subs" },
-    ],
-  },
-  {
-    label: "Planning",
-    icon: CalendarDays,
-    items: [
-      { label: "Content", icon: CalendarDays, section: "planner", sub: "content" },
-      { label: "To Do List", icon: ListTodo, section: "planner", sub: "projects" },
-      { label: "Feedback", icon: MessageSquare, section: "planner", sub: "feedback" },
-    ],
+    items: [{ label: "Income", icon: Coins, section: "finance", sub: "income" }],
   },
   {
     label: "Data",
     icon: Database,
     items: [
-      { label: "Portfolio", icon: IdCard, section: "mydata", sub: "portfolio" },
       { label: "Clients", icon: Users, section: "mydata", sub: "clients" },
       { label: "Suppliers", icon: Truck, section: "mydata", sub: "suppliers" },
-      { label: "Assets", icon: FolderOpen, section: "mydata", sub: "assets" },
       { label: "Legal Desk", icon: Scale, section: "mydata", sub: "legal" },
     ],
   },
@@ -282,7 +257,11 @@ export function DashboardSidebar({ active, activeSub, setActive }: DashboardSide
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Creative Labs" className={cn(MENU_BTN, "font-semibold")}>
+                <SidebarMenuButton
+                  asChild
+                  tooltip="Creative Labs"
+                  className={cn(MENU_BTN, "font-semibold")}
+                >
                   <Link to="/labs">
                     <FlaskConical className="h-4 w-4 shrink-0" />
                     {!collapsed && <span className="text-xs">Creative Labs</span>}
@@ -290,17 +269,15 @@ export function DashboardSidebar({ active, activeSub, setActive }: DashboardSide
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              {GROUPS.map((group, idx) => (
-                <React.Fragment key={group.label}>
-                  <NavCollapsibleGroup
-                    group={group}
-                    collapsed={collapsed}
-                    active={active}
-                    activeSub={activeSub}
-                    setActive={setActive}
-                  />
-                  {idx === 0 && <InhouseSidebarNav collapsed={collapsed} />}
-                </React.Fragment>
+              {GROUPS.map((group) => (
+                <NavCollapsibleGroup
+                  key={group.label}
+                  group={group}
+                  collapsed={collapsed}
+                  active={active}
+                  activeSub={activeSub}
+                  setActive={setActive}
+                />
               ))}
             </SidebarMenu>
           </SidebarGroupContent>

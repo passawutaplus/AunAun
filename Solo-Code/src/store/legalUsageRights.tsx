@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/auth/AuthProvider";
 import { throwIfSupabaseError } from "@/lib/supabaseError";
@@ -8,6 +9,9 @@ import {
   type UsageRights,
   type UsageRightsInput,
 } from "@/lib/usageRightsSchema";
+
+/** legal_usage_rights / legal_checklist_progress are not in the generated types yet. */
+const untypedSupabase = supabase as unknown as SupabaseClient;
 
 interface RightsRow {
   id: string;
@@ -81,7 +85,7 @@ export function useLegalUsageRights() {
     queryKey: KEY_MINE(uid),
     enabled: !!uid,
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await untypedSupabase
         .from("legal_usage_rights")
         .select("*")
         .eq("user_id", uid!)
@@ -105,7 +109,7 @@ export function useLegalUsageRights() {
       const row = inputToRow(uid, input, quotationId);
 
       if (rightsId) {
-        const { data, error } = await (supabase as any)
+        const { data, error } = await untypedSupabase
           .from("legal_usage_rights")
           .update(row)
           .eq("id", rightsId)
@@ -116,7 +120,7 @@ export function useLegalUsageRights() {
         return rowToRights(data as RightsRow);
       }
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await untypedSupabase
         .from("legal_usage_rights")
         .insert(row)
         .select("*")
@@ -125,7 +129,7 @@ export function useLegalUsageRights() {
       const saved = rowToRights(data as RightsRow);
 
       if (quotationId) {
-        const { error: qErr } = await (supabase as any)
+        const { error: qErr } = await untypedSupabase
           .from("quotations")
           .update({ usage_rights_id: saved.id })
           .eq("id", quotationId)
@@ -154,7 +158,7 @@ export function useUsageRightsById(id: string | null | undefined) {
     queryKey: KEY_ONE(id ?? "none"),
     enabled: !!id,
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await untypedSupabase
         .from("legal_usage_rights")
         .select("*")
         .eq("id", id!)
@@ -175,7 +179,7 @@ export function useLegalChecklist(checklistId: string) {
     queryKey: key,
     enabled: !!uid,
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await untypedSupabase
         .from("legal_checklist_progress")
         .select("checked_items")
         .eq("user_id", uid!)
@@ -193,7 +197,7 @@ export function useLegalChecklist(checklistId: string) {
       if (current.has(itemId)) current.delete(itemId);
       else current.add(itemId);
       const checked = [...current];
-      const { error } = await (supabase as any).from("legal_checklist_progress").upsert(
+      const { error } = await untypedSupabase.from("legal_checklist_progress").upsert(
         {
           user_id: uid,
           checklist_id: checklistId,
@@ -213,61 +217,4 @@ export function useLegalChecklist(checklistId: string) {
     toggle: toggle.mutateAsync,
     isLoading: progress.isLoading,
   };
-}
-
-export function useLegalDocuments() {
-  const { user } = useAuth();
-  const uid = user?.id;
-  const qc = useQueryClient();
-
-  const list = useQuery({
-    queryKey: ["legal_documents", uid],
-    enabled: !!uid,
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("legal_documents")
-        .select("*")
-        .eq("user_id", uid!)
-        .order("created_at", { ascending: false })
-        .limit(30);
-      throwIfSupabaseError(error);
-      return data as Array<{
-        id: string;
-        title: string;
-        body: string;
-        doc_type: string;
-        quotation_id: string | null;
-        created_at: string;
-      }>;
-    },
-  });
-
-  const save = useMutation({
-    mutationFn: async (doc: {
-      title: string;
-      body: string;
-      docType: "contract_draft" | "guardian_note" | "debt_reminder";
-      quotationId?: string;
-      meta?: Record<string, unknown>;
-    }) => {
-      if (!uid) throw new Error("ต้องเข้าสู่ระบบ");
-      const { data, error } = await (supabase as any)
-        .from("legal_documents")
-        .insert({
-          user_id: uid,
-          title: doc.title,
-          body: doc.body,
-          doc_type: doc.docType,
-          quotation_id: doc.quotationId ?? null,
-          meta: doc.meta ?? {},
-        })
-        .select("*")
-        .single();
-      throwIfSupabaseError(error);
-      return data;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["legal_documents", uid] }),
-  });
-
-  return { documents: list.data ?? [], save: save.mutateAsync };
 }

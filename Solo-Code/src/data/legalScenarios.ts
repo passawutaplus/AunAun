@@ -50,16 +50,14 @@ export const LEGAL_SCENARIOS: LegalScenario[] = [
     title: "ใช้ฟอนต์ฟรีในงานลูกค้าได้ไหม?",
     summary: "ขึ้นกับ license ของฟอนต์นั้นๆ",
     advice:
-      "ตรวจใน Assets ว่าฟอนต์เป็น Personal หรือ Commercial ฟอนต์ฟรีบางตัวห้ามใช้งานเชิงพาฎิกธิกรรม — บันทึกไว้ก่อนเริ่มงาน",
-    linkTab: { section: "mydata", sub: "assets", label: "ไปที่ Assets" },
+      "ตรวจ license ว่าฟอนต์เป็น Personal หรือ Commercial ฟอนต์ฟรีบางตัวห้ามใช้งานเชิงพาฎิกธิกรรม — บันทึกไว้ก่อนเริ่มงาน",
   },
   {
     id: "wht-50twi",
     title: "หัก ณ ที่จ่าย + ใบ 50 ทวิ",
     summary: "ลูกค้านิติบุคคลมักหัก 3% และออก 50 ทวิ",
-    advice:
-      "ใส่ข้อตกลงในใบเสนอราคาและสัญญา เก็บหลักฐานการชำระเงินใน Job Tracker และบันทึกรายได้ในแท็บภาษี",
-    linkTab: { section: "finance", sub: "tax", label: "ไปที่ภาษี" },
+    advice: "ใส่ข้อตกลงในใบเสนอราคาและสัญญา แล้วบันทึกรายได้กับใบ 50ทวิ ในแท็บรายได้",
+    linkTab: { section: "finance", sub: "income", label: "ไปที่รายได้" },
   },
 ];
 

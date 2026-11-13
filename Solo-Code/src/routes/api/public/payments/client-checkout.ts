@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
-  createClientJobCheckoutSession,
   paymentsCorsPreflightHeaders,
   paymentsJsonResponse,
   createEscrowCheckoutSession,
@@ -43,27 +42,17 @@ export const Route = createFileRoute("/api/public/payments/client-checkout")({
               ? "live"
               : "sandbox";
 
-        if (paymentType === "escrow") {
-          const result = await createEscrowCheckoutSession({
-            portalToken: parsed.token,
-            environment,
-            successUrl: parsed.successUrl,
-            cancelUrl: parsed.cancelUrl,
-          });
-          if ("error" in result) {
-            return paymentsJsonResponse(request, result, 400);
-          }
-          return paymentsJsonResponse(request, result);
+        // Job tracker deposit/final payments were retired with the So1o freelancer side.
+        if (paymentType !== "escrow") {
+          return paymentsJsonResponse(request, { error: "Unsupported payment type" }, 400);
         }
 
-        const result = await createClientJobCheckoutSession({
-          shareToken: parsed.token,
-          paymentType: paymentType as "deposit" | "final",
+        const result = await createEscrowCheckoutSession({
+          portalToken: parsed.token,
           environment,
           successUrl: parsed.successUrl,
           cancelUrl: parsed.cancelUrl,
         });
-
         if ("error" in result) {
           return paymentsJsonResponse(request, result, 400);
         }

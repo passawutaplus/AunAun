@@ -70,14 +70,6 @@ const DeviceAnalyticsSection = React.lazy(() =>
     default: m.DeviceAnalyticsSection,
   })),
 );
-const BannersHubSection = React.lazy(() =>
-  import("@/components/admin/BannersHubSection").then((m) => ({ default: m.BannersHubSection })),
-);
-const SubscriptionsHubSection = React.lazy(() =>
-  import("@/components/admin/SubscriptionsHubSection").then((m) => ({
-    default: m.SubscriptionsHubSection,
-  })),
-);
 const AiHubSection = React.lazy(() =>
   import("@/components/admin/AiHubSection").then((m) => ({ default: m.AiHubSection })),
 );
@@ -236,10 +228,8 @@ function AdminPage() {
                 {active === "chat" && <AdminChatSection />}
                 {active === "tickets" && <AdminTicketsSection />}
                 {active === "announcements" && <AnnouncementsSection />}
-                {active === "banners" && <BannersHubSection />}
                 {active === "articles" && <ArticlesSection />}
                 {active === "business" && <BusinessSection m={m} />}
-                {active === "subscriptions" && <SubscriptionsHubSection m={m} />}
                 {active === "payments" && <PaymentsSection />}
                 {active === "feature_usage" && <FeatureUsageSection />}
                 {active === "activity" && <ActivityAnalyticsSection />}

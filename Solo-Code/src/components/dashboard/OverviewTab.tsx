@@ -9,27 +9,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { useFinance } from "@/store/finance";
-import { useDashboardJobs } from "@/store/dashboardJobs";
-import { useClientInvoices } from "@/store/clientInvoices";
 import { toast } from "sonner";
 import { DebtWidget } from "./DebtWidget";
-import {
-  Wallet,
-  Users,
-  ArrowRight,
-  TrendingUp,
-  Receipt,
-  Target,
-  Check,
-  Pencil,
-} from "lucide-react";
+import { Users, FileText, ArrowRight, TrendingUp, Target, Check, Pencil } from "lucide-react";
 
 import { HeroGreeting } from "./overview/HeroGreeting";
-import { MiniContentCalendar } from "./overview/MiniContentCalendar";
-import { JobListWidget } from "./overview/JobListWidget";
-import { TaskListWidget } from "./overview/TaskListWidget";
 import { QuickNoteWidget } from "./overview/QuickNoteWidget";
-import { JobTrackerMiniWidget } from "./overview/JobTrackerMiniWidget";
 import { OnboardingChecklist } from "./overview/OnboardingChecklist";
 import { PipelineMiniWidget } from "./overview/PipelineMiniWidget";
 import { OverviewPerformanceCharts } from "./overview/OverviewPerformanceCharts";
@@ -114,12 +99,6 @@ export function OverviewTab({ onGo }: OverviewTabProps) {
   const monthIncome = finance.incomes
     .filter((i) => i.month === ym)
     .reduce((s, i) => s + (i.gross || 0), 0);
-  const ymPrefix = `${ym}-`;
-  const monthExp = [...finance.workExpenses, ...finance.personalExpenses]
-    .filter((e) => e.date?.startsWith(ymPrefix))
-    .reduce((s, e) => s + (e.amount || 0), 0);
-  const subsActive = finance.subs.length;
-  const subsCost = finance.subs.reduce((sum, s) => sum + (s.amount || 0), 0);
   const goal = finance.monthlyGoal || 0;
   const goalPct = goal > 0 ? Math.min(100, Math.round((monthIncome / goal) * 100)) : 0;
   const goalRemaining = Math.max(0, goal - monthIncome);
@@ -128,23 +107,6 @@ export function OverviewTab({ onGo }: OverviewTabProps) {
 
   const greet = profile?.brand_name || profile?.display_name || "";
 
-  // Productivity widgets data
-  const jobsList = useDashboardJobs().list;
-  const activeJobs = jobsList.filter((j) => !j.done).length;
-  const invoices = useClientInvoices().list;
-  const pendingInvoices = invoices.filter((i) => i.status !== "paid").length;
-  const [todayPosts, setTodayPosts] = React.useState(0);
-  React.useEffect(() => {
-    if (!user) return;
-    const today = new Date();
-    const iso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-    supabase
-      .from("planner_posts")
-      .select("id", { count: "exact", head: true })
-      .eq("post_date", iso)
-      .then(({ count }) => setTodayPosts(count || 0));
-  }, [user]);
-
   return (
     <div className="space-y-4 sm:space-y-5 lg:space-y-6">
       <OnboardingChecklist
@@ -152,7 +114,6 @@ export function OverviewTab({ onGo }: OverviewTabProps) {
         stats={{
           clients: snap?.clients ?? 0,
           quotations: snap?.quotations ?? 0,
-          jobs: jobsList.length,
           incomes: finance.incomes.length,
           hasBrand: !!(
             profile?.logo_url ||
@@ -184,7 +145,7 @@ export function OverviewTab({ onGo }: OverviewTabProps) {
       />
 
       {/* Finance stats row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-5">
         <StatCard
           accent
           label="รายได้เดือนนี้"
@@ -193,16 +154,10 @@ export function OverviewTab({ onGo }: OverviewTabProps) {
           icon={<TrendingUp className="h-5 w-5" />}
         />
         <StatCard
-          label="รายจ่ายเดือนนี้"
-          value={`฿${fmt(monthExp)}`}
-          sub={`สุทธิ ฿${fmt(monthIncome - monthExp)}`}
-          icon={<Wallet className="h-5 w-5" />}
-        />
-        <StatCard
-          label="Subscriptions ใช้งาน"
-          value={subsActive}
-          sub={`฿${fmt(subsCost)}/เดือน`}
-          icon={<Receipt className="h-5 w-5" />}
+          label="ใบเสนอราคา"
+          value={snap?.quotations ?? "—"}
+          sub="ทั้งหมดในระบบ"
+          icon={<FileText className="h-5 w-5" />}
         />
         <StatCard
           label="ลูกค้าในระบบ"
@@ -214,10 +169,9 @@ export function OverviewTab({ onGo }: OverviewTabProps) {
 
       <OverviewPerformanceCharts />
 
-      {/* Pipeline + Job tracker + Debt */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-5 items-stretch">
+      {/* Pipeline + Debt */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-5 items-stretch">
         <PipelineMiniWidget onGo={onGo} />
-        <JobTrackerMiniWidget onGo={onGo} />
         <DebtWidget onGo={onGo} />
       </div>
 
@@ -225,19 +179,6 @@ export function OverviewTab({ onGo }: OverviewTabProps) {
 
       {/* Quick Note */}
       <QuickNoteWidget />
-
-      {/* Jobs + Tasks + Calendar */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 lg:gap-5">
-        <div className="lg:col-span-4">
-          <JobListWidget />
-        </div>
-        <div className="lg:col-span-3">
-          <TaskListWidget />
-        </div>
-        <div className="md:col-span-2 lg:col-span-5">
-          <MiniContentCalendar onGo={onGo} />
-        </div>
-      </div>
 
       <PageFooterActions feature="overview" label="ภาพรวมหน้า Dashboard" />
     </div>

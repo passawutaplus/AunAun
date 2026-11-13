@@ -43,25 +43,13 @@ const LINE_KIND_COPY: Record<LineNotifyKind, KindCopy> = {
   portal_slip: {
     hook: "ลูกค้าชำระเงินแล้ว 💸",
     cta: "ไปตรวจสลิปกันเล้ยย",
-    path: "/dashboard?tab=finance&sub=jobs",
-    app: "solo",
-  },
-  portal_tracker_comment: {
-    hook: "มีคอมเมนต์ใหม่ในงาน!!",
-    cta: "ไปตอบลูกค้ากันต่อเล้ยย",
-    path: "/dashboard?tab=finance&sub=jobs",
+    path: "/dashboard?tab=finance&sub=quotations",
     app: "solo",
   },
   portal_brief: {
     hook: "ลูกค้ายืนยันบรีฟแล้ว!!",
     cta: "ไปดูบรีฟแล้วลุยต่อเลยย",
     path: "/dashboard?tab=planner&sub=briefs",
-    app: "solo",
-  },
-  portal_planner: {
-    hook: "ลูกค้าตอบคอนเทนต์แล้ว!!",
-    cta: "ไปจัดการคอนเทนต์กันต่อเล้ยย",
-    path: "/dashboard?tab=planner&sub=content",
     app: "solo",
   },
   portal_quotation: {
@@ -123,30 +111,6 @@ const LINE_KIND_COPY: Record<LineNotifyKind, KindCopy> = {
     cta: "ไปดูรายละเอียดที่ Earnings",
     path: "/earnings",
     app: "anthem",
-  },
-  inhouse_invite: {
-    hook: "มีคำเชิญเข้าร่วมทีม!!",
-    cta: "ไปดูคำเชิญกันเล้ยย",
-    path: "/inhouse",
-    app: "solo",
-  },
-  inhouse_member_join: {
-    hook: "มีสมาชิกใหม่เข้าร่วมทีม!!",
-    cta: "ไปดูทีมกันต่อเล้ยย",
-    path: "/inhouse",
-    app: "solo",
-  },
-  inhouse_chat: {
-    hook: "มีข้อความใหม่ใน workspace!!",
-    cta: "ไปตอบแชทกันต่อเล้ยย",
-    path: "/inhouse",
-    app: "solo",
-  },
-  inhouse_task: {
-    hook: "มีงานมอบหมายให้คุณ!!",
-    cta: "ไปดูงานกันต่อเล้ยย",
-    path: "/inhouse",
-    app: "solo",
   },
   support_ticket: {
     hook: "อัปเดตตั๋วช่วยเหลือแล้ว",

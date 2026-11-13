@@ -8,11 +8,10 @@ export type ClientPackPreflight = {
 export function computeClientPackPreflight(opts: {
   q: Quotation;
   extraFiles: File[];
-  trackUrl?: string;
   includeQtPdf: boolean;
   hasQtPdf: boolean;
 }): ClientPackPreflight {
-  const { q, extraFiles, trackUrl, includeQtPdf, hasQtPdf } = opts;
+  const { q, extraFiles, includeQtPdf, hasQtPdf } = opts;
   const items = [
     {
       id: "qt",
@@ -25,12 +24,6 @@ export function computeClientPackPreflight(opts: {
       label: "ไฟล์แนบ",
       ok: extraFiles.length > 0,
       hint: "เพิ่ม mockup / source หรือส่งจาก Doc Lab",
-    },
-    {
-      id: "track",
-      label: "ลิงก์ติดตามงาน",
-      ok: !!trackUrl || q.status === "draft",
-      hint: "สร้างลิงก์ติดตามจากใบเสนอราคา",
     },
     {
       id: "client",

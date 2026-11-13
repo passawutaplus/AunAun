@@ -19,9 +19,7 @@ import {
   BookOpen,
   Smartphone,
   Bot,
-  Image as ImageIcon,
   Link2,
-  Receipt,
   Banknote,
   Cpu,
   HeartPulse,
@@ -53,10 +51,8 @@ export type AdminSection =
   | "chat"
   | "tickets"
   | "announcements"
-  | "banners"
   | "articles"
   | "business"
-  | "subscriptions"
   | "payments"
   | "feature_usage"
   | "activity"
@@ -82,10 +78,8 @@ export const ADMIN_SECTION_IDS: AdminSection[] = [
   "ai_usage",
   "ecosystem_ops",
   "business",
-  "subscriptions",
   "payments",
   "announcements",
-  "banners",
   "articles",
   "ai_center",
   "health",
@@ -138,7 +132,6 @@ const GROUPS: { label: string; items: SectionItem[] }[] = [
     label: "ธุรกิจ",
     items: [
       { id: "business", label: "KPI", icon: Wallet, sub: "Business KPIs" },
-      { id: "subscriptions", label: "Subscriptions", icon: Receipt, sub: "Subs + Top Apps" },
       { id: "payments", label: "Payments", icon: Banknote, sub: "Stripe events" },
     ],
   },
@@ -146,7 +139,6 @@ const GROUPS: { label: string; items: SectionItem[] }[] = [
     label: "คอนเทนต์",
     items: [
       { id: "announcements", label: "ประกาศ", icon: Megaphone, sub: "Announcements" },
-      { id: "banners", label: "แบนเนอร์", icon: ImageIcon, sub: "Login + Dashboard" },
       { id: "articles", label: "บทความ", icon: BookOpen, sub: "Blog & SEO" },
     ],
   },

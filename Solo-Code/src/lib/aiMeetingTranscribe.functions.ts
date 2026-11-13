@@ -1,27 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import {
-  defaultModel,
-  fetchUrlAsMediaPart,
-  geminiChatWithParts,
-} from "@/lib/geminiServer";
-import {
-  assertAiCreditsAvailable,
-  debitAiCredits,
-  getAiUsageSummary,
-  refundAiCredits,
-} from "@/lib/aiCreditsServer";
+import { defaultModel, fetchUrlAsMediaPart, geminiChatWithParts } from "@/lib/geminiServer";
+import { assertAiCreditsAvailable, debitAiCredits, refundAiCredits } from "@/lib/aiCreditsServer";
 import { MEETING_TRANSCRIBE_SYSTEM_PROMPT } from "@/lib/briefExtractPrompt";
-import {
-  countTranscriptWords,
-  MEETING_LIMITS,
-} from "@/lib/meetingCaptureSchema";
-import {
-  meetingTranscribeCredits,
-  meetingTranscribeFeature,
-} from "@/lib/meetingCredits";
+import { countTranscriptWords, MEETING_LIMITS } from "@/lib/meetingCaptureSchema";
+import { meetingTranscribeCredits, meetingTranscribeFeature } from "@/lib/meetingCredits";
+
+/** meeting_captures is not in the generated types yet. */
+const untypedAdmin = supabaseAdmin as unknown as SupabaseClient;
 
 const MIN_TRANSCRIPT_WORDS = 50;
 
@@ -33,7 +22,7 @@ const TranscribeInput = z.object({
 });
 
 async function getCapture(userId: string, captureId: string) {
-  const { data, error } = await (supabaseAdmin as any)
+  const { data, error } = await untypedAdmin
     .from("meeting_captures")
     .select("*")
     .eq("id", captureId)
@@ -42,15 +31,6 @@ async function getCapture(userId: string, captureId: string) {
   if (error) throw new Error(error.message);
   if (!data) throw new Error("ไม่พบรายการประชุม");
   return data;
-}
-
-async function tryClaimFreeSlot(userId: string, durationSec: number): Promise<boolean> {
-  if (durationSec > MEETING_LIMITS.freeMaxSec) return false;
-  const { data, error } = await (supabaseAdmin as any).rpc("claim_meeting_free_slot", {
-    _user_id: userId,
-  });
-  if (error) return false;
-  return !!(data as { allowed?: boolean })?.allowed;
 }
 
 export const aiMeetingTranscribe = createServerFn({ method: "POST" })
@@ -64,28 +44,14 @@ export const aiMeetingTranscribe = createServerFn({ method: "POST" })
     const cost = meetingTranscribeCredits(durationSec);
     const idempotencyKey = `meeting-tx:${data.captureId}`;
 
-    let usedFree = false;
-    const summary = await getAiUsageSummary(userId);
-    const isLikelyFree =
-      summary.included_limit <= 25 && summary.purchased_balance === 0;
+    // The free meeting slot was retired on 2026-11-13; every transcript uses credits.
+    const usedFree = false;
+    await assertAiCreditsAvailable(userId, feature);
+    const quota = await debitAiCredits({ userId, feature, idempotencyKey });
+    if (!quota.allowed) throw new Error("limit_reached");
+    const debited = true;
 
-    if (isLikelyFree && durationSec <= MEETING_LIMITS.freeMaxSec) {
-      usedFree = await tryClaimFreeSlot(userId, durationSec);
-      if (!usedFree && summary.total_remaining < cost) {
-        throw new Error("limit_reached");
-      }
-    } else if (!usedFree) {
-      await assertAiCreditsAvailable(userId, feature);
-    }
-
-    let debited = false;
-    if (!usedFree) {
-      const quota = await debitAiCredits({ userId, feature, idempotencyKey });
-      if (!quota.allowed) throw new Error("limit_reached");
-      debited = true;
-    }
-
-    await (supabaseAdmin as any)
+    await untypedAdmin
       .from("meeting_captures")
       .update({ status: "transcribing", duration_sec: durationSec, used_free_slot: usedFree })
       .eq("id", data.captureId);
@@ -122,7 +88,7 @@ export const aiMeetingTranscribe = createServerFn({ method: "POST" })
             refundIdempotencyKey: `${idempotencyKey}:refund-short`,
           }).catch(() => undefined);
         }
-        await (supabaseAdmin as any)
+        await untypedAdmin
           .from("meeting_captures")
           .update({
             status: "failed",
@@ -134,7 +100,7 @@ export const aiMeetingTranscribe = createServerFn({ method: "POST" })
         throw new Error("เสียงสั้นหรือไม่ชัดพอ — ไม่สามารถสรุปบรีฟได้ เครดิตถอดเสียงถูกคืนแล้ว");
       }
 
-      await (supabaseAdmin as any)
+      await untypedAdmin
         .from("meeting_captures")
         .update({
           status: "transcribed",
@@ -154,7 +120,7 @@ export const aiMeetingTranscribe = createServerFn({ method: "POST" })
         }).catch(() => undefined);
       }
       if (!(e instanceof Error && e.message.includes("เสียงสั้น"))) {
-        await (supabaseAdmin as any)
+        await untypedAdmin
           .from("meeting_captures")
           .update({
             status: "failed",

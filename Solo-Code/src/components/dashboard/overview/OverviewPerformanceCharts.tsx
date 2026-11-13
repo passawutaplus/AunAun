@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useFinance } from "@/store/finance";
 import { formatTHB } from "@/data/mockData";
-import { TrendingUp, Wallet, Users, Receipt, BarChart3 } from "lucide-react";
+import { TrendingUp, Users, Receipt, BarChart3 } from "lucide-react";
 import {
   ResponsiveContainer,
   LineChart,
@@ -92,12 +92,11 @@ const MOCK_CLIENTS: ClientBar[] = [
   { name: "Indie Music Lab", value: 15000 },
 ];
 
-/** สร้างข้อมูลตัวอย่างเมื่อยังไม่มีรายได้/รายจ่ายจริง */
+/** สร้างข้อมูลตัวอย่างเมื่อยังไม่มีรายได้จริง */
 function buildMockChartData(monthLabels: string[], monthCount: number) {
   const incomeSeeds = [
     32000, 38000, 42000, 45000, 48000, 52000, 55000, 58000, 61000, 64000, 67000, 72000,
   ];
-  const expenseRatio = 0.28;
 
   const lineData: ChartPoint[] = monthLabels.map((label, idx) => {
     const base = incomeSeeds[(idx + 12 - monthCount) % incomeSeeds.length] ?? 40000;
@@ -107,18 +106,10 @@ function buildMockChartData(monthLabels: string[], monthCount: number) {
     return { label, current, previous };
   });
 
-  const netLineData: ChartPoint[] = lineData.map((d) => ({
-    label: d.label,
-    current: Math.round(d.current * (1 - expenseRatio)),
-    previous: Math.round(d.previous * (1 - expenseRatio - 0.02)),
-  }));
-
   const monthlyBars = lineData.map((d) => ({ label: d.label, value: d.current }));
 
   const currentIncomeTotal = lineData.reduce((s, d) => s + d.current, 0);
   const previousIncomeTotal = lineData.reduce((s, d) => s + d.previous, 0);
-  const currentNetTotal = netLineData.reduce((s, d) => s + d.current, 0);
-  const previousNetTotal = netLineData.reduce((s, d) => s + d.previous, 0);
   const avgMonthlyIncome =
     monthlyBars.length > 0 ? monthlyBars.reduce((s, d) => s + d.value, 0) / monthlyBars.length : 0;
   const latestMonthIncome = monthlyBars.at(-1)?.value ?? 0;
@@ -126,15 +117,11 @@ function buildMockChartData(monthLabels: string[], monthCount: number) {
 
   return {
     lineData,
-    netLineData,
     clientBars: MOCK_CLIENTS.slice(0, Math.min(5, Math.max(3, monthCount))),
     monthlyBars,
     currentIncomeTotal,
     previousIncomeTotal,
     incomeChange: pctChange(currentIncomeTotal, previousIncomeTotal),
-    currentNetTotal,
-    previousNetTotal,
-    netChange: pctChange(currentNetTotal, previousNetTotal),
     avgMonthlyIncome,
     latestMonthIncome,
     latestChange: pctChange(latestMonthIncome, prevMonthIncome),
@@ -152,7 +139,7 @@ function hasRealChartData(
 }
 
 export function OverviewPerformanceCharts() {
-  const { incomes, workExpenses, personalExpenses } = useFinance();
+  const { incomes } = useFinance();
   const [range, setRange] = React.useState<RangeKey>("1mo");
 
   const monthCount = RANGE_MONTHS[range];
@@ -169,16 +156,6 @@ export function OverviewPerformanceCharts() {
     return map;
   }, [incomes]);
 
-  const expenseByMonth = React.useMemo(() => {
-    const map: Record<string, number> = {};
-    for (const e of [...workExpenses, ...personalExpenses]) {
-      if (!e.date) continue;
-      const ym = e.date.slice(0, 7);
-      map[ym] = (map[ym] || 0) + (e.amount || 0);
-    }
-    return map;
-  }, [workExpenses, personalExpenses]);
-
   const lineData: ChartPoint[] = React.useMemo(
     () =>
       currentMonths.map((ym, idx) => ({
@@ -189,30 +166,9 @@ export function OverviewPerformanceCharts() {
     [currentMonths, previousMonths, incomeByMonth],
   );
 
-  const netLineData: ChartPoint[] = React.useMemo(
-    () =>
-      currentMonths.map((ym, idx) => {
-        const curIncome = incomeByMonth[ym] || 0;
-        const curExp = expenseByMonth[ym] || 0;
-        const prevYm = previousMonths[idx];
-        const prevIncome = incomeByMonth[prevYm] || 0;
-        const prevExp = expenseByMonth[prevYm] || 0;
-        return {
-          label: formatMonthLabel(ym),
-          current: curIncome - curExp,
-          previous: prevIncome - prevExp,
-        };
-      }),
-    [currentMonths, previousMonths, incomeByMonth, expenseByMonth],
-  );
-
   const currentIncomeTotal = lineData.reduce((s, d) => s + d.current, 0);
   const previousIncomeTotal = lineData.reduce((s, d) => s + d.previous, 0);
   const incomeChange = pctChange(currentIncomeTotal, previousIncomeTotal);
-
-  const currentNetTotal = netLineData.reduce((s, d) => s + d.current, 0);
-  const previousNetTotal = netLineData.reduce((s, d) => s + d.previous, 0);
-  const netChange = pctChange(currentNetTotal, previousNetTotal);
 
   const clientBars: ClientBar[] = React.useMemo(() => {
     const map: Record<string, number> = {};
@@ -258,15 +214,11 @@ export function OverviewPerformanceCharts() {
     ? mock
     : {
         lineData,
-        netLineData,
         clientBars,
         monthlyBars,
         currentIncomeTotal,
         previousIncomeTotal,
         incomeChange,
-        currentNetTotal,
-        previousNetTotal,
-        netChange,
         avgMonthlyIncome,
         latestMonthIncome,
         latestChange,
@@ -277,7 +229,7 @@ export function OverviewPerformanceCharts() {
       <section className="space-y-4">
         <div>
           <h2 className="text-sm font-semibold">Performance Analytics</h2>
-          <p className="text-xs text-muted-foreground">กราฟรายได้ รายจ่าย และลูกค้าชั้นนำ</p>
+          <p className="text-xs text-muted-foreground">กราฟรายได้ และลูกค้าชั้นนำ</p>
         </div>
         <Card className="border-border/60 border-dashed shadow-none">
           <CardContent className="py-10 text-center space-y-2">
@@ -297,7 +249,7 @@ export function OverviewPerformanceCharts() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h2 className="text-sm font-semibold">Performance Analytics</h2>
-          <p className="text-xs text-muted-foreground">กราฟรายได้ รายจ่าย และลูกค้าชั้นนำ</p>
+          <p className="text-xs text-muted-foreground">กราฟรายได้ และลูกค้าชั้นนำ</p>
         </div>
         <div className="inline-flex items-center rounded-lg border border-border/60 bg-muted/30 p-0.5">
           {RANGE_LABELS.map(({ key, label }) => (
@@ -329,18 +281,6 @@ export function OverviewPerformanceCharts() {
           demo={isDemo}
         >
           <DualLineChart data={display.lineData} />
-        </KpiChartCard>
-
-        <KpiChartCard
-          title="กำไรสุทธิ (รายได้ − รายจ่าย)"
-          icon={<Wallet className="h-4 w-4" />}
-          current={`฿${formatTHB(display.currentNetTotal)}`}
-          previous={`฿${formatTHB(display.previousNetTotal)}`}
-          change={display.netChange}
-          changeLabel="เทียบช่วงก่อนหน้า"
-          demo={isDemo}
-        >
-          <DualLineChart data={display.netLineData} />
         </KpiChartCard>
 
         <KpiChartCard

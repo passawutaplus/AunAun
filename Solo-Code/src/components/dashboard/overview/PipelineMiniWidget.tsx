@@ -60,8 +60,7 @@ export function PipelineMiniWidget({ onGo }: { onGo: (tab: string, sub?: string)
             {byColumn("working").length +
               byColumn("contract").length +
               byColumn("proposal").length +
-              byColumn("lead").length +
-              byColumn("billing").length}{" "}
+              byColumn("lead").length}{" "}
             ดีล
           </p>
         )}

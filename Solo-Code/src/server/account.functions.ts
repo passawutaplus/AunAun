@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { isEarlyAccessModeServer } from "@/lib/publicAccess.server";
 
@@ -10,14 +11,12 @@ export const exportUserData = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { userId, supabase } = context;
-    const sharedSupabase = supabase.schema("shared") as any;
+    const sharedSupabase = (supabase as unknown as SupabaseClient).schema("shared");
 
-    const [profile, clients, quotations, jobs, expenses, incomes, kycRequests, payoutProfile] = await Promise.all([
+    const [profile, clients, quotations, incomes, kycRequests, payoutProfile] = await Promise.all([
       supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle(),
       supabase.from("saved_clients").select("*").eq("user_id", userId),
       supabase.from("quotations").select("*").eq("user_id", userId),
-      supabase.from("job_trackers").select("*").eq("user_id", userId),
-      supabase.from("finance_expenses").select("*").eq("user_id", userId),
       supabase.from("finance_incomes").select("*").eq("user_id", userId),
       sharedSupabase.from("kyc_requests").select("*").eq("user_id", userId),
       sharedSupabase.from("payout_profiles").select("*").eq("user_id", userId).maybeSingle(),
@@ -29,8 +28,6 @@ export const exportUserData = createServerFn({ method: "GET" })
       profile: profile.data ?? null,
       clients: clients.data ?? [],
       quotations: quotations.data ?? [],
-      job_trackers: jobs.data ?? [],
-      finance_expenses: expenses.data ?? [],
       finance_incomes: incomes.data ?? [],
       kyc_requests: kycRequests.data ?? [],
       payout_profile: payoutProfile.data ?? null,
@@ -40,8 +37,6 @@ export const exportUserData = createServerFn({ method: "GET" })
         profile.error,
         clients.error,
         quotations.error,
-        jobs.error,
-        expenses.error,
         incomes.error,
         kycRequests.error,
         payoutProfile.error,
@@ -99,7 +94,7 @@ export const deleteOwnAccount = createServerFn({ method: "POST" })
       .eq("user_id", userId);
     if (roleErr) warnings.push(`user_roles:${roleErr.message}`);
 
-    const { error: updateErr } = await (supabaseAdmin as any)
+    const { error: updateErr } = await (supabaseAdmin as unknown as SupabaseClient)
       .from("profiles")
       .update({
         is_active: false,
@@ -115,7 +110,7 @@ export const deleteOwnAccount = createServerFn({ method: "POST" })
     }
 
     try {
-      const { error: banErr } = await (supabaseAdmin.auth.admin as any).updateUserById(userId, {
+      const { error: banErr } = await supabaseAdmin.auth.admin.updateUserById(userId, {
         ban_duration: "876000h",
       });
       if (banErr) warnings.push(`auth_ban:${banErr.message}`);

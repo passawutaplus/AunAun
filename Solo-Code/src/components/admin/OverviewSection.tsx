@@ -5,8 +5,6 @@ import {
   Users,
   Wallet,
   FileText,
-  Layers,
-  TrendingUp,
   Activity,
   ShieldCheck,
   Sparkles,
@@ -67,8 +65,7 @@ export function OverviewSection({ m }: { m: AdminMetrics }) {
   }, []);
   const dev = (k: string) => devices.find((d) => d.device_type === k);
   const totalGross = m.incomes.reduce((s, r) => s + Number(r.gross || 0), 0);
-  const totalExp = m.expenses.reduce((s, r) => s + Number(r.amount || 0), 0);
-  const active7 = activeUserIds([...m.quotations, ...m.incomes, ...m.expenses], 7).size;
+  const active7 = activeUserIds([...m.quotations, ...m.incomes], 7).size;
   const newUsers7 = m.profiles.filter(
     (p) => Date.now() - new Date(p.created_at).getTime() < 7 * 86_400_000,
   ).length;
@@ -115,7 +112,7 @@ export function OverviewSection({ m }: { m: AdminMetrics }) {
         <StatCard
           label="ใบเสนอ/บิล"
           value={m.quotations.length}
-          sub={`Active subs ${m.subscriptions.filter((s) => s.is_active).length}`}
+          sub="ทั้งหมดในระบบ"
           icon={<FileText className="h-4 w-4" />}
         />
       </div>
@@ -156,19 +153,7 @@ export function OverviewSection({ m }: { m: AdminMetrics }) {
         />
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <MiniStat
-          icon={Layers}
-          label="Subscriptions"
-          value={m.subscriptions.length}
-          sub={`${m.subscriptions.filter((s) => s.is_active).length} active`}
-        />
-        <MiniStat
-          icon={TrendingUp}
-          label="ค่าใช้จ่ายในระบบ"
-          value={`฿${fmtTHB(totalExp)}`}
-          sub={`${m.expenses.length} รายการ`}
-        />
+      <div className="grid grid-cols-2 gap-3">
         <MiniStat
           icon={ShieldCheck}
           label="Admin"

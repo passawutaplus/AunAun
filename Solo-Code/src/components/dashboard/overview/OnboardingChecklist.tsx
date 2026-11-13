@@ -13,9 +13,7 @@ const STEPS = [
   { id: "brand", label: "ตั้งค่าโปรไฟล์ร้าน (โลโก้/ธนาคาร)", tab: "settings" as const },
   { id: "client", label: "เพิ่มลูกค้าคนแรก", tab: "mydata", sub: "clients" },
   { id: "quotation", label: "สร้างใบเสนอราคา / ดีล", tab: "finance", sub: "pipeline" },
-  { id: "tracker", label: "แชร์ Job Tracker ให้ลูกค้า", tab: "finance", sub: "jobs" },
   { id: "income", label: "บันทึกรายได้เมื่อได้เงิน", tab: "finance", sub: "income" },
-  { id: "tax", label: "ดูภาษีประมาณการปีนี้", tab: "finance", sub: "tax" },
 ] as const;
 
 type StepId = (typeof STEPS)[number]["id"];
@@ -30,7 +28,6 @@ export function OnboardingChecklist({
   stats: {
     clients: number;
     quotations: number;
-    jobs: number;
     incomes: number;
     hasBrand?: boolean;
   };
@@ -51,9 +48,7 @@ export function OnboardingChecklist({
     brand: stats.hasBrand ?? false,
     client: stats.clients > 0,
     quotation: stats.quotations > 0,
-    tracker: stats.jobs > 0,
     income: stats.incomes > 0,
-    tax: stats.incomes > 0,
   };
 
   const done = (id: StepId) => !!(autoDone[id] || manual[id]);

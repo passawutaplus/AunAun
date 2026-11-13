@@ -1,4 +1,3 @@
-import * as React from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { useAuth } from "@/auth/AuthProvider";
 import { useTheme } from "@/hooks/useTheme";
@@ -16,10 +15,6 @@ import { LandingHowItWorks } from "@/components/landing/LandingHowItWorks";
 import { LandingPricingTeaser } from "@/components/landing/LandingPricingTeaser";
 import { LandingFaq } from "@/components/landing/LandingFaq";
 import { LandingFinalCta } from "@/components/landing/LandingFinalCta";
-
-const LandingMentorChat = React.lazy(() =>
-  import("@/components/landing/LandingMentorChat").then((m) => ({ default: m.LandingMentorChat })),
-);
 
 export type LandingStats = {
   approved: number;
@@ -49,13 +44,6 @@ export function LandingPage({ stats }: { stats: LandingStats | null | undefined 
         <LandingPainSolution />
         <LandingWorkflow />
         <LandingCalculatorSection remaining={remaining} />
-        <React.Suspense
-          fallback={
-            <div className="mx-auto max-w-5xl px-4 rounded-3xl border border-border bg-card/60 h-[600px] animate-pulse" />
-          }
-        >
-          <LandingMentorChat />
-        </React.Suspense>
         <LandingFeaturesTabs />
         <LandingShowcase user={!!user} />
         <LandingHowItWorks />

@@ -1,10 +1,7 @@
 import * as React from "react";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Upload, ImagePlus, Save, Loader2 } from "lucide-react";
+import { Upload, ImagePlus, Loader2 } from "lucide-react";
 import { extractPaletteFromImage } from "@/lib/extractPalette";
-import { useColorPalettes } from "@/hooks/useColorPalettes";
 import { preferWhiteText } from "@/lib/colorUtils";
 import { toast } from "sonner";
 
@@ -16,10 +13,8 @@ export function PaletteFromImage({ onPick }: Props) {
   const [busy, setBusy] = React.useState(false);
   const [colors, setColors] = React.useState<string[]>([]);
   const [preview, setPreview] = React.useState<string | null>(null);
-  const [name, setName] = React.useState("");
   const [dragOver, setDragOver] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
-  const { createPalette, addColor } = useColorPalettes();
 
   const handleFile = async (file: File) => {
     if (!file.type.startsWith("image/")) {
@@ -36,7 +31,6 @@ export function PaletteFromImage({ onPick }: Props) {
       setPreview(URL.createObjectURL(file));
       const result = await extractPaletteFromImage(file, 6);
       setColors(result);
-      if (!name) setName(file.name.replace(/\.[^.]+$/, "").slice(0, 40));
       toast.success(`ดึงสีออกมาได้ ${result.length} สี`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "ดึงสีไม่สำเร็จ");
@@ -50,16 +44,6 @@ export function PaletteFromImage({ onPick }: Props) {
     setDragOver(false);
     const f = e.dataTransfer.files?.[0];
     if (f) handleFile(f);
-  };
-
-  const saveAsPalette = async () => {
-    if (colors.length === 0) return;
-    const id = await createPalette(name.trim() || "พาเลทจากรูปภาพ");
-    if (!id) return;
-    for (const hex of colors) {
-      await addColor(id, hex);
-    }
-    toast.success("บันทึกพาเลทใหม่แล้ว");
   };
 
   return (
@@ -120,17 +104,6 @@ export function PaletteFromImage({ onPick }: Props) {
                 {c}
               </button>
             ))}
-          </div>
-          <div className="flex gap-2">
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="ตั้งชื่อพาเลท"
-              className="h-9 text-sm"
-            />
-            <Button onClick={saveAsPalette} className="gap-1.5 rounded-xl h-9">
-              <Save className="h-4 w-4" /> บันทึก
-            </Button>
           </div>
         </div>
       )}

@@ -43,28 +43,6 @@ export interface IncomeRow {
   created_at: string;
 }
 
-export interface ExpenseRow {
-  id: string;
-  user_id: string;
-  label: string;
-  amount: number;
-  category: string | null;
-  month: string;
-  scope: string;
-  created_at: string;
-}
-
-export interface SubscriptionRow {
-  id: string;
-  user_id: string;
-  name: string;
-  price: number;
-  cycle: string;
-  is_active: boolean;
-  next_renewal: string | null;
-  created_at: string;
-}
-
 export interface SavedClientRow {
   id: string;
   user_id: string;
@@ -78,8 +56,6 @@ export interface AdminMetrics {
   adminIds: Set<string>;
   quotations: QuotationRow[];
   incomes: IncomeRow[];
-  expenses: ExpenseRow[];
-  subscriptions: SubscriptionRow[];
   savedClients: SavedClientRow[];
   lastSeen: Map<string, Date>;
   /** AI chat usage today: user_id -> count today */
@@ -97,8 +73,6 @@ const empty: Omit<AdminMetrics, "refresh" | "loading" | "lastFetched" | "error">
   adminIds: new Set(),
   quotations: [],
   incomes: [],
-  expenses: [],
-  subscriptions: [],
   savedClients: [],
   lastSeen: new Map(),
   aiUsageToday: new Map(),
@@ -126,8 +100,6 @@ export function useAdminMetrics(): AdminMetrics {
         rolesRes,
         quotationsRes,
         incomesRes,
-        expensesRes,
-        subscriptionsRes,
         savedClientsRes,
         usageRes,
         aiUsageRes,
@@ -154,16 +126,6 @@ export function useAdminMetrics(): AdminMetrics {
           .order("created_at", { ascending: false })
           .limit(1000),
         supabase
-          .from("finance_expenses")
-          .select("id,user_id,label,amount,category,month,scope,created_at")
-          .order("created_at", { ascending: false })
-          .limit(1000),
-        supabase
-          .from("finance_subscriptions")
-          .select("id,user_id,name,price,cycle,is_active,next_renewal,created_at")
-          .order("created_at", { ascending: false })
-          .limit(500),
-        supabase
           .from("saved_clients")
           .select("id,user_id,name,type,created_at")
           .order("created_at", { ascending: false })
@@ -181,8 +143,6 @@ export function useAdminMetrics(): AdminMetrics {
         rolesRes,
         quotationsRes,
         incomesRes,
-        expensesRes,
-        subscriptionsRes,
         savedClientsRes,
         usageRes,
         aiUsageRes,
@@ -219,8 +179,6 @@ export function useAdminMetrics(): AdminMetrics {
         adminIds: new Set((rolesRes.data ?? []).map((r) => r.user_id)),
         quotations: (quotationsRes.data as QuotationRow[]) ?? [],
         incomes: (incomesRes.data as IncomeRow[]) ?? [],
-        expenses: (expensesRes.data as ExpenseRow[]) ?? [],
-        subscriptions: (subscriptionsRes.data as SubscriptionRow[]) ?? [],
         savedClients: (savedClientsRes.data as SavedClientRow[]) ?? [],
         lastSeen,
         aiUsageToday,

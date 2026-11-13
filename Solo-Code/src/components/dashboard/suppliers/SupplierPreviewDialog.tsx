@@ -1,8 +1,6 @@
-import * as React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Eye } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { SupplierPaper, type PaperLink } from "./SupplierPaper";
+import { SupplierPaper } from "./SupplierPaper";
 import type { Supplier } from "@/store/suppliers";
 
 interface Props {
@@ -13,19 +11,6 @@ interface Props {
 }
 
 export function SupplierPreviewDialog({ open, supplier, onClose, useHiddenFields = false }: Props) {
-  const [links, setLinks] = React.useState<PaperLink[]>([]);
-
-  React.useEffect(() => {
-    if (!open || !supplier) return;
-    (async () => {
-      const { data } = await supabase
-        .from("supplier_links")
-        .select("id,label,url")
-        .eq("supplier_id", supplier.id);
-      setLinks((data ?? []) as PaperLink[]);
-    })();
-  }, [open, supplier]);
-
   if (!supplier) return null;
 
   return (
@@ -55,7 +40,7 @@ export function SupplierPreviewDialog({ open, supplier, onClose, useHiddenFields
               cover_image_url: supplier.coverImageUrl,
               map_url: supplier.mapUrl,
             }}
-            links={links}
+            links={[]}
             hidden={useHiddenFields ? supplier.shareHiddenFields : []}
             showFooter={false}
           />

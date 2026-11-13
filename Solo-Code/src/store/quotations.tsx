@@ -104,7 +104,6 @@ export interface Quotation {
   orgSnapshot?: IssuerSnapshot | null;
   studioId?: string;
   studioSnapshot?: IssuerSnapshot | null;
-  inhouseWorkspaceId?: string;
   ownerUserId?: string;
   signatureMode?: SignatureMode;
   includeFreelancerSignature?: boolean;
@@ -183,7 +182,6 @@ interface QuotationRow {
   org_snapshot?: unknown;
   studio_id?: string | null;
   studio_snapshot?: unknown;
-  inhouse_workspace_id?: string | null;
   signature_mode?: string;
   include_freelancer_signature?: boolean;
   sign_share_token?: string | null;
@@ -254,7 +252,6 @@ export function rowToQuotation(r: QuotationRow): Quotation {
     orgSnapshot: (r.org_snapshot as IssuerSnapshot | null) ?? undefined,
     studioId: r.studio_id ?? undefined,
     studioSnapshot: (r.studio_snapshot as IssuerSnapshot | null) ?? undefined,
-    inhouseWorkspaceId: r.inhouse_workspace_id ?? undefined,
     ownerUserId: r.user_id,
     signatureMode: (r.signature_mode as SignatureMode) || "none",
     includeFreelancerSignature: !!r.include_freelancer_signature,
@@ -320,7 +317,6 @@ function quotationToRow(q: Quotation, userId: string) {
     org_snapshot: q.orgSnapshot ?? null,
     studio_id: q.studioId ?? null,
     studio_snapshot: q.studioSnapshot ?? null,
-    inhouse_workspace_id: q.inhouseWorkspaceId ?? null,
     signature_mode: q.signatureMode ?? "none",
     include_freelancer_signature: !!q.includeFreelancerSignature,
     sign_share_token: q.signShareToken ?? null,

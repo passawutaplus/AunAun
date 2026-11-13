@@ -15,16 +15,8 @@ import {
 } from "@/lib/docPdf";
 import { downloadBlob } from "@/lib/docZip";
 import { compressImageFile, dataUrlToBlob } from "@/lib/imageCompress";
-import {
-  buildBatchFilename,
-  DEFAULT_BATCH_PATTERN,
-  todayIsoDate,
-} from "@/lib/docLabBatchRename";
-import {
-  fileToHandoffEntry,
-  requestOpenClientPack,
-  storeDocLabHandoff,
-} from "@/lib/docLabHandoff";
+import { buildBatchFilename, DEFAULT_BATCH_PATTERN, todayIsoDate } from "@/lib/docLabBatchRename";
+import { fileToHandoffEntry, requestOpenClientPack, storeDocLabHandoff } from "@/lib/docLabHandoff";
 import { DocLabClientHandoffDialog } from "./DocLabClientHandoffDialog";
 import {
   DndContext,
@@ -41,14 +33,7 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import {
-  FileText,
-  Loader2,
-  Scissors,
-  Download,
-  AlertCircle,
-  Send,
-} from "lucide-react";
+import { FileText, Loader2, Scissors, Download, AlertCircle, Send } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -302,10 +287,13 @@ export function DocLabTab() {
           <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
           <p>
             ใบ 50ทวิ ควรเก็บที่{" "}
-            <Link to="/dashboard" search={{ tab: "finance", sub: "tax" }} className="font-medium underline">
-              ภาษี → เอกสารภาษี
-            </Link>{" "}
-            เพื่อรวมชุดนักบัญชีอัตโนมัติ
+            <Link
+              to="/dashboard"
+              search={{ tab: "finance", sub: "income" }}
+              className="font-medium underline"
+            >
+              รายได้ → ใบ 50ทวิ
+            </Link>
           </p>
         </div>
       )}
@@ -372,7 +360,10 @@ export function DocLabTab() {
 
           {queue.length > 0 && (
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-              <SortableContext items={queue.map((q) => q.id)} strategy={verticalListSortingStrategy}>
+              <SortableContext
+                items={queue.map((q) => q.id)}
+                strategy={verticalListSortingStrategy}
+              >
                 <ul className="space-y-1.5">
                   {queue.map((q) => (
                     <SortableFileRow
@@ -417,7 +408,9 @@ export function DocLabTab() {
                     type="button"
                     onClick={() =>
                       setSelectedPages((prev) =>
-                        prev.includes(i) ? prev.filter((x) => x !== i) : [...prev, i].sort((a, b) => a - b),
+                        prev.includes(i)
+                          ? prev.filter((x) => x !== i)
+                          : [...prev, i].sort((a, b) => a - b),
                       )
                     }
                     className={cn(
@@ -504,8 +497,16 @@ export function DocLabTab() {
             <Button type="button" size="sm" variant="outline" onClick={() => setWizardStep(2)}>
               ย้อนกลับ
             </Button>
-            <Button className="flex-1 gap-2" disabled={busy || queue.length === 0} onClick={() => void handleProcess()}>
-              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            <Button
+              className="flex-1 gap-2"
+              disabled={busy || queue.length === 0}
+              onClick={() => void handleProcess()}
+            >
+              {busy ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4" />
+              )}
               ดาวน์โหลด
             </Button>
             <Button
@@ -541,7 +542,9 @@ function SortableFileRow({
   name: string;
   onRemove: () => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id,
+  });
   return (
     <li
       ref={setNodeRef}
@@ -551,7 +554,12 @@ function SortableFileRow({
         isDragging && "opacity-70 shadow-md",
       )}
     >
-      <button type="button" className="cursor-grab text-muted-foreground" {...attributes} {...listeners}>
+      <button
+        type="button"
+        className="cursor-grab text-muted-foreground"
+        {...attributes}
+        {...listeners}
+      >
         ≡
       </button>
       <span className="flex-1 truncate">{name}</span>

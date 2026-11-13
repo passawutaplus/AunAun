@@ -12,7 +12,6 @@ import {
 import { LEGAL_DISCLAIMER } from "@/lib/usageRightsSchema";
 import { LegalScenarioCards } from "./LegalScenarioCards";
 import { LegalChecklist } from "./LegalChecklist";
-import { LegalGuardianPanel } from "./LegalGuardianPanel";
 import { toast } from "sonner";
 
 export function LegalDeskTab({
@@ -103,8 +102,6 @@ export function LegalDeskTab({
           ))}
         </div>
       </section>
-
-      <LegalGuardianPanel />
 
       <p className="text-[11px] text-muted-foreground px-1">
         ตั้งสิทธิลิขสิทธิ์ใน Pipeline → เปิดดีล → ปุ่ม &quot;ตั้งสิทธิ์ลิขสิทธิ์&quot;

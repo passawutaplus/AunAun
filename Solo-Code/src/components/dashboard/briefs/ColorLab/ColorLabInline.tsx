@@ -2,11 +2,10 @@ import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Plus, Heart, Copy, Palette, Wand2, Sparkles, Eye, Image as ImageIcon } from "lucide-react";
+import { Plus, Copy, Palette, Wand2, Sparkles, Eye, Image as ImageIcon } from "lucide-react";
 import { normalizeHex, getColorBreakdown, preferWhiteText } from "@/lib/colorUtils";
 import { ColorCodesTable } from "./ColorCodesTable";
 import { ContrastBadge } from "./ContrastBadge";
-import { AiMentorSuggest } from "./AiMentorSuggest";
 import { ColorChartPicker } from "./ColorChartPicker";
 import { HarmonyWheelSection } from "./HarmonyWheel/HarmonyWheelSection";
 import { ColorVariations } from "./ColorVariations";
@@ -14,10 +13,8 @@ import { GradientBuilder } from "./GradientBuilder";
 import { ContrastChecker } from "./ContrastChecker";
 import { ColorBlindnessSimulator } from "./ColorBlindnessSimulator";
 import { PaletteFromImage } from "./PaletteFromImage";
-import { MyPalettesQuickPick } from "./MyPalettesQuickPick";
 
 import { TailwindExport } from "./TailwindExport";
-import { SaveColorDialog } from "@/components/dashboard/labs/SaveColorDialog";
 import { toast } from "sonner";
 
 async function quickCopy(label: string, value: string) {
@@ -45,7 +42,6 @@ export function ColorLabInline({
   showPreview = true,
 }: Props) {
   const [hexInput, setHexInput] = React.useState<string>(hex);
-  const [saveOpen, setSaveOpen] = React.useState(false);
   React.useEffect(() => {
     setHexInput(hex);
   }, [hex]);
@@ -119,8 +115,6 @@ export function ColorLabInline({
       )}
 
       <div className="p-1 pt-4 space-y-4">
-        <MyPalettesQuickPick onPick={commitHex} />
-
         {/* Hex input row — shared across tabs */}
         <div className="flex flex-wrap items-center gap-2">
           <Input
@@ -133,14 +127,6 @@ export function ColorLabInline({
             className="font-mono uppercase max-w-[140px] h-10"
             placeholder="#FF6B00"
           />
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setSaveOpen(true)}
-            className="gap-1.5 rounded-xl h-10"
-          >
-            <Heart className="h-4 w-4 text-primary" /> บันทึกสีนี้
-          </Button>
           <TailwindExport hex={hex} />
           {onApply && (
             <Button onClick={apply} className="ml-auto gap-1.5 rounded-xl">
@@ -180,7 +166,6 @@ export function ColorLabInline({
               </div>
               <ColorCodesTable breakdown={breakdown} />
             </div>
-            <AiMentorSuggest hex={hex} onPick={commitHex} />
             <ContrastChecker hex={hex} />
           </TabsContent>
 
@@ -206,8 +191,6 @@ export function ColorLabInline({
           โปรดตรวจสอบกับโรงพิมพ์อีกครั้งก่อนสั่งผลิต
         </p>
       </div>
-
-      {saveOpen && <SaveColorDialog open={saveOpen} onOpenChange={setSaveOpen} hex={hex} />}
     </div>
   );
 }

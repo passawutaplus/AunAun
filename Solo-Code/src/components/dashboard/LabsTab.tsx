@@ -6,22 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowRight, FileText, FlaskConical, Palette, Type, Sparkles } from "lucide-react";
-import { PaletteSkeleton } from "@/components/dashboard/skeletons/TabSkeletons";
 import { LabsComingSoon } from "@/components/dashboard/labs/LabsComingSoon";
 import { TypographyLab } from "@/components/dashboard/labs/TypographyLab";
 import { CreativeBriefHandoffDialog } from "@/components/dashboard/labs/CreativeBriefHandoffDialog";
-import {
-  requestOpenBrief,
-  storeCreativeLabHandoff,
-} from "@/lib/creativeLabHandoff";
+import { requestOpenBrief, storeCreativeLabHandoff } from "@/lib/creativeLabHandoff";
 import { normalizeHex } from "@/lib/colorUtils";
 import { toast } from "sonner";
 
 const ColorLabInline = React.lazy(() =>
   import("./briefs/ColorLab/ColorLabInline").then((m) => ({ default: m.ColorLabInline })),
-);
-const MyPalettes = React.lazy(() =>
-  import("./labs/MyPalettes").then((m) => ({ default: m.MyPalettes })),
 );
 const ExportHub = React.lazy(() =>
   import("./labs/ExportHub").then((m) => ({ default: m.ExportHub })),
@@ -55,16 +48,11 @@ function ColorLabFallback() {
 export function LabsTab() {
   const navigate = useNavigate();
   const [hex, setHex] = React.useState("#FF6B00");
-  const [paletteHexes, setPaletteHexes] = React.useState<string[]>([hex]);
+  const [paletteHexes] = React.useState<string[]>([hex]);
   const [briefHandoffOpen, setBriefHandoffOpen] = React.useState(false);
   const [pendingHex, setPendingHex] = React.useState<string | null>(null);
   const [fontHandoffOpen, setFontHandoffOpen] = React.useState(false);
   const [pendingFonts, setPendingFonts] = React.useState<string | null>(null);
-
-  const handlePickColor = React.useCallback((nextHex: string) => {
-    setHex(nextHex);
-    setPaletteHexes((prev) => (prev.includes(nextHex) ? prev : [...prev, nextHex]));
-  }, []);
 
   function openColorBriefHandoff(hexValue: string) {
     const n = normalizeHex(hexValue);
@@ -155,9 +143,6 @@ export function LabsTab() {
           <TabsTrigger value="color" className="text-xs gap-1.5 flex-1 min-w-[4.5rem]">
             <Palette className="h-3.5 w-3.5" /> สี
           </TabsTrigger>
-          <TabsTrigger value="palettes" className="text-xs gap-1.5 flex-1 min-w-[4.5rem]">
-            พาเลท
-          </TabsTrigger>
           <TabsTrigger value="type" className="text-xs gap-1.5 flex-1 min-w-[4.5rem]">
             <Type className="h-3.5 w-3.5" /> ฟอนต์
           </TabsTrigger>
@@ -182,12 +167,6 @@ export function LabsTab() {
           </Card>
           <React.Suspense fallback={<Skeleton className="h-24 w-full" />}>
             <ExportHub hexes={[hex, ...paletteHexes.filter((h) => h !== hex)]} compact />
-          </React.Suspense>
-        </TabsContent>
-
-        <TabsContent value="palettes" className="mt-4">
-          <React.Suspense fallback={<PaletteSkeleton />}>
-            <MyPalettes onPickColor={handlePickColor} />
           </React.Suspense>
         </TabsContent>
 

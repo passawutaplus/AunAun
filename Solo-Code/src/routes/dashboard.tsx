@@ -54,16 +54,35 @@ import {
 } from "@/lib/ecosystemHandoff";
 import { supabase } from "@/integrations/supabase/client";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
-import { DashboardBannerSlider } from "@/components/DashboardBannerSlider";
 import { useTrackActivity } from "@/hooks/useTrackActivity";
 import { useLogActivity } from "@/hooks/useLogActivity";
 import { useDailyTrendsPrefetch } from "@/hooks/useDailyTrendsPrefetch";
 import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
-import { useProductTourOptional, ProductTourHeaderButton } from "@/components/dashboard/ProductTourProvider";
+import {
+  useProductTourOptional,
+  ProductTourHeaderButton,
+} from "@/components/dashboard/ProductTourProvider";
 import logoUrl from "@/assets/solo-freelancer-logo.webp";
 
+type HiringRequestRow = {
+  id: string;
+  client_name: string | null;
+  email: string | null;
+  phone: string | null;
+  message: string | null;
+  deadline: string | null;
+  project_title: string | null;
+};
+
+/** hiring_requests is not in the generated types yet. */
+type HiringRequestQuery = {
+  select: (columns: string) => HiringRequestQuery;
+  eq: (column: string, value: string) => HiringRequestQuery;
+  maybeSingle: () => Promise<{ data: HiringRequestRow | null }>;
+};
+
 const untypedSupabase = supabase as unknown as {
-  from: (table: string) => any;
+  from: (table: "hiring_requests") => HiringRequestQuery;
 };
 
 export const Route = createFileRoute("/dashboard")({
@@ -110,7 +129,7 @@ const SECTION_FALLBACK: Record<DashSection, string> = {
   home: "Home",
   overview: "Dashboard",
   finance: "Quotation",
-  planner: "Content",
+  planner: "Smart Brief",
   mydata: "ลูกค้า",
   settings: "ตั้งค่า",
 };
@@ -119,23 +138,15 @@ const SUB_TITLES: Partial<Record<DashSection, Record<string, string>>> = {
   finance: {
     pipeline: "Pipeline",
     quotations: "Quotation",
-    jobs: "Job Tracker",
     income: "รายได้",
-    tax: "ภาษี",
-    subs: "Subscription",
   },
   planner: {
-    content: "ปฏิทินคอนเทนต์",
-    projects: "To Do List",
     briefs: "Smart Brief",
     meetings: "Meeting",
-    feedback: "Feedback ลูกค้า",
   },
   mydata: {
     clients: "ลูกค้า",
     suppliers: "Suppliers",
-    portfolio: "Portfolio",
-    assets: "Assets",
     legal: "Legal Desk",
   },
 };
@@ -150,7 +161,7 @@ const DEFAULT_SUBS: Record<DashSection, string | undefined> = {
   home: undefined,
   overview: undefined,
   finance: "quotations",
-  planner: "content",
+  planner: "briefs",
   mydata: "clients",
   settings: undefined,
 };
@@ -328,9 +339,7 @@ function Dashboard() {
 
   React.useEffect(() => {
     if (!productTour) return;
-    productTour.registerDashboardNavigator((tab, sub) =>
-      updateSection(tab as DashSection, sub),
-    );
+    productTour.registerDashboardNavigator((tab, sub) => updateSection(tab as DashSection, sub));
     return () => productTour.registerDashboardNavigator(null);
   }, [productTour, updateSection]);
 
@@ -380,7 +389,6 @@ function Dashboard() {
               <main className="relative flex-1 min-w-0 overflow-x-hidden">
                 <div className="ambient-blobs" aria-hidden="true" />
                 <div className="relative z-10 mx-auto w-full max-w-6xl px-3 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
-                  <DashboardBannerSlider />
                   <div className="animate-fade-in">
                     {section === "home" && (
                       <React.Suspense fallback={<OverviewSkeleton />}>
@@ -395,8 +403,7 @@ function Dashboard() {
                     {section === "finance" && (
                       <React.Suspense fallback={<FinanceSkeleton />}>
                         <FinanceTab
-                          sub={(sub as any) ?? "quotations"}
-                          onMoneySubChange={(s) => updateSection("finance", s)}
+                          sub={sub}
                           onSubChange={(s) => updateSection("finance", s)}
                           onGoTab={updateSection}
                         />
@@ -404,12 +411,12 @@ function Dashboard() {
                     )}
                     {section === "planner" && (
                       <React.Suspense fallback={<PlannerSkeleton />}>
-                        <PlannerTab sub={(sub as any) ?? "content"} />
+                        <PlannerTab sub={sub} />
                       </React.Suspense>
                     )}
                     {section === "mydata" && (
                       <React.Suspense fallback={<MyDataSkeleton />}>
-                        <MyDataTab sub={(sub as any) ?? "clients"} onNavigate={updateSection} />
+                        <MyDataTab sub={sub} onNavigate={updateSection} />
                       </React.Suspense>
                     )}
                     {section === "settings" && (

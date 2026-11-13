@@ -1,7 +1,7 @@
 import * as React from "react";
 import { formatDistanceToNow } from "date-fns";
 import { th } from "date-fns/locale";
-import { X, FileText, ExternalLink, Receipt, Calculator, ScrollText, Scale } from "lucide-react";
+import { X, FileText, Coins, ScrollText, Scale } from "lucide-react";
 import { UsageRightsBuilder } from "@/components/legal-desk/UsageRightsBuilder";
 import { useUsageRightsById } from "@/store/legalUsageRights";
 import { Button } from "@/components/ui/button";
@@ -15,15 +15,13 @@ export function DealDrawer({
   deal,
   onClose,
   onOpenQuotation,
-  onOpenJobs,
-  onOpenTax,
+  onOpenIncome,
   onOpenContract,
 }: {
   deal: PipelineDeal;
   onClose: () => void;
   onOpenQuotation: () => void;
-  onOpenJobs: () => void;
-  onOpenTax: () => void;
+  onOpenIncome: () => void;
   onOpenContract: () => void;
 }) {
   const [contractOpen, setContractOpen] = React.useState(false);
@@ -33,10 +31,6 @@ export function DealDrawer({
   const st = statusLabel(q.status);
   const colLabel = PIPELINE_LABELS[deal.column];
   const colColor = PIPELINE_COLORS[deal.column as PipelineColumn];
-
-  const trackUrl = deal.job
-    ? `${typeof window !== "undefined" ? window.location.origin : ""}/track/${deal.job.shareToken}`
-    : null;
 
   return (
     <>
@@ -120,50 +114,15 @@ export function DealDrawer({
                 <FileText className="h-3.5 w-3.5" />
                 เปิดใบเสนอราคา
               </Button>
-              {deal.job ? (
-                <>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-8 text-xs gap-1"
-                    onClick={onOpenJobs}
-                  >
-                    <Receipt className="h-3.5 w-3.5" />
-                    Job Tracker
-                  </Button>
-                  {trackUrl && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-8 text-xs gap-1 col-span-2"
-                      asChild
-                    >
-                      <a href={trackUrl} target="_blank" rel="noopener noreferrer">
-                        <ExternalLink className="h-3.5 w-3.5" />
-                        แชร์ลิงก์ให้ลูกค้า
-                      </a>
-                    </Button>
-                  )}
-                </>
-              ) : (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-8 text-xs gap-1"
-                  onClick={onOpenJobs}
-                >
-                  สร้าง Job Tracker
-                </Button>
-              )}
               {deal.hasIncome && (
                 <Button
                   size="sm"
                   variant="outline"
                   className="h-8 text-xs gap-1"
-                  onClick={onOpenTax}
+                  onClick={onOpenIncome}
                 >
-                  <Calculator className="h-3.5 w-3.5" />
-                  ดูภาษี
+                  <Coins className="h-3.5 w-3.5" />
+                  ดูรายได้
                 </Button>
               )}
               <Button

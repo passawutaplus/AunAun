@@ -26,8 +26,7 @@ import {
   UserCircle,
 } from "lucide-react";
 import { toast } from "sonner";
-import type { ClientFile, SavedClient } from "@/store/clients";
-import type { ClientDocCategory } from "./shared";
+import type { SavedClient } from "@/store/clients";
 import { Field, SectionTitle, FormSection, INDUSTRY_PRESETS, PAYMENT_TERM_LABELS } from "./shared";
 import { PhoneInput } from "@/components/ui/phone-input";
 import {
@@ -39,7 +38,6 @@ import {
 } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { mergeFieldClass } from "@/lib/formFieldStyles";
-import { ClientDocumentsField, type StagedClientFile } from "./ClientDocumentsField";
 
 type Draft = Omit<SavedClient, "id" | "createdAt">;
 
@@ -79,13 +77,7 @@ function PreferredChannelPicker({
       <div className="grid grid-cols-4 gap-2">
         {(["line", "phone", "email", "social"] as const).map((ch) => {
           const Icon =
-            ch === "line"
-              ? MessageCircle
-              : ch === "phone"
-                ? Phone
-                : ch === "email"
-                  ? Mail
-                  : Hash;
+            ch === "line" ? MessageCircle : ch === "phone" ? Phone : ch === "email" ? Mail : Hash;
           const active = value === ch;
           return (
             <button
@@ -108,13 +100,7 @@ function PreferredChannelPicker({
   );
 }
 
-function PaymentTermsField({
-  value,
-  onChange,
-}: {
-  value?: string;
-  onChange: (v: string) => void;
-}) {
+function PaymentTermsField({ value, onChange }: { value?: string; onChange: (v: string) => void }) {
   return (
     <Field label="เงื่อนไขชำระเงิน" icon={Wallet}>
       <TooltipProvider delayDuration={200}>
@@ -215,19 +201,11 @@ export function ClientFormDialog({
   onClose,
   onCreate,
   onUpdate,
-  files = [],
-  onUpload,
-  onDeleteFile,
-  getSignedUrl,
 }: {
   editing: SavedClient | "new" | null;
   onClose: () => void;
-  onCreate: (payload: Draft, staged: StagedClientFile[]) => void | Promise<void>;
+  onCreate: (payload: Draft) => void | Promise<void>;
   onUpdate: (id: string, payload: Partial<SavedClient>) => void | Promise<void>;
-  files?: ClientFile[];
-  onUpload?: (file: File, docCategory: ClientDocCategory) => Promise<void>;
-  onDeleteFile?: (f: ClientFile) => Promise<void>;
-  getSignedUrl?: (path: string) => Promise<string>;
 }) {
   const isEditing = editing && editing !== "new";
   const open = !!editing;
@@ -237,7 +215,6 @@ export function ClientFormDialog({
   const [tagInput, setTagInput] = React.useState("");
   const [touched, setTouched] = React.useState(false);
   const [industryCustom, setIndustryCustom] = React.useState("");
-  const [stagedFiles, setStagedFiles] = React.useState<StagedClientFile[]>([]);
   const [submitting, setSubmitting] = React.useState(false);
 
   const industryIsOther =
@@ -252,7 +229,6 @@ export function ClientFormDialog({
     }
     setTagInput("");
     setTouched(false);
-    setStagedFiles([]);
     if (editing === "new") {
       setIndustryCustom("");
     } else if (editing && editing.industry) {
@@ -295,13 +271,11 @@ export function ClientFormDialog({
     setSubmitting(true);
     try {
       if (isEditing) await onUpdate((editing as SavedClient).id, draft);
-      else await onCreate(draft, stagedFiles);
+      else await onCreate(draft);
     } finally {
       setSubmitting(false);
     }
   };
-
-  const noopSignedUrl = async () => "";
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
@@ -460,7 +434,9 @@ export function ClientFormDialog({
                         draft.email,
                       )}
                     />
-                    {emailError && <p className="text-[11px] text-destructive mt-1">{emailError}</p>}
+                    {emailError && (
+                      <p className="text-[11px] text-destructive mt-1">{emailError}</p>
+                    )}
                   </Field>
                   <Field label="Social (IG / FB / X)" icon={Hash}>
                     <Input
@@ -561,7 +537,9 @@ export function ClientFormDialog({
                         draft.email,
                       )}
                     />
-                    {emailError && <p className="text-[11px] text-destructive mt-1">{emailError}</p>}
+                    {emailError && (
+                      <p className="text-[11px] text-destructive mt-1">{emailError}</p>
+                    )}
                   </Field>
                   <Field label="Social (IG / FB / X)" icon={Hash}>
                     <Input
@@ -617,20 +595,6 @@ export function ClientFormDialog({
               </section>
             </>
           )}
-
-          <section className="space-y-3">
-            <SectionTitle>เอกสารแนบ</SectionTitle>
-            <ClientDocumentsField
-              clientType={draft.type}
-              isEditing={!!isEditing}
-              files={isEditing ? files : []}
-              stagedFiles={stagedFiles}
-              onStagedChange={setStagedFiles}
-              onUpload={isEditing ? onUpload : undefined}
-              onDeleteFile={isEditing ? onDeleteFile : undefined}
-              getSignedUrl={getSignedUrl ?? noopSignedUrl}
-            />
-          </section>
 
           <section className="space-y-3">
             <SectionTitle>โน้ตและแท็ก (สำหรับฟรีแลนซ์)</SectionTitle>

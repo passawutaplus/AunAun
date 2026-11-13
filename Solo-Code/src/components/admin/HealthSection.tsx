@@ -15,8 +15,6 @@ interface FeatureDataRow {
 const TABLE_LABELS: Record<string, string> = {
   quotations: "quotations",
   finance_incomes: "finance_incomes",
-  finance_expenses: "finance_expenses",
-  finance_subscriptions: "finance_subscriptions",
   saved_clients: "saved_clients",
 };
 
