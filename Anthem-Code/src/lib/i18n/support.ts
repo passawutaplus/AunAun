@@ -74,6 +74,22 @@ export const SUPPORT = {
   problemNotEnough: { th: "เหลือแค่ {n} ชิ้น", en: "Only {n} left", zh: "仅剩 {n} 件" },
 
   // Order (test checkout)
+  // Checkout: who the order goes to
+  bName: { th: "ชื่อผู้รับ", en: "Recipient name", zh: "收件人" },
+  bPhone: { th: "เบอร์โทร", en: "Phone", zh: "电话" },
+  bAddress: { th: "ที่อยู่จัดส่ง", en: "Shipping address", zh: "收货地址" },
+  bContact: { th: "LINE ID หรืออีเมล", en: "LINE ID or email", zh: "LINE ID 或邮箱" },
+  bNote: { th: "ฝากบอกเรา", en: "Note to us", zh: "给我们的留言" },
+  eBName: { th: "ใส่ชื่อผู้รับหน่อยนะ", en: "Add the recipient's name", zh: "请填写收件人" },
+  eBPhone: { th: "เช็กเบอร์โทรอีกทีนะ", en: "Check the phone number", zh: "请检查电话号码" },
+  eBAddress: { th: "ใส่ที่อยู่ให้ครบหน่อยนะ", en: "Add the full address", zh: "请填写完整地址" },
+  shipOnly: { th: "ใช้เพื่อส่งของเท่านั้น", en: "Used for delivery only", zh: "仅用于配送" },
+  ordering: { th: "กำลังส่งออเดอร์…", en: "Placing your order…", zh: "正在提交订单…" },
+  orderFailed: {
+    th: "สั่งไม่ผ่าน ลองอีกที หรือทัก LINE มาก็ได้",
+    en: "Couldn't place the order. Try again, or message us on LINE.",
+    zh: "下单失败，请重试，或通过 LINE 联系我们",
+  },
   orderLine: { th: "ได้รับออเดอร์แล้ว ขอบคุณมากนะ", en: "Got your order. Thank you!", zh: "已收到订单，非常感谢" },
   orderRef: { th: "เลขที่ออเดอร์", en: "Order no.", zh: "订单号" },
   orderDemo: {
@@ -104,6 +120,13 @@ export const SUPPORT = {
     zh: "暂未开放，可以先逛逛商店",
   },
   thanks: { th: "ขอบคุณมากนะ", en: "Thank you so much", zh: "非常感谢" },
+  nameLabel: { th: "ชื่อที่อยากให้โชว์", en: "Name to show", zh: "显示的名字" },
+  donating: { th: "กำลังส่ง…", en: "Sending…", zh: "发送中…" },
+  donateFailed: {
+    th: "ส่งไม่ผ่าน ลองอีกที หรือทัก LINE มาก็ได้",
+    en: "Couldn't send. Try again, or message us on LINE.",
+    zh: "发送失败，请重试，或通过 LINE 联系我们",
+  },
   donateDemo: { th: "ทดสอบเฉย ๆ ไม่มีการตัดเงินจริง", en: "Just a test. No money moved.", zh: "仅为测试，未实际扣款" },
   taxNote: {
     th: "เงินนี้ใช้ดูแล SAMECOR นำไปลดหย่อนภาษีไม่ได้",
@@ -151,7 +174,11 @@ export const SUPPORT = {
   sentLine: { th: "เดี๋ยวเราตอบทางอีเมลนะ", en: "We'll reply by email", zh: "我们会通过邮件回复" },
   refNo: { th: "เลขที่ {ref}", en: "Ref {ref}", zh: "编号 {ref}" },
   sendAnother: { th: "ส่งอีกข้อความ", en: "Send another", zh: "再发一条" },
-  formDemo: { th: "โหมดทดสอบ ยังไม่ส่งจริงนะ", en: "Test mode. Nothing is sent.", zh: "测试模式，不会真正发送" },
+  formDemo: {
+    th: "โหมดทดสอบ ทีมจะเห็นเป็นข้อความทดสอบนะ",
+    en: "Test mode. The team sees this as a test.",
+    zh: "测试模式：团队会看到这是测试消息",
+  },
 
   // Select options
   iInKind: { th: "ของรางวัล / สิ่งของ", en: "Prizes / in-kind", zh: "奖品 / 实物" },

@@ -91,7 +91,7 @@ export function summariseBag(lines: BagLine[], demo?: boolean): BagSummary {
   };
 }
 
-/** A finished test order. Lives in this browser only: no money moved, nothing was sent to a server. */
+/** The receipt shown after ordering. Kept in this browser tab only; the order itself lives on the server. */
 export type DemoOrder = {
   ref: string;
   createdAt: string;
@@ -120,10 +120,15 @@ export function makeDemoRef(random: () => number = Math.random): string {
   return `DEMO-${out}`;
 }
 
-export function placeDemoOrder(summary: BagSummary, variantLabel: (row: BagRow) => string | null): DemoOrder | null {
+/** Saves the receipt for the order page. `ref` is the reference the server gave (a DEMO- one when there is none). */
+export function placeDemoOrder(
+  summary: BagSummary,
+  variantLabel: (row: BagRow) => string | null,
+  ref: string = makeDemoRef(),
+): DemoOrder | null {
   if (!summary.canCheckout) return null;
   const order: DemoOrder = {
-    ref: makeDemoRef(),
+    ref,
     createdAt: new Date().toISOString(),
     rows: summary.rows.map((r) => ({ name: r.product?.name ?? r.slug, variant: variantLabel(r), qty: r.qty, lineThb: r.lineThb })),
     subtotalThb: summary.subtotalThb,

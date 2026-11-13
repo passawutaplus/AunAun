@@ -15,6 +15,7 @@ import {
 } from "@/lib/support/bag";
 import { findProduct, formatThb, isPurchasable, listProducts, sortForShelf } from "@/lib/support/catalog";
 import { resolveDonation } from "@/lib/support/donate";
+import { EMPTY_BUYER, normaliseBuyer, orderItemsPayload, validateBuyer, type BuyerDetails } from "@/lib/support/orderForm";
 import { DONATE_MAX_THB, DONATE_MIN_THB, isSupportDemo, isSupportPath, isSupportSpaceEnabled } from "@/lib/support/flags";
 import {
   EMPTY_SPONSOR_INQUIRY,
@@ -160,6 +161,50 @@ describe("bag", () => {
 
   it("makes readable references", () => {
     expect(makeDemoRef(() => 0)).toBe("DEMO-AAAAAA");
+  });
+});
+
+describe("checkout: buyer details and order payload", () => {
+  const good: BuyerDetails = {
+    ...EMPTY_BUYER,
+    name: "  QA Tester ",
+    phone: "081-234-5678",
+    address: "123 ถนนทดสอบ เขตทดสอบ กรุงเทพ 10110",
+  };
+
+  it("an empty form misses name, phone and address", () => {
+    expect(Object.keys(validateBuyer(EMPTY_BUYER)).sort()).toEqual(["address", "name", "phone"]);
+  });
+
+  it("accepts a filled form and trims it", () => {
+    expect(validateBuyer(good)).toEqual({});
+    expect(normaliseBuyer(good).name).toBe("QA Tester");
+  });
+
+  it.each(["abc", "12345", "08 1234", "0812345678901234567890"])("rejects the phone %s", (phone) => {
+    expect(validateBuyer({ ...good, phone }).phone).toBe(true);
+  });
+
+  it.each(["0812345678", "+66 81 234 5678", "02-123-4567"])("accepts the phone %s", (phone) => {
+    expect(validateBuyer({ ...good, phone }).phone).toBeUndefined();
+  });
+
+  it("wants a real address, not a word", () => {
+    expect(validateBuyer({ ...good, address: "บ้าน" }).address).toBe(true);
+  });
+
+  it("sends items as the buyer saw them", () => {
+    const bag = summariseBag([{ slug: "arc-tray", variantId: "red", qty: 2 }], true);
+    expect(orderItemsPayload(bag, () => "Red")).toEqual([
+      { slug: "arc-tray", name: "Arc Tray", variant: "Red", qty: 2, unit_thb: 290 },
+    ]);
+    expect(orderItemsPayload(bag, () => null)[0].variant).toBe("");
+  });
+
+  it("keeps the server's reference on the receipt", () => {
+    const bag = summariseBag([{ slug: "dot-clip", variantId: "ink", qty: 1 }], true);
+    expect(placeDemoOrder(bag, () => null, "SO-ABCDEF12")?.ref).toBe("SO-ABCDEF12");
+    expect(findDemoOrder("SO-ABCDEF12")?.totalThb).toBe(120 + DEMO_SHIPPING_THB);
   });
 });
 
