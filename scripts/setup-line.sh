@@ -65,7 +65,7 @@ fi
 supabase secrets set "${SECRET_ARGS[@]}" --project-ref "$PROJECT_REF"
 
 echo "[2/3] Deploy edge functions..."
-supabase functions deploy line-connect line-queue-process line-webhook notify-hire-request \
+supabase functions deploy line-connect line-webhook notify-hire-request \
   --project-ref "$PROJECT_REF"
 
 echo "[3/3] ตรวจ client env ใน Solo-Code/.env"
