@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { tr, useLang, useT } from "@/lib/i18n";
 import { SUPPORT } from "@/lib/i18n/support";
 import { findProduct, formatThb, isPurchasable } from "@/lib/support/catalog";
+import { isFoundingEnabled } from "@/lib/founding/flags";
 import { isSupportDemo } from "@/lib/support/flags";
 import { productStatusText, stockText } from "@/lib/support/productText";
 import { useBag } from "@/stores/bagStore";
@@ -103,6 +104,11 @@ export default function ShopProductPage() {
                 {t("notForSale")}
               </Button>
             )}
+            {product.foundingPath && isFoundingEnabled() ? (
+              <Button asChild size="lg">
+                <Link to={product.foundingPath}>The First 30</Link>
+              </Button>
+            ) : null}
             {product.externalUrl ? (
               <Button asChild size="lg" variant="outline">
                 <a href={product.externalUrl} target="_blank" rel="noopener noreferrer">

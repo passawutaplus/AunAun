@@ -1,5 +1,6 @@
 import { isNativeApp } from "@/lib/appShell";
 import type { FeedMode } from "@/components/feed/FeedModeToggle";
+import { isFoundingPath } from "@/lib/founding/flags";
 import { isSupportPath } from "@/lib/support/flags";
 
 /**
@@ -101,6 +102,7 @@ export const LAUNCH_ALLOWED_ROUTE_PATTERNS: readonly RegExp[] = [
   /^\/exhibition(\/[^/]+)?$/,
   /^\/support(\/|$)/,
   /^\/shop(\/|$)/,
+  /^\/founding(\/|$)/,
   /^\/service\/[^/]+$/,
   /^\/object\/[^/]+$/,
   /^\/u\/[^/]+(\/followers)?$/,
@@ -195,6 +197,7 @@ export function isLaunchHiddenPath(pathname: string): boolean {
   if (isCommercePath(pathname)) return true;
   // Support Us (shop, donate, sponsor) stays closed until its own flag is on.
   if (isSupportPath(pathname)) return true;
+  if (isFoundingPath(pathname)) return true;
   if (isHiringBoardPath(pathname)) return !isAplus1HiringBoardEnabled();
   if (!isAplus1LaunchMinimal()) return false;
   if (isLaunchAllowedPath(pathname)) return false;

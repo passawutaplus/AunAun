@@ -1007,3 +1007,37 @@ export function flexDonation(d: DonationInfo): LineMessage {
     ),
   );
 }
+
+// ---------------------------------------------------------------------------
+// Founding Projects: waitlist sign-ups
+// ---------------------------------------------------------------------------
+export type WaitlistInfo = {
+  campaign: string;
+  email: string;
+  is_test: boolean;
+  created_at: string;
+  /** Real (non-test) sign-ups for this campaign so far. */
+  total: number;
+};
+
+const FOUNDING_CAMPAIGN_LABEL: Record<string, string> = { picker: "Picker · The First 30" };
+
+export function formatWaitlist(w: WaitlistInfo): string {
+  return [
+    `${testTag(w.is_test, "ลงชื่อ Waitlist")} · ${FOUNDING_CAMPAIGN_LABEL[w.campaign] ?? w.campaign}`,
+    w.email,
+    `รวม ${w.total} คน · ${bkkTime(w.created_at)}`,
+  ].join("\n");
+}
+
+export function flexWaitlist(w: WaitlistInfo): LineMessage {
+  return flex(
+    formatWaitlist(w),
+    bubble(
+      testTag(w.is_test, "ลงชื่อ Waitlist"),
+      FOUNDING_CAMPAIGN_LABEL[w.campaign] ?? w.campaign,
+      [section("user-plus", clip(w.email, 60), `รวม ${w.total} คน`, [bkkTime(w.created_at)])],
+      { label: "เปิดหน้าโครงการ", uri: `${ADMIN_SITE}/founding/${encodeURIComponent(w.campaign)}` },
+    ),
+  );
+}

@@ -18,6 +18,7 @@ import {
   type ShopOrderInfo,
   type SponsorInfo,
   type TrendInfo,
+  type WaitlistInfo,
   type LineMessage,
   flexCreatorInvite,
   flexDigest,
@@ -29,6 +30,7 @@ import {
   flexShopOrder,
   flexSponsor,
   flexTrend,
+  flexWaitlist,
   isIgnoredEmail,
 } from "../_shared/line-admin-format.ts";
 
@@ -44,7 +46,8 @@ type OutboxRow = {
     | "creator_invite"
     | "sponsor"
     | "shop_order"
-    | "donation";
+    | "donation"
+    | "waitlist";
   ref_id: string | null;
   attempts: number;
 };
@@ -181,6 +184,13 @@ Deno.serve(async (req) => {
       const don = ((data ?? []) as DonationInfo[])[0];
       if (don) {
         texts.push(flexDonation(don));
+        sentIds.push(r.id);
+      } else skippedIds.push(r.id);
+    } else if (r.kind === "waitlist" && r.ref_id) {
+      const { data } = await admin.rpc("admin_line_waitlist_info", { _id: r.ref_id });
+      const wl = ((data ?? []) as WaitlistInfo[])[0];
+      if (wl) {
+        texts.push(flexWaitlist(wl));
         sentIds.push(r.id);
       } else skippedIds.push(r.id);
     } else if (r.kind === "digest") {

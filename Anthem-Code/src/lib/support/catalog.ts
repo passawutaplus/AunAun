@@ -26,6 +26,8 @@ export type ShopProduct = {
   variants?: ProductVariant[];
   specs?: { label: Entry; value: Entry }[];
   externalUrl?: string;
+  /** Founding Projects campaign page for this item, shown as a button when that module is on. */
+  foundingPath?: string;
 };
 
 const INK: ProductVariant = { id: "ink", label: { th: "ดำ Ink", en: "Ink", zh: "墨黑" }, swatch: "#282929" };
@@ -41,6 +43,7 @@ const PRODUCTS: ShopProduct[] = [
     line: { th: "เครื่องจับสีพกพา ใช้คู่กับแอป Picker", en: "A pocket colour picker that works with the Picker app", zh: "便携取色器，搭配 Picker 应用使用" },
     art: "picker",
     externalUrl: "https://picker.samecor.com",
+    foundingPath: "/founding/picker",
     specs: [
       { label: { th: "ขนาดต้นแบบ", en: "Prototype size", zh: "原型尺寸" }, value: { th: "ประมาณ 84 × 33 × 20 มม.", en: "About 84 × 33 × 20 mm", zh: "约 84 × 33 × 20 毫米" } },
       { label: { th: "ล็อตแรก", en: "First batch", zh: "首批" }, value: { th: "ตั้งเป้า 30 เครื่อง", en: "Aiming for 30 units", zh: "目标 30 台" } },

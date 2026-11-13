@@ -19,13 +19,15 @@ type ShellProps = {
   /** Shows the bag button (shop pages). */
   bag?: boolean;
   noindex?: boolean;
+  /** Pages outside the shop (Founding) hide the shop's test-mode strip. */
+  hideDemoStrip?: boolean;
   children: ReactNode;
 };
 
 /** Shared frame for Support / Shop pages: test-mode strip, back link, bag button, footer. */
-export function SupportShell({ title, path, description, back, bag, noindex, children }: ShellProps) {
+export function SupportShell({ title, path, description, back, bag, noindex, hideDemoStrip, children }: ShellProps) {
   const t = useT(SUPPORT);
-  const demo = isSupportDemo();
+  const demo = isSupportDemo() && !hideDemoStrip;
   return (
     <main id="main-content" className={cn("min-h-screen bg-background text-foreground", MOBILE_PAGE_BOTTOM_CLASS)}>
       <SeoHead title={title} description={description} path={path} noindex={noindex || demo} />
