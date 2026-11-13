@@ -4,43 +4,19 @@ project_id = "zkflkpbmbozrchqncpzi"
 [api]
 schemas = ["public", "graphql_public", "shared", "anthem", "so1o", "ops"]
 
-[functions.ai-design-chat]
-verify_jwt = false
-
-[functions.planner-ai-assist]
-verify_jwt = true
-
-[functions.ai-price-suggest]
-verify_jwt = true
-
-[functions.color-mentor]
-verify_jwt = true
-
-[functions.embed-project]
-verify_jwt = false
-
 [functions.similar-images]
 verify_jwt = false
 
 [functions.generate-contract]
 verify_jwt = false
 
-[functions.sync-so1o-tier]
-verify_jwt = false
-
 [functions.job-match-dispatch]
-verify_jwt = false
-
-[functions.line-queue-process]
 verify_jwt = false
 
 [functions.line-connect]
 verify_jwt = false
 
 [functions.line-webhook]
-verify_jwt = false
-
-[functions.line-link-account]
 verify_jwt = false
 
 [functions.admin-ai-monitor]
@@ -65,6 +41,9 @@ verify_jwt = true
 verify_jwt = false
 
 [functions.line-admin-notify]
+verify_jwt = false
+
+[functions.picker-feedback-line]
 verify_jwt = false
 
 # Creator Invitation V1: public token-gated API (no account), admin actions (JWT + has_role), cron sweep
