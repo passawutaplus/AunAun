@@ -28,7 +28,6 @@ import { initLiff, isLineInAppBrowser, liffConfigured } from "@/lib/lineLiff";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useSubscription } from "@/hooks/useSubscription";
-import { useMyInhouseOrgs } from "@/hooks/inhouse/useInhouseOrg";
 import { LineNotificationPrefsPanel } from "@/components/line/LineNotificationPrefsPanel";
 
 type Phase = "boot" | "need_auth" | "ready" | "linking" | "success" | "error";
@@ -73,9 +72,7 @@ async function callLineConnect(payload: Record<string, string>) {
 export function LineLinkScreen() {
   const navigate = useNavigate();
   const { user, loading: authLoading, profile, refreshProfile } = useAuth();
-  const { isPro, tier } = useSubscription();
-  const { data: inhouseOrgs = [] } = useMyInhouseOrgs();
-  const showInhouseGroup = tier === "inhouse" || inhouseOrgs.length > 0;
+  const { isPro } = useSubscription();
   const [phase, setPhase] = React.useState<Phase>("boot");
   const [message, setMessage] = React.useState("");
   const [lineMeta, setLineMeta] = React.useState<LineMeta>({});
@@ -405,7 +402,6 @@ export function LineLinkScreen() {
                   defaultOpen
                   embedded
                   showLinkStatus={false}
-                  showInhouseGroup={showInhouseGroup}
                 />
               ) : (
                 <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-center space-y-3">

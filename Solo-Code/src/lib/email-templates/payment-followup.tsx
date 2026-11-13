@@ -115,7 +115,7 @@ export const template = {
     overdueDays: 7,
     tone: "formal",
     message: "รบกวนแจ้งกำหนดการชำระเงินภายใน 3 วันทำการนะครับ/ค่ะ",
-    portalUrl: "https://solofreelancer.com/track/example",
+    portalUrl: "https://solofreelancer.com",
   },
 } satisfies TemplateEntry;
 

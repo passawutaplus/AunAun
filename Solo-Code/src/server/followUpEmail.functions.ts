@@ -3,7 +3,6 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { enqueueTemplateEmail } from "@/server/portalEmail.server";
-import { canonicalUrl } from "@/lib/siteUrl";
 import {
   buildFollowUpMessage,
   daysOverdue,
@@ -90,17 +89,6 @@ export const sendPaymentFollowUpEmail = createServerFn({ method: "POST" })
       fallback: "ฟรีแลนซ์",
     });
 
-    const { data: job } = await supabaseAdmin
-      .from("job_trackers")
-      .select("share_token")
-      .eq("quotation_id", q.id)
-      .eq("user_id", userId)
-      .maybeSingle();
-
-    const portalUrl = job?.share_token
-      ? canonicalUrl(`/track/${job.share_token}`)
-      : canonicalUrl("/dashboard");
-
     const result = await enqueueTemplateEmail({
       templateName: "payment-followup",
       recipientEmail: clientEmail,
@@ -114,7 +102,6 @@ export const sendPaymentFollowUpEmail = createServerFn({ method: "POST" })
         overdueDays: daysOverdue(q),
         tone,
         message,
-        portalUrl,
       },
       idempotencyKey: `followup-${q.id}-${tone}-${new Date().toISOString().slice(0, 10)}`,
     });

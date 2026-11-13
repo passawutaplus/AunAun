@@ -4,10 +4,7 @@ import type { FinanceSub } from "./FinanceTab";
 const LABELS: Record<FinanceSub, string> = {
   pipeline: "Pipeline",
   quotations: "ใบเสนอราคา",
-  jobs: "Job Tracker",
   income: "รายได้",
-  tax: "ภาษี",
-  subs: "Subscription",
 };
 
 export function FinanceBreadcrumb({

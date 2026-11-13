@@ -8,7 +8,6 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/auth/AuthProvider";
 import { LineGlyph } from "@/components/LineContactButton";
 import { LineNotificationPrefsPanel } from "@/components/line/LineNotificationPrefsPanel";
-import { useMyInhouseOrgs } from "@/hooks/inhouse/useInhouseOrg";
 import { pickLocale, type UserLocale } from "@/lib/lineNotificationKinds";
 import { cn } from "@/lib/utils";
 
@@ -35,11 +34,9 @@ export function LineNotificationSection() {
   const { isPro, tier } = useSubscription();
   const { profile } = useAuth();
   const locale = pickLocale(profile?.locale);
-  const { data: inhouseOrgs = [] } = useMyInhouseOrgs();
 
   const t = (th: string, en: string) => (locale === "en" ? en : th);
   const tierLabel = TIER_LABEL[tier]?.[locale as UserLocale] ?? (locale === "en" ? "Pro" : "โปร");
-  const showInhouseGroup = tier === "inhouse" || inhouseOrgs.length > 0;
 
   if (!isPro) {
     return (
@@ -80,7 +77,6 @@ export function LineNotificationSection() {
       variant="settings"
       showLinkStatus
       showTestSamples
-      showInhouseGroup={showInhouseGroup}
       tierLabel={tierLabel}
     />
   );

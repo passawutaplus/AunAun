@@ -1,6 +1,4 @@
 import * as React from "react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import logoUrl from "@/assets/solo-freelancer-logo.webp";
 import { cn } from "@/lib/utils";
 
@@ -25,21 +23,7 @@ const FALLBACK: BannerSlide[] = [
 ];
 
 export function AuthBannerSlider({ className }: { className?: string }) {
-  const { data } = useQuery({
-    queryKey: ["auth_banner_slides"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("auth_banner_slides")
-        .select("*")
-        .eq("is_active", true)
-        .order("sort_order", { ascending: true });
-      if (error) throw error;
-      return (data ?? []) as BannerSlide[];
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const slides = data && data.length > 0 ? data : FALLBACK;
+  const slides = FALLBACK;
   const [idx, setIdx] = React.useState(0);
 
   React.useEffect(() => {

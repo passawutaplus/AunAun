@@ -4,11 +4,7 @@ import { HardDrive, Loader2, Crown, ChevronDown, Sparkles, Trash2 } from "lucide
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useStorageUsage } from "@/hooks/useStorageUsage";
 import {
@@ -31,10 +27,7 @@ const TIER_LABEL = {
 const MANAGE_LINKS: Partial<Record<StorageCategoryKey, string>> = {
   documents: "/dashboard?tab=finance&sub=quotations",
   suppliers: "/dashboard?tab=mydata&sub=suppliers",
-  jobs: "/dashboard?tab=finance&sub=jobs",
-  finance: "/dashboard?tab=finance&sub=tax",
-  brand_assets: "/dashboard?tab=mydata&sub=assets",
-  portfolio: "/dashboard?tab=mydata&sub=portfolio",
+  finance: "/dashboard?tab=finance&sub=income",
   planner: "/dashboard?tab=planner",
 };
 
@@ -90,7 +83,10 @@ export function StorageUsageSettingsSection() {
                 ) : (
                   <Badge
                     variant="secondary"
-                    className={cn("shrink-0", isPro && "bg-primary/15 text-primary border-primary/20")}
+                    className={cn(
+                      "shrink-0",
+                      isPro && "bg-primary/15 text-primary border-primary/20",
+                    )}
                   >
                     {isPro ? <Crown className="h-3 w-3 mr-1" /> : null}
                     {TIER_LABEL[tier]}
@@ -135,11 +131,15 @@ export function StorageUsageSettingsSection() {
               <div className="rounded-xl border border-border/60 bg-muted/30 px-4 py-3 space-y-2 text-xs">
                 <div className="flex items-center justify-between gap-3">
                   <span className="font-medium">ฐานข้อมูล</span>
-                  <span className="tabular-nums text-muted-foreground">{formatStorageBytes(db_bytes)}</span>
+                  <span className="tabular-nums text-muted-foreground">
+                    {formatStorageBytes(db_bytes)}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <span className="font-medium">ไฟล์แนบ</span>
-                  <span className="tabular-nums text-muted-foreground">{formatStorageBytes(file_bytes)}</span>
+                  <span className="tabular-nums text-muted-foreground">
+                    {formatStorageBytes(file_bytes)}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between gap-3 pt-1 border-t border-border/40">
                   <span className="font-medium">รวมใช้ไป</span>
@@ -155,7 +155,9 @@ export function StorageUsageSettingsSection() {
                   {sortedCategories.map((cat) => {
                     if (cat.bytes <= 0) return null;
                     const catPct =
-                      total_bytes > 0 ? Math.max(4, Math.round((cat.bytes / total_bytes) * 100)) : 0;
+                      total_bytes > 0
+                        ? Math.max(4, Math.round((cat.bytes / total_bytes) * 100))
+                        : 0;
                     const label = STORAGE_CATEGORY_LABELS[cat.key as StorageCategoryKey] ?? cat.key;
                     const manageHref = MANAGE_LINKS[cat.key as StorageCategoryKey];
                     return (
@@ -210,7 +212,8 @@ export function StorageUsageSettingsSection() {
               </div>
               {!isPro && (
                 <p className="text-[10px] text-muted-foreground">
-                  Pro ได้พื้นที่ {formatStorageBytes(5 * 1024 * 1024 * 1024)} — เก็บไฟล์งานและเอกสารได้เต็มที่
+                  Pro ได้พื้นที่ {formatStorageBytes(5 * 1024 * 1024 * 1024)} —
+                  เก็บไฟล์งานและเอกสารได้เต็มที่
                 </p>
               )}
             </div>

@@ -8,19 +8,9 @@ import { AddIncomeModal } from "./Modals";
 import { useFinance } from "@/store/finance";
 import { useQuotations, computeTotals } from "@/store/quotations";
 import { formatTHB } from "@/data/mockData";
-import {
-  Download,
-  Coins,
-  Receipt,
-  Calculator,
-  Sparkles,
-  RefreshCw,
-  ArrowRight,
-} from "lucide-react";
+import { Download, Coins, Receipt, Calculator, Sparkles, RefreshCw } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from "recharts";
 import { toast } from "sonner";
-import { FinanceMoneyNav, type FinanceMoneySub } from "./FinanceMoneyNav";
-import { useTaxEstimate } from "./tax/useTaxEstimate";
 import { exportIncomeCsv } from "./tax/exportIncomeCsv";
 
 const IncomeBreakdown = React.lazy(() =>
@@ -35,15 +25,15 @@ const IncomeNetTrendChart = React.lazy(() =>
 const IncomeTopClientsChart = React.lazy(() =>
   import("./tax/IncomeTrendCharts").then((m) => ({ default: m.IncomeTopClientsChart })),
 );
+const WHTCertificates = React.lazy(() =>
+  import("./tax/WHTCertificates").then((m) => ({ default: m.WHTCertificates })),
+);
 
-type Props = {
-  onNavigate: (sub: FinanceMoneySub) => void;
-};
-
-export function IncomeTab({ onNavigate }: Props) {
+export function IncomeTab() {
   const { incomes, upsertIncomeFromQuotation } = useFinance();
   const { list: quotationsList } = useQuotations();
-  const { est } = useTaxEstimate();
+  const totalGross = incomes.reduce((s, i) => s + i.gross, 0);
+  const totalWithheld = incomes.reduce((s, i) => s + (i.withholding ?? 0), 0);
   const [resyncing, setResyncing] = React.useState(false);
 
   function handleResyncAll() {
@@ -94,29 +84,8 @@ export function IncomeTab({ onNavigate }: Props) {
     <div className="space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <FinanceMoneyNav active="income" onNavigate={onNavigate} />
-          <p className="text-xs text-muted-foreground mt-1">
-            บันทึกเงินที่รับจากงาน — ใช้คำนวณภาษีในหน้าถัดไป
-          </p>
+          <p className="text-xs text-muted-foreground mt-1">บันทึกเงินที่รับจากงาน</p>
         </div>
-        <button
-          type="button"
-          onClick={() => onNavigate("tax")}
-          className="w-full sm:max-w-xs lg:w-1/3 lg:max-w-none flex items-center justify-between gap-3 rounded-2xl border border-primary/25 bg-primary-soft/50 px-4 py-3 text-left hover:border-primary/40 transition-colors shrink-0"
-        >
-          <div className="flex items-center gap-2 min-w-0">
-            <Calculator className="h-4 w-4 text-primary shrink-0" />
-            <div className="min-w-0">
-              <p className="text-xs text-muted-foreground truncate">
-                ภาษีประมาณการ (จากรายได้ที่บันทึก)
-              </p>
-              <p className="num text-sm font-semibold">฿{formatTHB(est.estimatedTax)}</p>
-            </div>
-          </div>
-          <span className="inline-flex items-center gap-1 text-xs font-medium text-primary shrink-0">
-            ดูรายละเอียด <ArrowRight className="h-3.5 w-3.5" />
-          </span>
-        </button>
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl glass border border-border p-3">
@@ -165,14 +134,14 @@ export function IncomeTab({ onNavigate }: Props) {
           <StatCard
             accent
             label="รายได้รวม (ปีนี้)"
-            value={`฿${formatTHB(est.totalGross)}`}
+            value={`฿${formatTHB(totalGross)}`}
             sub={`${incomes.length} รายการ`}
             icon={<Coins className="h-5 w-5" />}
           />
           <StatCard
             label="หัก ณ ที่จ่ายสะสม"
-            value={`฿${formatTHB(est.totalWithheld)}`}
-            sub="ใช้เครดิตภาษีในหน้าภาษี"
+            value={`฿${formatTHB(totalWithheld)}`}
+            sub="จากใบ 50ทวิ ที่บันทึก"
             icon={<Receipt className="h-5 w-5" />}
           />
           <StatCard
@@ -231,29 +200,34 @@ export function IncomeTab({ onNavigate }: Props) {
           </CardContent>
         </Card>
 
-        <React.Suspense
-          fallback={<div className="h-64 animate-pulse rounded-xl bg-muted/40" />}
-        >
+        <React.Suspense fallback={<div className="h-64 animate-pulse rounded-xl bg-muted/40" />}>
           <IncomeBreakdown />
         </React.Suspense>
 
-        <React.Suspense
-          fallback={<div className="h-64 animate-pulse rounded-xl bg-muted/40" />}
-        >
+        <React.Suspense fallback={<div className="h-64 animate-pulse rounded-xl bg-muted/40" />}>
           <IncomeCumulativeChart />
         </React.Suspense>
 
-        <React.Suspense
-          fallback={<div className="h-64 animate-pulse rounded-xl bg-muted/40" />}
-        >
+        <React.Suspense fallback={<div className="h-64 animate-pulse rounded-xl bg-muted/40" />}>
           <IncomeNetTrendChart />
         </React.Suspense>
 
-        <React.Suspense
-          fallback={<div className="h-64 animate-pulse rounded-xl bg-muted/40" />}
-        >
+        <React.Suspense fallback={<div className="h-64 animate-pulse rounded-xl bg-muted/40" />}>
           <IncomeTopClientsChart />
         </React.Suspense>
+
+        <Card className="animate-fade-up lg:col-span-2">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">ใบ 50ทวิ</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <React.Suspense
+              fallback={<div className="h-64 animate-pulse rounded-xl bg-muted/40" />}
+            >
+              <WHTCertificates />
+            </React.Suspense>
+          </CardContent>
+        </Card>
       </div>
 
       <PageFooterActions feature="income" label="รายได้" />

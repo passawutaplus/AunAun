@@ -2,7 +2,6 @@ import * as React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/auth/AuthProvider";
-import type { ClientDocCategory } from "@/components/dashboard/clients/shared";
 
 export interface SavedClient {
   id: string;
@@ -29,17 +28,6 @@ export interface SavedClient {
 
 export type SavedClientInput = Omit<SavedClient, "id" | "createdAt">;
 
-export interface ClientFile {
-  id: string;
-  clientId: string;
-  fileName: string;
-  storagePath: string;
-  mimeType?: string;
-  sizeBytes?: number;
-  docCategory: ClientDocCategory;
-  createdAt: string;
-}
-
 interface ClientRow {
   id: string;
   user_id: string;
@@ -61,17 +49,6 @@ interface ClientRow {
   contact_position: string | null;
   branch_code: string | null;
   website: string | null;
-  created_at: string;
-}
-
-interface ClientFileRow {
-  id: string;
-  client_id: string;
-  file_name: string;
-  storage_path: string;
-  mime_type: string | null;
-  size_bytes: number | null;
-  doc_category: string;
   created_at: string;
 }
 
@@ -151,16 +128,6 @@ export function clientsKey(userId: string | null) {
   return ["saved_clients", userId] as const;
 }
 
-const FILES_KEY = (uid?: string) => ["client_files", uid ?? "anon"] as const;
-
-const CLIENT_FILES_BUCKET = "client-files";
-
-/** Until generated types include client_files */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function clientFilesDb(): any {
-  return (supabase as any).from("client_files");
-}
-
 export function useClients() {
   const { user } = useAuth();
   const userId = user?.id ?? null;
@@ -177,29 +144,6 @@ export function useClients() {
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []).map((r) => rowToClient(r as unknown as ClientRow));
-    },
-  });
-
-  const filesQuery = useQuery({
-    queryKey: FILES_KEY(userId ?? undefined),
-    enabled: !!userId,
-    queryFn: async () => {
-      const { data, error } = await clientFilesDb()
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []).map((f: ClientFileRow) => {
-        return {
-          id: f.id,
-          clientId: f.client_id,
-          fileName: f.file_name,
-          storagePath: f.storage_path,
-          mimeType: f.mime_type ?? undefined,
-          sizeBytes: f.size_bytes ?? undefined,
-          docCategory: (f.doc_category as ClientDocCategory) || "other",
-          createdAt: f.created_at,
-        } as ClientFile;
-      });
     },
   });
 
@@ -230,101 +174,23 @@ export function useClients() {
 
   const removeMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { data: clientFiles } = await clientFilesDb()
-        .select("storage_path")
-        .eq("client_id", id);
-      if (clientFiles && clientFiles.length > 0) {
-        await supabase.storage
-          .from(CLIENT_FILES_BUCKET)
-          .remove(clientFiles.map((f: { storage_path: string }) => f.storage_path));
-      }
       const { error } = await supabase.from("saved_clients").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: clientsKey(userId) });
-      qc.invalidateQueries({ queryKey: FILES_KEY(userId ?? undefined) });
-    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: clientsKey(userId) }),
   });
-
-  const uploadFile = useMutation({
-    mutationFn: async ({
-      clientId,
-      file,
-      docCategory,
-    }: {
-      clientId: string;
-      file: File;
-      docCategory: ClientDocCategory;
-    }) => {
-      if (!userId) throw new Error("ต้องเข้าสู่ระบบ");
-      if (file.size > 5 * 1024 * 1024) throw new Error("ไฟล์ใหญ่เกิน 5MB");
-      const allowed = /\.(pdf|png|jpe?g|webp)$/i;
-      if (!allowed.test(file.name)) throw new Error("รองรับเฉพาะ PDF / รูป (JPG, PNG, WEBP)");
-      const ext = file.name.split(".").pop() || "bin";
-      const path = `${userId}/${clientId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-      const up = await supabase.storage
-        .from(CLIENT_FILES_BUCKET)
-        .upload(path, file, { contentType: file.type });
-      if (up.error) throw up.error;
-      const { error } = await clientFilesDb().insert({
-        client_id: clientId,
-        user_id: userId,
-        file_name: file.name,
-        storage_path: path,
-        mime_type: file.type,
-        size_bytes: file.size,
-        doc_category: docCategory,
-      } as never);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: FILES_KEY(userId ?? undefined) }),
-  });
-
-  const deleteFile = useMutation({
-    mutationFn: async (file: ClientFile) => {
-      await supabase.storage.from(CLIENT_FILES_BUCKET).remove([file.storagePath]);
-      const { error } = await clientFilesDb().delete().eq("id", file.id);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: FILES_KEY(userId ?? undefined) }),
-  });
-
-  const getSignedUrl = React.useCallback(async (path: string) => {
-    const { data, error } = await supabase.storage
-      .from(CLIENT_FILES_BUCKET)
-      .createSignedUrl(path, 60 * 10);
-    if (error) throw error;
-    return data.signedUrl;
-  }, []);
 
   return React.useMemo(
     () => ({
       list: query.data ?? [],
-      files: filesQuery.data ?? [],
       isLoading: query.isLoading,
       isError: query.isError,
       add: (c: SavedClientInput) => addMutation.mutateAsync(c),
       update: (id: string, patch: Partial<SavedClient>) =>
         updateMutation.mutateAsync({ id, patch }),
       remove: (id: string) => removeMutation.mutateAsync(id),
-      uploadFile: (clientId: string, file: File, docCategory: ClientDocCategory) =>
-        uploadFile.mutateAsync({ clientId, file, docCategory }),
-      deleteFile: deleteFile.mutateAsync,
-      getSignedUrl,
     }),
-    [
-      query.data,
-      filesQuery.data,
-      query.isLoading,
-      query.isError,
-      addMutation,
-      updateMutation,
-      removeMutation,
-      uploadFile,
-      deleteFile,
-      getSignedUrl,
-    ],
+    [query.data, query.isLoading, query.isError, addMutation, updateMutation, removeMutation],
   );
 }
 

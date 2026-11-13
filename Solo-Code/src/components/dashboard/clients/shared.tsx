@@ -121,38 +121,6 @@ export const INDUSTRY_PRESETS = [
   "อื่นๆ",
 ] as const;
 
-export type ClientDocCategory =
-  | "business_card"
-  | "company_profile"
-  | "pp20"
-  | "certificate"
-  | "id_card"
-  | "other";
-
-export const CLIENT_DOC_CATEGORIES: Record<
-  ClientDocCategory,
-  { label: string; forType?: "individual" | "company" }
-> = {
-  business_card: { label: "นามบัตร" },
-  company_profile: { label: "โปรไฟล์บริษัท", forType: "company" },
-  pp20: { label: "ภ.พ.20", forType: "company" },
-  certificate: { label: "หนังสือรับรองบริษัท", forType: "company" },
-  id_card: { label: "บัตรประชาชน", forType: "individual" },
-  other: { label: "อื่นๆ" },
-};
-
-export function clientDocCategoriesForType(
-  type: "individual" | "company" | undefined,
-): ClientDocCategory[] {
-  const t = type ?? "individual";
-  return (Object.keys(CLIENT_DOC_CATEGORIES) as ClientDocCategory[]).filter((k) => {
-    const meta = CLIENT_DOC_CATEGORIES[k];
-    if (!meta.forType) return true;
-    if (k === "business_card") return true;
-    return meta.forType === t;
-  });
-}
-
 export const PAYMENT_TERM_LABELS: Record<string, string> = {
   "100%": "ชำระเต็มจำนวนก่อนเริ่มงาน",
   "50/50": "มัดจำ 50% ก่อนเริ่ม · 50% เมื่อส่งมอบงาน",

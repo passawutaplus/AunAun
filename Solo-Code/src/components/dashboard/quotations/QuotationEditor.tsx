@@ -19,17 +19,14 @@ import {
   CheckCircle2,
   RefreshCw,
   Eye,
-  Link2,
   User,
   FileText,
   ListTree,
   CalendarRange,
   PanelRight,
-  ImageIcon,
   StickyNote,
   Coins,
   PenLine,
-  Users,
   Send,
 } from "lucide-react";
 import { StickyToolbar, type ToolbarAction } from "../shared/StickyToolbar";
@@ -38,21 +35,16 @@ import { ServicesPanel } from "./ServicesPanel";
 import { TimelinePanel } from "./TimelinePanel";
 import { PreviewPanel } from "./PreviewPanel";
 import { EscrowQuotationActions } from "./EscrowQuotationActions";
-import { QuotationHeaderBannerField } from "./QuotationHeaderBannerField";
-import { QuotationCollaboratorsPanel } from "./QuotationCollaboratorsPanel";
 import { QuotationCollapsibleBlock, QuotationFormCard } from "./QuotationFormCard";
-import { useQuotationCollaborators } from "@/hooks/useQuotationCollaborators";
 import { QuotationMockupDialog } from "./QuotationMockupDialog";
 import {
   QuotationExportOptionsDialog,
   type QuotationExportChoice,
 } from "./QuotationExportOptionsDialog";
-import { ShareTrackerDialog } from "./ShareTrackerDialog";
 import { ShareSignLinkDialog } from "./ShareSignLinkDialog";
 import { ClientPackDialog } from "./ClientPackDialog";
 import { consumeOpenClientPackRequest } from "@/lib/docLabHandoff";
 import { exportElementToPdfBlob } from "@/lib/printPdf";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/auth/AuthProvider";
 import { toast } from "sonner";
 import { cssAboveMobileBottomNav } from "@/lib/layoutConstants";
@@ -64,15 +56,8 @@ interface Props {
 export function QuotationEditor({ id, onBack }: Props) {
   const { get, update, markPdfExported, advanceStatus, isLoading } = useQuotations();
   const { upsertIncomeFromQuotation, removeIncomeBySource } = useFinance();
-  const { user, profile } = useAuth();
+  const { profile } = useAuth();
   const q = get(id);
-  const { data: collabs = [] } = useQuotationCollaborators(
-    q?.quotationKind && q.quotationKind !== "solo" ? q.id : undefined,
-  );
-  const canEditCollaborators =
-    !!user &&
-    !!q &&
-    (q.ownerUserId === user.id || collabs.some((c) => c.userId === user.id && c.role === "lead"));
   const [showMobilePreview, setShowMobilePreview] = React.useState(false);
   const [advancedOpen, setAdvancedOpen] = React.useState(false);
   const [mockupOpen, setMockupOpen] = React.useState(false);
@@ -86,15 +71,8 @@ export function QuotationEditor({ id, onBack }: Props) {
     includeFreelancerSignature: false,
   });
 
-  const [shareOpen, setShareOpen] = React.useState(false);
   const [signShareOpen, setSignShareOpen] = React.useState(false);
   const [clientPackOpen, setClientPackOpen] = React.useState(false);
-  const [shareInfo, setShareInfo] = React.useState<{
-    share_token: string;
-    tracking_code: string;
-    isNew: boolean;
-  } | null>(null);
-  const [creatingTracker, setCreatingTracker] = React.useState(false);
   const pdfCaptureRef = React.useRef<HTMLDivElement>(null);
 
   const captureQuotationPdf = React.useCallback(async (): Promise<Blob | null> => {
@@ -300,68 +278,6 @@ export function QuotationEditor({ id, onBack }: Props) {
 
   const statusInfo = statusLabel(q.status);
 
-  async function handleCreateOrOpenTracker() {
-    if (!q || !user) return;
-    const needsContract =
-      q.status === "pending_payment" || q.status === "pending_receipt" || q.status === "completed";
-    if (needsContract && !q.contractAccepted) {
-      toast.error("ยืนยันสัญญาจ้างก่อน — เปิดจาก Pipeline > การ์ดดีล > สัญญาจ้าง");
-      return;
-    }
-    setCreatingTracker(true);
-    try {
-      // ดูว่ามี job tracker ของใบนี้แล้วหรือยัง
-      const { data: existing } = await supabase
-        .from("job_trackers")
-        .select("share_token, tracking_code")
-        .eq("user_id", user.id)
-        .eq("quotation_id", q.id)
-        .maybeSingle();
-
-      if (existing) {
-        setShareInfo({
-          share_token: existing.share_token,
-          tracking_code: existing.tracking_code,
-          isNew: false,
-        });
-        setShareOpen(true);
-        return;
-      }
-
-      const totals = computeTotals(q);
-      const payload = {
-        user_id: user.id,
-        title: q.projectName || `งานของ ${q.clientName || "ลูกค้า"}`,
-        client_name: q.clientName || "",
-        total_amount: Math.round(totals.grandTotal),
-        deposit_percent: q.depositPreset || 0,
-        payment_info: q.paymentTerms || "",
-        start_date: q.startDate || null,
-        deadline: q.endDate || null,
-        notes: q.notes || "",
-        quotation_id: q.id,
-        brief_id: q.briefId ?? null,
-      };
-      const { data: created, error } = await supabase
-        .from("job_trackers")
-        .insert(payload)
-        .select("share_token, tracking_code")
-        .single();
-      if (error) throw error;
-      setShareInfo({
-        share_token: created.share_token,
-        tracking_code: created.tracking_code,
-        isNew: true,
-      });
-      setShareOpen(true);
-      toast.success("สร้าง Job Tracker แล้ว — คัดลอกลิงก์ส่งให้ลูกค้าได้เลย");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "สร้าง Job Tracker ไม่สำเร็จ");
-    } finally {
-      setCreatingTracker(false);
-    }
-  }
-
   const secondaryActions: ToolbarAction[] = [
     { label: "บันทึก", onClick: handleSave, icon: <Save className="h-4 w-4" /> },
     {
@@ -383,19 +299,7 @@ export function QuotationEditor({ id, onBack }: Props) {
   // workflow advance buttons removed — status is managed from the list dropdown only.
   void nextStep;
   void handleAdvance;
-  if (q.status !== "draft") {
-    primaryActions.push({
-      label: creatingTracker ? "กำลังสร้าง..." : "สร้างลิงก์ติดตามงาน",
-      onClick: handleCreateOrOpenTracker,
-      icon: <Link2 className="h-4 w-4" />,
-      variant: "secondary",
-      title: "สร้าง/เปิดลิงก์ติดตามงานสำหรับลูกค้า (แนบใบบรีฟ + ใบเสนอราคา)",
-    });
-  }
-  if (
-    (q.signatureMode === "online" || q.signatureMode === "wet") &&
-    q.signShareToken
-  ) {
+  if ((q.signatureMode === "online" || q.signatureMode === "wet") && q.signShareToken) {
     primaryActions.push({
       label: "แชร์ลิงก์เซ็น",
       onClick: () => setSignShareOpen(true),
@@ -483,35 +387,6 @@ export function QuotationEditor({ id, onBack }: Props) {
             icon={<Coins className="h-3.5 w-3.5" />}
           >
             <SettingsPanel q={q} patch={patch} sections={["modifiers"]} />
-          </QuotationCollapsibleBlock>
-
-          {(q.quotationKind === "inhouse" || q.quotationKind === "studio") && (
-            <QuotationCollapsibleBlock
-              title={
-                q.quotationKind === "inhouse"
-                  ? "สมาชิกทีม (In-House)"
-                  : "สมาชิก Studio (SAMECOR nest)"
-              }
-              icon={<Users className="h-3.5 w-3.5" />}
-            >
-              <QuotationCollaboratorsPanel
-                quotationId={q.id}
-                quotationKind={q.quotationKind}
-                canEdit={canEditCollaborators}
-                embedded
-              />
-            </QuotationCollapsibleBlock>
-          )}
-
-          <QuotationCollapsibleBlock
-            title="หมวดตกแต่ง"
-            description="ภาพหัวเอกสาร — แสดงใน preview และตอนส่งให้ลูกค้า"
-            icon={<ImageIcon className="h-3.5 w-3.5" />}
-          >
-            <QuotationHeaderBannerField
-              value={q.headerImageUrl}
-              onChange={(url) => patch({ headerImageUrl: url })}
-            />
           </QuotationCollapsibleBlock>
 
           <QuotationCollapsibleBlock
@@ -665,18 +540,6 @@ export function QuotationEditor({ id, onBack }: Props) {
         }}
       />
 
-      {shareInfo && (
-        <ShareTrackerDialog
-          open={shareOpen}
-          onOpenChange={setShareOpen}
-          shareToken={shareInfo.share_token}
-          trackingCode={shareInfo.tracking_code}
-          hasBrief={!!q.briefId}
-          hasQuotation={true}
-          isNew={shareInfo.isNew}
-        />
-      )}
-
       {q.signShareToken && (
         <ShareSignLinkDialog
           open={signShareOpen}
@@ -693,11 +556,6 @@ export function QuotationEditor({ id, onBack }: Props) {
         onOpenChange={setClientPackOpen}
         onExportPdf={handlePrint}
         onCaptureQuotationPdf={captureQuotationPdf}
-        trackUrl={
-          shareInfo
-            ? `${typeof window !== "undefined" ? window.location.origin : ""}/track/${shareInfo.share_token}`
-            : undefined
-        }
       />
 
       <div className="fixed -left-[10000px] top-0 w-[800px] pointer-events-none" aria-hidden>

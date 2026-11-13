@@ -5,11 +5,7 @@ import { ANTHEM_BASE, loadProjectEnv, SOLO_BASE } from "./load-env.mjs";
 
 loadProjectEnv();
 
-const SOLO_TOKENS = [
-  "/track/invalid-token-qa-000",
-  "/brief/invalid-token-qa-000",
-  "/supplier/invalid-token-qa-000",
-];
+const SOLO_TOKENS = ["/brief/invalid-token-qa-000"];
 
 const ANTHEM_TOKENS = [
   "/project/00000000-0000-0000-0000-000000000000",

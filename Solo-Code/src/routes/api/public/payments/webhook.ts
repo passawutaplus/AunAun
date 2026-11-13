@@ -1,13 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
+import type Stripe from "stripe";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { type StripeEnv, verifyWebhook, createStripeClient } from "@/lib/stripe.server";
 import { CREDITS_PER_PRICE, PX_PER_PRICE, checkoutKind } from "@/lib/stripe";
-import { syncAnthemFromSo1oUserFull } from "@/lib/ecosystemSync.server";
 import {
   syncConnectAccountFromStripe,
   upsertSubscriptionRecordFromStripe,
 } from "@/lib/stripePayments.server";
 import { guardIpRateLimit, IP_RATE_LIMITS } from "@/lib/rateLimit.server";
+
+/** Fields this webhook still reads from older Stripe API versions. */
+type LegacySubscription = Stripe.Subscription & { current_period_end?: number };
+type LegacyInvoice = Stripe.Invoice & { subscription?: string | null };
+type LegacyTransfer = Stripe.Transfer & { failure_message?: string | null };
 
 let _supabase: SupabaseClient | null = null;
 function getSupabase(): SupabaseClient {
@@ -17,7 +22,7 @@ function getSupabase(): SupabaseClient {
   return _supabase;
 }
 
-function resolvePriceId(item: any): string {
+function resolvePriceId(item: Stripe.SubscriptionItem | undefined): string {
   return (
     item?.price?.lookup_key ||
     item?.price?.metadata?.lovable_external_id ||
@@ -84,7 +89,7 @@ async function getUserEmail(userId: string): Promise<string | null> {
 async function enqueueEmail(opts: {
   userId: string;
   templateName: string;
-  templateData?: Record<string, any>;
+  templateData?: Record<string, unknown>;
   idempotencyKey: string;
 }) {
   try {
@@ -172,7 +177,7 @@ async function logPaymentNotification(opts: {
   currency?: string | null;
   priceId?: string | null;
   message: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }) {
   await getSupabase()
     .from("payment_notifications")
@@ -191,10 +196,13 @@ async function logPaymentNotification(opts: {
 async function syncTier(userId: string) {
   const sb = getSupabase();
   await sb.rpc("sync_user_tier", { _user_id: userId });
-  await syncAnthemFromSo1oUserFull(sb, userId);
 }
 
-async function handleSubscriptionUpsert(subscription: any, env: StripeEnv, isCreation: boolean) {
+async function handleSubscriptionUpsert(
+  subscription: LegacySubscription,
+  env: StripeEnv,
+  isCreation: boolean,
+) {
   const userId = await upsertSubscriptionRecordFromStripe(subscription, env);
   if (!userId) {
     console.error("[stripe-webhook] No userId on subscription", subscription.id);
@@ -252,7 +260,7 @@ async function handleSubscriptionUpsert(subscription: any, env: StripeEnv, isCre
   }
 }
 
-async function handleSubscriptionDeleted(subscription: any, env: StripeEnv) {
+async function handleSubscriptionDeleted(subscription: LegacySubscription, env: StripeEnv) {
   const userId = subscription.metadata?.userId;
   await getSupabase()
     .from("subscriptions")
@@ -281,7 +289,7 @@ async function handleSubscriptionDeleted(subscription: any, env: StripeEnv) {
   }
 }
 
-async function handleCheckoutCompleted(session: any, env: StripeEnv) {
+async function handleCheckoutCompleted(session: Stripe.Checkout.Session, env: StripeEnv) {
   if (session.mode === "subscription" && session.subscription) {
     try {
       const stripe = createStripeClient(env);
@@ -357,8 +365,7 @@ async function handleCheckoutCompleted(session: any, env: StripeEnv) {
       const raw = session.metadata?.amountPx;
       pxAmount = raw != null ? Math.floor(Number(raw)) : 0;
       if (!pxAmount || pxAmount < 100 || pxAmount > 10_000) {
-        const fromTotal =
-          session.amount_total != null ? Math.round(session.amount_total / 100) : 0;
+        const fromTotal = session.amount_total != null ? Math.round(session.amount_total / 100) : 0;
         if (fromTotal >= 100 && fromTotal <= 10_000) {
           pxAmount = fromTotal;
         } else {
@@ -516,71 +523,9 @@ async function handleCheckoutCompleted(session: any, env: StripeEnv) {
     });
     return;
   }
-
-  if (kind === "client_job") {
-    const jobId = session.metadata?.jobId;
-    const paymentType = session.metadata?.paymentType;
-    const amountThbRaw = session.metadata?.amountThb;
-    const amountThb =
-      typeof amountThbRaw === "string" ? parseFloat(amountThbRaw) : Number(amountThbRaw);
-
-    if (
-      !jobId ||
-      (paymentType !== "deposit" && paymentType !== "final") ||
-      !Number.isFinite(amountThb)
-    ) {
-      throw new Error("client_job checkout missing metadata");
-    }
-
-    const { error } = await sb.rpc("fulfill_client_job_payment_stripe", {
-      _stripe_session_id: session.id,
-      _job_id: jobId,
-      _freelancer_user_id: userId,
-      _payment_type: paymentType,
-      _amount_thb: amountThb,
-      _environment: env,
-    });
-    if (error) {
-      console.error("[stripe-webhook] fulfill_client_job_payment_stripe failed:", error);
-      throw error;
-    }
-
-    const { data: jobRow } = await sb
-      .from("job_trackers")
-      .select("title, client_name")
-      .eq("id", jobId)
-      .maybeSingle();
-
-    const paymentLabel = paymentType === "deposit" ? "มัดจำ" : "ยอดสุดท้าย";
-    await enqueueEmail({
-      userId,
-      templateName: "deposit-received",
-      templateData: {
-        recipientName: "คุณ",
-        clientName: jobRow?.client_name ?? "ลูกค้า",
-        projectName: jobRow?.title ?? "โปรเจกต์",
-        paymentType,
-        amount: `฿${Math.round(amountThb).toLocaleString("th-TH")}`,
-        note: `ชำระ${paymentLabel}ผ่าน Stripe Checkout`,
-        actionUrl: "https://solofreelancer.com/dashboard?tab=finance&sub=jobs",
-      },
-      idempotencyKey: `client-job-${session.id}`,
-    });
-
-    await logPaymentNotification({
-      userId,
-      eventType: "client_job.paid",
-      env,
-      amountCents: session.amount_total ?? null,
-      currency: session.currency ?? null,
-      priceId,
-      message: `ลูกค้าชำระ${paymentLabel} ฿${Math.round(amountThb).toLocaleString("th-TH")} ผ่าน Stripe`,
-      metadata: { sessionId: session.id, jobId, paymentType },
-    });
-  }
 }
 
-async function handleInvoicePaymentSucceeded(invoice: any, env: StripeEnv) {
+async function handleInvoicePaymentSucceeded(invoice: LegacyInvoice, env: StripeEnv) {
   if (invoice.billing_reason === "subscription_create") return;
   const subId = invoice.subscription;
   if (!subId) return;
@@ -614,7 +559,7 @@ async function handleInvoicePaymentSucceeded(invoice: any, env: StripeEnv) {
   }
 }
 
-async function handleAccountUpdated(account: any, env: StripeEnv) {
+async function handleAccountUpdated(account: Stripe.Account, env: StripeEnv) {
   await syncConnectAccountFromStripe(
     {
       id: account.id,
@@ -626,7 +571,7 @@ async function handleAccountUpdated(account: any, env: StripeEnv) {
   );
 }
 
-async function handleTransferPaid(transfer: any, env: StripeEnv) {
+async function handleTransferPaid(transfer: Stripe.Transfer, env: StripeEnv) {
   const cashoutId = transfer.metadata?.cashoutId;
   if (!cashoutId) return;
   await getSupabase().rpc("mark_cashout_paid_stripe", { _cashout_id: cashoutId });
@@ -641,7 +586,7 @@ async function handleTransferPaid(transfer: any, env: StripeEnv) {
   });
 }
 
-async function handleTransferFailed(transfer: any, env: StripeEnv) {
+async function handleTransferFailed(transfer: LegacyTransfer, env: StripeEnv) {
   const cashoutId = transfer.metadata?.cashoutId;
   if (!cashoutId) return;
   const reason = transfer.failure_message ?? "transfer_reversed";
@@ -662,7 +607,7 @@ async function handleWebhook(req: Request, env: StripeEnv) {
   const event = (await verifyWebhook(req, env)) as {
     id?: string;
     type: string;
-    data: { object: any };
+    data: { object: unknown };
   };
 
   if (event.id && (await isWebhookEventProcessed(event.id))) {
@@ -672,31 +617,31 @@ async function handleWebhook(req: Request, env: StripeEnv) {
 
   switch (event.type) {
     case "customer.subscription.created":
-      await handleSubscriptionUpsert(event.data.object, env, true);
+      await handleSubscriptionUpsert(event.data.object as LegacySubscription, env, true);
       break;
     case "customer.subscription.updated":
-      await handleSubscriptionUpsert(event.data.object, env, false);
+      await handleSubscriptionUpsert(event.data.object as LegacySubscription, env, false);
       break;
     case "customer.subscription.deleted":
-      await handleSubscriptionDeleted(event.data.object, env);
+      await handleSubscriptionDeleted(event.data.object as LegacySubscription, env);
       break;
     case "checkout.session.completed":
-      await handleCheckoutCompleted(event.data.object, env);
+      await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session, env);
       break;
     case "invoice.payment_succeeded":
-      await handleInvoicePaymentSucceeded(event.data.object, env);
+      await handleInvoicePaymentSucceeded(event.data.object as LegacyInvoice, env);
       break;
     case "invoice.payment_failed":
       console.log("[stripe-webhook] invoice.payment_failed — handled via subscription.updated");
       break;
     case "account.updated":
-      await handleAccountUpdated(event.data.object, env);
+      await handleAccountUpdated(event.data.object as Stripe.Account, env);
       break;
     case "transfer.created":
-      await handleTransferPaid(event.data.object, env);
+      await handleTransferPaid(event.data.object as Stripe.Transfer, env);
       break;
     case "transfer.reversed":
-      await handleTransferFailed(event.data.object, env);
+      await handleTransferFailed(event.data.object as LegacyTransfer, env);
       break;
     default:
       console.log("[stripe-webhook] unhandled:", event.type);

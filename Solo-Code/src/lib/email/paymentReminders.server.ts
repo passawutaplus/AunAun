@@ -1,6 +1,5 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { enqueueTemplateEmail } from "@/server/portalEmail.server";
-import { canonicalUrl } from "@/lib/siteUrl";
 import {
   buildFollowUpMessage,
   daysOverdue,
@@ -122,17 +121,6 @@ export async function runPaymentReminders(): Promise<{ sent: number; skipped: nu
       .eq("user_id", userId)
       .maybeSingle();
 
-    const { data: job } = await supabaseAdmin
-      .from("job_trackers")
-      .select("share_token")
-      .eq("quotation_id", q.id)
-      .eq("user_id", userId)
-      .maybeSingle();
-
-    const portalUrl = job?.share_token
-      ? canonicalUrl(`/track/${job.share_token}`)
-      : canonicalUrl("/dashboard");
-
     const recipientEmail = q.clientEmail?.trim();
     if (!recipientEmail) continue;
 
@@ -149,7 +137,6 @@ export async function runPaymentReminders(): Promise<{ sent: number; skipped: nu
         overdueDays: daysOverdue(q),
         tone: plan.tone,
         message,
-        portalUrl,
       },
       idempotencyKey: `cron-followup-${q.id}-${plan.reason}-${dateKey(today)}`,
     });

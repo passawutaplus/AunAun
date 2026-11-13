@@ -2,9 +2,7 @@
 
 export type LineNotifyKind =
   | "portal_slip"
-  | "portal_tracker_comment"
   | "portal_brief"
-  | "portal_planner"
   | "portal_quotation"
   | "anthem_hire"
   | "anthem_chat"
@@ -15,10 +13,6 @@ export type LineNotifyKind =
   | "anthem_job_application"
   | "anthem_topup"
   | "anthem_cashout"
-  | "inhouse_invite"
-  | "inhouse_member_join"
-  | "inhouse_chat"
-  | "inhouse_task"
   | "support_ticket"
   | "billing";
 
@@ -26,9 +20,7 @@ export type UserLocale = "th" | "en";
 
 export const DEFAULT_LINE_NOTIFY_PREFS: Record<LineNotifyKind, boolean> = {
   portal_slip: true,
-  portal_tracker_comment: true,
   portal_brief: true,
-  portal_planner: true,
   portal_quotation: true,
   anthem_hire: true,
   anthem_chat: true,
@@ -39,10 +31,6 @@ export const DEFAULT_LINE_NOTIFY_PREFS: Record<LineNotifyKind, boolean> = {
   anthem_job_application: true,
   anthem_topup: true,
   anthem_cashout: true,
-  inhouse_invite: true,
-  inhouse_member_join: true,
-  inhouse_chat: true,
-  inhouse_task: true,
   support_ticket: false,
   billing: false,
 };
@@ -77,27 +65,11 @@ export const LINE_NOTIFY_GROUPS: LineNotifyGroup[] = [
         },
       },
       {
-        key: "portal_tracker_comment",
-        label: { th: "คอมเมนต์ในงาน", en: "Job step comment" },
-        hint: {
-          th: "ลูกค้าคอมเมนต์ในขั้นตอนงาน",
-          en: "Client comments on a workflow step",
-        },
-      },
-      {
         key: "portal_brief",
         label: { th: "ยืนยันบรีฟงาน", en: "Brief confirmed" },
         hint: {
           th: "ลูกค้ายืนยันบรีฟครบถ้วน",
           en: "Client confirms the creative brief",
-        },
-      },
-      {
-        key: "portal_planner",
-        label: { th: "อนุมัติ / ขอแก้คอนเทนต์", en: "Content approval" },
-        hint: {
-          th: "ลูกค้าอนุมัติหรือขอแก้โพสต์",
-          en: "Client approves or requests changes",
         },
       },
       {
@@ -162,48 +134,6 @@ export const LINE_NOTIFY_GROUPS: LineNotifyGroup[] = [
         key: "anthem_cashout",
         label: { th: "ถอนเงิน / สถานะคำขอ", en: "Cashout updates" },
         hint: { th: "อัปเดตคำขอถอนและโอนเงิน", en: "Cashout request status updates" },
-      },
-    ],
-  },
-  {
-    id: "inhouse",
-    label: { th: "In-House Workspace", en: "In-House workspace" },
-    description: {
-      th: "คำเชิญทีม แชท และงานที่มอบหมายใน workspace",
-      en: "Team invites, workspace chat, and task assignments",
-    },
-    kinds: [
-      {
-        key: "inhouse_invite",
-        label: { th: "คำเชิญเข้าร่วมทีม", en: "Team invite" },
-        hint: {
-          th: "เมื่อ admin เชิญคุณเข้า org",
-          en: "When an admin invites you to an org",
-        },
-      },
-      {
-        key: "inhouse_member_join",
-        label: { th: "สมาชิกใหม่เข้าร่วม", en: "New member joined" },
-        hint: {
-          th: "เมื่อมีคนยอมรับคำเชิญของทีมคุณ",
-          en: "When someone accepts your team invite",
-        },
-      },
-      {
-        key: "inhouse_chat",
-        label: { th: "ข้อความใน workspace", en: "Workspace message" },
-        hint: {
-          th: "แชทในช่องของ workspace",
-          en: "Messages in workspace channels",
-        },
-      },
-      {
-        key: "inhouse_task",
-        label: { th: "มอบหมายงาน / due date", en: "Task assignment / due date" },
-        hint: {
-          th: "ถูก assign to-do หรือใกล้ครบกำหนด",
-          en: "Assigned a task or due today",
-        },
       },
     ],
   },

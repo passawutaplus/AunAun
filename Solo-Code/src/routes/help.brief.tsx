@@ -103,11 +103,6 @@ function BriefHelpPage() {
               เปิด Smart Brief
             </Link>
           </Button>
-          <Button asChild variant="outline" className="flex-1">
-            <Link to="/dashboard" search={{ tab: "finance", sub: "jobs" }}>
-              เปิด Job Tracker
-            </Link>
-          </Button>
         </div>
       </main>
 

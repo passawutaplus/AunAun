@@ -22,14 +22,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import {
   ArrowLeft,
   Plus,
   FileText,
   Loader2,
   Trash2,
-  Brain,
   ShieldCheck,
   Save,
   Check,
@@ -41,6 +40,7 @@ import {
   Receipt,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import { useAuth } from "@/auth/AuthProvider";
 import { toast } from "sonner";
 import {
@@ -55,7 +55,6 @@ import {
   sanitizeBriefDesignDirection,
 } from "@/lib/briefSchema";
 import { ReferenceUploader } from "./ReferenceUploader";
-import { AiAnalysisSheet } from "./AiAnalysisSheet";
 import { BriefPdfPreviewDialog } from "./BriefPdfPreviewDialog";
 import { ClientPicker } from "./ClientPicker";
 import { ColorChipsField } from "./ColorChipsField";
@@ -78,7 +77,8 @@ import { mergeCreativeHandoffIntoDirection } from "@/lib/mergeCreativeHandoff";
 import { normalizeHexArray } from "@/lib/colorUtils";
 import { PageFooterActions } from "@/components/dashboard/PageFooterActions";
 
-function rowToBrief(r: any): DesignBrief {
+function rowToBrief(row: unknown): DesignBrief {
+  const r = row as DesignBrief;
   return {
     id: r.id,
     user_id: r.user_id,
@@ -94,7 +94,10 @@ function rowToBrief(r: any): DesignBrief {
     timeline_budget: r.timeline_budget ?? {},
     notes: r.notes ?? "",
     references: r.references ?? [],
-    design_links: r.design_links ?? (r.design_direction as { design_links?: DesignBrief["design_links"] })?.design_links ?? [],
+    design_links:
+      r.design_links ??
+      (r.design_direction as { design_links?: DesignBrief["design_links"] })?.design_links ??
+      [],
     ai_analysis: r.ai_analysis,
     confirmed_at: r.confirmed_at,
     confirmed_by_name: r.confirmed_by_name,
@@ -203,8 +206,7 @@ export function BriefsTab() {
     }
 
     const title =
-      handoff.paletteName?.trim() ||
-      (hasColors ? "บรีฟจาก Color Lab" : "บรีฟจาก Typography Lab");
+      handoff.paletteName?.trim() || (hasColors ? "บรีฟจาก Color Lab" : "บรีฟจาก Typography Lab");
     const design_direction = mergePatch({ moods: [] });
     const { data, error } = await supabase
       .from("design_briefs")
@@ -311,14 +313,14 @@ export function BriefsTab() {
         user_id: user.id,
         title: `${src.title} (สำเนา)`,
         status: "draft",
-        client_info: src.client_info as any,
-        project_overview: src.project_overview as any,
-        audience: src.audience as any,
-        design_direction: src.design_direction as any,
-        tech_specs: src.tech_specs as any,
-        timeline_budget: src.timeline_budget as any,
+        client_info: src.client_info as unknown as Json,
+        project_overview: src.project_overview as unknown as Json,
+        audience: src.audience as unknown as Json,
+        design_direction: src.design_direction as unknown as Json,
+        tech_specs: src.tech_specs as unknown as Json,
+        timeline_budget: src.timeline_budget as unknown as Json,
         notes: src.notes,
-        references: src.references as any,
+        references: src.references as unknown as Json,
       })
       .select("*")
       .single();
@@ -560,7 +562,6 @@ function BriefEditor({
   );
   const [dirty, setDirty] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
-  const [aiOpen, setAiOpen] = React.useState(false);
   const [confirmSelfOpen, setConfirmSelfOpen] = React.useState(false);
   const [pdfOpen, setPdfOpen] = React.useState(false);
   const [pdfAutoPrint, setPdfAutoPrint] = React.useState(false);
@@ -580,7 +581,7 @@ function BriefEditor({
     setDirty(true);
   };
   const patchSection = <K extends keyof DesignBrief>(key: K, p: Partial<DesignBrief[K]>) => {
-    setB((cur) => ({ ...cur, [key]: { ...(cur[key] as any), ...p } }));
+    setB((cur) => ({ ...cur, [key]: { ...(cur[key] as object), ...p } }));
     setDirty(true);
   };
 
@@ -592,17 +593,17 @@ function BriefEditor({
         .update({
           title: b.title,
           status: overrideStatus ?? b.status,
-          client_info: b.client_info as any,
-          project_overview: b.project_overview as any,
-          audience: b.audience as any,
+          client_info: b.client_info as unknown as Json,
+          project_overview: b.project_overview as unknown as Json,
+          audience: b.audience as unknown as Json,
           design_direction: {
             ...b.design_direction,
             design_links: b.design_links ?? [],
-          } as any,
-          tech_specs: b.tech_specs as any,
-          timeline_budget: b.timeline_budget as any,
+          } as unknown as Json,
+          tech_specs: b.tech_specs as unknown as Json,
+          timeline_budget: b.timeline_budget as unknown as Json,
           notes: b.notes,
-          references: b.references as any,
+          references: b.references as unknown as Json,
         })
         .eq("id", b.id)
         .select("*")
@@ -627,7 +628,6 @@ function BriefEditor({
 
   const completeness = briefCompleteness(b);
   const locked = b.status === "confirmed";
-  const canAnalyze = !!savedAt && !dirty && completeness >= 50;
 
   const sendLinkToClient = async () => {
     if (dirty) {
@@ -771,31 +771,6 @@ function BriefEditor({
                 บันทึก
               </Button>
             )}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setAiOpen(true)}
-                    disabled={!canAnalyze}
-                  >
-                    <Brain className="h-4 w-4 mr-1" /> AI วิเคราะห์
-                  </Button>
-                </span>
-              </TooltipTrigger>
-              {!canAnalyze && (
-                <TooltipContent>
-                  <p className="text-xs max-w-[220px]">
-                    {dirty
-                      ? "กดบันทึกก่อนเพื่อให้ AI วิเคราะห์ข้อมูลล่าสุด"
-                      : completeness < 50
-                        ? `กรอกบรีฟให้ครบอย่างน้อย 50% (ตอนนี้ ${completeness}%)`
-                        : "บันทึกบรีฟก่อนจึงจะวิเคราะห์ได้"}
-                  </p>
-                </TooltipContent>
-              )}
-            </Tooltip>
             <Button size="sm" variant="outline" onClick={openPdfPreview}>
               <Eye className="h-4 w-4 mr-1" /> ดูพรีวิว PDF
             </Button>
@@ -1286,15 +1261,6 @@ function BriefEditor({
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-
-        <AiAnalysisSheet
-          open={aiOpen}
-          onOpenChange={setAiOpen}
-          brief={b}
-          onSaved={(an) => {
-            patch({ ai_analysis: an });
-          }}
-        />
       </div>
     </TooltipProvider>
   );

@@ -1,40 +1,27 @@
 import * as React from "react";
-import { SubscriptionsTab } from "./SubscriptionsTab";
-import { TaxTab } from "./TaxTab";
 import { IncomeTab } from "./IncomeTab";
 import { QuotationsTab } from "./QuotationsTab";
-import { JobTrackerTab } from "./JobTrackerTab";
 import { PipelineTab } from "./PipelineTab";
 import { FinanceBreadcrumb } from "./FinanceBreadcrumb";
 import { QuotationsProvider } from "@/store/quotations";
 import { ClientsProvider } from "@/store/clients";
-import type { FinanceMoneySub } from "./FinanceMoneyNav";
 
-export type FinanceSub = "pipeline" | "quotations" | "tax" | "income" | "subs" | "jobs";
+export type FinanceSub = "pipeline" | "quotations" | "income";
+
+const FINANCE_SUBS: readonly string[] = ["pipeline", "quotations", "income"];
 
 type Props = {
-  sub?: FinanceSub;
-  onMoneySubChange?: (sub: FinanceMoneySub) => void;
+  sub?: string;
   onSubChange?: (sub: FinanceSub) => void;
   onGoTab?: (tab: string, sub?: string) => void;
 };
 
-export function FinanceTab({ sub = "quotations", onMoneySubChange, onSubChange, onGoTab }: Props) {
-  const navigateMoney = React.useCallback(
-    (next: FinanceMoneySub) => onMoneySubChange?.(next),
-    [onMoneySubChange],
-  );
-
+export function FinanceTab({ sub: rawSub = "quotations", onSubChange, onGoTab }: Props) {
+  // Old links (e.g. sub=jobs / tax / subs from retired pages) fall back to quotations.
+  const sub = (FINANCE_SUBS.includes(rawSub) ? rawSub : "quotations") as FinanceSub;
   const navigateSub = React.useCallback(
     (next: string) => {
-      if (
-        next === "pipeline" ||
-        next === "quotations" ||
-        next === "tax" ||
-        next === "income" ||
-        next === "subs" ||
-        next === "jobs"
-      ) {
+      if (next === "pipeline" || next === "quotations" || next === "income") {
         onSubChange?.(next);
       }
     },
@@ -66,10 +53,7 @@ export function FinanceTab({ sub = "quotations", onMoneySubChange, onSubChange, 
             />
           )}
           {sub === "quotations" && <QuotationsTab />}
-          {sub === "income" && <IncomeTab onNavigate={navigateMoney} />}
-          {sub === "tax" && <TaxTab onNavigate={navigateMoney} onSubChange={navigateSub} />}
-          {sub === "subs" && <SubscriptionsTab />}
-          {sub === "jobs" && <JobTrackerTab onSubChange={navigateSub} />}
+          {sub === "income" && <IncomeTab />}
         </div>
       </QuotationsProvider>
     </ClientsProvider>

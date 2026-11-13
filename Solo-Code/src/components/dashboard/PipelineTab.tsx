@@ -2,15 +2,12 @@ import * as React from "react";
 import { Loader2, Plus, Kanban, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { usePipelineDeals, type PipelineDeal } from "@/store/pipeline";
 import { useQuotations, computeTotals } from "@/store/quotations";
 import { useFinance } from "@/store/finance";
 import {
   columnToQuotationStatus,
   moveColumnError,
-  targetJobStepForBilling,
-  targetJobStepForWorking,
   type PipelineColumn,
 } from "@/lib/pipelineStatus";
 import { PipelineKanban } from "./pipeline/PipelineKanban";
@@ -69,24 +66,10 @@ export function PipelineTab({ onNavigate, onGoTab, onOpenQuotation }: Props) {
       const nextStatus = columnToQuotationStatus(to);
       await advanceStatusAsync(dealId, nextStatus);
 
-      if (deal.job) {
-        if (to === "billing") {
-          await supabase
-            .from("job_trackers")
-            .update({ current_step: targetJobStepForBilling() })
-            .eq("id", deal.job.id);
-        } else if (to === "working") {
-          await supabase
-            .from("job_trackers")
-            .update({ current_step: targetJobStepForWorking() })
-            .eq("id", deal.job.id);
-        }
-      }
-
       if (to === "done") {
         const updated = list.find((x) => x.id === dealId);
         if (updated) syncIncome(updated);
-        toast.success("ปิดงานแล้ว — บันทึกรายได้เข้าหมวดภาษี");
+        toast.success("ปิดงานแล้ว — บันทึกรายได้แล้ว");
       } else {
         toast.success("อัปเดตสถานะดีลแล้ว");
       }
@@ -192,12 +175,8 @@ export function PipelineTab({ onNavigate, onGoTab, onOpenQuotation }: Props) {
               onNavigate?.("quotations");
               setSelected(null);
             }}
-            onOpenJobs={() => {
-              onNavigate?.("jobs");
-              setSelected(null);
-            }}
-            onOpenTax={() => {
-              onNavigate?.("tax");
+            onOpenIncome={() => {
+              onNavigate?.("income");
               setSelected(null);
             }}
             onOpenContract={() => refetch()}

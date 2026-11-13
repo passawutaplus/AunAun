@@ -12,7 +12,6 @@ import {
 import { ChevronsUpDown, UserPlus, Check, User as UserIcon, X } from "lucide-react";
 import { useClients, type SavedClient, type SavedClientInput } from "@/store/clients";
 import { ClientFormDialog } from "@/components/dashboard/clients/ClientFormDialog";
-import type { StagedClientFile } from "@/components/dashboard/clients/ClientDocumentsField";
 import type { BriefClientInfo } from "@/lib/briefSchema";
 import { toast } from "sonner";
 
@@ -34,7 +33,7 @@ function clientToBriefInfo(c: SavedClient): BriefClientInfo {
 }
 
 export function ClientPicker({ value, onPick, disabled }: Props) {
-  const { list, add, uploadFile, getSignedUrl } = useClients();
+  const { list, add } = useClients();
   const [open, setOpen] = React.useState(false);
   const [dialogOpen, setDialogOpen] = React.useState<"new" | null>(null);
   const [creating, setCreating] = React.useState(false);
@@ -42,18 +41,11 @@ export function ClientPicker({ value, onPick, disabled }: Props) {
   const selected = value.client_id ? list.find((c) => c.id === value.client_id) : undefined;
   const label = selected?.name || value.client_name || "เลือกลูกค้าจากรายชื่อ…";
 
-  const handleCreate = async (payload: SavedClientInput, staged: StagedClientFile[]) => {
+  const handleCreate = async (payload: SavedClientInput) => {
     if (creating) return;
     setCreating(true);
     try {
       const created = await add(payload);
-      for (const sf of staged) {
-        try {
-          await uploadFile(created.id, sf.file, sf.docCategory);
-        } catch {
-          /* ignore */
-        }
-      }
       onPick(clientToBriefInfo(created));
       setDialogOpen(null);
       toast.success("เพิ่มลูกค้าใหม่และเชื่อมกับบรีฟแล้ว");
@@ -103,13 +95,7 @@ export function ClientPicker({ value, onPick, disabled }: Props) {
                   {list.map((c) => (
                     <CommandItem
                       key={c.id}
-                      value={
-                        c.name +
-                        " " +
-                        (c.industry || "") +
-                        " " +
-                        (c.contactName || "")
-                      }
+                      value={c.name + " " + (c.industry || "") + " " + (c.contactName || "")}
                       onSelect={() => {
                         onPick(clientToBriefInfo(c));
                         setOpen(false);
@@ -167,7 +153,6 @@ export function ClientPicker({ value, onPick, disabled }: Props) {
         onClose={() => setDialogOpen(null)}
         onCreate={handleCreate}
         onUpdate={() => {}}
-        getSignedUrl={getSignedUrl}
       />
     </>
   );

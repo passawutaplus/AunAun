@@ -141,8 +141,8 @@ function TaxHelpPage() {
 
         <div className="flex flex-col sm:flex-row gap-3 pt-2">
           <Button asChild className="flex-1">
-            <Link to="/dashboard" search={{ tab: "finance", sub: "tax" }}>
-              เปิดแท็บภาษีใน My Desk
+            <Link to="/dashboard" search={{ tab: "finance", sub: "income" }}>
+              เปิดแท็บรายได้ใน My Desk
             </Link>
           </Button>
           <Button asChild variant="outline" className="flex-1">

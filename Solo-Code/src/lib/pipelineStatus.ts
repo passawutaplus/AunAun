@@ -1,13 +1,6 @@
 import type { Quotation, QuotationStatus } from "@/store/quotations";
 
-export const PIPELINE_COLUMNS = [
-  "lead",
-  "proposal",
-  "contract",
-  "working",
-  "billing",
-  "done",
-] as const;
+export const PIPELINE_COLUMNS = ["lead", "proposal", "contract", "working", "done"] as const;
 
 export type PipelineColumn = (typeof PIPELINE_COLUMNS)[number];
 
@@ -15,8 +8,7 @@ export const PIPELINE_LABELS: Record<PipelineColumn, string> = {
   lead: "คุย/ร่าง",
   proposal: "ส่งใบเสนอราคา",
   contract: "รอเซ็น/มัดจำ",
-  working: "กำลังทำงาน",
-  billing: "เก็บเงิน/ใบเสร็จ",
+  working: "กำลังทำงาน/เก็บเงิน",
   done: "ปิดงาน",
 };
 
@@ -25,18 +17,8 @@ export const PIPELINE_COLORS: Record<PipelineColumn, string> = {
   proposal: "bg-blue-50 text-blue-700 border-blue-200",
   contract: "bg-amber-50 text-amber-800 border-amber-200",
   working: "bg-[#FF5F05]/10 text-[#FF5F05] border-[#FF5F05]/30",
-  billing: "bg-violet-50 text-violet-800 border-violet-200",
   done: "bg-emerald-50 text-emerald-800 border-emerald-200",
 };
-
-export interface PipelineJobContext {
-  id: string;
-  currentStep: number;
-  shareToken: string;
-  depositPaid: boolean;
-  finalPaid: boolean;
-  pendingSlips: number;
-}
 
 export interface PipelineIncomeContext {
   id: string;
@@ -47,10 +29,9 @@ export function isPipelineExcluded(status: QuotationStatus): boolean {
   return status === "rejected" || status === "expired";
 }
 
-/** Derive kanban column from quotation + linked job/income. */
+/** Derive kanban column from quotation + linked income. */
 export function derivePipelineColumn(
   q: Quotation,
-  job?: PipelineJobContext | null,
   income?: PipelineIncomeContext | null,
 ): PipelineColumn {
   if (q.status === "completed" || income) return "done";
@@ -58,10 +39,7 @@ export function derivePipelineColumn(
   if (q.status === "pending_approval") return "proposal";
   if (q.status === "pending_payment") return "contract";
 
-  if (q.status === "pending_receipt") {
-    if (job && job.currentStep >= 4) return "billing";
-    return "working";
-  }
+  if (q.status === "pending_receipt") return "working";
 
   return "lead";
 }
@@ -76,7 +54,6 @@ export function columnToQuotationStatus(col: PipelineColumn): QuotationStatus {
     case "contract":
       return "pending_payment";
     case "working":
-    case "billing":
       return "pending_receipt";
     case "done":
       return "completed";
@@ -95,18 +72,8 @@ export function moveColumnError(from: PipelineColumn, to: PipelineColumn): strin
   if (!canMoveColumn(from, to)) {
     return "ย้ายได้ทีละขั้นเท่านั้น — ลากไปคอลัมน์ถัดไป";
   }
-  if (to === "done" && from !== "billing") {
-    return "ปิดงานได้จากคอลัมน์เก็บเงินเท่านั้น";
+  if (to === "done" && from !== "working") {
+    return "ปิดงานได้จากคอลัมน์กำลังทำงานเท่านั้น";
   }
   return null;
-}
-
-/** Job step to set when moving into billing column. */
-export function targetJobStepForBilling(): number {
-  return 4;
-}
-
-/** Job step when entering working from contract. */
-export function targetJobStepForWorking(): number {
-  return 1;
 }

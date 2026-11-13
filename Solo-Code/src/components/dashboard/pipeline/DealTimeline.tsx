@@ -1,8 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import { th } from "date-fns/locale";
-import { Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import type { PipelineDeal } from "@/store/pipeline";
 
 type TimelineItem = {
@@ -14,20 +11,6 @@ type TimelineItem = {
 
 export function DealTimeline({ deal }: { deal: PipelineDeal }) {
   const q = deal.quotation;
-
-  const eventsQuery = useQuery({
-    queryKey: ["deal_timeline", q.id, deal.job?.id],
-    enabled: !!deal.job?.id,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("job_events")
-        .select("id, title, note, created_at")
-        .eq("job_id", deal.job!.id)
-        .order("created_at", { ascending: true });
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
 
   const items: TimelineItem[] = [];
 
@@ -56,24 +39,6 @@ export function DealTimeline({ deal }: { deal: PipelineDeal }) {
     });
   }
 
-  if (deal.job) {
-    items.push({
-      id: "job",
-      label: "Job Tracker",
-      detail: `ขั้น ${deal.job.currentStep + 1}/6`,
-      at: q.updatedAt,
-    });
-  }
-
-  for (const ev of eventsQuery.data ?? []) {
-    items.push({
-      id: ev.id,
-      label: ev.title || "อัปเดตงาน",
-      detail: ev.note || undefined,
-      at: ev.created_at,
-    });
-  }
-
   if (deal.hasIncome) {
     items.push({
       id: "income",
@@ -96,11 +61,7 @@ export function DealTimeline({ deal }: { deal: PipelineDeal }) {
   return (
     <div className="space-y-2">
       <p className="text-xs font-semibold">Timeline ดีล</p>
-      {eventsQuery.isLoading && deal.job ? (
-        <div className="flex justify-center py-4">
-          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-        </div>
-      ) : items.length === 0 ? (
+      {items.length === 0 ? (
         <p className="text-[11px] text-muted-foreground">
           ยังไม่มีเหตุการณ์ — ลากดีลใน Pipeline เพื่ออัปเดตสถานะ
         </p>

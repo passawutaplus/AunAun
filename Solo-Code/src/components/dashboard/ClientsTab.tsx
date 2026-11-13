@@ -10,25 +10,14 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useFinance } from "@/store/finance";
-import { ClientsProvider, useClients, type SavedClient, type ClientFile } from "@/store/clients";
+import { ClientsProvider, useClients, type SavedClient } from "@/store/clients";
 import { formatTHB, MONTHLY_GOAL } from "@/data/mockData";
-import {
-  Users,
-  Target,
-  CheckCircle2,
-  AlertTriangle,
-  FileText,
-  Plus,
-  UserPlus,
-  Trash2,
-} from "lucide-react";
+import { Target, CheckCircle2, FileText, Plus, UserPlus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { CONTRACTS } from "./clients/shared";
 import { SavedClientCard } from "./clients/SavedClientCard";
 import { ClientFormDialog } from "./clients/ClientFormDialog";
 import { PageFooterActions } from "./PageFooterActions";
-import { ClientInvoicesSection } from "./clients/ClientInvoicesSection";
-import { useClientInvoices } from "@/store/clientInvoices";
 
 export function ClientsTab() {
   return (
@@ -40,17 +29,9 @@ export function ClientsTab() {
 
 function ClientsTabInner() {
   const { incomes } = useFinance();
-  const { list: saved, files, add, update, remove, uploadFile, deleteFile, getSignedUrl } =
-    useClients();
-  const { list: invoices } = useClientInvoices();
+  const { list: saved, add, update, remove } = useClients();
   const [editing, setEditing] = React.useState<SavedClient | "new" | null>(null);
   const [confirmDel, setConfirmDel] = React.useState<SavedClient | null>(null);
-
-  const receivable = invoices.filter((c) => c.status !== "paid").reduce((s, c) => s + c.amount, 0);
-  const overdue = invoices
-    .filter((c) => c.status === "late7" || c.status === "late30")
-    .reduce((s, c) => s + c.amount, 0);
-  const unpaidCount = invoices.filter((c) => c.status !== "paid").length;
 
   const thisMonth = new Date().toISOString().slice(0, 7);
   const monthlyEarned = incomes
@@ -64,18 +45,6 @@ function ClientsTabInner() {
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard
           accent
-          label="ค้างรับทั้งหมด"
-          value={`฿${formatTHB(receivable)}`}
-          sub={`${unpaidCount} ใบ`}
-          icon={<Users className="h-5 w-5" />}
-        />
-        <StatCard
-          label="เกินกำหนด"
-          value={`฿${formatTHB(overdue)}`}
-          sub="ต้องตามเก็บ"
-          icon={<AlertTriangle className="h-5 w-5" />}
-        />
-        <StatCard
           label="รับแล้ว (เดือนนี้)"
           value={`฿${formatTHB(monthlyEarned)}`}
           sub={`เข้าจริง ${incomes.filter((i) => i.month === thisMonth).length} ใบ`}
@@ -112,8 +81,6 @@ function ClientsTabInner() {
           </div>
         </CardContent>
       </Card>
-
-      <ClientInvoicesSection />
 
       <Card className="animate-fade-up">
         <CardHeader className="pb-2 flex-row items-center justify-between space-y-0">
@@ -155,7 +122,6 @@ function ClientsTabInner() {
                 <SavedClientCard
                   key={c.id}
                   client={c}
-                  fileCount={files.filter((f: ClientFile) => f.clientId === c.id).length}
                   onEdit={() => setEditing(c)}
                   onDelete={() => setConfirmDel(c)}
                 />
@@ -186,29 +152,8 @@ function ClientsTabInner() {
       <ClientFormDialog
         editing={editing}
         onClose={() => setEditing(null)}
-        files={
-          editing && editing !== "new" ? files.filter((f: ClientFile) => f.clientId === editing.id) : []
-        }
-        getSignedUrl={getSignedUrl}
-        onUpload={
-          editing && editing !== "new"
-            ? async (file, docCategory) => {
-                await uploadFile(editing.id, file, docCategory);
-              }
-            : undefined
-        }
-        onDeleteFile={async (f) => {
-          await deleteFile(f);
-        }}
-        onCreate={async (payload, staged) => {
-          const created = await add(payload);
-          for (const sf of staged) {
-            try {
-              await uploadFile(created.id, sf.file, sf.docCategory);
-            } catch {
-              /* ignore per-file errors */
-            }
-          }
+        onCreate={async (payload) => {
+          await add(payload);
           toast.success("เพิ่มลูกค้าเรียบร้อย");
           setEditing(null);
         }}

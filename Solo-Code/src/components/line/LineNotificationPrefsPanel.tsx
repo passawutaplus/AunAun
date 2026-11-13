@@ -27,7 +27,6 @@ export type LineNotificationPrefsPanelProps = {
   defaultOpen?: boolean;
   showLinkStatus?: boolean;
   showTestSamples?: boolean;
-  showInhouseGroup?: boolean;
   /** Omit Card wrapper — for embedding in /line-link */
   embedded?: boolean;
   tierLabel?: string;
@@ -56,7 +55,6 @@ export function LineNotificationPrefsPanel({
   defaultOpen = false,
   showLinkStatus = true,
   showTestSamples = false,
-  showInhouseGroup = false,
   embedded = false,
   tierLabel,
 }: LineNotificationPrefsPanelProps) {
@@ -74,7 +72,7 @@ export function LineNotificationPrefsPanel({
   const linkedAt = profile?.line_linked_at;
   const enabledCount = countEnabledPrefs(prefs);
 
-  const visibleGroups = LINE_NOTIFY_GROUPS.filter((g) => g.id !== "inhouse" || showInhouseGroup);
+  const visibleGroups = LINE_NOTIFY_GROUPS;
 
   React.useEffect(() => {
     setEnabled(!!profile?.line_notify_enabled);

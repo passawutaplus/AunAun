@@ -15,10 +15,6 @@ export function DealCard({
 }) {
   const q = deal.quotation;
   const badges: string[] = [];
-  if (deal.job) badges.push(`Job ${deal.job.currentStep + 1}/6`);
-  if (deal.job && deal.job.pendingSlips > 0) {
-    badges.push(`สลิปรอตรวจ ${deal.job.pendingSlips}`);
-  }
   if (deal.hasIncome) badges.push("บันทึกรายได้แล้ว");
 
   return (

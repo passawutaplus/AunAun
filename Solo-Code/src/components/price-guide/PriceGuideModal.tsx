@@ -85,35 +85,14 @@ export function PriceGuideModal({
     }
   }, [open, initialQuantity, initialJobType]);
 
-  async function handleCalculate() {
-    setLoading(true);
+  function handleCalculate() {
     const suggestion = computeSuggestion(jobType, days, complexity);
-    try {
-      const { data, error } = await supabase.functions.invoke("ai-price-suggest", {
-        body: { jobType, days, complexity, quantity, suggestion },
-      });
-      if (error) throw error;
-      const finalSuggestion = data?.marketAvg
-        ? computeSuggestion(jobType, days, complexity, data.marketAvg)
-        : suggestion;
-      setResult({
-        suggestion: finalSuggestion,
-        reasoning: data?.reasoning || "ราคานี้คำนวณจากเวลาและความยากของงานครับ",
-        eventId: data?.eventId ?? null,
-      });
-      setStep(4);
-    } catch (e) {
-      console.error(e);
-      setResult({
-        suggestion,
-        reasoning: `ราคานี้คำนวณจากเวลาทำงาน + ความยาก + ค่าเฉลี่ยตลาดครับ\n${DISCLAIMER_TAX_PRICE}`,
-        eventId: null,
-      });
-      setStep(4);
-      toast.info("ใช้การคำนวณท้องถิ่น (AI ไม่พร้อมใช้งาน)");
-    } finally {
-      setLoading(false);
-    }
+    setResult({
+      suggestion,
+      reasoning: `ราคานี้คำนวณจากเวลาทำงาน + ความยาก + ค่าเฉลี่ยตลาดครับ\n${DISCLAIMER_TAX_PRICE}`,
+      eventId: null,
+    });
+    setStep(4);
   }
 
   function handleApply() {

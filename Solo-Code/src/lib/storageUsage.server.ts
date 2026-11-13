@@ -1,3 +1,4 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { Tier } from "@/hooks/useSubscription";
 import {
@@ -11,7 +12,7 @@ import type {
   UserStorageUsageResponse,
 } from "@/lib/storageUsage.types";
 
-const untypedSupabaseAdmin = supabaseAdmin as any;
+const untypedSupabaseAdmin = supabaseAdmin as unknown as SupabaseClient;
 
 interface ListedFile {
   bucket: string;
@@ -20,19 +21,9 @@ interface ListedFile {
   mimetype: string | null;
 }
 
-const DOC_BUCKETS = new Set([
-  "expense-receipts",
-  "wht-certificates",
-  "supplier-files",
-  "ticket-attachments",
-]);
+const DOC_BUCKETS = new Set(["wht-certificates", "ticket-attachments"]);
 
-const PHOTO_BUCKETS = new Set([
-  "brand-logos",
-  "brief-references",
-  "chat-images",
-  "supplier-covers",
-]);
+const PHOTO_BUCKETS = new Set(["brand-logos", "brief-references", "chat-images"]);
 
 function emptyCategories(): Record<StorageCategoryId, StorageCategoryUsage> {
   return {
@@ -111,20 +102,6 @@ async function listUserStorageFiles(userId: string): Promise<ListedFile[]> {
     }
   }
 
-  const { data: jobs } = await supabaseAdmin
-    .from("job_trackers")
-    .select("id")
-    .eq("user_id", userId);
-
-  for (const job of jobs ?? []) {
-    try {
-      const slips = await listFilesUnderPrefix("job-tracker", `slips/${job.id}`);
-      files.push(...slips);
-    } catch {
-      /* noop */
-    }
-  }
-
   return files;
 }
 
@@ -135,8 +112,6 @@ async function countUserRows(
     | "ai_chat_messages"
     | "saved_clients"
     | "finance_incomes"
-    | "finance_expenses"
-    | "planner_posts"
     | "notifications",
   userId: string,
 ): Promise<number> {
@@ -150,17 +125,14 @@ async function countUserRows(
 
 /** Rough DB payload estimate from row counts (not exact pg_column_size). */
 async function estimateUserDataBytes(userId: string): Promise<number> {
-  const [quotations, briefs, aiChat, clients, incomes, expenses, planner, notifs] =
-    await Promise.all([
-      countUserRows("quotations", userId),
-      countUserRows("design_briefs", userId),
-      countUserRows("ai_chat_messages", userId),
-      countUserRows("saved_clients", userId),
-      countUserRows("finance_incomes", userId),
-      countUserRows("finance_expenses", userId),
-      countUserRows("planner_posts", userId),
-      countUserRows("notifications", userId),
-    ]);
+  const [quotations, briefs, aiChat, clients, incomes, notifs] = await Promise.all([
+    countUserRows("quotations", userId),
+    countUserRows("design_briefs", userId),
+    countUserRows("ai_chat_messages", userId),
+    countUserRows("saved_clients", userId),
+    countUserRows("finance_incomes", userId),
+    countUserRows("notifications", userId),
+  ]);
 
   return (
     quotations * 12_000 +
@@ -168,8 +140,6 @@ async function estimateUserDataBytes(userId: string): Promise<number> {
     aiChat * 2_500 +
     clients * 1_500 +
     incomes * 800 +
-    expenses * 1_200 +
-    planner * 3_000 +
     notifs * 600
   );
 }
