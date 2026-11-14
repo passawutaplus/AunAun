@@ -47,7 +47,10 @@ export default async function handler(req, res) {
       return res.status(502).json({ error: "upstream", status: upstream.status });
     }
     const rows = await upstream.json();
-    res.setHeader("Cache-Control", "public, max-age=0, s-maxage=60, stale-while-revalidate=300");
+    // 10 min at the CDN + serve stale for a day while refreshing: signed-out visitors only, so a new post
+    // can take up to ~10 min to show here. Was 60 s, which re-ran this function (and re-sent 120–200 rows)
+    // every minute per region and counted against Vercel "Fast Origin Transfer".
+    res.setHeader("Cache-Control", "public, max-age=0, s-maxage=600, stale-while-revalidate=86400");
     return res.status(200).json(rows);
   } catch (err) {
     console.error("[public-feed]", err);

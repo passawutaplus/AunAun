@@ -1,4 +1,3 @@
-import imageCompression from "browser-image-compression";
 import type { Tier } from "@/core/subscription/useSubscription";
 import { uploadAnthemMedia } from "@/lib/sharedMediaUpload";
 import { assertRealImage } from "@/lib/imageSignature";
@@ -39,6 +38,8 @@ async function compressForUpload(
   if (skipCompression && canSkipCompression(file)) return file;
 
   reporter?.onStage?.(UPLOAD_STAGE.compressingImage);
+  // Loaded on first upload only: keeps ~21 kB gzip out of the first page load.
+  const { default: imageCompression } = await import("browser-image-compression");
   return imageCompression(file, {
     maxSizeMB: 1.0,
     maxWidthOrHeight: 1920,

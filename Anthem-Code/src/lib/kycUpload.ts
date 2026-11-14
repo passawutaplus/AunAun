@@ -1,4 +1,3 @@
-import imageCompression from "browser-image-compression";
 import { sharedStorage, SHARED_MEDIA_BUCKET } from "@/integrations/supabase/sharedStorageClient";
 import { isHeicByHint, normalizeImageForUpload } from "@/lib/normalizeImageUpload";
 
@@ -115,6 +114,7 @@ export async function uploadKycDocument(
   }
 
   const decoded = await normalizeImageForUpload(file);
+  const { default: imageCompression } = await import("browser-image-compression");
   const compressed = await imageCompression(decoded, {
     maxSizeMB: COMPRESS_MAX_MB,
     maxWidthOrHeight: COMPRESS_MAX_EDGE,

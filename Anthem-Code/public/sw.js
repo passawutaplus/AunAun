@@ -52,6 +52,8 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
   if (url.pathname.startsWith("/api/") || url.pathname.includes("supabase")) return;
+  // Vercel Web Analytics / Speed Insights scripts and beacons: always from the network.
+  if (url.pathname.startsWith("/_vercel/")) return;
 
   // Vite hashed bundles must never be cache-first — old shell → deleted chunk = 404.
   if (url.pathname.startsWith("/assets/")) {

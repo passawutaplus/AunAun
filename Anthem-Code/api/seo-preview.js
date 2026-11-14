@@ -4,7 +4,7 @@
  *
  * GET /api/seo-preview?path=/showcase/...|/jobs/...|/@user|/u/...|/
  */
-const BOT_CACHE_SECONDS = 300;
+const BOT_CACHE_SECONDS = 3600; // crawlers only; titles/covers rarely change within an hour (was 300 s)
 
 function siteBase(req) {
   const env = process.env.VITE_SITE_URL || process.env.SITE_URL || "";
@@ -853,7 +853,7 @@ export default async function handler(req, res) {
       "Cache-Control",
       status === 404
         ? "public, s-maxage=60, stale-while-revalidate=300"
-        : `public, s-maxage=${BOT_CACHE_SECONDS}, stale-while-revalidate=600`,
+        : `public, s-maxage=${BOT_CACHE_SECONDS}, stale-while-revalidate=86400`,
     );
     res.status(status).send(html);
   } catch (err) {
