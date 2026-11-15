@@ -1,3 +1,4 @@
+import { cardImageSrc } from "@/lib/mediaThumb";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -257,7 +258,7 @@ export function EventRelatedWorks({ categories, className }: { categories: strin
             <div className="aspect-[4/3] overflow-hidden rounded-md bg-muted group-focus-visible:ring-2 group-focus-visible:ring-foreground">
               {w.cover_url ? (
                 <img
-                  src={w.cover_url}
+                  src={cardImageSrc(w.cover_url)}
                   alt=""
                   className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                   loading="lazy"

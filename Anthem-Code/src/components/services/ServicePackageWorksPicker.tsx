@@ -1,3 +1,4 @@
+import { cardImageSrc } from "@/lib/mediaThumb";
 import { useMemo, useState } from "react";
 import { Check, FolderOpen, Search, X } from "lucide-react";
 import { CompactLoader } from "@/components/ui/BanterLoader";
@@ -101,7 +102,7 @@ export default function ServicePackageWorksPicker({
             >
               <div className="aspect-[4/3] bg-muted">
                 {p.cover_url ? (
-                  <img loading="lazy" decoding="async" src={p.cover_url} alt="" className="h-full w-full object-cover" />
+                  <img loading="lazy" decoding="async" src={cardImageSrc(p.cover_url)} alt="" className="h-full w-full object-cover" />
                 ) : (
                   <div className="grid h-full place-items-center">
                     <FolderOpen className="h-5 w-5 text-muted-foreground" />
@@ -190,7 +191,7 @@ export default function ServicePackageWorksPicker({
                 >
                   {p.cover_url ? (
                     <img loading="lazy" decoding="async"
-                      src={p.cover_url}
+                      src={cardImageSrc(p.cover_url)}
                       alt=""
                       className="h-11 w-11 shrink-0 rounded-lg object-cover"
                     />

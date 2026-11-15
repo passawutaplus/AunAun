@@ -1,3 +1,4 @@
+import { cardImageSrc } from "@/lib/mediaThumb";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowUpRight, Bookmark } from "lucide-react";
@@ -63,8 +64,8 @@ const JobCard = ({ job, compact, onClick, showActions = true, overlayBadge, over
     >
       <div className={cn("relative overflow-hidden", compact ? "aspect-[4/3]" : "aspect-[4/5] sm:aspect-[4/3]")}>
         {hasCover ? (
-          <img
-            src={coverUrl!}
+          <img decoding="async"
+            src={cardImageSrc(coverUrl)}
             alt=""
             className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover/card:scale-[1.03]"
             loading="lazy"

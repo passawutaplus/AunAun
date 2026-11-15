@@ -11,8 +11,10 @@ import { registerPwa } from "./lib/pwa";
 import { installAppShell } from "./lib/appShell";
 import { installBootGate } from "./lib/bootGate";
 import { installChunkReload } from "./lib/lazyWithRetry";
+import { installThumbFallback } from "./lib/mediaThumb";
 
 installChunkReload();
+installThumbFallback();
 installCspReporter();
 installFeedbackDiagnostics();
 installReportableErrorToasts();

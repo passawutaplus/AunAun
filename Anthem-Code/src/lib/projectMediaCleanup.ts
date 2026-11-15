@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ANTHEM_MEDIA_BUCKET } from "@/lib/storageQuotas";
 import { PROJECT_ASSETS_BUCKET } from "@/lib/projectAssetStorage";
 import { invalidateAnthemStorageCache } from "@/lib/anthemStorageUsage";
+import { hasThumb, originalPathFromThumb, thumbPathFor } from "@/lib/mediaThumb";
 
 const UUID = "[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}";
 const UUID_RE = new RegExp(`^${UUID}$`, "i");
@@ -109,7 +110,14 @@ export async function removeUnreferencedProjectFiles(snapshot: ProjectFileSnapsh
     if ((works.data?.length ?? 0) >= ROW_CAP || (posts.data?.length ?? 0) >= ROW_CAP) return;
 
     const stillUsed = collectProjectFileRefs([works.data, posts.data], userId);
-    const media = [...snapshot.media].filter((p) => !stillUsed.media.has(p));
+    // A small copy (<file>.w640.webp) lives and dies with its original.
+    const media = [
+      ...new Set(
+        [...snapshot.media]
+          .filter((p) => !stillUsed.media.has(originalPathFromThumb(p) ?? p))
+          .flatMap((p) => (hasThumb(p) ? [p, thumbPathFor(p)] : [p])),
+      ),
+    ];
     const assets = [...snapshot.assets].filter((p) => !stillUsed.assets.has(p));
 
     await removeInChunks(ANTHEM_MEDIA_BUCKET, media);

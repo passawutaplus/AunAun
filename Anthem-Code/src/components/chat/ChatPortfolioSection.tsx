@@ -1,3 +1,4 @@
+import { cardImageSrc } from "@/lib/mediaThumb";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ExternalLink, Loader2, Plus, Search, Send } from "lucide-react";
@@ -93,7 +94,7 @@ function PortfolioRow({
   return (
     <div className="flex items-center gap-2 p-2 rounded-xl border border-border bg-card/50 hover:bg-accent/30 transition-colors">
       {project.cover_url ? (
-        <img loading="lazy" decoding="async" src={project.cover_url} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" />
+        <img loading="lazy" decoding="async" src={cardImageSrc(project.cover_url)} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" />
       ) : (
         <div className="w-12 h-12 rounded-lg bg-muted shrink-0" />
       )}
@@ -183,7 +184,7 @@ function PortfolioGridCard({
       <Link to={`/showcase/${project.id}`} className="block aspect-square bg-muted overflow-hidden relative group">
         {project.cover_url ? (
           <img loading="lazy" decoding="async"
-            src={project.cover_url}
+            src={cardImageSrc(project.cover_url)}
             alt=""
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />

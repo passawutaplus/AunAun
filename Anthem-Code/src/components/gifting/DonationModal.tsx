@@ -1,3 +1,4 @@
+import { cardImageSrc } from "@/lib/mediaThumb";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -161,7 +162,7 @@ const DonationModal = ({ open, onOpenChange, recipientId, recipientName, recipie
           {projectId && projectInfo && (
             <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/5 border border-primary/15">
               {projectInfo.cover_url ? (
-                <img loading="lazy" decoding="async" src={projectInfo.cover_url} alt="" className="w-8 h-8 rounded-md object-cover" />
+                <img loading="lazy" decoding="async" src={cardImageSrc(projectInfo.cover_url)} alt="" className="w-8 h-8 rounded-md object-cover" />
               ) : (
                 <div className="w-8 h-8 rounded-md bg-primary/15 text-primary flex items-center justify-center">
                   <FolderKanban className="w-4 h-4" />

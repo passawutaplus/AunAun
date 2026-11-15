@@ -22,6 +22,7 @@ async function uploadWithProgress(
   contentType: string,
   signal: AbortSignal | undefined,
   onProgress: (pct: number) => void,
+  cacheSeconds: string,
 ): Promise<{ error: XhrError | null } | null> {
   const { data: sess } = await sharedStorage.auth.getSession();
   const token = sess.session?.access_token;
@@ -43,9 +44,9 @@ async function uploadWithProgress(
     xhr.setRequestHeader("Authorization", `Bearer ${token}`);
     xhr.setRequestHeader("apikey", apiKey);
     xhr.setRequestHeader("x-upsert", "false");
-    xhr.setRequestHeader("cache-control", "max-age=3600");
+    xhr.setRequestHeader("cache-control", `max-age=${cacheSeconds}`);
     const form = new FormData();
-    form.append("cacheControl", "3600");
+    form.append("cacheControl", cacheSeconds);
     form.append("", new Blob([body], { type: contentType }));
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable && e.total > 0) onProgress((e.loaded / e.total) * 100);
@@ -103,6 +104,8 @@ export async function uploadToSharedMedia(
   retries = 2,
   signal?: AbortSignal,
   onProgress?: (pct: number) => void,
+  /** Seconds browsers and the CDN may keep the file. Callers pass a unique path per file, so a year is safe. */
+  cacheSeconds = "31536000",
 ): Promise<void> {
   let lastErr: unknown;
   for (let attempt = 0; attempt <= retries; attempt++) {
@@ -111,12 +114,12 @@ export async function uploadToSharedMedia(
     }
     let result: { error: unknown } | null = null;
     if (onProgress && body.size >= XHR_MIN_BYTES) {
-      result = await uploadWithProgress(path, body, contentType, signal, onProgress);
+      result = await uploadWithProgress(path, body, contentType, signal, onProgress, cacheSeconds);
     }
     if (!result) {
       result = await sharedStorage.storage
         .from(SHARED_MEDIA_BUCKET)
-        .upload(path, body, { contentType, upsert: false });
+        .upload(path, body, { contentType, upsert: false, cacheControl: cacheSeconds });
     }
     const { error } = result;
     if (!error) return;
