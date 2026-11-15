@@ -1,17 +1,22 @@
 import { CircleCheck } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
+import PromptPayCard from "@/components/support/PromptPayCard";
 import { SupportShell, Title } from "@/components/support/SupportShell";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/lib/i18n";
 import { SUPPORT } from "@/lib/i18n/support";
 import { findDemoOrder } from "@/lib/support/bag";
 import { formatThb } from "@/lib/support/catalog";
+import { isSupportDemo } from "@/lib/support/flags";
+import { getSupportPayee } from "@/lib/support/payment";
 
-/** /shop/order/:ref: the receipt of a test order (kept in this browser tab only). */
+/** /shop/order/:ref: the order receipt and how to pay it (kept in this browser tab only). */
 export default function ShopOrderPage() {
   const { ref } = useParams();
   const t = useT(SUPPORT);
   const order = findDemoOrder(ref);
+  const demo = isSupportDemo();
+  const payee = getSupportPayee();
 
   return (
     <SupportShell title="Order" path="/shop" back={{ to: "/shop", label: t("backToShop") }} noindex>
@@ -25,7 +30,13 @@ export default function ShopOrderPage() {
           </Title>
           <p className="mt-3 text-[15px] text-muted-foreground thai-body">{t("orderLine")}</p>
 
-          <section className="mt-8 rounded-3xl bg-card p-6">
+          {payee ? (
+            <div className="mt-10">
+              <PromptPayCard payee={payee} amountThb={order.totalThb} refNo={order.ref} demo={demo} />
+            </div>
+          ) : null}
+
+          <section aria-label={t("orderRef")} className="mt-10 rounded-3xl bg-card p-6">
             <p className="flex justify-between gap-4 text-sm">
               <span className="text-muted-foreground thai-body">{t("orderRef")}</span>
               <span className="font-medium tabular-nums">{order.ref}</span>
@@ -52,14 +63,16 @@ export default function ShopOrderPage() {
                 <dd>{formatThb(order.totalThb)}</dd>
               </div>
             </dl>
-            <p className="mt-5 rounded-2xl bg-muted px-4 py-3 text-[13px] text-muted-foreground thai-body">{t("orderDemo")}</p>
+            {demo ? (
+              <p className="mt-5 rounded-2xl bg-muted px-4 py-3 text-[13px] text-muted-foreground thai-body">{t("orderDemo")}</p>
+            ) : null}
           </section>
 
           <div className="mt-6 flex flex-wrap gap-3">
-            <Button asChild>
+            <Button asChild variant="outline">
               <Link to="/shop">{t("backToShop")}</Link>
             </Button>
-            <Button asChild variant="outline">
+            <Button asChild variant="ghost">
               <Link to="/support">{t("backToSupport")}</Link>
             </Button>
           </div>

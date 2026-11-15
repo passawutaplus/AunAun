@@ -17,6 +17,7 @@ import { placeDemoOrder, summariseBag, type BagRow } from "@/lib/support/bag";
 import { formatThb } from "@/lib/support/catalog";
 import { BRAND_LINE_CONTACT_URL } from "@/lib/brandConfig";
 import { isSupportDemo } from "@/lib/support/flags";
+import { isClosedError, isSupportPayOpen } from "@/lib/support/payment";
 import {
   EMPTY_BUYER,
   buyerFieldId,
@@ -39,6 +40,7 @@ export default function ShopBagPage() {
   const lang = useLang();
   const navigate = useNavigate();
   const demo = isSupportDemo();
+  const live = demo || isSupportPayOpen();
   const { lines, setQty, remove, clear } = useBag();
   const bag = summariseBag(lines, demo);
 
@@ -51,12 +53,12 @@ export default function ShopBagPage() {
 
   const [buyer, setBuyer] = useState(EMPTY_BUYER);
   const [tried, setTried] = useState(false);
-  const [state, setState] = useState<"idle" | "sending" | "failed">("idle");
+  const [state, setState] = useState<"idle" | "sending" | "failed" | "closed">("idle");
   const errors: BuyerErrors = tried ? validateBuyer(buyer) : {};
 
   const pay = async (e: FormEvent) => {
     e.preventDefault();
-    if (state === "sending" || !bag.canCheckout) return;
+    if (!live || state === "sending" || !bag.canCheckout) return;
     setTried(true);
     const found = validateBuyer(buyer);
     const first = BUYER_ORDER.find((f) => found[f]);
@@ -70,8 +72,8 @@ export default function ShopBagPage() {
       placeDemoOrder(bag, variantLabel, ref);
       clear();
       navigate(`/shop/order/${ref}`);
-    } catch {
-      setState("failed");
+    } catch (err) {
+      setState(isClosedError(err) ? "closed" : "failed");
     }
   };
 
@@ -216,7 +218,7 @@ export default function ShopBagPage() {
                 );
               })}
             </ul>
-            {demo ? (
+            {live ? (
               <form id={FORM_ID} noValidate onSubmit={pay} className="mt-8">
                 <BuyerForm value={buyer} errors={errors} onChange={setBuyer} />
               </form>
@@ -245,12 +247,12 @@ export default function ShopBagPage() {
                 <dd>{formatThb(bag.totalThb)}</dd>
               </div>
             </dl>
-            {state === "failed" ? (
+            {state === "failed" || state === "closed" ? (
               <div
                 role="alert"
                 className="mt-5 rounded-2xl bg-destructive/10 px-4 py-3 text-sm text-destructive thai-body"
               >
-                <span>{t("orderFailed")}</span>{" "}
+                <span>{state === "closed" ? t("payClosedNow") : t("orderFailed")}</span>{" "}
                 <a
                   href={BRAND_LINE_CONTACT_URL}
                   target="_blank"
@@ -262,7 +264,7 @@ export default function ShopBagPage() {
                 </a>
               </div>
             ) : null}
-            {demo ? (
+            {live ? (
               <Button
                 type="submit"
                 form={FORM_ID}
@@ -270,7 +272,7 @@ export default function ShopBagPage() {
                 className="mt-6 w-full"
                 disabled={!bag.canCheckout || state === "sending"}
               >
-                {state === "sending" ? t("ordering") : t("payDemo")}
+                {state === "sending" ? t("ordering") : demo ? t("payDemo") : t("pay")}
               </Button>
             ) : (
               <Button size="lg" className="mt-6 w-full" disabled>

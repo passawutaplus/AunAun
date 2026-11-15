@@ -14,6 +14,8 @@ import { formatThb } from "@/lib/support/catalog";
 import { BRAND_LINE_CONTACT_URL } from "@/lib/brandConfig";
 import { resolveDonation } from "@/lib/support/donate";
 import { DONATE_AMOUNTS_THB, DONATE_GOAL_THB, DONATE_MIN_THB, isSupportDemo } from "@/lib/support/flags";
+import { getSupportPayee, isClosedError, isSupportPayOpen } from "@/lib/support/payment";
+import PromptPayCard from "@/components/support/PromptPayCard";
 import { pledgeDonation } from "@/server/mutations/supportOrders";
 import { cn } from "@/lib/utils";
 
@@ -24,6 +26,8 @@ const RAISED_THB = 0;
 export default function DonatePage() {
   const t = useT(SUPPORT);
   const demo = isSupportDemo();
+  const payee = getSupportPayee();
+  const live = demo || isSupportPayOpen();
   const customId = useId();
   const showNameId = useId();
   const nameId = useId();
@@ -32,7 +36,7 @@ export default function DonatePage() {
   const [showName, setShowName] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const [thanked, setThanked] = useState<{ amount: number; ref: string } | null>(null);
-  const [state, setState] = useState<"idle" | "sending" | "failed">("idle");
+  const [state, setState] = useState<"idle" | "sending" | "failed" | "closed">("idle");
 
   // The thank-you screen is much shorter than the form: bring it into view.
   useEffect(() => {
@@ -43,17 +47,17 @@ export default function DonatePage() {
   const amountText = donation.amount === null ? null : formatThb(donation.amount);
   const customError = choice === "other" && custom !== "" && donation.amount === null ? t("minAmount", { n: DONATE_MIN_THB }) : null;
 
-  // A pledge is a record for the team (pay by transfer comes next); no money moves on this page.
+  // A pledge is a record for the team; the giver then pays by PromptPay. No money moves through SAMECOR's code.
   const donate = async () => {
-    if (donation.amount === null || state === "sending") return;
+    if (!live || donation.amount === null || state === "sending") return;
     const amount = donation.amount;
     setState("sending");
     try {
       const ref = await pledgeDonation(amount, showName, displayName, demo);
       setState("idle");
       setThanked({ amount, ref });
-    } catch {
-      setState("failed");
+    } catch (err) {
+      setState(isClosedError(err) ? "closed" : "failed");
     }
   };
 
@@ -81,25 +85,33 @@ export default function DonatePage() {
     >
       <div className="mx-auto max-w-xl">
         {thanked ? (
-          <section aria-live="polite" className="py-10 text-center">
-            <Heart className="mx-auto h-8 w-8 text-brand" strokeWidth={1.5} aria-hidden />
-            <Title className="mt-4">
-              Thank you. <em>{formatThb(thanked.amount)}</em>
-            </Title>
-            <p className="mt-3 text-[15px] text-muted-foreground thai-body">{t("thanks")}</p>
-            <p className="mt-1 text-[13px] tabular-nums text-muted-foreground thai-body">{t("refNo", { ref: thanked.ref })}</p>
-            <p className="mx-auto mt-6 max-w-sm rounded-2xl bg-muted px-4 py-3 text-[13px] text-muted-foreground thai-body">
-              {t("donateDemo")}
-            </p>
-            <div className="mt-6 flex flex-wrap justify-center gap-3">
-              <Button asChild>
+          <div aria-live="polite" className="py-6">
+            {payee ? (
+              <PromptPayCard payee={payee} amountThb={thanked.amount} refNo={thanked.ref} demo={demo} headingAs="h1" />
+            ) : (
+              <section className="py-4 text-center">
+                <Heart className="mx-auto h-8 w-8 text-brand" strokeWidth={1.5} aria-hidden />
+                <Title className="mt-4">
+                  Thank you. <em>{formatThb(thanked.amount)}</em>
+                </Title>
+                <p className="mt-3 text-[15px] text-muted-foreground thai-body">{t("thanks")}</p>
+                <p className="mt-1 text-[13px] tabular-nums text-muted-foreground thai-body">{t("refNo", { ref: thanked.ref })}</p>
+                {demo ? (
+                  <p className="mx-auto mt-6 max-w-sm rounded-2xl bg-muted px-4 py-3 text-[13px] text-muted-foreground thai-body">
+                    {t("donateDemo")}
+                  </p>
+                ) : null}
+              </section>
+            )}
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Button asChild variant="outline">
                 <Link to="/support">{t("backToSupport")}</Link>
               </Button>
-              <Button variant="outline" onClick={() => setThanked(null)}>
+              <Button variant="ghost" onClick={() => setThanked(null)}>
                 {t("donateCta")}
               </Button>
             </div>
-          </section>
+          </div>
         ) : (
           <>
             <header>
@@ -178,9 +190,9 @@ export default function DonatePage() {
                 </div>
               ) : null}
 
-              {state === "failed" ? (
+              {state === "failed" || state === "closed" ? (
                 <div role="alert" className="mt-5 rounded-2xl bg-destructive/10 px-4 py-3 text-sm text-destructive thai-body">
-                  <span>{t("donateFailed")}</span>{" "}
+                  <span>{state === "closed" ? t("payClosedNow") : t("donateFailed")}</span>{" "}
                   <a
                     href={BRAND_LINE_CONTACT_URL}
                     target="_blank"
@@ -193,7 +205,7 @@ export default function DonatePage() {
                 </div>
               ) : null}
 
-              {demo ? (
+              {live ? (
                 <Button
                   size="lg"
                   className="mt-6 w-full sm:w-auto"
@@ -203,7 +215,7 @@ export default function DonatePage() {
                   {state === "sending"
                     ? t("donating")
                     : amountText
-                      ? t("donateBtnDemo", { amount: amountText })
+                      ? t(demo ? "donateBtnDemo" : "donateBtn", { amount: amountText })
                       : t("donateCta")}
                 </Button>
               ) : (

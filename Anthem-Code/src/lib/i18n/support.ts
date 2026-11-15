@@ -98,6 +98,28 @@ export const SUPPORT = {
     zh: "测试订单：未扣款，也不会发货",
   },
   orderMissing: { th: "ไม่เจอออเดอร์นี้", en: "We couldn't find this order", zh: "找不到该订单" },
+  pay: { th: "จ่ายเงิน", en: "Pay", zh: "付款" },
+  payClosedNow: {
+    th: "ยังไม่เปิดรับนะ ทัก LINE มาก่อนได้",
+    en: "Not open yet. Message us on LINE.",
+    zh: "暂未开放，可以先通过 LINE 联系我们",
+  },
+
+  // PromptPay card (shop order + donate)
+  scanAnyBank: { th: "สแกนจากแอปธนาคารไหนก็ได้นะ", en: "Scan with any Thai bank app", zh: "用任意泰国银行 App 扫码" },
+  saveQr: { th: "บันทึก QR", en: "Save QR", zh: "保存二维码" },
+  sendSlip: { th: "ส่งสลิป", en: "Send slip", zh: "发送转账凭证" },
+  sameDevice: {
+    th: "อยู่บนมือถือ? บันทึก QR แล้วเลือกรูปในแอปธนาคารได้เลย",
+    en: "On your phone? Save the QR, then pick it from your bank app.",
+    zh: "在手机上？保存二维码，再在银行 App 里选图片",
+  },
+  copyAccount: { th: "คัดลอกเลขบัญชี", en: "Copy account number", zh: "复制账号" },
+  copied: { th: "คัดลอกแล้ว", en: "Copied", zh: "已复制" },
+  copyFailed: { th: "คัดลอกไม่ได้ ลองกดค้างที่เลขแทนนะ", en: "Couldn't copy. Press and hold the number instead.", zh: "复制失败，请长按号码" },
+  saveFailed: { th: "บันทึกไม่ได้ ลองแคปหน้าจอแทนนะ", en: "Couldn't save. Take a screenshot instead.", zh: "保存失败，请截图" },
+  payDemoNote: { th: "ทดสอบนะ ไม่ต้องโอนจริง", en: "Test only. Don't transfer.", zh: "仅为测试，请勿转账" },
+  payAfterLine: { th: "โอนแล้วส่งสลิปทาง LINE นะ", en: "Paid? Send the slip on LINE.", zh: "转账后请通过 LINE 发送凭证" },
 
   // Donate
   donateHeroLine: {
