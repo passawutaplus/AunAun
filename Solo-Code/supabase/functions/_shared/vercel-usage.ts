@@ -62,6 +62,9 @@ const HOBBY_LIMITS = {
   serverlessGbHours: 100,
 };
 
+/** Usage credit included in the Pro plan each month; usage past it is billed. */
+const PRO_INCLUDED_CREDIT_USD = 20;
+
 async function vercelFetch(path: string, token: string, teamId?: string) {
   const url = new URL(`https://api.vercel.com${path}`);
   if (teamId) url.searchParams.set("teamId", teamId);
@@ -104,28 +107,37 @@ function buildVercelUpgradeAdvice(
     if (verdict === "ok") verdict = "watch";
   }
 
-  if (billingTotal != null && billingTotal > 15) {
-    reasons.push(
-      `ค่าใช้จ่าย billing period นี้ ~$${billingTotal.toFixed(2)} — พิจารณา Pro ($20 credit)`,
-    );
+  const paidPlan = plan === "pro" || plan === "enterprise";
+
+  if (!paidPlan && billingTotal != null && billingTotal > 15) {
+    const cost = billingTotal.toFixed(2);
+    reasons.push(`ค่าใช้จ่าย billing period นี้ ~$${cost} — พิจารณา Pro ($20 credit)`);
     verdict = "upgrade_recommended";
   }
 
-  if (plan === "pro" || plan === "enterprise") {
+  if (paidPlan) {
     reasons.push(`Plan ${plan} — มี included credit และ spend management`);
-    if (verdict === "ok") verdict = "ok";
+    // Pro (since 2026-11-15) includes $20 of usage; past that, overage is billed instead of pausing.
+    if (billingTotal != null && billingTotal > PRO_INCLUDED_CREDIT_USD) {
+      reasons.push(
+        `ใช้เกิน credit $${PRO_INCLUDED_CREDIT_USD} แล้ว (~$${billingTotal.toFixed(2)}) ส่วนเกินคิดเงินจริง — เช็ก spend limit`,
+      );
+      if (verdict === "ok") verdict = "watch";
+    }
   }
 
   if (reasons.length === 0) {
     reasons.push("Vercel usage ยังอยู่ในเกณฑ์ปกติ");
   }
 
-  thresholds.push({
-    metric: "Bandwidth (Hobby ref)",
-    used: 0,
-    limit: HOBBY_LIMITS.bandwidthGb * 1024 ** 3,
-    percent: 0,
-  });
+  if (!paidPlan) {
+    thresholds.push({
+      metric: "Bandwidth (Hobby ref)",
+      used: 0,
+      limit: HOBBY_LIMITS.bandwidthGb * 1024 ** 3,
+      percent: 0,
+    });
+  }
 
   return {
     service: "vercel",
