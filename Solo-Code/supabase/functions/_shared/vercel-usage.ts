@@ -110,7 +110,8 @@ function buildVercelUpgradeAdvice(
   const paidPlan = plan === "pro" || plan === "enterprise";
 
   if (!paidPlan && billingTotal != null && billingTotal > 15) {
-    reasons.push(`ค่าใช้จ่าย billing period นี้ ~$${billingTotal.toFixed(2)} — พิจารณา Pro ($20 credit)`);
+    const cost = billingTotal.toFixed(2);
+    reasons.push(`ค่าใช้จ่าย billing period นี้ ~$${cost} — พิจารณา Pro ($20 credit)`);
     verdict = "upgrade_recommended";
   }
 
