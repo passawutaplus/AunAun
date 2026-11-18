@@ -2,11 +2,20 @@
  * Phone / browser push notifications (Web Push). The service worker (public/sw.js) shows them;
  * the send-push edge function (Solo-Code/supabase/functions/send-push) sends one for every
  * in-app notification once this device is registered with save_push_subscription.
+ * Inside the iOS app the same calls go to APNs instead (nativePush.ts).
  */
 import { supabase } from "@/integrations/supabase/client";
 import { isAndroidApp, isStandaloneDisplay } from "@/lib/appShell";
+import { disableNativePush, enableNativePush, getNativePushState, hasNativePush } from "@/lib/nativePush";
 
 export type PushState = "unsupported" | "unconfigured" | "denied" | "off" | "on";
+
+/** What to tell the user when notifications are blocked, in the place they can turn them back on. */
+export function pushBlockedMessage(): string {
+  return hasNativePush()
+    ? "iPhone ปิดแจ้งเตือนของ SAMECOR ไว้ เปิดได้ที่ ตั้งค่า > SAMECOR > การแจ้งเตือน"
+    : "เบราว์เซอร์บล็อกการแจ้งเตือนไว้ เปิดได้ในการตั้งค่าของเบราว์เซอร์หรือมือถือ";
+}
 
 const vapidPublicKey = () => (import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined)?.trim() ?? "";
 
@@ -31,6 +40,7 @@ async function registration(): Promise<ServiceWorkerRegistration | null> {
 }
 
 export async function getPushState(): Promise<PushState> {
+  if (hasNativePush()) return getNativePushState();
   if (!isSupported()) return "unsupported";
   if (!vapidPublicKey()) return "unconfigured";
   if (Notification.permission === "denied") return "denied";
@@ -41,6 +51,7 @@ export async function getPushState(): Promise<PushState> {
 
 /** Call from a click handler — the permission prompt needs a user gesture. */
 export async function enablePush(): Promise<PushState> {
+  if (hasNativePush()) return enableNativePush();
   if (!isSupported()) return "unsupported";
   const key = vapidPublicKey();
   if (!key) return "unconfigured";
@@ -73,6 +84,7 @@ export async function enablePush(): Promise<PushState> {
 }
 
 export async function disablePush(): Promise<PushState> {
+  if (hasNativePush()) return disableNativePush();
   const reg = await registration();
   const sub = await reg?.pushManager.getSubscription();
   if (sub) {

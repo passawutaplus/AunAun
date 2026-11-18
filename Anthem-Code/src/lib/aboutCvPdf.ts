@@ -1,3 +1,5 @@
+import { downloadBlob } from "@/lib/downloadBlob";
+
 const A4_PT_W = 595.28;
 const A4_PT_H = 841.89;
 
@@ -88,12 +90,7 @@ export function jpegDataUrlToA4Pdf(dataUrl: string): Blob {
 }
 
 export function saveBlob(blob: Blob, filename: string): void {
-  const href = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = href;
-  a.download = filename.endsWith(".pdf") ? filename : `${filename}.pdf`;
-  a.click();
-  URL.revokeObjectURL(href);
+  downloadBlob(blob, filename.endsWith(".pdf") ? filename : `${filename}.pdf`);
 }
 
 export async function downloadAboutCvPdf(filename: string): Promise<void> {

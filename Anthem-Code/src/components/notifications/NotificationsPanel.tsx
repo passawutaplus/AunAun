@@ -1,4 +1,5 @@
 import BriefcaseIcon from "../icons/BriefcaseIcon";
+import { isNativeApp } from "@/lib/appShell";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Bookmark, Check, Heart, MessageCircle, Handshake, Bell, UserPlus, X } from "lucide-react";
@@ -497,7 +498,7 @@ const NotificationsPanel = ({
                   {en ? "Open chat" : "เปิดแชท"}
                 </Button>
               </div>
-              {h.budgetAmount ? (
+              {h.budgetAmount && !isNativeApp() ? (
                 <p className="text-[10px] text-muted-foreground mt-2 text-right">
                   {en
                     ? "Paying through SAMECOR is opening soon — keep the details in chat."

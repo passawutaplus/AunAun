@@ -11,21 +11,26 @@ mapping is below. Wrong answers are a policy violation; re-check against the cod
 | Contact info → Name | Yes | Yes | App functionality | display name |
 | Contact info → Email address | Yes | Yes | App functionality, developer communications | sign-up |
 | Contact info → Physical address | Yes | Yes | App functionality | optional profile location, typed by the user |
+| Contact info → Phone number | Yes | Yes | App functionality | optional, on the profile About editor (`ProfileAboutEditor.tsx`) |
+| Contact info → Other user contact info | Yes | Yes | App functionality | client name, email and phone that a creator types into a quote or invoice (studio documents) |
 | User content → Photos or videos | Yes | Yes | App functionality | project images and videos, avatar |
 | User content → Other user content | Yes | Yes | App functionality | projects, comments, bio |
 | User content → Customer support | Yes | Yes | App functionality | in-app feedback |
 | Messages → Other in-app messages | Yes | Yes | App functionality | chat (Apple lists this under User content in some versions) |
 | Identifiers → User ID | Yes | Yes | App functionality | account id, username |
-| Usage data → Product interaction | Yes | Yes | Analytics | page views, likes, saves; only with analytics consent |
+| Usage data → Product interaction | Yes | Yes | Analytics, Product personalization | likes, saves, follows and `project_views` (stored with the user id), used for recommendations. Vercel Web Analytics also counts page views without consent (anonymous, so that part is not linked) |
 | Usage data → Search history | Yes | Yes | Analytics, App functionality | recent searches |
 | Diagnostics → Crash data | Yes | No | Analytics | Sentry; error message, stack, page, device type |
+| Diagnostics → Performance data | Yes | No | Analytics | Vercel Speed Insights (always on) and Sentry traces (5% sample) |
+| Financial info → Other financial info | Yes | Yes | App functionality | a PromptPay ID a creator adds to their own invoice; no card or bank data |
 | Diagnostics → Other diagnostic data | Yes | No | Analytics | in-app feedback diagnostics |
+| Identifiers → Device ID | Yes | Yes | App functionality | APNs push token, only after the user turns notifications on (`save_apns_token`) |
 
-**Not collected in the app:** identity documents, phone number, bank details (KYC is hidden in the app), location, contacts, health data, purchases.
+**Not collected in the app:** identity documents and bank accounts (KYC and payouts are hidden in the app), precise or coarse location (the event route sends a rounded point to OpenStreetMap routing for that request only, which Apple counts as not collected), contacts, health data, purchases.
 
 ## To confirm before submitting
 
 1. Whether analytics events are linked to the user id or anonymous (changes "Linked to the user" on the usage rows).
-2. If push notifications are added for iOS, add Identifiers → Device ID (APNs token), purpose App functionality.
-3. If Sign in with Apple or Google sign-in is turned on, add what that provider returns.
-4. Privacy policy URL: https://samecor.com/legal/privacy. Check it mentions the iOS app and the list above.
+2. If Sign in with Apple or Google sign-in is turned on, add what that provider returns.
+3. Privacy policy URL: https://samecor.com/legal/privacy. It covers the iOS app since PR #156: platforms, camera, microphone and
+   photo-save prompts, the APNs token, Apple as a push provider and App Store distributor. Check it is deployed before submitting.

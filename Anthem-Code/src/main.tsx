@@ -11,6 +11,7 @@ import { registerPwa } from "./lib/pwa";
 import { installAppShell } from "./lib/appShell";
 import { installBootGate } from "./lib/bootGate";
 import { installChunkReload } from "./lib/lazyWithRetry";
+import { installNativePush } from "./lib/nativePush";
 
 installChunkReload();
 installCspReporter();
@@ -20,6 +21,7 @@ void initErrorMonitoring();
 loadBrandFonts();
 registerPwa();
 installAppShell();
+installNativePush();
 installBootGate();
 
 const initialUrl = `${window.location.origin}${window.location.pathname}`;

@@ -1,6 +1,7 @@
 import type { Tier } from "@/core/subscription/useSubscription";
 import type { Studio, StudioMember } from "@/hooks/useStudios";
 import { isSoloEcosystemEnabled } from "@/lib/aplus1Launch";
+import { isNativeApp } from "@/lib/appShell";
 import { so1oStudioQuotationUrl, trackCrossLink } from "@/lib/crossLink";
 import { notifySoloComingSoon, openSoloExternal } from "@/lib/soloEcosystemGate";
 
@@ -17,7 +18,8 @@ export function canShowStudioQuoteUpsell(
   tier: Tier,
   role?: StudioMember["role"],
 ): boolean {
-  return !!role && QUOTE_ROLES.has(role) && tier !== "inhouse";
+  // The upsell sells the In-House plan, which the store apps must not offer outside their own billing.
+  return !isNativeApp() && !!role && QUOTE_ROLES.has(role) && tier !== "inhouse";
 }
 
 export type OpenStudioQuotationParams = {

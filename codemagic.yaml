@@ -1,0 +1,54 @@
+# Codemagic builds the SAMECOR iOS app (Anthem-Code/capacitor-shell) on a cloud Mac and uploads it to TestFlight.
+# Builds start only by hand (Codemagic → AunAun → Start new build), so pushes never spend build minutes.
+# Setup and the secrets it needs: Anthem-Code/ios/README.md → "Build on Codemagic".
+# Secrets live only in the Codemagic environment group `samecor_ios`, never in this public repo or its logs.
+
+workflows:
+  ios-testflight:
+    name: iOS → TestFlight
+    instance_type: mac_mini_m2
+    max_build_duration: 40
+    working_directory: Anthem-Code/capacitor-shell
+    environment:
+      groups:
+        # APP_STORE_CONNECT_ISSUER_ID, APP_STORE_CONNECT_KEY_IDENTIFIER,
+        # APP_STORE_CONNECT_PRIVATE_KEY (the .p8 file), CERTIFICATE_PRIVATE_KEY (RSA key for the distribution certificate)
+        - samecor_ios
+      vars:
+        BUNDLE_ID: com.samecor.app
+        XCODE_PROJECT: ios/App/App.xcodeproj
+        XCODE_SCHEME: App
+      node: 22
+      xcode: latest
+    scripts:
+      - name: Install shell dependencies
+        script: npm ci
+      - name: Copy web shell and config into the iOS project
+        script: npx cap sync ios
+      - name: Signing certificate and App Store profile
+        script: |
+          keychain initialize
+          # Reuses the distribution certificate made from CERTIFICATE_PRIVATE_KEY, or creates it (and the profile) once.
+          app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create
+          keychain add-certificates
+          xcode-project use-profiles
+      - name: Build number
+        script: |
+          # Codemagic's build counter only goes up, so every upload gets a new CFBundleVersion.
+          sed -i '' -E "s/CURRENT_PROJECT_VERSION = [0-9]+;/CURRENT_PROJECT_VERSION = $BUILD_NUMBER;/g" "$XCODE_PROJECT/project.pbxproj"
+          grep -m1 "CURRENT_PROJECT_VERSION" "$XCODE_PROJECT/project.pbxproj"
+      - name: Build ipa
+        script: xcode-project build-ipa --project "$XCODE_PROJECT" --scheme "$XCODE_SCHEME"
+    artifacts:
+      # Listed both ways because the path may be read from the repo root or from working_directory.
+      - build/ios/ipa/*.ipa
+      - Anthem-Code/capacitor-shell/build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
+        # Upload only. Internal testers see the build once Apple finishes processing it;
+        # external TestFlight and App Store review are started by hand in App Store Connect.
+        submit_to_testflight: false

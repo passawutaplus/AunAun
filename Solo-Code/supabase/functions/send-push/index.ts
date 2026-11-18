@@ -1,10 +1,13 @@
-// Delivers one shared.notifications row as a web push to every device the recipient registered
-// (browser, installed PWA, SAMECOR Android app). Called by the notifications_dispatch_push trigger
+// Delivers one shared.notifications row to every device the recipient registered: web push for the
+// browser, installed PWA and Android app; APNs for the iOS app (rows with shell 'ios', migration
+// 20261118120000_ios_push_tokens.sql). Called by the notifications_dispatch_push trigger
 // (migration 20261028090000_push_notifications.sql) with { notification_id }.
 //
-// Secrets: VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT (mailto:…), PUSH_DISPATCH_SECRET.
+// Secrets: VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT (mailto:…), PUSH_DISPATCH_SECRET,
+// and for iOS APNS_KEY_ID, APNS_TEAM_ID, APNS_PRIVATE_KEY (see ../_shared/apns.ts).
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
+import { apnsConfigFromEnv, sendApns } from "../_shared/apns.ts";
 
 const SITE = "https://samecor.com";
 const BADGE = `${SITE}/icons/notification-badge.png`;
@@ -56,7 +59,8 @@ const rasterAvatar = (url: string | undefined) =>
 /** 2–3 recommended works → one 2:1 image composed by the website (api/push-collage.js). */
 const collageUrl = (ids: string[]) => `${SITE}/api/push-collage?ids=${ids.slice(0, 3).join(",")}`;
 
-const truncate = (text: string, max: number) => (text.length > max ? `${text.slice(0, max - 1)}…` : text);
+const truncate = (text: string, max: number) =>
+  text.length > max ? `${text.slice(0, max - 1)}…` : text;
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
@@ -68,8 +72,16 @@ Deno.serve(async (req) => {
 
   const publicKey = Deno.env.get("VAPID_PUBLIC_KEY");
   const privateKey = Deno.env.get("VAPID_PRIVATE_KEY");
-  if (!publicKey || !privateKey) return json({ error: "vapid_not_configured" }, 500);
-  webpush.setVapidDetails(Deno.env.get("VAPID_SUBJECT") ?? "mailto:support@samecor.com", publicKey, privateKey);
+  const vapidReady = !!publicKey && !!privateKey;
+  const apns = apnsConfigFromEnv();
+  if (!vapidReady && !apns) return json({ error: "push_not_configured" }, 500);
+  if (publicKey && privateKey) {
+    webpush.setVapidDetails(
+      Deno.env.get("VAPID_SUBJECT") ?? "mailto:support@samecor.com",
+      publicKey,
+      privateKey,
+    );
+  }
 
   let notificationId: string;
   try {
@@ -79,7 +91,10 @@ Deno.serve(async (req) => {
   }
   if (!/^[0-9a-f-]{36}$/i.test(notificationId)) return json({ error: "invalid_body" }, 400);
 
-  const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  const admin = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+  );
   const shared = admin.schema("shared");
 
   const { data: row } = await shared
@@ -111,9 +126,46 @@ Deno.serve(async (req) => {
     });
   };
 
+  const markSent = (id: string) =>
+    shared
+      .from("push_subscriptions")
+      .update({ last_success_at: new Date().toISOString(), failure_count: 0 })
+      .eq("id", id);
+  const markFailed = (id: string, failures: number, gone: boolean) =>
+    gone || failures >= 4
+      ? shared.from("push_subscriptions").delete().eq("id", id)
+      : shared
+          .from("push_subscriptions")
+          .update({ failure_count: failures + 1 })
+          .eq("id", id);
+
   let sent = 0;
   await Promise.all(
     subs.map(async (sub) => {
+      if (sub.shell === "ios") {
+        if (!apns || !sub.endpoint.startsWith("apns:")) return;
+        try {
+          const result = await sendApns(apns, sub.endpoint.slice("apns:".length), {
+            title: payload.title,
+            body: payload.body,
+            url: payload.url,
+            collapseId: payload.tag,
+            highPriority: row.kind === "chat.message",
+          });
+          if (result.ok) {
+            sent += 1;
+            await markSent(sub.id);
+          } else {
+            console.warn("[send-push] apns", result.status, result.reason);
+            await markFailed(sub.id, sub.failure_count ?? 0, result.gone);
+          }
+        } catch (err) {
+          console.warn("[send-push] apns error", err instanceof Error ? err.message : err);
+          await markFailed(sub.id, sub.failure_count ?? 0, false);
+        }
+        return;
+      }
+      if (!vapidReady) return;
       try {
         await webpush.sendNotification(
           { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
@@ -158,10 +210,19 @@ async function buildPayload(
 
   const [actor, project] = await Promise.all([
     actorId
-      ? admin.from("profiles").select("display_name, username, avatar_url").eq("user_id", actorId).maybeSingle()
+      ? admin
+          .from("profiles")
+          .select("display_name, username, avatar_url")
+          .eq("user_id", actorId)
+          .maybeSingle()
       : Promise.resolve({ data: null }),
     projectId
-      ? admin.schema("anthem").from("projects").select("title, cover_url").eq("id", projectId).maybeSingle()
+      ? admin
+          .schema("anthem")
+          .from("projects")
+          .select("title, cover_url")
+          .eq("id", projectId)
+          .maybeSingle()
       : Promise.resolve({ data: null }),
   ]);
 
@@ -169,7 +230,9 @@ async function buildPayload(
     (actor.data as { display_name?: string; username?: string } | null)?.display_name?.trim() ||
     (actor.data as { username?: string } | null)?.username ||
     undefined;
-  const icon = rasterAvatar(httpsOrUndefined((actor.data as { avatar_url?: string } | null)?.avatar_url)) ?? FALLBACK_ICON;
+  const icon =
+    rasterAvatar(httpsOrUndefined((actor.data as { avatar_url?: string } | null)?.avatar_url)) ??
+    FALLBACK_ICON;
   const image = httpsOrUndefined((project.data as { cover_url?: string } | null)?.cover_url);
   const url = absolute(row.link);
   const title = row.title?.trim() || "SAMECOR";
@@ -208,7 +271,9 @@ async function buildPayload(
       actions: following
         ? [
             { action: "open", title: "ดูผลงาน" },
-            ...(actorId ? [{ action: "profile", title: "ดูโปรไฟล์", url: `${SITE}/u/${actorId}` }] : []),
+            ...(actorId
+              ? [{ action: "profile", title: "ดูโปรไฟล์", url: `${SITE}/u/${actorId}` }]
+              : []),
           ]
         : [
             { action: "open", title: "ดูผลงาน" },

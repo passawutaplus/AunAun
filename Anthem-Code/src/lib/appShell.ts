@@ -136,3 +136,20 @@ export function installAppShell(): void {
     attributeFilter: ["class"],
   });
 }
+
+/**
+ * Which store apps a page may name. Inside a store app only that platform is named (App Review 2.3.10 and Play
+ * policy both object to the other store inside the app); the website names both.
+ */
+export function storePlatforms(): { android: boolean; ios: boolean } {
+  if (isIosApp()) return { android: false, ios: true };
+  if (isAndroidApp()) return { android: true, ios: false };
+  return { android: true, ios: true };
+}
+
+/** "Android และ iOS", "iOS" or "Android", for legal copy. */
+export function storePlatformsLabel(lang: "th" | "en" = "th"): string {
+  const { android, ios } = storePlatforms();
+  if (android && ios) return lang === "th" ? "Android และ iOS" : "Android and iOS";
+  return ios ? "iOS" : "Android";
+}

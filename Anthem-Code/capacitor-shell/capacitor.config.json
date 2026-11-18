@@ -13,6 +13,12 @@
   },
   "android": {
     "appendUserAgent": "SamecorApp",
-    "allowMixedContent": false
+    "allowMixedContent": false,
+    "includePlugins": []
+  },
+  "plugins": {
+    "PushNotifications": {
+      "presentationOptions": ["badge", "sound", "alert"]
+    }
   }
 }

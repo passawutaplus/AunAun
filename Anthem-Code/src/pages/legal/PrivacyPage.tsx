@@ -1,4 +1,5 @@
 import LegalLayout from "@/components/LegalLayout";
+import { storePlatforms, storePlatformsLabel } from "@/lib/appShell";
 import FreeLaunchMoneyNotice from "@/components/legal/FreeLaunchMoneyNotice";
 import { LEGAL_APP_NAME, LEGAL_COMPANY_ADDRESS, LEGAL_COMPANY_NAME, LEGAL_COMPANY_TAX_ID, LEGAL_DPO_EMAIL, LEGAL_SOLO_NAME, LEGAL_SOLO_URL, LEGAL_WEBSITE } from "@/lib/legalConfig";
 
@@ -13,7 +14,7 @@ const PrivacyPage = () => (
       เราเขียนนโยบายนี้ให้อ่านเข้าใจง่าย — หากมีคำถาม ติดต่อ DPO ได้ที่ด้านล่าง
     </p>
     <p className="text-sm text-muted-foreground">
-      นโยบายนี้ใช้กับทั้งเว็บไซต์ {LEGAL_WEBSITE} และแอป {LEGAL_APP_NAME} บน Android ซึ่งเปิดบริการเดียวกัน
+      นโยบายนี้ใช้กับทั้งเว็บไซต์ {LEGAL_WEBSITE} และแอป {LEGAL_APP_NAME} บน {storePlatformsLabel()} ซึ่งเปิดบริการเดียวกัน
       และเก็บข้อมูลชุดเดียวกัน
     </p>
     <FreeLaunchMoneyNotice scope="privacy" />
@@ -116,15 +117,23 @@ const PrivacyPage = () => (
       <li>คุกกี้และ local storage — ดูรายละเอียดใน <a href="/legal/cookies">นโยบายคุกกี้</a></li>
       <li>
         ข้อมูลการรับแจ้งเตือน (push) — เฉพาะเมื่อคุณกดเปิดแจ้งเตือนบนเครื่อง: ที่อยู่สำหรับส่งแจ้งเตือน (endpoint)
-        กุญแจเข้ารหัสของเครื่อง ประเภทเบราว์เซอร์/แอป และเวลาที่ใช้ล่าสุด
+        หรือรหัสเครื่องสำหรับแจ้งเตือนของ Apple (device token) ในแอป iOS กุญแจเข้ารหัสของเครื่อง ประเภทเบราว์เซอร์/แอป
+        และเวลาที่ใช้ล่าสุด
       </li>
       <li>
         รายงานข้อผิดพลาดทางเทคนิค (ถ้าเปิดใช้) — ข้อความ error หน้าที่เกิดเหตุ และประเภทอุปกรณ์ เพื่อแก้บั๊ก
       </li>
     </ul>
-    <h3>3.4.1 แอป Android และการแชร์จากเครื่อง</h3>
+    <h3>3.4.1 แอปบนมือถือและการแชร์จากเครื่อง</h3>
     <ul>
-      <li>แอป Android ไม่ขอสิทธิ์เข้าถึงรายชื่อ ไมโครโฟน หรือคลังภาพทั้งหมด</li>
+      {storePlatforms().android && <li>แอป Android ไม่ขอสิทธิ์เข้าถึงรายชื่อ ไมโครโฟน หรือคลังภาพทั้งหมด</li>}
+      {storePlatforms().ios && (
+      <li>
+        แอป iOS ไม่ขอสิทธิ์เข้าถึงรายชื่อหรือคลังภาพทั้งหมด (เลือกรูปผ่านตัวเลือกรูปของระบบ)
+        และขอสิทธิ์เฉพาะตอนที่คุณใช้งาน: กล้องเมื่อถ่ายรูปหรือวิดีโอ ไมโครโฟนเมื่ออัดวิดีโอ
+        และการบันทึกลงคลังภาพเมื่อคุณกดบันทึกรูปเอง ทั้งหมดใช้ในเครื่องจนกว่าคุณจะกดโพสต์
+      </li>
+      )}
       <li>
         ตำแหน่ง: ขอเฉพาะเมื่อคุณกด “เริ่มจากตำแหน่งปัจจุบัน” ในเส้นทางไปงาน Exhibition และใช้ขณะเปิดแอปเท่านั้น
         จุดเริ่มต้นที่เลือก (ตำแหน่งปัจจุบัน บ้าน ที่ทำงาน หรือสถานที่ที่ค้นหา) เก็บไว้ในเครื่องของคุณ ไม่ส่งถึง {LEGAL_APP_NAME}{" "}
@@ -253,21 +262,23 @@ const PrivacyPage = () => (
       <li><strong>Google OAuth</strong> — เมื่อคุณเลือกเข้าสู่ระบบด้วย Google</li>
       <li><strong>Vercel</strong> — โฮสต์เว็บไซต์และ API (บันทึก IP และ request log ตามปกติของการให้บริการ)</li>
       <li>
-        <strong>บริการส่ง push ของเบราว์เซอร์/ระบบปฏิบัติการ</strong> (เช่น Google Firebase Cloud Messaging, Apple, Mozilla)
+        <strong>บริการส่ง push ของเบราว์เซอร์/ระบบปฏิบัติการ</strong> (เช่น Google Firebase Cloud Messaging,
+        Apple Push Notification service, Mozilla)
         — ส่งแจ้งเตือนถึงเครื่องคุณ เนื้อหาถูกเข้ารหัสระหว่างทาง
       </li>
       <li>
         <strong>Google Analytics 4</strong> — สถิติการใช้งานแบบรวม โหลดเฉพาะเมื่อคุณยินยอมคุกกี้วิเคราะห์
       </li>
       <li><strong>Sentry</strong> — รายงานข้อผิดพลาดทางเทคนิค (เมื่อเปิดใช้)</li>
-      <li><strong>Google Play</strong> — เมื่อคุณติดตั้งแอป Android (เป็นไปตามนโยบายของ Google)</li>
+      {storePlatforms().android && <li><strong>Google Play</strong> — เมื่อคุณติดตั้งแอป Android (เป็นไปตามนโยบายของ Google)</li>}
+      {storePlatforms().ios && <li><strong>Apple App Store</strong> — เมื่อคุณติดตั้งแอป iOS (เป็นไปตามนโยบายของ Apple)</li>}
       <li><strong>ผู้ให้บริการ AI</strong> — เฉพาะเมื่อคุณใช้ฟีเจอร์ร่างสัญญา/แนะนำผลงาน (ส่งเฉพาะข้อมูลที่จำเป็น)</li>
     </ul>
     <p>เราไม่ขายข้อมูลส่วนบุคคลของคุณให้บุคคลที่สามเพื่อการตลาด</p>
 
     <h2>6. การโอนข้อมูลไปต่างประเทศ</h2>
     <p>
-      ผู้ให้บริการบางราย (เช่น Supabase, Vercel, Google, Sentry, Omise) อาจประมวลผลข้อมูลบนเซิร์ฟเวอร์ต่างประเทศ
+      ผู้ให้บริการบางราย (เช่น Supabase, Vercel, Google, Apple, Sentry, Omise) อาจประมวลผลข้อมูลบนเซิร์ฟเวอร์ต่างประเทศ
       เราจะใช้มาตรการคุ้มครองที่เหมาะสมตามที่ PDPA กำหนด เช่น ข้อตกลงมาตรฐานสัญญา
       หรือการรับรองว่าปลายทางมีมาตรฐานคุ้มครองข้อมูลที่เพียงพอ
     </p>

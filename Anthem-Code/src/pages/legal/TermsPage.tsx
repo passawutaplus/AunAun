@@ -1,4 +1,5 @@
 import LegalLayout from "@/components/LegalLayout";
+import { storePlatforms, storePlatformsLabel } from "@/lib/appShell";
 import FreeLaunchMoneyNotice from "@/components/legal/FreeLaunchMoneyNotice";
 import {
   ATTESTATION_BULLETS,
@@ -32,8 +33,9 @@ const TermsPage = () => (
     <h2>1. คำนิยาม</h2>
     <ul>
       <li>
-        <strong>แพลตฟอร์ม</strong> — เว็บ แอป {LEGAL_APP_NAME} บน Android และบริการ {LEGAL_APP_NAME} ทั้งหมด
-        (การดาวน์โหลดแอปจาก Google Play อยู่ภายใต้ข้อกำหนดของ Google Play ด้วย)
+        <strong>แพลตฟอร์ม</strong> — เว็บ แอป {LEGAL_APP_NAME} บน {storePlatformsLabel()} และบริการ {LEGAL_APP_NAME} ทั้งหมด
+        {storePlatforms().android && " (การดาวน์โหลดแอปจาก Google Play อยู่ภายใต้ข้อกำหนดของ Google Play ด้วย Google ไม่ใช่คู่สัญญาของข้อกำหนดนี้)"}
+        {storePlatforms().ios && " (การดาวน์โหลดแอปจาก App Store อยู่ภายใต้ข้อกำหนดของ Apple ด้วย Apple ไม่ใช่คู่สัญญาของข้อกำหนดนี้)"}
       </li>
       <li><strong>ผู้ใช้</strong> — บุคคลที่สมัครบัญชีหรือเข้าชมแบบไม่ลงทะเบียน</li>
       <li><strong>เนื้อหา</strong> — ผลงาน รูปภาพ ข้อความ วิดีโอ และข้อมูลที่ผู้ใช้อัปโหลด</li>
@@ -76,6 +78,11 @@ const TermsPage = () => (
       <li>ใช้แพลตฟอร์มเพื่อฟอกเงิน การพนันผิดกฎหมาย หรือกิจกรรมที่ต้องห้าม</li>
       <li>ปกปิดการใช้ AI ในผลงาน หรือเลือกระดับการใช้ไม่ตรงความเป็นจริง</li>
     </ul>
+    <p>
+      {LEGAL_APP_NAME} ไม่ยอมรับเนื้อหาที่ไม่เหมาะสมหรือผู้ใช้ที่คุกคามผู้อื่นไม่ว่ากรณีใด ทุกคนกดรายงานผลงาน คอมเมนต์ โปรไฟล์
+      หรือข้อความแชท และบล็อกผู้ใช้ได้จากเมนูของสิ่งนั้น ทีมตรวจรายงานภายใน 24 ชั่วโมง ลบเนื้อหาที่ผิดข้อกำหนด
+      และระงับบัญชีที่ละเมิด
+    </p>
 
     <h2>5. การรับรองและคำแถลงของผู้ใช้</h2>
     <p>เมื่ออัปโหลดหรือเผยแพร่เนื้อหา คุณรับรองและยืนยันว่า:</p>

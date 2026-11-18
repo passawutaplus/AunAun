@@ -1,53 +1,127 @@
-# SAMECOR iOS app — preparation (nothing here has been built or submitted)
+# SAMECOR iOS app
 
-The iOS app is the same idea as the Android one: a Capacitor shell that loads https://samecor.com
-(`../capacitor-shell`). iOS apps cannot be built on Windows, and the Apple account is not set up yet, so this
-folder holds the decisions and drafts that do not need either.
+The iOS app is the same idea as the Android one: a Capacitor shell that loads https://samecor.com.
+The Xcode project lives in `../capacitor-shell/ios`, and it is built on a Codemagic cloud Mac (`/codemagic.yaml`),
+so no Mac is needed. Bundle id `com.samecor.app`, iPhone only, iOS 15+.
 
-## Already done in the web code
+## How the shell works
 
-- `src/lib/appShell.ts`: `isIosApp()` (user-agent marker `SamecorIos`), `isNativeApp()` (iOS or Android) and `shellName()`.
-  `isAndroidApp()` is false inside the iOS app. Behaviour that is about "the store app" (no KYC, no commerce prompts,
-  no download card, pull to refresh) now uses `isNativeApp()`. Analytics and Sentry tag the shell as `ios`.
-- `capacitor-shell/capacitor.config.json` has an `ios` block: user agent `SamecorApp SamecorIos`, `contentInset: never`
-  so the page draws under the notch and the CSS `env(safe-area-inset-*)` rules apply (the viewport already has `viewport-fit=cover`).
-- Already satisfying Apple's rules: account deletion inside the app (Settings → Privacy), block user in the comment, project and community menus, report in chat (report on projects and comments is not confirmed yet: check before submitting), a privacy policy URL.
+- **Safe area:** `ShellViewController.swift` keeps the web view inside the safe area, the way the Android shell pads its
+  WebView. The page never draws under the status bar, notch or home indicator. `public/app-shell-boot.js` already drops
+  `viewport-fit=cover` for every `SamecorApp` user agent, so the page lays out exactly as it does in the Android app.
+- **Theme colour:** the strips outside the safe area take the page colour. The site calls
+  `window.SamecorShell.setSystemBarColor(hex, dark)` (`src/lib/appShell.ts`), and the shell turns the status bar text
+  light or dark to match.
+- **App version:** `window.SamecorShell.getAppVersion()` returns `"1.0.0 (build)"` for Settings, the same shape as Android.
+- **Web gaps filled** (`ShellWebFeatures.swift`):
+  - Downloads (blob links, `download` links, attachments) open the iOS share sheet, where the user can Save to Files or Save Image.
+  - Same-site `target="_blank"` / `window.open` links stay in the app.
+  - `window.print()` opens the iOS print sheet.
+  - `navigator.share()` gets a native fallback.
+- **Privacy manifest:** `PrivacyInfo.xcprivacy` declares no tracking.
+- **Pattern for other apps** (Picker): `IOS_WEBVIEW_APP_PATTERN.md`.
+- **Navigation:** edge swipe goes back through page history. Pull to refresh comes from the site (`PullToRefresh`), and
+  Capacitor already turns off the web view's bounce so the two do not fight. Links to other hosts open in Safari.
+- **Detection:** the user agent ends in `SamecorApp SamecorIos` (`capacitor.config.json`). `isIosApp()` / `isNativeApp()`
+  hide Google sign-in, KYC, shop, donate and Founding payments inside the app.
+- **Launch screen and icon:** the SAMECOR mark from `F:\So1o\Samecor\svg\samecor. logo-04.svg`, light and dark launch
+  backgrounds (`Assets.xcassets/LaunchBackground`). The icon is RGB with no alpha, as the App Store requires.
+- **Permission prompts** (English in `Info.plist`, Thai in `th.lproj/InfoPlist.strings`): camera and microphone for
+  photo and video posts (iOS crashes the app without these), saving an image to Photos, and location for the event route.
+  `ITSAppUsesNonExemptEncryption = NO`: the app only uses HTTPS, so there is no export-compliance question per build.
 
-## What is blocked on the Apple account or a Mac
+## Build on Codemagic
+
+Codemagic only builds when someone presses **Start new build**; pushes never start a build.
+
+One-time setup (owner):
+
+1. Apple Developer → Certificates, Identifiers & Profiles → Identifiers → register the App ID `com.samecor.app`,
+   and tick **Push Notifications** under Capabilities. Without it the App Store profile lacks `aps-environment`
+   and the build fails at signing (`App/App.entitlements` asks for push).
+2. App Store Connect → Apps → New App: iOS, name SAMECOR, primary language Thai, bundle id `com.samecor.app`, SKU `samecor-ios`.
+3. App Store Connect → Users and Access → Integrations → App Store Connect API → generate a key with the
+   **App Manager** role. Download the `.p8` file (Apple lets you download it only once) and note the Key ID and Issuer ID.
+4. Make the signing key (once, on any computer): `ssh-keygen -t rsa -b 2048 -m PEM -f samecor_cert_key -q -N ""`.
+   Keep `samecor_cert_key` private. It is what lets every build reuse the same distribution certificate.
+5. Codemagic → AunAun → Environment variables → group `samecor_ios`, all marked **Secret**:
+
+   | Variable | Value |
+   |---|---|
+   | `APP_STORE_CONNECT_ISSUER_ID` | Issuer ID |
+   | `APP_STORE_CONNECT_KEY_IDENTIFIER` | Key ID |
+   | `APP_STORE_CONNECT_PRIVATE_KEY` | full contents of the `.p8` file |
+   | `CERTIFICATE_PRIVATE_KEY` | full contents of `samecor_cert_key` |
+
+Each build: Codemagic → AunAun → Start new build → workflow **iOS → TestFlight**, branch `main`. About 10–15 minutes.
+The build creates the distribution certificate and App Store profile the first time. Then it uploads to App Store Connect.
+The build appears in TestFlight for internal testers after Apple processes it, usually 10–30 minutes.
+
+The repo is public. Never print secrets in build scripts, and never commit `.p8` or key files.
+
+## Push notifications
+
+How it works:
+- The app uses `@capacitor/push-notifications` (APNs). `AppDelegate` passes the device token to the plugin, and
+  `src/lib/nativePush.ts` saves it with `save_apns_token`. That row lands in `shared.push_subscriptions` with shell `ios`.
+- `send-push` sends every in-app notification to those rows through APNs (`Solo-Code/supabase/functions/_shared/apns.ts`).
+- The settings switch and the studio nudge work as on the web, because `pushNotifications.ts` routes to `nativePush.ts`.
+- Tapping a notification opens its page in the app.
+
+One-time setup (owner, after the Apple account is active):
+
+1. Apple Developer → Keys → **+** → enable **Apple Push Notifications service (APNs)** → download `AuthKey_XXXXXXXXXX.p8`
+   (once only). Note the Key ID and the Team ID (top right of the developer site).
+2. Supabase → Edge Functions → Secrets: `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_PRIVATE_KEY` (full contents of the `.p8`).
+3. Apply `Solo-Code/supabase/migrations/20261118120000_ios_push_tokens.sql`.
+4. Deploy `send-push` from `Solo-Code/` (`npx supabase functions deploy send-push`), not from the repo root.
+
+Until the secrets exist, `send-push` skips iOS devices and web push works as before.
+
+## Before sending to App Review
+
+All three review documents are filled in. Check them against the live app before submitting:
+- `review-notes.md`: paste into App Review Information.
+- `app-privacy.md`: the App Privacy answers.
+- `app-store-listing.md`: listing text and screenshot sizes.
+
+| Guideline | Status |
+|---|---|
+| 4.2 Minimum functionality | Covered by native features: push notifications, share/print/save sheets, camera capture, swipe back, pull to refresh, safe-area theming, offline page |
+| 2.3.10 Other platforms | The `/learn` store badges and the Settings "download the app" panel are hidden in the app (`isNativeApp()`) |
+| 3.1.1 Payments | Shop, donate, Founding, `/upgrade`, subscriptions, So1o links and the In-House upsell are all hidden in the app |
+| 4.8 Sign in with Apple | Not needed: there is no third-party sign-in in the app (`SocialButtons` returns null in WebViews) |
+| 1.2 User content | Report and block on projects, comments, profiles and chat. Reports alert the admin LINE group. Terms section 4 promises 24-hour handling, so the owner must act on reports within a day |
+| 5.1.1(v) Account deletion | Settings → My data → Delete account, behind a password check. A team member approves it, it hides the account, and the account is purged after 30 days (the timeline is shown). See the risk below |
+| 2.1 Completeness | Demo account `tester@samecor.com`. Downloads, print and share work in the app |
+| 5.1.2 Privacy | The privacy policy names the iOS app, its permission prompts, the APNs token and Apple |
+
+Also hidden in the iOS app after the second audit: beta wording and badges, the star-rating prompt, "link Google account",
+"coming soon" pages (they redirect home), "paying through SAMECOR soon" text, payments and referral rewards. Legal pages
+name only the current platform's store.
+
+Remaining risks:
+- **Deletion needs manual approval.** This was the owner's decision on 2026-11-02. The app now says the team acts within
+  7 business days. Apple accepts a request flow that states its timeline, but some reviewers still push back. Approve
+  delete requests quickly, and never approve one from the demo account during review.
+- **Report handling.** Answer reports from the LINE admin alerts within 24 hours, as the Terms now say.
+- **Deployment.** The web fixes only reach the app once `main` is deployed to samecor.com. Submit only after that deploy,
+  after the push setup above, and after a TestFlight check on a real iPhone.
+- **Demo account.** Give `tester@samecor.com` a chat thread before submitting.
+- **Privacy policy section 2** still describes the retired So1o / Omise ecosystem and links to solofreelancer.com. Have the
+  owner update it, because a dead link or a retired service in the policy invites questions.
+- **Email links** (password reset) open in Safari. There are no universal links until `apple-app-site-association` is set up.
+  Sign-up uses a 6-digit code, so it stays in the app.
+- **4.2.** A short screen recording attached to the review notes (push arriving, share/save sheet, camera post) helps reviewers.
+
+## Later
 
 | Step | Needs |
 |---|---|
-| Enrol in the Apple Developer Program | the owner, with payment (check the current yearly fee) |
-| Bundle id, App Store Connect record, signing certificates | Apple account |
-| `npx cap add ios`, open in Xcode, build, TestFlight | a Mac or a cloud Mac builder (CI with macOS runners) |
-| `apple-app-site-association` (open links in the app) | Team ID from the account |
-| Push notifications | APNs key from the account, plus a native push plugin (Web Push does not work in a WebView) |
-| Sign in with Apple | only needed if Google sign-in is turned on in the iOS app; it is hidden in WebViews today |
-
-## Review risk to plan for
-
-Apple can reject an app that only wraps a website (guideline 4.2, minimum functionality). Check the current
-wording before submitting. Native features that give it a reason to exist: push notifications, sharing a photo
-into SAMECOR from the gallery or camera, haptics, an offline page. Keep these in mind when choosing what goes
-into the first build. If review rejects it, the alternative is a React Native (Expo) app, which EAS Build can
-build from Windows.
+| `apple-app-site-association` (open samecor.com links in the app) | Team ID from the Apple account |
 
 ## Files in this folder
 
 - `app-privacy.md`: draft answers for App Store Connect → App Privacy.
-- `app-store-listing.md`: listing text (Thai and English) and the screenshot sizes to prepare.
-- `review-notes.md`: what to tell App Review, including a test account placeholder.
-
-Review every draft against the live app before submitting: Apple treats wrong privacy answers as a violation.
-
-## Location (Exhibition route start point)
-
-When the iOS Capacitor project is created, add to `ios/App/App/Info.plist`:
-
-```xml
-<key>NSLocationWhenInUseUsageDescription</key>
-<string>ใช้ตำแหน่งของคุณเป็นจุดเริ่มต้นเส้นทางไปสถานที่จัดงาน (ไม่บันทึกขึ้นเซิร์ฟเวอร์)</string>
-```
-
-WKWebView then answers `navigator.geolocation` with the system prompt. App Privacy: location is used on the
-device only (a ~100 m rounded point is sent to the routing service to draw the route).
+- `app-store-listing.md`: listing text (Thai and English) and screenshot sizes.
+- `review-notes.md`: what to tell App Review, with the demo account.

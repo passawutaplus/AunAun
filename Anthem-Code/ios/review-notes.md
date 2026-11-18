@@ -1,20 +1,39 @@
-# Notes for App Review (draft)
+# Notes for App Review
 
-Paste into App Store Connect → App Review Information. Fill the bracketed parts.
+Paste the block below into App Store Connect → App Review Information → Notes. The demo account's email and password go
+in the Sign-in fields there (the owner types the password; it is never written in this repo).
 
-**What the app is:** SAMECOR is a gallery and community for creators: they post projects, browse work by category, follow people and chat.
+**Demo account (not for pasting):** `tester@samecor.com`. Email confirmed, profile complete with a published project,
+password sign-in, not an admin. Before submitting, give it at least one chat conversation so the reviewer can try chat. During review, do not approve a delete request from this account in admin → privacy requests. A reviewer
+may test deletion, and approving it would hide the demo account.
 
-**Sign in:** the app needs an account to post, chat and follow. Browsing works without one.
-- Test account: [email created for review] / [password entered by the owner in App Store Connect, never written in this repo]
+---
 
-**User-generated content (guideline 1.2):**
-- Report: chat messages and users can be reported (checked in the code). [Before submitting, confirm projects and comments can be reported too; Apple expects it for all user content. Say where reports are reviewed.]
-- Block: users can be blocked from the comment, project and community menus (checked in the code).
-- Delete account: Settings → Privacy → delete account, inside the app.
-- Terms and privacy policy: https://samecor.com/legal/privacy
+SAMECOR is a gallery and community for Thai creators. Creators post their projects, people browse work by category,
+follow creators and chat with them. The interface is in Thai; Thai labels are given in brackets below. The app is free and has no purchases. Browsing works without an account; posting,
+following and chat need one (demo account above).
 
-**Payments:** the iOS app has no purchases, subscriptions or paid features. Commerce and identity checks (KYC) are hidden in the app.
+Native features in this build:
+- Push notifications (APNs) for new chat messages, followers and activity on your work. Turn on in Settings (ตั้งค่า) → Notifications (การแจ้งเตือน);
+  tapping a notification opens the related page.
+- Native share sheet, print sheet and file saving (Save to Files / Save Image) for exports, PDFs and images.
+- Camera and video capture for posting work, swipe-back navigation, pull to refresh, light and dark appearance that follows the page.
 
-**What the app does beyond a website (guideline 4.2):** [list the native features included in this build, e.g. push notifications, sharing a photo into SAMECOR, haptics. Do not list anything that is not in the build.]
+User-generated content (1.2):
+- Report: every project, comment, profile and chat message has Report (รายงาน) in its "…" menu. Reports reach our moderation team
+  immediately (admin alerts) and are handled within 24 hours.
+- Block: from the same menus, or "block too" inside the report dialog. Unblock in Settings (ตั้งค่า) → Chat (แชท).
+- Filtering: posts, comments and community text go through a profanity and spam filter before they are shown.
+- Terms (accepted at sign-up) forbid objectionable content and abusive users: https://samecor.com/legal/terms
+- Contact: support@samecor.com
 
-**Contact:** support@samecor.com
+Account deletion (5.1.1(v)): Settings (ตั้งค่า) → My data (ข้อมูลของฉัน) → Delete account (ขอลบบัญชี) → confirm with the account password. The team processes the request within 7 business days (the screen says so):
+the profile and work are hidden at once, the account is permanently deleted 30 days later, and the user can cancel
+until then (the dates appear on the same screen). A public page also explains it: https://samecor.com/legal/delete-account
+
+Payments: the app sells no digital goods, subscriptions or in-app content, and has no external purchase links.
+Creators can send a client a quote or invoice in chat for freelance work (design, illustration, photography) that is
+done and paid outside the app, between the two people (guideline 3.1.3(e), goods and services consumed outside the app).
+SAMECOR does not take a cut and processes no payment.
+
+Privacy policy: https://samecor.com/legal/privacy

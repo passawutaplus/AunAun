@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { BellRing, X } from "lucide-react";
 import { toast } from "sonner";
-import { enablePush, getPushState } from "@/lib/pushNotifications";
+import { enablePush, getPushState, pushBlockedMessage } from "@/lib/pushNotifications";
 
 const DISMISS_KEY = "samecor:studio-push-nudge-dismissed-at";
 const DISMISS_DAYS = 14;
@@ -49,7 +49,7 @@ export default function StudioPushNudge() {
         toast.success("เปิดแจ้งเตือนแล้ว");
         setShow(false);
       } else if (s === "denied") {
-        toast.error("เบราว์เซอร์บล็อกการแจ้งเตือนไว้ เปิดได้จากการตั้งค่าเว็บไซต์");
+        toast.error(pushBlockedMessage());
         setShow(false);
       }
     } catch {

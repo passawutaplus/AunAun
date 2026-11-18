@@ -1,0 +1,5 @@
+/* Thai permission prompts. English defaults live in Info.plist. */
+"NSCameraUsageDescription" = "SAMECOR ใช้กล้องตอนที่คุณถ่ายรูปหรือวิดีโอเพื่อลงผลงานหรือตั้งเป็นรูปโปรไฟล์";
+"NSMicrophoneUsageDescription" = "SAMECOR ใช้ไมโครโฟนตอนที่คุณอัดวิดีโอเพื่อลงผลงาน";
+"NSPhotoLibraryAddUsageDescription" = "SAMECOR บันทึกรูปลงคลังรูปภาพเมื่อคุณเลือกบันทึกเอง";
+"NSLocationWhenInUseUsageDescription" = "SAMECOR ใช้ตำแหน่งของคุณเป็นจุดเริ่มต้นเส้นทางไปสถานที่จัดงาน และไม่บันทึกขึ้นเซิร์ฟเวอร์";

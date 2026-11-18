@@ -1,4 +1,4 @@
-import { isNativeApp } from "@/lib/appShell";
+import { isIosApp, isNativeApp } from "@/lib/appShell";
 import type { FeedMode } from "@/components/feed/FeedModeToggle";
 import { isFoundingPath } from "@/lib/founding/flags";
 import { isSupportPath } from "@/lib/support/flags";
@@ -35,6 +35,8 @@ export function isInspireEnabled(): boolean {
  * On by default; set VITE_SAMECOR_BETA_FEEDBACK=false (and redeploy) once the beta ends.
  */
 export function isBetaFeedbackEnabled(): boolean {
+  // The iOS app ships straight to the App Store, where "beta" wording is a rejection (2.2).
+  if (isIosApp()) return false;
   return import.meta.env.VITE_SAMECOR_BETA_FEEDBACK !== "false";
 }
 
@@ -194,6 +196,10 @@ export function isLaunchHiddenPath(pathname: string): boolean {
   if (isRetiredPublicPath(pathname)) return true;
   // Keeps national-ID / bank-account collection out of the app (and its Play Data safety form).
   if (isNativeApp() && isKycPath(pathname)) return true;
+  // Paid plans are sold on the website only: App Store / Play rules forbid prices or "pay elsewhere" in the app.
+  if (isNativeApp() && isUpgradePath(pathname)) return true;
+  // Referral rewards (PX that can be cashed out) are a payment feature the store apps must not offer.
+  if (isNativeApp() && (pathname === "/referrals" || pathname.startsWith("/referrals/"))) return true;
   if (isCommercePath(pathname)) return true;
   // Support Us (shop, donate, sponsor) stays closed until its own flag is on.
   if (isSupportPath(pathname)) return true;
@@ -215,9 +221,9 @@ export function isAplus1SubscriptionsEnabled(): boolean {
   return import.meta.env.VITE_APLUS1_SUBSCRIPTIONS_ENABLED === "true";
 }
 
-/** SAMECOR ↔ So1o ecosystem — disabled at launch unless env enables it. */
+/** SAMECOR ↔ So1o ecosystem — disabled at launch unless env enables it. Never inside the store apps (paid plans). */
 export function isSoloEcosystemEnabled(): boolean {
-  if (isAplus1LaunchMinimal()) return false;
+  if (isAplus1LaunchMinimal() || isNativeApp()) return false;
   return (
     import.meta.env.VITE_SOLO_ECOSYSTEM_ENABLED === "true" ||
     import.meta.env.VITE_APLUS1_UPGRADE_ENABLED === "true"
@@ -228,6 +234,11 @@ export function isSoloEcosystemEnabled(): boolean {
 export const isAplus1UpgradeEnabled = isSoloEcosystemEnabled;
 
 export const UPGRADE_PATH = "/upgrade";
+
+/** /upgrade and its sub-pages: plans, prices and checkout. */
+export function isUpgradePath(pathname: string): boolean {
+  return pathname === UPGRADE_PATH || pathname.startsWith(`${UPGRADE_PATH}/`);
+}
 
 export const UPGRADE_COMING_SOON_TH =
   "แพ็ก Pro บน SAMECOR กำลังจะเปิดให้สมัครเร็ว ๆ นี้ — ใช้งานฟรีได้ตามปกติ";
@@ -246,7 +257,7 @@ export const APLUS1_SOLO_PAYMENTS_CUTOVER_TH =
 
 /** Omise hire/checkout UI — explicit opt-in (still blocked live without marketplace approval). */
 export function isAplus1PaymentsEnabled(): boolean {
-  if (isAplus1LaunchMinimal()) return false;
+  if (isAplus1LaunchMinimal() || isNativeApp()) return false;
   return import.meta.env.VITE_APLUS1_PAYMENTS_ENABLED === "true";
 }
 

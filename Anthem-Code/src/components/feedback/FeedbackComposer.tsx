@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { isIosApp } from "@/lib/appShell";
 import { FEEDBACK_PAGE_OPTIONS, featureFromRoute } from "@/lib/featureRoute";
 import { dataUrlToBlob } from "@/lib/feedbackCapture";
 import { uploadFeedbackScreenshot } from "@/lib/feedbackScreenshot";
@@ -199,9 +200,11 @@ export default function FeedbackComposer() {
           </button>
               <div className="flex items-center gap-2 pr-6">
                 <h2 className="text-xl font-bold tracking-tight">มีอะไรอยากบอกเราไหม?</h2>
-                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold tracking-wide text-primary">
-                  BETA
-                </span>
+                {!isIosApp() && (
+                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold tracking-wide text-primary">
+                    BETA
+                  </span>
+                )}
               </div>
               <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">
                 ทุกข้อความช่วยให้ SAMECOR ดีขึ้น — ทีมอ่านเองทุกอัน
