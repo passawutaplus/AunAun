@@ -25,6 +25,7 @@ import {
   BRAND_SUPPORT_EMAIL,
 } from "@/lib/brandConfig";
 import { optimizedFeedImageUrl } from "@/lib/feedProjectCover";
+import { isNativeApp } from "@/lib/appShell";
 
 import { copyText } from "@/lib/copyText";
 const MARQUEE = ["Graphic", "Illustration", "UX/UI", "Motion", "Photo", "3D", "Branding", "Typography"];
@@ -393,6 +394,8 @@ export default function PlatformLandingPage() {
                   Your work, in your pocket.
                 </h2>
                 <p className="sub">{t("app.sub")}</p>
+                {/* Store badges only on the website: App Review rejects other stores inside the iOS app (2.3.10). */}
+                {!isNativeApp() && (
                 <div className="stores">
                   <div className="store">
                     <img src="/go/badges/google-play.png" alt="Google Play" />
@@ -403,6 +406,7 @@ export default function PlatformLandingPage() {
                     <span>Coming soon</span>
                   </div>
                 </div>
+                )}
               </div>
               <div className="phones" aria-hidden="true">
                 {[

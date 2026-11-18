@@ -10,6 +10,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { downloadBlob } from "@/lib/downloadBlob";
 import {
   Dialog,
   DialogContent,
@@ -82,12 +83,7 @@ export function AccountPrivacySection({ embedded = false }: { embedded?: boolean
         note: "ไฟล์นี้เป็นข้อมูลพื้นฐาน — เอกสาร KYC ใน Storage ติดต่อ DPO หากต้องการสำเนา",
       };
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `aplus1-export-${new Date().toISOString().slice(0, 10)}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
+      downloadBlob(blob, `aplus1-export-${new Date().toISOString().slice(0, 10)}.json`);
       toast.success("ดาวน์โหลดไฟล์แล้ว");
       try {
         await submitRequest.mutateAsync({ type: "export", description: "ดาวน์โหลดจากตั้งค่า (self-serve)" });

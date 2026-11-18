@@ -36,7 +36,9 @@ Codemagic only builds when someone presses **Start new build**; pushes never sta
 
 One-time setup (owner):
 
-1. Apple Developer → Certificates, Identifiers & Profiles → Identifiers → register the App ID `com.samecor.app`.
+1. Apple Developer → Certificates, Identifiers & Profiles → Identifiers → register the App ID `com.samecor.app`,
+   and tick **Push Notifications** under Capabilities. Without it the App Store profile lacks `aps-environment`
+   and the build fails at signing (`App/App.entitlements` asks for push).
 2. App Store Connect → Apps → New App: iOS, name SAMECOR, primary language Thai, bundle id `com.samecor.app`, SKU `samecor-ios`.
 3. App Store Connect → Users and Access → Integrations → App Store Connect API → generate a key with the
    **App Manager** role. Download the `.p8` file (Apple lets you download it only once) and note the Key ID and Issuer ID.
@@ -57,26 +59,57 @@ The build appears in TestFlight for internal testers after Apple processes it, u
 
 The repo is public. Never print secrets in build scripts, and never commit `.p8` or key files.
 
+## Push notifications
+
+How it works:
+- The app uses `@capacitor/push-notifications` (APNs). `AppDelegate` passes the device token to the plugin, and
+  `src/lib/nativePush.ts` saves it with `save_apns_token`. That row lands in `shared.push_subscriptions` with shell `ios`.
+- `send-push` sends every in-app notification to those rows through APNs (`Solo-Code/supabase/functions/_shared/apns.ts`).
+- The settings switch and the studio nudge work as on the web, because `pushNotifications.ts` routes to `nativePush.ts`.
+- Tapping a notification opens its page in the app.
+
+One-time setup (owner, after the Apple account is active):
+
+1. Apple Developer → Keys → **+** → enable **Apple Push Notifications service (APNs)** → download `AuthKey_XXXXXXXXXX.p8`
+   (once only). Note the Key ID and the Team ID (top right of the developer site).
+2. Supabase → Edge Functions → Secrets: `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_PRIVATE_KEY` (full contents of the `.p8`).
+3. Apply `Solo-Code/supabase/migrations/20261118120000_ios_push_tokens.sql`.
+4. Deploy `send-push` from `Solo-Code/` (`npx supabase functions deploy send-push`), not from the repo root.
+
+Until the secrets exist, `send-push` skips iOS devices and web push works as before.
+
 ## Before sending to App Review
 
-- Guideline 4.2 (minimum functionality): Apple can reject an app that only wraps a website. This build adds native
-  safe-area theming, swipe back, pull to refresh and an offline page. Plan push notifications (APNs plus a native push
-  plugin, since Web Push does not work in a WebView) as the next native feature before the first review.
-- Sign in with Apple is not needed: the app shows no third-party sign-in (`SocialButtons` hides them in WebViews).
-- In-app purchase is not needed: the app sells nothing (shop, donate and Founding payments are hidden by `isNativeApp()`).
-- Fill `review-notes.md`, `app-privacy.md` and `app-store-listing.md`, and check them against the live app.
-  Apple treats wrong privacy answers as a violation.
+All three review documents are filled in. Check them against the live app before submitting:
+- `review-notes.md`: paste into App Review Information.
+- `app-privacy.md`: the App Privacy answers.
+- `app-store-listing.md`: listing text and screenshot sizes.
+
+| Guideline | Status |
+|---|---|
+| 4.2 Minimum functionality | Covered by native features: push notifications, share/print/save sheets, camera capture, swipe back, pull to refresh, safe-area theming, offline page |
+| 2.3.10 Other platforms | The `/learn` store badges and the Settings "download the app" panel are hidden in the app (`isNativeApp()`) |
+| 3.1.1 Payments | Shop, donate, Founding, `/upgrade`, subscriptions, So1o links and the In-House upsell are all hidden in the app |
+| 4.8 Sign in with Apple | Not needed: there is no third-party sign-in in the app (`SocialButtons` returns null in WebViews) |
+| 1.2 User content | Report and block on projects, comments, profiles and chat. Reports alert the admin LINE group. Terms section 4 promises 24-hour handling, so the owner must act on reports within a day |
+| 5.1.1(v) Account deletion | Settings → My data → Delete account, behind a password check. A team member approves it, it hides the account, and the account is purged after 30 days (the timeline is shown). See the risk below |
+| 2.1 Completeness | Demo account `tester@samecor.com`. Downloads, print and share work in the app |
+| 5.1.2 Privacy | The privacy policy names the iOS app, its permission prompts, the APNs token and Apple |
+
+Remaining risks:
+- **Deletion needs manual approval.** Apple accepts a request flow that states its timeline. Some reviewers still ask for deletion
+  that starts without a manual step, so approve delete requests quickly, and consider auto-approving self-serve requests.
+- **Report handling.** Answer reports from the LINE admin alerts within 24 hours, as the Terms now say.
+- **Deployment.** The web fixes only reach the app once `main` is deployed to samecor.com. Submit only after that deploy.
 
 ## Later
 
 | Step | Needs |
 |---|---|
 | `apple-app-site-association` (open samecor.com links in the app) | Team ID from the Apple account |
-| Push notifications | APNs key, a native push plugin, and the web side to register the device token |
-| Downloads, share sheet, print inside the app | `@capacitor/filesystem` and `@capacitor/share`, the same gap as Android |
 
 ## Files in this folder
 
 - `app-privacy.md`: draft answers for App Store Connect → App Privacy.
 - `app-store-listing.md`: listing text (Thai and English) and screenshot sizes.
-- `review-notes.md`: what to tell App Review, including a test account placeholder.
+- `review-notes.md`: what to tell App Review, with the demo account.

@@ -46,7 +46,9 @@ to the project's Sources build phase.
 | **Swipe back** | `allowsBackForwardNavigationGestures = true` (works with single-page-app history) | iPhone has no back button. Pages without an on-screen back link become dead ends |
 | **Downloads** | Blob/data links, `download` links and `Content-Disposition: attachment` become a `WKDownload` saved to a temp file, then the share sheet opens (Save to Files, Save Image, AirDrop) | The button does nothing. App Review reports it as a broken feature (2.1) |
 | **New windows on the same site** | `target="_blank"` / `window.open` to the app's own host load in the app. Other hosts still open in Safari (Capacitor) | Capacitor sends every new window to Safari, including your own pages |
-| **Print** | `window.print` → `UIPrintInteractionController` with the web view's print formatter | `window.print()` does nothing in WKWebView |
+| **Print** | `window.print` → `UIPrintInteractionController` with the web view's print formatter. When the sheet closes, the shell fires `afterprint` | `window.print()` does nothing in WKWebView |
+| **Print from an iframe** (web side) | WKWebView cannot print an iframe. In the app, put the paper in the page with print-only CSS that hides everything else, call `window.print()`, and clean up on `afterprint` (SAMECOR: `src/lib/documents/printDocument.ts` → `printInPage`) | Print buttons for quotes, invoices and receipts do nothing |
+| **Blob downloads** (web side) | Revoke blob URLs after about 60 s, not right after `click()` (SAMECOR: `src/lib/downloadBlob.ts`). WebKit reads the blob after the handler returns | The download fails silently, and the share sheet never opens |
 | **Share** | If WebKit has no `navigator.share`, a promise-based shim opens `UIActivityViewController` | Share buttons throw or do nothing |
 | **App version** | `window.<Shell>.getAppVersion()` → `"1.0.0 (42)"` for the Settings page | No way to tell which build a tester runs |
 
@@ -58,6 +60,25 @@ Capacitor facts the code relies on (Capacitor 8):
 - The `WKScriptMessageHandler` goes through a weak proxy, because the content controller retains its handlers.
 
 **Per app:** theme colours (`ShellTheme`), the JS bridge name (`SamecorShell`), the message handler name, and the user-agent marker in `capacitor.config.json` → `ios.appendUserAgent`.
+
+### Push notifications (APNs)
+
+Web Push does not exist in WKWebView. Use `@capacitor/push-notifications`. On a remote `server.url` page, the bridge
+injects the plugin as `window.Capacitor.Plugins.PushNotifications`, so the website needs no Capacitor npm package.
+
+| Piece | SAMECOR file |
+|---|---|
+| Plugin in the shell. Keep it off Android with `"android": { "includePlugins": [] }`; otherwise Android needs Firebase | `capacitor-shell/package.json`, `capacitor.config.json` (`plugins.PushNotifications.presentationOptions` shows alerts in the foreground) |
+| Token hand-off: `didRegisterForRemoteNotificationsWithDeviceToken` → `.capacitorDidRegisterForRemoteNotifications` | `ios/App/App/AppDelegate.swift` |
+| `aps-environment = production` (CI builds only use App Store profiles) and `CODE_SIGN_ENTITLEMENTS` in both configs | `ios/App/App/App.entitlements`, `project.pbxproj` |
+| Web: check, request, register, save the token. Tapping a notification calls `history.pushState` and then dispatches `popstate`, so the router moves without a reload. The token is refreshed on sign-in | `src/lib/nativePush.ts`, wired into `src/lib/pushNotifications.ts` |
+| DB: the token is stored as `endpoint = 'apns:<hex>'`, shell `ios`, in the existing push table | `Solo-Code/supabase/migrations/20261118120000_ios_push_tokens.sql` |
+| Sender: ES256 JWT from the `.p8` via WebCrypto, HTTP/2 POST to `api.push.apple.com/3/device/<token>`. Delete the row on 410 / BadDeviceToken | `Solo-Code/supabase/functions/_shared/apns.ts`, `send-push/index.ts` |
+
+Owner, once per Apple team:
+- Tick **Push Notifications** on the App ID before the first build. Otherwise signing fails, because the entitlement asks for push.
+- Create one **APNs key** (Keys → APNs). It works for every app of the team.
+- Set `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_PRIVATE_KEY`, plus `APNS_TOPIC` = the bundle id when it is not `com.samecor.app`.
 
 ## 4. Info.plist and privacy
 
@@ -79,14 +100,14 @@ Write purpose strings as plain sentences that say what the user gets: "uses the 
 
 | Guideline | Rule | SAMECOR status |
 |---|---|---|
-| 4.2 Minimum functionality | Must be more than a website. List the real native features in the review notes | Sections 3 and 4 help. **Push notifications are the next feature to add**. Picker's native Bluetooth already counts |
-| 2.3.10 | No mention of Android, Google Play or "download the app" inside the iOS app | Check every banner and footer that switches on "native app" |
-| 3.1.1 / 3.1.3 | Digital goods and subscriptions need Apple In-App Purchase. No prices, upgrade buttons or "pay on our website" links for them | Hide them when `isIosApp()` / `isNativeApp()` is true. Physical goods may use other payments |
+| 4.2 Minimum functionality | Must be more than a website. List the real native features in the review notes | Push, share, print and save sheets, camera, swipe back, pull to refresh, safe-area theming. Picker's native Bluetooth counts too |
+| 2.3.10 | No mention of Android, Google Play or "download the app" inside the iOS app | Store badges on `/learn` and the "download the app" panel are hidden with `isNativeApp()`. Search the site for `Google Play`, `Play Store` and badge images |
+| 3.1.1 / 3.1.3 | Digital goods and subscriptions need Apple In-App Purchase. No prices, upgrade buttons or "pay on our website" links for them | Hide them when `isNativeApp()` is true: routes (`/upgrade`, checkout), env-flag features (So1o links, Pro and In-House upsells) and menu items. Do not rely on env flags being off in production. Physical goods may use other payments |
 | 4.8 Sign in with Apple | Required only if the app offers Google, LINE, Facebook or other third-party login | Hide third-party login in the WebView (Google blocks it there anyway), or add Sign in with Apple |
-| 5.1.1(v) | Account deletion starts inside the app | Settings → Privacy → delete account |
-| 1.2 User content | Report content, block users, act on reports, publish contact info | Report and block in menus. Name where reports are handled in the review notes |
-| 2.1 Completeness | Demo account in App Review Information. Every visible button works | Downloads, print and share are fixed in section 3. Remove anything still unfinished |
-| 5.1.2 / App Privacy | App Store Connect privacy answers must match what the site collects (Sentry, analytics, account data) | Answer from the real data flows, not guesses |
+| 5.1.1(v) | Account deletion starts inside the app, and the app says how long it takes | Settings → My data → delete, behind a password check, with dates shown. A flow that needs manual approval is accepted but is a risk; approve requests fast |
+| 1.2 User content | Report content, block users, act on reports within 24 h, publish contact info, Terms with zero tolerance | Report and block in every "…" menu. Reports alert the admin LINE group. The 24-hour promise is in Terms section 4 |
+| 2.1 Completeness | Demo account in App Review Information. Every visible button works | `tester@samecor.com`, password sign-in. Don't approve its delete request during review |
+| 5.1.2 / App Privacy | App Store Connect privacy answers and the privacy policy must match what the app does (Sentry, analytics, account data, push token) | Privacy policy names the iOS app, its permission prompts, the APNs token and Apple. `app-privacy.md` lists the answers |
 
 ## 6. Owner steps (once per app)
 
@@ -122,3 +143,9 @@ strings, iPhone only, portrait only). To match this pattern:
    Its current prompts are Thai only, which App Review accepts, but English helps the reviewer.
 7. Review notes: list native Bluetooth (pairing with the Picker device) as the main native feature (4.2). Give App Review a way
    to see the app work without the hardware, such as a demo mode or a video link in the notes. Otherwise expect a 2.1 rejection.
+8. Push is optional for Picker v1. Its iOS app has no sign-in yet, so there is no user to send to, and Bluetooth already
+   carries the 4.2 argument. If sign-in comes later, follow the push section in section 3, with `APNS_TOPIC=com.samecor.picker`.
+9. Run the web-side checks from section 3 against picker.samecor.com:
+   - Blob downloads must revoke late, for example on palette export.
+   - Any print must come from the main page, not an iframe.
+   - No store badges, prices or "download the app" text may show in the app.

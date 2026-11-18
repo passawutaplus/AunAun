@@ -20,12 +20,13 @@ mapping is below. Wrong answers are a policy violation; re-check against the cod
 | Usage data → Search history | Yes | Yes | Analytics, App functionality | recent searches |
 | Diagnostics → Crash data | Yes | No | Analytics | Sentry; error message, stack, page, device type |
 | Diagnostics → Other diagnostic data | Yes | No | Analytics | in-app feedback diagnostics |
+| Identifiers → Device ID | Yes | Yes | App functionality | APNs push token, only after the user turns notifications on (`save_apns_token`) |
 
 **Not collected in the app:** identity documents, phone number, bank details (KYC is hidden in the app), location, contacts, health data, purchases.
 
 ## To confirm before submitting
 
 1. Whether analytics events are linked to the user id or anonymous (changes "Linked to the user" on the usage rows).
-2. If push notifications are added for iOS, add Identifiers → Device ID (APNs token), purpose App functionality.
-3. If Sign in with Apple or Google sign-in is turned on, add what that provider returns.
-4. Privacy policy URL: https://samecor.com/legal/privacy. Check it mentions the iOS app and the list above.
+2. If Sign in with Apple or Google sign-in is turned on, add what that provider returns.
+3. Privacy policy URL: https://samecor.com/legal/privacy. It covers the iOS app since PR #156: platforms, camera, microphone and
+   photo-save prompts, the APNs token, Apple as a push provider and App Store distributor. Check it is deployed before submitting.

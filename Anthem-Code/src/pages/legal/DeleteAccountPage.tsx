@@ -5,7 +5,7 @@ import { LEGAL_APP_NAME, LEGAL_DPO_EMAIL } from "@/lib/legalConfig";
 import { useAuth } from "@/hooks/useAuth";
 
 /**
- * Public account-deletion page — the URL given to Google Play (Data safety → account deletion).
+ * Public account-deletion page — the URL given to Google Play (Data safety → account deletion) and App Store review.
  * Must work signed out, name the app, and say what is deleted and what is kept.
  */
 const DeleteAccountPage = () => {
@@ -19,10 +19,10 @@ const DeleteAccountPage = () => {
   return (
     <LegalLayout title={`ลบบัญชี ${LEGAL_APP_NAME} · Delete your ${LEGAL_APP_NAME} account`}>
       <p>
-        หน้านี้อธิบายวิธีลบบัญชี {LEGAL_APP_NAME} ทั้งบนเว็บ samecor.com และแอป {LEGAL_APP_NAME} บน Android
+        หน้านี้อธิบายวิธีลบบัญชี {LEGAL_APP_NAME} ทั้งบนเว็บ samecor.com และแอป {LEGAL_APP_NAME} บน Android และ iOS
       </p>
       <p className="text-sm text-muted-foreground">
-        How to delete your {LEGAL_APP_NAME} account, for both samecor.com and the {LEGAL_APP_NAME} Android app.
+        How to delete your {LEGAL_APP_NAME} account, for samecor.com and the {LEGAL_APP_NAME} Android and iOS apps.
       </p>
 
       <div className="not-prose my-6 flex flex-wrap gap-2">

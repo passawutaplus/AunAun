@@ -55,7 +55,10 @@ final class ShellWebFeatures: NSObject {
         let controller = UIPrintInteractionController.shared
         controller.printInfo = info
         controller.printFormatter = webView.viewPrintFormatter()
-        controller.present(animated: true)
+        // Pages that set up print-only content (src/lib/documents/printDocument.ts) clean up on afterprint.
+        controller.present(animated: true) { [weak webView] _, _, _ in
+            webView?.evaluateJavaScript("window.dispatchEvent(new Event('afterprint'))")
+        }
     }
 
     func share(title: String, text: String, url: String, completion: @escaping (Bool) -> Void) {

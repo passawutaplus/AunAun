@@ -2,9 +2,11 @@
  * Phone / browser push notifications (Web Push). The service worker (public/sw.js) shows them;
  * the send-push edge function (Solo-Code/supabase/functions/send-push) sends one for every
  * in-app notification once this device is registered with save_push_subscription.
+ * Inside the iOS app the same calls go to APNs instead (nativePush.ts).
  */
 import { supabase } from "@/integrations/supabase/client";
 import { isAndroidApp, isStandaloneDisplay } from "@/lib/appShell";
+import { disableNativePush, enableNativePush, getNativePushState, hasNativePush } from "@/lib/nativePush";
 
 export type PushState = "unsupported" | "unconfigured" | "denied" | "off" | "on";
 
@@ -31,6 +33,7 @@ async function registration(): Promise<ServiceWorkerRegistration | null> {
 }
 
 export async function getPushState(): Promise<PushState> {
+  if (hasNativePush()) return getNativePushState();
   if (!isSupported()) return "unsupported";
   if (!vapidPublicKey()) return "unconfigured";
   if (Notification.permission === "denied") return "denied";
@@ -41,6 +44,7 @@ export async function getPushState(): Promise<PushState> {
 
 /** Call from a click handler — the permission prompt needs a user gesture. */
 export async function enablePush(): Promise<PushState> {
+  if (hasNativePush()) return enableNativePush();
   if (!isSupported()) return "unsupported";
   const key = vapidPublicKey();
   if (!key) return "unconfigured";
@@ -73,6 +77,7 @@ export async function enablePush(): Promise<PushState> {
 }
 
 export async function disablePush(): Promise<PushState> {
+  if (hasNativePush()) return disableNativePush();
   const reg = await registration();
   const sub = await reg?.pushManager.getSubscription();
   if (sub) {
