@@ -36,6 +36,7 @@
 		958DCC722DB07C7200EA8C5F /* debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = debug.xcconfig; path = ../debug.xcconfig; sourceTree = SOURCE_ROOT; };
 		5A3C0E1F2B00000000000002 /* ShellViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellViewController.swift; sourceTree = "<group>"; };
 		5A3C0E1F2B00000000000005 /* th */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = th; path = th.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		5A3C0E1F2B0000000000000B /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		5A3C0E1F2B00000000000007 /* ShellWebFeatures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellWebFeatures.swift; sourceTree = "<group>"; };
 		5A3C0E1F2B00000000000009 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		5A3C0E1F2B0000000000000A /* App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = App.entitlements; sourceTree = "<group>"; };
@@ -205,6 +206,7 @@
 			isa = PBXVariantGroup;
 			children = (
 				5A3C0E1F2B00000000000005 /* th */,
+				5A3C0E1F2B0000000000000B /* en */,
 			);
 			name = InfoPlist.strings;
 			sourceTree = "<group>";

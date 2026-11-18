@@ -178,8 +178,8 @@ export function AccountPrivacySection({ embedded = false }: { embedded?: boolean
               {purgeDate
                 ? `บัญชีถูกซ่อนแล้ว จะลบถาวรวันที่ ${purgeDate}`
                 : pendingDelete
-                  ? `สถานะ: ${REQUEST_STATUS[pendingDelete.status] ?? pendingDelete.status}`
-                  : "ทีมตรวจคำขอ แล้วลบถาวรหลัง 30 วัน"}
+                  ? `สถานะ: ${REQUEST_STATUS[pendingDelete.status] ?? pendingDelete.status} · ทีมดำเนินการภายใน 7 วันทำการ`
+                  : "ทีมดำเนินการภายใน 7 วันทำการ แล้วลบถาวรหลัง 30 วัน"}
             </p>
           </div>
         </button>
@@ -282,7 +282,7 @@ export function AccountPrivacySection({ embedded = false }: { embedded?: boolean
               ขอลบบัญชี
             </DialogTitle>
             <DialogDescription className="text-left">
-              เมื่อทีมอนุมัติ โปรไฟล์และผลงานจะถูกซ่อนทันที และลบถาวรหลัง 30 วัน ยกเลิกได้ก่อนถึงวันนั้น
+              ทีมดำเนินการภายใน 7 วันทำการ: ซ่อนโปรไฟล์และผลงานทันที แล้วลบถาวรหลัง 30 วัน ยกเลิกได้ก่อนถึงวันนั้น
               ข้อความแชตที่ส่งถึงคนอื่นยังอยู่แต่ไม่แสดงชื่อคุณ บันทึกการเงินและภาษีเก็บไว้ตามที่กฎหมายกำหนด
             </DialogDescription>
           </DialogHeader>

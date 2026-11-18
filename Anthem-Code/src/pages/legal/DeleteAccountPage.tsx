@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { storePlatformsLabel } from "@/lib/appShell";
 import LegalLayout from "@/components/LegalLayout";
 import { Button } from "@/components/ui/button";
 import { LEGAL_APP_NAME, LEGAL_DPO_EMAIL } from "@/lib/legalConfig";
@@ -19,10 +20,10 @@ const DeleteAccountPage = () => {
   return (
     <LegalLayout title={`ลบบัญชี ${LEGAL_APP_NAME} · Delete your ${LEGAL_APP_NAME} account`}>
       <p>
-        หน้านี้อธิบายวิธีลบบัญชี {LEGAL_APP_NAME} ทั้งบนเว็บ samecor.com และแอป {LEGAL_APP_NAME} บน Android และ iOS
+        หน้านี้อธิบายวิธีลบบัญชี {LEGAL_APP_NAME} ทั้งบนเว็บ samecor.com และแอป {LEGAL_APP_NAME} บน {storePlatformsLabel("th")}
       </p>
       <p className="text-sm text-muted-foreground">
-        How to delete your {LEGAL_APP_NAME} account, for samecor.com and the {LEGAL_APP_NAME} Android and iOS apps.
+        How to delete your {LEGAL_APP_NAME} account, for samecor.com and the {LEGAL_APP_NAME} {storePlatformsLabel("en")} app.
       </p>
 
       <div className="not-prose my-6 flex flex-wrap gap-2">

@@ -19,8 +19,10 @@ final class ShellViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        let dark = traitCollection.userInterfaceStyle == .dark
-        applyTheme(color: dark ? ShellTheme.dark : ShellTheme.light, dark: dark)
+        // Until the page reports its theme, follow the system appearance. A dynamic colour is right even when
+        // traitCollection is not settled yet in viewDidLoad (iOS 17+).
+        view.backgroundColor = UIColor { $0.userInterfaceStyle == .dark ? ShellTheme.dark : ShellTheme.light }
+        barStyle = .default
         bridgeController.onThemeChange = { [weak self] color, dark in
             self?.applyTheme(color: color, dark: dark)
         }

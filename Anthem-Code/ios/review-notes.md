@@ -3,8 +3,8 @@
 Paste the block below into App Store Connect → App Review Information → Notes. The demo account's email and password go
 in the Sign-in fields there (the owner types the password; it is never written in this repo).
 
-**Demo account:** `tester@samecor.com`. It is the account used for Play testing: email confirmed, profile complete,
-password sign-in. During review, do not approve a delete request from this account in admin → privacy requests. A reviewer
+**Demo account (not for pasting):** `tester@samecor.com`. Email confirmed, profile complete with a published project,
+password sign-in, not an admin. Before submitting, give it at least one chat conversation so the reviewer can try chat. During review, do not approve a delete request from this account in admin → privacy requests. A reviewer
 may test deletion, and approving it would hide the demo account.
 
 ---
@@ -23,13 +23,17 @@ User-generated content (1.2):
 - Report: every project, comment, profile and chat message has Report (รายงาน) in its "…" menu. Reports reach our moderation team
   immediately (admin alerts) and are handled within 24 hours.
 - Block: from the same menus, or "block too" inside the report dialog. Unblock in Settings (ตั้งค่า) → Chat (แชท).
+- Filtering: posts, comments and community text go through a profanity and spam filter before they are shown.
 - Terms (accepted at sign-up) forbid objectionable content and abusive users: https://samecor.com/legal/terms
 - Contact: support@samecor.com
 
-Account deletion (5.1.1(v)): Settings (ตั้งค่า) → My data (ข้อมูลของฉัน) → Delete account (ขอลบบัญชี) → confirm with the account password. The account is
-hidden as soon as the request is approved and permanently deleted after 30 days; the screen shows the dates. A public
-page also explains it: https://samecor.com/legal/delete-account
+Account deletion (5.1.1(v)): Settings (ตั้งค่า) → My data (ข้อมูลของฉัน) → Delete account (ขอลบบัญชี) → confirm with the account password. The team processes the request within 7 business days (the screen says so):
+the profile and work are hidden at once, the account is permanently deleted 30 days later, and the user can cancel
+until then (the dates appear on the same screen). A public page also explains it: https://samecor.com/legal/delete-account
 
-Payments: none. The app sells no digital goods or subscriptions and shows no prices or external purchase links.
+Payments: the app sells no digital goods, subscriptions or in-app content, and has no external purchase links.
+Creators can send a client a quote or invoice in chat for freelance work (design, illustration, photography) that is
+done and paid outside the app, between the two people (guideline 3.1.3(e), goods and services consumed outside the app).
+SAMECOR does not take a cut and processes no payment.
 
 Privacy policy: https://samecor.com/legal/privacy

@@ -14,17 +14,20 @@ Primary language: Thai, with English. Limits are Apple's as remembered; confirm 
 | Marketing URL | https://samecor.com |
 | Privacy policy URL | https://samecor.com/legal/privacy |
 | Contact email | support@samecor.com |
-| Age rating | Answer the questionnaire; the app has user-generated content with report and block |
+| Age rating | Answer the questionnaire honestly: user-generated content and chat with strangers, moderated with report and block. Expect 13+ or higher; keep it in line with the Play rating |
 
 ## Promotional text (≤170, editable without a new build)
 
-- **TH:** โชว์ผลงาน ค้นพบครีเอเตอร์ และคุยกันได้ทันที ลงผลงานชิ้นแรกได้ฟรีวันนี้
-- **EN:** Show your work, find creators and chat. Post your first project free today.
+- **TH:** โชว์ผลงาน ค้นพบครีเอเตอร์ และคุยกันได้ทันที
+- **EN:** Show your work, find creators and chat.
+
+(No "free today": it reads as if later posts cost money, and the app has no purchases.)
 
 ## Description
 
 Use the full Thai and English descriptions from `../android/play-store-listing.md` (App Store allows up to 4000 characters).
-Keep to what the iOS app really does at launch. Do not mention features that are off in the app.
+Keep to what the iOS app really does at launch. Do not mention features that are off in the app, and remove every
+mention of Android, Google Play, "beta", "coming soon" or prices from the copied text (App Review 2.3.10, 2.3.1).
 
 ## Keywords (≤100 characters, comma separated, no spaces)
 

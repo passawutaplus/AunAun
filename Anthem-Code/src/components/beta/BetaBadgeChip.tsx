@@ -1,5 +1,6 @@
 import { FlaskConical, Sparkles } from "lucide-react";
 import { useBetaBadge } from "@/hooks/useBetaBadge";
+import { isIosApp } from "@/lib/appShell";
 import { betaBadgeLabel } from "@/lib/betaBadge";
 import { cn } from "@/lib/utils";
 
@@ -7,7 +8,8 @@ import { cn } from "@/lib/utils";
 export default function BetaBadgeChip({ userId, className }: { userId: string | null | undefined; className?: string }) {
   const { data } = useBetaBadge(userId);
   const label = betaBadgeLabel(data);
-  if (!label) return null;
+  // App Review rejects "beta" wording inside a store build (2.2): the badge stays on the web and Android.
+  if (!label || isIosApp()) return null;
   const Icon = data?.co_creator ? Sparkles : FlaskConical;
   return (
     <span

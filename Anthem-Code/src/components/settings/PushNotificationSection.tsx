@@ -8,6 +8,7 @@ import {
   disablePush,
   enablePush,
   getPushState,
+  pushBlockedMessage,
   getRecommendationPushes,
   setRecommendationPushes,
   type PushState,
@@ -35,7 +36,7 @@ function usePushState() {
       const next = on ? await enablePush() : await disablePush();
       setState(next);
       if (on && next === "on") toast.success("เปิดแจ้งเตือนแล้ว");
-      if (on && next === "denied") toast.error("เบราว์เซอร์บล็อกการแจ้งเตือนไว้ — เปิดได้ในการตั้งค่าของเบราว์เซอร์/แอป");
+      if (on && next === "denied") toast.error(pushBlockedMessage());
     } catch (err) {
       toast.error(userFacingError(err, "เปิดแจ้งเตือนไม่สำเร็จ"));
     } finally {
@@ -98,7 +99,7 @@ export function PushNotificationSection() {
       title="แจ้งเตือนบนอุปกรณ์นี้"
       description={
         state === "denied"
-          ? "ถูกบล็อกไว้ — เปิดสิทธิ์การแจ้งเตือนของ SAMECOR ในการตั้งค่าเบราว์เซอร์หรือมือถือก่อน"
+          ? pushBlockedMessage()
           : PITCH
       }
     >

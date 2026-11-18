@@ -1,0 +1,5 @@
+/* English permission prompts (same as the defaults in Info.plist), so English users never fall back to Thai. */
+"NSCameraUsageDescription" = "SAMECOR uses the camera when you take a photo or video to post or to use as your profile picture.";
+"NSMicrophoneUsageDescription" = "SAMECOR uses the microphone when you record a video to post.";
+"NSPhotoLibraryAddUsageDescription" = "SAMECOR saves an image to your photo library when you choose to save it.";
+"NSLocationWhenInUseUsageDescription" = "SAMECOR uses your location as the starting point of the route to an event venue. It is not saved on our servers.";

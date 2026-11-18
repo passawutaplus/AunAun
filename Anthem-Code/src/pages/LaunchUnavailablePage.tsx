@@ -1,4 +1,5 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, Navigate, useLocation } from "react-router-dom";
+import { isNativeApp } from "@/lib/appShell";
 import { Home, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LAUNCH_COMING_SOON_TH } from "@/lib/aplus1Launch";
@@ -6,6 +7,8 @@ import { LAUNCH_COMING_SOON_TH } from "@/lib/aplus1Launch";
 /** Shown when a route exists but is outside the launch-minimal allowlist. */
 export default function LaunchUnavailablePage() {
   const { pathname } = useLocation();
+  // App Review flags "not available yet" screens (2.1); the app simply never shows hidden features.
+  if (isNativeApp()) return <Navigate to="/" replace />;
 
   return (
     <main className="min-h-[70vh] flex items-center justify-center px-4 py-16">

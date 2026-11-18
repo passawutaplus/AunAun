@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { isIosApp } from "@/lib/appShell";
 import { useLocation } from "react-router-dom";
 import { Check, Loader2, Share2, Star, X } from "lucide-react";
 import { toast } from "sonner";
@@ -56,7 +57,9 @@ export default function RatingPrompt() {
   }, [user]);
 
   const check = useCallback(() => {
-    if (!user || moment || composerOpen || !isPromptRoute(pathname)) return;
+    // A home-made star rating looks like an App Store review prompt, which iOS apps may only show via
+    // SKStoreReviewController (App Review 5.6.1), so the iOS app never shows it.
+    if (isIosApp() || !user || moment || composerOpen || !isPromptRoute(pathname)) return;
     const next = pendingRatingMoment();
     if (!next) return;
     markRatingShown();

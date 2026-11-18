@@ -8,7 +8,14 @@ vi.mock("@/integrations/supabase/client", () => ({
   },
 }));
 
-import { isLaunchHiddenPath, isSoloEcosystemEnabled, isUpgradePath } from "../aplus1Launch";
+import {
+  isAplus1PaymentsEnabled,
+  isBetaFeedbackEnabled,
+  isLaunchHiddenPath,
+  isSoloEcosystemEnabled,
+  isUpgradePath,
+} from "../aplus1Launch";
+import { storePlatforms, storePlatformsLabel } from "../appShell";
 import { downloadBlob, BLOB_URL_LIFETIME_MS } from "../downloadBlob";
 import { disableNativePush, enableNativePush, getNativePushState, hasNativePush } from "../nativePush";
 import { canShowStudioQuoteUpsell } from "../studioQuotationHandoff";
@@ -59,6 +66,30 @@ describe("iOS app: App Review rules", () => {
     withUa(SAFARI_UA);
     expect(isLaunchHiddenPath("/upgrade")).toBe(false);
     expect(canShowStudioQuoteUpsell("free", "owner")).toBe(true);
+  });
+
+  it("hides beta wording, payments and referral rewards in the iOS app only", () => {
+    vi.stubEnv("VITE_APLUS1_FULL_PRODUCT", "true");
+    vi.stubEnv("VITE_APLUS1_PAYMENTS_ENABLED", "true");
+    withUa(IOS_UA);
+    expect(isBetaFeedbackEnabled()).toBe(false);
+    expect(isAplus1PaymentsEnabled()).toBe(false);
+    expect(isLaunchHiddenPath("/referrals")).toBe(true);
+
+    vi.restoreAllMocks();
+    withUa(SAFARI_UA);
+    expect(isBetaFeedbackEnabled()).toBe(true);
+    expect(isAplus1PaymentsEnabled()).toBe(true);
+  });
+
+  it("names only the current platform's store in legal copy", () => {
+    withUa(IOS_UA);
+    expect(storePlatforms()).toEqual({ android: false, ios: true });
+    expect(storePlatformsLabel("en")).toBe("iOS");
+    vi.restoreAllMocks();
+    withUa(SAFARI_UA);
+    expect(storePlatforms()).toEqual({ android: true, ios: true });
+    expect(storePlatformsLabel()).toBe("Android และ iOS");
   });
 
   describe("downloads", () => {

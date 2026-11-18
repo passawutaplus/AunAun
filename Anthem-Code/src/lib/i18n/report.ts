@@ -46,9 +46,9 @@ export const REPORT = {
   blockAsk: { th: "จะบล็อกด้วยไหม?", en: "Block this user too?", zh: "同时屏蔽该用户吗？" },
   alreadyBlocked: { th: "คุณบล็อกผู้ใช้นี้อยู่แล้ว", en: "You have already blocked this user", zh: "你已屏蔽该用户" },
   blockToo: {
-    th: "บล็อกผู้ใช้นี้ด้วย — จะส่งคำขอจ้างงานหรือคอลแลปหาคุณไม่ได้อีก จนกว่าคุณจะปลดบล็อกทีหลัง",
-    en: "Block this user too — they can't send you hire or collab requests until you unblock them",
-    zh: "同时屏蔽该用户 — 在你解除屏蔽之前，对方无法再向你发送雇佣或合作请求",
+    th: "บล็อกผู้ใช้นี้ด้วย — จะไม่เห็นผลงานและข้อความของกันและกัน และติดต่อกันไม่ได้ จนกว่าคุณจะปลดบล็อก",
+    en: "Block this user too — you won't see each other's work or messages and can't contact each other until you unblock them",
+    zh: "同时屏蔽该用户 — 在你解除屏蔽之前，你们互相看不到作品和消息，也无法联系",
   },
   blockConfirmTitle: { th: "บล็อก {name}?", en: "Block {name}?", zh: "屏蔽 {name}？" },
   blockConfirmBody: {

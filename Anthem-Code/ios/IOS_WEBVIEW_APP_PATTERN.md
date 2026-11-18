@@ -109,6 +109,26 @@ Write purpose strings as plain sentences that say what the user gets: "uses the 
 | 2.1 Completeness | Demo account in App Review Information. Every visible button works | `tester@samecor.com`, password sign-in. Don't approve its delete request during review |
 | 5.1.2 / App Privacy | App Store Connect privacy answers and the privacy policy must match what the app does (Sentry, analytics, account data, push token) | Privacy policy names the iOS app, its permission prompts, the APNs token and Apple. `app-privacy.md` lists the answers |
 
+### Second-pass checklist (found when SAMECOR was audited again)
+
+Search the website for each of these and gate it with `isIosApp()` / `isNativeApp()`:
+- **"Beta" wording**: feedback buttons, BETA chips, beta-tester badges and progress cards (2.2). In an App Store build nothing may say beta.
+- **Home-made star ratings** that look like an App Store review prompt (5.6.1). Hide them, or use `SKStoreReviewController`.
+- **OAuth buttons anywhere**, including "link Google / LINE account" in settings, not only on the sign-in page. They open
+  Safari and never come back (2.1), and showing Google login can raise the Sign in with Apple rule (4.8).
+- **"Coming soon" or "not available in this version" pages** (2.1). In the app, redirect to home instead.
+- **Payment promises** such as "paying through the app opens soon", wallets, referral rewards that can be cashed out,
+  and upgrade links. Gate them in the code itself, not only with env flags, since flags can be on in production (3.1.1).
+- **Other stores in legal pages**: render only the current platform's store (SAMECOR: `storePlatforms()` in `appShell.ts`).
+- **Permission and error copy** that says "browser". In the app, point to iPhone Settings → app → Notifications.
+- **App Privacy answers** must cover analytics that load without consent (Vercel Analytics and Speed Insights), view
+  counts stored with the user id, optional phone numbers, and contact or financial details typed into documents.
+
+Before submitting:
+- **Deploy the website**, because the app only shows what samecor.com serves.
+- **Demo account** must be non-admin, with a published item and a chat thread. Never approve its delete request during review.
+- **Review notes**: explain any prices the reviewer can see (freelance quotes are 3.1.3(e)), and name the content filter.
+
 ## 6. Owner steps (once per app)
 
 1. Developer portal → Identifiers → register the bundle id **(per app)**.

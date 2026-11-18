@@ -1,4 +1,5 @@
 import LegalLayout from "@/components/LegalLayout";
+import { storePlatforms, storePlatformsLabel } from "@/lib/appShell";
 import FreeLaunchMoneyNotice from "@/components/legal/FreeLaunchMoneyNotice";
 import {
   ATTESTATION_BULLETS,
@@ -32,9 +33,9 @@ const TermsPage = () => (
     <h2>1. คำนิยาม</h2>
     <ul>
       <li>
-        <strong>แพลตฟอร์ม</strong> — เว็บ แอป {LEGAL_APP_NAME} บน Android และ iOS และบริการ {LEGAL_APP_NAME} ทั้งหมด
-        (การดาวน์โหลดแอปจาก Google Play อยู่ภายใต้ข้อกำหนดของ Google Play และการดาวน์โหลดจาก App Store
-        อยู่ภายใต้ข้อกำหนดของ Apple ด้วย Apple และ Google ไม่ใช่คู่สัญญาของข้อกำหนดนี้)
+        <strong>แพลตฟอร์ม</strong> — เว็บ แอป {LEGAL_APP_NAME} บน {storePlatformsLabel()} และบริการ {LEGAL_APP_NAME} ทั้งหมด
+        {storePlatforms().android && " (การดาวน์โหลดแอปจาก Google Play อยู่ภายใต้ข้อกำหนดของ Google Play ด้วย Google ไม่ใช่คู่สัญญาของข้อกำหนดนี้)"}
+        {storePlatforms().ios && " (การดาวน์โหลดแอปจาก App Store อยู่ภายใต้ข้อกำหนดของ Apple ด้วย Apple ไม่ใช่คู่สัญญาของข้อกำหนดนี้)"}
       </li>
       <li><strong>ผู้ใช้</strong> — บุคคลที่สมัครบัญชีหรือเข้าชมแบบไม่ลงทะเบียน</li>
       <li><strong>เนื้อหา</strong> — ผลงาน รูปภาพ ข้อความ วิดีโอ และข้อมูลที่ผู้ใช้อัปโหลด</li>

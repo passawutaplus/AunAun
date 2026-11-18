@@ -20,6 +20,8 @@ final class ShellWebFeatures: NSObject {
 
     /// Call from capacitorDidLoad, after Capacitor set its delegates and before the first page loads.
     func install(on webView: WKWebView, appURL: URL?, presenter: UIViewController) {
+        // Installing twice would make this object forward to itself forever.
+        guard !(webView.navigationDelegate is ShellWebFeatures) else { return }
         self.webView = webView
         self.presenter = presenter
         self.appURL = appURL

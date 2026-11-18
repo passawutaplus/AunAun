@@ -96,11 +96,23 @@ All three review documents are filled in. Check them against the live app before
 | 2.1 Completeness | Demo account `tester@samecor.com`. Downloads, print and share work in the app |
 | 5.1.2 Privacy | The privacy policy names the iOS app, its permission prompts, the APNs token and Apple |
 
+Also hidden in the iOS app after the second audit: beta wording and badges, the star-rating prompt, "link Google account",
+"coming soon" pages (they redirect home), "paying through SAMECOR soon" text, payments and referral rewards. Legal pages
+name only the current platform's store.
+
 Remaining risks:
-- **Deletion needs manual approval.** Apple accepts a request flow that states its timeline. Some reviewers still ask for deletion
-  that starts without a manual step, so approve delete requests quickly, and consider auto-approving self-serve requests.
+- **Deletion needs manual approval.** This was the owner's decision on 2026-11-02. The app now says the team acts within
+  7 business days. Apple accepts a request flow that states its timeline, but some reviewers still push back. Approve
+  delete requests quickly, and never approve one from the demo account during review.
 - **Report handling.** Answer reports from the LINE admin alerts within 24 hours, as the Terms now say.
-- **Deployment.** The web fixes only reach the app once `main` is deployed to samecor.com. Submit only after that deploy.
+- **Deployment.** The web fixes only reach the app once `main` is deployed to samecor.com. Submit only after that deploy,
+  after the push setup above, and after a TestFlight check on a real iPhone.
+- **Demo account.** Give `tester@samecor.com` a chat thread before submitting.
+- **Privacy policy section 2** still describes the retired So1o / Omise ecosystem and links to solofreelancer.com. Have the
+  owner update it, because a dead link or a retired service in the policy invites questions.
+- **Email links** (password reset) open in Safari. There are no universal links until `apple-app-site-association` is set up.
+  Sign-up uses a 6-digit code, so it stays in the app.
+- **4.2.** A short screen recording attached to the review notes (push arriving, share/save sheet, camera post) helps reviewers.
 
 ## Later
 

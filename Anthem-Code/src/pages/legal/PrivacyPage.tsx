@@ -1,4 +1,5 @@
 import LegalLayout from "@/components/LegalLayout";
+import { storePlatforms, storePlatformsLabel } from "@/lib/appShell";
 import FreeLaunchMoneyNotice from "@/components/legal/FreeLaunchMoneyNotice";
 import { LEGAL_APP_NAME, LEGAL_COMPANY_ADDRESS, LEGAL_COMPANY_NAME, LEGAL_COMPANY_TAX_ID, LEGAL_DPO_EMAIL, LEGAL_SOLO_NAME, LEGAL_SOLO_URL, LEGAL_WEBSITE } from "@/lib/legalConfig";
 
@@ -13,7 +14,7 @@ const PrivacyPage = () => (
       เราเขียนนโยบายนี้ให้อ่านเข้าใจง่าย — หากมีคำถาม ติดต่อ DPO ได้ที่ด้านล่าง
     </p>
     <p className="text-sm text-muted-foreground">
-      นโยบายนี้ใช้กับทั้งเว็บไซต์ {LEGAL_WEBSITE} และแอป {LEGAL_APP_NAME} บน Android และ iOS ซึ่งเปิดบริการเดียวกัน
+      นโยบายนี้ใช้กับทั้งเว็บไซต์ {LEGAL_WEBSITE} และแอป {LEGAL_APP_NAME} บน {storePlatformsLabel()} ซึ่งเปิดบริการเดียวกัน
       และเก็บข้อมูลชุดเดียวกัน
     </p>
     <FreeLaunchMoneyNotice scope="privacy" />
@@ -123,14 +124,16 @@ const PrivacyPage = () => (
         รายงานข้อผิดพลาดทางเทคนิค (ถ้าเปิดใช้) — ข้อความ error หน้าที่เกิดเหตุ และประเภทอุปกรณ์ เพื่อแก้บั๊ก
       </li>
     </ul>
-    <h3>3.4.1 แอป Android / iOS และการแชร์จากเครื่อง</h3>
+    <h3>3.4.1 แอปบนมือถือและการแชร์จากเครื่อง</h3>
     <ul>
-      <li>แอป Android ไม่ขอสิทธิ์เข้าถึงรายชื่อ ไมโครโฟน หรือคลังภาพทั้งหมด</li>
+      {storePlatforms().android && <li>แอป Android ไม่ขอสิทธิ์เข้าถึงรายชื่อ ไมโครโฟน หรือคลังภาพทั้งหมด</li>}
+      {storePlatforms().ios && (
       <li>
         แอป iOS ไม่ขอสิทธิ์เข้าถึงรายชื่อหรือคลังภาพทั้งหมด (เลือกรูปผ่านตัวเลือกรูปของระบบ)
         และขอสิทธิ์เฉพาะตอนที่คุณใช้งาน: กล้องเมื่อถ่ายรูปหรือวิดีโอ ไมโครโฟนเมื่ออัดวิดีโอ
         และการบันทึกลงคลังภาพเมื่อคุณกดบันทึกรูปเอง ทั้งหมดใช้ในเครื่องจนกว่าคุณจะกดโพสต์
       </li>
+      )}
       <li>
         ตำแหน่ง: ขอเฉพาะเมื่อคุณกด “เริ่มจากตำแหน่งปัจจุบัน” ในเส้นทางไปงาน Exhibition และใช้ขณะเปิดแอปเท่านั้น
         จุดเริ่มต้นที่เลือก (ตำแหน่งปัจจุบัน บ้าน ที่ทำงาน หรือสถานที่ที่ค้นหา) เก็บไว้ในเครื่องของคุณ ไม่ส่งถึง {LEGAL_APP_NAME}{" "}
@@ -267,8 +270,8 @@ const PrivacyPage = () => (
         <strong>Google Analytics 4</strong> — สถิติการใช้งานแบบรวม โหลดเฉพาะเมื่อคุณยินยอมคุกกี้วิเคราะห์
       </li>
       <li><strong>Sentry</strong> — รายงานข้อผิดพลาดทางเทคนิค (เมื่อเปิดใช้)</li>
-      <li><strong>Google Play</strong> — เมื่อคุณติดตั้งแอป Android (เป็นไปตามนโยบายของ Google)</li>
-      <li><strong>Apple App Store</strong> — เมื่อคุณติดตั้งแอป iOS (เป็นไปตามนโยบายของ Apple)</li>
+      {storePlatforms().android && <li><strong>Google Play</strong> — เมื่อคุณติดตั้งแอป Android (เป็นไปตามนโยบายของ Google)</li>}
+      {storePlatforms().ios && <li><strong>Apple App Store</strong> — เมื่อคุณติดตั้งแอป iOS (เป็นไปตามนโยบายของ Apple)</li>}
       <li><strong>ผู้ให้บริการ AI</strong> — เฉพาะเมื่อคุณใช้ฟีเจอร์ร่างสัญญา/แนะนำผลงาน (ส่งเฉพาะข้อมูลที่จำเป็น)</li>
     </ul>
     <p>เราไม่ขายข้อมูลส่วนบุคคลของคุณให้บุคคลที่สามเพื่อการตลาด</p>

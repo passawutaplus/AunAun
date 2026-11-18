@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { isWebViewApp } from "@/lib/appShell";
 import { PushNotificationSection } from "@/components/settings/PushNotificationSection";
 import { GetInTouchLink } from "@/components/settings/GetInTouchLink";
 import { AppVersionRow, CopyrightLine, SettingsLegalList } from "@/components/settings/SettingsLegalLinks";
@@ -347,7 +348,8 @@ const SettingsPage = () => {
             {panel === "account" ? (
               <div className="space-y-6">
                 {user ? <ChangePasswordSection user={user} /> : null}
-                {user ? <LinkedAccountsSection user={user} /> : null}
+                {/* OAuth cannot finish inside the app WebView (Google blocks it), so linking stays on the web. */}
+                {user && !isWebViewApp() ? <LinkedAccountsSection user={user} /> : null}
                 {user && isCommerceEnabled() ? (
                   <>
                     <AccountSecurityIntro showWithdrawPin />

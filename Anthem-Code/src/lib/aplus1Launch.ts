@@ -1,4 +1,4 @@
-import { isNativeApp } from "@/lib/appShell";
+import { isIosApp, isNativeApp } from "@/lib/appShell";
 import type { FeedMode } from "@/components/feed/FeedModeToggle";
 import { isFoundingPath } from "@/lib/founding/flags";
 import { isSupportPath } from "@/lib/support/flags";
@@ -35,6 +35,8 @@ export function isInspireEnabled(): boolean {
  * On by default; set VITE_SAMECOR_BETA_FEEDBACK=false (and redeploy) once the beta ends.
  */
 export function isBetaFeedbackEnabled(): boolean {
+  // The iOS app ships straight to the App Store, where "beta" wording is a rejection (2.2).
+  if (isIosApp()) return false;
   return import.meta.env.VITE_SAMECOR_BETA_FEEDBACK !== "false";
 }
 
@@ -196,6 +198,8 @@ export function isLaunchHiddenPath(pathname: string): boolean {
   if (isNativeApp() && isKycPath(pathname)) return true;
   // Paid plans are sold on the website only: App Store / Play rules forbid prices or "pay elsewhere" in the app.
   if (isNativeApp() && isUpgradePath(pathname)) return true;
+  // Referral rewards (PX that can be cashed out) are a payment feature the store apps must not offer.
+  if (isNativeApp() && (pathname === "/referrals" || pathname.startsWith("/referrals/"))) return true;
   if (isCommercePath(pathname)) return true;
   // Support Us (shop, donate, sponsor) stays closed until its own flag is on.
   if (isSupportPath(pathname)) return true;
@@ -253,7 +257,7 @@ export const APLUS1_SOLO_PAYMENTS_CUTOVER_TH =
 
 /** Omise hire/checkout UI — explicit opt-in (still blocked live without marketplace approval). */
 export function isAplus1PaymentsEnabled(): boolean {
-  if (isAplus1LaunchMinimal()) return false;
+  if (isAplus1LaunchMinimal() || isNativeApp()) return false;
   return import.meta.env.VITE_APLUS1_PAYMENTS_ENABLED === "true";
 }
 

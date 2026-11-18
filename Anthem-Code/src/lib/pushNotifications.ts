@@ -10,6 +10,13 @@ import { disableNativePush, enableNativePush, getNativePushState, hasNativePush 
 
 export type PushState = "unsupported" | "unconfigured" | "denied" | "off" | "on";
 
+/** What to tell the user when notifications are blocked, in the place they can turn them back on. */
+export function pushBlockedMessage(): string {
+  return hasNativePush()
+    ? "iPhone ปิดแจ้งเตือนของ SAMECOR ไว้ เปิดได้ที่ ตั้งค่า > SAMECOR > การแจ้งเตือน"
+    : "เบราว์เซอร์บล็อกการแจ้งเตือนไว้ เปิดได้ในการตั้งค่าของเบราว์เซอร์หรือมือถือ";
+}
+
 const vapidPublicKey = () => (import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined)?.trim() ?? "";
 
 function urlBase64ToUint8Array(base64: string): Uint8Array {

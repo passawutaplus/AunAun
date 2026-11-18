@@ -1,4 +1,5 @@
 import { useBetaBadge } from "@/hooks/useBetaBadge";
+import { isIosApp } from "@/lib/appShell";
 import { BETA_TIERS, betaBadgeLabel, nextBetaTier } from "@/lib/betaBadge";
 import { cn } from "@/lib/utils";
 
@@ -13,7 +14,8 @@ export default function BetaProgress({
   className?: string;
 }) {
   const { data } = useBetaBadge(userId);
-  if (!data) return null;
+  // No "beta" wording inside the iOS app (App Review 2.2).
+  if (!data || isIosApp()) return null;
   const next = nextBetaTier(data.count);
   const current = betaBadgeLabel(data);
   const prevMin = [...BETA_TIERS].reverse().find((t) => data.count >= t.min)?.min ?? 0;
