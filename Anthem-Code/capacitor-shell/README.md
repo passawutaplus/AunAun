@@ -1,4 +1,10 @@
-# SAMECOR Android (Capacitor WebView shell)
+# SAMECOR app shell (Capacitor: Android and iOS)
+
+**iOS:** the Xcode project is in `ios/`. It is built on Codemagic (`/codemagic.yaml`), not on this PC. See
+`../ios/README.md` for how the shell works, the one-time Codemagic setup and the TestFlight steps.
+After changing `capacitor.config.json` or `www/`, run `npm run sync:ios` and commit what it changes under `ios/`.
+
+## Android
 
 Loads https://samecor.com in a WebView. Replaces the Bubblewrap TWA in `../android`
 for Play closed testing (tester services would not accept a TWA). New Play app `com.samecor.app` (the old `com.samecor.twa` listing is abandoned). Same upload key.

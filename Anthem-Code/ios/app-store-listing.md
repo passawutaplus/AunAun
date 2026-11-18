@@ -38,11 +38,13 @@ Apple asks for at least one size per device family and scales to the rest. Confi
 |---|---|---|
 | iPhone 6.9" | 1320 × 2868 | required set |
 | iPhone 6.5" | 1284 × 2778 or 1242 × 2688 | if asked |
-| iPad 13" | 2064 × 2752 | only if the app supports iPad |
+| iPad 13" | 2064 × 2752 | not needed: the app is iPhone only (`TARGETED_DEVICE_FAMILY = 1`) |
 
 Reuse the 5 phone screens in `../android/store-screenshots` (1080 × 1920) as a base for the layouts, but capture from the iOS app on a real
 device or simulator: Apple rejects screenshots that show another platform's UI.
 
 ## Icon
 
-1024 × 1024 PNG, no transparency, no rounded corners (iOS rounds it). `../android/play-icon-512.png` is the base; export a full-bleed square.
+Done: `../capacitor-shell/ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png`. It is 1024 × 1024 RGB with no
+transparency and square corners (iOS rounds them). It uses the same mark and background (#F8F7F2) as the Android icon,
+rendered from `samecor. logo-04.svg`. App Store Connect takes the icon from the build, so there is nothing to upload.

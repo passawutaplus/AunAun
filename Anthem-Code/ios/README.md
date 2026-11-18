@@ -1,53 +1,75 @@
-# SAMECOR iOS app — preparation (nothing here has been built or submitted)
+# SAMECOR iOS app
 
-The iOS app is the same idea as the Android one: a Capacitor shell that loads https://samecor.com
-(`../capacitor-shell`). iOS apps cannot be built on Windows, and the Apple account is not set up yet, so this
-folder holds the decisions and drafts that do not need either.
+The iOS app is the same idea as the Android one: a Capacitor shell that loads https://samecor.com.
+The Xcode project lives in `../capacitor-shell/ios`, and it is built on a Codemagic cloud Mac (`/codemagic.yaml`),
+so no Mac is needed. Bundle id `com.samecor.app`, iPhone only, iOS 15+.
 
-## Already done in the web code
+## How the shell works
 
-- `src/lib/appShell.ts`: `isIosApp()` (user-agent marker `SamecorIos`), `isNativeApp()` (iOS or Android) and `shellName()`.
-  `isAndroidApp()` is false inside the iOS app. Behaviour that is about "the store app" (no KYC, no commerce prompts,
-  no download card, pull to refresh) now uses `isNativeApp()`. Analytics and Sentry tag the shell as `ios`.
-- `capacitor-shell/capacitor.config.json` has an `ios` block: user agent `SamecorApp SamecorIos`, `contentInset: never`
-  so the page draws under the notch and the CSS `env(safe-area-inset-*)` rules apply (the viewport already has `viewport-fit=cover`).
-- Already satisfying Apple's rules: account deletion inside the app (Settings → Privacy), block user in the comment, project and community menus, report in chat (report on projects and comments is not confirmed yet: check before submitting), a privacy policy URL.
+- **Safe area:** `ShellViewController.swift` keeps the web view inside the safe area, the way the Android shell pads its
+  WebView. The page never draws under the status bar, notch or home indicator. `public/app-shell-boot.js` already drops
+  `viewport-fit=cover` for every `SamecorApp` user agent, so the page lays out exactly as it does in the Android app.
+- **Theme colour:** the strips outside the safe area take the page colour. The site calls
+  `window.SamecorShell.setSystemBarColor(hex, dark)` (`src/lib/appShell.ts`), and the shell turns the status bar text
+  light or dark to match.
+- **App version:** `window.SamecorShell.getAppVersion()` returns `"1.0.0 (build)"` for Settings, the same shape as Android.
+- **Navigation:** edge swipe goes back through page history. Pull to refresh comes from the site (`PullToRefresh`), and
+  Capacitor already turns off the web view's bounce so the two do not fight. Links to other hosts open in Safari.
+- **Detection:** the user agent ends in `SamecorApp SamecorIos` (`capacitor.config.json`). `isIosApp()` / `isNativeApp()`
+  hide Google sign-in, KYC, shop, donate and Founding payments inside the app.
+- **Launch screen and icon:** the SAMECOR mark from `F:\So1o\Samecor\svg\samecor. logo-04.svg`, light and dark launch
+  backgrounds (`Assets.xcassets/LaunchBackground`). The icon is RGB with no alpha, as the App Store requires.
+- **Permission prompts** (English in `Info.plist`, Thai in `th.lproj/InfoPlist.strings`): camera and microphone for
+  photo and video posts (iOS crashes the app without these), saving an image to Photos, and location for the event route.
+  `ITSAppUsesNonExemptEncryption = NO`: the app only uses HTTPS, so there is no export-compliance question per build.
 
-## What is blocked on the Apple account or a Mac
+## Build on Codemagic
+
+Codemagic only builds when someone presses **Start new build**; pushes never start a build.
+
+One-time setup (owner):
+
+1. Apple Developer → Certificates, Identifiers & Profiles → Identifiers → register the App ID `com.samecor.app`.
+2. App Store Connect → Apps → New App: iOS, name SAMECOR, primary language Thai, bundle id `com.samecor.app`, SKU `samecor-ios`.
+3. App Store Connect → Users and Access → Integrations → App Store Connect API → generate a key with the
+   **App Manager** role. Download the `.p8` file (Apple lets you download it only once) and note the Key ID and Issuer ID.
+4. Make the signing key (once, on any computer): `ssh-keygen -t rsa -b 2048 -m PEM -f samecor_cert_key -q -N ""`.
+   Keep `samecor_cert_key` private. It is what lets every build reuse the same distribution certificate.
+5. Codemagic → AunAun → Environment variables → group `samecor_ios`, all marked **Secret**:
+
+   | Variable | Value |
+   |---|---|
+   | `APP_STORE_CONNECT_ISSUER_ID` | Issuer ID |
+   | `APP_STORE_CONNECT_KEY_IDENTIFIER` | Key ID |
+   | `APP_STORE_CONNECT_PRIVATE_KEY` | full contents of the `.p8` file |
+   | `CERTIFICATE_PRIVATE_KEY` | full contents of `samecor_cert_key` |
+
+Each build: Codemagic → AunAun → Start new build → workflow **iOS → TestFlight**, branch `main`. About 10–15 minutes.
+The build creates the distribution certificate and App Store profile the first time. Then it uploads to App Store Connect.
+The build appears in TestFlight for internal testers after Apple processes it, usually 10–30 minutes.
+
+The repo is public. Never print secrets in build scripts, and never commit `.p8` or key files.
+
+## Before sending to App Review
+
+- Guideline 4.2 (minimum functionality): Apple can reject an app that only wraps a website. This build adds native
+  safe-area theming, swipe back, pull to refresh and an offline page. Plan push notifications (APNs plus a native push
+  plugin, since Web Push does not work in a WebView) as the next native feature before the first review.
+- Sign in with Apple is not needed: the app shows no third-party sign-in (`SocialButtons` hides them in WebViews).
+- In-app purchase is not needed: the app sells nothing (shop, donate and Founding payments are hidden by `isNativeApp()`).
+- Fill `review-notes.md`, `app-privacy.md` and `app-store-listing.md`, and check them against the live app.
+  Apple treats wrong privacy answers as a violation.
+
+## Later
 
 | Step | Needs |
 |---|---|
-| Enrol in the Apple Developer Program | the owner, with payment (check the current yearly fee) |
-| Bundle id, App Store Connect record, signing certificates | Apple account |
-| `npx cap add ios`, open in Xcode, build, TestFlight | a Mac or a cloud Mac builder (CI with macOS runners) |
-| `apple-app-site-association` (open links in the app) | Team ID from the account |
-| Push notifications | APNs key from the account, plus a native push plugin (Web Push does not work in a WebView) |
-| Sign in with Apple | only needed if Google sign-in is turned on in the iOS app; it is hidden in WebViews today |
-
-## Review risk to plan for
-
-Apple can reject an app that only wraps a website (guideline 4.2, minimum functionality). Check the current
-wording before submitting. Native features that give it a reason to exist: push notifications, sharing a photo
-into SAMECOR from the gallery or camera, haptics, an offline page. Keep these in mind when choosing what goes
-into the first build. If review rejects it, the alternative is a React Native (Expo) app, which EAS Build can
-build from Windows.
+| `apple-app-site-association` (open samecor.com links in the app) | Team ID from the Apple account |
+| Push notifications | APNs key, a native push plugin, and the web side to register the device token |
+| Downloads, share sheet, print inside the app | `@capacitor/filesystem` and `@capacitor/share`, the same gap as Android |
 
 ## Files in this folder
 
 - `app-privacy.md`: draft answers for App Store Connect → App Privacy.
-- `app-store-listing.md`: listing text (Thai and English) and the screenshot sizes to prepare.
+- `app-store-listing.md`: listing text (Thai and English) and screenshot sizes.
 - `review-notes.md`: what to tell App Review, including a test account placeholder.
-
-Review every draft against the live app before submitting: Apple treats wrong privacy answers as a violation.
-
-## Location (Exhibition route start point)
-
-When the iOS Capacitor project is created, add to `ios/App/App/Info.plist`:
-
-```xml
-<key>NSLocationWhenInUseUsageDescription</key>
-<string>ใช้ตำแหน่งของคุณเป็นจุดเริ่มต้นเส้นทางไปสถานที่จัดงาน (ไม่บันทึกขึ้นเซิร์ฟเวอร์)</string>
-```
-
-WKWebView then answers `navigator.geolocation` with the system prompt. App Privacy: location is used on the
-device only (a ~100 m rounded point is sent to the routing service to draw the route).

@@ -2,14 +2,16 @@
   "name": "samecor-capacitor-shell",
   "private": true,
   "version": "1.0.0",
-  "description": "Android WebView shell for samecor.com (Capacitor). Replaces the Bubblewrap TWA in ../android for Play closed testing.",
+  "description": "Android and iOS WebView shell for samecor.com (Capacitor). The iOS build runs on Codemagic (../../codemagic.yaml).",
   "scripts": {
     "sync": "cap sync android",
-    "open": "cap open android"
+    "open": "cap open android",
+    "sync:ios": "cap sync ios"
   },
   "dependencies": {
     "@capacitor/android": "8.5.3",
-    "@capacitor/core": "8.5.3"
+    "@capacitor/core": "8.5.3",
+    "@capacitor/ios": "8.5.3"
   },
   "devDependencies": {
     "@capacitor/cli": "8.5.3"
