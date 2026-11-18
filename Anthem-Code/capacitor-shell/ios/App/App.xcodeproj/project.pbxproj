@@ -18,6 +18,8 @@
 		9582B6832FE993A70072D4E8 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9582B6822FE993A50072D4E8 /* SceneDelegate.swift */; };
 		5A3C0E1F2B00000000000001 /* ShellViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A3C0E1F2B00000000000002 /* ShellViewController.swift */; };
 		5A3C0E1F2B00000000000003 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 5A3C0E1F2B00000000000004 /* InfoPlist.strings */; };
+		5A3C0E1F2B00000000000006 /* ShellWebFeatures.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A3C0E1F2B00000000000007 /* ShellWebFeatures.swift */; };
+		5A3C0E1F2B00000000000008 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 5A3C0E1F2B00000000000009 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -34,6 +36,8 @@
 		958DCC722DB07C7200EA8C5F /* debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = debug.xcconfig; path = ../debug.xcconfig; sourceTree = SOURCE_ROOT; };
 		5A3C0E1F2B00000000000002 /* ShellViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellViewController.swift; sourceTree = "<group>"; };
 		5A3C0E1F2B00000000000005 /* th */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = th; path = th.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		5A3C0E1F2B00000000000007 /* ShellWebFeatures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellWebFeatures.swift; sourceTree = "<group>"; };
+		5A3C0E1F2B00000000000009 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -70,7 +74,9 @@
 			children = (
 				9582B6822FE993A50072D4E8 /* SceneDelegate.swift */,
 				5A3C0E1F2B00000000000002 /* ShellViewController.swift */,
+				5A3C0E1F2B00000000000007 /* ShellWebFeatures.swift */,
 				5A3C0E1F2B00000000000004 /* InfoPlist.strings */,
+				5A3C0E1F2B00000000000009 /* PrivacyInfo.xcprivacy */,
 				50379B222058CBB4000EE86E /* capacitor.config.json */,
 				504EC3071FED79650016851F /* AppDelegate.swift */,
 				504EC30B1FED79650016851F /* Main.storyboard */,
@@ -156,6 +162,7 @@
 				504EC30D1FED79650016851F /* Main.storyboard in Resources */,
 				2FAD9763203C412B000D30F8 /* config.xml in Resources */,
 				5A3C0E1F2B00000000000003 /* InfoPlist.strings in Resources */,
+				5A3C0E1F2B00000000000008 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -169,6 +176,7 @@
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
 				9582B6832FE993A70072D4E8 /* SceneDelegate.swift in Sources */,
 				5A3C0E1F2B00000000000001 /* ShellViewController.swift in Sources */,
+				5A3C0E1F2B00000000000006 /* ShellWebFeatures.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

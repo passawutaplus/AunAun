@@ -48,10 +48,12 @@ final class ShellViewController: UIViewController {
 
 /// Capacitor's view controller plus what the Android MainActivity adds: swipe back through page history,
 /// and the `window.SamecorShell` bridge the site already calls (getAppVersion, setSystemBarColor).
+/// Downloads, new windows, print and share are handled by ShellWebFeatures.
 final class SamecorBridgeViewController: CAPBridgeViewController, WKScriptMessageHandler {
     private static let messageHandlerName = "samecorShell"
 
     var onThemeChange: ((UIColor, Bool) -> Void)?
+    private let webFeatures = ShellWebFeatures()
 
     override func capacitorDidLoad() {
         super.capacitorDidLoad()
@@ -64,6 +66,8 @@ final class SamecorBridgeViewController: CAPBridgeViewController, WKScriptMessag
         webView.backgroundColor = .clear
         webView.scrollView.backgroundColor = .clear
 
+        webFeatures.install(on: webView, appURL: bridge?.config.serverURL, presenter: self)
+
         let contentController = webView.configuration.userContentController
         contentController.addUserScript(
             WKUserScript(source: Self.bridgeScript(), injectionTime: .atDocumentStart, forMainFrameOnly: true)
@@ -72,12 +76,25 @@ final class SamecorBridgeViewController: CAPBridgeViewController, WKScriptMessag
     }
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        guard message.name == Self.messageHandlerName,
-              let body = message.body as? [String: Any],
-              let hex = body["hex"] as? String,
-              let color = UIColor(shellHex: hex) else { return }
-        let dark = body["dark"] as? Bool ?? false
-        onThemeChange?(color, dark)
+        guard message.name == Self.messageHandlerName, let body = message.body as? [String: Any] else { return }
+        switch body["type"] as? String {
+        case "theme":
+            guard let hex = body["hex"] as? String, let color = UIColor(shellHex: hex) else { return }
+            onThemeChange?(color, body["dark"] as? Bool ?? false)
+        case "print":
+            webFeatures.printPage()
+        case "share":
+            guard let id = body["id"] as? Int else { return }
+            webFeatures.share(
+                title: body["title"] as? String ?? "",
+                text: body["text"] as? String ?? "",
+                url: body["url"] as? String ?? ""
+            ) { [weak self] completed in
+                self?.webView?.evaluateJavaScript("window.__samecorShellShareDone && window.__samecorShellShareDone(\(id), \(completed))")
+            }
+        default:
+            break
+        }
     }
 
     /// "1.0.0 (12)", the same shape the Android bridge returns.
@@ -94,14 +111,35 @@ final class SamecorBridgeViewController: CAPBridgeViewController, WKScriptMessag
         (function () {
           if (window.SamecorShell) return;
           var version = \(version);
+          function post(message) {
+            try { window.webkit.messageHandlers.\(messageHandlerName).postMessage(message); } catch (e) {}
+          }
           window.SamecorShell = {
             getAppVersion: function () { return version; },
-            setSystemBarColor: function (hex, dark) {
-              try {
-                window.webkit.messageHandlers.\(messageHandlerName).postMessage({ hex: String(hex), dark: !!dark });
-              } catch (e) {}
-            }
+            setSystemBarColor: function (hex, dark) { post({ type: "theme", hex: String(hex), dark: !!dark }); }
           };
+          // WKWebView has no print dialog of its own.
+          window.print = function () { post({ type: "print" }); };
+          // Native share sheet when WebKit does not offer navigator.share.
+          if (typeof navigator.share !== "function") {
+            var pending = {};
+            var nextId = 0;
+            window.__samecorShellShareDone = function (id, completed) {
+              var call = pending[id];
+              if (!call) return;
+              delete pending[id];
+              if (completed) call.resolve();
+              else call.reject(new DOMException("Share canceled", "AbortError"));
+            };
+            navigator.share = function (data) {
+              data = data || {};
+              return new Promise(function (resolve, reject) {
+                var id = ++nextId;
+                pending[id] = { resolve: resolve, reject: reject };
+                post({ type: "share", id: id, title: String(data.title || ""), text: String(data.text || ""), url: String(data.url || "") });
+              });
+            };
+          }
         })();
         """
     }

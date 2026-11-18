@@ -13,6 +13,13 @@ so no Mac is needed. Bundle id `com.samecor.app`, iPhone only, iOS 15+.
   `window.SamecorShell.setSystemBarColor(hex, dark)` (`src/lib/appShell.ts`), and the shell turns the status bar text
   light or dark to match.
 - **App version:** `window.SamecorShell.getAppVersion()` returns `"1.0.0 (build)"` for Settings, the same shape as Android.
+- **Web gaps filled** (`ShellWebFeatures.swift`):
+  - Downloads (blob links, `download` links, attachments) open the iOS share sheet, where the user can Save to Files or Save Image.
+  - Same-site `target="_blank"` / `window.open` links stay in the app.
+  - `window.print()` opens the iOS print sheet.
+  - `navigator.share()` gets a native fallback.
+- **Privacy manifest:** `PrivacyInfo.xcprivacy` declares no tracking.
+- **Pattern for other apps** (Picker): `IOS_WEBVIEW_APP_PATTERN.md`.
 - **Navigation:** edge swipe goes back through page history. Pull to refresh comes from the site (`PullToRefresh`), and
   Capacitor already turns off the web view's bounce so the two do not fight. Links to other hosts open in Safari.
 - **Detection:** the user agent ends in `SamecorApp SamecorIos` (`capacitor.config.json`). `isIosApp()` / `isNativeApp()`
