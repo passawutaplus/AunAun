@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 360" role="img" aria-label="กรอบภาพบนผนัง ข้างกันมีป้ายคำอธิบาย ตัวชี้สีแดงเลื่อนไล่ลงทีละบรรทัด ตั้งแต่ชื่อศิลปิน ชื่องานและปี วัสดุ ไปจนถึงบรรทัดที่มาของผลงาน">
+<style>.p{animation:p 8s cubic-bezier(.5,0,.2,1) infinite}@keyframes p{0%,12%{transform:translateY(0)}22%,34%{transform:translateY(40px)}44%,56%{transform:translateY(80px)}66%,82%{transform:translateY(120px)}100%{transform:translateY(0)}}@media (prefers-reduced-motion:reduce){*{animation:none!important}.end{opacity:1!important;transform:none!important;stroke-dashoffset:0!important}}</style>
+<rect width="800" height="360" fill="#F8F7F2"/>
+<rect x="90" y="50" width="330" height="250" fill="#FFFFFF" stroke="#282929" stroke-width="6"/>
+<rect x="120" y="80" width="270" height="190" fill="#E6E6E3"/>
+<path d="M120 270 L210 190 L270 235 L330 175 L390 230 L390 270 Z" fill="#666"/>
+<circle cx="330" cy="120" r="18" fill="#FFFFFF"/>
+<rect x="490" y="130" width="230" height="190" rx="4" fill="#FFFFFF" stroke="#E6E6E3" stroke-width="2"/>
+<rect x="520" y="158" width="130" height="12" rx="3" fill="#282929"/>
+<rect x="520" y="198" width="170" height="10" rx="3" fill="#282929" opacity=".75"/>
+<rect x="520" y="238" width="120" height="8" rx="3" fill="#666"/>
+<rect x="520" y="278" width="150" height="8" rx="3" fill="#666" opacity=".6"/>
+<g class="p"><rect x="500" y="156" width="6" height="16" rx="3" fill="#EE3D29"/></g>
+</svg>

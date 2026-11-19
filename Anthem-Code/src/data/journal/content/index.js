@@ -3,12 +3,18 @@
 import c_ai_and_your_creative_work from "./ai-and-your-creative-work.js";
 import c_brand_is_not_a_logo from "./brand-is-not-a-logo.js";
 import c_brand_voice from "./brand-voice.js";
+import c_color_contrast_readability from "./color-contrast-readability.js";
 import c_creative_brief from "./creative-brief.js";
+import c_creative_burnout from "./creative-burnout.js";
 import c_finding_collaborators from "./finding-collaborators.js";
 import c_four_questions_at_the_gallery from "./four-questions-at-the-gallery.js";
 import c_grid_systems_explained from "./grid-systems-explained.js";
+import c_one_page_brand_guideline from "./one-page-brand-guideline.js";
 import c_photographing_artwork from "./photographing-artwork.js";
+import c_portfolio_curation from "./portfolio-curation.js";
 import c_pricing_creative_work from "./pricing-creative-work.js";
+import c_reading_wall_labels from "./reading-wall-labels.js";
+import c_slow_design from "./slow-design.js";
 import c_tell_the_story_behind_the_work from "./tell-the-story-behind-the-work.js";
 import c_type_hierarchy from "./type-hierarchy.js";
 import c_using_trends_wisely from "./using-trends-wisely.js";
@@ -21,12 +27,18 @@ export const JOURNAL_CONTENT = {
   "ai-and-your-creative-work": c_ai_and_your_creative_work,
   "brand-is-not-a-logo": c_brand_is_not_a_logo,
   "brand-voice": c_brand_voice,
+  "color-contrast-readability": c_color_contrast_readability,
   "creative-brief": c_creative_brief,
+  "creative-burnout": c_creative_burnout,
   "finding-collaborators": c_finding_collaborators,
   "four-questions-at-the-gallery": c_four_questions_at_the_gallery,
   "grid-systems-explained": c_grid_systems_explained,
+  "one-page-brand-guideline": c_one_page_brand_guideline,
   "photographing-artwork": c_photographing_artwork,
+  "portfolio-curation": c_portfolio_curation,
   "pricing-creative-work": c_pricing_creative_work,
+  "reading-wall-labels": c_reading_wall_labels,
+  "slow-design": c_slow_design,
   "tell-the-story-behind-the-work": c_tell_the_story_behind_the_work,
   "type-hierarchy": c_type_hierarchy,
   "using-trends-wisely": c_using_trends_wisely,

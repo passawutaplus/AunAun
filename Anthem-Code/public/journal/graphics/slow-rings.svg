@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 360" role="img" aria-label="วงปีไม้ค่อยๆ ขยายออกจากจุดกลางทีละชั้นอย่างช้าๆ มีวงหนึ่งเป็นสีแดง">
+<style>.g{opacity:0;transform-origin:400px 180px;animation:g 12s ease-out infinite}@keyframes g{0%{opacity:0;transform:scale(.6)}15%,85%{opacity:1;transform:none}100%{opacity:0;transform:none}}@media (prefers-reduced-motion:reduce){*{animation:none!important}.end{opacity:1!important;transform:none!important;stroke-dashoffset:0!important}}</style>
+<rect width="800" height="360" fill="#F8F7F2"/>
+<circle cx="400" cy="180" r="8" fill="#282929"/>
+<circle class="g end" cx="400" cy="180" r="30" fill="none" stroke="#666" stroke-width="3" style="animation-delay:0s"/>
+<circle class="g end" cx="400" cy="180" r="56" fill="none" stroke="#666" stroke-width="3" style="animation-delay:.8s"/>
+<circle class="g end" cx="400" cy="180" r="78" fill="none" stroke="#666" stroke-width="3" style="animation-delay:1.6s"/>
+<circle class="g end" cx="400" cy="180" r="104" fill="none" stroke="#EE3D29" stroke-width="4" style="animation-delay:2.4s"/>
+<circle class="g end" cx="400" cy="180" r="124" fill="none" stroke="#666" stroke-width="3" style="animation-delay:3.2s"/>
+<circle class="g end" cx="400" cy="180" r="150" fill="none" stroke="#282929" stroke-width="3" style="animation-delay:4s"/>
+</svg>
