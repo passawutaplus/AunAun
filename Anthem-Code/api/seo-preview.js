@@ -102,6 +102,11 @@ function journalBodyHtml(a, base) {
     if (b.p) return `<p>${escapeHtml(b.p)}</p>`;
     if (b.ul) return `<ul>${b.ul.map((i) => `<li>${escapeHtml(i)}</li>`).join("")}</ul>`;
     if (b.quote) return `<blockquote>${escapeHtml(b.quote)}</blockquote>`;
+    if (b.img || b.graphic) {
+      const f = b.img || b.graphic;
+      const cap = [f.caption, f.credit].filter(Boolean).map(escapeHtml).join(" · ");
+      return `<figure><img src="${escapeHtml(base + f.src)}" alt="${escapeHtml(f.alt)}" loading="lazy" />${cap ? `<figcaption>${cap}</figcaption>` : ""}</figure>`;
+    }
     return "";
   });
   return `<article>

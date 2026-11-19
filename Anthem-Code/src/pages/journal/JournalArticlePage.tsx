@@ -29,6 +29,29 @@ function Block({ block }: { block: JournalBlock }) {
       </ul>
     );
   }
+  if ("img" in block) {
+    const { src, alt, caption, credit } = block.img;
+    return (
+      <figure className="my-10">
+        <img src={src} alt={alt} loading="lazy" className="w-full rounded-lg object-cover" />
+        <figcaption className="mt-2 text-xs text-muted-foreground">
+          {caption ? <span className="thai-body block text-sm text-foreground/80">{caption}</span> : null}
+          <span>{credit}</span>
+        </figcaption>
+      </figure>
+    );
+  }
+  if ("graphic" in block) {
+    const { src, alt, caption } = block.graphic;
+    return (
+      <figure className="my-10">
+        <img src={src} alt={alt} loading="lazy" className="w-full rounded-lg border border-border" />
+        {caption ? (
+          <figcaption className="thai-body mt-2 text-sm text-muted-foreground">{caption}</figcaption>
+        ) : null}
+      </figure>
+    );
+  }
   if ("quote" in block) {
     return (
       <blockquote className="thai-display my-10 border-l-2 border-primary pl-5 text-xl font-medium sm:text-2xl">

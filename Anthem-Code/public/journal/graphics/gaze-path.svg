@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" role="img" aria-label="ภาพนามธรรมในกรอบบนผนัง มีจุดสีแดงเคลื่อนไปตามลำดับที่สายตามอง จากรูปทรงที่เด่นที่สุดไปยังจุดรอง">
+<style>
+.t{fill:none;stroke:#EE3D29;stroke-width:2;stroke-dasharray:4 7;stroke-linecap:round}
+.s{fill:none;stroke:#EE3D29;stroke-width:2;opacity:0;animation:ap 8s ease-in-out infinite}
+.s2{animation-delay:2s}.s3{animation-delay:4s}.s4{animation-delay:6s}
+@keyframes ap{0%{opacity:0;transform:scale(.6)}6%,30%{opacity:1;transform:scale(1)}45%,100%{opacity:.35;transform:scale(1)}}
+.s{transform-box:fill-box;transform-origin:center}
+.m{fill:#EE3D29}
+@media (prefers-reduced-motion:reduce){.s{animation:none;opacity:1}.m{display:none}}
+</style>
+<rect width="800" height="400" fill="#F8F7F2"/>
+<rect x="230" y="40" width="340" height="320" fill="#fff" stroke="#282929" stroke-width="6"/>
+<rect x="252" y="62" width="296" height="276" fill="#E6E6E3"/>
+<circle cx="470" cy="140" r="52" fill="#282929"/>
+<path d="M252 338 L252 250 Q340 190 420 250 T548 230 L548 338 Z" fill="#666"/>
+<rect x="290" y="96" width="70" height="70" fill="none" stroke="#282929" stroke-width="3"/>
+<circle cx="330" cy="290" r="10" fill="#282929"/>
+<path id="gp" class="t" d="M470 140 L330 290 L325 131 L520 260"/>
+<circle class="s" cx="470" cy="140" r="66"/>
+<circle class="s s2" cx="330" cy="290" r="22"/>
+<circle class="s s3" cx="325" cy="131" r="46"/>
+<circle class="s s4" cx="520" cy="260" r="30"/>
+<circle class="m" r="7"><animateMotion dur="8s" repeatCount="indefinite" keyPoints="0;0;.34;.34;.67;.67;1;1" keyTimes="0;.2;.25;.45;.5;.7;.75;1" calcMode="linear"><mpath href="#gp"/></animateMotion></circle>
+</svg>
