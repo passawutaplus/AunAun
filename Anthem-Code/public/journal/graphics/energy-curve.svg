@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 340" role="img" aria-label="เส้นกราฟพลังงานค่อยๆ ลดต่ำลงจนถึงจุดสีแดงที่ต่ำที่สุด แล้วค่อยๆ ไต่กลับขึ้นหลังช่วงพัก">
+<style>.l{stroke-dasharray:900;stroke-dashoffset:900;animation:l 9s ease-in-out infinite}@keyframes l{0%{stroke-dashoffset:900}55%,88%{stroke-dashoffset:0}100%{stroke-dashoffset:0;opacity:0}}.d{opacity:0;animation:d 9s ease-in-out infinite}@keyframes d{0%,30%{opacity:0}36%,88%{opacity:1}100%{opacity:0}}.r{opacity:0;animation:r 9s ease-in-out infinite}@keyframes r{0%,36%{opacity:0}44%,88%{opacity:1}100%{opacity:0}}@media (prefers-reduced-motion:reduce){*{animation:none!important}.end{opacity:1!important;transform:none!important;stroke-dashoffset:0!important}}</style>
+<rect width="800" height="340" fill="#F8F7F2"/>
+<line x1="60" y1="280" x2="740" y2="280" stroke="#E6E6E3" stroke-width="2"/>
+<line x1="60" y1="60" x2="60" y2="280" stroke="#E6E6E3" stroke-width="2"/>
+<rect class="r end" x="380" y="70" width="110" height="210" fill="#E6E6E3" opacity=".6"/>
+<path class="l end" d="M60 90 C150 92 200 110 250 150 S340 240 380 250 L490 250 C540 240 580 170 640 130 S720 100 740 98" fill="none" stroke="#282929" stroke-width="5" stroke-linecap="round"/>
+<circle class="d end" cx="380" cy="250" r="12" fill="#EE3D29"/>
+</svg>
