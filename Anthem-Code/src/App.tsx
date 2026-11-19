@@ -178,6 +178,8 @@ const CommunityFeedPage = lazy(() => import("./pages/CommunityFeedPage.tsx"));
 const AdminCommunityPage = lazy(() => import("./pages/admin/AdminCommunityPage"));
 const AdminForumPage = lazy(() => import("./pages/admin/AdminForumPage"));
 const AdminModerationPage = lazy(() => import("./pages/admin/AdminModerationPage"));
+const JournalPage = lazy(() => import("./pages/journal/JournalPage"));
+const JournalArticlePage = lazy(() => import("./pages/journal/JournalArticlePage"));
 const ForumHomePage = lazy(() => import("./pages/forum/ForumHomePage"));
 const ForumCategoryPage = lazy(() => import("./pages/forum/ForumCategoryPage"));
 const ForumTopicPage = lazy(() => import("./pages/forum/ForumTopicPage"));
@@ -291,6 +293,8 @@ const App = () => (
               <Route path="/learn/trust" element={<RedirectTo to="/learn#trust" />} />
               <Route path="/learn/px" element={<RedirectTo to="/learn" />} />
               <Route path="/learn/faq" element={<RedirectTo to="/help" />} />
+              <Route path="/journal" element={<JournalPage />} />
+              <Route path="/journal/:slug" element={<JournalArticlePage />} />
               <Route path="/changelog" element={<ChangelogPage />} />
               <Route path="/help" element={<HelpShell />}>
                 <Route index element={<HelpHubPage />} />

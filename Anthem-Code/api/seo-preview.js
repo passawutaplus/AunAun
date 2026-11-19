@@ -4,6 +4,8 @@
  *
  * GET /api/seo-preview?path=/showcase/...|/jobs/...|/@user|/u/...|/
  */
+import { JOURNAL_ARTICLES, JOURNAL_CATEGORIES, getJournalArticle } from "../src/data/journal/articles.js";
+
 const BOT_CACHE_SECONDS = 3600; // crawlers only; titles/covers rarely change within an hour (was 300 s)
 
 function siteBase(req) {
@@ -22,7 +24,7 @@ function escapeHtml(s) {
     .replace(/"/g, "&quot;");
 }
 
-function shell({ title, description, url, image, noindex, jsonLd, type }) {
+function shell({ title, description, url, image, noindex, jsonLd, type, bodyHtml, published, modified }) {
   const robots = noindex ? "noindex, nofollow" : "index, follow";
   const ogType = type || "website";
   const ld = jsonLd
@@ -50,13 +52,15 @@ function shell({ title, description, url, image, noindex, jsonLd, type }) {
   <meta name="twitter:description" content="${escapeHtml(description)}" />
   <meta name="twitter:image" content="${escapeHtml(image)}" />
   <meta name="twitter:image:alt" content="${escapeHtml(title)}" />
+  ${published ? `<meta property="article:published_time" content="${escapeHtml(published)}" />` : ""}
+  ${modified ? `<meta property="article:modified_time" content="${escapeHtml(modified)}" />` : ""}
   ${ld}
 </head>
 <body>
   <main>
-    <h1>${escapeHtml(title)}</h1>
+    ${bodyHtml || `<h1>${escapeHtml(title)}</h1>
     <p>${escapeHtml(description)}</p>
-    <p><a href="${escapeHtml(url)}">เปิดใน SAMECOR</a></p>
+    <p><a href="${escapeHtml(url)}">เปิดใน SAMECOR</a></p>`}
   </main>
 </body>
 </html>`;
@@ -72,7 +76,7 @@ async function fetchJson(url, headers) {
 function isKnownPublicPath(pathname) {
   if (pathname === "/") return true;
   if (
-    /^\/(jobs|advertise|research|upgrade|learn|auth|forum|help|explore|collections|inspire|series|s|error|exhibition|hiring)(\/|$)/i.test(
+    /^\/(jobs|advertise|research|upgrade|learn|auth|forum|help|explore|collections|inspire|series|s|error|exhibition|hiring|journal)(\/|$)/i.test(
       pathname,
     )
   ) {
@@ -87,6 +91,124 @@ function isKnownPublicPath(pathname) {
   if (/^\/service\/[0-9a-f-]{36}$/i.test(pathname)) return true;
   if (/^\/object\/[0-9a-f-]{36}$/i.test(pathname)) return true;
   return false;
+}
+
+// ---------- Journal (/journal) ----------
+
+/** เนื้อบทความเป็น HTML ล้วน ให้บอทที่ไม่รัน JavaScript อ่านเนื้อหาครบ */
+function journalBodyHtml(a, base) {
+  const parts = a.body.map((b) => {
+    if (b.h) return `<h2>${escapeHtml(b.h)}</h2>`;
+    if (b.p) return `<p>${escapeHtml(b.p)}</p>`;
+    if (b.ul) return `<ul>${b.ul.map((i) => `<li>${escapeHtml(i)}</li>`).join("")}</ul>`;
+    if (b.quote) return `<blockquote>${escapeHtml(b.quote)}</blockquote>`;
+    return "";
+  });
+  return `<article>
+    <p>${escapeHtml(JOURNAL_CATEGORIES[a.category].label)}</p>
+    <p>${escapeHtml(a.titleEn)}</p>
+    <h1>${escapeHtml(a.title)}</h1>
+    <p>${escapeHtml(a.description)}</p>
+    <img src="${escapeHtml(base + a.image.src)}" alt="${escapeHtml(a.image.alt)}" />
+    ${parts.join("\n    ")}
+    <p><a href="${escapeHtml(base)}/journal">Journal</a></p>
+  </article>`;
+}
+
+/** /journal และ /journal/<slug> ไม่ต้องใช้ฐานข้อมูล */
+function resolveJournal(pathname, base, defaultMeta) {
+  const m = pathname.match(/^\/journal(?:\/([^/]+))?\/?$/i);
+  if (!m) return null;
+  const org = { "@type": "Organization", name: "SAMECOR", url: `${base}/` };
+  if (!m[1]) {
+    const url = `${base}/journal`;
+    const title = "Journal — เรื่องราวด้านดีไซน์ ผู้คน และศิลปะ | SAMECOR";
+    const description =
+      "บทความจากทีม SAMECOR เกี่ยวกับดีไซน์ ครีเอเตอร์ และศิลปะ เขียนให้คนทำงานสร้างสรรค์อ่านแล้วเอาไปใช้ต่อได้ทันที";
+    const sorted = [...JOURNAL_ARTICLES].sort((a, b) => new Date(b.datePublished) - new Date(a.datePublished));
+    return {
+      ...defaultMeta,
+      title,
+      description,
+      url,
+      image: sorted[0] ? `${base}${sorted[0].image.src}` : defaultMeta.image,
+      bodyHtml: `<h1>Journal</h1><p>${escapeHtml(description)}</p><ul>${sorted
+        .map(
+          (a) =>
+            `<li><a href="${escapeHtml(base)}/journal/${escapeHtml(a.slug)}">${escapeHtml(a.title)}</a> — ${escapeHtml(a.description)}</li>`,
+        )
+        .join("")}</ul>`,
+      jsonLd: {
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        name: title,
+        description,
+        url,
+        inLanguage: "th",
+        isPartOf: { "@type": "WebSite", name: "SAMECOR", url: `${base}/` },
+        mainEntity: {
+          "@type": "ItemList",
+          itemListElement: sorted.map((a, i) => ({
+            "@type": "ListItem",
+            position: i + 1,
+            url: `${base}/journal/${a.slug}`,
+            name: a.title,
+          })),
+        },
+      },
+    };
+  }
+  let slug = m[1];
+  try {
+    slug = decodeURIComponent(slug);
+  } catch {
+    /* keep raw */
+  }
+  const a = getJournalArticle(slug);
+  if (!a) {
+    return { ...defaultMeta, noindex: true, title: "ไม่พบบทความ | SAMECOR", status: 404, jsonLd: null };
+  }
+  const url = `${base}/journal/${a.slug}`;
+  const image = `${base}${a.image.src}`;
+  return {
+    ...defaultMeta,
+    title: `${a.title} | SAMECOR`,
+    description: a.description,
+    url,
+    image,
+    type: "article",
+    published: a.datePublished,
+    modified: a.dateModified,
+    bodyHtml: journalBodyHtml(a, base),
+    jsonLd: {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Article",
+          headline: a.title,
+          alternativeHeadline: a.titleEn,
+          description: a.description,
+          image: [image],
+          datePublished: a.datePublished,
+          dateModified: a.dateModified,
+          inLanguage: "th",
+          articleSection: JOURNAL_CATEGORIES[a.category].label,
+          keywords: a.tags.join(", "),
+          mainEntityOfPage: { "@type": "WebPage", "@id": url },
+          author: org,
+          publisher: { ...org, logo: { "@type": "ImageObject", url: `${base}/icons/icon-512.png` } },
+        },
+        {
+          "@type": "BreadcrumbList",
+          itemListElement: [
+            { "@type": "ListItem", position: 1, name: "SAMECOR", item: `${base}/` },
+            { "@type": "ListItem", position: 2, name: "Journal", item: `${base}/journal` },
+            { "@type": "ListItem", position: 3, name: a.title, item: url },
+          ],
+        },
+      ],
+    },
+  };
 }
 
 // ---------- Events (/exhibition) ----------
@@ -353,6 +475,10 @@ async function resolveMeta(pathname, base) {
       status: 404,
     };
   }
+
+  // Journal pages come from the data file, no database.
+  const journalMeta = resolveJournal(pathname, base, defaultMeta);
+  if (journalMeta) return journalMeta;
 
   // Event list + category pages need no database.
   const exhibitionMeta = resolveExhibitionStatic(pathname, base, defaultMeta);
