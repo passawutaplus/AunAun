@@ -3,9 +3,13 @@
 import c_ai_and_your_creative_work from "./ai-and-your-creative-work.js";
 import c_brand_is_not_a_logo from "./brand-is-not-a-logo.js";
 import c_brand_voice from "./brand-voice.js";
+import c_choosing_brand_colors from "./choosing-brand-colors.js";
 import c_color_contrast_readability from "./color-contrast-readability.js";
+import c_contract_basics from "./contract-basics.js";
 import c_creative_brief from "./creative-brief.js";
 import c_creative_burnout from "./creative-burnout.js";
+import c_curating_small_show from "./curating-small-show.js";
+import c_finding_a_mentor from "./finding-a-mentor.js";
 import c_finding_collaborators from "./finding-collaborators.js";
 import c_four_questions_at_the_gallery from "./four-questions-at-the-gallery.js";
 import c_grid_systems_explained from "./grid-systems-explained.js";
@@ -15,7 +19,9 @@ import c_portfolio_curation from "./portfolio-curation.js";
 import c_pricing_creative_work from "./pricing-creative-work.js";
 import c_reading_wall_labels from "./reading-wall-labels.js";
 import c_slow_design from "./slow-design.js";
+import c_sustainable_design from "./sustainable-design.js";
 import c_tell_the_story_behind_the_work from "./tell-the-story-behind-the-work.js";
+import c_thai_latin_type_pairing from "./thai-latin-type-pairing.js";
 import c_type_hierarchy from "./type-hierarchy.js";
 import c_using_trends_wisely from "./using-trends-wisely.js";
 import c_when_you_feel_not_good_enough from "./when-you-feel-not-good-enough.js";
@@ -27,9 +33,13 @@ export const JOURNAL_CONTENT = {
   "ai-and-your-creative-work": c_ai_and_your_creative_work,
   "brand-is-not-a-logo": c_brand_is_not_a_logo,
   "brand-voice": c_brand_voice,
+  "choosing-brand-colors": c_choosing_brand_colors,
   "color-contrast-readability": c_color_contrast_readability,
+  "contract-basics": c_contract_basics,
   "creative-brief": c_creative_brief,
   "creative-burnout": c_creative_burnout,
+  "curating-small-show": c_curating_small_show,
+  "finding-a-mentor": c_finding_a_mentor,
   "finding-collaborators": c_finding_collaborators,
   "four-questions-at-the-gallery": c_four_questions_at_the_gallery,
   "grid-systems-explained": c_grid_systems_explained,
@@ -39,7 +49,9 @@ export const JOURNAL_CONTENT = {
   "pricing-creative-work": c_pricing_creative_work,
   "reading-wall-labels": c_reading_wall_labels,
   "slow-design": c_slow_design,
+  "sustainable-design": c_sustainable_design,
   "tell-the-story-behind-the-work": c_tell_the_story_behind_the_work,
+  "thai-latin-type-pairing": c_thai_latin_type_pairing,
   "type-hierarchy": c_type_hierarchy,
   "using-trends-wisely": c_using_trends_wisely,
   "when-you-feel-not-good-enough": c_when_you_feel_not_good_enough,
