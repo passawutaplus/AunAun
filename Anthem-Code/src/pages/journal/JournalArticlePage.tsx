@@ -3,6 +3,7 @@ import SeoHead from "@/components/SeoHead";
 import SeoBreadcrumb from "@/components/seo/SeoBreadcrumb";
 import Footer from "@/components/Footer";
 import JournalCard from "@/components/journal/JournalCard";
+import JournalSources from "@/components/journal/JournalSources";
 import { formatJournalDate } from "@/components/journal/formatDate";
 import {
   getJournalArticle,
@@ -77,6 +78,12 @@ export default function JournalArticlePage() {
             inLanguage: "th",
             articleSection: cat.label,
             keywords: article.tags.join(", "),
+            citation: article.sources.map((s) => ({
+              "@type": "CreativeWork",
+              name: s.title,
+              url: s.url,
+              publisher: { "@type": "Organization", name: s.publisher },
+            })),
             mainEntityOfPage: { "@type": "WebPage", "@id": url },
             author: { "@type": "Organization", name: "SAMECOR", url: absoluteUrl("/") },
             publisher: {
@@ -121,6 +128,8 @@ export default function JournalArticlePage() {
             <Block key={i} block={block} />
           ))}
         </div>
+
+        <JournalSources sources={article.sources} />
 
         <ul className="mt-10 flex flex-wrap gap-2" aria-label="แท็ก">
           {article.tags.map((t) => (

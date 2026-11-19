@@ -6,6 +6,12 @@ export type JournalBlock =
   | { ul: string[] }
   | { quote: string };
 
+export interface JournalSource {
+  title: string;
+  publisher: string;
+  url: string;
+}
+
 export interface JournalArticle {
   slug: string;
   category: JournalCategoryId;
@@ -19,6 +25,8 @@ export interface JournalArticle {
   readMinutes: number;
   tags: string[];
   body: JournalBlock[];
+  /** Required. First 2 are shown; the rest fold under "more sources". */
+  sources: JournalSource[];
 }
 
 export const JOURNAL_CATEGORIES: Record<

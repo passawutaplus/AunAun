@@ -8,6 +8,10 @@
  * แล้วรัน `npm run sitemap:gen` (build บน Vercel รันให้เอง)
  *
  * บล็อกเนื้อหา: { h: "หัวข้อย่อย" } · { p: "ย่อหน้า" } · { ul: ["ข้อ", ...] } · { quote: "ประโยคเด่น" }
+ *
+ * แหล่งอ้างอิง (บังคับทุกบทความ): sources: [{ title, publisher, url }]
+ * เรียงจากสำคัญสุด — หน้าเว็บโชว์ 2 แหล่งแรก ที่เหลือพับไว้ใต้ปุ่ม "ดูแหล่งอ้างอิงเพิ่มเติม"
+ * ใส่เฉพาะลิงก์ที่มีอยู่จริงและตรงกับเนื้อหา ห้ามเดา URL
  */
 
 /** ลำดับนี้คือลำดับในแถบหมวดด้านซ้ายของหน้า Journal */
@@ -39,6 +43,28 @@ export const JOURNAL_ARTICLES = [
     dateModified: "2026-11-19T09:00:00+07:00",
     readMinutes: 4,
     tags: ["ศิลปะ", "แกลเลอรี", "นิทรรศการ", "การดูงานศิลปะ"],
+    sources: [
+      {
+        title: "A guide to slow looking",
+        publisher: "Tate",
+        url: "https://www.tate.org.uk/art/guide-slow-looking",
+      },
+      {
+        title: "Visual Thinking Strategies (VTS)",
+        publisher: "Yale Center for Language Study",
+        url: "https://artlang.yale.edu/visual-thinking-strategies-vts",
+      },
+      {
+        title: "Three questions not to ask about art – and four to ask instead",
+        publisher: "The Conversation",
+        url: "https://theconversation.com/three-questions-not-to-ask-about-art-and-four-to-ask-instead-29830",
+      },
+      {
+        title: "VTS Resources for Families",
+        publisher: "Visual Thinking Strategies",
+        url: "https://vtshome.org/wp-content/uploads/2020/03/VTS-Resources-for-Families.pdf",
+      },
+    ],
     body: [
       {
         p: "หลายคนเดินเข้าแกลเลอรีแล้วรู้สึกเหมือนมาผิดห้อง ผนังขาว ภาพเงียบ ๆ ป้ายข้อความยาว ๆ และความรู้สึกว่าทุกคนในห้องรู้อะไรบางอย่างที่เราไม่รู้ เรื่องนี้เกิดกับคนทำงานสร้างสรรค์เองก็บ่อย ไม่ใช่แค่คนที่เพิ่งเริ่มสนใจ",
@@ -93,6 +119,23 @@ export const JOURNAL_ARTICLES = [
     dateModified: "2026-11-19T09:01:00+07:00",
     readMinutes: 5,
     tags: ["ครีเอเตอร์", "พอร์ตโฟลิโอ", "เล่าเรื่อง", "ฟรีแลนซ์"],
+    sources: [
+      {
+        title: "How To Write A Case Study For Your Design Portfolio",
+        publisher: "Format Magazine",
+        url: "https://www.format.com/magazine/resources/design/how-to-write-design-case-study",
+      },
+      {
+        title: "How To Write a Great Design Case Study",
+        publisher: "Smart Interface Design Patterns",
+        url: "https://smart-interface-design-patterns.com/articles/design-case-study/",
+      },
+      {
+        title: "How to write project case studies for your portfolio",
+        publisher: "Vanschneider",
+        url: "https://vanschneider.com/blog/portfolio-tips/write-project-case-studies-portfolio/",
+      },
+    ],
     body: [
       {
         p: "ลองนึกถึงพอร์ตโฟลิโอที่คุณเคยเปิดดูแล้วอยากทักไปคุยกับเจ้าของ มักไม่ใช่เพราะภาพสวยที่สุด แต่เพราะคุณเห็นวิธีคิดของเขาผ่านงาน เห็นว่าเขาตัดสินใจอะไร และทำไม นั่นคือเรื่องเล่า",
@@ -153,6 +196,28 @@ export const JOURNAL_ARTICLES = [
     dateModified: "2026-11-19T09:02:00+07:00",
     readMinutes: 5,
     tags: ["ดีไซน์", "เลย์เอาต์", "White space", "กราฟิกดีไซน์"],
+    sources: [
+      {
+        title: "Proximity Principle in Visual Design",
+        publisher: "Nielsen Norman Group",
+        url: "https://www.nngroup.com/articles/gestalt-proximity/",
+      },
+      {
+        title: "Negative Space",
+        publisher: "Interaction Design Foundation",
+        url: "https://ixdf.org/literature/topics/negative-space",
+      },
+      {
+        title: "White space in interaction design",
+        publisher: "Awwwards",
+        url: "https://www.awwwards.com/white-space-in-interaction-design.html",
+      },
+      {
+        title: "Understanding Success Criterion 2.5.8: Target Size (Minimum)",
+        publisher: "W3C WAI",
+        url: "https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html",
+      },
+    ],
     body: [
       {
         p: "มือใหม่ที่ออกแบบเลย์เอาต์มักรู้สึกว่าที่ว่างคือที่เสียเปล่า เลยเติมโลโก้ให้ใหญ่ขึ้น เพิ่มไอคอน เพิ่มกรอบ จนทุกอย่างตะโกนพร้อมกัน แล้วไม่มีอะไรได้ยินเลย",
