@@ -1,10 +1,25 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { withImageSizes } from "@/lib/imageSize";
 import { useFeedProjectSelect } from "./useFeedProjectSelect";
 import { supabase } from "@/integrations/supabase/client";
-import type { TablesInsert, TablesUpdate, Tables } from "@/integrations/supabase/types";
-import { PROJECT_FEED_CARD_SELECT, PROJECT_FEED_CARD_SELECT_WITH_AI } from "@/lib/dbSelects";
-import { fetchProjectRow, fetchProjectRows, fetchFeedCardRows } from "@/lib/fetchProjectRow";
-import { removeUnreferencedProjectFiles, snapshotProjectFiles } from "@/lib/projectMediaCleanup";
+import type {
+  TablesInsert,
+  TablesUpdate,
+  Tables,
+} from "@/integrations/supabase/types";
+import {
+  PROJECT_FEED_CARD_SELECT,
+  PROJECT_FEED_CARD_SELECT_WITH_AI,
+} from "@/lib/dbSelects";
+import {
+  fetchProjectRow,
+  fetchProjectRows,
+  fetchFeedCardRows,
+} from "@/lib/fetchProjectRow";
+import {
+  removeUnreferencedProjectFiles,
+  snapshotProjectFiles,
+} from "@/lib/projectMediaCleanup";
 import {
   blendPersonalizedProjects,
   buildCategoryWeights,
@@ -33,21 +48,36 @@ export type DBProject = Tables<"projects"> & {
 };
 
 async function fetchPublishedFeedCards(
-  build: (select: string) => PromiseLike<{ data: unknown[] | null; error: { message?: string; code?: string } | null }>,
+  build: (select: string) => PromiseLike<{
+    data: unknown[] | null;
+    error: { message?: string; code?: string } | null;
+  }>,
 ): Promise<DBProject[]> {
-  return fetchFeedCardRows(build, PROJECT_FEED_CARD_SELECT_WITH_AI, PROJECT_FEED_CARD_SELECT) as Promise<DBProject[]>;
+  return fetchFeedCardRows(
+    build,
+    PROJECT_FEED_CARD_SELECT_WITH_AI,
+    PROJECT_FEED_CARD_SELECT,
+  ) as Promise<DBProject[]>;
 }
 
 /**
  * Edge-cached public feed (`api/public-feed`) for signed-out visitors only — signed-in users
  * must see their own just-published work immediately. Null when unavailable (local dev, outage).
  */
-async function fetchCachedPublicFeed(kind: "recent" | "top"): Promise<DBProject[] | null> {
+async function fetchCachedPublicFeed(
+  kind: "recent" | "top",
+): Promise<DBProject[] | null> {
   try {
     const { data } = await supabase.auth.getSession();
     if (data.session) return null;
-    const res = await fetch(`/api/public-feed?kind=${kind}`, { signal: AbortSignal.timeout(4000) });
-    if (!res.ok || !res.headers.get("content-type")?.includes("application/json")) return null;
+    const res = await fetch(`/api/public-feed?kind=${kind}`, {
+      signal: AbortSignal.timeout(4000),
+    });
+    if (
+      !res.ok ||
+      !res.headers.get("content-type")?.includes("application/json")
+    )
+      return null;
     const rows: unknown = await res.json();
     return Array.isArray(rows) ? (rows as DBProject[]) : null;
   } catch {
@@ -57,42 +87,77 @@ async function fetchCachedPublicFeed(kind: "recent" | "top"): Promise<DBProject[
 
 async function writeProjectRow(
   mode: "insert" | "update",
-  args: { row?: TablesInsert<"projects">; id?: string; patch?: TablesUpdate<"projects"> },
+  args: {
+    row?: TablesInsert<"projects">;
+    id?: string;
+    patch?: TablesUpdate<"projects">;
+  },
 ): Promise<DBProject> {
-  const attempt = async (payload: TablesInsert<"projects"> | TablesUpdate<"projects">) => {
+  const attempt = async (
+    payload: TablesInsert<"projects"> | TablesUpdate<"projects">,
+  ) => {
     if (mode === "insert") {
-      const row = { ...(payload as TablesInsert<"projects">), id: (payload as TablesInsert<"projects">).id ?? crypto.randomUUID() };
+      const row = {
+        ...(payload as TablesInsert<"projects">),
+        id: (payload as TablesInsert<"projects">).id ?? crypto.randomUUID(),
+      };
       const { error } = await supabase.from("projects").insert(row);
       if (error) throw error;
       const data = await fetchProjectRow(row.id);
       if (!data?.id) throw new Error("PROJECT_ID_MISSING");
       return data;
     }
-    const { error } = await supabase.from("projects").update(payload).eq("id", args.id!);
+    const { error } = await supabase
+      .from("projects")
+      .update(payload)
+      .eq("id", args.id!);
     if (error) throw error;
     const data = await fetchProjectRow(args.id!);
     if (!data?.id) throw new Error("PROJECT_ID_MISSING");
     return data;
   };
 
-  const payload = mode === "insert" ? args.row! : args.patch!;
+  const rawPayload = mode === "insert" ? args.row! : args.patch!;
+  // Record each single image's natural size so the public page reserves its box (no layout shift).
+  const payload: typeof rawPayload =
+    rawPayload &&
+    Array.isArray((rawPayload as { content_blocks?: unknown }).content_blocks)
+      ? ({
+          ...rawPayload,
+          content_blocks: await withImageSizes(
+            (rawPayload as { content_blocks: unknown[] }).content_blocks,
+          ),
+        } as typeof rawPayload)
+      : rawPayload;
   try {
     return await attempt(payload);
   } catch (e) {
     if (isSchemaClientPermissionError(e)) {
-      console.warn("[projects] client permission column missing — saving without it", e);
-      return await attempt(stripOptionalClientPermissionFields(payload as Record<string, unknown>));
+      console.warn(
+        "[projects] client permission column missing — saving without it",
+        e,
+      );
+      return await attempt(
+        stripOptionalClientPermissionFields(payload as Record<string, unknown>),
+      );
     }
     if (isSchemaAiDisclosureError(e)) {
-      console.warn("[projects] ai disclosure columns missing — saving without them", e);
-      return await attempt(stripOptionalAiDisclosureFields(payload as Record<string, unknown>));
+      console.warn(
+        "[projects] ai disclosure columns missing — saving without them",
+        e,
+      );
+      return await attempt(
+        stripOptionalAiDisclosureFields(payload as Record<string, unknown>),
+      );
     }
     if (isSchemaContentPresentationError(e)) {
       console.warn(
         "[projects] content_blocks columns missing — saving without module layout (images only)",
         e,
       );
-      return await attempt(stripOptionalProjectContentFields(payload as Record<string, unknown>));
+      return await attempt(
+        stripOptionalProjectContentFields(payload as Record<string, unknown>),
+      );
     }
     throw e;
   }
@@ -222,13 +287,34 @@ export const useForYouProjects = (userId: string | undefined) => {
     queryKey: ["for-you-projects", userId],
     enabled: !!userId,
     queryFn: async () => {
-      const [viewsRes, bookmarksRes, likesRes, imgLikesRes, profileRes] = await Promise.all([
-        supabase.from("project_views").select("project_id").eq("user_id", userId!).order("viewed_at", { ascending: false }).limit(100),
-        supabase.from("project_bookmarks").select("project_id").eq("user_id", userId!),
-        supabase.from("project_likes").select("project_id").eq("user_id", userId!),
-        supabase.from("image_likes").select("project_id").eq("user_id", userId!).order("created_at", { ascending: false }).limit(50),
-        supabase.from("profiles").select("feed_interests").eq("user_id", userId!).maybeSingle(),
-      ]);
+      const [viewsRes, bookmarksRes, likesRes, imgLikesRes, profileRes] =
+        await Promise.all([
+          supabase
+            .from("project_views")
+            .select("project_id")
+            .eq("user_id", userId!)
+            .order("viewed_at", { ascending: false })
+            .limit(100),
+          supabase
+            .from("project_bookmarks")
+            .select("project_id")
+            .eq("user_id", userId!),
+          supabase
+            .from("project_likes")
+            .select("project_id")
+            .eq("user_id", userId!),
+          supabase
+            .from("image_likes")
+            .select("project_id")
+            .eq("user_id", userId!)
+            .order("created_at", { ascending: false })
+            .limit(50),
+          supabase
+            .from("profiles")
+            .select("feed_interests")
+            .eq("user_id", userId!)
+            .maybeSingle(),
+        ]);
 
       const feedInterests = (profileRes.data?.feed_interests ?? []) as string[];
       const searchCategoryWeights = getFeedSearchCategoryWeights(userId!);
@@ -245,10 +331,13 @@ export const useForYouProjects = (userId: string | undefined) => {
 
       let aiRecs: DBProject[] = [];
       if (likedIds.size > 0) {
-        const { data: recIds, error: recErr } = await supabase.rpc("recommend_from_likes", {
-          _user_id: userId!,
-          _limit: 40,
-        });
+        const { data: recIds, error: recErr } = await supabase.rpc(
+          "recommend_from_likes",
+          {
+            _user_id: userId!,
+            _limit: 40,
+          },
+        );
         if (!recErr) {
           const ids = (recIds ?? []).map((r: { id: string }) => r.id);
           if (ids.length) {
@@ -256,7 +345,9 @@ export const useForYouProjects = (userId: string | undefined) => {
               supabase.from("projects").select(select).in("id", ids),
             );
             const orderMap = new Map(ids.map((id, i) => [id, i]));
-            aiRecs = full.sort((a, b) => (orderMap.get(a.id) ?? 0) - (orderMap.get(b.id) ?? 0));
+            aiRecs = full.sort(
+              (a, b) => (orderMap.get(a.id) ?? 0) - (orderMap.get(b.id) ?? 0),
+            );
           }
         } else if (!isOptionalQueryError(recErr)) {
           throw recErr;
@@ -281,7 +372,11 @@ export const useForYouProjects = (userId: string | undefined) => {
         const byId = new Map(
           (signalProjects ?? []).map((p) => [
             p.id,
-            p as { id: string; category: string | null; opportunity_types: string[] | null },
+            p as {
+              id: string;
+              category: string | null;
+              opportunity_types: string[] | null;
+            },
           ]),
         );
         for (const id of viewedIdsOrdered) {
@@ -301,7 +396,10 @@ export const useForYouProjects = (userId: string | undefined) => {
         feedInterests,
         searchCategoryWeights,
       });
-      categoryWeights = mergeViewCategoryWeights(categoryWeights, viewedCategoriesNewestFirst);
+      categoryWeights = mergeViewCategoryWeights(
+        categoryWeights,
+        viewedCategoriesNewestFirst,
+      );
       for (const [cat, w] of Object.entries(localAffinity.categories)) {
         categoryWeights[cat] = (categoryWeights[cat] ?? 0) + w;
       }
@@ -359,7 +457,10 @@ export const useForYouProjects = (userId: string | undefined) => {
               .limit(40),
           );
         } catch (oppErr) {
-          if (!isOptionalQueryError(oppErr as { message?: string; code?: string })) throw oppErr;
+          if (
+            !isOptionalQueryError(oppErr as { message?: string; code?: string })
+          )
+            throw oppErr;
         }
       }
 
@@ -413,8 +514,6 @@ export const useForYouProjects = (userId: string | undefined) => {
   });
 };
 
-
-
 export const useProject = (id: string | undefined) =>
   useQuery({
     queryKey: ["project", id],
@@ -428,7 +527,8 @@ export const useProject = (id: string | undefined) =>
 export const useCreateProject = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (payload: TablesInsert<"projects">) => writeProjectRow("insert", { row: payload }),
+    mutationFn: async (payload: TablesInsert<"projects">) =>
+      writeProjectRow("insert", { row: payload }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["my-projects"] });
       qc.invalidateQueries({ queryKey: ["published-projects"] });
@@ -443,8 +543,13 @@ export const useCreateProject = () => {
 export const useUpdateProject = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, patch }: { id: string; patch: TablesUpdate<"projects"> }) =>
-      writeProjectRow("update", { id, patch }),
+    mutationFn: async ({
+      id,
+      patch,
+    }: {
+      id: string;
+      patch: TablesUpdate<"projects">;
+    }) => writeProjectRow("update", { id, patch }),
     onSuccess: (_d, vars) => {
       qc.invalidateQueries({ queryKey: ["my-projects"] });
       qc.invalidateQueries({ queryKey: ["published-projects"] });

@@ -3,7 +3,13 @@ import { lazyWithRetry as lazy } from "@/lib/lazyWithRetry";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/hooks/useAuth";
 import { SensitiveActionReauthProvider } from "@/components/legal/SensitiveActionReauthProvider";
-import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
+import {
+  BrowserRouter,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+} from "react-router-dom";
 import { getBackgroundLocation } from "@/lib/projectOverlay";
 import { isInspireEnabled } from "@/lib/aplus1Launch";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -13,8 +19,8 @@ import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import ErrorPage from "./pages/ErrorPage.tsx";
 import AuthCallbackPage from "./pages/AuthCallbackPage.tsx";
-import AuthForgotPage from "./pages/AuthForgotPage.tsx";
-import ResetPasswordPage from "./pages/ResetPasswordPage.tsx";
+const AuthForgotPage = lazy(() => import("./pages/AuthForgotPage.tsx"));
+const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage.tsx"));
 import CookieConsent from "./components/CookieConsent.tsx";
 import AndroidAppBanner from "./components/AndroidAppBanner.tsx";
 import GoogleAnalytics from "./components/seo/GoogleAnalytics.tsx";
@@ -25,14 +31,27 @@ import RequireAuth from "./components/RequireAuth.tsx";
 import SeoHead from "./components/SeoHead.tsx";
 import { TITLES } from "./lib/i18n/pageTitles.ts";
 import AdminGuard from "./components/admin/AdminGuard.tsx";
-import FeedbackTicketHost from "./components/feedback/FeedbackTicketHost.tsx";
+// Popups that never show on first paint: loaded after the page instead of in the main bundle.
+const FeedbackTicketHost = lazy(
+  () => import("./components/feedback/FeedbackTicketHost.tsx"),
+);
 import PullToRefresh from "./components/PullToRefresh.tsx";
-import RatingPrompt from "./components/feedback/RatingPrompt.tsx";
+const RatingPrompt = lazy(
+  () => import("./components/feedback/RatingPrompt.tsx"),
+);
 import CloudPrefsSync from "./components/settings/CloudPrefsSync.tsx";
-import { InterestSurveyGate } from "./components/onboarding/InterestSurveyDialog.tsx";
+const InterestSurveyGate = lazy(() =>
+  import("./components/onboarding/InterestSurveyDialog.tsx").then((m) => ({
+    default: m.InterestSurveyGate,
+  })),
+);
 import { SkipLink } from "./components/a11y/SkipLink.tsx";
 import { OfflineBanner } from "./components/OfflineBanner.tsx";
-import RedirectTo, { JobsToHiringRedirect, ProjectToShowcaseRedirect, SearchShortcutRedirect } from "./components/RedirectTo.tsx";
+import RedirectTo, {
+  JobsToHiringRedirect,
+  ProjectToShowcaseRedirect,
+  SearchShortcutRedirect,
+} from "./components/RedirectTo.tsx";
 import VanityProfileRoute from "./components/profile/VanityProfileRoute.tsx";
 import RouteFallback from "./components/RouteFallback.tsx";
 import DemoModeBanner from "./components/DemoModeBanner.tsx";
@@ -51,30 +70,60 @@ const AuthDialog = lazy(() => import("./components/AuthDialog.tsx"));
 
 // Code-split routes — only the home feed stays in the main chunk.
 const AuthPage = lazy(() => import("./pages/AuthPage.tsx"));
-const PortfolioProfilePage = lazy(() => import("./pages/PortfolioProfilePage.tsx"));
-const PortfolioManagePage = lazy(() => import("./pages/PortfolioManagePage.tsx"));
+const PortfolioProfilePage = lazy(
+  () => import("./pages/PortfolioProfilePage.tsx"),
+);
+const PortfolioManagePage = lazy(
+  () => import("./pages/PortfolioManagePage.tsx"),
+);
 const DashboardPage = lazy(() => import("./pages/DashboardPage.tsx"));
 const DashboardHomePage = lazy(() => import("./pages/DashboardHomePage.tsx"));
-const DashboardInsightsPage = lazy(() => import("./pages/DashboardInsightsPage.tsx"));
-const DashboardBillingPage = lazy(() => import("./pages/DashboardBillingPage.tsx"));
-const DashboardPortfolioPage = lazy(() => import("./pages/DashboardPortfolioPage.tsx"));
-const DashboardReviewsPage = lazy(() => import("./pages/DashboardReviewsPage.tsx"));
-const MyExhibitionPage = lazy(() => import("./pages/dashboard/MyExhibitionPage.tsx"));
-const ExhibitionEditorPage = lazy(() => import("./pages/dashboard/ExhibitionEditorPage.tsx"));
-const ExhibitionPage = lazy(() => import("./pages/exhibition/ExhibitionPage.tsx"));
-const ExhibitionDetailPage = lazy(() => import("./pages/exhibition/ExhibitionDetailPage.tsx"));
+const DashboardInsightsPage = lazy(
+  () => import("./pages/DashboardInsightsPage.tsx"),
+);
+const DashboardBillingPage = lazy(
+  () => import("./pages/DashboardBillingPage.tsx"),
+);
+const DashboardPortfolioPage = lazy(
+  () => import("./pages/DashboardPortfolioPage.tsx"),
+);
+const DashboardReviewsPage = lazy(
+  () => import("./pages/DashboardReviewsPage.tsx"),
+);
+const MyExhibitionPage = lazy(
+  () => import("./pages/dashboard/MyExhibitionPage.tsx"),
+);
+const ExhibitionEditorPage = lazy(
+  () => import("./pages/dashboard/ExhibitionEditorPage.tsx"),
+);
+const ExhibitionPage = lazy(
+  () => import("./pages/exhibition/ExhibitionPage.tsx"),
+);
+const ExhibitionDetailPage = lazy(
+  () => import("./pages/exhibition/ExhibitionDetailPage.tsx"),
+);
 const SupportPage = lazy(() => import("./pages/support/SupportPage.tsx"));
 const DonatePage = lazy(() => import("./pages/support/DonatePage.tsx"));
 const PartnersPage = lazy(() => import("./pages/support/PartnersPage.tsx"));
 const ShopPage = lazy(() => import("./pages/support/ShopPage.tsx"));
-const ShopProductPage = lazy(() => import("./pages/support/ShopProductPage.tsx"));
+const ShopProductPage = lazy(
+  () => import("./pages/support/ShopProductPage.tsx"),
+);
 const ShopBagPage = lazy(() => import("./pages/support/ShopBagPage.tsx"));
 const ShopOrderPage = lazy(() => import("./pages/support/ShopOrderPage.tsx"));
-const FoundingPickerPage = lazy(() => import("./pages/founding/FoundingPickerPage.tsx"));
-const DashboardDocumentsPage = lazy(() => import("./pages/DashboardDocumentsPage.tsx"));
-const DashboardPayoutPage = lazy(() => import("./pages/DashboardPayoutPage.tsx"));
+const FoundingPickerPage = lazy(
+  () => import("./pages/founding/FoundingPickerPage.tsx"),
+);
+const DashboardDocumentsPage = lazy(
+  () => import("./pages/DashboardDocumentsPage.tsx"),
+);
+const DashboardPayoutPage = lazy(
+  () => import("./pages/DashboardPayoutPage.tsx"),
+);
 const ProjectDetailPage = lazy(() => import("./pages/ProjectDetailPage.tsx"));
-const ProjectOverlay = lazy(() => import("./components/project/ProjectOverlay.tsx"));
+const ProjectOverlay = lazy(
+  () => import("./components/project/ProjectOverlay.tsx"),
+);
 const ServiceDetailPage = lazy(() => import("./pages/ServiceDetailPage.tsx"));
 const ObjectDetailPage = lazy(() => import("./pages/ObjectDetailPage.tsx"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage.tsx"));
@@ -84,7 +133,9 @@ const PublicProfilePage = lazy(() => import("./pages/PublicProfilePage.tsx"));
 const NotificationsPage = lazy(() => import("./pages/NotificationsPage.tsx"));
 const ChatInboxPage = lazy(() => import("./pages/ChatInboxPage.tsx"));
 const CollectionsPage = lazy(() => import("./pages/CollectionsPage.tsx"));
-const CollectionDetailPage = lazy(() => import("./pages/CollectionDetailPage.tsx"));
+const CollectionDetailPage = lazy(
+  () => import("./pages/CollectionDetailPage.tsx"),
+);
 const SeriesListPage = lazy(() =>
   import("./pages/SeriesListPage").then((m) => ({ default: m.default })),
 );
@@ -93,15 +144,21 @@ const JobsPage = lazy(() => import("./pages/JobsPage.tsx"));
 const JobsSeekingPage = lazy(() => import("./pages/JobsSeekingPage.tsx"));
 const JobDetailPage = lazy(() => import("./pages/JobDetailPage.tsx"));
 const JobNewPage = lazy(() => import("./pages/JobNewPage.tsx"));
-const HiringOrgRegisterPage = lazy(() => import("./pages/HiringOrgRegisterPage.tsx"));
-const HiringOrgStatusPage = lazy(() => import("./pages/HiringOrgStatusPage.tsx"));
+const HiringOrgRegisterPage = lazy(
+  () => import("./pages/HiringOrgRegisterPage.tsx"),
+);
+const HiringOrgStatusPage = lazy(
+  () => import("./pages/HiringOrgStatusPage.tsx"),
+);
 const StudioProfilePage = lazy(() => import("./pages/StudioProfilePage.tsx"));
 const StudioCreatePage = lazy(() => import("./pages/StudioCreatePage.tsx"));
 const StudioInvitesPage = lazy(() => import("./pages/StudioInvitesPage.tsx"));
 const StudioManagePage = lazy(() => import("./pages/StudioManagePage.tsx"));
 const SimilarImagesPage = lazy(() => import("./pages/SimilarImagesPage.tsx"));
 const InspireBoardsPage = lazy(() => import("./pages/InspireBoardsPage.tsx"));
-const InspireBoardDetailPage = lazy(() => import("./pages/InspireBoardDetailPage.tsx"));
+const InspireBoardDetailPage = lazy(
+  () => import("./pages/InspireBoardDetailPage.tsx"),
+);
 const MyReportsPage = lazy(() => import("./pages/MyReportsPage.tsx"));
 const MyFeedbackPage = lazy(() => import("./pages/MyFeedbackPage.tsx"));
 const ChangelogPage = lazy(() => import("./pages/ChangelogPage.tsx"));
@@ -112,27 +169,43 @@ const AdminUsersPage = lazy(() => import("./pages/admin/AdminUsersPage"));
 const AdminStudiosPage = lazy(() => import("./pages/admin/AdminStudiosPage"));
 const AdminProjectsPage = lazy(() => import("./pages/admin/AdminProjectsPage"));
 const AdminJobsPage = lazy(() => import("./pages/admin/AdminJobsPage"));
-const AdminHiringOrgsPage = lazy(() => import("./pages/admin/AdminHiringOrgsPage"));
+const AdminHiringOrgsPage = lazy(
+  () => import("./pages/admin/AdminHiringOrgsPage"),
+);
 const AdminHiringPage = lazy(() => import("./pages/admin/AdminHiringPage"));
 const AdminCollabsPage = lazy(() => import("./pages/admin/AdminCollabsPage"));
 const AdminChatsPage = lazy(() => import("./pages/admin/AdminChatsPage"));
 const AdminCommentsPage = lazy(() => import("./pages/admin/AdminCommentsPage"));
-const AdminCollectionsPage = lazy(() => import("./pages/admin/AdminCollectionsPage"));
+const AdminCollectionsPage = lazy(
+  () => import("./pages/admin/AdminCollectionsPage"),
+);
 const AdminPackagesPage = lazy(() => import("./pages/admin/AdminPackagesPage"));
 const AdminObjectsPage = lazy(() => import("./pages/admin/AdminObjectsPage"));
 const AdminGiftsPage = lazy(() => import("./pages/admin/AdminGiftsPage"));
-const AdminNotificationsPage = lazy(() => import("./pages/admin/AdminNotificationsPage"));
+const AdminNotificationsPage = lazy(
+  () => import("./pages/admin/AdminNotificationsPage"),
+);
 const AdminStoragePage = lazy(() => import("./pages/admin/AdminStoragePage"));
 const AdminAuditPage = lazy(() => import("./pages/admin/AdminAuditPage"));
 const AdminActivityPage = lazy(() => import("./pages/admin/AdminActivityPage"));
-const AdminContractsPage = lazy(() => import("./pages/admin/AdminContractsPage"));
+const AdminContractsPage = lazy(
+  () => import("./pages/admin/AdminContractsPage"),
+);
 const AdminWalletPage = lazy(() => import("./pages/admin/AdminWalletPage"));
 const AdminFinancePage = lazy(() => import("./pages/admin/AdminFinancePage"));
-const AdminApplicationsPage = lazy(() => import("./pages/admin/AdminApplicationsPage"));
-const AdminAnalyticsPage = lazy(() => import("./pages/admin/AdminAnalyticsPage"));
+const AdminApplicationsPage = lazy(
+  () => import("./pages/admin/AdminApplicationsPage"),
+);
+const AdminAnalyticsPage = lazy(
+  () => import("./pages/admin/AdminAnalyticsPage"),
+);
 const AdminDataHubPage = lazy(() => import("./pages/admin/AdminDataHubPage"));
-const AdminContentInsightsPage = lazy(() => import("./pages/admin/AdminContentInsightsPage"));
-const AdminPageDwellPage = lazy(() => import("./pages/admin/AdminPageDwellPage"));
+const AdminContentInsightsPage = lazy(
+  () => import("./pages/admin/AdminContentInsightsPage"),
+);
+const AdminPageDwellPage = lazy(
+  () => import("./pages/admin/AdminPageDwellPage"),
+);
 const AdminSeoPage = lazy(() => import("./pages/admin/AdminSeoPage"));
 const AdminSystemPage = lazy(() => import("./pages/admin/AdminSystemPage"));
 const AdminAdsPage = lazy(() => import("./pages/admin/AdminAdsPage"));
@@ -141,44 +214,102 @@ const AdminFeedbackPage = lazy(() => import("./pages/admin/AdminFeedbackPage"));
 const AdminAmlPage = lazy(() => import("./pages/admin/AdminAmlPage"));
 const AdminKycPage = lazy(() => import("./pages/admin/AdminKycPage"));
 const AdminInspirePage = lazy(() => import("./pages/admin/AdminInspirePage"));
-const AdminAiMonitorPage = lazy(() => import("./pages/admin/AdminAiMonitorPage"));
+const AdminAiMonitorPage = lazy(
+  () => import("./pages/admin/AdminAiMonitorPage"),
+);
 const AdminDevTasksPage = lazy(() => import("./pages/admin/AdminDevTasksPage"));
-const AdminMarketingPage = lazy(() => import("./pages/admin/AdminMarketingPage"));
-const MarketingOverviewPage = lazy(() => import("./components/admin/marketing/MarketingOverviewPage"));
-const MarketingBusinessSetup = lazy(() => import("./components/admin/marketing/MarketingBusinessSetup"));
-const MarketingLeadTable = lazy(() => import("./components/admin/marketing/MarketingLeadTable"));
-const MarketingCompetitorTable = lazy(() => import("./components/admin/marketing/MarketingCompetitorTable"));
-const MarketingContentTable = lazy(() => import("./components/admin/marketing/MarketingContentTable"));
-const MarketingInsightPanel = lazy(() => import("./components/admin/marketing/MarketingInsightPanel"));
-const MarketingAdsPlanner = lazy(() => import("./components/admin/marketing/MarketingAdsPlanner"));
-const MarketingOfferBuilder = lazy(() => import("./components/admin/marketing/MarketingOfferBuilder"));
-const MarketingContentPlanner = lazy(() => import("./components/admin/marketing/MarketingContentPlanner"));
-const MarketingOutreachPanel = lazy(() => import("./components/admin/marketing/MarketingOutreachPanel"));
-const MarketingReportsPanel = lazy(() => import("./components/admin/marketing/MarketingReportsPanel"));
-const MarketingSettingsPanel = lazy(() => import("./components/admin/marketing/MarketingSettingsPanel"));
-const MarketingManualPage = lazy(() => import("./components/admin/marketing/MarketingManualPage"));
-const MarketingSignalsPage = lazy(() => import("./components/admin/marketing/MarketingSignalsPage"));
-const LegacyMarketingRedirect = lazy(() => import("./components/admin/marketing/LegacyMarketingRedirect"));
+const AdminMarketingPage = lazy(
+  () => import("./pages/admin/AdminMarketingPage"),
+);
+const MarketingOverviewPage = lazy(
+  () => import("./components/admin/marketing/MarketingOverviewPage"),
+);
+const MarketingBusinessSetup = lazy(
+  () => import("./components/admin/marketing/MarketingBusinessSetup"),
+);
+const MarketingLeadTable = lazy(
+  () => import("./components/admin/marketing/MarketingLeadTable"),
+);
+const MarketingCompetitorTable = lazy(
+  () => import("./components/admin/marketing/MarketingCompetitorTable"),
+);
+const MarketingContentTable = lazy(
+  () => import("./components/admin/marketing/MarketingContentTable"),
+);
+const MarketingInsightPanel = lazy(
+  () => import("./components/admin/marketing/MarketingInsightPanel"),
+);
+const MarketingAdsPlanner = lazy(
+  () => import("./components/admin/marketing/MarketingAdsPlanner"),
+);
+const MarketingOfferBuilder = lazy(
+  () => import("./components/admin/marketing/MarketingOfferBuilder"),
+);
+const MarketingContentPlanner = lazy(
+  () => import("./components/admin/marketing/MarketingContentPlanner"),
+);
+const MarketingOutreachPanel = lazy(
+  () => import("./components/admin/marketing/MarketingOutreachPanel"),
+);
+const MarketingReportsPanel = lazy(
+  () => import("./components/admin/marketing/MarketingReportsPanel"),
+);
+const MarketingSettingsPanel = lazy(
+  () => import("./components/admin/marketing/MarketingSettingsPanel"),
+);
+const MarketingManualPage = lazy(
+  () => import("./components/admin/marketing/MarketingManualPage"),
+);
+const MarketingSignalsPage = lazy(
+  () => import("./components/admin/marketing/MarketingSignalsPage"),
+);
+const LegacyMarketingRedirect = lazy(
+  () => import("./components/admin/marketing/LegacyMarketingRedirect"),
+);
 const PrivacyPage = lazy(() => import("./pages/legal/PrivacyPage.tsx"));
 const TermsPage = lazy(() => import("./pages/legal/TermsPage.tsx"));
 const CookiesPage = lazy(() => import("./pages/legal/CookiesPage.tsx"));
 const DataRightsPage = lazy(() => import("./pages/legal/DataRightsPage.tsx"));
-const DeleteAccountPage = lazy(() => import("./pages/legal/DeleteAccountPage.tsx"));
-const IntellectualPropertyPage = lazy(() => import("./pages/legal/IntellectualPropertyPage.tsx"));
-const CommunityGuidelinesPage = lazy(() => import("./pages/legal/CommunityGuidelinesPage.tsx"));
-const CopyrightReportPage = lazy(() => import("./pages/legal/CopyrightReportPage.tsx"));
-const PaymentRefundPage = lazy(() => import("./pages/legal/PaymentRefundPage.tsx"));
-const ServiceAgreementPage = lazy(() => import("./pages/legal/ServiceAgreementPage.tsx"));
-const PackagesPolicyPage = lazy(() => import("./pages/legal/PackagesPolicyPage.tsx"));
+const DeleteAccountPage = lazy(
+  () => import("./pages/legal/DeleteAccountPage.tsx"),
+);
+const IntellectualPropertyPage = lazy(
+  () => import("./pages/legal/IntellectualPropertyPage.tsx"),
+);
+const CommunityGuidelinesPage = lazy(
+  () => import("./pages/legal/CommunityGuidelinesPage.tsx"),
+);
+const CopyrightReportPage = lazy(
+  () => import("./pages/legal/CopyrightReportPage.tsx"),
+);
+const PaymentRefundPage = lazy(
+  () => import("./pages/legal/PaymentRefundPage.tsx"),
+);
+const ServiceAgreementPage = lazy(
+  () => import("./pages/legal/ServiceAgreementPage.tsx"),
+);
+const PackagesPolicyPage = lazy(
+  () => import("./pages/legal/PackagesPolicyPage.tsx"),
+);
 const KycAmlPage = lazy(() => import("./pages/legal/KycAmlPage.tsx"));
 const LegalIndexPage = lazy(() => import("./pages/legal/LegalIndexPage.tsx"));
-const CommunityPostDetailPage = lazy(() => import("./pages/CommunityPostDetailPage.tsx"));
-const CommunityPostEditorPage = lazy(() => import("./pages/CommunityPostEditorPage.tsx"));
+const CommunityPostDetailPage = lazy(
+  () => import("./pages/CommunityPostDetailPage.tsx"),
+);
+const CommunityPostEditorPage = lazy(
+  () => import("./pages/CommunityPostEditorPage.tsx"),
+);
 const CommunityFeedPage = lazy(() => import("./pages/CommunityFeedPage.tsx"));
-const AdminCommunityPage = lazy(() => import("./pages/admin/AdminCommunityPage"));
+const AdminCommunityPage = lazy(
+  () => import("./pages/admin/AdminCommunityPage"),
+);
 const AdminForumPage = lazy(() => import("./pages/admin/AdminForumPage"));
-const AdminModerationPage = lazy(() => import("./pages/admin/AdminModerationPage"));
-const JournalArticlePage = lazy(() => import("./pages/journal/JournalArticlePage"));
+const AdminModerationPage = lazy(
+  () => import("./pages/admin/AdminModerationPage"),
+);
+const JournalArticlePage = lazy(
+  () => import("./pages/journal/JournalArticlePage"),
+);
 const ForumHomePage = lazy(() => import("./pages/forum/ForumHomePage"));
 const ForumCategoryPage = lazy(() => import("./pages/forum/ForumCategoryPage"));
 const ForumTopicPage = lazy(() => import("./pages/forum/ForumTopicPage"));
@@ -187,32 +318,62 @@ const ForumSearchPage = lazy(() => import("./pages/forum/ForumSearchPage"));
 const ForumAdminPage = lazy(() => import("./pages/forum/ForumAdminPage"));
 const ForumMyPage = lazy(() => import("./pages/forum/ForumMyPage"));
 const ForumLayoutRoute = lazy(() => import("./components/forum/ForumLayout"));
-const AdminCompliancePage = lazy(() => import("./pages/admin/AdminCompliancePage"));
-const AdminCopyrightReportsPage = lazy(() => import("./pages/admin/AdminCopyrightReportsPage"));
-const AdminPrivacyRequestsPage = lazy(() => import("./pages/admin/AdminPrivacyRequestsPage"));
+const AdminCompliancePage = lazy(
+  () => import("./pages/admin/AdminCompliancePage"),
+);
+const AdminCopyrightReportsPage = lazy(
+  () => import("./pages/admin/AdminCopyrightReportsPage"),
+);
+const AdminPrivacyRequestsPage = lazy(
+  () => import("./pages/admin/AdminPrivacyRequestsPage"),
+);
 const AdminEventsPage = lazy(() => import("./pages/admin/AdminEventsPage"));
-const AdminCreatorInvitationsPage = lazy(() => import("./pages/admin/AdminCreatorInvitationsPage"));
-const AdminCreatorInvitationNewPage = lazy(() => import("./pages/admin/AdminCreatorInvitationNewPage"));
-const AdminCreatorInvitationDetailPage = lazy(() => import("./pages/admin/AdminCreatorInvitationDetailPage"));
-const CreatorInvitePage = lazy(() => import("./pages/invite/CreatorInvitePage"));
-const CreatorReviewPage = lazy(() => import("./pages/invite/CreatorReviewPage"));
-const SetFirstPasswordPage = lazy(() => import("./pages/invite/SetFirstPasswordPage"));
-const ExploreProjectsPage = lazy(() => import("./pages/ExploreProjectsPage.tsx"));
+const AdminCreatorInvitationsPage = lazy(
+  () => import("./pages/admin/AdminCreatorInvitationsPage"),
+);
+const AdminCreatorInvitationNewPage = lazy(
+  () => import("./pages/admin/AdminCreatorInvitationNewPage"),
+);
+const AdminCreatorInvitationDetailPage = lazy(
+  () => import("./pages/admin/AdminCreatorInvitationDetailPage"),
+);
+const CreatorInvitePage = lazy(
+  () => import("./pages/invite/CreatorInvitePage"),
+);
+const CreatorReviewPage = lazy(
+  () => import("./pages/invite/CreatorReviewPage"),
+);
+const SetFirstPasswordPage = lazy(
+  () => import("./pages/invite/SetFirstPasswordPage"),
+);
+const ExploreProjectsPage = lazy(
+  () => import("./pages/ExploreProjectsPage.tsx"),
+);
 const EarningsPage = lazy(() => import("./pages/EarningsPage.tsx"));
 const WithdrawPage = lazy(() => import("./pages/WithdrawPage.tsx"));
 const WithdrawPinPage = lazy(() => import("./pages/WithdrawPinPage.tsx"));
 const ResearchPage = lazy(() => import("./pages/ResearchPage.tsx"));
-const UxResearchFeedbackPage = lazy(() => import("./pages/UxResearchFeedbackPage.tsx"));
+const UxResearchFeedbackPage = lazy(
+  () => import("./pages/UxResearchFeedbackPage.tsx"),
+);
 const AdvertisePage = lazy(() => import("./pages/AdvertisePage.tsx"));
 const LearnShell = lazy(() =>
-  import("./components/learn/LearnShell.tsx").then((m) => ({ default: m.LearnShell })),
+  import("./components/learn/LearnShell.tsx").then((m) => ({
+    default: m.LearnShell,
+  })),
 );
-const PlatformLandingPage = lazy(() => import("./pages/learn/PlatformLandingPage.tsx"));
+const PlatformLandingPage = lazy(
+  () => import("./pages/learn/PlatformLandingPage.tsx"),
+);
 const HelpShell = lazy(() =>
-  import("./components/help/HelpShell.tsx").then((m) => ({ default: m.HelpShell })),
+  import("./components/help/HelpShell.tsx").then((m) => ({
+    default: m.HelpShell,
+  })),
 );
 const HelpHubPage = lazy(() => import("./pages/help/HelpHubPage.tsx"));
-const HelpCategoryPage = lazy(() => import("./pages/help/HelpCategoryPage.tsx"));
+const HelpCategoryPage = lazy(
+  () => import("./pages/help/HelpCategoryPage.tsx"),
+);
 const HelpArticlePage = lazy(() => import("./pages/help/HelpArticlePage.tsx"));
 const UpgradePage = lazy(() => import("./pages/UpgradePage.tsx"));
 const AdDetailPage = lazy(() => import("./pages/AdDetailPage.tsx"));
@@ -221,11 +382,21 @@ const ContractsListPage = lazy(() => import("./pages/ContractsListPage.tsx"));
 const DrillGalleryPage = lazy(() => import("./pages/DrillGalleryPage.tsx"));
 const SavedPostsPage = lazy(() => import("./pages/SavedPostsPage.tsx"));
 const ReferralPage = lazy(() => import("./pages/ReferralPage.tsx"));
-const FollowConnectionsPage = lazy(() => import("./pages/FollowConnectionsPage.tsx"));
-const ReviewFormPreviewPage = lazy(() => import("./pages/dev/ReviewFormPreviewPage.tsx"));
-const HireCancelPreviewPage = lazy(() => import("./pages/dev/HireCancelPreviewPage.tsx"));
-const OfferDialogPreviewPage = lazy(() => import("./pages/dev/OfferDialogPreviewPage.tsx"));
-const BillingPreviewPage = lazy(() => import("./pages/dev/BillingPreviewPage.tsx"));
+const FollowConnectionsPage = lazy(
+  () => import("./pages/FollowConnectionsPage.tsx"),
+);
+const ReviewFormPreviewPage = lazy(
+  () => import("./pages/dev/ReviewFormPreviewPage.tsx"),
+);
+const HireCancelPreviewPage = lazy(
+  () => import("./pages/dev/HireCancelPreviewPage.tsx"),
+);
+const OfferDialogPreviewPage = lazy(
+  () => import("./pages/dev/OfferDialogPreviewPage.tsx"),
+);
+const BillingPreviewPage = lazy(
+  () => import("./pages/dev/BillingPreviewPage.tsx"),
+);
 
 /** Routes render the page underneath; a work opened with router state `backgroundLocation` sits on top as an overlay. */
 const BackgroundAwareRoutes = ({ children }: { children: ReactNode }) => {
@@ -258,296 +429,1040 @@ const queryClient = new QueryClient({
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
-    <SensitiveActionReauthProvider>
-    <ThemeProvider>
-      <TooltipProvider>
-        <Sonner />
-        {/* startTransition: keep the current page on screen while a lazy route chunk loads (no full-screen loader flash). */}
-        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-          <ScrollToTop />
-          <OAuthErrorGate />
-          <ProductEventTracker />
-          <ErrorBoundary>
-          <SkipLink />
-          <DemoModeBanner />
-          <AvatarPoolBootstrap />
-          <ReferralAttribution />
-          <CreatorInviteAccountGuards />
-          <DesktopTopNav />
-          <Suspense fallback={<RouteFallback />}>
-            <BackgroundAwareRoutes>
-              <Route element={<LaunchMinimalGate />}>
-              <Route element={<PageTransition />}>
-              <Route path="/" element={<Index />} />
-              <Route path="/learn" element={<LearnShell />}>
-                <Route index element={<PlatformLandingPage />} />
-              </Route>
-              <Route path="/search" element={<SearchShortcutRedirect />} />
-              <Route path="/learn/who" element={<RedirectTo to="/learn#who" />} />
-              <Route path="/learn/start" element={<RedirectTo to="/learn#start" />} />
-              <Route path="/learn/creators" element={<RedirectTo to="/learn#creators" />} />
-              <Route path="/learn/hirers" element={<RedirectTo to="/learn#hirers" />} />
-              <Route path="/learn/opportunity-loop" element={<RedirectTo to="/learn#opportunity-loop" />} />
-              <Route path="/learn/features" element={<RedirectTo to="/learn#features" />} />
-              <Route path="/learn/trust" element={<RedirectTo to="/learn#trust" />} />
-              <Route path="/learn/px" element={<RedirectTo to="/learn" />} />
-              <Route path="/learn/faq" element={<RedirectTo to="/help" />} />
-              <Route path="/journal" element={<Navigate to="/exhibition/category/journal" replace />} />
-              <Route path="/journal/:slug" element={<JournalArticlePage />} />
-              <Route path="/changelog" element={<ChangelogPage />} />
-              <Route path="/help" element={<HelpShell />}>
-                <Route index element={<HelpHubPage />} />
-                <Route path=":categoryId" element={<HelpCategoryPage />} />
-                <Route path=":categoryId/:slug" element={<HelpArticlePage />} />
-              </Route>
-              {import.meta.env.DEV ? (
-                <>
-                  <Route path="/dev/review-form" element={<ReviewFormPreviewPage />} />
-                  <Route path="/dev/hire-cancel" element={<HireCancelPreviewPage />} />
-                  <Route path="/dev/offer-dialog" element={<OfferDialogPreviewPage />} />
-                  <Route path="/dev/billing" element={<BillingPreviewPage />} />
-                  {/* Creator invitation admin screens with sample data (no login, no edge functions) */}
-                  <Route path="/dev/creator-invitations" element={<AdminLayout preview />}>
-                    <Route index element={<AdminCreatorInvitationsPage />} />
-                    <Route path="new" element={<AdminCreatorInvitationNewPage />} />
-                    <Route path=":id" element={<AdminCreatorInvitationDetailPage />} />
-                  </Route>
-                </>
-              ) : null}
-              <Route path="/research" element={<ResearchPage />} />
-              <Route path="/research/feedback" element={<UxResearchFeedbackPage />} />
-              <Route path="/auth" element={<AuthPage />} />
-              <Route path="/auth/forgot" element={<AuthForgotPage />} />
-              <Route path="/auth/callback" element={<AuthCallbackPage />} />
-              <Route path="/reset-password" element={<ResetPasswordPage />} />
-              {/* Creator Invitation V1 — private, token-gated, noindex */}
-              <Route path="/invite/creator/:token" element={<CreatorInvitePage />} />
-              <Route path="/invite/creator/:token/form" element={<CreatorInvitePage />} />
-              <Route path="/invite/review/:token" element={<CreatorReviewPage />} />
-              <Route path="/account/set-password" element={<RequireAuth><SetFirstPasswordPage /></RequireAuth>} />
-              <Route path="/portfolio" element={<RequireAuth><SeoHead title="My Studio" path="/portfolio" noindex /><PortfolioProfilePage /></RequireAuth>} />
-              <Route path="/portfolio/saved" element={<RequireAuth><SavedPostsPage /></RequireAuth>} />
-              <Route path="/portfolio/manage" element={<RequireAuth><PortfolioManagePage /></RequireAuth>} />
-              <Route path="/dashboard" element={<RequireAuth><DashboardHomePage /></RequireAuth>} />
-              <Route path="/dashboard/hire" element={<RequireAuth><DashboardPage mode="hire" /></RequireAuth>} />
-              <Route path="/dashboard/collab" element={<RequireAuth><DashboardPage mode="collab" /></RequireAuth>} />
-              <Route path="/dashboard/projects" element={<RequireAuth><DashboardPortfolioPage mode="projects" /></RequireAuth>} />
-              <Route path="/dashboard/packages" element={<RequireAuth><DashboardPortfolioPage mode="packages" /></RequireAuth>} />
-              <Route path="/dashboard/objects" element={<RequireAuth><DashboardPortfolioPage mode="objects" /></RequireAuth>} />
-              <Route path="/dashboard/catalogs" element={<RequireAuth><DashboardPortfolioPage mode="catalogs" /></RequireAuth>} />
-              <Route path="/dashboard/insights" element={<RequireAuth><DashboardInsightsPage /></RequireAuth>} />
-              <Route path="/dashboard/billing" element={<RequireAuth><DashboardBillingPage /></RequireAuth>} />
-              <Route path="/dashboard/reviews" element={<RequireAuth><DashboardReviewsPage /></RequireAuth>} />
-              <Route path="/dashboard/exhibition" element={<RequireAuth><MyExhibitionPage /></RequireAuth>} />
-              <Route path="/dashboard/exhibition/new" element={<RequireAuth><ExhibitionEditorPage /></RequireAuth>} />
-              <Route path="/dashboard/exhibition/:id/edit" element={<RequireAuth><ExhibitionEditorPage /></RequireAuth>} />
-              <Route path="/dashboard/documents" element={<RequireAuth><DashboardDocumentsPage /></RequireAuth>} />
-              <Route path="/dashboard/payout" element={<RequireAuth><DashboardPayoutPage /></RequireAuth>} />
-              <Route path="/portfolio/followers" element={<RequireAuth><FollowConnectionsPage /></RequireAuth>} />
-              <Route path="/hire/start" element={<RequireAuth><RedirectTo to="/verify" /></RequireAuth>} />
-              <Route path="/hire-requests" element={<RequireAuth><RedirectTo to="/dashboard/hire" /></RequireAuth>} />
-              <Route path="/collab-requests" element={<RequireAuth><RedirectTo to="/dashboard/collab" /></RequireAuth>} />
-              <Route path="/portfolio/packages" element={<Navigate to="/dashboard/packages" replace />} />
-              <Route path="/portfolio/packages/new" element={<RequireAuth><PackageEditorPage /></RequireAuth>} />
-              <Route path="/portfolio/packages/:id/edit" element={<RequireAuth><PackageEditorPage /></RequireAuth>} />
-              <Route path="/portfolio/new" element={<RequireAuth><ProjectEditorPage /></RequireAuth>} />
-              <Route path="/portfolio/:id/edit" element={<RequireAuth><ProjectEditorPage /></RequireAuth>} />
-              <Route path="/showcase/:id" element={<ProjectDetailPage />} />
-              <Route path="/project/:id" element={<ProjectToShowcaseRedirect />} />
-              <Route path="/exhibition" element={<ExhibitionPage />} />
-              <Route path="/exhibition/category/:cat" element={<ExhibitionPage />} />
-              <Route path="/exhibition/:id" element={<ExhibitionDetailPage />} />
-              {/* Support Us: hidden by LaunchMinimalGate until VITE_SUPPORT_SPACE_ENABLED=true */}
-              <Route path="/support" element={<SupportPage />} />
-              <Route path="/support/donate" element={<DonatePage />} />
-              <Route path="/support/partners" element={<PartnersPage />} />
-              <Route path="/shop" element={<ShopPage />} />
-              <Route path="/shop/bag" element={<ShopBagPage />} />
-              <Route path="/shop/order/:ref" element={<ShopOrderPage />} />
-              <Route path="/shop/:slug" element={<ShopProductPage />} />
-              {/* Founding Projects: hidden by LaunchMinimalGate until VITE_FOUNDING_ENABLED=true */}
-              <Route path="/founding" element={<Navigate to="/founding/picker" replace />} />
-              <Route path="/founding/:slug" element={<FoundingPickerPage />} />
-              <Route path="/service/:id" element={<ServiceDetailPage />} />
-              <Route path="/object/:id" element={<ObjectDetailPage />} />
-              <Route path="/drill" element={<DrillGalleryPage />} />
-              <Route path="/explore/:kind/:value" element={<ExploreProjectsPage />} />
-              <Route path="/similar/:projectId" element={<SimilarImagesPage />} />
-              {isInspireEnabled() ? (
-                <>
-                  <Route path="/inspire" element={<RequireAuth><InspireBoardsPage /></RequireAuth>} />
-                  <Route path="/inspire/:boardId" element={<RequireAuth><InspireBoardDetailPage /></RequireAuth>} />
-                </>
-              ) : (
-                <Route path="/inspire/*" element={<Navigate to="/portfolio" replace />} />
-              )}
-              <Route path="/u/:userId" element={<PublicProfilePage />} />
-              <Route path="/u/:userId/followers" element={<FollowConnectionsPage />} />
-              <Route path="/earnings" element={<RequireAuth><EarningsPage /></RequireAuth>} />
-              <Route path="/earnings/withdraw/pin" element={<RequireAuth><WithdrawPinPage /></RequireAuth>} />
-              <Route path="/earnings/withdraw" element={<RequireAuth><WithdrawPage /></RequireAuth>} />
-              <Route path="/referrals" element={<RequireAuth><ReferralPage /></RequireAuth>} />
+      <SensitiveActionReauthProvider>
+        <ThemeProvider>
+          <TooltipProvider>
+            <Sonner />
+            {/* startTransition: keep the current page on screen while a lazy route chunk loads (no full-screen loader flash). */}
+            <BrowserRouter
+              future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+            >
+              <ScrollToTop />
+              <OAuthErrorGate />
+              <ProductEventTracker />
+              <ErrorBoundary>
+                <SkipLink />
+                <DemoModeBanner />
+                <AvatarPoolBootstrap />
+                <ReferralAttribution />
+                <CreatorInviteAccountGuards />
+                <DesktopTopNav />
+                <Suspense fallback={<RouteFallback />}>
+                  <BackgroundAwareRoutes>
+                    <Route element={<LaunchMinimalGate />}>
+                      <Route element={<PageTransition />}>
+                        <Route path="/" element={<Index />} />
+                        <Route path="/learn" element={<LearnShell />}>
+                          <Route index element={<PlatformLandingPage />} />
+                        </Route>
+                        <Route
+                          path="/search"
+                          element={<SearchShortcutRedirect />}
+                        />
+                        <Route
+                          path="/learn/who"
+                          element={<RedirectTo to="/learn#who" />}
+                        />
+                        <Route
+                          path="/learn/start"
+                          element={<RedirectTo to="/learn#start" />}
+                        />
+                        <Route
+                          path="/learn/creators"
+                          element={<RedirectTo to="/learn#creators" />}
+                        />
+                        <Route
+                          path="/learn/hirers"
+                          element={<RedirectTo to="/learn#hirers" />}
+                        />
+                        <Route
+                          path="/learn/opportunity-loop"
+                          element={<RedirectTo to="/learn#opportunity-loop" />}
+                        />
+                        <Route
+                          path="/learn/features"
+                          element={<RedirectTo to="/learn#features" />}
+                        />
+                        <Route
+                          path="/learn/trust"
+                          element={<RedirectTo to="/learn#trust" />}
+                        />
+                        <Route
+                          path="/learn/px"
+                          element={<RedirectTo to="/learn" />}
+                        />
+                        <Route
+                          path="/learn/faq"
+                          element={<RedirectTo to="/help" />}
+                        />
+                        <Route
+                          path="/journal"
+                          element={
+                            <Navigate
+                              to="/exhibition/category/journal"
+                              replace
+                            />
+                          }
+                        />
+                        <Route
+                          path="/journal/:slug"
+                          element={<JournalArticlePage />}
+                        />
+                        <Route path="/changelog" element={<ChangelogPage />} />
+                        <Route path="/help" element={<HelpShell />}>
+                          <Route index element={<HelpHubPage />} />
+                          <Route
+                            path=":categoryId"
+                            element={<HelpCategoryPage />}
+                          />
+                          <Route
+                            path=":categoryId/:slug"
+                            element={<HelpArticlePage />}
+                          />
+                        </Route>
+                        {import.meta.env.DEV ? (
+                          <>
+                            <Route
+                              path="/dev/review-form"
+                              element={<ReviewFormPreviewPage />}
+                            />
+                            <Route
+                              path="/dev/hire-cancel"
+                              element={<HireCancelPreviewPage />}
+                            />
+                            <Route
+                              path="/dev/offer-dialog"
+                              element={<OfferDialogPreviewPage />}
+                            />
+                            <Route
+                              path="/dev/billing"
+                              element={<BillingPreviewPage />}
+                            />
+                            {/* Creator invitation admin screens with sample data (no login, no edge functions) */}
+                            <Route
+                              path="/dev/creator-invitations"
+                              element={<AdminLayout preview />}
+                            >
+                              <Route
+                                index
+                                element={<AdminCreatorInvitationsPage />}
+                              />
+                              <Route
+                                path="new"
+                                element={<AdminCreatorInvitationNewPage />}
+                              />
+                              <Route
+                                path=":id"
+                                element={<AdminCreatorInvitationDetailPage />}
+                              />
+                            </Route>
+                          </>
+                        ) : null}
+                        <Route path="/research" element={<ResearchPage />} />
+                        <Route
+                          path="/research/feedback"
+                          element={<UxResearchFeedbackPage />}
+                        />
+                        <Route path="/auth" element={<AuthPage />} />
+                        <Route
+                          path="/auth/forgot"
+                          element={<AuthForgotPage />}
+                        />
+                        <Route
+                          path="/auth/callback"
+                          element={<AuthCallbackPage />}
+                        />
+                        <Route
+                          path="/reset-password"
+                          element={<ResetPasswordPage />}
+                        />
+                        {/* Creator Invitation V1 — private, token-gated, noindex */}
+                        <Route
+                          path="/invite/creator/:token"
+                          element={<CreatorInvitePage />}
+                        />
+                        <Route
+                          path="/invite/creator/:token/form"
+                          element={<CreatorInvitePage />}
+                        />
+                        <Route
+                          path="/invite/review/:token"
+                          element={<CreatorReviewPage />}
+                        />
+                        <Route
+                          path="/account/set-password"
+                          element={
+                            <RequireAuth>
+                              <SetFirstPasswordPage />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/portfolio"
+                          element={
+                            <RequireAuth>
+                              <SeoHead
+                                title="My Studio"
+                                path="/portfolio"
+                                noindex
+                              />
+                              <PortfolioProfilePage />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/portfolio/saved"
+                          element={
+                            <RequireAuth>
+                              <SavedPostsPage />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/portfolio/manage"
+                          element={
+                            <RequireAuth>
+                              <PortfolioManagePage />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/dashboard"
+                          element={
+                            <RequireAuth>
+                              <DashboardHomePage />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/dashboard/hire"
+                          element={
+                            <RequireAuth>
+                              <DashboardPage mode="hire" />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/dashboard/collab"
+                          element={
+                            <RequireAuth>
+                              <DashboardPage mode="collab" />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/dashboard/projects"
+                          element={
+                            <RequireAuth>
+                              <DashboardPortfolioPage mode="projects" />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/dashboard/packages"
+                          element={
+                            <RequireAuth>
+                              <DashboardPortfolioPage mode="packages" />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/dashboard/objects"
+                          element={
+                            <RequireAuth>
+                              <DashboardPortfolioPage mode="objects" />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/dashboard/catalogs"
+                          element={
+                            <RequireAuth>
+                              <DashboardPortfolioPage mode="catalogs" />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/dashboard/insights"
+                          element={
+                            <RequireAuth>
+                              <DashboardInsightsPage />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/dashboard/billing"
+                          element={
+                            <RequireAuth>
+                              <DashboardBillingPage />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/dashboard/reviews"
+                          element={
+                            <RequireAuth>
+                              <DashboardReviewsPage />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/dashboard/exhibition"
+                          element={
+                            <RequireAuth>
+                              <MyExhibitionPage />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/dashboard/exhibition/new"
+                          element={
+                            <RequireAuth>
+                              <ExhibitionEditorPage />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/dashboard/exhibition/:id/edit"
+                          element={
+                            <RequireAuth>
+                              <ExhibitionEditorPage />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/dashboard/documents"
+                          element={
+                            <RequireAuth>
+                              <DashboardDocumentsPage />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/dashboard/payout"
+                          element={
+                            <RequireAuth>
+                              <DashboardPayoutPage />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/portfolio/followers"
+                          element={
+                            <RequireAuth>
+                              <FollowConnectionsPage />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/hire/start"
+                          element={
+                            <RequireAuth>
+                              <RedirectTo to="/verify" />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/hire-requests"
+                          element={
+                            <RequireAuth>
+                              <RedirectTo to="/dashboard/hire" />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/collab-requests"
+                          element={
+                            <RequireAuth>
+                              <RedirectTo to="/dashboard/collab" />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/portfolio/packages"
+                          element={
+                            <Navigate to="/dashboard/packages" replace />
+                          }
+                        />
+                        <Route
+                          path="/portfolio/packages/new"
+                          element={
+                            <RequireAuth>
+                              <PackageEditorPage />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/portfolio/packages/:id/edit"
+                          element={
+                            <RequireAuth>
+                              <PackageEditorPage />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/portfolio/new"
+                          element={
+                            <RequireAuth>
+                              <ProjectEditorPage />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/portfolio/:id/edit"
+                          element={
+                            <RequireAuth>
+                              <ProjectEditorPage />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/showcase/:id"
+                          element={<ProjectDetailPage />}
+                        />
+                        <Route
+                          path="/project/:id"
+                          element={<ProjectToShowcaseRedirect />}
+                        />
+                        <Route
+                          path="/exhibition"
+                          element={<ExhibitionPage />}
+                        />
+                        <Route
+                          path="/exhibition/category/:cat"
+                          element={<ExhibitionPage />}
+                        />
+                        <Route
+                          path="/exhibition/:id"
+                          element={<ExhibitionDetailPage />}
+                        />
+                        {/* Support Us: hidden by LaunchMinimalGate until VITE_SUPPORT_SPACE_ENABLED=true */}
+                        <Route path="/support" element={<SupportPage />} />
+                        <Route
+                          path="/support/donate"
+                          element={<DonatePage />}
+                        />
+                        <Route
+                          path="/support/partners"
+                          element={<PartnersPage />}
+                        />
+                        <Route path="/shop" element={<ShopPage />} />
+                        <Route path="/shop/bag" element={<ShopBagPage />} />
+                        <Route
+                          path="/shop/order/:ref"
+                          element={<ShopOrderPage />}
+                        />
+                        <Route
+                          path="/shop/:slug"
+                          element={<ShopProductPage />}
+                        />
+                        {/* Founding Projects: hidden by LaunchMinimalGate until VITE_FOUNDING_ENABLED=true */}
+                        <Route
+                          path="/founding"
+                          element={<Navigate to="/founding/picker" replace />}
+                        />
+                        <Route
+                          path="/founding/:slug"
+                          element={<FoundingPickerPage />}
+                        />
+                        <Route
+                          path="/service/:id"
+                          element={<ServiceDetailPage />}
+                        />
+                        <Route
+                          path="/object/:id"
+                          element={<ObjectDetailPage />}
+                        />
+                        <Route path="/drill" element={<DrillGalleryPage />} />
+                        <Route
+                          path="/explore/:kind/:value"
+                          element={<ExploreProjectsPage />}
+                        />
+                        <Route
+                          path="/similar/:projectId"
+                          element={<SimilarImagesPage />}
+                        />
+                        {isInspireEnabled() ? (
+                          <>
+                            <Route
+                              path="/inspire"
+                              element={
+                                <RequireAuth>
+                                  <InspireBoardsPage />
+                                </RequireAuth>
+                              }
+                            />
+                            <Route
+                              path="/inspire/:boardId"
+                              element={
+                                <RequireAuth>
+                                  <InspireBoardDetailPage />
+                                </RequireAuth>
+                              }
+                            />
+                          </>
+                        ) : (
+                          <Route
+                            path="/inspire/*"
+                            element={<Navigate to="/portfolio" replace />}
+                          />
+                        )}
+                        <Route
+                          path="/u/:userId"
+                          element={<PublicProfilePage />}
+                        />
+                        <Route
+                          path="/u/:userId/followers"
+                          element={<FollowConnectionsPage />}
+                        />
+                        <Route
+                          path="/earnings"
+                          element={
+                            <RequireAuth>
+                              <EarningsPage />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/earnings/withdraw/pin"
+                          element={
+                            <RequireAuth>
+                              <WithdrawPinPage />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/earnings/withdraw"
+                          element={
+                            <RequireAuth>
+                              <WithdrawPage />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/referrals"
+                          element={
+                            <RequireAuth>
+                              <ReferralPage />
+                            </RequireAuth>
+                          }
+                        />
 
-              <Route path="/settings" element={<RequireAuth><SeoHead title={TITLES.settings} path="/settings" noindex /><SettingsPage /></RequireAuth>} />
-              <Route path="/notifications" element={<RequireAuth><NotificationsPage /></RequireAuth>} />
-              <Route path="/chat/:id?" element={<RequireAuth><SeoHead title={TITLES.chat} path="/chat" noindex /><ChatInboxPage /></RequireAuth>} />
-              <Route path="/community/new" element={<RequireAuth><CommunityPostEditorPage /></RequireAuth>} />
-              <Route path="/community/:id/edit" element={<RequireAuth><CommunityPostEditorPage /></RequireAuth>} />
-              <Route path="/community" element={<CommunityFeedPage />} />
-              <Route path="/community/:id" element={<CommunityPostDetailPage />} />
-              <Route path="/forum" element={<ForumLayoutRoute />}>
-                <Route index element={<ForumHomePage />} />
-                <Route path="search" element={<ForumSearchPage />} />
-                <Route path="me" element={<RequireAuth><ForumMyPage /></RequireAuth>} />
-                <Route path="new" element={<RequireAuth><ForumNewTopicPage /></RequireAuth>} />
-                <Route path="admin" element={<RequireAuth><AdminGuard><ForumAdminPage /></AdminGuard></RequireAuth>} />
-                <Route path="c/:slug" element={<ForumCategoryPage />} />
-                <Route path="t/:id" element={<ForumTopicPage />} />
-              </Route>
-              <Route path="/collections" element={<RequireAuth><CollectionsPage /></RequireAuth>} />
-              <Route path="/collections/:id" element={<CollectionDetailPage />} />
-              <Route path="/series" element={<RequireAuth><SeriesListPage /></RequireAuth>} />
-              <Route path="/series/:id" element={<SeriesDetailPage />} />
-              <Route path="/me/reports" element={<RequireAuth><MyReportsPage /></RequireAuth>} />
-              <Route path="/me/feedback" element={<RequireAuth><MyFeedbackPage /></RequireAuth>} />
-              <Route path="/reports" element={<RedirectTo to="/me/reports" />} />
-              <Route path="/feedback" element={<RedirectTo to="/me/feedback" />} />
-              <Route path="/verify" element={<RequireAuth><VerificationPage /></RequireAuth>} />
-              <Route path="/admin" element={<AdminLayout />}>
-                <Route index element={<OverviewPage />} />
-                <Route path="dev-tasks" element={<AdminDevTasksPage />} />
-                <Route path="marketing" element={<AdminMarketingPage />}>
-                  <Route index element={<MarketingOverviewPage />} />
-                  <Route path="setup" element={<MarketingBusinessSetup />} />
-                  <Route path="signals" element={<MarketingSignalsPage />} />
-                  <Route path="leads" element={<MarketingLeadTable />} />
-                  <Route path="competitors" element={<MarketingCompetitorTable />} />
-                  <Route path="content" element={<MarketingContentTable />} />
-                  <Route path="insights" element={<MarketingInsightPanel />} />
-                  <Route path="ads" element={<MarketingAdsPlanner />} />
-                  <Route path="offers" element={<MarketingOfferBuilder />} />
-                  <Route path="planner" element={<MarketingContentPlanner />} />
-                  <Route path="outreach" element={<MarketingOutreachPanel />} />
-                  <Route path="reports" element={<MarketingReportsPanel />} />
-                  <Route path="settings" element={<MarketingSettingsPanel />} />
-                  <Route path="manual" element={<MarketingManualPage />} />
-                </Route>
-                <Route path="marketing-module/*" element={<Navigate to="/admin/marketing" replace />} />
-                <Route path="kuy-radar/*" element={<LegacyMarketingRedirect />} />
-                <Route path="activity" element={<AdminActivityPage />} />
-                <Route path="analytics" element={<AdminAnalyticsPage />} />
-                <Route path="data" element={<AdminDataHubPage />} />
-                <Route path="insights" element={<AdminContentInsightsPage />} />
-                <Route path="page-time" element={<AdminPageDwellPage />} />
-                <Route path="seo" element={<AdminSeoPage />} />
-                <Route path="contracts" element={<AdminContractsPage />} />
-                <Route path="wallet" element={<AdminWalletPage />} />
-                <Route path="finance" element={<AdminFinancePage />} />
-                <Route path="applications" element={<AdminApplicationsPage />} />
-                <Route path="users" element={<AdminUsersPage />} />
-                <Route path="studios" element={<AdminStudiosPage />} />
-                <Route path="projects" element={<AdminProjectsPage />} />
-                <Route path="jobs" element={<AdminJobsPage />} />
-                <Route path="employer-orgs" element={<AdminHiringOrgsPage />} />
-                <Route path="hiring" element={<AdminHiringPage />} />
-                <Route path="collabs" element={<AdminCollabsPage />} />
-                <Route path="chats" element={<AdminChatsPage />} />
-                <Route path="comments" element={<AdminCommentsPage />} />
-                <Route path="collections" element={<AdminCollectionsPage />} />
-                <Route path="packages" element={<AdminPackagesPage />} />
-                <Route path="objects" element={<AdminObjectsPage />} />
-                <Route path="inspire" element={<AdminInspirePage />} />
-                <Route path="gifts" element={<AdminGiftsPage />} />
-                <Route path="aml" element={<AdminAmlPage />} />
-                <Route path="kyc" element={<AdminKycPage />} />
-                <Route path="ads" element={<AdminAdsPage />} />
-                <Route path="notifications" element={<AdminNotificationsPage />} />
-                <Route path="storage" element={<AdminStoragePage />} />
-                <Route path="audit" element={<AdminAuditPage />} />
-                <Route path="reports" element={<AdminReportsPage />} />
-                <Route path="community" element={<AdminCommunityPage />} />
-                <Route path="forum" element={<AdminForumPage />} />
-                <Route path="moderation" element={<AdminModerationPage />} />
-                <Route path="compliance" element={<AdminCompliancePage />} />
-                <Route path="compliance/copyright" element={<AdminCopyrightReportsPage />} />
-                <Route path="compliance/privacy" element={<AdminPrivacyRequestsPage />} />
-                <Route path="events" element={<AdminEventsPage />} />
-                <Route path="creator-invitations" element={<AdminCreatorInvitationsPage />} />
-                <Route path="creator-invitations/new" element={<AdminCreatorInvitationNewPage />} />
-                <Route path="creator-invitations/:id" element={<AdminCreatorInvitationDetailPage />} />
-                <Route path="events/new" element={<ExhibitionEditorPage team />} />
-                <Route path="events/:id/edit" element={<ExhibitionEditorPage team />} />
-                <Route path="feedback" element={<AdminFeedbackPage />} />
-                <Route path="system" element={<AdminSystemPage />} />
-                <Route path="ai" element={<AdminAiMonitorPage />} />
-              </Route>
-              <Route path="/hiring" element={<JobsPage />} />
-              <Route path="/hiring/new" element={<JobNewPage />} />
-              <Route path="/hiring/:id" element={<JobDetailPage />} />
-              <Route path="/jobs" element={<JobsSeekingPage />} />
-              <Route path="/jobs/new" element={<RedirectTo to="/hiring/new" />} />
-              <Route path="/jobs/:id" element={<JobsToHiringRedirect />} />
-              <Route path="/org/register" element={<HiringOrgRegisterPage />} />
-              <Route path="/org/status" element={<HiringOrgStatusPage />} />
-              <Route path="/advertise" element={<AdvertisePage />} />
-              <Route path="/upgrade" element={<UpgradePage />} />
-              <Route path="/ads/:id" element={<AdDetailPage />} />
-              <Route path="/contracts" element={<ContractsListPage />} />
-              <Route path="/contracts/new" element={<ContractEditorPage />} />
-              <Route path="/s/:slug" element={<StudioProfilePage />} />
-              <Route path="/studio/new" element={<StudioCreatePage />} />
-              <Route path="/studio/invites" element={<StudioInvitesPage />} />
-              <Route path="/studio/manage" element={<StudioManagePage />} />
-              <Route path="/legal" element={<LegalIndexPage />} />
-              <Route path="/legal/privacy" element={<PrivacyPage />} />
-              <Route path="/legal/terms" element={<TermsPage />} />
-              <Route path="/legal/cookies" element={<CookiesPage />} />
-              <Route path="/legal/rights" element={<DataRightsPage />} />
-              <Route path="/legal/delete-account" element={<DeleteAccountPage />} />
-              <Route path="/legal/ip" element={<IntellectualPropertyPage />} />
-              <Route path="/legal/community" element={<CommunityGuidelinesPage />} />
-              <Route path="/legal/copyright-report" element={<CopyrightReportPage />} />
-              <Route path="/legal/payment-refund" element={<PaymentRefundPage />} />
-              <Route path="/legal/service-agreement" element={<ServiceAgreementPage />} />
-              <Route path="/legal/packages" element={<PackagesPolicyPage />} />
-              <Route path="/legal/kyc-aml" element={<KycAmlPage />} />
-              <Route path="/error" element={<ErrorPage />} />
-              <Route path="/error/400" element={<ErrorPage defaultKind="400" />} />
-              <Route path="/error/403" element={<ErrorPage defaultKind="403" />} />
-              <Route path="/error/404" element={<ErrorPage defaultKind="404" />} />
-              <Route path="/error/405" element={<ErrorPage defaultKind="405" />} />
-              <Route path="/error/500" element={<ErrorPage defaultKind="500" />} />
-              <Route path="/error/502" element={<ErrorPage defaultKind="502" />} />
-              <Route path="/error/503" element={<ErrorPage defaultKind="503" />} />
-              {/*
+                        <Route
+                          path="/settings"
+                          element={
+                            <RequireAuth>
+                              <SeoHead
+                                title={TITLES.settings}
+                                path="/settings"
+                                noindex
+                              />
+                              <SettingsPage />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/notifications"
+                          element={
+                            <RequireAuth>
+                              <NotificationsPage />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/chat/:id?"
+                          element={
+                            <RequireAuth>
+                              <SeoHead
+                                title={TITLES.chat}
+                                path="/chat"
+                                noindex
+                              />
+                              <ChatInboxPage />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/community/new"
+                          element={
+                            <RequireAuth>
+                              <CommunityPostEditorPage />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/community/:id/edit"
+                          element={
+                            <RequireAuth>
+                              <CommunityPostEditorPage />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/community"
+                          element={<CommunityFeedPage />}
+                        />
+                        <Route
+                          path="/community/:id"
+                          element={<CommunityPostDetailPage />}
+                        />
+                        <Route path="/forum" element={<ForumLayoutRoute />}>
+                          <Route index element={<ForumHomePage />} />
+                          <Route path="search" element={<ForumSearchPage />} />
+                          <Route
+                            path="me"
+                            element={
+                              <RequireAuth>
+                                <ForumMyPage />
+                              </RequireAuth>
+                            }
+                          />
+                          <Route
+                            path="new"
+                            element={
+                              <RequireAuth>
+                                <ForumNewTopicPage />
+                              </RequireAuth>
+                            }
+                          />
+                          <Route
+                            path="admin"
+                            element={
+                              <RequireAuth>
+                                <AdminGuard>
+                                  <ForumAdminPage />
+                                </AdminGuard>
+                              </RequireAuth>
+                            }
+                          />
+                          <Route
+                            path="c/:slug"
+                            element={<ForumCategoryPage />}
+                          />
+                          <Route path="t/:id" element={<ForumTopicPage />} />
+                        </Route>
+                        <Route
+                          path="/collections"
+                          element={
+                            <RequireAuth>
+                              <CollectionsPage />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/collections/:id"
+                          element={<CollectionDetailPage />}
+                        />
+                        <Route
+                          path="/series"
+                          element={
+                            <RequireAuth>
+                              <SeriesListPage />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/series/:id"
+                          element={<SeriesDetailPage />}
+                        />
+                        <Route
+                          path="/me/reports"
+                          element={
+                            <RequireAuth>
+                              <MyReportsPage />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/me/feedback"
+                          element={
+                            <RequireAuth>
+                              <MyFeedbackPage />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/reports"
+                          element={<RedirectTo to="/me/reports" />}
+                        />
+                        <Route
+                          path="/feedback"
+                          element={<RedirectTo to="/me/feedback" />}
+                        />
+                        <Route
+                          path="/verify"
+                          element={
+                            <RequireAuth>
+                              <VerificationPage />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route path="/admin" element={<AdminLayout />}>
+                          <Route index element={<OverviewPage />} />
+                          <Route
+                            path="dev-tasks"
+                            element={<AdminDevTasksPage />}
+                          />
+                          <Route
+                            path="marketing"
+                            element={<AdminMarketingPage />}
+                          >
+                            <Route index element={<MarketingOverviewPage />} />
+                            <Route
+                              path="setup"
+                              element={<MarketingBusinessSetup />}
+                            />
+                            <Route
+                              path="signals"
+                              element={<MarketingSignalsPage />}
+                            />
+                            <Route
+                              path="leads"
+                              element={<MarketingLeadTable />}
+                            />
+                            <Route
+                              path="competitors"
+                              element={<MarketingCompetitorTable />}
+                            />
+                            <Route
+                              path="content"
+                              element={<MarketingContentTable />}
+                            />
+                            <Route
+                              path="insights"
+                              element={<MarketingInsightPanel />}
+                            />
+                            <Route
+                              path="ads"
+                              element={<MarketingAdsPlanner />}
+                            />
+                            <Route
+                              path="offers"
+                              element={<MarketingOfferBuilder />}
+                            />
+                            <Route
+                              path="planner"
+                              element={<MarketingContentPlanner />}
+                            />
+                            <Route
+                              path="outreach"
+                              element={<MarketingOutreachPanel />}
+                            />
+                            <Route
+                              path="reports"
+                              element={<MarketingReportsPanel />}
+                            />
+                            <Route
+                              path="settings"
+                              element={<MarketingSettingsPanel />}
+                            />
+                            <Route
+                              path="manual"
+                              element={<MarketingManualPage />}
+                            />
+                          </Route>
+                          <Route
+                            path="marketing-module/*"
+                            element={<Navigate to="/admin/marketing" replace />}
+                          />
+                          <Route
+                            path="kuy-radar/*"
+                            element={<LegacyMarketingRedirect />}
+                          />
+                          <Route
+                            path="activity"
+                            element={<AdminActivityPage />}
+                          />
+                          <Route
+                            path="analytics"
+                            element={<AdminAnalyticsPage />}
+                          />
+                          <Route path="data" element={<AdminDataHubPage />} />
+                          <Route
+                            path="insights"
+                            element={<AdminContentInsightsPage />}
+                          />
+                          <Route
+                            path="page-time"
+                            element={<AdminPageDwellPage />}
+                          />
+                          <Route path="seo" element={<AdminSeoPage />} />
+                          <Route
+                            path="contracts"
+                            element={<AdminContractsPage />}
+                          />
+                          <Route path="wallet" element={<AdminWalletPage />} />
+                          <Route
+                            path="finance"
+                            element={<AdminFinancePage />}
+                          />
+                          <Route
+                            path="applications"
+                            element={<AdminApplicationsPage />}
+                          />
+                          <Route path="users" element={<AdminUsersPage />} />
+                          <Route
+                            path="studios"
+                            element={<AdminStudiosPage />}
+                          />
+                          <Route
+                            path="projects"
+                            element={<AdminProjectsPage />}
+                          />
+                          <Route path="jobs" element={<AdminJobsPage />} />
+                          <Route
+                            path="employer-orgs"
+                            element={<AdminHiringOrgsPage />}
+                          />
+                          <Route path="hiring" element={<AdminHiringPage />} />
+                          <Route
+                            path="collabs"
+                            element={<AdminCollabsPage />}
+                          />
+                          <Route path="chats" element={<AdminChatsPage />} />
+                          <Route
+                            path="comments"
+                            element={<AdminCommentsPage />}
+                          />
+                          <Route
+                            path="collections"
+                            element={<AdminCollectionsPage />}
+                          />
+                          <Route
+                            path="packages"
+                            element={<AdminPackagesPage />}
+                          />
+                          <Route
+                            path="objects"
+                            element={<AdminObjectsPage />}
+                          />
+                          <Route
+                            path="inspire"
+                            element={<AdminInspirePage />}
+                          />
+                          <Route path="gifts" element={<AdminGiftsPage />} />
+                          <Route path="aml" element={<AdminAmlPage />} />
+                          <Route path="kyc" element={<AdminKycPage />} />
+                          <Route path="ads" element={<AdminAdsPage />} />
+                          <Route
+                            path="notifications"
+                            element={<AdminNotificationsPage />}
+                          />
+                          <Route
+                            path="storage"
+                            element={<AdminStoragePage />}
+                          />
+                          <Route path="audit" element={<AdminAuditPage />} />
+                          <Route
+                            path="reports"
+                            element={<AdminReportsPage />}
+                          />
+                          <Route
+                            path="community"
+                            element={<AdminCommunityPage />}
+                          />
+                          <Route path="forum" element={<AdminForumPage />} />
+                          <Route
+                            path="moderation"
+                            element={<AdminModerationPage />}
+                          />
+                          <Route
+                            path="compliance"
+                            element={<AdminCompliancePage />}
+                          />
+                          <Route
+                            path="compliance/copyright"
+                            element={<AdminCopyrightReportsPage />}
+                          />
+                          <Route
+                            path="compliance/privacy"
+                            element={<AdminPrivacyRequestsPage />}
+                          />
+                          <Route path="events" element={<AdminEventsPage />} />
+                          <Route
+                            path="creator-invitations"
+                            element={<AdminCreatorInvitationsPage />}
+                          />
+                          <Route
+                            path="creator-invitations/new"
+                            element={<AdminCreatorInvitationNewPage />}
+                          />
+                          <Route
+                            path="creator-invitations/:id"
+                            element={<AdminCreatorInvitationDetailPage />}
+                          />
+                          <Route
+                            path="events/new"
+                            element={<ExhibitionEditorPage team />}
+                          />
+                          <Route
+                            path="events/:id/edit"
+                            element={<ExhibitionEditorPage team />}
+                          />
+                          <Route
+                            path="feedback"
+                            element={<AdminFeedbackPage />}
+                          />
+                          <Route path="system" element={<AdminSystemPage />} />
+                          <Route path="ai" element={<AdminAiMonitorPage />} />
+                        </Route>
+                        <Route path="/hiring" element={<JobsPage />} />
+                        <Route path="/hiring/new" element={<JobNewPage />} />
+                        <Route path="/hiring/:id" element={<JobDetailPage />} />
+                        <Route path="/jobs" element={<JobsSeekingPage />} />
+                        <Route
+                          path="/jobs/new"
+                          element={<RedirectTo to="/hiring/new" />}
+                        />
+                        <Route
+                          path="/jobs/:id"
+                          element={<JobsToHiringRedirect />}
+                        />
+                        <Route
+                          path="/org/register"
+                          element={<HiringOrgRegisterPage />}
+                        />
+                        <Route
+                          path="/org/status"
+                          element={<HiringOrgStatusPage />}
+                        />
+                        <Route path="/advertise" element={<AdvertisePage />} />
+                        <Route path="/upgrade" element={<UpgradePage />} />
+                        <Route path="/ads/:id" element={<AdDetailPage />} />
+                        <Route
+                          path="/contracts"
+                          element={<ContractsListPage />}
+                        />
+                        <Route
+                          path="/contracts/new"
+                          element={<ContractEditorPage />}
+                        />
+                        <Route
+                          path="/s/:slug"
+                          element={<StudioProfilePage />}
+                        />
+                        <Route
+                          path="/studio/new"
+                          element={<StudioCreatePage />}
+                        />
+                        <Route
+                          path="/studio/invites"
+                          element={<StudioInvitesPage />}
+                        />
+                        <Route
+                          path="/studio/manage"
+                          element={<StudioManagePage />}
+                        />
+                        <Route path="/legal" element={<LegalIndexPage />} />
+                        <Route
+                          path="/legal/privacy"
+                          element={<PrivacyPage />}
+                        />
+                        <Route path="/legal/terms" element={<TermsPage />} />
+                        <Route
+                          path="/legal/cookies"
+                          element={<CookiesPage />}
+                        />
+                        <Route
+                          path="/legal/rights"
+                          element={<DataRightsPage />}
+                        />
+                        <Route
+                          path="/legal/delete-account"
+                          element={<DeleteAccountPage />}
+                        />
+                        <Route
+                          path="/legal/ip"
+                          element={<IntellectualPropertyPage />}
+                        />
+                        <Route
+                          path="/legal/community"
+                          element={<CommunityGuidelinesPage />}
+                        />
+                        <Route
+                          path="/legal/copyright-report"
+                          element={<CopyrightReportPage />}
+                        />
+                        <Route
+                          path="/legal/payment-refund"
+                          element={<PaymentRefundPage />}
+                        />
+                        <Route
+                          path="/legal/service-agreement"
+                          element={<ServiceAgreementPage />}
+                        />
+                        <Route
+                          path="/legal/packages"
+                          element={<PackagesPolicyPage />}
+                        />
+                        <Route path="/legal/kyc-aml" element={<KycAmlPage />} />
+                        <Route path="/error" element={<ErrorPage />} />
+                        <Route
+                          path="/error/400"
+                          element={<ErrorPage defaultKind="400" />}
+                        />
+                        <Route
+                          path="/error/403"
+                          element={<ErrorPage defaultKind="403" />}
+                        />
+                        <Route
+                          path="/error/404"
+                          element={<ErrorPage defaultKind="404" />}
+                        />
+                        <Route
+                          path="/error/405"
+                          element={<ErrorPage defaultKind="405" />}
+                        />
+                        <Route
+                          path="/error/500"
+                          element={<ErrorPage defaultKind="500" />}
+                        />
+                        <Route
+                          path="/error/502"
+                          element={<ErrorPage defaultKind="502" />}
+                        />
+                        <Route
+                          path="/error/503"
+                          element={<ErrorPage defaultKind="503" />}
+                        />
+                        {/*
                 react-router v6 cannot match `/@:username` (literal @ before param).
                 Vanity URLs use `/:vanityHandle` with a leading @ — see VanityProfileRoute.
               */}
-              <Route path="/:vanityHandle" element={<VanityProfileRoute />} />
-              <Route path="*" element={<NotFound />} />
-              </Route>
-              </Route>
-            </BackgroundAwareRoutes>
-          </Suspense>
-          <OfflineBanner />
-          <CookieConsent />
-          <GoogleAnalytics />
-          <PolicyReconsentGate />
-          <FloatingNav />
-          <AndroidAppBanner />
-          <Suspense fallback={null}>
-            <AuthDialog />
-          </Suspense>
-          <FeedbackTicketHost />
-          <PullToRefresh />
-          <RatingPrompt />
-          <CloudPrefsSync />
-          <InterestSurveyGate />
-          </ErrorBoundary>
-        </BrowserRouter>
-      </TooltipProvider>
-    </ThemeProvider>
-    </SensitiveActionReauthProvider>
+                        <Route
+                          path="/:vanityHandle"
+                          element={<VanityProfileRoute />}
+                        />
+                        <Route path="*" element={<NotFound />} />
+                      </Route>
+                    </Route>
+                  </BackgroundAwareRoutes>
+                </Suspense>
+                <OfflineBanner />
+                <CookieConsent />
+                <GoogleAnalytics />
+                <PolicyReconsentGate />
+                <FloatingNav />
+                <AndroidAppBanner />
+                <Suspense fallback={null}>
+                  <AuthDialog />
+                </Suspense>
+                <Suspense fallback={null}>
+                  <FeedbackTicketHost />
+                </Suspense>
+                <PullToRefresh />
+                <Suspense fallback={null}>
+                  <RatingPrompt />
+                </Suspense>
+                <CloudPrefsSync />
+                <Suspense fallback={null}>
+                  <InterestSurveyGate />
+                </Suspense>
+              </ErrorBoundary>
+            </BrowserRouter>
+          </TooltipProvider>
+        </ThemeProvider>
+      </SensitiveActionReauthProvider>
     </AuthProvider>
   </QueryClientProvider>
 );

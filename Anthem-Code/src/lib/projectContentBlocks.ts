@@ -51,6 +51,8 @@ export type ProjectContentBlock = {
   textVerticalAlign?: TextVerticalAlign;
   /** Gap below this block. Omit / spaced = normal; tight = flush with next. */
   gapAfter?: BlockGapAfter;
+  /** Natural [width, height] of a single image, so the page reserves its box before it loads (no layout shift). */
+  size?: [number, number];
 };
 
 export type GalleryDisplayMode = "single" | "gallery" | "grid";
@@ -121,6 +123,14 @@ export function parseBlockGapAfter(raw: unknown): BlockGapAfter {
 /** Only persist non-default gap to keep stored JSON lean. */
 export function gapAfterFields(gapAfter: unknown): { gapAfter?: BlockGapAfter } {
   return gapAfter === "tight" ? { gapAfter: "tight" } : {};
+}
+
+/** Keeps a stored [width, height] only when both are sane positive pixel counts. */
+export function imageSizeFields(size: unknown): { size?: [number, number] } {
+  if (!Array.isArray(size) || size.length !== 2) return {};
+  const [w, h] = size;
+  const ok = (n: unknown) => typeof n === "number" && Number.isFinite(n) && n > 0 && n <= 20000;
+  return ok(w) && ok(h) ? { size: [Math.round(w as number), Math.round(h as number)] } : {};
 }
 
 /** Margin below a block before the next (public / editor). */
@@ -389,6 +399,7 @@ export function parseContentBlocks(raw: unknown): ProjectContentBlock[] {
           url: filled[0],
           mediaLayout: "single",
           ...gapAfterFields(row.gapAfter),
+          ...imageSizeFields(row.size),
         });
       }
       continue;

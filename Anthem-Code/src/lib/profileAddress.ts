@@ -1,26 +1,53 @@
-import { z } from "zod";
 import { normalizeThaiProvince } from "@/lib/thaiProvinces";
 
-/** Full Thai-style address on profile (settings / About). */
-export const profileAddressSchema = z.object({
-  line1: z.string().trim().max(120).default(""),
-  subdistrict: z.string().trim().max(60).default(""),
-  district: z.string().trim().max(60).default(""),
-  province: z
-    .string()
-    .trim()
-    .max(60)
-    .transform((v) => normalizeThaiProvince(v) || v.trim())
-    .default(""),
-  postalCode: z
-    .string()
-    .trim()
-    .max(5)
-    .regex(/^(\d{5})?$/, "รหัสไปรษณีย์ 5 หลัก")
-    .default(""),
-});
+/**
+ * Full Thai-style address on profile (settings / About).
+ * Plain code on purpose: this file loads with the feed, so it must not import the schema library.
+ * The form schema with the same rules lives in `@/lib/validators`.
+ */
+export type ProfileAddress = {
+  line1: string;
+  subdistrict: string;
+  district: string;
+  province: string;
+  postalCode: string;
+};
 
-export type ProfileAddress = z.infer<typeof profileAddressSchema>;
+export const PROFILE_ADDRESS_MAX = {
+  line1: 120,
+  subdistrict: 60,
+  district: 60,
+  province: 60,
+  postalCode: 5,
+} as const;
+
+/** Same rules as the form schema: trim, length limits, province normalised, postal code empty or 5 digits. */
+export function cleanProfileAddress(
+  input: Record<keyof ProfileAddress, string>,
+): ProfileAddress | null {
+  const line1 = input.line1.trim();
+  const subdistrict = input.subdistrict.trim();
+  const district = input.district.trim();
+  const provinceRaw = input.province.trim();
+  const postalCode = input.postalCode.trim();
+  if (
+    line1.length > PROFILE_ADDRESS_MAX.line1 ||
+    subdistrict.length > PROFILE_ADDRESS_MAX.subdistrict ||
+    district.length > PROFILE_ADDRESS_MAX.district ||
+    provinceRaw.length > PROFILE_ADDRESS_MAX.province ||
+    postalCode.length > PROFILE_ADDRESS_MAX.postalCode ||
+    !/^(\d{5})?$/.test(postalCode)
+  ) {
+    return null;
+  }
+  return {
+    line1,
+    subdistrict,
+    district,
+    province: normalizeThaiProvince(provinceRaw) || provinceRaw,
+    postalCode,
+  };
+}
 
 export const EMPTY_PROFILE_ADDRESS: ProfileAddress = {
   line1: "",
@@ -42,29 +69,33 @@ export function parseProfileAddress(raw: unknown): ProfileAddress {
   };
   const postalRaw =
     o.postalCode ?? o.postal_code ?? o.zipcode ?? o.zip_code ?? "";
-  const parsed = profileAddressSchema.safeParse({
+  const cleaned = cleanProfileAddress({
     line1: str(o.line1),
     subdistrict: str(o.subdistrict ?? o.sub_district ?? o.tambon),
     district: str(o.district ?? o.amphoe),
     province: str(o.province),
     postalCode: str(postalRaw).replace(/\D/g, "").slice(0, 5),
   });
-  return parsed.success ? parsed.data : { ...EMPTY_PROFILE_ADDRESS };
+  return cleaned ?? { ...EMPTY_PROFILE_ADDRESS };
 }
 
-export function hasProfileAddress(addr: ProfileAddress | null | undefined): boolean {
+export function hasProfileAddress(
+  addr: ProfileAddress | null | undefined,
+): boolean {
   if (!addr) return false;
   return Boolean(
     addr.line1.trim() ||
-      addr.subdistrict.trim() ||
-      addr.district.trim() ||
-      addr.province.trim() ||
-      addr.postalCode.trim(),
+    addr.subdistrict.trim() ||
+    addr.district.trim() ||
+    addr.province.trim() ||
+    addr.postalCode.trim(),
   );
 }
 
 /** Full display line for About / sidebar. */
-export function formatProfileAddress(addr: ProfileAddress | null | undefined): string {
+export function formatProfileAddress(
+  addr: ProfileAddress | null | undefined,
+): string {
   if (!addr) return "";
   return [
     addr.line1,
@@ -79,9 +110,13 @@ export function formatProfileAddress(addr: ProfileAddress | null | undefined): s
 }
 
 /** Short line for cover header chips (district/province). */
-export function formatProfileAddressShort(addr: ProfileAddress | null | undefined): string {
+export function formatProfileAddressShort(
+  addr: ProfileAddress | null | undefined,
+): string {
   if (!addr) return "";
-  const parts = [addr.district, addr.province].map((s) => s.trim()).filter(Boolean);
+  const parts = [addr.district, addr.province]
+    .map((s) => s.trim())
+    .filter(Boolean);
   if (parts.length) return parts.join(", ");
   return addr.province.trim() || addr.line1.trim();
 }
@@ -106,16 +141,23 @@ export function displayProfileAddress(
 ): string {
   const parsed = parseProfileAddress(profileAddress);
   if (hasProfileAddress(parsed)) {
-    return mode === "short" ? formatProfileAddressShort(parsed) : formatProfileAddress(parsed);
+    return mode === "short"
+      ? formatProfileAddressShort(parsed)
+      : formatProfileAddress(parsed);
   }
   return (location ?? "").trim();
 }
 
 /** Fill province/district dropdowns from a legacy “เขต, จังหวัด” location string. */
-export function hydrateAddressFromLocation(location: string | null | undefined): ProfileAddress {
+export function hydrateAddressFromLocation(
+  location: string | null | undefined,
+): ProfileAddress {
   const raw = (location ?? "").trim();
   if (!raw) return { ...EMPTY_PROFILE_ADDRESS };
-  const parts = raw.split(",").map((s) => s.trim()).filter(Boolean);
+  const parts = raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
   if (parts.length >= 2) {
     const provinceRaw = parts[parts.length - 1] ?? "";
     const province = normalizeThaiProvince(provinceRaw) || provinceRaw;

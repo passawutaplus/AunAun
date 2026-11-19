@@ -2315,9 +2315,11 @@ html [data-feed-sheet] [data-feed-catalog-head] .gap-y-1 {
   animation: hero-split 1.5s cubic-bezier(0.42, -0.01, 0.06, 0.98) 1.05s both;
 }
 
+/* `translate` (not margin-top): moves the lower half without re-laying out the page every frame,
+   which counted as layout shift (CLS ~0.19 on /). It composes with framer-motion's inline transform. */
 @keyframes hero-split {
-  from { margin-top: 0; }
-  to { margin-top: 54vh; }
+  from { translate: 0 0; }
+  to { translate: 0 54vh; }
 }
 
 .hero-cover-tile {

@@ -43,8 +43,11 @@ function ImageFrame({
   className,
   imgClassName,
   onOpenImage,
+  size,
 }: {
   url: string;
+  /** Natural [width, height]: lets the browser reserve the box before the image arrives. */
+  size?: [number, number];
   imageIndex: number;
   actions?: ActionContext | null;
   className?: string;
@@ -71,6 +74,8 @@ function ImageFrame({
         <img
           src={url}
           alt=""
+          width={size?.[0]}
+          height={size?.[1]}
           className={cn(
             "pointer-events-none h-auto w-full max-w-full object-contain",
             imgClassName,
@@ -239,6 +244,7 @@ function renderBlock(
           imageIndex={imageIndexOffset}
           actions={actions}
           onOpenImage={onOpenImage}
+          size={block.size}
         />
       );
     }
