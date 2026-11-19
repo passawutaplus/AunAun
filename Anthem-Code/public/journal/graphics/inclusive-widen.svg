@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 340" role="img" aria-label="แถบสี่แถบเริ่มจากสั้น แถบบนสุดสีแดง แล้วทุกแถบค่อยๆ ยืดออกจนยาวเท่ากัน แทนงานที่ออกแบบให้คนกลุ่มหนึ่งแล้วใช้ได้กับทุกคน">
+<style>.g{transform-box:fill-box;transform-origin:left;animation:g 9s cubic-bezier(.2,.8,.2,1) infinite}@keyframes g{0%,10%{transform:scaleX(.18)}40%,88%{transform:none}100%{transform:scaleX(.18)}}@media (prefers-reduced-motion:reduce){*{animation:none!important}.end{opacity:1!important;transform:none!important;stroke-dashoffset:0!important}}</style>
+<rect width="800" height="340" fill="#F8F7F2"/>
+<rect class="g end" x="140" y="70" width="520" height="30" fill="#EE3D29" style="animation-delay:0.00s"/><rect class="g end" x="140" y="125" width="520" height="30" fill="#282929" style="animation-delay:0.35s"/><rect class="g end" x="140" y="180" width="520" height="30" fill="#666666" style="animation-delay:0.70s"/><rect class="g end" x="140" y="235" width="520" height="30" fill="#9A9A96" style="animation-delay:1.05s"/>
+</svg>

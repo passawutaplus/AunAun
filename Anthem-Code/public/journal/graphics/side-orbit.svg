@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 340" role="img" aria-label="วงกลมใหญ่สีเข้มอยู่ตรงกลาง มีวงกลมเล็กสีแดงโคจรรอบช้าๆ แทนโปรเจกต์ส่วนตัวที่หมุนอยู่รอบงานหลัก">
+<style>.r{transform-origin:400px 170px;animation:r 12s linear infinite}@keyframes r{to{transform:rotate(360deg)}}@media (prefers-reduced-motion:reduce){*{animation:none!important}.end{opacity:1!important;transform:none!important;stroke-dashoffset:0!important}}</style>
+<rect width="800" height="340" fill="#F8F7F2"/>
+<circle cx="400" cy="170" r="125" fill="none" stroke="#C9C9C5" stroke-width="2" stroke-dasharray="4 8"/><circle cx="400" cy="170" r="70" fill="#282929"/><g class="r"><circle cx="525" cy="170" r="22" fill="#EE3D29"/></g>
+</svg>
