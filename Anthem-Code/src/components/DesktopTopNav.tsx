@@ -240,13 +240,6 @@ const DesktopTopNav = () => {
     >
       <CommunityNavDropdown className={isHome ? "text-background/80 hover:text-background" : undefined} />
       <NavLink
-        to="/journal"
-        end={false}
-        className={isHome ? "text-[13px] font-medium text-background transition-opacity hover:opacity-70" : linkClass}
-      >
-        Journal
-      </NavLink>
-      <NavLink
         to="/learn"
         end={false}
         className={isHome ? "text-[13px] font-medium text-background transition-opacity hover:opacity-70" : linkClass}

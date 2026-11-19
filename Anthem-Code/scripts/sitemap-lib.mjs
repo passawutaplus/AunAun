@@ -22,7 +22,6 @@ export const FORUM_CATEGORY_SLUGS = ["announcements", "help", "bug", "idea", "fe
 
 export const STATIC_PATHS = [
   { loc: "/", priority: "1.0", changefreq: "daily", group: "static" },
-  { loc: "/journal", priority: "0.85", changefreq: "daily", group: "static" },
   { loc: "/forum", priority: "0.85", changefreq: "daily", group: "static" },
   ...FORUM_CATEGORY_SLUGS.map((slug) => ({
     loc: `/forum/c/${slug}`,
@@ -43,6 +42,9 @@ export const STATIC_PATHS = [
 
 /** Event categories (DB id → URL segment: "_" becomes "-"). */
 export const EVENT_CATEGORIES = ["exhibition", "workshop", "art_fair", "talk_forum", "open_call", "other"];
+
+/** Journal's article list is a category page in Exhibition mode. */
+export const JOURNAL_LIST_PATH = "/exhibition/category/journal";
 
 export function eventCategorySlug(cat) {
   return String(cat).replace(/_/g, "-");
@@ -165,6 +167,7 @@ export function buildSitemapUrls(opts = {}) {
 
   const urls = [
     ...staticPaths,
+    { loc: JOURNAL_LIST_PATH, priority: "0.8", changefreq: "weekly", group: "journal" },
     ...JOURNAL_ARTICLES.map((a) => ({
       loc: `/journal/${a.slug}`,
       priority: "0.8",

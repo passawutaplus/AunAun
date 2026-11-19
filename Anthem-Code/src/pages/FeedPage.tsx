@@ -14,7 +14,6 @@ import { sortByViewAffinity } from "@/lib/viewAffinity";
 
 
 import Footer from "@/components/Footer";
-import JournalHomeStrip from "@/components/journal/JournalHomeStrip";
 import FeedHero from "@/components/feed/FeedHero";
 import FeedToolbar from "@/components/feed/FeedToolbar";
 import HomeHeroWash from "@/components/feed/HomeHeroWash";
@@ -1110,7 +1109,6 @@ const FeedPage = (_props: { onMyPortClick: () => void }) => {
         </div>
       </div>
 
-      <JournalHomeStrip />
       <Footer />
 
       <Suspense fallback={null}>

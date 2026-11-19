@@ -111,17 +111,20 @@ function journalBodyHtml(a, base) {
     <p>${escapeHtml(a.description)}</p>
     <img src="${escapeHtml(base + a.image.src)}" alt="${escapeHtml(a.image.alt)}" />
     ${parts.join("\n    ")}
-    <p><a href="${escapeHtml(base)}/journal">Journal</a></p>
+    <p><a href="${escapeHtml(base)}/exhibition/category/journal">Journal</a></p>
   </article>`;
 }
 
 /** /journal และ /journal/<slug> ไม่ต้องใช้ฐานข้อมูล */
 function resolveJournal(pathname, base, defaultMeta) {
-  const m = pathname.match(/^\/journal(?:\/([^/]+))?\/?$/i);
+  // The Journal list lives in Exhibition mode as a category; /journal itself redirects there.
+  const m = /^\/exhibition\/category\/journal\/?$/i.test(pathname)
+    ? [pathname, undefined]
+    : pathname.match(/^\/journal(?:\/([^/]+))?\/?$/i);
   if (!m) return null;
   const org = { "@type": "Organization", name: "SAMECOR", url: `${base}/` };
   if (!m[1]) {
-    const url = `${base}/journal`;
+    const url = `${base}/exhibition/category/journal`;
     const title = "Journal — เรื่องราวด้านดีไซน์ ผู้คน และศิลปะ | SAMECOR";
     const description =
       "บทความจากทีม SAMECOR เกี่ยวกับดีไซน์ ครีเอเตอร์ และศิลปะ เขียนให้คนทำงานสร้างสรรค์อ่านแล้วเอาไปใช้ต่อได้ทันที";
@@ -202,7 +205,7 @@ function resolveJournal(pathname, base, defaultMeta) {
           "@type": "BreadcrumbList",
           itemListElement: [
             { "@type": "ListItem", position: 1, name: "SAMECOR", item: `${base}/` },
-            { "@type": "ListItem", position: 2, name: "Journal", item: `${base}/journal` },
+            { "@type": "ListItem", position: 2, name: "Journal", item: `${base}/exhibition/category/journal` },
             { "@type": "ListItem", position: 3, name: a.title, item: url },
           ],
         },

@@ -101,7 +101,7 @@ export const LAUNCH_ALLOWED_ROUTE_PATTERNS: readonly RegExp[] = [
   /^\/collab-requests$/,
   /^\/showcase\/[^/]+$/,
   /^\/project\/[^/]+$/,
-  /^\/exhibition(\/[^/]+)?$/,
+  /^\/exhibition(\/category\/[^/]+|\/[^/]+)?$/,
   /^\/journal(\/[^/]+)?$/,
   /^\/support(\/|$)/,
   /^\/shop(\/|$)/,

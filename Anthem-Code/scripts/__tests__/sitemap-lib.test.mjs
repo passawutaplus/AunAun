@@ -146,7 +146,8 @@ describe("sitemap-lib", () => {
 describe("journal + test-data filtering", () => {
   it("lists /journal and every article", () => {
     const paths = buildSitemapUrls().map((u) => u.loc);
-    expect(paths).toContain("/journal");
+    expect(paths).toContain("/exhibition/category/journal");
+    expect(paths).not.toContain("/journal");
     expect(paths.filter((p) => p.startsWith("/journal/")).length).toBeGreaterThanOrEqual(3);
   });
   it("drops seed UUIDs and test handles from live data", () => {

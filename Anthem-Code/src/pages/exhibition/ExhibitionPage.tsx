@@ -9,6 +9,9 @@ import { BrandLogo } from "@/components/brand/BrandLogo";
 import ProfileButton from "@/components/ProfileButton";
 import FeedModeToggle from "@/components/feed/FeedModeToggle";
 import { EventListCard } from "@/components/exhibition/EventParts";
+import JournalBrowser from "@/components/journal/JournalBrowser";
+import { sortedJournalArticles } from "@/data/journal/articles";
+import { absoluteUrl } from "@/lib/seo";
 import { ExhibitionCalendar } from "@/components/exhibition/ExhibitionCalendar";
 import { FeaturedEventBanner } from "@/components/exhibition/FeaturedEventBanner";
 import EmptyState from "@/components/ui/EmptyState";
@@ -47,6 +50,13 @@ function matchesSearch(e: { title: string; location_name: string | null; organiz
   return [e.title, e.location_name, e.organizer_name].some((v) => v?.toLowerCase().includes(needle));
 }
 
+/** "Journal" is a category chip too, but its items are articles (src/data/journal), not events. */
+const JOURNAL_CATEGORY = "journal" as const;
+type ChipCategory = EventCategory | "all" | typeof JOURNAL_CATEGORY;
+const JOURNAL_SEO_TITLE = "Journal — เรื่องราวด้านดีไซน์ ผู้คน และศิลปะ";
+const JOURNAL_SEO_DESCRIPTION =
+  "บทความจากทีม SAMECOR เกี่ยวกับดีไซน์ ครีเอเตอร์ และศิลปะ เขียนให้คนทำงานสร้างสรรค์อ่านแล้วเอาไปใช้ต่อได้ทันที";
+
 /** Meta descriptions for the category pages (Thai first: that's what people search here). */
 const CATEGORY_SEO: Record<EventCategory, string> = {
   exhibition: "นิทรรศการศิลปะและดีไซน์ที่กำลังจัดในกรุงเทพฯ และทั่วไทย — วันเวลา สถานที่ ค่าเข้าชม และเส้นทาง รวมไว้ที่ SAMECOR",
@@ -69,11 +79,12 @@ export default function ExhibitionPage() {
   const { data = [], isLoading, isError, refetch } = usePublishedEvents();
   // The category lives in the URL (/exhibition/category/open-call) so each one is its own indexable page.
   const { cat } = useParams<{ cat?: string }>();
-  const category: EventCategory | "all" = categoryFromSlug(cat) ?? "all";
-  const setCategory = (c: EventCategory | "all") =>
+  const category: ChipCategory = cat === JOURNAL_CATEGORY ? JOURNAL_CATEGORY : (categoryFromSlug(cat) ?? "all");
+  const isJournal = category === JOURNAL_CATEGORY;
+  const setCategory = (c: ChipCategory) =>
     navigate(`${c === "all" ? "/exhibition" : categoryPath(c)}${window.location.search}`, { replace: true });
   useEffect(() => {
-    if (cat && !categoryFromSlug(cat)) navigate("/exhibition", { replace: true });
+    if (cat && cat !== JOURNAL_CATEGORY && !categoryFromSlug(cat)) navigate("/exhibition", { replace: true });
   }, [cat, navigate]);
   const [view, setView] = useState<ListView>("now");
   const when: "now" | "done" = view === "done" ? "done" : "now";
@@ -100,6 +111,15 @@ export default function ExhibitionPage() {
       ),
     [data, category, when, search],
   );
+
+  const journalRows = useMemo(() => {
+    const needle = search.trim().toLowerCase();
+    return sortedJournalArticles().filter(
+      (a) =>
+        !needle ||
+        [a.title, a.titleEn, a.description, ...a.tags].some((v) => v.toLowerCase().includes(needle)),
+    );
+  }, [search]);
 
   const rowIds = useMemo(() => rows.map((e) => e.id), [rows]);
   const { data: stats } = useEventStats(rowIds);
@@ -138,6 +158,7 @@ export default function ExhibitionPage() {
   const categoryOptions = [
     { id: "all" as const, label: t("all") },
     ...EVENT_CATEGORIES.map((c) => ({ id: c.id, label: categoryLabel(c.id) })),
+    { id: JOURNAL_CATEGORY, label: "Journal" },
   ];
 
   const toggle = <FeedModeToggle value="showcase" exhibitionActive onChange={(m) => navigate(`/?mode=${m}`)} />;
@@ -181,13 +202,13 @@ export default function ExhibitionPage() {
   );
   const filters = (
     <div className="flex min-w-0 items-center gap-3 lg:justify-center lg:gap-6">
-      {viewMenu}
+      {isJournal ? null : viewMenu}
       <div className="min-w-0 flex-1 lg:flex-none">
         <FilterChips
           align={isMobile ? "start" : "center"}
           options={categoryOptions}
           selected={category}
-          onSelect={(id) => setCategory(id as EventCategory | "all")}
+          onSelect={(id) => setCategory(id as ChipCategory)}
         />
       </div>
     </div>
@@ -195,11 +216,36 @@ export default function ExhibitionPage() {
 
   return (
     <main id="main-content" className={cn("relative min-h-screen bg-app-ambient", MOBILE_PAGE_BOTTOM_CLASS)}>
-      <SeoHead
-        title={category === "all" ? "Exhibition & Events" : `${categoryLabel(category, "en")} — Exhibition & Events`}
-        description={category === "all" ? t("seoDescription") : CATEGORY_SEO[category]}
-        path={category === "all" ? "/exhibition" : categoryPath(category)}
-      />
+      {isJournal ? (
+        <SeoHead
+          title={JOURNAL_SEO_TITLE}
+          description={JOURNAL_SEO_DESCRIPTION}
+          path={categoryPath(JOURNAL_CATEGORY)}
+          image={journalRows[0] ? absoluteUrl(journalRows[0].image.src) : undefined}
+          jsonLd={{
+            "@type": "CollectionPage",
+            name: JOURNAL_SEO_TITLE,
+            description: JOURNAL_SEO_DESCRIPTION,
+            url: absoluteUrl(categoryPath(JOURNAL_CATEGORY)),
+            inLanguage: "th",
+            mainEntity: {
+              "@type": "ItemList",
+              itemListElement: sortedJournalArticles().map((a, i) => ({
+                "@type": "ListItem",
+                position: i + 1,
+                url: absoluteUrl(`/journal/${a.slug}`),
+                name: a.title,
+              })),
+            },
+          }}
+        />
+      ) : (
+        <SeoHead
+          title={category === "all" ? "Exhibition & Events" : `${categoryLabel(category, "en")} — Exhibition & Events`}
+          description={category === "all" ? t("seoDescription") : CATEGORY_SEO[category]}
+          path={category === "all" ? "/exhibition" : categoryPath(category)}
+        />
+      )}
 
       {/* Desktop: the same bar the Showcase / Creators feed slides in once its title scrolls away. */}
       <motion.div
@@ -259,7 +305,7 @@ export default function ExhibitionPage() {
           </Link>
           {showBetaFeedback ? <FeedbackHeaderPill className="ml-auto" /> : null}
           <MobileFilterButton
-            count={(view !== "now" ? 1 : 0) + (category !== "all" ? 1 : 0)}
+            count={(view !== "now" && !isJournal ? 1 : 0) + (category !== "all" ? 1 : 0)}
             onClick={() => setFilterOpen(true)}
             className={cn(!showBetaFeedback && "ml-auto")}
           />
@@ -283,6 +329,7 @@ export default function ExhibitionPage() {
           <SheetContent side="bottom" className="rounded-t-3xl pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
             <SheetTitle className="text-base">{t("filterTitle")}</SheetTitle>
             <div className="mt-4 space-y-5">
+              {isJournal ? null : (
               <div className="space-y-2">
                 <p className="text-xs font-medium text-muted-foreground">{t("timing")}</p>
                 <div className="flex flex-wrap gap-2">
@@ -304,6 +351,7 @@ export default function ExhibitionPage() {
                   ))}
                 </div>
               </div>
+              )}
               <div className="space-y-2">
                 <p className="text-xs font-medium text-muted-foreground">{t("eventType")}</p>
                 <div className="flex flex-wrap gap-2">
@@ -326,7 +374,7 @@ export default function ExhibitionPage() {
                 </div>
               </div>
               <Button type="button" className="w-full rounded-full" onClick={() => setFilterOpen(false)}>
-                {t("showN", { n: rows.length })}
+                {t("showN", { n: isJournal ? journalRows.length : rows.length })}
               </Button>
             </div>
           </SheetContent>
@@ -334,7 +382,15 @@ export default function ExhibitionPage() {
 
         {/* Phones: a plain title instead of the hero slideshow, like the other modes. */}
         <h1 className="pb-5 pt-4 text-[3.25rem] font-semibold leading-[0.9] tracking-tight text-foreground sm:text-7xl lg:hidden">
-          Exhibition <span className="block text-muted-foreground">&amp; Events</span>
+          {isJournal ? (
+            <>
+              Journal <span className="block text-muted-foreground">Stories</span>
+            </>
+          ) : (
+            <>
+              Exhibition <span className="block text-muted-foreground">&amp; Events</span>
+            </>
+          )}
         </h1>
 
         <div className={cn("hidden min-w-0 items-center justify-center gap-3 pb-4 pt-3 lg:flex", scrolled && "invisible")}>
@@ -349,16 +405,31 @@ export default function ExhibitionPage() {
 
         {/* Desktop: a plain page title, like Showcase / Creators (no slideshow). */}
         <h2 className="hidden pb-8 pt-10 text-[5.25rem] font-semibold leading-[0.8] tracking-tight text-foreground lg:block xl:text-[6.5rem]">
-          Exhibition <span className="text-muted-foreground">&amp; Events</span>
+          {isJournal ? (
+            <>
+              Journal <span className="text-muted-foreground">Stories</span>
+            </>
+          ) : (
+            <>
+              Exhibition <span className="text-muted-foreground">&amp; Events</span>
+            </>
+          )}
         </h2>
 
-        {/* This week + full calendar; uses every published event, not just the filtered list. */}
-        <ExhibitionCalendar events={data} className="mb-8" />
+        {isJournal ? null : (
+          <>
+            {/* This week + full calendar; uses every published event, not just the filtered list. */}
+            <ExhibitionCalendar events={data} className="mb-8" />
 
-        {/* Team-pinned event (one at a time), under This Week. */}
-        <FeaturedEventBanner className="mb-8" />
+            {/* Team-pinned event (one at a time), under This Week. */}
+            <FeaturedEventBanner className="mb-8" />
+          </>
+        )}
 
 
+        {isJournal ? (
+          <JournalBrowser articles={journalRows} />
+        ) : (
         <div>
       {isLoading || isError ? (
         <QueryStatusPanel
@@ -382,6 +453,7 @@ export default function ExhibitionPage() {
         </div>
       )}
         </div>
+        )}
       </div>
     </main>
   );

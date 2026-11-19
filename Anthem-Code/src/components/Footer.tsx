@@ -12,7 +12,7 @@ import { APP_LOCALE_OPTIONS } from "@/lib/localePrefs";
 
 const EXPLORE_LINKS = [
   { to: "/help", label: "Help Center" },
-  { to: "/journal", label: "Journal" },
+  { to: "/exhibition/category/journal", label: "Journal" },
   { to: "/learn", label: "About" },
   { to: "/advertise", label: "Advertise" },
   { to: "/support", label: "Support us" },

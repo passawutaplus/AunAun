@@ -1,4 +1,4 @@
-export type JournalCategoryId = "design" | "people" | "art";
+export type JournalCategoryId = "design" | "branding" | "people" | "career" | "art" | "culture";
 
 export type JournalBlock =
   | { h: string }
