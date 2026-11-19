@@ -1,6 +1,10 @@
 # SAMECOR Journal — แพทเทิร์นการทำบทความ
 
-ใช้กับทุกบทความใน samecor.com/exhibition/category/journal (ข้อมูล: `src/data/journal/articles.js`)
+ใช้กับทุกบทความใน samecor.com/exhibition/category/journal
+- หัวเรื่อง (ชื่อ คำโปรย ปก แท็ก วันที่): `src/data/journal/articles.js` — เพิ่ม object ใหม่ไว้บนสุด
+- เนื้อหา + แหล่งอ้างอิง: `src/data/journal/content/<slug>.js` (หน้าเว็บโหลดเฉพาะเรื่องที่เปิด)
+- `content/index.js` สร้างอัตโนมัติตอน build (`node scripts/gen-journal-content-index.mjs`) — รันเองก่อน commit ได้
+- เทสต์ `scripts/__tests__/journal-content.test.mjs` ตรวจว่าทุกเรื่องมีปก แหล่งอ้างอิง ≥2 และภาพมี alt/เครดิต
 หลักใหญ่ยึด Brand Book: **ผลงานคือพระเอก แบรนด์คือกรอบ** · Gallery calm, bold accent
 
 ---
@@ -15,7 +19,7 @@
 | 4 | คำโปรย (`description`) | 1–2 ประโยค ใช้เป็น meta description ด้วย (≤160 ตัวอักษร) |
 | 5 | ปกคอลลาจ | ดูข้อ 2 |
 | 6 | เนื้อหา | 600–1,000 คำ · หัวข้อย่อย 3–6 ข้อ · มี quote 1 ประโยค |
-| 7 | ภาพ/กราฟิกในเนื้อหา | อย่างน้อย 1 ภาพจริง + 1 กราฟิก (ดูข้อ 3) |
+| 7 | ภาพ/กราฟิกในเนื้อหา | อย่างน้อย 1 กราฟิก/โมชันกราฟิก · ภาพจริงเมื่อเนื้อหาพูดถึงคน สถานที่ หรือผลงานจริง (ดูข้อ 3) |
 | 8 | แท็ก | 3–5 คำ |
 | 9 | แหล่งอ้างอิง | บังคับ ดูข้อ 4 |
 

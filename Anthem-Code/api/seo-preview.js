@@ -5,6 +5,7 @@
  * GET /api/seo-preview?path=/showcase/...|/jobs/...|/@user|/u/...|/
  */
 import { JOURNAL_ARTICLES, JOURNAL_CATEGORIES, getJournalArticle } from "../src/data/journal/articles.js";
+import { JOURNAL_CONTENT } from "../src/data/journal/content/index.js";
 
 const BOT_CACHE_SECONDS = 3600; // crawlers only; titles/covers rarely change within an hour (was 300 s)
 
@@ -184,7 +185,8 @@ function resolveJournal(pathname, base, defaultMeta) {
   } catch {
     /* keep raw */
   }
-  const a = getJournalArticle(slug);
+  const meta = getJournalArticle(slug);
+  const a = meta && { body: [], sources: [], ...meta, ...JOURNAL_CONTENT[slug] };
   if (!a) {
     return { ...defaultMeta, noindex: true, title: "ไม่พบบทความ | SAMECOR", status: 404, jsonLd: null };
   }
