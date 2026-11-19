@@ -10,8 +10,13 @@ import { joinedPillPath } from "./shape";
 const config = {
   web: "https://samecor.com/",
   stores: [
-    // Flip `live` to true and set `href` when each store listing is public.
-    { name: "Google Play", img: "/go/badges/google-play.png", href: "https://play.google.com/store/apps/details?id=com.samecor.app", live: false },
+    // Flip `live` to true and set `href` when each store listing is public. Google Play: live since 2026-11-19.
+    {
+      name: "Google Play",
+      img: "/go/badges/google-play.png",
+      href: "https://play.google.com/store/apps/details?id=com.samecor.app&utm_source=samecor_go&utm_medium=go",
+      live: true,
+    },
     { name: "App Store", img: "/go/badges/app-store.png", href: "", live: false },
   ],
   socials: [
@@ -70,10 +75,13 @@ function render() {
   document.getElementById("stores")!.innerHTML = config.stores
     .map((s) =>
       s.live && s.href
-        ? `<a class="store" href="${escapeAttr(s.href)}" rel="noopener"><img src="${s.img}" alt="Get it on ${escapeAttr(s.name)}"></a>`
+        ? `<a class="store" href="${escapeAttr(s.href)}" rel="noopener" data-store="${escapeAttr(s.name)}"><img src="${s.img}" alt="Get it on ${escapeAttr(s.name)}"></a>`
         : `<span class="store" aria-disabled="true"><img src="${s.img}" alt="${escapeAttr(s.name)} — coming soon"><span class="soon">Coming soon</span></span>`,
     )
     .join("");
+  document.querySelectorAll<HTMLAnchorElement>("#stores a.store").forEach((a) =>
+    a.addEventListener("click", () => track("cta_ecosystem", { target: a.dataset.store ?? "store" })),
+  );
 
   document.getElementById("soc")!.innerHTML = config.socials
     .map(
