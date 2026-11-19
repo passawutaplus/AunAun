@@ -8,7 +8,7 @@ Primary language: Thai, with English. Limits are Apple's as remembered; confirm 
 | Field | Value |
 |---|---|
 | Name (≤30) | SAMECOR |
-| Subtitle (≤30) | พื้นที่ของคนสร้างงาน / A place for creators |
+| Subtitle (≤30) | `Showcase|Creator|Exhibition` (27, same idea as the Play short description) |
 | Category | Graphics & Design (secondary: Photo & Video, if offered) |
 | Support URL | https://samecor.com/help |
 | Marketing URL | https://samecor.com |
@@ -18,8 +18,10 @@ Primary language: Thai, with English. Limits are Apple's as remembered; confirm 
 
 ## Promotional text (≤170, editable without a new build)
 
-- **TH:** โชว์ผลงาน ค้นพบครีเอเตอร์ และคุยกันได้ทันที
-- **EN:** Show your work, find creators and chat.
+- **TH:** Community แห่งโอกาสของครีเอเตอร์ไทย - Showcase | Creator | Exhibition
+- **EN:** The Creative Opportunity Platform Community - Showcase | Creator | Exhibition
+
+(Same lines as the Google Play short description, so both stores say the same thing.)
 
 (No "free today": it reads as if later posts cost money, and the app has no purchases.)
 

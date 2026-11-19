@@ -28,8 +28,15 @@ only features that exist in the build. Brand: Guidelines v1.0, not a job board, 
 
 ### Short description (≤80)
 
-- **TH (78):** แกลเลอรีของคนคอเดียวกัน แขวนผลงานฟรี ไม่พลาดนิทรรศการ เวิร์กช็อป และ Open Call
-- **EN (77):** A gallery with an open door. Show your work, find art events across Thailand.
+Live since 2026-11-19 (owner's wording, sent to Google review that day):
+
+- **TH (69):** Community แห่งโอกาสของครีเอเตอร์ไทย - Showcase | Creator | Exhibition
+- **EN (77):** The Creative Opportunity Platform Community - Showcase | Creator | Exhibition
+
+Earlier v1.1 lines, replaced because the owner found them AI-sounding:
+TH "แกลเลอรีของคนคอเดียวกัน แขวนผลงานฟรี ไม่พลาดนิทรรศการ เวิร์กช็อป และ Open Call",
+EN "A gallery with an open door. Show your work, find art events across Thailand."
+The full descriptions were also edited in the Play Console on 2026-11-19; the Console is the source of truth for them.
 
 ### Full description (≤4000)
 
