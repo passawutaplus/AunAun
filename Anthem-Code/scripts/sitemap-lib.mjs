@@ -1,4 +1,18 @@
 /** Pure helpers for sitemap generation — shared by CLI and unit tests. */
+import { JOURNAL_ARTICLES } from "../src/data/journal/articles.js";
+
+/**
+ * Demo / test data must never reach Google: seed UUIDs (00000000-0000-0000-…) and
+ * handles that look like test accounts.
+ */
+export function isTestId(id) {
+  return typeof id === "string" && /^00000000-0000-0000-/.test(id);
+}
+
+export function isTestHandle(handle) {
+  return typeof handle === "string" && /^(test|demo|qa|dummy|sample)([_.\-0-9]|$)/i.test(handle);
+}
+
 
 /**
  * Public static routes that are indexable under launch-minimal.
@@ -8,6 +22,7 @@ export const FORUM_CATEGORY_SLUGS = ["announcements", "help", "bug", "idea", "fe
 
 export const STATIC_PATHS = [
   { loc: "/", priority: "1.0", changefreq: "daily", group: "static" },
+  { loc: "/journal", priority: "0.85", changefreq: "daily", group: "static" },
   { loc: "/forum", priority: "0.85", changefreq: "daily", group: "static" },
   ...FORUM_CATEGORY_SLUGS.map((slug) => ({
     loc: `/forum/c/${slug}`,
@@ -111,15 +126,21 @@ export function catalogProjectId(i) {
 export function buildSitemapUrls(opts = {}) {
   const fullProduct = opts.fullProduct === true;
   const hiringBoard = opts.hiringBoard === true;
+  // Seed catalog is only a local/demo fallback; production passes useSeedCatalog:false.
+  const useSeed = opts.useSeedCatalog !== false;
   const projectIds =
     opts.projectIds?.length > 0
-      ? opts.projectIds
-      : Array.from({ length: CATALOG_PROJECT_COUNT }, (_, i) => catalogProjectId(i));
+      ? opts.projectIds.filter((id) => !isTestId(id))
+      : useSeed
+        ? Array.from({ length: CATALOG_PROJECT_COUNT }, (_, i) => catalogProjectId(i))
+        : [];
   const profileUserIds =
     opts.profileUserIds?.length > 0
-      ? opts.profileUserIds
-      : Array.from({ length: CATALOG_PROFILE_COUNT }, (_, i) => catalogUid(i));
-  const vanityHandles = (opts.vanityHandles || []).filter(Boolean);
+      ? opts.profileUserIds.filter((id) => !isTestId(id))
+      : useSeed
+        ? Array.from({ length: CATALOG_PROFILE_COUNT }, (_, i) => catalogUid(i))
+        : [];
+  const vanityHandles = (opts.vanityHandles || []).filter((h) => h && !isTestHandle(h));
   const seriesIds = opts.seriesIds || [];
   const collectionIds = opts.collectionIds || [];
   const serviceIds = opts.serviceIds || [];
@@ -144,6 +165,13 @@ export function buildSitemapUrls(opts = {}) {
 
   const urls = [
     ...staticPaths,
+    ...JOURNAL_ARTICLES.map((a) => ({
+      loc: `/journal/${a.slug}`,
+      priority: "0.8",
+      changefreq: "monthly",
+      group: "journal",
+      lastmod: toLastmod(a.dateModified),
+    })),
     ...projectIds.map((id) => ({
       loc: `/showcase/${id}`,
       priority: "0.8",
@@ -297,6 +325,7 @@ export function buildSitemapBundles(base, opts = {}) {
     explore: urls.filter((u) => u.group === "explore"),
     jobs: urls.filter((u) => u.group === "jobs"),
     events: urls.filter((u) => u.group === "events"),
+    journal: urls.filter((u) => u.group === "journal"),
     studios: urls.filter((u) => u.group === "studios"),
   };
 

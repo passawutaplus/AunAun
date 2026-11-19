@@ -34,6 +34,7 @@ function shouldShowDesktopTopNav(pathname: string): boolean {
     pathname === "/exhibition" ||
     /^\/(support|shop|founding)(\/|$)/.test(pathname) ||
     pathname.startsWith("/help") ||
+    pathname.startsWith("/journal") ||
     pathname.startsWith("/forum") ||
     // My Studio (/dashboard, /earnings) has its own back-office top bar
     pathname.startsWith("/portfolio") ||
@@ -238,6 +239,13 @@ const DesktopTopNav = () => {
       aria-label={t("mainMenu")}
     >
       <CommunityNavDropdown className={isHome ? "text-background/80 hover:text-background" : undefined} />
+      <NavLink
+        to="/journal"
+        end={false}
+        className={isHome ? "text-[13px] font-medium text-background transition-opacity hover:opacity-70" : linkClass}
+      >
+        Journal
+      </NavLink>
       <NavLink
         to="/learn"
         end={false}

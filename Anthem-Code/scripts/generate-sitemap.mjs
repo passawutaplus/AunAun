@@ -12,7 +12,8 @@
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
-import { buildSitemapBundles, buildSitemapUrls, eventPath } from "./sitemap-lib.mjs";
+import { JOURNAL_ARTICLES } from "../src/data/journal/articles.js";
+import { buildSitemapBundles, buildSitemapUrls, eventPath, isTestHandle, isTestId } from "./sitemap-lib.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const base = (process.env.VITE_SITE_URL || process.env.SITE_URL || "https://samecor.com").replace(
@@ -116,7 +117,7 @@ async function fetchLiveCatalog(supabaseUrl, anonKey) {
     throw new Error(`projects fetch ${projectsRes.status}`);
   }
   const projects = await projectsRes.json();
-  const projectIds = projects.map((p) => p.id).filter(Boolean);
+  const projectIds = projects.map((p) => p.id).filter((id) => id && !isTestId(id));
   const images = projects
     .filter((p) => p.cover_url && p.id)
     .map((p) => ({
@@ -136,8 +137,9 @@ async function fetchLiveCatalog(supabaseUrl, anonKey) {
         (typeof p.username === "string" ||
           (typeof p.bio === "string" && p.bio.trim().length >= 20)),
     );
-    profileUserIds = usable.map((p) => p.user_id).filter(Boolean);
-    vanityHandles = usable
+    const real = usable.filter((p) => !isTestId(p.user_id) && !isTestHandle(p.username));
+    profileUserIds = real.map((p) => p.user_id).filter(Boolean);
+    vanityHandles = real
       .map((p) => p.username)
       .filter((u) => typeof u === "string" && /^[a-z0-9_.]{2,}$/i.test(u));
   }
@@ -214,10 +216,19 @@ if (supabaseUrl && anonKey) {
   console.warn("No Supabase credentials — using seed catalog only.");
 }
 
+// Production must never list the seed catalog (fake demo UUIDs) when the live fetch fails.
+const isProductionBase = /^https:\/\/(www\.)?samecor\.com$/i.test(base);
+const journalImages = JOURNAL_ARTICLES.map((a) => ({
+  loc: `/journal/${a.slug}`,
+  imageLoc: `${base}${a.image.src}`,
+  title: a.title,
+}));
 const opts = {
+  useSeedCatalog: !isProductionBase,
   fullProduct,
   hiringBoard,
   ...(live || {}),
+  images: [...(live?.images || []), ...journalImages],
 };
 
 const { files, urlCount, indexEntries } = buildSitemapBundles(base, opts);

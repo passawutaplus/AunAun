@@ -142,3 +142,28 @@ describe("sitemap-lib", () => {
     expect(files["sitemap-static.xml"]).not.toContain("<lastmod>");
   });
 });
+
+describe("journal + test-data filtering", () => {
+  it("lists /journal and every article", () => {
+    const paths = buildSitemapUrls().map((u) => u.loc);
+    expect(paths).toContain("/journal");
+    expect(paths.filter((p) => p.startsWith("/journal/")).length).toBeGreaterThanOrEqual(3);
+  });
+  it("drops seed UUIDs and test handles from live data", () => {
+    const paths = buildSitemapUrls({
+      useSeedCatalog: false,
+      projectIds: ["00000000-0000-0000-0002-000000000001", "11111111-1111-4111-8111-111111111111"],
+      profileUserIds: ["00000000-0000-0000-0000-00000000a000"],
+      vanityHandles: ["test_user", "demo1", "real.person"],
+    }).map((u) => u.loc);
+    expect(paths).toContain("/showcase/11111111-1111-4111-8111-111111111111");
+    expect(paths.some((p) => p.includes("00000000-0000-0000-"))).toBe(false);
+    expect(paths).not.toContain("/@test_user");
+    expect(paths).not.toContain("/@demo1");
+    expect(paths).toContain("/@real.person");
+  });
+  it("never falls back to the seed catalog when disabled", () => {
+    const paths = buildSitemapUrls({ useSeedCatalog: false }).map((u) => u.loc);
+    expect(paths.filter((p) => p.startsWith("/showcase/") || p.startsWith("/u/"))).toHaveLength(0);
+  });
+});
