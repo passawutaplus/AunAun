@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 340" role="img" aria-label="จุดกลางหนึ่งจุด มีเส้นค่อยๆ ลากออกไปเชื่อมกับจุดรอบข้างสี่จุด จุดหนึ่งเป็นสีแดง แสดงเครือข่ายพี่เลี้ยงหลายคน">
+<style>.l{stroke-dasharray:240;stroke-dashoffset:240;animation:l 8s ease-in-out infinite}@keyframes l{0%,5%{stroke-dashoffset:240}25%,85%{stroke-dashoffset:0}100%{stroke-dashoffset:240}}.n{opacity:0;animation:n 8s ease-in-out infinite}@keyframes n{0%,15%{opacity:0}28%,85%{opacity:1}100%{opacity:0}}@media (prefers-reduced-motion:reduce){*{animation:none!important}.end{opacity:1!important;transform:none!important;stroke-dashoffset:0!important}}</style>
+<rect width="800" height="340" fill="#F8F7F2"/>
+<line class="l end" x1="400" y1="170" x2="210" y2="80" stroke="#666" stroke-width="3" style="animation-delay:0s"/>
+<line class="l end" x1="400" y1="170" x2="600" y2="70" stroke="#666" stroke-width="3" style="animation-delay:.6s"/>
+<line class="l end" x1="400" y1="170" x2="610" y2="270" stroke="#666" stroke-width="3" style="animation-delay:1.2s"/>
+<line class="l end" x1="400" y1="170" x2="190" y2="260" stroke="#666" stroke-width="3" style="animation-delay:1.8s"/>
+<circle class="n end" cx="210" cy="80" r="22" fill="#282929" style="animation-delay:0s"/>
+<circle class="n end" cx="600" cy="70" r="22" fill="#EE3D29" style="animation-delay:.6s"/>
+<circle class="n end" cx="610" cy="270" r="22" fill="#282929" style="animation-delay:1.2s"/>
+<circle class="n end" cx="190" cy="260" r="22" fill="#282929" style="animation-delay:1.8s"/>
+<circle cx="400" cy="170" r="30" fill="#FFFFFF" stroke="#282929" stroke-width="4"/>
+</svg>

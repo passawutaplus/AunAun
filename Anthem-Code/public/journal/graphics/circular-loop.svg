@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 340" role="img" aria-label="วงกลมที่มีสามจุดบนเส้นรอบวง จุดสีแดงวิ่งวนรอบวงไม่หยุด แสดงวัสดุที่หมุนเวียนกลับมาใช้ใหม่">
+<style>.r{transform-origin:400px 170px;animation:r 8s linear infinite}@keyframes r{to{transform:rotate(360deg)}}@media (prefers-reduced-motion:reduce){*{animation:none!important}}</style>
+<rect width="800" height="340" fill="#F8F7F2"/>
+<path d="M400 50 a120 120 0 1 1 -0.1 0 Z" fill="none" stroke="#E6E6E3" stroke-width="6"/>
+<path d="M400 50 a120 120 0 1 1 -0.1 0" fill="none" stroke="#666" stroke-width="2" stroke-dasharray="4 10"/>
+<circle cx="400" cy="50" r="18" fill="#282929"/>
+<circle cx="504" cy="230" r="18" fill="#282929"/>
+<circle cx="296" cy="230" r="18" fill="#282929"/>
+<g class="r"><circle cx="400" cy="50" r="11" fill="#EE3D29" transform="rotate(60 400 170)"/></g>
+</svg>

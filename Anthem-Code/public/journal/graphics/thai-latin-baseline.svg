@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 340" role="img" aria-label="บล็อกตัวอักษรละตินกับบล็อกตัวอักษรไทยวางคู่กัน บล็อกไทยเลื่อนขึ้นลงจนตั้งบนเส้นฐานสีแดงเดียวกัน และมีความสูงใกล้กับตัวพิมพ์เล็กของละติน">
+<style>.t{animation:t 7s cubic-bezier(.2,.8,.2,1) infinite}@keyframes t{0%,15%{transform:translateY(-34px) scale(1,1.18)}45%,85%{transform:none}100%{transform:translateY(-34px) scale(1,1.18)}}@media (prefers-reduced-motion:reduce){*{animation:none!important}.end{opacity:1!important;transform:none!important;stroke-dashoffset:0!important}}</style>
+<rect width="800" height="340" fill="#F8F7F2"/>
+<line x1="60" y1="140" x2="740" y2="140" stroke="#666" stroke-width="1.5" stroke-dasharray="6 6"/>
+<line x1="60" y1="230" x2="740" y2="230" stroke="#EE3D29" stroke-width="3"/>
+<rect x="110" y="80" width="26" height="150" rx="4" fill="#282929"/><rect x="150" y="140" width="80" height="90" rx="40" fill="#282929"/><rect x="246" y="140" width="70" height="90" rx="10" fill="#282929"/><rect x="330" y="140" width="26" height="90" rx="4" fill="#282929"/>
+<g class="t end" style="transform-origin:560px 230px"><rect x="430" y="146" width="70" height="84" rx="30" fill="#666"/><rect x="514" y="146" width="70" height="84" rx="30" fill="#666"/><rect x="598" y="146" width="80" height="84" rx="30" fill="#666"/><rect x="540" y="112" width="28" height="12" rx="6" fill="#666"/><rect x="620" y="244" width="22" height="14" rx="6" fill="#666"/></g>
+</svg>

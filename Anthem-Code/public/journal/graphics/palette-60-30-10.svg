@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 300" role="img" aria-label="แถบสีแนวนอนค่อยๆ ขยายออกเป็นสามส่วน สีเข้มกินพื้นที่มากที่สุด สีเทารองลงมา และสีแดงส่วนเล็กที่สุด">
+<style>.s{transform-box:fill-box;transform-origin:left center;animation:s 8s cubic-bezier(.2,.8,.2,1) infinite}@keyframes s{0%{transform:scaleX(0)}25%,85%{transform:none}100%{transform:scaleX(0)}}@media (prefers-reduced-motion:reduce){*{animation:none!important}.end{opacity:1!important;transform:none!important;stroke-dashoffset:0!important}}</style>
+<rect width="800" height="300" fill="#F8F7F2"/>
+<rect class="s end" x="80" y="110" width="384" height="80" fill="#282929" style="animation-delay:0s"/>
+<rect class="s end" x="464" y="110" width="192" height="80" fill="#E6E6E3" style="animation-delay:.5s"/>
+<rect class="s end" x="656" y="110" width="64" height="80" fill="#EE3D29" style="animation-delay:1s"/>
+<rect x="80" y="110" width="640" height="80" fill="none" stroke="#666" stroke-width="1.5"/>
+</svg>
