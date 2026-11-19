@@ -1,5 +1,12 @@
 import { useState, useEffect } from "react";
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "@/components/ui/carousel";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+  type CarouselApi,
+} from "@/components/ui/carousel";
 import ImageActionBar from "@/components/project/ImageActionBar";
 
 interface Props {
@@ -32,14 +39,18 @@ const ProjectGallery = ({
 
   return (
     <div className="space-y-3">
-      <Carousel setApi={setApi} className="relative group overflow-hidden rounded-none bg-transparent">
+      <Carousel
+        setApi={setApi}
+        className="relative group overflow-hidden rounded-none bg-transparent"
+      >
         <CarouselContent>
           {images.map((src, i) => (
             <CarouselItem key={i}>
               <img
                 src={src}
                 alt={`${alt} ${i + 1}`}
-                className="max-h-[min(80vh,720px)] w-full object-contain"
+                // Fixed 4:3 box (max 720px tall): the page no longer jumps when the photo arrives.
+                className="aspect-[4/3] max-h-[min(80vh,720px)] w-full object-contain"
                 loading="lazy"
               />
             </CarouselItem>
@@ -60,17 +71,25 @@ const ProjectGallery = ({
       {/* Centered row; w-max + mx-auto keeps it scrollable from the first thumb when it overflows. */}
       <div className="overflow-x-auto scrollbar-hide pb-1">
         <div className="mx-auto flex w-max gap-2">
-        {images.map((src, i) => (
-          <button
-            key={i}
-            onClick={() => api?.scrollTo(i)}
-            className={`h-14 w-20 shrink-0 overflow-hidden rounded-none border-2 bg-transparent transition-all ${
-              current === i ? "border-primary" : "border-transparent opacity-60 hover:opacity-100"
-            }`}
-          >
-            <img loading="lazy" decoding="async" src={src} alt="" className="h-full w-full object-contain" />
-          </button>
-        ))}
+          {images.map((src, i) => (
+            <button
+              key={i}
+              onClick={() => api?.scrollTo(i)}
+              className={`h-14 w-20 shrink-0 overflow-hidden rounded-none border-2 bg-transparent transition-all ${
+                current === i
+                  ? "border-primary"
+                  : "border-transparent opacity-60 hover:opacity-100"
+              }`}
+            >
+              <img
+                loading="lazy"
+                decoding="async"
+                src={src}
+                alt=""
+                className="h-full w-full object-contain"
+              />
+            </button>
+          ))}
         </div>
       </div>
     </div>

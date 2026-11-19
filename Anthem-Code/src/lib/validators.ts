@@ -12,8 +12,27 @@ import {
   PROJECT_BLOCK_HEADING_MAX,
   PROJECT_CONTENT_BLOCKS_MAX,
 } from "@/lib/projectContentBlocks";
-import { profileAddressSchema } from "@/lib/profileAddress";
+import { normalizeThaiProvince } from "@/lib/thaiProvinces";
 import { educationItemSchema, WORK_ARRANGEMENTS, certificationItemSchema, awardItemSchema, cvLanguageItemSchema } from "@/lib/profileCv";
+
+/** Full Thai-style address on profile (settings / About). Plain twin: `cleanProfileAddress` in `@/lib/profileAddress`. */
+export const profileAddressSchema = z.object({
+  line1: z.string().trim().max(120).default(""),
+  subdistrict: z.string().trim().max(60).default(""),
+  district: z.string().trim().max(60).default(""),
+  province: z
+    .string()
+    .trim()
+    .max(60)
+    .transform((v) => normalizeThaiProvince(v) || v.trim())
+    .default(""),
+  postalCode: z
+    .string()
+    .trim()
+    .max(5)
+    .regex(/^(\d{5})?$/, "รหัสไปรษณีย์ 5 หลัก")
+    .default(""),
+});
 
 export const communityMediaAspectSchema = z.enum([
   "square",
@@ -525,6 +544,7 @@ export const projectSchema = z.object({
         posterUrl: z.string().url().optional().or(z.literal("")),
         urls: z.array(z.string()).max(20).optional(),
         mediaLayout: z.enum(["single", "gallery", "grid", "multi"]).optional(),
+        size: z.tuple([z.number().positive(), z.number().positive()]).optional(),
         gridLayout: z
           .enum([
             "two_stack",
