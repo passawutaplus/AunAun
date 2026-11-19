@@ -17,16 +17,28 @@ import {
 } from "../aplus1Launch";
 import { storePlatforms, storePlatformsLabel } from "../appShell";
 import { downloadBlob, BLOB_URL_LIFETIME_MS } from "../downloadBlob";
-import { disableNativePush, enableNativePush, getNativePushState, hasNativePush } from "../nativePush";
+import {
+  disableNativePush,
+  enableNativePush,
+  getNativePushState,
+  hasNativePush,
+  installNativePush,
+} from "../nativePush";
 import { canShowStudioQuoteUpsell } from "../studioQuotationHandoff";
 
-const IOS_UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0) AppleWebKit/605 Mobile/15E148 SamecorApp SamecorIos";
-const SAFARI_UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0) AppleWebKit/605 Version/18.0 Mobile/15E148 Safari/604.1";
-const withUa = (ua: string) => vi.spyOn(window.navigator, "userAgent", "get").mockReturnValue(ua);
+const IOS_UA =
+  "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0) AppleWebKit/605 Mobile/15E148 SamecorApp SamecorIos";
+const SAFARI_UA =
+  "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0) AppleWebKit/605 Version/18.0 Mobile/15E148 Safari/604.1";
+const withUa = (ua: string) =>
+  vi.spyOn(window.navigator, "userAgent", "get").mockReturnValue(ua);
 
 type Win = Window & { Capacitor?: { Plugins?: Record<string, unknown> } };
 
-function fakePushPlugin(permission: "granted" | "denied" | "prompt", token = "a1b2c3d4".repeat(8)) {
+function fakePushPlugin(
+  permission: "granted" | "denied" | "prompt",
+  token = "a1b2c3d4".repeat(8),
+) {
   const listeners: Record<string, (payload: unknown) => void> = {};
   return {
     checkPermissions: vi.fn(async () => ({ receive: permission })),
@@ -34,10 +46,12 @@ function fakePushPlugin(permission: "granted" | "denied" | "prompt", token = "a1
     register: vi.fn(async () => {
       setTimeout(() => listeners.registration?.({ value: token }), 0);
     }),
-    addListener: vi.fn(async (event: string, cb: (payload: unknown) => void) => {
-      listeners[event] = cb;
-      return { remove: async () => undefined };
-    }),
+    addListener: vi.fn(
+      async (event: string, cb: (payload: unknown) => void) => {
+        listeners[event] = cb;
+        return { remove: async () => undefined };
+      },
+    ),
   };
 }
 
@@ -101,7 +115,9 @@ describe("iOS app: App Review rules", () => {
       const create = vi.fn(() => "blob:https://samecor.com/x");
       const revoke = vi.fn();
       Object.assign(URL, { createObjectURL: create, revokeObjectURL: revoke });
-      vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => undefined);
+      vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(
+        () => undefined,
+      );
 
       downloadBlob(new Blob(["{}"]), "export.json");
       expect(create).toHaveBeenCalledOnce();
@@ -114,7 +130,9 @@ describe("iOS app: App Review rules", () => {
   describe("native push", () => {
     it("is off outside the iOS app, even when a Capacitor bridge exists", async () => {
       withUa(SAFARI_UA);
-      (window as Win).Capacitor = { Plugins: { PushNotifications: fakePushPlugin("granted") } };
+      (window as Win).Capacitor = {
+        Plugins: { PushNotifications: fakePushPlugin("granted") },
+      };
       expect(hasNativePush()).toBe(false);
       await expect(getNativePushState()).resolves.toBe("unsupported");
     });
@@ -129,17 +147,59 @@ describe("iOS app: App Review rules", () => {
       expect(hasNativePush()).toBe(true);
       await expect(getNativePushState()).resolves.toBe("off");
       await expect(enableNativePush()).resolves.toBe("on");
-      expect(rpc).toHaveBeenCalledWith("save_apns_token", expect.objectContaining({ _token: token }));
+      expect(rpc).toHaveBeenCalledWith(
+        "save_apns_token",
+        expect.objectContaining({ _token: token }),
+      );
       await expect(getNativePushState()).resolves.toBe("on");
 
       await expect(disableNativePush()).resolves.toBe("off");
-      expect(rpc).toHaveBeenLastCalledWith("remove_push_subscription", { _endpoint: `apns:${token}` });
+      expect(rpc).toHaveBeenLastCalledWith("remove_push_subscription", {
+        _endpoint: `apns:${token}`,
+      });
       await expect(getNativePushState()).resolves.toBe("off");
+    });
+
+    it("works when the bridge's addListener returns the handle itself, not a Promise (Sentry JAVASCRIPT-REACT-D)", async () => {
+      withUa(IOS_UA);
+      const token = "cd".repeat(32);
+      const push = fakePushPlugin("granted", token);
+      const listeners: Record<string, (payload: unknown) => void> = {};
+      push.addListener = vi.fn(
+        (event: string, cb: (payload: unknown) => void) => {
+          listeners[event] = cb;
+          return { remove: async () => undefined };
+        },
+      ) as unknown as typeof push.addListener;
+      push.register = vi.fn(async () => {
+        setTimeout(() => listeners.registration?.({ value: token }), 0);
+      });
+      (window as Win).Capacitor = { Plugins: { PushNotifications: push } };
+      rpc.mockResolvedValue({ error: null });
+
+      expect(() => installNativePush()).not.toThrow();
+      await expect(enableNativePush()).resolves.toBe("on");
+      expect(rpc).toHaveBeenCalledWith(
+        "save_apns_token",
+        expect.objectContaining({ _token: token }),
+      );
+    });
+
+    it("does not throw at startup when addListener itself throws", () => {
+      withUa(IOS_UA);
+      const push = fakePushPlugin("granted");
+      push.addListener = vi.fn(() => {
+        throw new Error("bridge not ready");
+      }) as unknown as typeof push.addListener;
+      (window as Win).Capacitor = { Plugins: { PushNotifications: push } };
+      expect(() => installNativePush()).not.toThrow();
     });
 
     it("reports denied when iOS notifications are blocked", async () => {
       withUa(IOS_UA);
-      (window as Win).Capacitor = { Plugins: { PushNotifications: fakePushPlugin("denied") } };
+      (window as Win).Capacitor = {
+        Plugins: { PushNotifications: fakePushPlugin("denied") },
+      };
       await expect(enableNativePush()).resolves.toBe("denied");
       expect(rpc).not.toHaveBeenCalled();
     });

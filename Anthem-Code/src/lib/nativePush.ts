@@ -11,21 +11,42 @@ import { isIosApp } from "@/lib/appShell";
 
 export type NativePushState = "unsupported" | "denied" | "off" | "on";
 
-type PermissionState = "prompt" | "prompt-with-rationale" | "granted" | "denied";
+type PermissionState =
+  | "prompt"
+  | "prompt-with-rationale"
+  | "granted"
+  | "denied";
 type ListenerHandle = { remove: () => Promise<void> };
 type NotificationAction = { notification?: { data?: Record<string, unknown> } };
 
+// The remote-page bridge returns the handle itself from addListener, not a Promise (Sentry
+// JAVASCRIPT-REACT-D: ".catch is not a function" on iOS), so treat the result as either.
+type MaybeHandle = ListenerHandle | Promise<ListenerHandle>;
 type PushNotificationsPlugin = {
   checkPermissions(): Promise<{ receive: PermissionState }>;
   requestPermissions(): Promise<{ receive: PermissionState }>;
   register(): Promise<void>;
-  addListener(event: "registration", cb: (token: { value: string }) => void): Promise<ListenerHandle>;
-  addListener(event: "registrationError", cb: (err: { error?: string }) => void): Promise<ListenerHandle>;
+  addListener(
+    event: "registration",
+    cb: (token: { value: string }) => void,
+  ): MaybeHandle;
+  addListener(
+    event: "registrationError",
+    cb: (err: { error?: string }) => void,
+  ): MaybeHandle;
   addListener(
     event: "pushNotificationActionPerformed",
     cb: (action: NotificationAction) => void,
-  ): Promise<ListenerHandle>;
+  ): MaybeHandle;
 };
+
+/** Runs addListener and always hands back a Promise, whether the bridge returns a handle, a Promise or throws. */
+function listen(add: () => MaybeHandle): Promise<ListenerHandle | null> {
+  return new Promise<MaybeHandle>((resolve) => resolve(add())).then(
+    (handle) => handle,
+    () => null,
+  );
+}
 
 /** The token this device last saved for the signed-in user; cleared when push is turned off or on sign-out. */
 const TOKEN_KEY = "samecor:apns-token";
@@ -33,8 +54,13 @@ const REGISTER_TIMEOUT_MS = 20_000;
 
 function plugin(): PushNotificationsPlugin | null {
   if (typeof window === "undefined" || !isIosApp()) return null;
-  const cap = (window as Window & { Capacitor?: { Plugins?: Record<string, unknown> } }).Capacitor;
-  return (cap?.Plugins?.PushNotifications as PushNotificationsPlugin | undefined) ?? null;
+  const cap = (
+    window as Window & { Capacitor?: { Plugins?: Record<string, unknown> } }
+  ).Capacitor;
+  return (
+    (cap?.Plugins?.PushNotifications as PushNotificationsPlugin | undefined) ??
+    null
+  );
 }
 
 /** True inside an iOS app build that ships the push plugin. */
@@ -62,21 +88,36 @@ function storeToken(token: string | null): void {
 /** Asks iOS for the APNs device token and waits for the answer. */
 function requestToken(push: PushNotificationsPlugin): Promise<string> {
   return new Promise<string>((resolve, reject) => {
-    const handles: Promise<ListenerHandle>[] = [];
+    const handles: Promise<ListenerHandle | null>[] = [];
     let settled = false;
     let timer = 0;
     const finish = (settle: () => void) => {
       if (settled) return;
       settled = true;
       window.clearTimeout(timer);
-      handles.forEach((h) => void h.then((handle) => handle.remove()).catch(() => undefined));
+      handles.forEach(
+        (h) => void h.then((handle) => handle?.remove()).catch(() => undefined),
+      );
       settle();
     };
-    timer = window.setTimeout(() => finish(() => reject(new Error("APNS_TIMEOUT"))), REGISTER_TIMEOUT_MS);
-    handles.push(push.addListener("registration", (token) => finish(() => resolve(token.value))));
+    timer = window.setTimeout(
+      () => finish(() => reject(new Error("APNS_TIMEOUT"))),
+      REGISTER_TIMEOUT_MS,
+    );
     handles.push(
-      push.addListener("registrationError", (err) =>
-        finish(() => reject(new Error(err.error || "APNS_REGISTRATION_FAILED"))),
+      listen(() =>
+        push.addListener("registration", (token) =>
+          finish(() => resolve(token.value)),
+        ),
+      ),
+    );
+    handles.push(
+      listen(() =>
+        push.addListener("registrationError", (err) =>
+          finish(() =>
+            reject(new Error(err.error || "APNS_REGISTRATION_FAILED")),
+          ),
+        ),
       ),
     );
     push.register().catch((err: unknown) => finish(() => reject(err)));
@@ -92,7 +133,10 @@ async function saveToken(token: string): Promise<void> {
 }
 
 async function removeToken(token: string): Promise<void> {
-  await supabase.rpc("remove_push_subscription" as never, { _endpoint: `apns:${token.toLowerCase()}` } as never);
+  await supabase.rpc(
+    "remove_push_subscription" as never,
+    { _endpoint: `apns:${token.toLowerCase()}` } as never,
+  );
 }
 
 export async function getNativePushState(): Promise<NativePushState> {
@@ -108,7 +152,8 @@ export async function enableNativePush(): Promise<NativePushState> {
   const push = plugin();
   if (!push) return "unsupported";
   let { receive } = await push.checkPermissions();
-  if (receive !== "granted") receive = (await push.requestPermissions()).receive;
+  if (receive !== "granted")
+    receive = (await push.requestPermissions()).receive;
   if (receive !== "granted") return receive === "denied" ? "denied" : "off";
 
   const token = await requestToken(push);
@@ -167,12 +212,15 @@ export function installNativePush(): void {
   if (!push) return;
 
   // Tapping a notification opens the page it is about (send-push puts it in data.url).
-  void push
-    .addListener("pushNotificationActionPerformed", (action) => openNotificationUrl(action.notification?.data?.url))
-    .catch(() => undefined);
+  void listen(() =>
+    push.addListener("pushNotificationActionPerformed", (action) =>
+      openNotificationUrl(action.notification?.data?.url),
+    ),
+  );
 
   supabase.auth.onAuthStateChange((event, session) => {
-    if (!session || (event !== "INITIAL_SESSION" && event !== "SIGNED_IN")) return;
+    if (!session || (event !== "INITIAL_SESSION" && event !== "SIGNED_IN"))
+      return;
     // Supabase must not be called from inside its own auth callback; run it on the next tick.
     window.setTimeout(() => void refreshToken(push).catch(() => undefined), 0);
   });
