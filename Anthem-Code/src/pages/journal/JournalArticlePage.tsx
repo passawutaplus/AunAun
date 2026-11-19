@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Navigate, useParams } from "react-router-dom";
 import SeoHead from "@/components/SeoHead";
 import SeoBreadcrumb from "@/components/seo/SeoBreadcrumb";
@@ -8,6 +9,8 @@ import { formatJournalDate } from "@/components/journal/formatDate";
 import {
   getJournalArticle,
   JOURNAL_CATEGORIES,
+  loadJournalContent,
+  type JournalContent,
   sortedJournalArticles,
   type JournalBlock,
 } from "@/data/journal/articles";
@@ -62,18 +65,38 @@ function Block({ block }: { block: JournalBlock }) {
   return <p className="thai-body mt-4 text-base text-foreground/90">{block.p}</p>;
 }
 
+/** Body + sources live in per-article chunks; load the one being read. */
+function useJournalContent(slug: string | undefined) {
+  const [state, setState] = useState<{ slug?: string; content?: JournalContent; failed?: boolean }>({});
+  useEffect(() => {
+    if (!slug) return;
+    let alive = true;
+    loadJournalContent(slug)
+      .then((content) => alive && setState({ slug, content }))
+      .catch(() => alive && setState({ slug, failed: true }));
+    return () => {
+      alive = false;
+    };
+  }, [slug]);
+  return state.slug === slug ? state : {};
+}
+
 export default function JournalArticlePage() {
   const { slug } = useParams<{ slug: string }>();
   const article = slug ? getJournalArticle(slug) : undefined;
+  const { content, failed } = useJournalContent(article?.slug);
   if (!article) return <Navigate to="/exhibition/category/journal" replace />;
+  const sources = content?.sources ?? [];
 
   const cat = JOURNAL_CATEGORIES[article.category];
   const path = `/journal/${article.slug}`;
   const url = absoluteUrl(path);
   const image = absoluteUrl(article.image.src);
-  const more = sortedJournalArticles()
-    .filter((a) => a.slug !== article.slug)
-    .slice(0, 2);
+  const others = sortedJournalArticles().filter((a) => a.slug !== article.slug);
+  const more = [
+    ...others.filter((a) => a.category === article.category),
+    ...others.filter((a) => a.category !== article.category),
+  ].slice(0, 2);
   const crumbs = [
     { name: "SAMECOR", path: "/" },
     { name: "Journal", path: "/exhibition/category/journal" },
@@ -101,7 +124,7 @@ export default function JournalArticlePage() {
             inLanguage: "th",
             articleSection: cat.label,
             keywords: article.tags.join(", "),
-            citation: article.sources.map((s) => ({
+            citation: sources.map((s) => ({
               "@type": "CreativeWork",
               name: s.title,
               url: s.url,
@@ -146,13 +169,23 @@ export default function JournalArticlePage() {
           <figcaption className="mt-2 text-xs text-muted-foreground">{article.image.credit}</figcaption>
         </figure>
 
-        <div className="mt-6">
-          {article.body.map((block, i) => (
-            <Block key={i} block={block} />
-          ))}
+        <div className="mt-6" aria-busy={!content && !failed}>
+          {content ? (
+            content.body.map((block, i) => <Block key={i} block={block} />)
+          ) : failed ? (
+            <p className="thai-body mt-4 text-base text-muted-foreground">
+              โหลดเนื้อหาไม่สำเร็จ ลองรีเฟรชหน้านี้อีกครั้ง
+            </p>
+          ) : (
+            <div className="mt-4 space-y-3" aria-hidden>
+              {[0, 1, 2, 3].map((i) => (
+                <div key={i} className="h-4 animate-pulse rounded bg-muted" style={{ width: `${92 - i * 9}%` }} />
+              ))}
+            </div>
+          )}
         </div>
 
-        <JournalSources sources={article.sources} />
+        <JournalSources sources={sources} />
 
         <ul className="mt-10 flex flex-wrap gap-2" aria-label="แท็ก">
           {article.tags.map((t) => (
