@@ -4,7 +4,9 @@ export type JournalBlock =
   | { h: string }
   | { p: string }
   | { ul: string[] }
-  | { quote: string };
+  | { quote: string }
+  | { img: { src: string; alt: string; caption?: string; credit: string } }
+  | { graphic: { src: string; alt: string; caption?: string } };
 
 export interface JournalSource {
   title: string;

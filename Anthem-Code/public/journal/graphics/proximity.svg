@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 360" role="img" aria-label="จุดที่เว้นระยะเท่ากัน ค่อยๆ ขยับรวมเป็น 3 กลุ่มด้วยระยะห่างอย่างเดียว ไม่ต้องใช้เส้นหรือกรอบ">
+<style>
+.d{fill:#282929}.r{fill:#EE3D29}
+.d,.r{animation:g 7s ease-in-out infinite alternate}
+@keyframes g{0%,25%{transform:translateX(0)}75%,100%{transform:translateX(var(--x))}}
+.f{fill:none;stroke:#EE3D29;stroke-width:1.5;stroke-dasharray:5 6;opacity:0;animation:o 7s ease-in-out infinite alternate}
+@keyframes o{0%,75%{opacity:0}95%,100%{opacity:.9}}
+@media (prefers-reduced-motion:reduce){.d,.r{animation:none;transform:translateX(var(--x))}.f{animation:none;opacity:.9}}
+</style>
+<rect width="800" height="360" fill="#F8F7F2"/>
+<circle class="d" cx="70" cy="140" r="14" style="--x:20px"/><circle class="d" cx="70" cy="220" r="14" style="--x:20px"/><circle class="d" cx="130" cy="140" r="14" style="--x:0px"/><circle class="d" cx="130" cy="220" r="14" style="--x:0px"/><circle class="d" cx="190" cy="140" r="14" style="--x:-20px"/><circle class="d" cx="190" cy="220" r="14" style="--x:-20px"/><circle class="d" cx="250" cy="140" r="14" style="--x:-40px"/><circle class="d" cx="250" cy="220" r="14" style="--x:-40px"/><circle class="d" cx="310" cy="140" r="14" style="--x:30px"/><circle class="d" cx="310" cy="220" r="14" style="--x:30px"/><circle class="d" cx="370" cy="140" r="14" style="--x:10px"/><circle class="r" cx="370" cy="220" r="14" style="--x:10px"/><circle class="d" cx="430" cy="140" r="14" style="--x:-10px"/><circle class="d" cx="430" cy="220" r="14" style="--x:-10px"/><circle class="d" cx="490" cy="140" r="14" style="--x:-30px"/><circle class="d" cx="490" cy="220" r="14" style="--x:-30px"/><circle class="d" cx="550" cy="140" r="14" style="--x:40px"/><circle class="d" cx="550" cy="220" r="14" style="--x:40px"/><circle class="d" cx="610" cy="140" r="14" style="--x:20px"/><circle class="d" cx="610" cy="220" r="14" style="--x:20px"/><circle class="d" cx="670" cy="140" r="14" style="--x:0px"/><circle class="d" cx="670" cy="220" r="14" style="--x:0px"/><circle class="d" cx="730" cy="140" r="14" style="--x:-20px"/><circle class="d" cx="730" cy="220" r="14" style="--x:-20px"/>
+<rect class="f" x="64" y="104" width="172" height="152" rx="22"/><rect class="f" x="314" y="104" width="172" height="152" rx="22"/><rect class="f" x="564" y="104" width="172" height="152" rx="22"/>
+</svg>

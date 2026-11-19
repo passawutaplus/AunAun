@@ -22,7 +22,7 @@ export default function JournalCard({ article, size = "regular", className }: Pr
         <div
           className={cn(
             "overflow-hidden rounded-lg bg-muted",
-            size === "feature" ? "aspect-[16/9]" : "aspect-[4/3]",
+            "aspect-[16/9]",
           )}
         >
           <img
