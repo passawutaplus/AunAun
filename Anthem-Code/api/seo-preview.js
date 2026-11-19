@@ -118,8 +118,21 @@ function journalBodyHtml(a, base) {
     <img src="${escapeHtml(base + a.image.src)}" alt="${escapeHtml(a.image.alt)}" />
     ${parts.join("\n    ")}
     ${journalSourcesHtml(a)}
+    ${journalRelatedHtml(a, base)}
     <p><a href="${escapeHtml(base)}/exhibition/category/journal">Journal</a></p>
   </article>`;
+}
+
+/** Link every article to 4 others (same category first) so bots can walk the Journal without JavaScript. */
+function journalRelatedHtml(a, base) {
+  const others = [...JOURNAL_ARTICLES]
+    .sort((x, y) => new Date(y.datePublished) - new Date(x.datePublished))
+    .filter((x) => x.slug !== a.slug);
+  const picks = [...others.filter((x) => x.category === a.category), ...others.filter((x) => x.category !== a.category)].slice(0, 4);
+  if (!picks.length) return "";
+  return `<section><h2>More stories / บทความอื่น</h2><ul>${picks
+    .map((x) => `<li><a href="${escapeHtml(base)}/journal/${escapeHtml(x.slug)}">${escapeHtml(x.title)}</a></li>`)
+    .join("")}</ul></section>`;
 }
 
 function journalSourcesHtml(a) {
@@ -520,9 +533,16 @@ async function resolveMeta(pathname, base) {
     const list = works.length
       ? `<h2>ผลงานล่าสุด</h2><ul>${works.map((w) => `<li><a href="${escapeHtml(base)}/showcase/${escapeHtml(w.id)}">${escapeHtml(w.title)}</a></li>`).join("")}</ul>`
       : "";
+    const latestJournal = [...JOURNAL_ARTICLES]
+      .sort((a, b) => new Date(b.datePublished) - new Date(a.datePublished))
+      .slice(0, 6)
+      .map((a) => `<li><a href="${escapeHtml(base)}/journal/${escapeHtml(a.slug)}">${escapeHtml(a.title)}</a></li>`)
+      .join("");
+    defaultMeta.image = `${base}/brand/og-image.png`;
     defaultMeta.bodyHtml = `<h1>SAMECOR — You Create. We Connect.</h1>
     <p>${escapeHtml(defaultMeta.description)}</p>
     ${list}
+    <h2>Journal บทความล่าสุด</h2><ul>${latestJournal}</ul>
     <nav aria-label="หมวดหลัก"><ul>
       <li><a href="${escapeHtml(base)}/exhibition">นิทรรศการและกิจกรรมสร้างสรรค์</a></li>
       <li><a href="${escapeHtml(base)}/forum">ฟอรั่มชุมชน</a></li>
