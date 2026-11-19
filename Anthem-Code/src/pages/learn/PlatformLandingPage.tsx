@@ -26,6 +26,7 @@ import {
 } from "@/lib/brandConfig";
 import { optimizedFeedImageUrl } from "@/lib/feedProjectCover";
 import { isNativeApp } from "@/lib/appShell";
+import { isPlayStoreLive, PLAY_STORE_URL } from "@/components/AndroidAppBanner";
 
 import { copyText } from "@/lib/copyText";
 const MARQUEE = ["Graphic", "Illustration", "UX/UI", "Motion", "Photo", "3D", "Branding", "Typography"];
@@ -397,10 +398,22 @@ export default function PlatformLandingPage() {
                 {/* Store badges only on the website: App Review rejects other stores inside the iOS app (2.3.10). */}
                 {!isNativeApp() && (
                 <div className="stores">
-                  <div className="store">
-                    <img src="/go/badges/google-play.png" alt="Google Play" />
-                    <span>Coming soon</span>
-                  </div>
+                  {isPlayStoreLive() ? (
+                    <a
+                      className="store live"
+                      href={PLAY_STORE_URL.replace("utm_medium=banner", "utm_medium=learn")}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <img src="/go/badges/google-play.png" alt="Get it on Google Play" />
+                      <span>Download</span>
+                    </a>
+                  ) : (
+                    <div className="store">
+                      <img src="/go/badges/google-play.png" alt="Google Play" />
+                      <span>Coming soon</span>
+                    </div>
+                  )}
                   <div className="store">
                     <img src="/go/badges/app-store.png" alt="App Store" />
                     <span>Coming soon</span>

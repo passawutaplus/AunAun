@@ -13,9 +13,9 @@ const SHOW_DELAY_MS = 4000;
 /** Pages where a small card above the bottom nav doesn't cover anything important. */
 const SHOW_ON = [/^\/$/, /^\/showcase\/[^/]+$/, /^\/u\/[^/]+$/];
 
-/** Off until the app is live on Google Play — fail-closed. */
+/** Live on Google Play since 2026-11-19. Set VITE_PLAY_STORE_LIVE=false to hide every store prompt again. */
 export function isPlayStoreLive(): boolean {
-  return import.meta.env.VITE_PLAY_STORE_LIVE === "true";
+  return import.meta.env.VITE_PLAY_STORE_LIVE !== "false";
 }
 
 function dismissedRecently(): boolean {
