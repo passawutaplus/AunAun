@@ -111,8 +111,20 @@ function journalBodyHtml(a, base) {
     <p>${escapeHtml(a.description)}</p>
     <img src="${escapeHtml(base + a.image.src)}" alt="${escapeHtml(a.image.alt)}" />
     ${parts.join("\n    ")}
+    ${journalSourcesHtml(a)}
     <p><a href="${escapeHtml(base)}/exhibition/category/journal">Journal</a></p>
   </article>`;
+}
+
+function journalSourcesHtml(a) {
+  if (!a.sources?.length) return "";
+  const items = a.sources
+    .map(
+      (s) =>
+        `<li><a href="${escapeHtml(s.url)}" rel="noopener">${escapeHtml(s.title)}</a> — ${escapeHtml(s.publisher)}</li>`,
+    )
+    .join("");
+  return `<section><h2>Sources / แหล่งอ้างอิง</h2><ol>${items}</ol></section>`;
 }
 
 /** /journal และ /journal/<slug> ไม่ต้องใช้ฐานข้อมูล */
@@ -197,6 +209,12 @@ function resolveJournal(pathname, base, defaultMeta) {
           inLanguage: "th",
           articleSection: JOURNAL_CATEGORIES[a.category].label,
           keywords: a.tags.join(", "),
+          citation: (a.sources || []).map((s) => ({
+            "@type": "CreativeWork",
+            name: s.title,
+            url: s.url,
+            publisher: { "@type": "Organization", name: s.publisher },
+          })),
           mainEntityOfPage: { "@type": "WebPage", "@id": url },
           author: org,
           publisher: { ...org, logo: { "@type": "ImageObject", url: `${base}/icons/icon-512.png` } },
