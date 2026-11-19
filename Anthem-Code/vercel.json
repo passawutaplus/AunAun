@@ -9,6 +9,11 @@
   ],
   "redirects": [
     {
+      "source": "/journal",
+      "destination": "/exhibition/category/journal",
+      "permanent": true
+    },
+    {
       "source": "/project/:id",
       "destination": "/showcase/:id",
       "permanent": true

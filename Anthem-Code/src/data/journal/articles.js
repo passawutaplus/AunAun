@@ -10,10 +10,14 @@
  * บล็อกเนื้อหา: { h: "หัวข้อย่อย" } · { p: "ย่อหน้า" } · { ul: ["ข้อ", ...] } · { quote: "ประโยคเด่น" }
  */
 
+/** ลำดับนี้คือลำดับในแถบหมวดด้านซ้ายของหน้า Journal */
 export const JOURNAL_CATEGORIES = {
-  design: { id: "design", label: "Design", labelTh: "ดีไซน์" },
-  people: { id: "people", label: "People", labelTh: "ผู้คน" },
-  art: { id: "art", label: "Art", labelTh: "ศิลปะ" },
+  design: { id: "design", label: "Design", labelTh: "ดีไซน์และเลย์เอาต์" },
+  branding: { id: "branding", label: "Branding", labelTh: "แบรนด์และอัตลักษณ์" },
+  people: { id: "people", label: "People", labelTh: "ผู้คนและครีเอเตอร์" },
+  career: { id: "career", label: "Career", labelTh: "อาชีพและพอร์ตโฟลิโอ" },
+  art: { id: "art", label: "Art", labelTh: "ศิลปะและนิทรรศการ" },
+  culture: { id: "culture", label: "Culture", labelTh: "วัฒนธรรมและเทรนด์" },
 };
 
 /** @type {import("./articles").JournalArticle[]} */
@@ -74,7 +78,7 @@ export const JOURNAL_ARTICLES = [
   },
   {
     slug: "tell-the-story-behind-the-work",
-    category: "people",
+    category: "career",
     titleEn: "Tell the story behind the work",
     title: "เล่าเบื้องหลังผลงาน ให้คนอยากคุยกับคุณต่อ",
     description:

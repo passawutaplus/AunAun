@@ -41,7 +41,7 @@ function Block({ block }: { block: JournalBlock }) {
 export default function JournalArticlePage() {
   const { slug } = useParams<{ slug: string }>();
   const article = slug ? getJournalArticle(slug) : undefined;
-  if (!article) return <Navigate to="/journal" replace />;
+  if (!article) return <Navigate to="/exhibition/category/journal" replace />;
 
   const cat = JOURNAL_CATEGORIES[article.category];
   const path = `/journal/${article.slug}`;
@@ -52,7 +52,7 @@ export default function JournalArticlePage() {
     .slice(0, 2);
   const crumbs = [
     { name: "SAMECOR", path: "/" },
-    { name: "Journal", path: "/journal" },
+    { name: "Journal", path: "/exhibition/category/journal" },
     { name: article.title, path },
   ];
 

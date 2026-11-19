@@ -19,15 +19,19 @@ export default function JournalCard({ article, size = "regular", className }: Pr
         to={journalArticlePath(article.slug)}
         className="block rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
-        <div className="overflow-hidden rounded-lg bg-muted">
+        <div
+          className={cn(
+            "overflow-hidden rounded-lg bg-muted",
+            size === "feature" ? "aspect-[16/9]" : "aspect-[4/3]",
+          )}
+        >
           <img
             src={article.image.src}
             alt={article.image.alt}
             loading="lazy"
             decoding="async"
             className={cn(
-              "w-full object-cover transition-transform duration-500 group-hover:scale-[1.02] motion-reduce:transition-none",
-              size === "feature" ? "aspect-[16/9]" : "aspect-[4/3]",
+              "h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02] motion-reduce:transition-none",
             )}
           />
         </div>
