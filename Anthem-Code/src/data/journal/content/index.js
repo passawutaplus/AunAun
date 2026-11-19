@@ -2,6 +2,7 @@
 // Server-side only (api/seo-preview.js). The web app loads content per article via loadJournalContent().
 import c_ai_and_your_creative_work from "./ai-and-your-creative-work.js";
 import c_art_vs_design from "./art-vs-design.js";
+import c_artist_residency from "./artist-residency.js";
 import c_attention_and_scrolling from "./attention-and-scrolling.js";
 import c_brand_consistency from "./brand-consistency.js";
 import c_brand_is_not_a_logo from "./brand-is-not-a-logo.js";
@@ -13,10 +14,12 @@ import c_contract_basics from "./contract-basics.js";
 import c_copyright_basics from "./copyright-basics.js";
 import c_creative_brief from "./creative-brief.js";
 import c_creative_burnout from "./creative-burnout.js";
+import c_creative_cities from "./creative-cities.js";
 import c_creative_community from "./creative-community.js";
 import c_creative_routines from "./creative-routines.js";
 import c_curating_small_show from "./curating-small-show.js";
 import c_design_critique from "./design-critique.js";
+import c_editing_your_design from "./editing-your-design.js";
 import c_feedback_rounds from "./feedback-rounds.js";
 import c_finding_a_mentor from "./finding-a-mentor.js";
 import c_finding_collaborators from "./finding-collaborators.js";
@@ -29,10 +32,12 @@ import c_moodboard_that_works from "./moodboard-that-works.js";
 import c_naming_a_brand from "./naming-a-brand.js";
 import c_nostalgia_in_design from "./nostalgia-in-design.js";
 import c_one_page_brand_guideline from "./one-page-brand-guideline.js";
+import c_open_call_applications from "./open-call-applications.js";
 import c_personal_brand_for_creators from "./personal-brand-for-creators.js";
 import c_photographing_artwork from "./photographing-artwork.js";
 import c_portfolio_curation from "./portfolio-curation.js";
 import c_pricing_creative_work from "./pricing-creative-work.js";
+import c_reaching_out_to_creators from "./reaching-out-to-creators.js";
 import c_reading_wall_labels from "./reading-wall-labels.js";
 import c_slow_design from "./slow-design.js";
 import c_sustainable_design from "./sustainable-design.js";
@@ -41,6 +46,7 @@ import c_thai_craft_today from "./thai-craft-today.js";
 import c_thai_latin_type_pairing from "./thai-latin-type-pairing.js";
 import c_type_hierarchy from "./type-hierarchy.js";
 import c_using_trends_wisely from "./using-trends-wisely.js";
+import c_when_to_rebrand from "./when-to-rebrand.js";
 import c_when_you_feel_not_good_enough from "./when-you-feel-not-good-enough.js";
 import c_white_space_is_a_design_tool from "./white-space-is-a-design-tool.js";
 import c_why_contemporary_art_confuses from "./why-contemporary-art-confuses.js";
@@ -50,6 +56,7 @@ import c_writing_an_artist_statement from "./writing-an-artist-statement.js";
 export const JOURNAL_CONTENT = {
   "ai-and-your-creative-work": c_ai_and_your_creative_work,
   "art-vs-design": c_art_vs_design,
+  "artist-residency": c_artist_residency,
   "attention-and-scrolling": c_attention_and_scrolling,
   "brand-consistency": c_brand_consistency,
   "brand-is-not-a-logo": c_brand_is_not_a_logo,
@@ -61,10 +68,12 @@ export const JOURNAL_CONTENT = {
   "copyright-basics": c_copyright_basics,
   "creative-brief": c_creative_brief,
   "creative-burnout": c_creative_burnout,
+  "creative-cities": c_creative_cities,
   "creative-community": c_creative_community,
   "creative-routines": c_creative_routines,
   "curating-small-show": c_curating_small_show,
   "design-critique": c_design_critique,
+  "editing-your-design": c_editing_your_design,
   "feedback-rounds": c_feedback_rounds,
   "finding-a-mentor": c_finding_a_mentor,
   "finding-collaborators": c_finding_collaborators,
@@ -77,10 +86,12 @@ export const JOURNAL_CONTENT = {
   "naming-a-brand": c_naming_a_brand,
   "nostalgia-in-design": c_nostalgia_in_design,
   "one-page-brand-guideline": c_one_page_brand_guideline,
+  "open-call-applications": c_open_call_applications,
   "personal-brand-for-creators": c_personal_brand_for_creators,
   "photographing-artwork": c_photographing_artwork,
   "portfolio-curation": c_portfolio_curation,
   "pricing-creative-work": c_pricing_creative_work,
+  "reaching-out-to-creators": c_reaching_out_to_creators,
   "reading-wall-labels": c_reading_wall_labels,
   "slow-design": c_slow_design,
   "sustainable-design": c_sustainable_design,
@@ -89,6 +100,7 @@ export const JOURNAL_CONTENT = {
   "thai-latin-type-pairing": c_thai_latin_type_pairing,
   "type-hierarchy": c_type_hierarchy,
   "using-trends-wisely": c_using_trends_wisely,
+  "when-to-rebrand": c_when_to_rebrand,
   "when-you-feel-not-good-enough": c_when_you_feel_not_good_enough,
   "white-space-is-a-design-tool": c_white_space_is_a_design_tool,
   "why-contemporary-art-confuses": c_why_contemporary_art_confuses,
