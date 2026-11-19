@@ -451,9 +451,8 @@ function resolveExhibitionStatic(pathname, base, defaultMeta) {
 
 async function resolveMeta(pathname, base) {
   const defaultMeta = {
-    title: "SAMECOR — 1 โปรไฟล์ สู่ 100+ โอกาส",
-    description:
-      "SAMECOR ช่วยค้นหาครีเอเตอร์จากผลงานจริง — ดูสไตล์และบริบทงานก่อนคุยโอกาส ไม่ใช่แพ็กเกจราคา",
+    title: "SAMECOR — You Create. We Connect.",
+    description: "SAMECOR เชื่อมผลงานของคุณกับคน โปรเจกต์ และโอกาสถัดไป — You Create. We Connect.",
     url: `${base}${pathname === "/" ? "/" : pathname}`,
     image: `${base}/icons/icon-512.png`,
     noindex: false,
@@ -497,6 +496,35 @@ async function resolveMeta(pathname, base) {
     };
   }
 
+  // Home: give crawlers real links and text (the SPA shell is empty without JavaScript).
+  if (pathname === "/") {
+    let works = [];
+    const sUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
+    const sKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY || "";
+    if (sUrl && sKey) {
+      const rows = await fetchJson(
+        `${sUrl.replace(/\/$/, "")}/rest/v1/projects?select=id,title&status=eq.Published&order=created_at.desc&limit=40`,
+        { apikey: sKey, Authorization: `Bearer ${sKey}`, Accept: "application/json", "Accept-Profile": "anthem", "Content-Profile": "anthem" },
+      );
+      works = (Array.isArray(rows) ? rows : [])
+        .filter((r) => r && r.id && !/^00000000-0000-0000-/.test(r.id) && String(r.title || "").trim().length >= 3)
+        .slice(0, 12);
+    }
+    const list = works.length
+      ? `<h2>ผลงานล่าสุด</h2><ul>${works.map((w) => `<li><a href="${escapeHtml(base)}/showcase/${escapeHtml(w.id)}">${escapeHtml(w.title)}</a></li>`).join("")}</ul>`
+      : "";
+    defaultMeta.bodyHtml = `<h1>SAMECOR — You Create. We Connect.</h1>
+    <p>${escapeHtml(defaultMeta.description)}</p>
+    ${list}
+    <nav aria-label="หมวดหลัก"><ul>
+      <li><a href="${escapeHtml(base)}/exhibition">นิทรรศการและกิจกรรมสร้างสรรค์</a></li>
+      <li><a href="${escapeHtml(base)}/forum">ฟอรั่มชุมชน</a></li>
+      <li><a href="${escapeHtml(base)}/journal">Journal บทความ</a></li>
+      <li><a href="${escapeHtml(base)}/learn">เรียนรู้การใช้ SAMECOR</a></li>
+    </ul></nav>`;
+    return defaultMeta;
+  }
+
   // Journal pages come from the data file, no database.
   const journalMeta = resolveJournal(pathname, base, defaultMeta);
   if (journalMeta) return journalMeta;
@@ -526,7 +554,7 @@ async function resolveMeta(pathname, base) {
   if (projectMatch) {
     const id = projectMatch[1];
     const rows = await fetchJson(
-      `${rest}/projects?select=id,title,description,cover_url,status,owner_id&id=eq.${id}&status=eq.Published&limit=1`,
+      `${rest}/projects?select=id,title,description,cover_url,status,owner_id,created_at,tags,tools&id=eq.${id}&status=eq.Published&limit=1`,
       anthemHeaders,
     );
     const p = rows?.[0];
@@ -543,20 +571,55 @@ async function resolveMeta(pathname, base) {
         ? p.cover_url
         : `${base}${p.cover_url.startsWith("/") ? "" : "/"}${p.cover_url}`
       : defaultMeta.image;
+    const url = `${base}/showcase/${p.id}`;
+    let author = null;
+    if (p.owner_id) {
+      const owners = await fetchJson(
+        `${rest}/profiles_public?select=user_id,username,display_name&user_id=eq.${p.owner_id}&limit=1`,
+        headers,
+      );
+      const o = owners?.[0];
+      if (o) {
+        author = {
+          name: o.display_name || o.username || "ครีเอเตอร์",
+          url: `${base}${o.username ? `/@${o.username}` : `/u/${o.user_id}`}`,
+        };
+      }
+    }
+    const keywords = [...(Array.isArray(p.tags) ? p.tags : []), ...(Array.isArray(p.tools) ? p.tools : [])]
+      .filter((k) => typeof k === "string" && k.trim())
+      .slice(0, 12);
+    const desc = String(p.description || "").replace(/\s+/g, " ").trim();
+    const bodyHtml = `<article>
+    <h1>${escapeHtml(p.title)}</h1>
+    ${author ? `<p>โดย <a href="${escapeHtml(author.url)}">${escapeHtml(author.name)}</a></p>` : ""}
+    ${p.cover_url ? `<img src="${escapeHtml(cover)}" alt="${escapeHtml(p.title)}" />` : ""}
+    ${desc ? `<p>${escapeHtml(desc)}</p>` : ""}
+    ${keywords.length ? `<p>${keywords.map((k) => escapeHtml(`#${k}`)).join(" ")}</p>` : ""}
+    <p><a href="${escapeHtml(url)}">เปิดใน SAMECOR</a></p>
+    </article>`;
     return {
       title: `${p.title} | SAMECOR`,
-      description: (p.description || p.title || "").slice(0, 160),
-      url: `${base}/showcase/${p.id}`,
+      description: (desc || p.title || "").slice(0, 160),
+      url,
       image: cover,
       noindex: false,
       type: "article",
       status: 200,
+      published: p.created_at || undefined,
+      bodyHtml,
       jsonLd: {
         "@context": "https://schema.org",
         "@type": "CreativeWork",
         name: p.title,
-        url: `${base}/showcase/${p.id}`,
+        url,
         image: cover,
+        ...(desc ? { description: desc.slice(0, 300) } : {}),
+        ...(p.created_at ? { datePublished: p.created_at } : {}),
+        ...(keywords.length ? { keywords: keywords.join(", ") } : {}),
+        ...(author ? { author: { "@type": "Person", name: author.name, url: author.url } } : {}),
+        publisher: { "@type": "Organization", name: "SAMECOR", url: `${base}/` },
+        mainEntityOfPage: url,
       },
     };
   }
