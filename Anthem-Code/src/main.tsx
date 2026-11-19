@@ -21,7 +21,12 @@ void initErrorMonitoring();
 loadBrandFonts();
 registerPwa();
 installAppShell();
-installNativePush();
+// Never let a native-bridge surprise stop the app from rendering (a throw here meant a blank screen).
+try {
+  installNativePush();
+} catch (err) {
+  console.error("installNativePush failed", err);
+}
 installBootGate();
 
 const initialUrl = `${window.location.origin}${window.location.pathname}`;
