@@ -12,11 +12,15 @@ import c_creative_brief from "./creative-brief.js";
 import c_creative_burnout from "./creative-burnout.js";
 import c_creative_routines from "./creative-routines.js";
 import c_curating_small_show from "./curating-small-show.js";
+import c_feedback_rounds from "./feedback-rounds.js";
 import c_finding_a_mentor from "./finding-a-mentor.js";
 import c_finding_collaborators from "./finding-collaborators.js";
 import c_four_questions_at_the_gallery from "./four-questions-at-the-gallery.js";
+import c_gestalt_principles from "./gestalt-principles.js";
+import c_giving_credit from "./giving-credit.js";
 import c_grid_systems_explained from "./grid-systems-explained.js";
 import c_moodboard_that_works from "./moodboard-that-works.js";
+import c_naming_a_brand from "./naming-a-brand.js";
 import c_nostalgia_in_design from "./nostalgia-in-design.js";
 import c_one_page_brand_guideline from "./one-page-brand-guideline.js";
 import c_personal_brand_for_creators from "./personal-brand-for-creators.js";
@@ -27,11 +31,13 @@ import c_reading_wall_labels from "./reading-wall-labels.js";
 import c_slow_design from "./slow-design.js";
 import c_sustainable_design from "./sustainable-design.js";
 import c_tell_the_story_behind_the_work from "./tell-the-story-behind-the-work.js";
+import c_thai_craft_today from "./thai-craft-today.js";
 import c_thai_latin_type_pairing from "./thai-latin-type-pairing.js";
 import c_type_hierarchy from "./type-hierarchy.js";
 import c_using_trends_wisely from "./using-trends-wisely.js";
 import c_when_you_feel_not_good_enough from "./when-you-feel-not-good-enough.js";
 import c_white_space_is_a_design_tool from "./white-space-is-a-design-tool.js";
+import c_why_contemporary_art_confuses from "./why-contemporary-art-confuses.js";
 import c_writing_an_artist_statement from "./writing-an-artist-statement.js";
 
 /** @type {Record<string, import("../articles").JournalContent>} */
@@ -48,11 +54,15 @@ export const JOURNAL_CONTENT = {
   "creative-burnout": c_creative_burnout,
   "creative-routines": c_creative_routines,
   "curating-small-show": c_curating_small_show,
+  "feedback-rounds": c_feedback_rounds,
   "finding-a-mentor": c_finding_a_mentor,
   "finding-collaborators": c_finding_collaborators,
   "four-questions-at-the-gallery": c_four_questions_at_the_gallery,
+  "gestalt-principles": c_gestalt_principles,
+  "giving-credit": c_giving_credit,
   "grid-systems-explained": c_grid_systems_explained,
   "moodboard-that-works": c_moodboard_that_works,
+  "naming-a-brand": c_naming_a_brand,
   "nostalgia-in-design": c_nostalgia_in_design,
   "one-page-brand-guideline": c_one_page_brand_guideline,
   "personal-brand-for-creators": c_personal_brand_for_creators,
@@ -63,10 +73,12 @@ export const JOURNAL_CONTENT = {
   "slow-design": c_slow_design,
   "sustainable-design": c_sustainable_design,
   "tell-the-story-behind-the-work": c_tell_the_story_behind_the_work,
+  "thai-craft-today": c_thai_craft_today,
   "thai-latin-type-pairing": c_thai_latin_type_pairing,
   "type-hierarchy": c_type_hierarchy,
   "using-trends-wisely": c_using_trends_wisely,
   "when-you-feel-not-good-enough": c_when_you_feel_not_good_enough,
   "white-space-is-a-design-tool": c_white_space_is_a_design_tool,
+  "why-contemporary-art-confuses": c_why_contemporary_art_confuses,
   "writing-an-artist-statement": c_writing_an_artist_statement,
 };
