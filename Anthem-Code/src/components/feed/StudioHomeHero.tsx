@@ -1,8 +1,24 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent, type RefObject } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type FormEvent,
+  type RefObject,
+} from "react";
 import { useTheme } from "next-themes";
-import { AnimatePresence, motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
+import {
+  AnimatePresence,
+  motion,
+  useReducedMotion,
+  useScroll,
+  useTransform,
+} from "framer-motion";
 import { startMonolithHeroWave } from "@/components/feed/monolithHeroWave";
-import FeedModeToggle, { type FeedMode } from "@/components/feed/FeedModeToggle";
+import FeedModeToggle, {
+  type FeedMode,
+} from "@/components/feed/FeedModeToggle";
 import { useTopProjects, type DBProject } from "@/hooks/useProjects";
 import { optimizedFeedImageUrl } from "@/lib/feedProjectCover";
 import { smoothEase } from "@/lib/motion";
@@ -17,7 +33,11 @@ type Props = {
 };
 
 function projectCover(project: DBProject) {
-  return project.cover_url?.trim() || project.gallery_urls?.find((url) => url?.trim()) || "";
+  return (
+    project.cover_url?.trim() ||
+    project.gallery_urls?.find((url) => url?.trim()) ||
+    ""
+  );
 }
 
 /** Page field (Studio White, or Gallery Black in dark mode) plus a faint neutral bottom wash, so the Monolith ripple has something to move. Brand Book: no coloured glow. */
@@ -55,26 +75,44 @@ function uniqueThumbs(urls: string[], width: number) {
     const trimmed = url.trim();
     if (!trimmed || seen.has(trimmed)) continue;
     seen.add(trimmed);
-    out.push(optimizedFeedImageUrl(trimmed, { width, quality: 68, natural: false }));
+    out.push(
+      optimizedFeedImageUrl(trimmed, { width, quality: 68, natural: false }),
+    );
     if (out.length >= 16) break;
   }
   return out;
 }
 
 /** Same stagger the reference uses so the tiles don't arrive in a row. */
-const TILE_DELAYS = [0.3, 0, 0.2, 0.4, 0.1, 0.8, 0.5, 0.3, 0.2, 0.5, 0.7, 0.4, 0.4, 0.2, 0.5, 0.6];
+const TILE_DELAYS = [
+  0.3, 0, 0.2, 0.4, 0.1, 0.8, 0.5, 0.3, 0.2, 0.5, 0.7, 0.4, 0.4, 0.2, 0.5, 0.6,
+];
 
 function coverColumns(urls: string[]) {
-  return Array.from({ length: 4 }, (_, column) => urls.slice(column * 4, column * 4 + 4));
+  return Array.from({ length: 4 }, (_, column) =>
+    urls.slice(column * 4, column * 4 + 4),
+  );
 }
 
 /** Nouns that rise through the second line, starting on Opportunities. */
-const HERO_RISING_WORDS = ["Opportunities", "Designers", "Artists", "Projects", "Collaborations"] as const;
+const HERO_RISING_WORDS = [
+  "Opportunities",
+  "Designers",
+  "Artists",
+  "Projects",
+  "Collaborations",
+] as const;
 const HERO_RISE_MS = 2400;
 const HERO_RISE_EASE = smoothEase;
 
 /** "100+" stays put. Only the noun beside it rises. */
-function HeroRollingLine({ images, interactive }: { images: string[]; interactive: boolean }) {
+function HeroRollingLine({
+  images,
+  interactive,
+}: {
+  images: string[];
+  interactive: boolean;
+}) {
   const reduced = useReducedMotion();
   const [index, setIndex] = useState(0);
 
@@ -93,11 +131,22 @@ function HeroRollingLine({ images, interactive }: { images: string[]; interactiv
   }, [reduced]);
 
   const word = HERO_RISING_WORDS[index] ?? HERO_RISING_WORDS[0];
-  const widest = HERO_RISING_WORDS.reduce((a, b) => (a.length >= b.length ? a : b));
+  const widest = HERO_RISING_WORDS.reduce((a, b) =>
+    a.length >= b.length ? a : b,
+  );
 
   return (
-    <span className="poster-word hero-roll-line" style={{ "--w": 3 } as CSSProperties} aria-live="polite">
-      <HeroWord before="100" after="+" images={images} interactive={interactive} />
+    <span
+      className="poster-word hero-roll-line"
+      style={{ "--w": 3 } as CSSProperties}
+      aria-live="polite"
+    >
+      <HeroWord
+        before="100"
+        after="+"
+        images={images}
+        interactive={interactive}
+      />
       <span className="hero-roll">
         <span className="hero-roll-sizer" aria-hidden>
           {widest}
@@ -119,7 +168,13 @@ function HeroRollingLine({ images, interactive }: { images: string[]; interactiv
   );
 }
 
-const INTRO_ANIMATIONS = new Set(["poster-word-in", "hero-tile-in", "hero-split", "hero-looking-in"]);
+const INTRO_ANIMATIONS = new Set([
+  "poster-word-in",
+  "hero-tile-in",
+  "hero-split",
+  "hero-split-up",
+  "hero-looking-in",
+]);
 
 /** Running entrance animations only — the word roll and search wiggle keep going. */
 function introAnimations(root: HTMLElement) {
@@ -164,7 +219,9 @@ function useHeroIntroReady(
         finish();
         return;
       }
-      void Promise.all(anims.map((anim) => anim.finished.catch(() => undefined))).then(() => {
+      void Promise.all(
+        anims.map((anim) => anim.finished.catch(() => undefined)),
+      ).then(() => {
         if (cancelled) return;
         const more = introAnimations(root);
         if (more.length === 0) finish();
@@ -337,17 +394,40 @@ function HeroProfileLine({
   };
 
   return (
-    <span ref={lineRef} data-tour="home-mode" className="poster-line" onPointerEnter={show} onPointerLeave={hide}>
+    <span
+      ref={lineRef}
+      data-tour="home-mode"
+      className="poster-line"
+      onPointerEnter={show}
+      onPointerLeave={hide}
+    >
       <span className="sr-only">1 Profile to</span>
-      <span className="poster-word" style={{ "--w": 0 } as CSSProperties} aria-hidden>
+      <span
+        className="poster-word"
+        style={{ "--w": 0 } as CSSProperties}
+        aria-hidden
+      >
         1
       </span>
-      <span className={cn("monolith-hero-word monolith-hero-word--split", open && "is-open")}>
-        <span className="poster-word" style={{ "--w": 1 } as CSSProperties} aria-hidden>
+      <span
+        className={cn(
+          "monolith-hero-word monolith-hero-word--split",
+          open && "is-open",
+        )}
+      >
+        <span
+          className="poster-word"
+          style={{ "--w": 1 } as CSSProperties}
+          aria-hidden
+        >
           Profile
         </span>
         <span className="hero-mode-slot">
-          <span ref={clipRef} className="hero-mode-slot-clip" aria-hidden={open ? undefined : true}>
+          <span
+            ref={clipRef}
+            className="hero-mode-slot-clip"
+            aria-hidden={open ? undefined : true}
+          >
             <FeedModeToggle
               value={mode}
               onChange={(next) => onModeChange?.(next, "hero")}
@@ -356,7 +436,11 @@ function HeroProfileLine({
             />
           </span>
         </span>
-        <span className="poster-word monolith-hero-after" style={{ "--w": 2 } as CSSProperties} aria-hidden>
+        <span
+          className="poster-word monolith-hero-after"
+          style={{ "--w": 2 } as CSSProperties}
+          aria-hidden
+        >
           to
         </span>
       </span>
@@ -381,7 +465,12 @@ export function HeroPosterTitle({
 }) {
   const titleRef = useRef<HTMLHeadingElement>(null);
   const reduced = useReducedMotion();
-  const interactive = useHeroIntroReady(titleRef, active, reduced, images.length);
+  const interactive = useHeroIntroReady(
+    titleRef,
+    active,
+    reduced,
+    images.length,
+  );
   const Tag = arrive ? "h2" : "h1";
 
   return (
@@ -394,7 +483,11 @@ export function HeroPosterTitle({
         interactive ? "pointer-events-auto" : "pointer-events-none",
       )}
     >
-      <HeroProfileLine mode={mode} onModeChange={onModeChange} interactive={interactive} />
+      <HeroProfileLine
+        mode={mode}
+        onModeChange={onModeChange}
+        interactive={interactive}
+      />
       <span className="poster-line max-w-[calc(100vw-3rem)]">
         <HeroRollingLine images={images} interactive={interactive} />
       </span>
@@ -418,13 +511,22 @@ const StudioHomeHero = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { resolvedTheme } = useTheme();
   const dark = resolvedTheme === "dark";
-  const paperStill = useMemo(() => (typeof document === "undefined" ? "" : paintPaperStill(dark)), [dark]);
+  const paperStill = useMemo(
+    () => (typeof document === "undefined" ? "" : paintPaperStill(dark)),
+    [dark],
+  );
   const { data: projects = [] } = useTopProjects();
   const covers = useMemo(() => projects.map(projectCover), [projects]);
   const projectImages = useMemo(() => uniqueThumbs(covers, 240), [covers]);
-  const columns = useMemo(() => coverColumns(uniqueThumbs(covers, 560)), [covers]);
+  const columns = useMemo(
+    () => coverColumns(uniqueThumbs(covers, 560)),
+    [covers],
+  );
   const [entered, setEntered] = useState(false);
-  const coverCount = columns.reduce((count, column) => count + column.length, 0);
+  const coverCount = columns.reduce(
+    (count, column) => count + column.length,
+    0,
+  );
   const interactive = useHeroIntroReady(heroRef, entered, reduced, coverCount);
   const { scrollYProgress } = useScroll({
     target: pinRef,
@@ -472,91 +574,130 @@ const StudioHomeHero = ({
         className,
       )}
     >
-    <section
-      ref={heroRef}
-      data-feed-hero
-      aria-label="Introduction"
-      className="sticky top-0 z-0 h-[100dvh] overflow-hidden bg-background"
-    >
-      <div ref={frameRef} className="monolith-hero-frame pointer-events-none absolute inset-[-4%]">
-        <img
-          ref={imageRef}
-          src={paperStill}
-          alt=""
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-        {reduced ? null : (
-          <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" aria-hidden />
-        )}
-      </div>
-
-      <div className={cn("hero-cover-field", entered && "is-in")} aria-hidden>
-        {columns.map((column, columnIndex) => (
-          <motion.div key={columnIndex} className="hero-cover-col" style={{ x: columnX[columnIndex] }}>
-            <div className="hero-cover-col-shift">
-              {[column.slice(0, 2), column.slice(2, 4)].map((half, halfIndex) => (
-                <motion.div
-                  key={halfIndex}
-                  className="hero-cover-half"
-                  style={{ y: halfIndex === 0 ? yTop : yBottom }}
-                >
-                  {half.map((src, row) => (
-                    <img
-                      key={src}
-                      className="hero-cover-tile"
-                      src={src}
-                      alt=""
-                      decoding="async"
-                      // The lower half of each column sits below the fold at first paint — fetch it after the top half.
-                      loading={halfIndex === 0 ? "eager" : "lazy"}
-                      style={{ "--d": `${TILE_DELAYS[columnIndex * 4 + halfIndex * 2 + row] ?? 0}s` } as CSSProperties}
-                    />
-                  ))}
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-        ))}
-      </div>
-      <div className="pointer-events-none absolute inset-0 z-[3] flex items-center justify-center px-6">
-        <div className="flex w-full max-w-[40rem] flex-col items-center">
-          <h1 className={cn("hero-poster-title", entered && "is-in", interactive ? "pointer-events-auto" : "pointer-events-none")}>
-            <HeroProfileLine mode={mode} onModeChange={onModeChange} interactive={interactive} />
-            <span className="poster-line max-w-[calc(100vw-3rem)]">
-              <HeroRollingLine images={projectImages} interactive={interactive} />
-            </span>
-          </h1>
-          <form
-            data-tour="home-search"
-            className={cn("hero-looking pointer-events-auto", entered && "is-in")}
-            onSubmit={(event: FormEvent) => {
-              event.preventDefault();
-              document.querySelector("[data-feed-sheet]")?.scrollIntoView({ behavior: "smooth", block: "start" });
-            }}
-          >
-            <label htmlFor="hero-looking" className="hero-looking-label">
-              I'm looking for
-            </label>
-            <span className="hero-looking-field">
-              <input
-                id="hero-looking"
-                value={search}
-                onChange={(event) => onSearchChange?.(event.target.value)}
-                className="hero-looking-input"
-                autoComplete="off"
-                enterKeyHint="search"
-              />
-              <button type="submit" className="hero-looking-search" aria-label="ค้นหา">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <circle cx="10.5" cy="10.5" r="6.25" />
-                  <path d="M15.2 15.2 L20 20" />
-                </svg>
-              </button>
-            </span>
-          </form>
+      <section
+        ref={heroRef}
+        data-feed-hero
+        aria-label="Introduction"
+        className="sticky top-0 z-0 h-[100dvh] overflow-hidden bg-background"
+      >
+        <div
+          ref={frameRef}
+          className="monolith-hero-frame pointer-events-none absolute inset-[-4%]"
+        >
+          <img
+            ref={imageRef}
+            src={paperStill}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+          {reduced ? null : (
+            <canvas
+              ref={canvasRef}
+              className="absolute inset-0 h-full w-full"
+              aria-hidden
+            />
+          )}
         </div>
-      </div>
-    </section>
+
+        <div className={cn("hero-cover-field", entered && "is-in")} aria-hidden>
+          {columns.map((column, columnIndex) => (
+            <motion.div
+              key={columnIndex}
+              className="hero-cover-col"
+              style={{ x: columnX[columnIndex] }}
+            >
+              <div className="hero-cover-col-shift">
+                {[column.slice(0, 2), column.slice(2, 4)].map(
+                  (half, halfIndex) => (
+                    <motion.div
+                      key={halfIndex}
+                      className="hero-cover-half"
+                      style={{ y: halfIndex === 0 ? yTop : yBottom }}
+                    >
+                      {half.map((src, row) => (
+                        <img
+                          key={src}
+                          className="hero-cover-tile"
+                          src={src}
+                          alt=""
+                          decoding="async"
+                          // The lower half of each column sits below the fold at first paint — fetch it after the top half.
+                          loading={halfIndex === 0 ? "eager" : "lazy"}
+                          style={
+                            {
+                              "--d": `${TILE_DELAYS[columnIndex * 4 + halfIndex * 2 + row] ?? 0}s`,
+                            } as CSSProperties
+                          }
+                        />
+                      ))}
+                    </motion.div>
+                  ),
+                )}
+              </div>
+            </motion.div>
+          ))}
+        </div>
+        <div className="pointer-events-none absolute inset-0 z-[3] flex items-center justify-center px-6">
+          <div className="flex w-full max-w-[40rem] flex-col items-center">
+            <h1
+              className={cn(
+                "hero-poster-title",
+                entered && "is-in",
+                interactive ? "pointer-events-auto" : "pointer-events-none",
+              )}
+            >
+              <HeroProfileLine
+                mode={mode}
+                onModeChange={onModeChange}
+                interactive={interactive}
+              />
+              <span className="poster-line max-w-[calc(100vw-3rem)]">
+                <HeroRollingLine
+                  images={projectImages}
+                  interactive={interactive}
+                />
+              </span>
+            </h1>
+            <form
+              data-tour="home-search"
+              className={cn(
+                "hero-looking pointer-events-auto",
+                entered && "is-in",
+              )}
+              onSubmit={(event: FormEvent) => {
+                event.preventDefault();
+                document
+                  .querySelector("[data-feed-sheet]")
+                  ?.scrollIntoView({ behavior: "smooth", block: "start" });
+              }}
+            >
+              <label htmlFor="hero-looking" className="hero-looking-label">
+                I'm looking for
+              </label>
+              <span className="hero-looking-field">
+                <input
+                  id="hero-looking"
+                  value={search}
+                  onChange={(event) => onSearchChange?.(event.target.value)}
+                  className="hero-looking-input"
+                  autoComplete="off"
+                  enterKeyHint="search"
+                />
+                <button
+                  type="submit"
+                  className="hero-looking-search"
+                  aria-label="ค้นหา"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="10.5" cy="10.5" r="6.25" />
+                    <path d="M15.2 15.2 L20 20" />
+                  </svg>
+                </button>
+              </span>
+            </form>
+          </div>
+        </div>
+      </section>
     </div>
   );
 };

@@ -2311,15 +2311,25 @@ html [data-feed-sheet] [data-feed-catalog-head] .gap-y-1 {
   margin-top: 0;
 }
 
+.hero-cover-field.is-in .hero-cover-half:first-child {
+  animation: hero-split-up 1.5s cubic-bezier(0.42, -0.01, 0.06, 0.98) 1.05s both;
+}
+
 .hero-cover-field.is-in .hero-cover-half + .hero-cover-half {
   animation: hero-split 1.5s cubic-bezier(0.42, -0.01, 0.06, 0.98) 1.05s both;
 }
 
-/* `translate` (not margin-top): moves the lower half without re-laying out the page every frame,
-   which counted as layout shift (CLS ~0.19 on /). It composes with framer-motion's inline transform. */
+/* The halves part by 54vh around the centred column: each moves 27vh (same look as the old
+   margin-top: 54vh). `translate` instead of margin keeps it off the layout, so it no longer counts
+   as layout shift (CLS ~0.19 on /), and it composes with framer-motion's inline transform. */
+@keyframes hero-split-up {
+  from { translate: 0 0; }
+  to { translate: 0 -27vh; }
+}
+
 @keyframes hero-split {
   from { translate: 0 0; }
-  to { translate: 0 54vh; }
+  to { translate: 0 27vh; }
 }
 
 .hero-cover-tile {
