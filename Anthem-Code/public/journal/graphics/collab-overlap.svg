@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 360" role="img" aria-label="วงกลมสองวงค่อยๆ เลื่อนเข้าหากัน จนเกิดพื้นที่ซ้อนทับตรงกลางเป็นสีแดง">
+<style>.a{animation:a 8s ease-in-out infinite}.bb{animation:b 8s ease-in-out infinite}@keyframes a{0%,15%{transform:translateX(-120px)}50%,85%{transform:none}100%{transform:translateX(-120px)}}@keyframes b{0%,15%{transform:translateX(120px)}50%,85%{transform:none}100%{transform:translateX(120px)}}@media (prefers-reduced-motion:reduce){*{animation:none!important}.end{opacity:1!important;transform:none!important}}</style>
+<rect width="800" height="360" fill="#F8F7F2"/>
+<defs><clipPath id="cl"><circle class="a" cx="310" cy="180" r="130"/></clipPath></defs><circle class="a" cx="310" cy="180" r="130" fill="none" stroke="#282929" stroke-width="3"/><circle class="bb" cx="490" cy="180" r="130" fill="none" stroke="#282929" stroke-width="3"/><g clip-path="url(#cl)"><circle class="bb" cx="490" cy="180" r="130" fill="#EE3D29"/></g>
+</svg>

@@ -2,10 +2,16 @@
 // Server-side only (api/seo-preview.js). The web app loads content per article via loadJournalContent().
 import c_ai_and_your_creative_work from "./ai-and-your-creative-work.js";
 import c_brand_is_not_a_logo from "./brand-is-not-a-logo.js";
+import c_brand_voice from "./brand-voice.js";
+import c_creative_brief from "./creative-brief.js";
+import c_finding_collaborators from "./finding-collaborators.js";
 import c_four_questions_at_the_gallery from "./four-questions-at-the-gallery.js";
 import c_grid_systems_explained from "./grid-systems-explained.js";
+import c_photographing_artwork from "./photographing-artwork.js";
 import c_pricing_creative_work from "./pricing-creative-work.js";
 import c_tell_the_story_behind_the_work from "./tell-the-story-behind-the-work.js";
+import c_type_hierarchy from "./type-hierarchy.js";
+import c_using_trends_wisely from "./using-trends-wisely.js";
 import c_when_you_feel_not_good_enough from "./when-you-feel-not-good-enough.js";
 import c_white_space_is_a_design_tool from "./white-space-is-a-design-tool.js";
 import c_writing_an_artist_statement from "./writing-an-artist-statement.js";
@@ -14,10 +20,16 @@ import c_writing_an_artist_statement from "./writing-an-artist-statement.js";
 export const JOURNAL_CONTENT = {
   "ai-and-your-creative-work": c_ai_and_your_creative_work,
   "brand-is-not-a-logo": c_brand_is_not_a_logo,
+  "brand-voice": c_brand_voice,
+  "creative-brief": c_creative_brief,
+  "finding-collaborators": c_finding_collaborators,
   "four-questions-at-the-gallery": c_four_questions_at_the_gallery,
   "grid-systems-explained": c_grid_systems_explained,
+  "photographing-artwork": c_photographing_artwork,
   "pricing-creative-work": c_pricing_creative_work,
   "tell-the-story-behind-the-work": c_tell_the_story_behind_the_work,
+  "type-hierarchy": c_type_hierarchy,
+  "using-trends-wisely": c_using_trends_wisely,
   "when-you-feel-not-good-enough": c_when_you_feel_not_good_enough,
   "white-space-is-a-design-tool": c_white_space_is_a_design_tool,
   "writing-an-artist-statement": c_writing_an_artist_statement,
