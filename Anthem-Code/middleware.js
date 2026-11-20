@@ -33,6 +33,7 @@ export default async function middleware(request) {
   if (
     pathname.startsWith("/assets/") ||
     pathname.startsWith("/api/") ||
+    pathname.startsWith("/.well-known/") ||
     pathname === "/robots.txt" ||
     pathname.startsWith("/sitemap") ||
     /\.[a-z0-9]+$/i.test(pathname)
