@@ -4,7 +4,7 @@ import type { User, UserIdentity } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { nativeAppleIdToken, type OAuthProviderId } from "@/integrations/oauth";
-import { enabledExtraProviders } from "@/lib/authProviders";
+import { signInProviders } from "@/lib/authProviders";
 import { buildOAuthCallbackUrl, clearStaleOAuthPkceState, storeOAuthRedirect } from "@/lib/oauthRedirect";
 import { PROVIDER_ICONS } from "@/components/auth/ProviderIcons";
 import { appReturnUrl, hasShellFeature, openAuthInSystemBrowser } from "@/lib/nativeShell";
@@ -26,11 +26,7 @@ function linkErrorMessage(error: unknown): string {
  * Supabase Auth; accounts with the same verified email are linked automatically.
  */
 export function LinkedAccountsSection({ user }: { user: User }) {
-  const rows: Row[] = [
-    ...(hasShellFeature("apple") ? [{ key: "apple" as const, id: "apple" as OAuthProviderId, name: "Apple" }] : []),
-    { key: "google", id: "google", name: "Google" },
-    ...enabledExtraProviders(),
-  ];
+  const rows: Row[] = signInProviders(hasShellFeature("apple"));
   const [identities, setIdentities] = useState<UserIdentity[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [confirmUnlink, setConfirmUnlink] = useState<string | null>(null);
@@ -72,7 +68,7 @@ export function LinkedAccountsSection({ user }: { user: User }) {
   };
 
   const link = async (row: Row) => {
-    if (row.key === "apple") return linkApple();
+    if (row.key === "apple" && hasShellFeature("apple")) return linkApple();
     setBusy(row.id);
     storeOAuthRedirect("/settings#account");
     clearStaleOAuthPkceState();
