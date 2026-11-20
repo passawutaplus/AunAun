@@ -29,6 +29,7 @@ import {
   MessageSquare,
   MessageSquareHeart,
   Radio,
+  Rocket,
   Scale,
   ScrollText,
   Search,
@@ -180,6 +181,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     icon: TrendingUp,
     tone: "cyan",
     items: [
+      { to: "/admin/growth", label: "Growth Engine", hint: "อนุมัติคอนเทนต์ คอมเมนต์ให้ AI แก้ (mock)", icon: Rocket, keywords: ["growth", "approve", "content", "ai", "คอนเทนต์", "อนุมัติ"] },
       { to: "/admin/analytics", label: "Analytics", hint: "แนวโน้มและ conversion", icon: BarChart3, keywords: ["analytics", "สถิติ", "conversion"] },
       { to: "/admin/insights", label: "Insights ผลงาน", hint: "ผลงานหมวดไหนคนดูมาก/น้อย", icon: Lightbulb, keywords: ["insight"] },
       { to: "/admin/page-time", label: "เวลาบนหน้า", hint: "ผู้ใช้อยู่แต่ละหน้ากี่นาที", icon: Timer, keywords: ["dwell", "time", "นาที"] },
