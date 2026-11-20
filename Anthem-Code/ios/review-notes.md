@@ -1,6 +1,6 @@
 # Notes for App Review
 
-Paste the block below into App Store Connect → App Review Information → Notes. The demo account's email and password go
+Version 1.1.0. Paste the block below into App Store Connect → App Review Information → Notes. The demo account's email and password go
 in the Sign-in fields there (the owner types the password; it is never written in this repo).
 
 **Demo account (not for pasting):** `tester@samecor.com`. Email confirmed, profile complete with a published project,
@@ -16,7 +16,12 @@ following and chat need one (demo account above).
 Native features in this build:
 - Push notifications (APNs) for new chat messages, followers and activity on your work. Turn on in Settings (ตั้งค่า) → Notifications (การแจ้งเตือน);
   tapping a notification opens the related page.
+- Sign in with Apple (native Apple sheet), plus Google, LINE and Facebook sign-in in an ASWebAuthenticationSession sheet.
+  All are on the sign-in screen (เข้าสู่ระบบ) as a row of logo buttons; Apple is first. Accounts can be linked in Settings (ตั้งค่า) →
+  Account (บัญชี) → Linked accounts (บัญชีที่เชื่อมไว้). The demo account uses email and password.
+- Universal links: samecor.com links to projects, profiles and events open in the app.
 - Native share sheet, print sheet and file saving (Save to Files / Save Image) for exports, PDFs and images.
+- Rating requests use SKStoreReviewController only (no custom rating prompt), after a positive moment such as publishing the first project.
 - Camera and video capture for posting work, swipe-back navigation, pull to refresh, light and dark appearance that follows the page.
 
 User-generated content (1.2):

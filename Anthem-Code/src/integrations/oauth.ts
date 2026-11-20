@@ -1,5 +1,12 @@
 import { supabase } from "@/integrations/supabase/client";
-import { isStandaloneDisplay } from "@/lib/appShell";
+import { isStandaloneDisplay, isWebViewApp } from "@/lib/appShell";
+import {
+  appReturnUrl,
+  hasShellFeature,
+  nativeAppleSignIn,
+  openAuthInSystemBrowser,
+  ShellCanceledError,
+} from "@/lib/nativeShell";
 import {
   buildOAuthCallbackUrl,
   clearStaleOAuthPkceState,
@@ -21,7 +28,8 @@ export function openOAuthPopup(): Window | null {
   if (typeof window === "undefined") return null;
   // Installed PWA / Android app: a popup opens as a separate tab that never hands the
   // session back, so sign-in uses the full-page redirect instead.
-  if (isStandaloneDisplay()) return null;
+  // Store apps open sign-in in the phone's browser instead (signInWithOAuth below).
+  if (isStandaloneDisplay() || isWebViewApp()) return null;
   const width = 480;
   const height = 640;
   const left = window.screenX + Math.max(0, (window.outerWidth - width) / 2);
@@ -84,7 +92,9 @@ export async function signInWithOAuth(
   );
   storeOAuthRedirect(afterAuth);
 
-  const callbackUrl = buildOAuthCallbackUrl();
+  // Store app: the provider page opens in the phone's browser and comes back through /auth/app-return.
+  const inApp = hasShellFeature("auth");
+  const callbackUrl = inApp ? appReturnUrl() : buildOAuthCallbackUrl();
   clearStaleOAuthPkceState();
 
   const { data, error } = await supabase.auth.signInWithOAuth({
@@ -104,6 +114,12 @@ export async function signInWithOAuth(
   }
   if (!data?.url || typeof window === "undefined") {
     popup?.close();
+    return {};
+  }
+
+  if (inApp) {
+    // The app comes back to /auth/callback in this web view, which finishes the PKCE exchange.
+    if (!openAuthInSystemBrowser(data.url)) return { error: new Error("เปิดหน้าเข้าสู่ระบบไม่ได้ ลองใหม่อีกครั้ง") };
     return {};
   }
 
@@ -134,6 +150,64 @@ export async function signInWithOAuth(
 
   // Main tab never left this page during the whole flow, so its history stays
   // clean — no Google or Solo pages to land on when the user presses back.
+  window.location.assign(afterAuth);
+  return { redirected: true };
+}
+
+/** Random string for the Sign in with Apple nonce (Supabase gets it raw, Apple gets its SHA-256). */
+function randomNonce(): string {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function sha256Hex(text: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/** Apple's identity token for the signed-in Apple ID, with the raw nonce Supabase checks it against. */
+export async function nativeAppleIdToken(): Promise<{ token: string; nonce: string; name?: string } | null> {
+  const nonce = randomNonce();
+  try {
+    const credential = await nativeAppleSignIn(await sha256Hex(nonce));
+    return { ...credential, nonce };
+  } catch (err) {
+    if (err instanceof ShellCanceledError) return null;
+    throw err;
+  }
+}
+
+/**
+ * Sign in with Apple inside the iOS app (App Review 4.8): Apple's own sheet, then Supabase signInWithIdToken.
+ * Apple shares the name only the first time, so it is saved to the account then.
+ */
+export async function signInWithApple(
+  options?: { redirectTo?: string },
+): Promise<{ error?: Error; redirected?: boolean }> {
+  const afterAuth = safeRelativePath(
+    options?.redirectTo ?? (typeof window !== "undefined" ? currentAppPath() : undefined),
+    DEFAULT_AFTER_AUTH,
+  );
+  let apple: Awaited<ReturnType<typeof nativeAppleIdToken>>;
+  try {
+    apple = await nativeAppleIdToken();
+  } catch (err) {
+    return { error: err instanceof Error ? err : new Error(String(err)) };
+  }
+  if (!apple) return {}; // closed the Apple sheet
+
+  const { data, error } = await supabase.auth.signInWithIdToken({
+    provider: "apple",
+    token: apple.token,
+    nonce: apple.nonce,
+  });
+  if (error) return { error };
+
+  const meta = data.user?.user_metadata ?? {};
+  if (apple.name && !meta.full_name && !meta.name) {
+    await supabase.auth.updateUser({ data: { full_name: apple.name, name: apple.name } }).catch(() => undefined);
+  }
   window.location.assign(afterAuth);
   return { redirected: true };
 }

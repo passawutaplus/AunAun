@@ -32,7 +32,7 @@ None of this is **shared** in Play's sense: Supabase, Vercel, Google Sign-In and
 | App activity → Other user-generated content | Yes | Optional | App functionality | projects, comments, bio |
 | App info and performance → Crash logs | Yes | Required | Analytics | Sentry (error reports: message, stack, page, browser/device type; no user PII sent) |
 | App info and performance → Diagnostics | Yes | Optional | Analytics | in-app feedback diagnostics |
-| Device or other IDs | Yes | Optional | App functionality | push subscription endpoint + keys (`shared.push_subscriptions`) — only after the user turns on notifications; removed on turn-off / sign-out |
+| Device or other IDs | Yes | Optional | App functionality | push subscription endpoint + keys (`shared.push_subscriptions`), or the Firebase Cloud Messaging token in app 1.2.0+ (`save_fcm_token`) — only after the user turns on notifications; removed on turn-off / sign-out. Google (Firebase) delivers the notification as a service provider |
 
 **Not collected in the Android app:** identity documents, national ID, phone number, bank account (KYC is hidden in the app); contacts, calendar, health, audio, files outside what the user uploads, web browsing history, purchase history (commerce is off in the Android app).
 

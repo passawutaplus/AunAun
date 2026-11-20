@@ -7,6 +7,7 @@
  */
 
 import { isIosApp } from "@/lib/appShell";
+import { hasShellFeature } from "@/lib/nativeShell";
 
 const PAGE_CSS = `@page { size: A4; margin: 14mm 12mm; }`;
 const PAPER_CSS = `
@@ -55,8 +56,9 @@ function copyStyles(target: Document) {
 }
 
 /**
- * The iOS app prints only the main page (WKWebView has no print for iframes), so the paper goes into the
- * page itself, everything else is hidden by print CSS, and the shell's window.print opens the print sheet.
+ * The apps print only the main page (WKWebView has no print for iframes; the Android shell prints the
+ * WebView itself), so the paper goes into the page, everything else is hidden by print CSS, and the shell's
+ * window.print opens the system print sheet.
  */
 function printInPage(el: HTMLElement, fileStem: string) {
   document.getElementById(IN_PAGE_ROOT_ID)?.remove();
@@ -83,7 +85,7 @@ function printInPage(el: HTMLElement, fileStem: string) {
     document.title = prevTitle;
     if (wasDark) html.classList.add("dark");
   };
-  // The iOS shell fires afterprint when the print sheet closes.
+  // The shells fire afterprint when the print sheet closes.
   window.addEventListener("afterprint", cleanup);
   fallback = window.setTimeout(cleanup, 120_000);
   window.print();
@@ -98,7 +100,8 @@ export async function printDocumentElement(
     typeof target === "string" ? document.getElementById(target) : target;
   if (!el) return;
 
-  if (isIosApp()) {
+  // iOS has the print bridge since app 1.0.0, Android since 1.2.0 ("print" shell feature).
+  if (isIosApp() || hasShellFeature("print")) {
     printInPage(el, fileStem);
     return;
   }

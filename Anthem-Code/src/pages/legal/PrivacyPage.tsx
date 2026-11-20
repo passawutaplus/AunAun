@@ -117,7 +117,7 @@ const PrivacyPage = () => (
       <li>คุกกี้และ local storage — ดูรายละเอียดใน <a href="/legal/cookies">นโยบายคุกกี้</a></li>
       <li>
         ข้อมูลการรับแจ้งเตือน (push) — เฉพาะเมื่อคุณกดเปิดแจ้งเตือนบนเครื่อง: ที่อยู่สำหรับส่งแจ้งเตือน (endpoint)
-        หรือรหัสเครื่องสำหรับแจ้งเตือนของ Apple (device token) ในแอป iOS กุญแจเข้ารหัสของเครื่อง ประเภทเบราว์เซอร์/แอป
+        หรือรหัสเครื่องสำหรับแจ้งเตือน (device token) ของ Apple ในแอป iOS และของ Google Firebase ในแอป Android กุญแจเข้ารหัสของเครื่อง ประเภทเบราว์เซอร์/แอป
         และเวลาที่ใช้ล่าสุด
       </li>
       <li>
@@ -260,6 +260,10 @@ const PrivacyPage = () => (
         เราไม่เก็บเลขบัตรเต็มบนเซิร์ฟเวอร์ของเรา — Omise จัดการ tokenization ตามมาตรฐาน PCI
       </li>
       <li><strong>Google OAuth</strong> — เมื่อคุณเลือกเข้าสู่ระบบด้วย Google</li>
+      <li>
+        <strong>LINE, Facebook และ Sign in with Apple</strong> — เมื่อคุณเลือกเข้าสู่ระบบหรือเชื่อมบัญชีด้วยบริการนั้น
+        เราได้รับรหัสบัญชีของบริการนั้น ชื่อ และอีเมล (ถ้าบริการส่งให้ Apple อาจส่งอีเมลแบบซ่อนจริงแทน)
+      </li>
       <li><strong>Vercel</strong> — โฮสต์เว็บไซต์และ API (บันทึก IP และ request log ตามปกติของการให้บริการ)</li>
       <li>
         <strong>บริการส่ง push ของเบราว์เซอร์/ระบบปฏิบัติการ</strong> (เช่น Google Firebase Cloud Messaging,

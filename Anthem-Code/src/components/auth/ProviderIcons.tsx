@@ -27,4 +27,14 @@ export const GoogleIcon = () => (
   </svg>
 );
 
-export const PROVIDER_ICONS = { google: GoogleIcon, line: LineIcon, facebook: FacebookIcon } as const;
+/** Apple logo in the text colour (black on light, white on dark), as Apple's sign-in button guidelines ask. */
+export const AppleIcon = () => (
+  <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
+    <path
+      fill="currentColor"
+      d="M16.37 12.73c-.02-2.33 1.9-3.45 1.99-3.5-1.08-1.59-2.77-1.8-3.37-1.83-1.43-.15-2.8.84-3.53.84-.73 0-1.85-.82-3.04-.8-1.56.02-3 .91-3.81 2.31-1.62 2.82-.41 6.99 1.17 9.28.77 1.12 1.69 2.38 2.9 2.33 1.16-.05 1.6-.75 3.01-.75 1.4 0 1.8.75 3.03.73 1.25-.02 2.04-1.14 2.81-2.26.88-1.3 1.25-2.55 1.27-2.62-.03-.01-2.43-.93-2.45-3.71zM14.06 5.88c.64-.78 1.07-1.85.95-2.93-.92.04-2.04.61-2.7 1.39-.59.69-1.11 1.79-.97 2.85 1.03.08 2.07-.52 2.72-1.31z"
+    />
+  </svg>
+);
+
+export const PROVIDER_ICONS = { google: GoogleIcon, line: LineIcon, facebook: FacebookIcon, apple: AppleIcon } as const;

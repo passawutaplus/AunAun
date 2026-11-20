@@ -1,4 +1,5 @@
 import { safeRelativePath } from "./safeUrl";
+import { appReturnUrl, hasShellFeature } from "./nativeShell";
 
 export { safeRelativePath };
 
@@ -63,6 +64,9 @@ export function buildEmailConfirmUrl(): string {
 }
 
 export function buildResetPasswordUrl(): string {
+  // Store app: the email link opens the phone's browser, which hands the code back to the app (its web view
+  // holds the PKCE verifier), so the app opens /reset-password itself.
+  if (hasShellFeature("auth")) return appReturnUrl("reset-password");
   if (typeof window !== "undefined") {
     return `${window.location.origin}/reset-password`;
   }

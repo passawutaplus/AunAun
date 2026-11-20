@@ -1,13 +1,16 @@
 /**
- * Push notifications inside the SAMECOR iOS app. WKWebView has no Web Push, so the app uses Apple's
- * APNs through @capacitor/push-notifications (Anthem-Code/capacitor-shell). The Capacitor bridge puts
- * the plugin on this page as window.Capacitor.Plugins.PushNotifications.
+ * Push notifications inside the SAMECOR store apps. App web views have no Web Push, so the apps use
+ * @capacitor/push-notifications (Anthem-Code/capacitor-shell): Apple's APNs on iOS, Firebase Cloud Messaging
+ * on Android (from app 1.2.0, which reports the "push" shell feature once Firebase is set up). The Capacitor
+ * bridge puts the plugin on this page as window.Capacitor.Plugins.PushNotifications.
  *
- * The device token is saved with save_apns_token (migration 20261118120000_ios_push_tokens.sql) and
- * send-push delivers every in-app notification to it. pushNotifications.ts calls these on iOS.
+ * The device token is saved with save_apns_token (migration 20261118120000_ios_push_tokens.sql) or
+ * save_fcm_token (20261120100000_android_fcm_tokens.sql), and send-push delivers every in-app notification
+ * to it. pushNotifications.ts calls these inside the apps.
  */
 import { supabase } from "@/integrations/supabase/client";
 import { isIosApp } from "@/lib/appShell";
+import { hasShellFeature } from "@/lib/nativeShell";
 
 export type NativePushState = "unsupported" | "denied" | "off" | "on";
 
@@ -48,12 +51,17 @@ function listen(add: () => MaybeHandle): Promise<ListenerHandle | null> {
   );
 }
 
-/** The token this device last saved for the signed-in user; cleared when push is turned off or on sign-out. */
+/**
+ * The token this device last saved for the signed-in user (APNs on iOS, FCM on Android; the key name dates from
+ * the iOS-only version); cleared when push is turned off or on sign-out.
+ */
 const TOKEN_KEY = "samecor:apns-token";
 const REGISTER_TIMEOUT_MS = 20_000;
 
+/** iOS has push since app 1.0.0; Android only in builds with Firebase (shell feature "push"). */
 function plugin(): PushNotificationsPlugin | null {
-  if (typeof window === "undefined" || !isIosApp()) return null;
+  if (typeof window === "undefined" || !(isIosApp() || hasShellFeature("push")))
+    return null;
   const cap = (
     window as Window & { Capacitor?: { Plugins?: Record<string, unknown> } }
   ).Capacitor;
@@ -63,7 +71,7 @@ function plugin(): PushNotificationsPlugin | null {
   );
 }
 
-/** True inside an iOS app build that ships the push plugin. */
+/** True inside an app build that ships the push plugin. */
 export function hasNativePush(): boolean {
   return plugin() !== null;
 }
@@ -85,7 +93,7 @@ function storeToken(token: string | null): void {
   }
 }
 
-/** Asks iOS for the APNs device token and waits for the answer. */
+/** Asks the phone for its push token (APNs / FCM) and waits for the answer. */
 function requestToken(push: PushNotificationsPlugin): Promise<string> {
   return new Promise<string>((resolve, reject) => {
     const handles: Promise<ListenerHandle | null>[] = [];
@@ -126,16 +134,18 @@ function requestToken(push: PushNotificationsPlugin): Promise<string> {
 
 async function saveToken(token: string): Promise<void> {
   const { error } = await supabase.rpc(
-    "save_apns_token" as never,
+    (isIosApp() ? "save_apns_token" : "save_fcm_token") as never,
     { _token: token, _user_agent: navigator.userAgent } as never,
   );
   if (error) throw error;
 }
 
 async function removeToken(token: string): Promise<void> {
+  // Same endpoint shape the save_* functions store: APNs tokens are lower-cased hex, FCM tokens stay as they are.
+  const endpoint = isIosApp() ? `apns:${token.toLowerCase()}` : `fcm:${token}`;
   await supabase.rpc(
     "remove_push_subscription" as never,
-    { _endpoint: `apns:${token.toLowerCase()}` } as never,
+    { _endpoint: endpoint } as never,
   );
 }
 
@@ -147,7 +157,7 @@ export async function getNativePushState(): Promise<NativePushState> {
   return receive === "granted" && storedToken() ? "on" : "off";
 }
 
-/** Call from a click handler: shows the iOS permission prompt the first time. */
+/** Call from a click handler: shows the system permission prompt the first time (iOS, Android 13+). */
 export async function enableNativePush(): Promise<NativePushState> {
   const push = plugin();
   if (!push) return "unsupported";
@@ -190,13 +200,13 @@ function openNotificationUrl(raw: unknown): void {
   window.dispatchEvent(new PopStateEvent("popstate"));
 }
 
-/** Tokens can change after an iOS update or restore; keep the saved one current while push is on. */
+/** Tokens can change after an OS update, restore or reinstall; keep the saved one current while push is on. */
 async function refreshToken(push: PushNotificationsPlugin): Promise<void> {
   const previous = storedToken();
   if (!previous) return;
   const { receive } = await push.checkPermissions();
   if (receive !== "granted") {
-    // Turned off in iOS Settings: stop sending to this device.
+    // Turned off in the phone's settings: stop sending to this device.
     await disableNativePush();
     return;
   }
@@ -206,7 +216,7 @@ async function refreshToken(push: PushNotificationsPlugin): Promise<void> {
   if (previous !== token) await removeToken(previous);
 }
 
-/** Call once at startup. Does nothing outside the iOS app. */
+/** Call once at startup. Does nothing outside the store apps. */
 export function installNativePush(): void {
   const push = plugin();
   if (!push) return;

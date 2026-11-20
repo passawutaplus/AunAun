@@ -90,7 +90,7 @@ All three review documents are filled in. Check them against the live app before
 | 4.2 Minimum functionality | Covered by native features: push notifications, share/print/save sheets, camera capture, swipe back, pull to refresh, safe-area theming, offline page |
 | 2.3.10 Other platforms | The `/learn` store badges and the Settings "download the app" panel are hidden in the app (`isNativeApp()`) |
 | 3.1.1 Payments | Shop, donate, Founding, `/upgrade`, subscriptions, So1o links and the In-House upsell are all hidden in the app |
-| 4.8 Sign in with Apple | Not needed: there is no third-party sign-in in the app (`SocialButtons` returns null in WebViews) |
+| 4.8 Sign in with Apple | From 1.1.0 the app offers Google, LINE and Facebook (ASWebAuthenticationSession), so it also offers native Sign in with Apple, first in the row (`ShellSignIn.swift`, `signInWithApple` in `src/integrations/oauth.ts`) |
 | 1.2 User content | Report and block on projects, comments, profiles and chat. Reports alert the admin LINE group. Terms section 4 promises 24-hour handling, so the owner must act on reports within a day |
 | 5.1.1(v) Account deletion | Settings → My data → Delete account, behind a password check. A team member approves it, it hides the account, and the account is purged after 30 days (the timeline is shown). See the risk below |
 | 2.1 Completeness | Demo account `tester@samecor.com`. Downloads, print and share work in the app |
@@ -110,15 +110,33 @@ Remaining risks:
 - **Demo account.** Give `tester@samecor.com` a chat thread before submitting.
 - **Privacy policy section 2** still describes the retired So1o / Omise ecosystem and links to solofreelancer.com. Have the
   owner update it, because a dead link or a retired service in the policy invites questions.
-- **Email links** (password reset) open in Safari. There are no universal links until `apple-app-site-association` is set up.
-  Sign-up uses a 6-digit code, so it stays in the app.
+- **Email links** (password reset) requested in the app come back through `https://samecor.com/auth/app-return?to=reset-password`,
+  which opens `com.samecor.app://auth/reset-password` (Safari asks "Open in SAMECOR?"). Sign-up uses a 6-digit code, so it stays in the app.
+- **Sign in with Apple and account deletion.** Apple expects apps that use Sign in with Apple to revoke the user's Apple token
+  when the account is deleted. The deletion flow does not call Apple's revoke endpoint yet (it needs a Services ID key).
+  Reviewers rarely test it; if one asks, add the revoke call before resubmitting.
 - **4.2.** A short screen recording attached to the review notes (push arriving, share/save sheet, camera post) helps reviewers.
 
-## Later
+## Sign-in, links and rating (1.1.0)
 
-| Step | Needs |
-|---|---|
-| `apple-app-site-association` (open samecor.com links in the app) | Team ID from the Apple account |
+- **Google / LINE / Facebook:** the page asks Supabase for the provider URL with `redirectTo = https://samecor.com/auth/app-return`
+  and calls `SamecorShell.openAuth(url)`. `ShellSignIn` opens it in `ASWebAuthenticationSession` (callback scheme
+  `com.samecor.app`). Supabase lands on `/auth/app-return`, whose script jumps to `com.samecor.app://auth/callback?code=…`;
+  the session catches it and the shell loads `https://samecor.com/auth/callback?code=…` in the web view, where the PKCE
+  verifier lives. The same page handles password reset (`?to=reset-password`).
+- **Sign in with Apple:** `SamecorShell.signInWithApple(sha256(nonce))` → Apple's sheet → identity token →
+  `supabase.auth.signInWithIdToken({ provider: "apple", token, nonce })`. Needs the Supabase Apple provider with Client ID
+  `com.samecor.app`, and **Sign In with Apple** ticked on the App ID.
+- **Universal links:** `public/.well-known/apple-app-site-association` (team `ZD5YU7PP65`) lists the content pages that open in
+  the app; auth, reset-password, `/go` and payment pages stay in Safari. The entitlement also has `webcredentials:samecor.com`,
+  so iOS offers saved samecor.com passwords. Needs **Associated Domains** ticked on the App ID.
+- **Rating:** `SamecorShell.requestReview()` → `AppStore.requestReview(in:)` (SKStoreReviewController before iOS 16), at the
+  same moments the website shows its own star prompt (`RatingPrompt.tsx`). TestFlight never shows the sheet.
+- **Feature list:** `SamecorShell.getFeatures()` tells the site what this build can do (`src/lib/nativeShell.ts`). Build 1.0.0
+  has no list, so the site keeps its 1.0.0 behaviour there.
+
+After ticking new capabilities on the App ID, delete the old App Store profile for `com.samecor.app` (Profiles) so Codemagic
+creates one that includes them. Owner steps for the whole release: `../capacitor-shell/RELEASE_1.2_OWNER_STEPS.md`.
 
 ## Files in this folder
 

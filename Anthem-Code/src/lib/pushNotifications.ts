@@ -2,19 +2,20 @@
  * Phone / browser push notifications (Web Push). The service worker (public/sw.js) shows them;
  * the send-push edge function (Solo-Code/supabase/functions/send-push) sends one for every
  * in-app notification once this device is registered with save_push_subscription.
- * Inside the iOS app the same calls go to APNs instead (nativePush.ts).
+ * Inside the store apps the same calls go to APNs / FCM instead (nativePush.ts).
  */
 import { supabase } from "@/integrations/supabase/client";
-import { isAndroidApp, isStandaloneDisplay } from "@/lib/appShell";
+import { isAndroidApp, isIosApp, isStandaloneDisplay } from "@/lib/appShell";
 import { disableNativePush, enableNativePush, getNativePushState, hasNativePush } from "@/lib/nativePush";
 
 export type PushState = "unsupported" | "unconfigured" | "denied" | "off" | "on";
 
 /** What to tell the user when notifications are blocked, in the place they can turn them back on. */
 export function pushBlockedMessage(): string {
-  return hasNativePush()
+  if (!hasNativePush()) return "เบราว์เซอร์บล็อกการแจ้งเตือนไว้ เปิดได้ในการตั้งค่าของเบราว์เซอร์หรือมือถือ";
+  return isIosApp()
     ? "iPhone ปิดแจ้งเตือนของ SAMECOR ไว้ เปิดได้ที่ ตั้งค่า > SAMECOR > การแจ้งเตือน"
-    : "เบราว์เซอร์บล็อกการแจ้งเตือนไว้ เปิดได้ในการตั้งค่าของเบราว์เซอร์หรือมือถือ";
+    : "มือถือปิดแจ้งเตือนของ SAMECOR ไว้ เปิดได้ที่ การตั้งค่า > แอป > SAMECOR > การแจ้งเตือน";
 }
 
 const vapidPublicKey = () => (import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined)?.trim() ?? "";

@@ -14,7 +14,7 @@
   "android": {
     "appendUserAgent": "SamecorApp",
     "allowMixedContent": false,
-    "includePlugins": []
+    "includePlugins": ["@capacitor/push-notifications"]
   },
   "plugins": {
     "PushNotifications": {

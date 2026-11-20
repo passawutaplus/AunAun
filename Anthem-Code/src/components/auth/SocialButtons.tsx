@@ -3,15 +3,17 @@ import { Link } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { openOAuthPopup, signInWithOAuth, type OAuthProviderId } from "@/integrations/oauth";
+import { openOAuthPopup, signInWithApple, signInWithOAuth, type OAuthProviderId } from "@/integrations/oauth";
 import { enabledExtraProviders } from "@/lib/authProviders";
 import { GoogleIcon, PROVIDER_ICONS } from "@/components/auth/ProviderIcons";
 import { isWebViewApp } from "@/lib/appShell";
+import { hasShellFeature } from "@/lib/nativeShell";
 import { cn } from "@/lib/utils";
 import { userFacingError } from "@/lib/userFacingError";
 
 async function handleOAuth(provider: OAuthProviderId, name: string, redirectTo?: string, popup?: Window | null) {
-  const result = await signInWithOAuth({ redirectTo, popup, provider });
+  const result =
+    provider === "apple" ? await signInWithApple({ redirectTo }) : await signInWithOAuth({ redirectTo, popup, provider });
   if (result.error) {
     toast.error(userFacingError(result.error, `เข้าสู่ระบบด้วย ${name} ไม่สำเร็จ`));
   }
@@ -29,7 +31,10 @@ export function SocialButtons({
   label?: string;
 }) {
   const [busy, setBusy] = useState<OAuthProviderId | null>(null);
-  const extras = enabledExtraProviders();
+  // iOS app: Sign in with Apple sits next to the other providers (App Review 4.8).
+  const apple = hasShellFeature("apple") ? [{ key: "apple" as const, id: "apple" as OAuthProviderId, name: "Apple" }] : [];
+  const providers = [...apple, { key: "google" as const, id: "google" as OAuthProviderId, name: "Google" }, ...enabledExtraProviders()];
+  const extras = providers.filter((p) => p.key !== "google");
 
   const start = async (provider: OAuthProviderId, name: string) => {
     setBusy(provider);
@@ -43,15 +48,16 @@ export function SocialButtons({
     }
   };
 
-  // Google rejects OAuth inside embedded WebViews (disallowed_useragent); email sign-in only there.
-  if (isWebViewApp()) return null;
+  // Google rejects OAuth inside embedded WebViews (disallowed_useragent). App builds that open sign-in in the
+  // phone's browser report the "auth" feature; older builds keep email sign-in only.
+  if (isWebViewApp() && !hasShellFeature("auth")) return null;
 
   return (
     <div className={cn(className)}>
       {extras.length ? (
-        // Several providers: logo-only buttons in one row (Google first).
-        <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${extras.length + 1}, minmax(0, 1fr))` }}>
-          {[{ key: "google" as const, id: "google" as OAuthProviderId, name: "Google" }, ...extras].map((p) => {
+        // Several providers: logo-only buttons in one row (Apple first in the iOS app, then Google).
+        <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${providers.length}, minmax(0, 1fr))` }}>
+          {providers.map((p) => {
             const Icon = PROVIDER_ICONS[p.key];
             return (
               <Button
@@ -96,7 +102,7 @@ export function SocialButtons({
 }
 
 export function AuthEmailSeparator({ label = "หรือเข้าด้วยอีเมล" }: { label?: string } = {}) {
-  if (isWebViewApp()) return null;
+  if (isWebViewApp() && !hasShellFeature("auth")) return null;
   return (
     <div className="relative my-1">
       <div className="absolute inset-0 flex items-center">
