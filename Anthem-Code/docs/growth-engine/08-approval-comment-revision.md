@@ -1,4 +1,4 @@
-# 08 · Approval & Comment-to-Revision
+# 08 · Approval, Comment-to-Revision & Notifications
 
 ## Owner inbox: exactly three groups
 
@@ -47,3 +47,43 @@ Demo (spec §19), verified by tests and the dashboard: comment "ภาพ 2 แ�
 ## Phase 1 mock parser
 
 `planRevision()` understands: reduce text N%, "don't touch frame N", casual tone, add checklist, rebalance dark tiles, editorial gallery direction. Anything else → `NEEDS_OWNER_DECISION` with a hint. Phase 2 replaces the parser and edits with Claude returning a `revision_plan` JSON; the contract and tests stay.
+
+## Notifications (D4, updated 2026-11-20)
+
+**Every** Growth Engine notification goes to the existing LINE admin group **"Noti SAMECOR"**, and nowhere else (no email, no other channel).
+
+| Kind (`ge_notifications.kind`) | When | Urgent | Example text (one line) |
+|---|---|---|---|
+| `approval_waiting` | campaign enters `AWAITING_APPROVAL` (each version) | | รอ approve: Portfolio First Impression v2 (IG) |
+| `needs_decision` | owner decision item, comment the agent could not act on, `NEEDS_VERIFY` | | ต้องตัดสินใจ: Creator spotlight: ยังไม่มี consent |
+| `revision_ready` | new version v2+ | | แก้เสร็จแล้ว: Portfolio First Impression v2 รอดูอีกรอบ |
+| `job_scheduled` | job scheduled | | ลงคิวแล้ว: … · FB, Threads · เริ่ม Mon 23 Nov 12:00 |
+| `job_exported` | manual export ready | | พร้อมโพสต์เอง: … · FB |
+| `job_published` | live URL confirmed | | โพสต์แล้ว: … · FB |
+| `publish_failed` | failed or unknown result | ✓ | โพสต์ไม่ผ่าน: … · IG · token หมดอายุ |
+| `token_issue` | connection `ACTION_REQUIRED` | ✓ | บัญชี Meta ต้องเชื่อมใหม่ |
+| `budget_threshold` | 70 / 90 / 100% of the owner's cap (once per cycle) | 100% | AI credit ใช้ไป 70% ของเพดาน |
+| `blocked_budget` | credit exhausted (once per cycle) | ✓ | AI credit หมดรอบนี้ งาน AI หยุดรอรอบใหม่ (ไม่ซื้อเพิ่ม) |
+| `pause_all` | Pause All on / off | ✓ | Pause All เปิดแล้ว: หยุดโพสต์ + หยุด AI |
+| `weekly_insights` | weekly memo created | | สรุปสัปดาห์มาแล้ว · 3 เรื่องให้ตัดสินใจ |
+
+### Delivery rules
+
+- **Short Thai**, one line per item; every item is followed by its link into `/admin/growth` (campaign page, `?decision=`, `?panel=cost`, `?insights=`). Paths are enforced in SQL (`item_path LIKE '/admin/growth%'`).
+- **Grouping:** events inside `notify_batch_seconds` (default 3 min) become **one** message: header `SAMECOR Growth · N เรื่อง`, urgent items first, at most 8 items + "+ อีก N เรื่อง" with a link to the overview.
+- **Urgent** items flush the batch at once (header starts with `ด่วน ·`).
+- **Dedupe:** a unique `dedupe_key` per event (e.g. one approval notice per version, budget level once per cycle).
+- **Quota guard:** past `notify_max_batches_per_day` (default 24) messages in a Bangkok day, the window becomes 1 hour; urgent still goes at once.
+- Messages hold titles and links only: no personal data, no tokens, no budget amounts.
+
+### Design
+
+```
+event (trigger / engine) → ge_notify(kind, text, path, dedupe) → ge_notifications (pending)
+cron 1/min → ge_flush_notifications() → ge_notification_batches (one per burst)
+   notify_mode = 'mock' → status MOCK, shown in the dashboard, never sent      ← Phase 1
+   notify_mode = 'line' → status READY → admin_line_outbox (kind 'growth')     ← Phase 1b, owner's OK
+                          → line-admin-notify pushes to Noti SAMECOR → SENT / FAILED
+```
+
+TypeScript twin: `src/lib/growth/notify.ts` (`makeNotification`, `enqueueNotification`, `shouldFlush`, `flushNotifications`, `formatBatchTh`, `NotificationSender`). Phase 1 ships only `MockLineSender` (keeps messages in memory; `senderFor('line')` throws). The dashboard's **LINE · Noti SAMECOR** panel shows how many items wait, and the exact text of the last grouped message. Real sending reuses the existing `line-admin-notify` edge function and secrets (`LINE_SAMECOR_ADMIN_*`); nothing new is exposed to the browser.

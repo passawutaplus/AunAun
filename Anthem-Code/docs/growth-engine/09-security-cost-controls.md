@@ -20,7 +20,7 @@ Sources, social comments and web pages are data. Agents never execute instructio
 
 ## Kill switch
 
-`ge_settings.pause_all` (dashboard switch "Pause All"): no publish dispatch, no publish claims, no agent claims. Existing jobs stay; nothing is deleted. Turning it on/off is audited and (Phase 1b) sent to LINE.
+`ge_settings.pause_all` (dashboard switch "Pause All"): no publish dispatch, no publish claims, no agent claims. Existing jobs stay; nothing is deleted. Turning it on/off is audited and raises an urgent LINE notification. Notifications keep flowing while paused.
 
 ## AI credit rule (owner decision D2)
 
@@ -32,13 +32,17 @@ The run-time agents use only the monthly API credit included with the owner's pl
 | Cap | Owner sets `ai_monthly_cap_usd` in the dashboard (DB only). Reaching it flips `ai_credit_status = EXHAUSTED` |
 | Hard stop | An API "credit balance too low" error → `ge_mark_credit_exhausted()` |
 | Effect | Queued and newly created AI tasks → `BLOCKED_BUDGET`; non-AI tasks continue |
-| Notify | `ai_budget_notice_pending` is raised once per cycle → one LINE notice |
+| Notify | 70 / 90 / 100% of the cap and `BLOCKED_BUDGET` each create one notification per cycle (dedupe key `budget:<cycle>:<level>`, `blocked:<cycle>`) → LINE admin group |
 | Resume | `ge_start_credit_cycle(date)` on the next credit date → tasks back to `QUEUED` |
 | Never | auto-reload, buying credits, turning on paid usage, silently lowering quality |
 
 Thresholds 70 / 90 / 100% (`budgetAlertLevel`). The dashboard cost meter shows `UNAVAILABLE` until a real source exists (no key yet), and labels every simulated number as `MOCK`.
 
 Magnific: quality-first, but per-campaign soft limit and monthly hard limit; at the hard limit generation stops until the owner approves more (audited). Credits are read from the provider, never assumed.
+
+## Notifications and the LINE quota
+
+LINE is the only channel (D4). Push messages count against the LINE OA plan's monthly quota, so the notifier groups bursts into one message and, past `notify_max_batches_per_day` messages in a Bangkok day, stretches the window to an hour (urgent items still go at once). Check the OA plan quota before switching `notify_mode` to `line`; the system never upgrades a plan or pays for extra messages. Messages carry titles and links only, never personal data, tokens or budget figures.
 
 ## Spend outside AI
 

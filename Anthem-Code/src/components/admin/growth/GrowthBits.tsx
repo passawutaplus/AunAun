@@ -200,14 +200,38 @@ export function CostMeter() {
         <SmallButton onClick={simulateCreditOut}>จำลอง credit หมด</SmallButton>
         <SmallButton onClick={newCreditCycle}>เริ่มรอบใหม่</SmallButton>
       </div>
-      {state.lineNotices.length > 0 && (
-        <div className="mt-3 space-y-1 border-t border-admin-border pt-3">
-          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-admin-muted">LINE (จำลอง ไม่ได้ส่ง)</p>
-          {state.lineNotices.slice(-3).map((n) => (
-            <p key={n.at + n.text} className="text-xs text-admin-fg">
-              {bangkokTime(n.at)} · {n.text}
-            </p>
-          ))}
+    </div>
+  );
+}
+
+/** What the LINE admin group ("Noti SAMECOR") would receive. Mock: grouped and shown here, never sent. */
+export function LineNotifyPanel() {
+  const { state, flushNotify } = useGrowth();
+  const { pending, sent } = state.notify;
+  const minutes = Math.round(state.notifySettings.batchWindowMs / 60_000);
+  const urgent = pending.some((n) => n.severity === "urgent");
+  const last = sent[sent.length - 1];
+  return (
+    <div className="border border-admin-border bg-admin-surface p-4 rounded-sm">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-admin-muted">LINE · Noti SAMECOR</p>
+        <MockPill label="ไม่ได้ส่งจริง" />
+      </div>
+      <p className="text-xs text-admin-muted">ทุกแจ้งเตือนเข้ากลุ่มนี้ที่เดียว รวมทุก {minutes} นาที เรื่องด่วนส่งทันที มีลิงก์ทุกเรื่อง</p>
+      <div className="mt-3 flex items-center justify-between gap-2">
+        <span className="text-sm text-admin-fg">
+          รอรวม {pending.length} เรื่อง{urgent ? " · มีเรื่องด่วน" : ""}
+        </span>
+        <SmallButton onClick={() => flushNotify()} disabled={pending.length === 0}>
+          รวมแล้วส่ง (mock)
+        </SmallButton>
+      </div>
+      {last && (
+        <div className="mt-3 border-t border-admin-border pt-3">
+          <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.18em] text-admin-muted">
+            ข้อความล่าสุด · {bangkokTime(last.createdAt)} · {sent.length} ข้อความ
+          </p>
+          <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-all rounded-sm bg-admin-bg p-2 font-sans text-[11px] leading-relaxed text-admin-fg">{last.text}</pre>
         </div>
       )}
     </div>

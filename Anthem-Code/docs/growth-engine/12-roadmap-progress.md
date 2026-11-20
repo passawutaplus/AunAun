@@ -21,7 +21,8 @@ Remaining Phase 1 items:
 
 - [ ] Owner reviews and applies the migration; expose `growth` in API settings
 - [ ] Phase 1b: swap the in-memory store for Supabase reads/writes; seed the demo campaign as rows; real audit view
-- [ ] LINE: add `growth_digest` / `growth_urgent` kinds to `admin_line_outbox`; 08:30 digest, Sunday brief, urgent (Pause All, credit exhausted, publish failure)
+- [x] Notification design: every event → `ge_notifications`, grouped per burst, links to `/admin/growth`, mock sender + dashboard preview (D4 updated 2026-11-20)
+- [ ] LINE real sends (needs the owner's OK): add kind `growth` to `admin_line_outbox`, a `flexGrowthBatch` formatter in `_shared/line-admin-format.ts`, cron calling `ge_flush_notifications()` every minute, `line-admin-notify` marks batches `SENT`/`FAILED`; check the LINE OA message quota first
 - [ ] Funnel events in the app: `creator_signup_completed`, `creator_profile_completed`, `first_project_published`, UTM capture on landing
 - [ ] Inline anchors: image hotspot rectangles (normalised [0,1]), text ranges
 

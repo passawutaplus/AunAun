@@ -6,6 +6,7 @@
 |---|---|---|
 | Pure engine (TS) | `src/lib/growth/__tests__/engine.test.ts` | CI (`npm run test`) |
 | Migration ↔ engine parity | `src/lib/growth/__tests__/migrationParity.test.ts` | CI |
+| Notifications | `src/lib/growth/__tests__/notify.test.ts` | CI |
 | SQL behaviour | `Solo-Code/supabase/tests/growth-engine/run.sh` on a throwaway Postgres 17 | local, before applying / after editing the migration |
 | UI walkthrough | `/dev/growth` in `npm run dev` (screenshots in the PR) | manual / Playwright later |
 | Live integrations | per adapter, sandbox account first | Phase 2–3 |
@@ -22,8 +23,9 @@ Engine (vitest):
 - Idempotency: key format in UTC; scheduling twice → one job; duplicate job row → `DUPLICATE`, one publication; unknown status → `NEEDS_RECONCILE`; not before slot; mock export is `simulated`, never "published"; task enqueue dedupe.
 - Agent queue: dependencies, lease, expired-lease reclaim, only the holder completes.
 - Budget: exhausted → AI tasks `BLOCKED_BUDGET`, non-AI continue, one notice per cycle; cap reached = exhausted; new cycle resumes.
+- Notifications: every kind has short Thai text + `/admin/growth` link; urgent kinds; dedupe (budget once per cycle); burst inside the window → one message; urgent flushes at once and is listed first; item cap with "+ อีก N เรื่อง"; daily cap stretches the window; mock sender delivers nothing and real LINE is refused.
 
-SQL (36 checks, last run 2026-11-20, all ok): sha256 hashes set by DB, version gaps rejected, append-only, `OWNER_ONLY`, `HASH_MISMATCH`, `NOT_APPROVED` scheduling, invalid transition, `NOT_ALL_PLATFORMS_APPROVED`, non-admin sees nothing, anon denied, idempotency + one live slot, `PAUSED_ALL`, no claims while paused, new variant revokes only changed platform, closed jobs never move, reconcile before retry, lease + deps + holder-only completion, cap → `EXHAUSTED` + one notice, new AI tasks start blocked, next cycle requeues, audit rows.
+SQL (47 checks, last run 2026-11-20, all ok; includes events → notifications, links only under `/admin/growth`, burst waits for the window then becomes one `MOCK` batch, urgent flushes at once): sha256 hashes set by DB, version gaps rejected, append-only, `OWNER_ONLY`, `HASH_MISMATCH`, `NOT_APPROVED` scheduling, invalid transition, `NOT_ALL_PLATFORMS_APPROVED`, non-admin sees nothing, anon denied, idempotency + one live slot, `PAUSED_ALL`, no claims while paused, new variant revokes only changed platform, closed jobs never move, reconcile before retry, lease + deps + holder-only completion, cap → `EXHAUSTED` + one notice, new AI tasks start blocked, next cycle requeues, audit rows.
 
 ## Acceptance checklist (spec §20) — Phase 1 status
 

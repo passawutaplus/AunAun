@@ -13,7 +13,8 @@ flowchart LR
   DB --> Pub[Publisher tick<br/>ge_claim_due_publish_job]
   Pub --> Exp[Manual export draft<br/>Phase 1–3]
   Pub -. later .-> Meta[Meta adapter]
-  DB --> Line[LINE notifier<br/>admin_line_outbox]
+  DB --> Notif[ge_notifications → ge_flush_notifications<br/>one batch per burst]
+  Notif -. Phase 1b, owner OK .-> Line[admin_line_outbox → line-admin-notify<br/>group Noti SAMECOR]
   App[SAMECOR app events] --> Funnel[(ge_funnel_events)]
 ```
 
@@ -29,7 +30,7 @@ flowchart LR
 | Data | Supabase Postgres schema `growth`, RLS admin-only | Audit, approvals, idempotency in SQL |
 | Dashboard | `/admin/growth` inside AdminLayout/AdminGuard | Reuses admin chrome and patterns |
 | Publishing | Adapter contract; Phase 1–3 = manual export only | D3 |
-| Notifications | Existing LINE admin group via `public.admin_line_outbox` (new kinds added in Phase 1b) | D4 |
+| Notifications | Every event → `growth.ge_notifications` → grouped batch → LINE admin group only. Phase 1: mock sender (shown in the dashboard). Phase 1b: reuse `public.admin_line_outbox` + `line-admin-notify` (new kind `growth`) | D4 (updated) |
 
 ## Modes (`growth.ge_settings.mode`)
 

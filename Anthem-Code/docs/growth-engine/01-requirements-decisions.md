@@ -27,7 +27,7 @@ The owner's job is limited to: **Approve / Request changes (comment) / Reject / 
 | D1 Where | Inside this repo at `/admin/growth`, same Supabase project. The repo is public, so prompts, strategy and budgets live in the DB. |
 | D2 AI | Run-time agents use the monthly API credit included with the owner's plan, as a **hard cap**. When it runs out: stop (`BLOCKED_BUDGET`), send one LINE notice, resume next cycle. Never auto-reload, never buy credits, never enable paid usage add-ons. Same rule for Claude Code plan limits: wait for the reset. The API key does not exist yet (Phase 2). |
 | D3 Publishing | Manual export through Phase 1–3 (no social APIs). First adapter later: Meta (FB Page + IG Professional). |
-| D4 Notifications | Existing LINE admin group: 08:30 digest, Sunday brief, urgent alerts only. |
+| D4 Notifications (updated 2026-11-20) | **Every** Growth Engine notification goes to the existing LINE admin group "Noti SAMECOR", and only there (no email, no other channel): approvals waiting, needs-decision items, revision ready, scheduled / exported / published, failures and token issues, budget 70/90/100% and `BLOCKED_BUDGET`, weekly insights, Pause All. Short Thai, bursts within a few minutes grouped into one message, every item links to `/admin/growth`. Replaces the earlier "08:30 digest + Sunday brief + urgent only". Phase 1 = mock sender; real sends only after the owner's OK. |
 | Engineering calls | Brand Book v1.0 tokens (not the spec's draft colours) · Supabase Cron is the only scheduler · deterministic Thai renderer · everything starts in mock mode. |
 
 ## Audit facts that shape the build (2026-11-20)
@@ -40,4 +40,4 @@ The owner's job is limited to: **Approve / Request changes (comment) / Reject / 
 
 ## Out of scope for Phase 1
 
-Real AI calls, image generation, social APIs, blog publishing, analytics ingestion, LINE sending, video.
+Real AI calls, image generation, social APIs, blog publishing, analytics ingestion, real LINE sending (notifications are built and grouped, but only shown in the dashboard), video.

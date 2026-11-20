@@ -3,7 +3,7 @@ import { AlertTriangle, ArrowRight, Check, CircleDashed, RotateCcw } from "lucid
 import KpiCard from "@/components/admin/KpiCard";
 import SectionHeader from "@/components/admin/SectionHeader";
 import StatusPill from "@/components/admin/StatusPill";
-import { ApprovalPill, CostMeter, FrameCard, GrowthControls, MockPill, PLATFORM_LABEL, SmallButton, bangkokTime } from "@/components/admin/growth/GrowthBits";
+import { ApprovalPill, CostMeter, FrameCard, GrowthControls, LineNotifyPanel, MockPill, PLATFORM_LABEL, SmallButton, bangkokTime } from "@/components/admin/growth/GrowthBits";
 import { approvalProgress, latestVersion } from "@/lib/growth/engine";
 import { effectiveCreditStatus } from "@/lib/growth/tasks";
 import { MOCK_INSIGHTS, UNAVAILABLE_METRICS } from "@/lib/growth/mockData";
@@ -191,6 +191,7 @@ export default function GrowthOverviewPage() {
         </div>
 
         <aside className="space-y-4 xl:sticky xl:top-20 xl:self-start">
+          <LineNotifyPanel />
           <CostMeter />
         </aside>
       </div>

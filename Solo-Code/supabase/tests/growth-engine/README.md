@@ -12,4 +12,4 @@ PGPORT=54329 ./run.sh
 pg_ctl -D /tmp/ge-pg stop && rm -rf /tmp/ge-pg
 ```
 
-Limits: no PostgREST, no real Supabase roles/ownership. Last run 2026-11-20: 36 ok, 0 failed.
+Limits: no PostgREST, no real Supabase roles/ownership. Last run 2026-11-20: 47 ok, 0 failed (incl. notification grouping).

@@ -12,6 +12,7 @@ import {
   FeedGrid,
   FrameCard,
   GrowthControls,
+  LineNotifyPanel,
   LockToggle,
   MockPill,
   PLATFORM_LABEL,
@@ -554,6 +555,7 @@ export default function GrowthCampaignPage() {
             )}
           </section>
 
+          <LineNotifyPanel />
           <CostMeter />
           <div className="flex items-center gap-2 text-xs text-admin-muted">
             <MockPill /> ทุกอย่างในหน้านี้อยู่ในหน่วยความจำ รีเฟรชแล้วกลับค่าเริ่มต้น

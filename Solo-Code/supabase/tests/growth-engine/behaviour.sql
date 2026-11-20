@@ -113,17 +113,35 @@ SELECT pg_temp.check((SELECT NOT growth.ge_complete_task('44444444-0000-0000-000
 SELECT pg_temp.check((SELECT growth.ge_complete_task('44444444-0000-0000-0000-000000000001', 'w1', true)), 'holder completes');
 UPDATE growth.ge_settings SET ai_credit_cycle_start = DATE '2026-11-01', ai_credit_status = 'AVAILABLE', ai_monthly_cap_usd = 1.00;
 SELECT growth.ge_record_ai_usage(NULL, NULL, 1.20);
-SELECT pg_temp.check((SELECT ai_credit_status = 'EXHAUSTED' AND ai_budget_notice_pending FROM growth.ge_settings), 'cap reached → EXHAUSTED + one notice pending');
+SELECT pg_temp.check((SELECT ai_credit_status = 'EXHAUSTED' FROM growth.ge_settings), 'cap reached → EXHAUSTED');
+SELECT pg_temp.check((SELECT count(*) = 1 FROM growth.ge_notifications WHERE kind = 'blocked_budget'), 'one BLOCKED_BUDGET notification');
+SELECT pg_temp.check((SELECT count(*) = 3 FROM growth.ge_notifications WHERE kind = 'budget_threshold'), 'budget 70/90/100 notifications');
 SELECT pg_temp.check((SELECT status = 'BLOCKED_BUDGET' FROM growth.ge_agent_tasks WHERE id = '44444444-0000-0000-0000-000000000003'), 'queued AI task → BLOCKED_BUDGET');
 INSERT INTO growth.ge_agent_tasks (role, kind, uses_ai, idempotency_key) VALUES ('copy', 'caption', true, 't-copy'), ('analytics', 'sync', false, 't-sync');
 SELECT pg_temp.check((SELECT status = 'BLOCKED_BUDGET' FROM growth.ge_agent_tasks WHERE idempotency_key = 't-copy'), 'new AI task starts BLOCKED_BUDGET');
 SELECT pg_temp.check(((growth.ge_claim_next_task('w3')).idempotency_key = 't-sync'), 'non-AI work continues');
-UPDATE growth.ge_settings SET ai_budget_notice_pending = false; -- notifier sent it
 UPDATE growth.ge_settings SET ai_spent_estimate_usd = ai_spent_estimate_usd + 0.5;
-SELECT pg_temp.check((SELECT NOT ai_budget_notice_pending FROM growth.ge_settings), 'no second notice in the same cycle');
+SELECT pg_temp.check((SELECT count(*) = 1 FROM growth.ge_notifications WHERE kind = 'blocked_budget')
+  AND (SELECT count(*) = 3 FROM growth.ge_notifications WHERE kind = 'budget_threshold'), 'no second budget notice in the same cycle');
 SELECT growth.ge_start_credit_cycle(DATE '2026-12-01');
 SELECT pg_temp.check((SELECT count(*) = 0 FROM growth.ge_agent_tasks WHERE status = 'BLOCKED_BUDGET'), 'new cycle → AI tasks back to QUEUED');
 RESET ROLE;
+
+-- Notifications: every event kind lands in one table, each with an /admin/growth link.
+SELECT pg_temp.check((SELECT count(DISTINCT kind) >= 7 FROM growth.ge_notifications), 'events → notifications (7+ kinds)');
+SELECT pg_temp.check((SELECT bool_and(item_path LIKE '/admin/growth%') FROM growth.ge_notifications), 'every notification links into /admin/growth');
+SELECT pg_temp.expect_error($$INSERT INTO growth.ge_notifications (kind, severity, text_th, item_path, dedupe_key) VALUES ('needs_decision', 'info', 'x', 'https://evil.example', 'x')$$, 'ge_notifications_item_path_check');
+SET ROLE service_role;
+-- Urgent items pending → one batch at once, status MOCK (never sent).
+SELECT pg_temp.check(((growth.ge_flush_notifications()).status = 'MOCK'), 'flush groups everything into one MOCK batch');
+SELECT pg_temp.check((SELECT count(*) = 0 FROM growth.ge_notifications WHERE batch_id IS NULL), 'nothing left pending');
+SELECT pg_temp.check((growth.ge_flush_notifications()).id IS NULL, 'empty queue → no batch');
+-- A non-urgent burst waits for the window, then goes out as one message.
+INSERT INTO growth.ge_owner_decisions (kind, title) VALUES ('rights', 'Creator spotlight: ยังไม่มี consent'), ('source', 'Open Calls: วันปิดรับยังไม่ยืนยัน');
+SELECT pg_temp.check((growth.ge_flush_notifications()).id IS NULL, 'burst waits for the batch window');
+SELECT pg_temp.check((SELECT cardinality(notification_ids) = 2 FROM growth.ge_flush_notifications(now() + interval '4 minutes')), 'burst → one message with 2 items');
+RESET ROLE;
+SELECT pg_temp.check((SELECT count(*) = 2 FROM growth.ge_notification_batches WHERE status = 'MOCK'), 'all batches MOCK while notify_mode = mock');
 
 SELECT pg_temp.check((SELECT count(*) >= 5 FROM growth.ge_audit_logs), 'audit rows written');
 SELECT action, actor_kind FROM growth.ge_audit_logs ORDER BY id;

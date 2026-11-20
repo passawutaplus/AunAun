@@ -10,8 +10,11 @@
 --   * approvals bind a platform variant hash; a new variant with a different hash
 --     revokes scheduled jobs for that platform; only a signed-in admin can approve
 --   * Pause All blocks every dispatch and every agent claim
---   * when the monthly AI credit runs out, AI tasks become BLOCKED_BUDGET (one LINE
---     notice per cycle) and come back on the next cycle. Nothing buys more credit.
+--   * when the monthly AI credit runs out, AI tasks become BLOCKED_BUDGET and come back
+--     on the next cycle. Nothing buys more credit.
+--   * every Growth Engine event becomes a notification for the LINE admin group, grouped
+--     into one message per burst (urgent = at once), each with an /admin/growth link.
+--     notify_mode = 'mock': grouped, never sent. Real sending is Phase 1b (owner's OK).
 --   * RLS: admins only. Agents and the publisher run as service_role.
 --
 -- Not in this file on purpose (the repo is public): prompts, editorial strategy,
@@ -78,9 +81,13 @@ CREATE TABLE IF NOT EXISTS growth.ge_settings (
   ai_credit_cycle_start date,
   ai_monthly_cap_usd numeric(10, 2) CHECK (ai_monthly_cap_usd IS NULL OR ai_monthly_cap_usd >= 0),
   ai_spent_estimate_usd numeric(12, 4) NOT NULL DEFAULT 0 CHECK (ai_spent_estimate_usd >= 0),
-  -- One LINE notice per cycle when credit runs out. The notifier clears *_pending after sending.
-  ai_budget_notice_cycle date,
-  ai_budget_notice_pending boolean NOT NULL DEFAULT false,
+  -- LINE admin group ("Noti SAMECOR") is the only channel. 'mock' = grouped + shown, never sent.
+  -- Switching to 'line' needs the owner's OK (and the Phase 1b outbox kind).
+  notify_mode text NOT NULL DEFAULT 'mock' CHECK (notify_mode IN ('mock', 'line')),
+  -- Events inside this window become one message; urgent ones flush at once.
+  notify_batch_seconds integer NOT NULL DEFAULT 180 CHECK (notify_batch_seconds BETWEEN 30 AND 900),
+  -- Past this many messages in a Bangkok day the window stretches to 1 hour (LINE quota guard).
+  notify_max_batches_per_day integer NOT NULL DEFAULT 24 CHECK (notify_max_batches_per_day BETWEEN 1 AND 200),
   magnific_credit_status text NOT NULL DEFAULT 'UNKNOWN' CHECK (magnific_credit_status IN ('UNKNOWN', 'AVAILABLE', 'LOW', 'EXHAUSTED')),
   updated_at timestamptz NOT NULL DEFAULT now(),
   updated_by uuid
@@ -100,6 +107,58 @@ CREATE TABLE IF NOT EXISTS growth.ge_audit_logs (
 );
 CREATE INDEX IF NOT EXISTS ge_audit_logs_at_idx ON growth.ge_audit_logs (at DESC);
 CREATE INDEX IF NOT EXISTS ge_audit_logs_resource_idx ON growth.ge_audit_logs (resource, at DESC);
+
+-- ---------------------------------------------------------------------------
+-- Notifications → LINE admin group (the only channel)
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS growth.ge_notification_batches (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  notification_ids uuid[] NOT NULL,
+  urgent boolean NOT NULL,
+  -- MOCK = grouped, never sent (Phase 1). READY = waiting for the LINE outbox (Phase 1b).
+  -- SENT / FAILED are set by line-admin-notify.
+  status text NOT NULL CHECK (status IN ('MOCK', 'READY', 'SENT', 'FAILED')),
+  sent_at timestamptz,
+  error text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS growth.ge_notifications (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  kind text NOT NULL CHECK (kind IN (
+    'approval_waiting', 'needs_decision', 'revision_ready', 'job_scheduled', 'job_exported', 'job_published',
+    'publish_failed', 'token_issue', 'budget_threshold', 'blocked_budget', 'pause_all', 'weekly_insights')),
+  severity text NOT NULL CHECK (severity IN ('info', 'urgent')),
+  -- One short Thai line; the link is added when the message is formatted.
+  text_th text NOT NULL CHECK (length(text_th) BETWEEN 1 AND 200),
+  item_path text NOT NULL CHECK (item_path LIKE '/admin/growth%'),
+  campaign_id uuid,
+  -- Same key twice = one notification (budget 70% once per cycle, one approval per version…).
+  dedupe_key text NOT NULL UNIQUE,
+  detail jsonb NOT NULL DEFAULT '{}'::jsonb,
+  batch_id uuid REFERENCES growth.ge_notification_batches (id) ON DELETE SET NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS ge_notifications_pending_idx ON growth.ge_notifications (created_at) WHERE batch_id IS NULL;
+
+CREATE OR REPLACE FUNCTION growth.ge_notify(_kind text, _text text, _path text, _dedupe text, _campaign uuid DEFAULT NULL, _detail jsonb DEFAULT '{}'::jsonb)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = growth, pg_temp
+AS $$
+BEGIN
+  INSERT INTO growth.ge_notifications (kind, severity, text_th, item_path, campaign_id, dedupe_key, detail)
+  VALUES (
+    _kind,
+    CASE WHEN _kind IN ('publish_failed', 'token_issue', 'blocked_budget', 'pause_all')
+           OR (_kind = 'budget_threshold' AND _detail ->> 'level' = '100') THEN 'urgent' ELSE 'info' END,
+    left(_text, 200), _path, _campaign, _dedupe, COALESCE(_detail, '{}'::jsonb))
+  ON CONFLICT (dedupe_key) DO NOTHING;
+END;
+$$;
+REVOKE ALL ON FUNCTION growth.ge_notify(text, text, text, text, uuid, jsonb) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION growth.ge_notify(text, text, text, text, uuid, jsonb) TO service_role;
 
 CREATE OR REPLACE FUNCTION growth.ge_audit(_action text, _resource text, _detail jsonb DEFAULT '{}'::jsonb, _old integer DEFAULT NULL, _new integer DEFAULT NULL)
 RETURNS void
@@ -695,6 +754,8 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = growth, pg_temp
 AS $$
+DECLARE
+  v_ver integer;
 BEGIN
   NEW.updated_at := now();
   IF NEW.status IS NOT DISTINCT FROM OLD.status THEN
@@ -715,6 +776,16 @@ BEGIN
   END IF;
   NEW.paused_from := CASE WHEN NEW.status = 'PAUSED' THEN OLD.status ELSE NULL END;
   PERFORM growth.ge_audit('status.change', 'campaign:' || NEW.id, jsonb_build_object('from', OLD.status, 'to', NEW.status));
+  IF NEW.status IN ('AWAITING_APPROVAL', 'NEEDS_VERIFY') THEN
+    SELECT COALESCE(max(version), 0) INTO v_ver FROM growth.ge_campaign_versions WHERE campaign_id = NEW.id;
+    IF NEW.status = 'AWAITING_APPROVAL' THEN
+      PERFORM growth.ge_notify('approval_waiting', 'รอ approve: ' || NEW.name || ' v' || v_ver,
+        '/admin/growth/campaigns/' || NEW.slug, 'approval:' || NEW.id || ':v' || v_ver, NEW.id);
+    ELSE
+      PERFORM growth.ge_notify('needs_decision', 'ต้องเช็กแหล่งข้อมูล: ' || NEW.name || ' v' || v_ver,
+        '/admin/growth/campaigns/' || NEW.slug, 'verify:' || NEW.id || ':v' || v_ver, NEW.id);
+    END IF;
+  END IF;
   RETURN NEW;
 END;
 $$;
@@ -848,11 +919,6 @@ BEGIN
   IF NEW.ai_monthly_cap_usd IS NOT NULL AND NEW.ai_spent_estimate_usd >= NEW.ai_monthly_cap_usd THEN
     NEW.ai_credit_status := 'EXHAUSTED';
   END IF;
-  IF NEW.ai_credit_status = 'EXHAUSTED'
-     AND NEW.ai_budget_notice_cycle IS DISTINCT FROM COALESCE(NEW.ai_credit_cycle_start, DATE '1970-01-01') THEN
-    NEW.ai_budget_notice_cycle := COALESCE(NEW.ai_credit_cycle_start, DATE '1970-01-01');
-    NEW.ai_budget_notice_pending := true;
-  END IF;
   RETURN NEW;
 END;
 $$;
@@ -866,6 +932,9 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = growth, pg_temp
 AS $$
+DECLARE
+  v_cycle text := COALESCE(NEW.ai_credit_cycle_start::text, 'no-cycle');
+  v_level integer;
 BEGIN
   IF NEW.ai_credit_status = 'EXHAUSTED' AND OLD.ai_credit_status IS DISTINCT FROM 'EXHAUSTED' THEN
     UPDATE growth.ge_agent_tasks
@@ -877,8 +946,28 @@ BEGIN
     UPDATE growth.ge_agent_tasks SET status = 'QUEUED', blocked_reason = NULL, updated_at = now() WHERE status = 'BLOCKED_BUDGET';
     UPDATE growth.ge_revision_requests SET status = 'QUEUED', updated_at = now() WHERE status = 'BLOCKED_BUDGET';
   END IF;
+  -- Budget 70/90/100% of the owner's cap and BLOCKED_BUDGET: once per credit cycle (dedupe key).
+  IF NEW.ai_monthly_cap_usd > 0 THEN
+    FOREACH v_level IN ARRAY ARRAY[70, 90, 100] LOOP
+      IF NEW.ai_spent_estimate_usd >= NEW.ai_monthly_cap_usd * v_level / 100.0 THEN
+        PERFORM growth.ge_notify('budget_threshold',
+          CASE WHEN v_level = 100 THEN 'AI credit ถึงเพดานแล้ว' ELSE 'AI credit ใช้ไป ' || v_level || '% ของเพดาน' END,
+          '/admin/growth?panel=cost', 'budget:' || v_cycle || ':' || v_level, NULL, jsonb_build_object('level', v_level));
+      END IF;
+    END LOOP;
+  END IF;
+  IF NEW.ai_credit_status = 'EXHAUSTED' THEN
+    PERFORM growth.ge_notify('blocked_budget', 'AI credit หมดรอบนี้ งาน AI หยุดรอรอบใหม่ (ไม่ซื้อเพิ่ม)',
+      '/admin/growth?panel=cost', 'blocked:' || v_cycle);
+  END IF;
   IF NEW.pause_all IS DISTINCT FROM OLD.pause_all THEN
     PERFORM growth.ge_audit(CASE WHEN NEW.pause_all THEN 'pause_all.on' ELSE 'pause_all.off' END, 'settings', jsonb_build_object('reason', NEW.pause_reason));
+    PERFORM growth.ge_notify('pause_all',
+      CASE WHEN NEW.pause_all THEN 'Pause All เปิดแล้ว: หยุดโพสต์ + หยุด AI' ELSE 'Pause All ปิดแล้ว: กลับมาทำงานตามคิว' END,
+      '/admin/growth', 'pause:' || NEW.pause_all || ':' || clock_timestamp());
+  END IF;
+  IF NEW.notify_mode IS DISTINCT FROM OLD.notify_mode THEN
+    PERFORM growth.ge_audit('notify_mode.change', 'settings', jsonb_build_object('from', OLD.notify_mode, 'to', NEW.notify_mode));
   END IF;
   IF NEW.mode IS DISTINCT FROM OLD.mode THEN
     PERFORM growth.ge_audit('mode.change', 'settings', jsonb_build_object('from', OLD.mode, 'to', NEW.mode));
@@ -1016,9 +1105,126 @@ SET search_path = growth, pg_temp
 AS $$
   UPDATE growth.ge_settings
      SET ai_credit_status = 'AVAILABLE', ai_credit_cycle_start = _cycle_start,
-         ai_spent_estimate_usd = 0, ai_budget_notice_pending = false
+         ai_spent_estimate_usd = 0
    WHERE id = 1;
 $$;
+
+-- ---------------------------------------------------------------------------
+-- Event → notification (one short Thai line + link). Settings/campaign events are above.
+-- ---------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION growth.ge_notify_events()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = growth, pg_temp
+AS $$
+DECLARE
+  v_c growth.ge_campaigns;
+  v_path text;
+BEGIN
+  IF TG_TABLE_NAME = 'ge_campaign_versions' THEN
+    IF NEW.version > 1 THEN
+      SELECT * INTO v_c FROM growth.ge_campaigns WHERE id = NEW.campaign_id;
+      PERFORM growth.ge_notify('revision_ready', 'แก้เสร็จแล้ว: ' || v_c.name || ' v' || NEW.version || ' รอดูอีกรอบ',
+        '/admin/growth/campaigns/' || v_c.slug, 'revision:' || v_c.id || ':v' || NEW.version, v_c.id);
+    END IF;
+  ELSIF TG_TABLE_NAME = 'ge_owner_decisions' THEN
+    PERFORM growth.ge_notify('needs_decision', 'ต้องตัดสินใจ: ' || NEW.title, '/admin/growth?decision=' || NEW.id, 'decision:' || NEW.id);
+  ELSIF TG_TABLE_NAME = 'ge_comments' THEN
+    IF NEW.status = 'NEEDS_OWNER_DECISION' AND NEW.status IS DISTINCT FROM OLD.status THEN
+      SELECT * INTO v_c FROM growth.ge_campaigns WHERE id = NEW.campaign_id;
+      PERFORM growth.ge_notify('needs_decision', 'คอมเมนต์รอคุณตัดสินใจ: ' || v_c.name,
+        '/admin/growth/campaigns/' || v_c.slug, 'comment:' || NEW.id, v_c.id);
+    END IF;
+  ELSIF TG_TABLE_NAME = 'ge_publish_jobs' THEN
+    IF TG_OP = 'UPDATE' AND NEW.status IS NOT DISTINCT FROM OLD.status THEN
+      RETURN NULL;
+    END IF;
+    SELECT * INTO v_c FROM growth.ge_campaigns WHERE id = NEW.campaign_id;
+    v_path := '/admin/growth/campaigns/' || v_c.slug;
+    IF NEW.status = 'SCHEDULED' THEN
+      PERFORM growth.ge_notify('job_scheduled', 'ลงคิวแล้ว: ' || v_c.name || ' · ' || NEW.platform || ' · '
+        || to_char(NEW.scheduled_at AT TIME ZONE 'Asia/Bangkok', 'Dy DD Mon HH24:MI'), v_path, 'scheduled:' || NEW.idempotency_key, v_c.id);
+    ELSIF NEW.status = 'EXPORTED_FOR_MANUAL_POST' THEN
+      PERFORM growth.ge_notify('job_exported', 'พร้อมโพสต์เอง: ' || v_c.name || ' · ' || NEW.platform, v_path, 'exported:' || NEW.idempotency_key, v_c.id);
+    ELSIF NEW.status = 'PUBLISHED' THEN
+      PERFORM growth.ge_notify('job_published', 'โพสต์แล้ว: ' || v_c.name || ' · ' || NEW.platform, v_path, 'published:' || NEW.idempotency_key, v_c.id);
+    ELSIF NEW.status IN ('PUBLISH_FAILED', 'PUBLISH_STATUS_UNKNOWN') THEN
+      PERFORM growth.ge_notify('publish_failed', 'โพสต์ไม่ผ่าน: ' || v_c.name || ' · ' || NEW.platform || ' · '
+        || COALESCE(left(NEW.last_error, 60), CASE WHEN NEW.status = 'PUBLISH_FAILED' THEN 'ล้มเหลว' ELSE 'ต้องเช็กสถานะก่อน' END),
+        v_path, 'failed:' || NEW.idempotency_key || ':' || NEW.status || ':' || NEW.retry_count, v_c.id);
+    END IF;
+  ELSIF TG_TABLE_NAME = 'ge_provider_connections' THEN
+    IF NEW.status = 'ACTION_REQUIRED' AND (TG_OP = 'INSERT' OR NEW.status IS DISTINCT FROM OLD.status) THEN
+      PERFORM growth.ge_notify('token_issue', 'บัญชี ' || NEW.provider || ' ต้องเชื่อมใหม่', '/admin/growth?panel=connections',
+        'token:' || NEW.id || ':' || to_char(now() AT TIME ZONE 'Asia/Bangkok', 'YYYY-MM-DD'));
+    END IF;
+  ELSIF TG_TABLE_NAME = 'ge_learning_memos' THEN
+    PERFORM growth.ge_notify('weekly_insights', 'สรุปสัปดาห์มาแล้ว · ' || LEAST(3, jsonb_array_length(NEW.next_tests)) || ' เรื่องให้ตัดสินใจ',
+      '/admin/growth?insights=' || NEW.week, 'weekly:' || NEW.week);
+  END IF;
+  RETURN NULL;
+END;
+$$;
+
+DO $notify$
+DECLARE
+  t record;
+BEGIN
+  FOR t IN SELECT * FROM (VALUES
+    ('ge_campaign_versions', 'INSERT'), ('ge_owner_decisions', 'INSERT'), ('ge_comments', 'UPDATE'),
+    ('ge_publish_jobs', 'INSERT OR UPDATE'), ('ge_provider_connections', 'INSERT OR UPDATE'), ('ge_learning_memos', 'INSERT')
+  ) AS v (tbl, ev)
+  LOOP
+    EXECUTE format('DROP TRIGGER IF EXISTS %I ON growth.%I', t.tbl || '_notify', t.tbl);
+    EXECUTE format('CREATE TRIGGER %I AFTER %s ON growth.%I FOR EACH ROW EXECUTE FUNCTION growth.ge_notify_events()', t.tbl || '_notify', t.ev, t.tbl);
+  END LOOP;
+END
+$notify$;
+
+-- Notifier tick (cron every minute). Groups everything pending into one batch when the oldest
+-- item has waited notify_batch_seconds, or at once if anything is urgent. Returns NULL otherwise.
+-- notify_mode 'mock' → batch status MOCK (never sent). 'line' → READY for the outbox (Phase 1b).
+CREATE OR REPLACE FUNCTION growth.ge_flush_notifications(_now timestamptz DEFAULT now())
+RETURNS growth.ge_notification_batches
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = growth, pg_temp
+AS $$
+DECLARE
+  v_settings growth.ge_settings;
+  v_ids uuid[];
+  v_oldest timestamptz;
+  v_urgent boolean;
+  v_today integer;
+  v_window interval;
+  v_batch growth.ge_notification_batches;
+BEGIN
+  SELECT * INTO v_settings FROM growth.ge_settings WHERE id = 1;
+  SELECT array_agg(p.id ORDER BY p.created_at), min(p.created_at), bool_or(p.severity = 'urgent')
+    INTO v_ids, v_oldest, v_urgent
+    FROM (SELECT id, created_at, severity FROM growth.ge_notifications
+           WHERE batch_id IS NULL ORDER BY created_at FOR UPDATE SKIP LOCKED) p;
+  IF v_ids IS NULL THEN
+    RETURN NULL;
+  END IF;
+  SELECT count(*) INTO v_today FROM growth.ge_notification_batches
+   WHERE created_at >= (date_trunc('day', _now AT TIME ZONE 'Asia/Bangkok') AT TIME ZONE 'Asia/Bangkok');
+  v_window := make_interval(secs => CASE WHEN v_today >= v_settings.notify_max_batches_per_day
+                                         THEN GREATEST(v_settings.notify_batch_seconds, 3600)
+                                         ELSE v_settings.notify_batch_seconds END);
+  IF NOT v_urgent AND v_oldest > _now - v_window THEN
+    RETURN NULL;
+  END IF;
+  INSERT INTO growth.ge_notification_batches (notification_ids, urgent, status, created_at)
+  VALUES (v_ids, v_urgent, CASE WHEN v_settings.notify_mode = 'line' THEN 'READY' ELSE 'MOCK' END, _now)
+  RETURNING * INTO v_batch;
+  UPDATE growth.ge_notifications SET batch_id = v_batch.id WHERE id = ANY (v_ids);
+  RETURN v_batch;
+END;
+$$;
+REVOKE ALL ON FUNCTION growth.ge_flush_notifications(timestamptz) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION growth.ge_flush_notifications(timestamptz) TO service_role;
 
 REVOKE ALL ON FUNCTION growth.ge_claim_next_task(text, integer) FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION growth.ge_complete_task(uuid, text, boolean, text) FROM PUBLIC, anon, authenticated;
@@ -1041,7 +1247,7 @@ GRANT SELECT ON ALL TABLES IN SCHEMA growth TO authenticated;
 GRANT ALL ON ALL TABLES IN SCHEMA growth TO service_role;
 GRANT USAGE ON ALL SEQUENCES IN SCHEMA growth TO service_role;
 
-GRANT UPDATE (mode, pause_all, pause_reason, vacation_mode, ai_monthly_cap_usd) ON growth.ge_settings TO authenticated;
+GRANT UPDATE (mode, pause_all, pause_reason, vacation_mode, ai_monthly_cap_usd, notify_mode, notify_batch_seconds, notify_max_batches_per_day) ON growth.ge_settings TO authenticated;
 GRANT INSERT ON growth.ge_approvals TO authenticated;
 GRANT INSERT, UPDATE (status, ai_note) ON growth.ge_comments TO authenticated;
 GRANT INSERT, DELETE ON growth.ge_locks TO authenticated;

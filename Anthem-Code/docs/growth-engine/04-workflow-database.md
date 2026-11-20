@@ -18,7 +18,8 @@ The full table is `TRANSITIONS` in `src/lib/growth/engine.ts` and `growth.ge_sta
 
 | Group | Tables |
 |---|---|
-| Settings & audit | `ge_settings` (one row: mode, pause_all, AI credit status/cycle/cap/estimate, notice flag), `ge_audit_logs` (append-only) |
+| Settings & audit | `ge_settings` (one row: mode, pause_all, AI credit status/cycle/cap/estimate, `notify_mode` mock/line, `notify_batch_seconds`, `notify_max_batches_per_day`), `ge_audit_logs` (append-only) |
+| Notifications | `ge_notifications` (one short Thai line + `/admin/growth` path, unique `dedupe_key`), `ge_notification_batches` (one LINE message per burst; `MOCK` / `READY` / `SENT` / `FAILED`) |
 | Playbooks | `ge_playbooks` (prompts, editorial strategy, brand rules, CTA library; versioned, append-only) |
 | Research | `ge_sources`, `ge_signals` |
 | Campaigns | `ge_status_transitions`, `ge_campaigns`, `ge_campaign_versions`, `ge_briefs`, `ge_assets`, `ge_asset_versions`, `ge_platform_variants`, `ge_locks` |
@@ -51,7 +52,7 @@ When a new variant is inserted with a different hash, scheduled jobs for that pl
 
 ### Agent functions (service_role only)
 
-`ge_claim_next_task`, `ge_complete_task`, `ge_record_ai_usage`, `ge_mark_credit_exhausted`, `ge_start_credit_cycle`, `ge_claim_due_publish_job`.
+`ge_claim_next_task`, `ge_complete_task`, `ge_record_ai_usage`, `ge_mark_credit_exhausted`, `ge_start_credit_cycle`, `ge_claim_due_publish_job`, `ge_flush_notifications`. Triggers call `ge_notify()` for every event (see doc 08).
 
 ### RLS
 
