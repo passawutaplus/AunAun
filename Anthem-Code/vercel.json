@@ -56,6 +56,7 @@
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/go", "destination": "/go.html" },
+    { "source": "/auth/app-return", "destination": "/app-return.html" },
     {
       "source": "/((?!api/|assets/|line-icons/|sitemap|robots\\.txt|llms\\.txt|google.*\\.html|icons/|manifest\\.webmanifest|sw\\.js|\\.well-known/).*)",
       "destination": "/index.html"
@@ -79,6 +80,21 @@
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=3600" },
         { "key": "Content-Type", "value": "application/json; charset=utf-8" }
+      ]
+    },
+    {
+      "source": "/.well-known/apple-app-site-association",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=3600" },
+        { "key": "Content-Type", "value": "application/json" }
+      ]
+    },
+    {
+      "source": "/auth/app-return",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow" },
+        { "key": "Referrer-Policy", "value": "no-referrer" },
+        { "key": "Cache-Control", "value": "no-store" }
       ]
     },
     {

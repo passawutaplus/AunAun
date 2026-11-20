@@ -1,0 +1,202 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": [
+          "ZD5YU7PP65.com.samecor.app"
+        ],
+        "components": [
+          {
+            "/": "/",
+            "comment": "Home"
+          },
+          {
+            "/": "/showcase"
+          },
+          {
+            "/": "/showcase/*"
+          },
+          {
+            "/": "/project"
+          },
+          {
+            "/": "/project/*"
+          },
+          {
+            "/": "/u"
+          },
+          {
+            "/": "/u/*"
+          },
+          {
+            "/": "/s"
+          },
+          {
+            "/": "/s/*"
+          },
+          {
+            "/": "/series"
+          },
+          {
+            "/": "/series/*"
+          },
+          {
+            "/": "/exhibition"
+          },
+          {
+            "/": "/exhibition/*"
+          },
+          {
+            "/": "/explore"
+          },
+          {
+            "/": "/explore/*"
+          },
+          {
+            "/": "/forum"
+          },
+          {
+            "/": "/forum/*"
+          },
+          {
+            "/": "/hiring"
+          },
+          {
+            "/": "/hiring/*"
+          },
+          {
+            "/": "/jobs"
+          },
+          {
+            "/": "/jobs/*"
+          },
+          {
+            "/": "/journal"
+          },
+          {
+            "/": "/journal/*"
+          },
+          {
+            "/": "/community"
+          },
+          {
+            "/": "/community/*"
+          },
+          {
+            "/": "/inspire"
+          },
+          {
+            "/": "/inspire/*"
+          },
+          {
+            "/": "/collections"
+          },
+          {
+            "/": "/collections/*"
+          },
+          {
+            "/": "/portfolio"
+          },
+          {
+            "/": "/portfolio/*"
+          },
+          {
+            "/": "/org"
+          },
+          {
+            "/": "/org/*"
+          },
+          {
+            "/": "/object"
+          },
+          {
+            "/": "/object/*"
+          },
+          {
+            "/": "/search"
+          },
+          {
+            "/": "/search/*"
+          },
+          {
+            "/": "/notifications"
+          },
+          {
+            "/": "/notifications/*"
+          },
+          {
+            "/": "/chat"
+          },
+          {
+            "/": "/chat/*"
+          },
+          {
+            "/": "/studio"
+          },
+          {
+            "/": "/studio/*"
+          },
+          {
+            "/": "/settings"
+          },
+          {
+            "/": "/settings/*"
+          },
+          {
+            "/": "/me"
+          },
+          {
+            "/": "/me/*"
+          },
+          {
+            "/": "/invite"
+          },
+          {
+            "/": "/invite/*"
+          },
+          {
+            "/": "/legal"
+          },
+          {
+            "/": "/legal/*"
+          },
+          {
+            "/": "/support"
+          },
+          {
+            "/": "/support/*"
+          },
+          {
+            "/": "/help"
+          },
+          {
+            "/": "/help/*"
+          },
+          {
+            "/": "/learn"
+          },
+          {
+            "/": "/learn/*"
+          },
+          {
+            "/": "/hire"
+          },
+          {
+            "/": "/hire/*"
+          },
+          {
+            "/": "/service"
+          },
+          {
+            "/": "/service/*"
+          }
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": [
+      "ZD5YU7PP65.com.samecor.app"
+    ]
+  }
+}

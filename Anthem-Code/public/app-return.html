@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="referrer" content="no-referrer" />
+    <title>SAMECOR</title>
+    <!--
+      /auth/app-return (vercel.json rewrite). Sign-in links started in the SAMECOR app (Google, LINE, Facebook,
+      password reset email) come back here in the phone's browser; app-return.js hands the code to the app
+      through com.samecor.app://auth/… so the app finishes the sign-in in its own web view (PKCE verifier lives there).
+    -->
+    <style>
+      :root { color-scheme: light dark; --bg: #f2f2f0; --fg: #282929; --muted: #6b6b6b; --accent: #ee3d29; }
+      @media (prefers-color-scheme: dark) { :root { --bg: #201f1e; --fg: #f2f2f0; --muted: #a3a3a3; } }
+      html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); }
+      body {
+        display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box;
+        font-family: "IBM Plex Sans Thai", "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+        text-align: center;
+      }
+      main { max-width: 320px; }
+      h1 { font-size: 20px; margin: 0 0 8px; }
+      p { font-size: 14px; line-height: 1.6; color: var(--muted); margin: 0 0 24px; }
+      a.open {
+        display: inline-block; padding: 12px 24px; border-radius: 999px; background: var(--accent); color: #fff;
+        font-weight: 600; text-decoration: none;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>กลับไปที่แอป SAMECOR</h1>
+      <p>กำลังพากลับไปที่แอป ถ้าแอปไม่เปิดเอง กดปุ่มด้านล่างได้เลย</p>
+      <a class="open" id="open" href="com.samecor.app://auth/callback">เปิดแอป SAMECOR</a>
+    </main>
+    <script src="/app-return.js"></script>
+  </body>
+</html>
