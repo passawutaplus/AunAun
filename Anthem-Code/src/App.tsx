@@ -337,6 +337,13 @@ const AdminCreatorInvitationNewPage = lazy(
 const AdminCreatorInvitationDetailPage = lazy(
   () => import("./pages/admin/AdminCreatorInvitationDetailPage"),
 );
+const GrowthLayout = lazy(() => import("./pages/admin/growth/GrowthLayout"));
+const GrowthOverviewPage = lazy(
+  () => import("./pages/admin/growth/GrowthOverviewPage"),
+);
+const GrowthCampaignPage = lazy(
+  () => import("./pages/admin/growth/GrowthCampaignPage"),
+);
 const CreatorInvitePage = lazy(
   () => import("./pages/invite/CreatorInvitePage"),
 );
@@ -555,6 +562,19 @@ const App = () => (
                                 path=":id"
                                 element={<AdminCreatorInvitationDetailPage />}
                               />
+                            </Route>
+                            {/* Growth Engine mock dashboard without login (DEV only) */}
+                            <Route
+                              path="/dev/growth"
+                              element={<AdminLayout preview />}
+                            >
+                              <Route element={<GrowthLayout />}>
+                                <Route index element={<GrowthOverviewPage />} />
+                                <Route
+                                  path="campaigns/:campaignId"
+                                  element={<GrowthCampaignPage />}
+                                />
+                              </Route>
                             </Route>
                           </>
                         ) : null}
@@ -1099,6 +1119,14 @@ const App = () => (
                         />
                         <Route path="/admin" element={<AdminLayout />}>
                           <Route index element={<OverviewPage />} />
+                          {/* Growth Engine Phase 1: mock data only (docs/growth-engine) */}
+                          <Route path="growth" element={<GrowthLayout />}>
+                            <Route index element={<GrowthOverviewPage />} />
+                            <Route
+                              path="campaigns/:campaignId"
+                              element={<GrowthCampaignPage />}
+                            />
+                          </Route>
                           <Route
                             path="dev-tasks"
                             element={<AdminDevTasksPage />}
