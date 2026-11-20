@@ -7,6 +7,7 @@
 | Pure engine (TS) | `src/lib/growth/__tests__/engine.test.ts` | CI (`npm run test`) |
 | Migration ↔ engine parity | `src/lib/growth/__tests__/migrationParity.test.ts` | CI |
 | Notifications | `src/lib/growth/__tests__/notify.test.ts` | CI |
+| Activation KPI | `src/lib/growth/__tests__/activation.test.ts` (core profile rule, 7-day window, open cohort, empty = 0) | CI |
 | SQL behaviour | `Solo-Code/supabase/tests/growth-engine/run.sh` on a throwaway Postgres 17 | local, before applying / after editing the migration |
 | UI walkthrough | `/dev/growth` in `npm run dev` (screenshots in the PR) | manual / Playwright later |
 | Live integrations | per adapter, sandbox account first | Phase 2–3 |
@@ -37,7 +38,7 @@ SQL (47 checks, last run 2026-11-20, all ok; includes events → notifications, 
 | 3×3 feed preview in publish order with real cover | ✅ mock tiles |
 | Versions, resolved comments, approval log, credits per campaign | ✅ versions/comments/audit · credits `UNAVAILABLE` |
 | Unapproved / out-of-date content cannot publish | ✅ TS + SQL |
-| Metrics shown or explicitly `UNAVAILABLE` | ✅ |
+| Metrics shown or explicitly `UNAVAILABLE` | ✅ Activated creators (7d) real from profiles + projects; social/blog `UNAVAILABLE` |
 | Kill switch stops costs and integrations | ✅ Pause All (no integrations yet) |
 | Weekly report with ≤3 decisions | ⏳ mock insights only |
 | Trend sources with link/date/score, article SEO fields, rights per image, consent per spotlight | ⏳ schema ready, Phase 2 |

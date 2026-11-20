@@ -3,3 +3,4 @@
  * Rule: only `src/server/*` and `src/core/auth/*` may import the supabase client.
  */
 export * from "./queries/profiles";
+export * from "./queries/growthActivation";
