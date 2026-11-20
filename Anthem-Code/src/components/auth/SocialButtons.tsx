@@ -4,7 +4,7 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { openOAuthPopup, signInWithApple, signInWithOAuth, type OAuthProviderId } from "@/integrations/oauth";
-import { enabledExtraProviders } from "@/lib/authProviders";
+import { signInProviders } from "@/lib/authProviders";
 import { GoogleIcon, PROVIDER_ICONS } from "@/components/auth/ProviderIcons";
 import { isWebViewApp } from "@/lib/appShell";
 import { hasShellFeature } from "@/lib/nativeShell";
@@ -13,7 +13,7 @@ import { userFacingError } from "@/lib/userFacingError";
 
 async function handleOAuth(provider: OAuthProviderId, name: string, redirectTo?: string, popup?: Window | null) {
   const result =
-    provider === "apple" ? await signInWithApple({ redirectTo }) : await signInWithOAuth({ redirectTo, popup, provider });
+    provider === "apple" && hasShellFeature("apple") ? await signInWithApple({ redirectTo }) : await signInWithOAuth({ redirectTo, popup, provider });
   if (result.error) {
     toast.error(userFacingError(result.error, `เข้าสู่ระบบด้วย ${name} ไม่สำเร็จ`));
   }
@@ -31,9 +31,8 @@ export function SocialButtons({
   label?: string;
 }) {
   const [busy, setBusy] = useState<OAuthProviderId | null>(null);
-  // iOS app: Sign in with Apple sits next to the other providers (App Review 4.8).
-  const apple = hasShellFeature("apple") ? [{ key: "apple" as const, id: "apple" as OAuthProviderId, name: "Apple" }] : [];
-  const providers = [...apple, { key: "google" as const, id: "google" as OAuthProviderId, name: "Google" }, ...enabledExtraProviders()];
+  // iOS app: Sign in with Apple sits next to the other providers (App Review 4.8); web/Android use Apple's web sign-in.
+  const providers = signInProviders(hasShellFeature("apple"));
   const extras = providers.filter((p) => p.key !== "google");
 
   const start = async (provider: OAuthProviderId, name: string) => {
