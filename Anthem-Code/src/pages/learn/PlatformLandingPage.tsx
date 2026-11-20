@@ -26,7 +26,7 @@ import {
 } from "@/lib/brandConfig";
 import { optimizedFeedImageUrl } from "@/lib/feedProjectCover";
 import { isNativeApp } from "@/lib/appShell";
-import { isPlayStoreLive, PLAY_STORE_URL } from "@/components/AndroidAppBanner";
+import { APP_STORE_URL, isAppStoreLive, isPlayStoreLive, PLAY_STORE_URL } from "@/components/AndroidAppBanner";
 
 import { copyText } from "@/lib/copyText";
 const MARQUEE = ["Graphic", "Illustration", "UX/UI", "Motion", "Photo", "3D", "Branding", "Typography"];
@@ -414,10 +414,17 @@ export default function PlatformLandingPage() {
                       <span>Coming soon</span>
                     </div>
                   )}
-                  <div className="store">
-                    <img src="/go/badges/app-store.png" alt="App Store" />
-                    <span>Coming soon</span>
-                  </div>
+                  {isAppStoreLive() ? (
+                    <a className="store live" href={APP_STORE_URL} target="_blank" rel="noopener noreferrer">
+                      <img src="/go/badges/app-store.png" alt="Download on the App Store" />
+                      <span>Download</span>
+                    </a>
+                  ) : (
+                    <div className="store">
+                      <img src="/go/badges/app-store.png" alt="App Store" />
+                      <span>Coming soon</span>
+                    </div>
+                  )}
                 </div>
                 )}
               </div>

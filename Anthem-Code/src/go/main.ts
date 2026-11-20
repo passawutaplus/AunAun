@@ -10,14 +10,14 @@ import { joinedPillPath } from "./shape";
 const config = {
   web: "https://samecor.com/",
   stores: [
-    // Flip `live` to true and set `href` when each store listing is public. Google Play: live since 2026-11-19.
+    // Flip `live` to true and set `href` when each store listing is public. Both stores live since 2026-11-19.
     {
       name: "Google Play",
       img: "/go/badges/google-play.png",
       href: "https://play.google.com/store/apps/details?id=com.samecor.app&utm_source=samecor_go&utm_medium=go",
       live: true,
     },
-    { name: "App Store", img: "/go/badges/app-store.png", href: "", live: false },
+    { name: "App Store", img: "/go/badges/app-store.png", href: "https://apps.apple.com/th/app/samecor/id6836398087", live: true },
   ],
   socials: [
     {

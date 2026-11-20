@@ -13,6 +13,14 @@ const SHOW_DELAY_MS = 4000;
 /** Pages where a small card above the bottom nav doesn't cover anything important. */
 const SHOW_ON = [/^\/$/, /^\/showcase\/[^/]+$/, /^\/u\/[^/]+$/];
 
+/** App Store listing (Thailand), live since 2026-11-19. Apple ignores utm_* parameters, so the link stays plain. */
+export const APP_STORE_URL = "https://apps.apple.com/th/app/samecor/id6836398087";
+
+/** Live on the App Store since 2026-11-19. Set VITE_APP_STORE_LIVE=false to hide the App Store links again. */
+export function isAppStoreLive(): boolean {
+  return import.meta.env.VITE_APP_STORE_LIVE !== "false";
+}
+
 /** Live on Google Play since 2026-11-19. Set VITE_PLAY_STORE_LIVE=false to hide every store prompt again. */
 export function isPlayStoreLive(): boolean {
   return import.meta.env.VITE_PLAY_STORE_LIVE !== "false";
