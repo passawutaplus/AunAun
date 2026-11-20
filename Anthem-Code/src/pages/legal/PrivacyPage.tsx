@@ -1,10 +1,10 @@
 import LegalLayout from "@/components/LegalLayout";
 import { storePlatforms, storePlatformsLabel } from "@/lib/appShell";
 import FreeLaunchMoneyNotice from "@/components/legal/FreeLaunchMoneyNotice";
-import { LEGAL_APP_NAME, LEGAL_COMPANY_ADDRESS, LEGAL_COMPANY_NAME, LEGAL_COMPANY_TAX_ID, LEGAL_DPO_EMAIL, LEGAL_SOLO_NAME, LEGAL_SOLO_URL, LEGAL_WEBSITE } from "@/lib/legalConfig";
+import { LEGAL_APP_NAME, LEGAL_COMPANY_ADDRESS, LEGAL_COMPANY_NAME, LEGAL_COMPANY_TAX_ID, LEGAL_DPO_EMAIL, LEGAL_WEBSITE } from "@/lib/legalConfig";
 
 const PrivacyPage = () => (
-  <LegalLayout title="นโยบายความเป็นส่วนตัว (PDPA)">
+  <LegalLayout title="นโยบายความเป็นส่วนตัว (PDPA)" updatedAt="20 พฤศจิกายน 2569">
     <p>
       {LEGAL_COMPANY_NAME} (&quot;เรา&quot;) ให้บริการแพลตฟอร์ม <strong>{LEGAL_APP_NAME}</strong> สำหรับครีเอเตอร์และฟรีแลนซ์ไทย
       นโยบายฉบับนี้อธิบายการเก็บรวบรวม ใช้ เปิดเผย และคุ้มครองข้อมูลส่วนบุคคลของคุณตามพระราชบัญญัติคุ้มครองข้อมูลส่วนบุคคล พ.ศ. 2562 (PDPA)
@@ -41,23 +41,12 @@ const PrivacyPage = () => (
       <a href={`mailto:${LEGAL_DPO_EMAIL}`}>{LEGAL_DPO_EMAIL}</a>
     </p>
 
-    <h2>2. Ecosystem — บัญชีร่วมกับ {LEGAL_SOLO_NAME}</h2>
+    <h2>2. การชำระเงิน</h2>
     <p>
-      {LEGAL_APP_NAME} ทำงานคู่กับ {LEGAL_SOLO_NAME} ({LEGAL_SOLO_URL}) ภายใต้ ecosystem บัญชีเดียว
-      เมื่อคุณสมัครหรืออัพเกรดแผน Pro ข้อมูลแพ็กเกจ โควต้า storage และสิทธิ์บางอย่างอาจแชร์ข้ามแอป
+      ช่วงเปิดตัว {LEGAL_APP_NAME} ยังไม่รับชำระเงินผ่านเว็บหรือแอป เราจึงยังไม่เก็บข้อมูลบัตรหรือข้อมูลการชำระเงินของคุณ
+      ถ้าเปิดรับชำระเงินในอนาคต เราจะปรับนโยบายนี้และแจ้งให้ทราบก่อนเริ่มใช้ — ดูเพิ่มที่{" "}
+      <a href="/legal/payment-refund">นโยบายการชำระเงินและการคืนเงิน SAMECOR</a>
     </p>
-    <ul>
-      <li>
-        นโยบายการชำระเงินจ้างงาน (THB/Omise) — ดู{" "}
-        <a href="/legal/payment-refund">นโยบายการชำระเงินและการคืนเงิน SAMECOR</a>
-      </li>
-      <li>
-        นโยบายการชำระเงิน subscription และการคืนเงิน — ดูที่{" "}
-        <a href={`${LEGAL_SOLO_URL}/privacy`} target="_blank" rel="noopener noreferrer">PDPA So1o</a> และ{" "}
-        <a href={`${LEGAL_SOLO_URL}/refund`} target="_blank" rel="noopener noreferrer">นโยบายคืนเงิน So1o</a>
-      </li>
-      <li>การลบบัญชีฝั่งใดฝั่งหนึ่ง อาจกระทบการเข้าใช้แอปคู่ — ติดต่อ DPO ก่อนดำเนินการ</li>
-    </ul>
 
     <h2>3. ข้อมูลส่วนบุคคลที่เราเก็บรวบรวม</h2>
     <h3>3.1 ข้อมูลที่คุณให้โดยตรง</h3>
@@ -237,11 +226,6 @@ const PrivacyPage = () => (
             <td className="p-3 text-muted-foreground align-top">ตรวจจับและแก้บั๊ก ให้บริการทำงานได้เสถียร</td>
             <td className="p-3 align-top">ประโยชน์โดยชอบด้วยกฎหมาย</td>
           </tr>
-          <tr className="border-b border-border/40">
-            <td className="p-3 align-top">Ecosystem {LEGAL_SOLO_NAME}</td>
-            <td className="p-3 text-muted-foreground align-top">ซิงค์แพ็กเกจ โควต้า และบัญชีร่วม</td>
-            <td className="p-3 align-top">สัญญา / บริการที่ร้องขอ</td>
-          </tr>
           <tr>
             <td className="p-3 align-top">ความปลอดภัย</td>
             <td className="p-3 text-muted-foreground align-top">ป้องกันทุจริต ตรวจสอบการละเมิด</td>
@@ -256,7 +240,7 @@ const PrivacyPage = () => (
     <ul>
       <li><strong>Supabase</strong> — ฐานข้อมูล การยืนยันตัวตน ที่เก็บไฟล์ (มี Row-Level Security และข้อตกลงประมวลผลข้อมูล DPA)</li>
       <li>
-        <strong>Omise (Opn Payments)</strong> — ประมวลผลการชำระเงินจ้างงาน (PromptPay/บัตรเครดิต) และการโอนเงิน (payout)
+        <strong>Omise (Opn Payments)</strong> — เฉพาะเมื่อเปิดรับชำระเงินจ้างงาน (ตอนนี้ยังปิดอยู่) ประมวลผลการชำระเงิน (PromptPay/บัตรเครดิต) และการโอนเงิน (payout)
         เราไม่เก็บเลขบัตรเต็มบนเซิร์ฟเวอร์ของเรา — Omise จัดการ tokenization ตามมาตรฐาน PCI
       </li>
       <li><strong>Google OAuth</strong> — เมื่อคุณเลือกเข้าสู่ระบบด้วย Google</li>
