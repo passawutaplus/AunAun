@@ -1,6 +1,6 @@
 import { Bell, Check, Share2, Smartphone, Zap } from "lucide-react";
 import { SettingsCard } from "@/components/settings/SettingsCard";
-import { isPlayStoreLive, PLAY_STORE_URL } from "@/components/AndroidAppBanner";
+import { APP_STORE_URL, isAppStoreLive, isPlayStoreLive, PLAY_STORE_URL } from "@/components/AndroidAppBanner";
 import { isStandaloneDisplay } from "@/lib/appShell";
 
 const PERKS = [
@@ -9,9 +9,11 @@ const PERKS = [
   { icon: Zap, text: "เปิดไวกว่า เต็มจอ ไม่มีแถบเบราว์เซอร์" },
 ];
 
-/** Settings → "แอป SAMECOR": tells web users there is an app and how to get it. Hidden inside the Android app. */
+/** Settings → "แอป SAMECOR": tells web users there is an app and how to get it. Hidden inside the native apps. */
 export function AppDownloadSection() {
-  const live = isPlayStoreLive();
+  const playLive = isPlayStoreLive();
+  const appStoreLive = isAppStoreLive();
+  const anyLive = playLive || appStoreLive;
   const installed = isStandaloneDisplay();
   const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
   const isIos = /iPhone|iPad|iPod/i.test(ua);
@@ -26,9 +28,9 @@ export function AppDownloadSection() {
       <div className="flex items-center gap-3">
         <img src="/icons/icon-192.png" alt="" className="h-14 w-14 shrink-0 rounded-2xl" />
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-foreground">SAMECOR สำหรับ Android</p>
+          <p className="text-sm font-semibold text-foreground">SAMECOR สำหรับ iPhone และ Android</p>
           <p className="text-xs text-muted-foreground">
-            {live ? "ดาวน์โหลดฟรีบน Google Play" : "เร็ว ๆ นี้บน Google Play"}
+            {anyLive ? "ดาวน์โหลดฟรีบน App Store และ Google Play" : "เร็ว ๆ นี้บน App Store และ Google Play"}
           </p>
         </div>
       </div>
@@ -43,26 +45,41 @@ export function AppDownloadSection() {
       </ul>
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
-        {live ? (
+        {appStoreLive ? (
+          <a
+            href={APP_STORE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-colors hover:bg-foreground/90"
+          >
+            <Smartphone className="h-4 w-4" /> App Store
+          </a>
+        ) : null}
+        {playLive ? (
           <a
             href={PLAY_STORE_URL.replace("utm_medium=banner", "utm_medium=settings")}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-colors hover:bg-foreground/90"
           >
-            <Smartphone className="h-4 w-4" /> ดาวน์โหลดบน Google Play
+            <Smartphone className="h-4 w-4" /> Google Play
           </a>
-        ) : (
+        ) : null}
+        {!anyLive ? (
           <span className="inline-flex items-center rounded-full border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground">
             กำลังเปิดให้ทดสอบ · Coming soon
           </span>
-        )}
+        ) : null}
       </div>
 
       <div className="mt-5 rounded-xl bg-muted/50 p-3 text-xs text-muted-foreground">
         {installed ? (
           <p className="flex items-center gap-1.5 text-foreground">
             <Check className="h-3.5 w-3.5" /> ติดตั้ง SAMECOR บนเครื่องนี้แล้ว
+          </p>
+        ) : isIos && appStoreLive ? (
+          <p>
+            <span className="font-medium text-foreground">iPhone:</span> โหลดแอป SAMECOR จาก App Store ได้เลย รับแจ้งเตือนแชทและงานใหม่ได้ทันที
           </p>
         ) : isIos ? (
           <p>
