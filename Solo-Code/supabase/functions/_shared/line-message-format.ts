@@ -1,3 +1,5 @@
+import { samecorLink, samecorSiteUrl } from "./samecor-site.ts";
+
 type LineNotifyKind =
   | "portal_slip"
   | "portal_tracker_comment"
@@ -43,11 +45,7 @@ const SOLO_BASE = (Deno.env.get("SOLO_SITE_URL") ?? "https://solofreelancer.com"
   /\/$/,
   "",
 );
-const ANTHEM_BASE = (
-  Deno.env.get("APLUS1_APP_URL") ??
-  Deno.env.get("ANTHEM_APP_URL") ??
-  "https://samecor.com"
-).replace(/\/$/, "");
+const ANTHEM_BASE = samecorSiteUrl();
 
 type KindCopy = {
   hook: string;
@@ -208,7 +206,12 @@ export function formatLineNotification(
   opts?: { link?: string } & LinePersonalization,
 ): string {
   const copy = LINE_KIND_COPY[kind];
-  const url = opts?.link ?? lineNotificationLink(kind);
+  // Paths get the app's origin (LINE only links absolute URLs); old-brand URLs move to samecor.com.
+  const url = !opts?.link
+    ? lineNotificationLink(kind)
+    : opts.link.startsWith("/")
+      ? lineNotificationLink(kind, opts.link)
+      : samecorLink(opts.link, ANTHEM_BASE);
   const detail = body.trim();
   const personal = formatPersonalLine(opts);
 

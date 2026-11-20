@@ -1,14 +1,6 @@
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 import { sharedDb } from "./ecosystem-db.ts";
-
-/** Same lookup as anthem-email-html.ts, kept local so the scan functions do not bundle the whole email template file. */
-function anthemSiteUrl(): string {
-  return (
-    Deno.env.get("APLUS1_APP_URL") ??
-    Deno.env.get("ANTHEM_APP_URL") ??
-    "https://aplus1.app"
-  ).replace(/\/$/, "");
-}
+import { samecorSiteUrl as anthemSiteUrl } from "./samecor-site.ts";
 
 export type ScanAsset = {
   id?: string;
@@ -70,9 +62,7 @@ export async function notifyProjectAssetScan(
   const body = isClean
     ? `"${asset.label}" พร้อมให้คนอื่นดูแล้ว`
     : `"${asset.label}": ${asset.scan_reason ?? "ไม่ปลอดภัย"}`;
-  const link = isClean
-    ? `${site}/showcase/${projectId}`
-    : `${site}/portfolio/${projectId}/edit`;
+  const link = isClean ? `${site}/showcase/${projectId}` : `${site}/portfolio/${projectId}/edit`;
 
   const idempotencyKey = `asset-scan:${projectId}:${asset.id}:${asset.scan_status}`;
 
