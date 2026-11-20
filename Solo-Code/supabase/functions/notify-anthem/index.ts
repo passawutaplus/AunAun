@@ -147,10 +147,15 @@ Deno.serve(async (req) => {
 
       const { data: follower } = await admin
         .from("profiles")
-        .select("display_name")
+        .select("display_name, username")
         .eq("user_id", callerId)
         .maybeSingle();
       const followerName = follower?.display_name ?? "ครีเอเตอร์";
+      // The follower's public profile, built like the web's profilePublicPath().
+      const followerUsername = follower?.username?.trim();
+      const followerPath = followerUsername
+        ? `/@${encodeURIComponent(followerUsername)}`
+        : `/u/${callerId}`;
 
       const result = await dispatchAnthemNotification(admin, {
         recipientId: body.following_id,
@@ -161,13 +166,13 @@ Deno.serve(async (req) => {
         emailIdempotencyKey: `follow-${callerId}-${body.following_id}`,
         templateData: {
           followerName,
-          actionUrl: `${siteUrl}/portfolio/manage`,
+          actionUrl: `${siteUrl}${followerPath}`,
         },
         line: {
           kind: "anthem_follow",
           body: `${followerName} เริ่มติดตามคุณ`,
           idempotencyKey: `line-follow-${callerId}-${body.following_id}`,
-          link: "/portfolio/manage",
+          link: followerPath,
         },
       });
       return json(req, result);
