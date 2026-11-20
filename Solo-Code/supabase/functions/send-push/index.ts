@@ -1,13 +1,16 @@
 // Delivers one shared.notifications row to every device the recipient registered: web push for the
-// browser, installed PWA and Android app; APNs for the iOS app (rows with shell 'ios', migration
-// 20261118120000_ios_push_tokens.sql). Called by the notifications_dispatch_push trigger
+// browser, installed PWA and old Android app builds; APNs for the iOS app (rows with shell 'ios', migration
+// 20261118120000_ios_push_tokens.sql); FCM for the Android app from 1.2.0 ('fcm:' endpoints, migration
+// 20261120100000_android_fcm_tokens.sql). Called by the notifications_dispatch_push trigger
 // (migration 20261028090000_push_notifications.sql) with { notification_id }.
 //
 // Secrets: VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT (mailto:…), PUSH_DISPATCH_SECRET,
-// and for iOS APNS_KEY_ID, APNS_TEAM_ID, APNS_PRIVATE_KEY (see ../_shared/apns.ts).
+// for iOS APNS_KEY_ID, APNS_TEAM_ID, APNS_PRIVATE_KEY (see ../_shared/apns.ts),
+// and for Android FCM_SERVICE_ACCOUNT (see ../_shared/fcm.ts).
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
 import { apnsConfigFromEnv, sendApns } from "../_shared/apns.ts";
+import { fcmConfigFromEnv, sendFcm } from "../_shared/fcm.ts";
 
 const SITE = "https://samecor.com";
 const BADGE = `${SITE}/icons/notification-badge.png`;
@@ -74,7 +77,8 @@ Deno.serve(async (req) => {
   const privateKey = Deno.env.get("VAPID_PRIVATE_KEY");
   const vapidReady = !!publicKey && !!privateKey;
   const apns = apnsConfigFromEnv();
-  if (!vapidReady && !apns) return json({ error: "push_not_configured" }, 500);
+  const fcm = fcmConfigFromEnv();
+  if (!vapidReady && !apns && !fcm) return json({ error: "push_not_configured" }, 500);
   if (publicKey && privateKey) {
     webpush.setVapidDetails(
       Deno.env.get("VAPID_SUBJECT") ?? "mailto:support@samecor.com",
@@ -142,6 +146,30 @@ Deno.serve(async (req) => {
   let sent = 0;
   await Promise.all(
     subs.map(async (sub) => {
+      if (sub.endpoint.startsWith("fcm:")) {
+        if (!fcm) return;
+        try {
+          const result = await sendFcm(fcm, sub.endpoint.slice("fcm:".length), {
+            title: payload.title,
+            body: payload.body,
+            url: payload.url,
+            tag: payload.tag,
+            image: payload.image,
+            highPriority: row.kind === "chat.message",
+          });
+          if (result.ok) {
+            sent += 1;
+            await markSent(sub.id);
+          } else {
+            console.warn("[send-push] fcm", result.status, result.reason);
+            await markFailed(sub.id, sub.failure_count ?? 0, result.gone);
+          }
+        } catch (err) {
+          console.warn("[send-push] fcm error", err instanceof Error ? err.message : err);
+          await markFailed(sub.id, sub.failure_count ?? 0, false);
+        }
+        return;
+      }
       if (sub.shell === "ios") {
         if (!apns || !sub.endpoint.startsWith("apns:")) return;
         try {
