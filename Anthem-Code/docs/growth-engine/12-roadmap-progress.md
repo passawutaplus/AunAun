@@ -23,7 +23,8 @@ Remaining Phase 1 items:
 - [ ] Phase 1b: swap the in-memory store for Supabase reads/writes; seed the demo campaign as rows; real audit view
 - [x] Notification design: every event → `ge_notifications`, grouped per burst, links to `/admin/growth`, mock sender + dashboard preview (D4 updated 2026-11-20)
 - [ ] LINE real sends (needs the owner's OK): add kind `growth` to `admin_line_outbox`, a `flexGrowthBatch` formatter in `_shared/line-admin-format.ts`, cron calling `ge_flush_notifications()` every minute, `line-admin-notify` marks batches `SENT`/`FAILED`; check the LINE OA message quota first
-- [ ] Funnel events in the app: `creator_signup_completed`, `creator_profile_completed`, `first_project_published`, UTM capture on landing
+- [x] North-star from existing data (no cookie, no new events): Activated creators (7d) = signup → core profile (photo + role/skills + bio ≥ 20) → first Published project within 7 days. `src/lib/growth/activation.ts`, query in `src/server/queries/growthActivation.ts`, shown in Growth Insights; `UNAVAILABLE` on error
+- [ ] Attribution: UTM capture on landing + campaign id at signup (needed to say which campaign activated whom); add `published_at` to projects for an exact publish time
 - [ ] Inline anchors: image hotspot rectangles (normalised [0,1]), text ranges
 
 ## Phase 2 — Real AI editorial & visuals (needs owner inputs)

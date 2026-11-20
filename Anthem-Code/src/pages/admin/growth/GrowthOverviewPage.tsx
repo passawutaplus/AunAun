@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { AlertTriangle, ArrowRight, Check, CircleDashed, RotateCcw } from "lucide-react";
 import KpiCard from "@/components/admin/KpiCard";
 import SectionHeader from "@/components/admin/SectionHeader";
@@ -9,6 +9,7 @@ import { effectiveCreditStatus } from "@/lib/growth/tasks";
 import { MOCK_INSIGHTS, UNAVAILABLE_METRICS } from "@/lib/growth/mockData";
 import { useGrowth } from "@/lib/growth/store";
 import type { Campaign } from "@/lib/growth/types";
+import { useActivationFunnel } from "@/lib/growth/useActivationFunnel";
 
 const TODAY = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Bangkok", weekday: "short", day: "numeric", month: "short" });
 
@@ -78,6 +79,36 @@ function ApproveCard({ c }: { c: Campaign }) {
         </div>
       </div>
     </article>
+  );
+}
+
+/** North-star from real data (profiles + projects). UNAVAILABLE if it cannot be read, never a guess. */
+function ActivationKpi() {
+  const { data, isLoading, isError } = useActivationFunnel();
+  // /dev/growth runs without an admin login, so row-level security may hide some rows.
+  const preview = useLocation().pathname.startsWith("/dev/");
+  if (isLoading) return <KpiCard label="Activated creators (7d)" value="…" delta="กำลังนับจากข้อมูลจริง" />;
+  if (isError || !data) return <KpiCard label="Activated creators (7d)" value="UNAVAILABLE" delta="อ่านข้อมูลโปรไฟล์/ผลงานไม่ได้" />;
+  const step = (label: string, n: number) => (
+    <span className="whitespace-nowrap">
+      {label} <span className="font-mono text-admin-fg">{n}</span>
+    </span>
+  );
+  return (
+    <div className="mb-3 grid gap-3 sm:grid-cols-[220px_1fr]">
+      <KpiCard label="Activated creators (7d)" value={data.activated} delta={data.directional ? "ฐานยังเล็ก ดูเป็นทิศทาง" : undefined} accent />
+      <div className="flex flex-col justify-center gap-1 border border-admin-border bg-admin-surface p-4 rounded-sm text-sm text-admin-muted">
+        <div className="flex flex-wrap items-center gap-2">
+          {step("สมัคร", data.signups)} <ArrowRight className="h-3 w-3" /> {step("โปรไฟล์ครบ", data.profileCompleted)} <ArrowRight className="h-3 w-3" />
+          {step("ลงผลงานแรกใน 7 วัน", data.activated)}
+          <StatusPill status="ข้อมูลจริง" tone="default" />
+        </div>
+        <p className="text-xs">
+          {preview && <span className="text-admin-accent">Preview ไม่ได้ล็อกอิน ตัวเลขอาจไม่ครบ · </span>}
+          คนที่สมัครใน {data.windowDays} วันล่าสุด · ยังอยู่ในช่วง 7 วัน {data.stillOpen} คน (ยังขยับได้) · โปรไฟล์ครบ = รูป + role + bio · นับจากผลงานสถานะ Published
+        </p>
+      </div>
+    </div>
   );
 }
 
@@ -167,7 +198,8 @@ export default function GrowthOverviewPage() {
 
           <section aria-labelledby="g-insights">
             <GroupHeader n="03" title="Growth Insights" count={MOCK_INSIGHTS.length} hint="สูงสุด 3 เรื่องต่อสัปดาห์: Keep / Improve / Stop / Test Next" />
-            <div className="mb-3 grid gap-3 sm:grid-cols-3">
+            <ActivationKpi />
+            <div className="mb-3 grid gap-3 sm:grid-cols-2">
               {UNAVAILABLE_METRICS.map((m) => (
                 <KpiCard key={m.label} label={m.label} value="UNAVAILABLE" delta={m.reason} />
               ))}
@@ -186,7 +218,7 @@ export default function GrowthOverviewPage() {
                 </li>
               ))}
             </ul>
-            <p className="mt-2 text-xs text-admin-muted">ตัวอย่างหน้าตาเท่านั้น ยังไม่มีข้อมูลจริง ไม่เดาตัวเลข</p>
+            <p className="mt-2 text-xs text-admin-muted">Insight 3 ข้อด้านบนเป็นตัวอย่าง (mock) ส่วน Activated creators เป็นตัวเลขจริง</p>
           </section>
         </div>
 

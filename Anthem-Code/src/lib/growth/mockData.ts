@@ -239,7 +239,6 @@ export interface InsightItem {
 }
 
 export const UNAVAILABLE_METRICS: { label: string; reason: string }[] = [
-  { label: "Activated creators (7d)", reason: "ยังไม่มี event signup → profile → first project" },
   { label: "Social reach", reason: "ยังไม่ต่อ API (Phase 3)" },
   { label: "Blog sessions", reason: "ยังไม่มีบทความจริง" },
 ];
