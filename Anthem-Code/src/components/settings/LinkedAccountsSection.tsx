@@ -3,15 +3,16 @@ import { Link2, Loader2, Mail } from "lucide-react";
 import type { User, UserIdentity } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import type { OAuthProviderId } from "@/integrations/oauth";
+import { nativeAppleIdToken, type OAuthProviderId } from "@/integrations/oauth";
 import { enabledExtraProviders } from "@/lib/authProviders";
 import { buildOAuthCallbackUrl, clearStaleOAuthPkceState, storeOAuthRedirect } from "@/lib/oauthRedirect";
 import { PROVIDER_ICONS } from "@/components/auth/ProviderIcons";
+import { appReturnUrl, hasShellFeature, openAuthInSystemBrowser } from "@/lib/nativeShell";
 import { SettingsCard } from "@/components/settings/SettingsCard";
 import { userFacingError } from "@/lib/userFacingError";
 import { cn } from "@/lib/utils";
 
-type Row = { key: "google" | "line" | "facebook"; id: OAuthProviderId; name: string };
+type Row = { key: "google" | "line" | "facebook" | "apple"; id: OAuthProviderId; name: string };
 
 function linkErrorMessage(error: unknown): string {
   const msg = error instanceof Error ? error.message : String(error ?? "");
@@ -25,7 +26,11 @@ function linkErrorMessage(error: unknown): string {
  * Supabase Auth; accounts with the same verified email are linked automatically.
  */
 export function LinkedAccountsSection({ user }: { user: User }) {
-  const rows: Row[] = [{ key: "google", id: "google", name: "Google" }, ...enabledExtraProviders()];
+  const rows: Row[] = [
+    ...(hasShellFeature("apple") ? [{ key: "apple" as const, id: "apple" as OAuthProviderId, name: "Apple" }] : []),
+    { key: "google", id: "google", name: "Google" },
+    ...enabledExtraProviders(),
+  ];
   const [identities, setIdentities] = useState<UserIdentity[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [confirmUnlink, setConfirmUnlink] = useState<string | null>(null);
@@ -47,18 +52,45 @@ export function LinkedAccountsSection({ user }: { user: User }) {
   const emailIdentity = find("email");
   const total = identities?.length ?? 0;
 
+  const linkApple = async () => {
+    setBusy("apple");
+    try {
+      const apple = await nativeAppleIdToken();
+      if (!apple) return; // closed the Apple sheet
+      const { error } = await supabase.auth.linkIdentity({ provider: "apple", token: apple.token, nonce: apple.nonce });
+      if (error) {
+        toast.error(linkErrorMessage(error));
+        return;
+      }
+      toast.success("เชื่อม Apple แล้ว");
+      void load();
+    } catch (err) {
+      toast.error(linkErrorMessage(err));
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const link = async (row: Row) => {
+    if (row.key === "apple") return linkApple();
     setBusy(row.id);
     storeOAuthRedirect("/settings#account");
     clearStaleOAuthPkceState();
-    const { error } = await supabase.auth.linkIdentity({
+    // Store app: the provider page opens in the phone's browser and comes back through /auth/app-return.
+    const inApp = hasShellFeature("auth");
+    const { data, error } = await supabase.auth.linkIdentity({
       // supabase-js types list only built-in providers; "custom:*" ids work at runtime.
       provider: row.id as "google",
-      options: { redirectTo: buildOAuthCallbackUrl() },
+      options: { redirectTo: inApp ? appReturnUrl() : buildOAuthCallbackUrl(), skipBrowserRedirect: inApp },
     });
     if (error) {
       setBusy(null);
       toast.error(linkErrorMessage(error));
+      return;
+    }
+    if (inApp) {
+      setBusy(null);
+      if (!data?.url || !openAuthInSystemBrowser(data.url)) toast.error("เปิดหน้าเชื่อมบัญชีไม่ได้ ลองใหม่อีกครั้ง");
     }
     // On success the browser leaves for the provider and comes back to /settings#account.
   };

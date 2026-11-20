@@ -31,6 +31,7 @@ mapping is below. Wrong answers are a policy violation; re-check against the cod
 ## To confirm before submitting
 
 1. Whether analytics events are linked to the user id or anonymous (changes "Linked to the user" on the usage rows).
-2. If Sign in with Apple or Google sign-in is turned on, add what that provider returns.
+2. Sign in with Apple, Google, LINE and Facebook (1.1.0) return a name, an email (Apple may give a private relay address) and the
+   provider's account id. Those fall under Name, Email address and User ID above, so no new data type is needed.
 3. Privacy policy URL: https://samecor.com/legal/privacy. It covers the iOS app since PR #156: platforms, camera, microphone and
    photo-save prompts, the APNs token, Apple as a push provider and App Store distributor. Check it is deployed before submitting.

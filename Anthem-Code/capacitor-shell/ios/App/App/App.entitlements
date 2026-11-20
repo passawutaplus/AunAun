@@ -1,10 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!-- Builds are only made on Codemagic with an App Store profile, which carries aps-environment = production.
-     For a Debug build on a device with a development profile, switch this to development. -->
+     For a Debug build on a device with a development profile, switch this to development.
+     Sign in with Apple and Associated Domains (applinks + webcredentials for samecor.com) need those capabilities
+     ticked on the App ID, or signing fails (ios/README.md). -->
 <plist version="1.0">
 <dict>
 	<key>aps-environment</key>
 	<string>production</string>
+	<key>com.apple.developer.applesignin</key>
+	<array>
+		<string>Default</string>
+	</array>
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:samecor.com</string>
+		<string>webcredentials:samecor.com</string>
+	</array>
 </dict>
 </plist>

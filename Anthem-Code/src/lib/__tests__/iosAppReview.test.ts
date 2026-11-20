@@ -137,6 +137,33 @@ describe("iOS app: App Review rules", () => {
       await expect(getNativePushState()).resolves.toBe("unsupported");
     });
 
+    it("uses FCM in Android app builds that report the push feature, and stays off in older ones", async () => {
+      withUa(
+        "Mozilla/5.0 (Linux; Android 14; Pixel) AppleWebKit/537 Chrome/130 Mobile Safari/537 SamecorApp",
+      );
+      const token = "fcm-token_" + "x".repeat(150);
+      const push = fakePushPlugin("granted", token);
+      (window as Win).Capacitor = { Plugins: { PushNotifications: push } };
+      const shellWindow = window as Window & { SamecorShell?: { getFeatures?: () => string } };
+
+      shellWindow.SamecorShell = { getFeatures: () => "auth,review" };
+      expect(hasNativePush()).toBe(false);
+
+      shellWindow.SamecorShell = { getFeatures: () => "auth,review,push" };
+      rpc.mockResolvedValue({ error: null });
+      expect(hasNativePush()).toBe(true);
+      await expect(enableNativePush()).resolves.toBe("on");
+      expect(rpc).toHaveBeenCalledWith(
+        "save_fcm_token",
+        expect.objectContaining({ _token: token }),
+      );
+      await expect(disableNativePush()).resolves.toBe("off");
+      expect(rpc).toHaveBeenLastCalledWith("remove_push_subscription", {
+        _endpoint: `fcm:${token}`,
+      });
+      delete shellWindow.SamecorShell;
+    });
+
     it("saves the APNs token when the user turns push on, and removes it when turned off", async () => {
       withUa(IOS_UA);
       const token = "ab".repeat(32);

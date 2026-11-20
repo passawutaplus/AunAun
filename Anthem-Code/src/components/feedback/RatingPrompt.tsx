@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { isIosApp } from "@/lib/appShell";
+import { hasShellFeature, requestStoreReview } from "@/lib/nativeShell";
 import { useLocation } from "react-router-dom";
 import { Check, Loader2, Share2, Star, X } from "lucide-react";
 import { toast } from "sonner";
@@ -57,9 +58,19 @@ export default function RatingPrompt() {
   }, [user]);
 
   const check = useCallback(() => {
+    if (!user || moment || composerOpen || !isPromptRoute(pathname)) return;
+    // Store apps that have the native rating sheet (iOS 1.1.0+, Android 1.2.0+) show only that, at the same
+    // moments, with no pre-prompt (App Review 5.6.1). The store decides whether it really appears.
+    if (hasShellFeature("review")) {
+      if (pendingRatingMoment() && requestStoreReview()) {
+        markRatingShown();
+        finishRating();
+      }
+      return;
+    }
     // A home-made star rating looks like an App Store review prompt, which iOS apps may only show via
-    // SKStoreReviewController (App Review 5.6.1), so the iOS app never shows it.
-    if (isIosApp() || !user || moment || composerOpen || !isPromptRoute(pathname)) return;
+    // SKStoreReviewController, so older iOS builds never show it.
+    if (isIosApp()) return;
     const next = pendingRatingMoment();
     if (!next) return;
     markRatingShown();

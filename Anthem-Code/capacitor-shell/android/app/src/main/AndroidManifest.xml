@@ -22,7 +22,97 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- Sign-in that ran in the phone's browser comes back here (public/app-return.js on samecor.com):
+                 com.samecor.app://auth/callback?code=... or /reset-password?code=... MainActivity opens the
+                 matching samecor.com page in the WebView, which holds the PKCE verifier. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="com.samecor.app" android:host="auth" />
+            </intent-filter>
+
+            <!-- App Links: samecor.com content pages open in the app (verified by
+                 https://samecor.com/.well-known/assetlinks.json). Same page list as the iOS
+                 apple-app-site-association; auth, reset-password, /go and payment pages stay in the browser. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" />
+                <data android:host="samecor.com" />
+                <data android:path="/" />
+                <data android:path="/showcase" />
+                <data android:pathPrefix="/showcase/" />
+                <data android:path="/project" />
+                <data android:pathPrefix="/project/" />
+                <data android:path="/u" />
+                <data android:pathPrefix="/u/" />
+                <data android:path="/s" />
+                <data android:pathPrefix="/s/" />
+                <data android:path="/series" />
+                <data android:pathPrefix="/series/" />
+                <data android:path="/exhibition" />
+                <data android:pathPrefix="/exhibition/" />
+                <data android:path="/explore" />
+                <data android:pathPrefix="/explore/" />
+                <data android:path="/forum" />
+                <data android:pathPrefix="/forum/" />
+                <data android:path="/hiring" />
+                <data android:pathPrefix="/hiring/" />
+                <data android:path="/jobs" />
+                <data android:pathPrefix="/jobs/" />
+                <data android:path="/journal" />
+                <data android:pathPrefix="/journal/" />
+                <data android:path="/community" />
+                <data android:pathPrefix="/community/" />
+                <data android:path="/inspire" />
+                <data android:pathPrefix="/inspire/" />
+                <data android:path="/collections" />
+                <data android:pathPrefix="/collections/" />
+                <data android:path="/portfolio" />
+                <data android:pathPrefix="/portfolio/" />
+                <data android:path="/org" />
+                <data android:pathPrefix="/org/" />
+                <data android:path="/object" />
+                <data android:pathPrefix="/object/" />
+                <data android:path="/search" />
+                <data android:pathPrefix="/search/" />
+                <data android:path="/notifications" />
+                <data android:pathPrefix="/notifications/" />
+                <data android:path="/chat" />
+                <data android:pathPrefix="/chat/" />
+                <data android:path="/studio" />
+                <data android:pathPrefix="/studio/" />
+                <data android:path="/settings" />
+                <data android:pathPrefix="/settings/" />
+                <data android:path="/me" />
+                <data android:pathPrefix="/me/" />
+                <data android:path="/invite" />
+                <data android:pathPrefix="/invite/" />
+                <data android:path="/legal" />
+                <data android:pathPrefix="/legal/" />
+                <data android:path="/support" />
+                <data android:pathPrefix="/support/" />
+                <data android:path="/help" />
+                <data android:pathPrefix="/help/" />
+                <data android:path="/learn" />
+                <data android:pathPrefix="/learn/" />
+                <data android:path="/hire" />
+                <data android:pathPrefix="/hire/" />
+                <data android:path="/service" />
+                <data android:pathPrefix="/service/" />
+            </intent-filter>
+
         </activity>
+
+        <!-- FCM (google-services.json): status bar icon and colour for push notifications. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_samecor" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/colorAccent" />
 
         <provider
             android:name="androidx.core.content.FileProvider"
@@ -38,8 +128,17 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Android 13+: push notifications need the user's OK (asked when they turn notifications on in Settings). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Exhibition "เริ่มจาก ตำแหน่งปัจจุบัน": the WebView asks at runtime; position stays on the device. -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-feature android:name="android.hardware.location" android:required="false" />
+
+    <!-- Android 11+: lets the app find a browser that supports Custom Tabs for sign-in. -->
+    <queries>
+        <intent>
+            <action android:name="android.support.customtabs.action.CustomTabsService" />
+        </intent>
+    </queries>
 </manifest>
