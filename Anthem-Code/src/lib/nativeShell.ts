@@ -6,7 +6,7 @@
  * false there and the site keeps its older in-app behaviour (no social sign-in, no store review prompt, ...).
  * On the website there is no bridge at all.
  */
-import { isWebViewApp } from "@/lib/appShell";
+import { isNativeApp, isWebViewApp } from "@/lib/appShell";
 
 export type ShellFeature =
   /** Sign-in pages open in the phone's browser (Custom Tabs / ASWebAuthenticationSession) and come back to the app. */
@@ -91,6 +91,21 @@ export function requestStoreReview(): boolean {
   } catch {
     return false;
   }
+}
+
+/**
+ * Store apps: a share button opens the phone's share sheet straight away, like other apps, instead of SAMECOR's own
+ * share panel (whose Facebook / LINE links bounce through the browser). Call it from the click itself so the
+ * system still counts it as a tap. Returns false where it does nothing (the website, app builds without a share
+ * sheet), and the caller opens its panel as before.
+ */
+export function shareFromApp(data: { title: string; url: string }, onShared?: () => void): boolean {
+  if (!isNativeApp() || typeof navigator === "undefined" || typeof navigator.share !== "function") return false;
+  navigator.share(data).then(
+    () => onShared?.(),
+    () => undefined, // closed the sheet
+  );
+  return true;
 }
 
 export type AppleCredential = { token: string; name?: string };

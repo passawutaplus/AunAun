@@ -5,6 +5,7 @@ import {
   nativeAppleSignIn,
   openAuthInSystemBrowser,
   requestStoreReview,
+  shareFromApp,
   ShellCanceledError,
 } from "../nativeShell";
 
@@ -66,5 +67,26 @@ describe("native shell features", () => {
     await expect(nativeAppleSignIn("hash")).rejects.toBeInstanceOf(ShellCanceledError);
     await expect(nativeAppleSignIn("hash")).rejects.toThrow("boom");
     expect(signInWithApple).toHaveBeenCalledWith("hash");
+  });
+
+  it("opens the phone's share sheet directly only inside the store apps", async () => {
+    const share = vi.fn().mockResolvedValue(undefined);
+    const original = Object.getOwnPropertyDescriptor(navigator, "share");
+    Object.defineProperty(navigator, "share", { value: share, configurable: true });
+    try {
+      withUa("Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537 Chrome/130 Safari/537");
+      expect(shareFromApp({ title: "t", url: "https://samecor.com/x" })).toBe(false);
+      expect(share).not.toHaveBeenCalled();
+
+      withUa(ANDROID_UA);
+      const onShared = vi.fn();
+      expect(shareFromApp({ title: "t", url: "https://samecor.com/x" }, onShared)).toBe(true);
+      expect(share).toHaveBeenCalledWith({ title: "t", url: "https://samecor.com/x" });
+      await Promise.resolve();
+      expect(onShared).toHaveBeenCalledOnce();
+    } finally {
+      if (original) Object.defineProperty(navigator, "share", original);
+      else delete (navigator as Navigator & { share?: unknown }).share;
+    }
   });
 });
