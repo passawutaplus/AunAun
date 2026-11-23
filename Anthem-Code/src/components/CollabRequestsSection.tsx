@@ -1,4 +1,5 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { lazyWithRetry as lazy } from "@/lib/lazyWithRetry";
 import { InfoHint } from "@/components/tour/InfoHint";
 import { RequestStatusScene } from "@/components/tour/TourScenes";
 import { useQuery } from "@tanstack/react-query";

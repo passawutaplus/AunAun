@@ -21,7 +21,8 @@ import {
   Check,
   X,
 } from "lucide-react";
-import { lazy, Suspense, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { Suspense, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { lazyWithRetry as lazy } from "@/lib/lazyWithRetry";
 import {
   FLEX_GRID_MODULE_DEFAULTS,
   snapHeight,

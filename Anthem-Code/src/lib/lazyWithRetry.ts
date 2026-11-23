@@ -39,7 +39,9 @@ export function installChunkReload() {
  * Like React.lazy, but one hard reload when a chunk 404s after deploy
  * (old index still in memory requesting a deleted hashed asset).
  */
-export function lazyWithRetry<T extends ComponentType<unknown>>(
+// Same constraint as React.lazy, so components with props fit too.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function lazyWithRetry<T extends ComponentType<any>>(
   factory: () => Promise<{ default: T }>,
 ): LazyExoticComponent<T> {
   return lazy(() => loadChunk(factory));

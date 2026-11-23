@@ -1,4 +1,5 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { lazyWithRetry as lazy } from "@/lib/lazyWithRetry";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Bookmark, Check, MapPin, ChevronDown, ExternalLink, Map as MapIcon, Navigation, Route, TrainFront, Ticket, X } from "lucide-react";
 import { Button } from "@/components/ui/button";

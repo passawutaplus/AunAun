@@ -1,5 +1,6 @@
 import { sanitizeProjectRichText } from "@/lib/projectRichText";
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { lazyWithRetry as lazy } from "@/lib/lazyWithRetry";
 import { Box, Film, Loader2 } from "lucide-react";
 import {
   parseFlexGridLayout,

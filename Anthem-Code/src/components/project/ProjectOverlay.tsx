@@ -1,5 +1,4 @@
 import {
-  lazy,
   Suspense,
   useCallback,
   useEffect,
@@ -12,6 +11,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { getBackgroundLocation, takeOverlayOrigin } from "@/lib/projectOverlay";
 import { cn } from "@/lib/utils";
 import { useProjectT } from "@/lib/i18n/project";
+import { lazyWithRetry as lazy } from "@/lib/lazyWithRetry";
 
 const ProjectDetailPage = lazy(() => import("@/pages/ProjectDetailPage"));
 
