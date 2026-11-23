@@ -65,6 +65,12 @@ verify_jwt = false
 [functions.account-deletion-cancel]
 verify_jwt = true
 
+[functions.apple-signin-token]
+verify_jwt = true
+
+[functions.social-avatar-import]
+verify_jwt = true
+
 [functions.event-extract]
 verify_jwt = true
 

@@ -5,6 +5,8 @@
 // APNS_TOPIC (bundle id, default com.samecor.app), APNS_HOST (default api.push.apple.com; TestFlight and
 // App Store builds use production, only Xcode debug builds need api.sandbox.push.apple.com).
 
+import { signEs256Jwt } from "./es256-jwt.ts";
+
 export type ApnsConfig = {
   keyId: string;
   teamId: string;
@@ -41,13 +43,6 @@ export function apnsConfigFromEnv(): ApnsConfig | null {
   };
 }
 
-const base64Url = (bytes: Uint8Array) =>
-  btoa(String.fromCharCode(...bytes))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
-const base64UrlText = (text: string) => base64Url(new TextEncoder().encode(text));
-
 let cachedToken: { jwt: string; issuedAt: number; keyId: string } | null = null;
 
 /** Apple accepts a provider token for an hour and rejects refreshing it more than every 20 minutes. */
@@ -56,31 +51,7 @@ async function providerToken(config: ApnsConfig): Promise<string> {
   if (cachedToken && cachedToken.keyId === config.keyId && now - cachedToken.issuedAt < 50 * 60) {
     return cachedToken.jwt;
   }
-  // Secrets pasted on one line keep "\n" literally; the PEM body is what matters.
-  const pemBody = config.privateKey
-    .replace(/\\n/g, "\n")
-    .replace(/-----[^-]+-----/g, "")
-    .replace(/\s+/g, "");
-  const der = Uint8Array.from(atob(pemBody), (c) => c.charCodeAt(0));
-  const key = await crypto.subtle.importKey(
-    "pkcs8",
-    der,
-    { name: "ECDSA", namedCurve: "P-256" },
-    false,
-    ["sign"],
-  );
-  const signingInput = `${base64UrlText(JSON.stringify({ alg: "ES256", kid: config.keyId }))}.${base64UrlText(
-    JSON.stringify({ iss: config.teamId, iat: now }),
-  )}`;
-  // WebCrypto returns the raw r||s signature, which is the format JWS ES256 expects.
-  const signature = new Uint8Array(
-    await crypto.subtle.sign(
-      { name: "ECDSA", hash: "SHA-256" },
-      key,
-      new TextEncoder().encode(signingInput),
-    ),
-  );
-  const jwt = `${signingInput}.${base64Url(signature)}`;
+  const jwt = await signEs256Jwt(config.keyId, config.privateKey, { iss: config.teamId, iat: now });
   cachedToken = { jwt, issuedAt: now, keyId: config.keyId };
   return jwt;
 }

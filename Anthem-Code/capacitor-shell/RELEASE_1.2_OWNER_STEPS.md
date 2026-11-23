@@ -28,7 +28,7 @@
 5. **Deploy send-push** (หลัง merge PR ของ Solo-Code) ใน PowerShell:
 
 ```powershell
-cd F:\So1o\AunAun-fresh\Solo-Code
+cd F:\So1o\wt-paper\Solo-Code
 npx supabase functions deploy send-push
 ```
 
@@ -42,7 +42,7 @@ npx supabase functions deploy send-push
 1. https://console.firebase.google.com → **Create a project** → ชื่อ `SAMECOR` → ปิด Google Analytics ได้ → Create
 2. หน้า project → ไอคอน Android → **Android package name:** `com.samecor.app` → App nickname `SAMECOR Android` → Register app
    (ช่อง SHA-1 ไม่ต้องใส่)
-3. ⚠️ ดาวน์โหลด `google-services.json` → วางที่ `F:\So1o\AunAun-fresh\Anthem-Code\capacitor-shell\android\app\google-services.json`
+3. ⚠️ ดาวน์โหลด `google-services.json` → วางที่ `F:\So1o\wt-paper\Anthem-Code\capacitor-shell\android\app\google-services.json`
    - ไฟล์นี้ถูก gitignore ไว้แล้ว **ห้าม commit** (repo เป็น public)
    - ถ้าไม่มีไฟล์นี้ คำสั่ง build release จะหยุดพร้อมข้อความเตือน (กันลืม)
 4. ⚙️ Project settings → **Service accounts** → **Generate new private key** → ได้ไฟล์ JSON → เอาไปใส่ข้อ A4
@@ -58,10 +58,10 @@ npx supabase functions deploy send-push
 
 ## D. Build
 
-**Android 1.2.0** (PowerShell, หลัง merge PR แล้ว `git pull` ที่ main):
+**Android 1.2.0** (PowerShell, หลัง merge PR แล้ว `git pull` ที่ main) — build ที่ `F:\So1o\wt-paper` เท่านั้น (keystore + google-services.json อยู่ที่นั่น):
 
 ```powershell
-cd F:\So1o\AunAun-fresh\Anthem-Code\capacitor-shell
+cd F:\So1o\wt-paper\Anthem-Code\capacitor-shell
 npm install
 npx cap sync android
 $env:JAVA_HOME = "C:\Program Files\Eclipse Adoptium\jdk-21.0.12.101-hotspot"
@@ -135,4 +135,26 @@ TestFlight ไม่แสดงหน้าต่างให้คะแนน
 - โค้ด iOS ยังไม่ได้ compile (ไม่มี Mac) → build แรกบน Codemagic คือการตรวจ compile
 - Push ของ iPhone ยังไม่เคยมีเครื่องจริงลงทะเบียน (ตั้งแต่ 1.0.0)
 - การเด้งกลับจาก Chrome แท็บในแอปบน Android: บางเครื่อง Chrome อาจไม่เด้งเอง ต้องกดปุ่มแดง "เปิดแอป SAMECOR" 1 ครั้ง
-- Sign in with Apple + ลบบัญชี: ยังไม่ได้เรียก revoke token ของ Apple ตอนลบบัญชี (ดู `Anthem-Code/ios/README.md`)
+- Sign in with Apple + ลบบัญชี: revoke token ของ Apple ตอนลบบัญชีทำแล้ว (ดูหัวข้อ G) แต่ใช้ได้เฉพาะคนที่ login ด้วย Apple จากแอป iOS build ใหม่ (1.1.1 ขึ้นไป) คนที่ login จาก 1.1.0 จะมี token เก็บไว้ก็ต่อเมื่อ login ด้วย Apple อีกครั้ง
+
+## G. Apple revoke + รูป Facebook (หลัง merge PR นี้)
+
+1. ⚠️ developer.apple.com → Certificates, Identifiers & Profiles → **Keys** → **+** → ชื่อ `SAMECOR Sign in with Apple`
+   → ติ๊ก **Sign in with Apple** → Configure → Primary App ID `com.samecor.app` → Save → Continue → Register
+   → **Download** ไฟล์ `AuthKey_XXXXXXXXXX.p8` (โหลดได้ครั้งเดียว) แล้วจด **Key ID**
+2. ⚠️ Supabase → Edge Functions → Secrets → Add:
+   - `APPLE_SIGNIN_KEY_ID` = Key ID จากข้อ 1
+   - `APPLE_SIGNIN_PRIVATE_KEY` = เนื้อหาไฟล์ .p8 ทั้งไฟล์
+   - `APPLE_TEAM_ID` ไม่ต้องใส่ถ้ามี `APNS_TEAM_ID` อยู่แล้ว (ใช้ค่าเดียวกัน)
+   - เก็บไฟล์ .p8 ไว้ที่ปลอดภัย ห้ามใส่ใน repo
+3. ⚠️ SQL Editor → วางไฟล์ `Solo-Code/supabase/migrations/20261123110000_apple_signin_tokens.sql` → Run
+4. Deploy (PowerShell):
+
+```powershell
+cd F:\So1o\wt-paper\Solo-Code
+git pull
+npx supabase functions deploy apple-signin-token social-avatar-import account-purge send-push
+```
+
+   (send-push ต้อง deploy ใหม่ด้วย เพราะใช้โค้ด JWT ตัวเดียวกับ Apple)
+5. iOS: ต้อง build ใหม่บน Codemagic แอปถึงจะส่ง code ของ Apple มาได้ (1.1.0 (2) ที่อยู่ในรีวิวยังไม่มี)

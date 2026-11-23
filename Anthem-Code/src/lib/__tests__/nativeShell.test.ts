@@ -60,10 +60,12 @@ describe("native shell features", () => {
     const signInWithApple = vi
       .fn()
       .mockResolvedValueOnce({ token: "id-token", name: " Aun " })
+      .mockResolvedValueOnce({ token: "id-token", code: "c1.0.abc" })
       .mockResolvedValueOnce({ error: "canceled" })
       .mockResolvedValueOnce({ error: "boom" });
     setShell({ getFeatures: () => "auth,apple", signInWithApple });
     await expect(nativeAppleSignIn("hash")).resolves.toEqual({ token: "id-token", name: "Aun" });
+    await expect(nativeAppleSignIn("hash")).resolves.toEqual({ token: "id-token", code: "c1.0.abc" });
     await expect(nativeAppleSignIn("hash")).rejects.toBeInstanceOf(ShellCanceledError);
     await expect(nativeAppleSignIn("hash")).rejects.toThrow("boom");
     expect(signInWithApple).toHaveBeenCalledWith("hash");

@@ -86,6 +86,11 @@ extension ShellSignIn: ASAuthorizationControllerDelegate {
             return
         }
         var result: [String: Any] = ["token": token]
+        // One-time code (5 minutes) the site sends to apple-signin-token, so a later account deletion can revoke
+        // SAMECOR's access at Apple (App Review 5.1.1(v)).
+        if let codeData = credential.authorizationCode, let code = String(data: codeData, encoding: .utf8) {
+            result["code"] = code
+        }
         // Apple shares the name only the first time someone signs in to the app.
         if let name = credential.fullName {
             let formatted = PersonNameComponentsFormatter().string(from: name).trimmingCharacters(in: .whitespacesAndNewlines)

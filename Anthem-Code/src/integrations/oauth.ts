@@ -167,7 +167,9 @@ async function sha256Hex(text: string): Promise<string> {
 }
 
 /** Apple's identity token for the signed-in Apple ID, with the raw nonce Supabase checks it against. */
-export async function nativeAppleIdToken(): Promise<{ token: string; nonce: string; name?: string } | null> {
+export async function nativeAppleIdToken(): Promise<
+  { token: string; nonce: string; name?: string; code?: string } | null
+> {
   const nonce = randomNonce();
   try {
     const credential = await nativeAppleSignIn(await sha256Hex(nonce));
@@ -176,6 +178,18 @@ export async function nativeAppleIdToken(): Promise<{ token: string; nonce: stri
     if (err instanceof ShellCanceledError) return null;
     throw err;
   }
+}
+
+/**
+ * Hands Apple's one-time code to the apple-signin-token function, so a later account deletion can revoke
+ * SAMECOR's access at Apple (App Review 5.1.1(v)). Never throws and gives up after 6 s: it must not block sign-in.
+ */
+export async function saveAppleSignInCode(code: string | undefined): Promise<void> {
+  if (!code) return;
+  await Promise.race([
+    supabase.functions.invoke("apple-signin-token", { body: { code } }).catch(() => undefined),
+    new Promise((resolve) => window.setTimeout(resolve, 6000)),
+  ]);
 }
 
 /**
@@ -208,6 +222,7 @@ export async function signInWithApple(
   if (apple.name && !meta.full_name && !meta.name) {
     await supabase.auth.updateUser({ data: { full_name: apple.name, name: apple.name } }).catch(() => undefined);
   }
+  await saveAppleSignInCode(apple.code);
   window.location.assign(afterAuth);
   return { redirected: true };
 }
