@@ -42,28 +42,35 @@ export function installChunkReload() {
 export function lazyWithRetry<T extends ComponentType<unknown>>(
   factory: () => Promise<{ default: T }>,
 ): LazyExoticComponent<T> {
-  return lazy(async () => {
+  return lazy(() => loadChunk(factory));
+}
+
+/** The loader behind lazyWithRetry, exported for tests. */
+export async function loadChunk<T>(factory: () => Promise<{ default: T }>): Promise<{ default: T }> {
+  try {
+    const mod = await factory();
+    // When installChunkReload cancels Vite's preload error it is already reloading the page, and Vite then
+    // resolves the import with undefined. React would read `.default` of it (Sentry JAVASCRIPT-REACT-G),
+    // so keep suspending until the reload replaces the page.
+    if (!mod) return await new Promise<{ default: T }>(() => {});
     try {
-      const mod = await factory();
-      try {
-        sessionStorage.removeItem(RELOAD_KEY);
-      } catch {
-        /* ignore */
-      }
-      return mod;
-    } catch (err) {
-      if (isChunkLoadError(err)) {
-        try {
-          if (!sessionStorage.getItem(RELOAD_KEY)) {
-            sessionStorage.setItem(RELOAD_KEY, "1");
-            window.location.reload();
-            return await new Promise<{ default: T }>(() => {});
-          }
-        } catch {
-          /* fall through */
-        }
-      }
-      throw err;
+      sessionStorage.removeItem(RELOAD_KEY);
+    } catch {
+      /* ignore */
     }
-  });
+    return mod;
+  } catch (err) {
+    if (isChunkLoadError(err)) {
+      try {
+        if (!sessionStorage.getItem(RELOAD_KEY)) {
+          sessionStorage.setItem(RELOAD_KEY, "1");
+          window.location.reload();
+          return await new Promise<{ default: T }>(() => {});
+        }
+      } catch {
+        /* fall through */
+      }
+    }
+    throw err;
+  }
 }
