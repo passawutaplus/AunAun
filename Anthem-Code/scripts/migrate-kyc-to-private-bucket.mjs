@@ -63,12 +63,12 @@ async function listAll(prefix) {
   }
 }
 
-const { data: docs, error: docsErr } = await db
-  .from("kyc_documents")
-  .select("storage_path")
-  .like("storage_path", `${LEGACY_PREFIX}%`);
+// All paths, not only legacy ones: after an --apply run the rows already point at the new path, and a re-run
+// must still treat that file as referenced (not as an orphan).
+const { data: docs, error: docsErr } = await db.from("kyc_documents").select("storage_path");
 if (docsErr) throw docsErr;
 const referenced = new Set(docs.map((d) => d.storage_path));
+const isReferenced = (oldPath) => referenced.has(oldPath) || referenced.has(oldPath.slice(LEGACY_PREFIX.length));
 
 const files = await listAll(LEGACY_PREFIX);
 const userExists = new Map();
@@ -84,11 +84,11 @@ async function accountExists(userId) {
 const plan = [];
 for (const oldPath of files) {
   const rest = oldPath.slice(LEGACY_PREFIX.length); // <user>/<docType>/<file>
-  if (referenced.has(oldPath)) plan.push({ oldPath, newPath: rest, kind: "referenced" });
+  if (isReferenced(oldPath)) plan.push({ oldPath, newPath: rest, kind: "referenced" });
   else if (await accountExists(rest.split("/")[0])) plan.push({ oldPath, newPath: `${ORPHAN_PREFIX}${rest}`, kind: "orphan" });
   else plan.push({ oldPath, newPath: null, kind: "deleted-account" });
 }
-for (const p of referenced) if (!files.includes(p)) console.warn(`! DB points to a missing file: ${p}`);
+for (const p of referenced) if (p.startsWith(LEGACY_PREFIX) && !files.includes(p)) console.warn(`! DB points to a missing file: ${p}`);
 
 const count = (k) => plan.filter((p) => p.kind === k).length;
 console.log(
