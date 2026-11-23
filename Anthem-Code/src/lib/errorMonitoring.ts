@@ -20,6 +20,9 @@ export async function initErrorMonitoring(): Promise<void> {
           (import.meta.env.VITE_VERCEL_ENV as string | undefined) ?? (import.meta.env.PROD ? "production" : "development"),
         tracesSampleRate: 0.05,
         ignoreErrors: ["ResizeObserver loop"],
+        // Vercel's analytics scripts (index.html) use Array.prototype.at, missing before Chrome 92: on old Android
+        // WebViews they throw "….at is not a function" (JAVASCRIPT-REACT-E/F) while the app itself works.
+        denyUrls: [/\/_vercel\/(speed-)?insights\//],
       });
       Sentry.setTag("shell", shellName());
       sentryReady = true;

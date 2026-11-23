@@ -1,5 +1,6 @@
 import { isCommerceEnabled } from "@/lib/aplus1Launch";
-import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { lazyWithRetry as lazy } from "@/lib/lazyWithRetry";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Briefcase, Handshake, Loader2 } from "lucide-react";
