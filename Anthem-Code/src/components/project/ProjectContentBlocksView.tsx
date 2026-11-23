@@ -16,6 +16,7 @@ import {
 } from "@/lib/projectContentBlocks";
 import { parsePhotoGridLayout } from "@/lib/photoGridLayouts";
 import { cn } from "@/lib/utils";
+import { responsiveImageProps } from "@/lib/imageProxy";
 
 type ActionContext = {
   projectId: string;
@@ -72,7 +73,7 @@ function ImageFrame({
         disabled={!onOpenImage}
       >
         <img
-          src={url}
+          {...responsiveImageProps(url, "(min-width: 1280px) 1200px, 100vw")}
           alt=""
           width={size?.[0]}
           height={size?.[1]}

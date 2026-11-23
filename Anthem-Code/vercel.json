@@ -4,6 +4,19 @@
   "framework": "vite",
   "buildCommand": "npm run sitemap:gen && npm run build",
   "outputDirectory": "dist",
+  "images": {
+    "sizes": [128, 256, 384, 640, 828, 1080, 1200, 1920],
+    "qualities": [70, 75, 80, 85],
+    "formats": ["image/webp"],
+    "minimumCacheTTL": 2678400,
+    "remotePatterns": [
+      {
+        "protocol": "https",
+        "hostname": "^zkflkpbmbozrchqncpzi\\.supabase\\.co$",
+        "pathname": "^/storage/v1/object/public/.*$"
+      }
+    ]
+  },
   "crons": [
     { "path": "/api/aplus1-quote-expiry-cron?kind=expire-quotes", "schedule": "0 18 * * *" }
   ],
@@ -58,7 +71,7 @@
     { "source": "/go", "destination": "/go.html" },
     { "source": "/auth/app-return", "destination": "/app-return.html" },
     {
-      "source": "/((?!api/|assets/|line-icons/|sitemap|robots\\.txt|llms\\.txt|google.*\\.html|icons/|manifest\\.webmanifest|sw\\.js|\\.well-known/).*)",
+      "source": "/((?!api/|_vercel/|assets/|line-icons/|sitemap|robots\\.txt|llms\\.txt|google.*\\.html|icons/|manifest\\.webmanifest|sw\\.js|\\.well-known/).*)",
       "destination": "/index.html"
     }
   ],

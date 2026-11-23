@@ -11,6 +11,7 @@ import SaveToCollectionPopover from "@/components/collections/SaveToCollectionPo
 import { cn } from "@/lib/utils";
 import SafeDemoImage from "@/components/SafeDemoImage";
 import { naturalFeedCoverUrl, optimizedFeedImageUrl } from "@/lib/feedProjectCover";
+import { proxiedImageSrcSet } from "@/lib/imageProxy";
 import { smoothEase } from "@/lib/motion";
 import BoostBadge from "@/components/boost/BoostBadge";
 import { DrillProjectBadge } from "@/components/drill/DrillProjectBadge";
@@ -226,6 +227,7 @@ const ProjectCard = ({
       >
         <SafeDemoImage
           src={coverSrc}
+          srcSet={proxiedImageSrcSet(project.image, showNatural ? [384, 640, 828, 1080] : [384, 640], 75) || undefined}
           index={imageIndex}
           naturalFallback={showNatural}
           alt={project.title}
