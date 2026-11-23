@@ -13,10 +13,25 @@ import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, Loader2, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import {
+  markSensitiveActionVerified,
   userHasEmailPassword,
   verifyEmailConfirmation,
   verifyUserPassword,
 } from "@/lib/sensitiveActionAuth";
+import type { User } from "@supabase/supabase-js";
+
+const PROVIDER_NAMES: Record<string, string> = {
+  google: "Google",
+  apple: "Apple",
+  facebook: "Facebook",
+  "custom:line": "LINE",
+};
+
+/** "LINE", "Google", ... for the sign-in this account used. */
+function providerName(user: User | null | undefined): string {
+  const provider = String(user?.app_metadata?.provider ?? "");
+  return PROVIDER_NAMES[provider] ?? (provider.includes("line") ? "LINE" : "บัญชีภายนอก");
+}
 
 export interface ReauthRequest {
   reason: string;
@@ -55,11 +70,14 @@ const SensitiveActionReauthDialog = ({ request, onClose }: Props) => {
   };
 
   const confirm = async () => {
-    if (!user?.email || !request) return;
+    if (!user || !request) return;
     setBusy(true);
     setError(null);
     try {
-      if (hasPassword) {
+      if (!user.email) {
+        // LINE (and other sign-ins without an email) has nothing to type: the signed-in owner just confirms.
+        markSensitiveActionVerified();
+      } else if (hasPassword) {
         if (!password) {
           setError("กรุณากรอกรหัสผ่าน");
           return;
@@ -127,6 +145,10 @@ const SensitiveActionReauthDialog = ({ request, onClose }: Props) => {
                 อีเมล: {user?.email}
               </p>
             </div>
+          ) : !user?.email ? (
+            <p className="text-sm text-muted-foreground">
+              บัญชีนี้เข้าสู่ระบบด้วย {providerName(user)} และไม่มีอีเมล กดยืนยันเพื่อทำต่อได้เลย
+            </p>
           ) : (
             <div className="space-y-1.5">
               <Label htmlFor="reauth-email">พิมพ์อีเมลบัญชีเพื่อยืนยัน</Label>
@@ -140,7 +162,7 @@ const SensitiveActionReauthDialog = ({ request, onClose }: Props) => {
                 onKeyDown={(e) => e.key === "Enter" && void confirm()}
               />
               <p className="text-[11px] text-muted-foreground">
-                บัญชีนี้เข้าสู่ระบบด้วย Google — ใช้การยืนยันอีเมลแทนรหัสผ่าน
+                บัญชีนี้เข้าสู่ระบบด้วย {providerName(user)} — ใช้การยืนยันอีเมลแทนรหัสผ่าน
               </p>
             </div>
           )}
