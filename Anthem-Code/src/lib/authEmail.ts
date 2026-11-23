@@ -2,8 +2,12 @@ import type { User } from "@supabase/supabase-js";
 
 type AuthEmailUser = Pick<User, "email_confirmed_at" | "identities" | "app_metadata">;
 
-/** OAuth providers ที่เชื่อถือได้ว่ายืนยันอีเมลแล้ว (อย่ารวม anonymous / แปลก ๆ) */
-const TRUSTED_OAUTH_PROVIDERS = new Set(["google"]);
+/**
+ * Sign-ins that already prove who the person is, so they skip the e-mail link step (never anonymous).
+ * LINE may give no e-mail at all, and Facebook / Apple accounts can arrive without email_confirmed_at;
+ * without them here those accounts were stuck on "ยืนยันอีเมลของคุณ" right after signing in.
+ */
+const TRUSTED_OAUTH_PROVIDERS = new Set(["google", "apple", "facebook", "custom:line"]);
 
 /** มี identity จาก OAuth ที่เชื่อถือได้ (เช่น Google) */
 export function userHasOAuthIdentity(user: AuthEmailUser | null | undefined): boolean {
