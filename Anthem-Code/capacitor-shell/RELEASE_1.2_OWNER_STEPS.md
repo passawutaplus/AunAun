@@ -28,7 +28,7 @@
 5. **Deploy send-push** (หลัง merge PR ของ Solo-Code) ใน PowerShell:
 
 ```powershell
-cd F:\So1o\AunAun-fresh\Solo-Code
+cd F:\So1o\wt-paper\Solo-Code
 npx supabase functions deploy send-push
 ```
 
@@ -42,7 +42,7 @@ npx supabase functions deploy send-push
 1. https://console.firebase.google.com → **Create a project** → ชื่อ `SAMECOR` → ปิด Google Analytics ได้ → Create
 2. หน้า project → ไอคอน Android → **Android package name:** `com.samecor.app` → App nickname `SAMECOR Android` → Register app
    (ช่อง SHA-1 ไม่ต้องใส่)
-3. ⚠️ ดาวน์โหลด `google-services.json` → วางที่ `F:\So1o\AunAun-fresh\Anthem-Code\capacitor-shell\android\app\google-services.json`
+3. ⚠️ ดาวน์โหลด `google-services.json` → วางที่ `F:\So1o\wt-paper\Anthem-Code\capacitor-shell\android\app\google-services.json`
    - ไฟล์นี้ถูก gitignore ไว้แล้ว **ห้าม commit** (repo เป็น public)
    - ถ้าไม่มีไฟล์นี้ คำสั่ง build release จะหยุดพร้อมข้อความเตือน (กันลืม)
 4. ⚙️ Project settings → **Service accounts** → **Generate new private key** → ได้ไฟล์ JSON → เอาไปใส่ข้อ A4
@@ -58,10 +58,10 @@ npx supabase functions deploy send-push
 
 ## D. Build
 
-**Android 1.2.0** (PowerShell, หลัง merge PR แล้ว `git pull` ที่ main):
+**Android 1.2.0** (PowerShell, หลัง merge PR แล้ว `git pull` ที่ main) — build ที่ `F:\So1o\wt-paper` เท่านั้น (keystore + google-services.json อยู่ที่นั่น):
 
 ```powershell
-cd F:\So1o\AunAun-fresh\Anthem-Code\capacitor-shell
+cd F:\So1o\wt-paper\Anthem-Code\capacitor-shell
 npm install
 npx cap sync android
 $env:JAVA_HOME = "C:\Program Files\Eclipse Adoptium\jdk-21.0.12.101-hotspot"
