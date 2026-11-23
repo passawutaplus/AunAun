@@ -13,6 +13,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProjectLike } from "@/hooks/useProjectInteractions";
 import { navigateToAuth } from "@/lib/authRedirect";
 import { naturalFeedCoverUrl } from "@/lib/feedProjectCover";
+import { proxiedImageSrcSet } from "@/lib/imageProxy";
 import { smoothEase } from "@/lib/motion";
 import { profilePublicPath } from "@/lib/profileRoutes";
 import { useQuickView } from "@/stores/quickViewStore";
@@ -255,6 +256,8 @@ export function ProjectQuickViewHost() {
                 >
                   <img
                     src={naturalFeedCoverUrl(project.image)}
+                    srcSet={proxiedImageSrcSet(project.image, [640, 1080, 1920], 80) || undefined}
+                    sizes="(min-width: 768px) 60vw, 100vw"
                     alt={project.title}
                     className="pointer-events-none mx-auto max-h-[64dvh] w-auto max-w-full select-none rounded-2xl object-contain"
                     draggable={false}

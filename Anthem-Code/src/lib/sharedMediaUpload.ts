@@ -9,6 +9,9 @@ import type { UploadStageReporter } from "@/lib/uploadProgress";
 /** Below this the SDK upload is instant enough that a progress bar adds nothing. */
 const XHR_MIN_BYTES = 1.5 * 1024 * 1024;
 
+/** Every upload gets a new path and is never overwritten, so browsers and CDNs may keep it a year. */
+const MEDIA_CACHE_SECONDS = "31536000";
+
 type XhrError = Error & { status?: number };
 
 /**
@@ -43,9 +46,9 @@ async function uploadWithProgress(
     xhr.setRequestHeader("Authorization", `Bearer ${token}`);
     xhr.setRequestHeader("apikey", apiKey);
     xhr.setRequestHeader("x-upsert", "false");
-    xhr.setRequestHeader("cache-control", "max-age=3600");
+    xhr.setRequestHeader("cache-control", `max-age=${MEDIA_CACHE_SECONDS}`);
     const form = new FormData();
-    form.append("cacheControl", "3600");
+    form.append("cacheControl", MEDIA_CACHE_SECONDS);
     form.append("", new Blob([body], { type: contentType }));
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable && e.total > 0) onProgress((e.loaded / e.total) * 100);
@@ -116,7 +119,7 @@ export async function uploadToSharedMedia(
     if (!result) {
       result = await sharedStorage.storage
         .from(SHARED_MEDIA_BUCKET)
-        .upload(path, body, { contentType, upsert: false });
+        .upload(path, body, { contentType, upsert: false, cacheControl: MEDIA_CACHE_SECONDS });
     }
     const { error } = result;
     if (!error) return;

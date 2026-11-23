@@ -7,6 +7,7 @@ import type { DesignerCardData } from "@/hooks/useDesigners";
 import type { FollowedByPerson } from "@/hooks/useFollowedBy";
 import { highlight } from "@/lib/highlight";
 import { naturalFeedCoverUrl, thumbFeedCoverUrl } from "@/lib/feedProjectCover";
+import { proxiedImageSrcSet } from "@/lib/imageProxy";
 import { displayProfileAddress } from "@/lib/profileAddress";
 import { cn } from "@/lib/utils";
 import { COMMON, useT } from "@/lib/i18n";
@@ -54,14 +55,24 @@ const DesignerCard = ({ data, search = "", newWorkCount = 0 }: Props) => {
   // No profile cover yet: borrow the cover of their most-viewed work.
   const mostViewed = [...projects].sort((a, b) => (b.views ?? 0) - (a.views ?? 0))[0];
   const profileCover = (profile as { cover_url?: string | null }).cover_url;
-  const cover = profileCover || naturalFeedCoverUrl(coverSrc(mostViewed));
+  const coverOriginal = profileCover || coverSrc(mostViewed);
+  const cover = naturalFeedCoverUrl(coverOriginal);
+  const coverSrcSet = proxiedImageSrcSet(coverOriginal, [384, 640, 828, 1080], 75);
   const thumbs = projects.slice(0, THUMBS);
 
   return (
     <article className="relative flex h-full min-w-0 flex-col overflow-hidden rounded-2xl border border-border bg-card">
       <Link to={profilePath} className="relative block aspect-[16/7] overflow-hidden bg-muted" tabIndex={-1} aria-hidden>
         {cover ? (
-          <img src={cover} alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" />
+          <img
+            src={cover}
+            srcSet={coverSrcSet || undefined}
+            sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+            alt=""
+            className="h-full w-full object-cover"
+            loading="lazy"
+            decoding="async"
+          />
         ) : null}
         {/* Fade into the card so the avatar and text read cleanly over any photo. */}
         <span className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-card to-transparent" />

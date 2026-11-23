@@ -3,9 +3,12 @@
  * Demo seed often stores Unsplash with ?w=&h=&fit=crop; strip crop for masonry,
  * and always cap width + auto-format for PageSpeed (especially mobile).
  *
- * Supabase Storage Image Transformation is not applied here (requires Pro);
- * Unsplash + size caps cover the bulk of home-feed payload.
+ * Supabase Storage images go through Vercel Image Optimization (see imageProxy.ts):
+ * Supabase's own transforms need the Pro plan, and full originals used up the
+ * Free plan's 5 GB cached egress.
  */
+
+import { proxiedImageSrcSet, proxiedImageUrl } from "@/lib/imageProxy";
 
 export type FeedImageOpts = {
   /** Max display width in CSS px (device-independent). Default 800. */
@@ -72,7 +75,7 @@ export function optimizedFeedImageUrl(
     /* keep original */
   }
 
-  return trimmed;
+  return proxiedImageUrl(trimmed, width, quality);
 }
 
 /** Feed masonry — original proportions, capped width. */
@@ -89,6 +92,8 @@ export function heroFeedCoverUrl(url: string | null | undefined): string {
 export function heroFeedCoverSrcSet(url: string | null | undefined): string {
   const trimmed = url?.trim();
   if (!trimmed) return "";
+  const proxied = proxiedImageSrcSet(trimmed, [640, 828, 1200, 1920], 70);
+  if (proxied) return proxied;
   const mobile = optimizedFeedImageUrl(trimmed, { width: 720, quality: 68, natural: true });
   const tablet = optimizedFeedImageUrl(trimmed, { width: 1100, quality: 70, natural: true });
   const desktop = optimizedFeedImageUrl(trimmed, { width: 1400, quality: 70, natural: true });

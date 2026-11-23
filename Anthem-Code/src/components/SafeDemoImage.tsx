@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { demoImageUrl, demoImageUrlNatural } from "@/lib/demoImages";
 import { imageRevealTransition } from "@/lib/motion";
+import { originalFromProxyUrl } from "@/lib/imageProxy";
 
 // framer-motion's <motion.img> redefines the drag/animation handlers, so they are not forwarded.
 type SafeDemoImageProps = Omit<
@@ -26,16 +27,21 @@ const SafeDemoImage = ({
   reveal = true,
   naturalFallback = false,
   className,
+  srcSet,
+  sizes,
   ...props
 }: SafeDemoImageProps) => {
   const reduced = useReducedMotion();
   const fallback = naturalFallback ? demoImageUrlNatural(index) : demoImageUrl(index);
   const [current, setCurrent] = useState(src || fallback);
   const [loaded, setLoaded] = useState(false);
+  /** Resized copy failed (see imageProxy): load the original before giving up. */
+  const [proxyFailed, setProxyFailed] = useState(false);
   const imgRef = useRef<HTMLImageElement | null>(null);
 
   useEffect(() => {
     setCurrent(src || fallback);
+    setProxyFailed(false);
     // A cached image can finish before React attaches onLoad → it would stay invisible.
     setLoaded(!!imgRef.current?.complete && (imgRef.current?.naturalWidth ?? 0) > 0);
   }, [src, fallback]);
@@ -50,6 +56,8 @@ const SafeDemoImage = ({
       decoding="async"
       loading="lazy"
       {...props}
+      srcSet={proxyFailed ? undefined : srcSet}
+      sizes={proxyFailed ? undefined : sizes}
       src={current}
       alt={alt}
       className={className}
@@ -62,6 +70,12 @@ const SafeDemoImage = ({
       transition={imageRevealTransition}
       onLoad={() => setLoaded(true)}
       onError={() => {
+        const original = proxyFailed ? null : originalFromProxyUrl(current);
+        if (original) {
+          setProxyFailed(true);
+          setCurrent(original);
+          return;
+        }
         if (current !== FAILED_IMAGE_PLACEHOLDER) {
           setLoaded(false);
           setCurrent(FAILED_IMAGE_PLACEHOLDER);

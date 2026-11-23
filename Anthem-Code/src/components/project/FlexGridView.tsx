@@ -9,6 +9,7 @@ import {
 import { cn } from "@/lib/utils";
 import { isVideoUrl } from "@/lib/videoAccept";
 import ImageLightbox from "@/components/project/ImageLightbox";
+import { responsiveImageProps } from "@/lib/imageProxy";
 
 const Model3dViewer = lazy(() => import("@/components/project/Model3dViewer"));
 
@@ -151,7 +152,7 @@ function ModuleView({
             aria-label="ดูภาพขนาดใหญ่"
           >
             <img
-              src={module.url}
+              {...responsiveImageProps(module.url, `${Math.ceil(module.w)}px`, [384, 640, 1080, 1920])}
               alt=""
               className="pointer-events-none h-full w-full object-cover"
               loading="lazy"

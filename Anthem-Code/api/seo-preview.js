@@ -25,7 +25,26 @@ function escapeHtml(s) {
     .replace(/"/g, "&quot;");
 }
 
-function shell({ title, description, url, image, noindex, jsonLd, type, bodyHtml, published, modified }) {
+const SUPABASE_PUBLIC_IMAGE =
+  /^https:\/\/zkflkpbmbozrchqncpzi\.supabase\.co\/storage\/v1\/object\/public\/[^?#]+\.(?:jpe?g|png|webp|avif)$/i;
+
+/**
+ * Link previews (LINE, Facebook, X…) download og:image every time a page is shared. Send them a
+ * 1200 px copy from Vercel Image Optimization (vercel.json "images") instead of the full Supabase
+ * original, which counted against the Supabase Free plan's 5 GB egress.
+ */
+export function socialPreviewImage(image, pageUrl) {
+  if (!image || !SUPABASE_PUBLIC_IMAGE.test(image)) return image;
+  try {
+    const origin = new URL(pageUrl).origin;
+    return `${origin}/_vercel/image?url=${encodeURIComponent(image)}&w=1200&q=80`;
+  } catch {
+    return image;
+  }
+}
+
+function shell({ title, description, url, image: rawImage, noindex, jsonLd, type, bodyHtml, published, modified }) {
+  const image = socialPreviewImage(rawImage, url);
   const robots = noindex ? "noindex, nofollow" : "index, follow";
   const ogType = type || "website";
   const ld = jsonLd

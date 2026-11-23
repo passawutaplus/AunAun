@@ -12,8 +12,10 @@ import { installAppShell } from "./lib/appShell";
 import { installBootGate } from "./lib/bootGate";
 import { installChunkReload } from "./lib/lazyWithRetry";
 import { installNativePush } from "./lib/nativePush";
+import { installImageProxyFallback } from "./lib/imageProxy";
 
 installChunkReload();
+installImageProxyFallback();
 installCspReporter();
 installFeedbackDiagnostics();
 installReportableErrorToasts();
