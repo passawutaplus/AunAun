@@ -3,7 +3,7 @@ import { Link2, Loader2, Mail } from "lucide-react";
 import type { User, UserIdentity } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { nativeAppleIdToken, type OAuthProviderId } from "@/integrations/oauth";
+import { nativeAppleIdToken, saveAppleSignInCode, type OAuthProviderId } from "@/integrations/oauth";
 import { signInProviders } from "@/lib/authProviders";
 import { buildOAuthCallbackUrl, clearStaleOAuthPkceState, storeOAuthRedirect } from "@/lib/oauthRedirect";
 import { PROVIDER_ICONS } from "@/components/auth/ProviderIcons";
@@ -59,6 +59,7 @@ export function LinkedAccountsSection({ user }: { user: User }) {
         return;
       }
       toast.success("เชื่อม Apple แล้ว");
+      void saveAppleSignInCode(apple.code);
       void load();
     } catch (err) {
       toast.error(linkErrorMessage(err));

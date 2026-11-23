@@ -35,6 +35,8 @@ User-generated content (1.2):
 Account deletion (5.1.1(v)): Settings (ตั้งค่า) → My data (ข้อมูลของฉัน) → Delete account (ขอลบบัญชี) → confirm with the account password. The team processes the request within 7 business days (the screen says so):
 the profile and work are hidden at once, the account is permanently deleted 30 days later, and the user can cancel
 until then (the dates appear on the same screen). A public page also explains it: https://samecor.com/legal/delete-account
+For accounts that use Sign in with Apple, the permanent deletion also revokes the app's Apple tokens through Apple's
+REST API (appleid.apple.com/auth/revoke), so SAMECOR disappears from the user's "Sign in with Apple" apps.
 
 Payments: the app sells no digital goods, subscriptions or in-app content, and has no external purchase links.
 Creators can send a client a quote or invoice in chat for freelance work (design, illustration, photography) that is

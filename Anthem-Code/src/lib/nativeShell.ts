@@ -108,7 +108,8 @@ export function shareFromApp(data: { title: string; url: string }, onShared?: ()
   return true;
 }
 
-export type AppleCredential = { token: string; name?: string };
+/** `code` is Apple's one-time authorization code (iOS app 1.1.1+), used to revoke access on account deletion. */
+export type AppleCredential = { token: string; name?: string; code?: string };
 
 /** Thrown when the user closes the Apple sheet; callers stay quiet for it. */
 export class ShellCanceledError extends Error {
@@ -128,7 +129,7 @@ export async function nativeAppleSignIn(nonceHash: string): Promise<AppleCredent
     throw new Error("Sign in with Apple is not available in this app version");
   }
   const result = (await shell.signInWithApple(nonceHash)) as
-    | { token?: unknown; name?: unknown; error?: unknown }
+    | { token?: unknown; name?: unknown; code?: unknown; error?: unknown }
     | null
     | undefined;
   if (result?.error === "canceled") throw new ShellCanceledError();
@@ -136,5 +137,6 @@ export async function nativeAppleSignIn(nonceHash: string): Promise<AppleCredent
     throw new Error(typeof result?.error === "string" && result.error ? result.error : "Sign in with Apple failed");
   }
   const name = typeof result.name === "string" && result.name.trim() ? result.name.trim() : undefined;
-  return { token: result.token, name };
+  const code = typeof result.code === "string" && result.code ? result.code : undefined;
+  return code ? { token: result.token, name, code } : { token: result.token, name };
 }

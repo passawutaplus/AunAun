@@ -12,6 +12,7 @@ import { installAppShell } from "./lib/appShell";
 import { installBootGate } from "./lib/bootGate";
 import { installChunkReload } from "./lib/lazyWithRetry";
 import { installNativePush } from "./lib/nativePush";
+import { installSocialAvatarImport } from "./lib/socialAvatar";
 import { installImageProxyFallback } from "./lib/imageProxy";
 
 installChunkReload();
@@ -28,6 +29,11 @@ try {
   installNativePush();
 } catch (err) {
   console.error("installNativePush failed", err);
+}
+try {
+  installSocialAvatarImport();
+} catch (err) {
+  console.error("installSocialAvatarImport failed", err);
 }
 installBootGate();
 

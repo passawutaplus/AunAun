@@ -135,4 +135,26 @@ TestFlight ไม่แสดงหน้าต่างให้คะแนน
 - โค้ด iOS ยังไม่ได้ compile (ไม่มี Mac) → build แรกบน Codemagic คือการตรวจ compile
 - Push ของ iPhone ยังไม่เคยมีเครื่องจริงลงทะเบียน (ตั้งแต่ 1.0.0)
 - การเด้งกลับจาก Chrome แท็บในแอปบน Android: บางเครื่อง Chrome อาจไม่เด้งเอง ต้องกดปุ่มแดง "เปิดแอป SAMECOR" 1 ครั้ง
-- Sign in with Apple + ลบบัญชี: ยังไม่ได้เรียก revoke token ของ Apple ตอนลบบัญชี (ดู `Anthem-Code/ios/README.md`)
+- Sign in with Apple + ลบบัญชี: revoke token ของ Apple ตอนลบบัญชีทำแล้ว (ดูหัวข้อ G) แต่ใช้ได้เฉพาะคนที่ login ด้วย Apple จากแอป iOS build ใหม่ (1.1.1 ขึ้นไป) คนที่ login จาก 1.1.0 จะมี token เก็บไว้ก็ต่อเมื่อ login ด้วย Apple อีกครั้ง
+
+## G. Apple revoke + รูป Facebook (หลัง merge PR นี้)
+
+1. ⚠️ developer.apple.com → Certificates, Identifiers & Profiles → **Keys** → **+** → ชื่อ `SAMECOR Sign in with Apple`
+   → ติ๊ก **Sign in with Apple** → Configure → Primary App ID `com.samecor.app` → Save → Continue → Register
+   → **Download** ไฟล์ `AuthKey_XXXXXXXXXX.p8` (โหลดได้ครั้งเดียว) แล้วจด **Key ID**
+2. ⚠️ Supabase → Edge Functions → Secrets → Add:
+   - `APPLE_SIGNIN_KEY_ID` = Key ID จากข้อ 1
+   - `APPLE_SIGNIN_PRIVATE_KEY` = เนื้อหาไฟล์ .p8 ทั้งไฟล์
+   - `APPLE_TEAM_ID` ไม่ต้องใส่ถ้ามี `APNS_TEAM_ID` อยู่แล้ว (ใช้ค่าเดียวกัน)
+   - เก็บไฟล์ .p8 ไว้ที่ปลอดภัย ห้ามใส่ใน repo
+3. ⚠️ SQL Editor → วางไฟล์ `Solo-Code/supabase/migrations/20261123110000_apple_signin_tokens.sql` → Run
+4. Deploy (PowerShell):
+
+```powershell
+cd F:\So1o\wt-paper\Solo-Code
+git pull
+npx supabase functions deploy apple-signin-token social-avatar-import account-purge send-push
+```
+
+   (send-push ต้อง deploy ใหม่ด้วย เพราะใช้โค้ด JWT ตัวเดียวกับ Apple)
+5. iOS: ต้อง build ใหม่บน Codemagic แอปถึงจะส่ง code ของ Apple มาได้ (1.1.0 (2) ที่อยู่ในรีวิวยังไม่มี)

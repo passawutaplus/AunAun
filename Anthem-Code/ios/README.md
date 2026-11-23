@@ -113,8 +113,10 @@ Remaining risks:
 - **Email links** (password reset) requested in the app come back through `https://samecor.com/auth/app-return?to=reset-password`,
   which opens `com.samecor.app://auth/reset-password` (Safari asks "Open in SAMECOR?"). Sign-up uses a 6-digit code, so it stays in the app.
 - **Sign in with Apple and account deletion.** Apple expects apps that use Sign in with Apple to revoke the user's Apple token
-  when the account is deleted. The deletion flow does not call Apple's revoke endpoint yet (it needs a Services ID key).
-  Reviewers rarely test it; if one asks, add the revoke call before resubmitting.
+  when the account is deleted. From app 1.1.1 the Apple sheet also returns a one-time authorization code; the site sends
+  it to the `apple-signin-token` edge function, which keeps Apple's refresh token, and `account-purge` revokes it before
+  deleting the account (`Solo-Code/supabase/functions/_shared/apple-signin.ts`, secrets `APPLE_SIGNIN_KEY_ID` +
+  `APPLE_SIGNIN_PRIVATE_KEY`). Accounts that last signed in with Apple on 1.1.0 have no stored token until they sign in again.
 - **4.2.** A short screen recording attached to the review notes (push arriving, share/save sheet, camera post) helps reviewers.
 
 ## Sign-in, links and rating (1.1.0)

@@ -1,6 +1,7 @@
 import { supabaseSecretKey } from "../_shared/supabase-keys.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { anthemDb, sharedDb } from "../_shared/ecosystem-db.ts";
+import { revokeStoredAppleToken } from "../_shared/apple-signin.ts";
 
 /**
  * Purges accounts whose deletion an admin approved at least 30 days ago (woken daily by
@@ -38,7 +39,9 @@ Deno.serve(async (req) => {
   for (const r of (due ?? []) as DueRequest[]) {
     try {
       if (!r.purged_at) {
-        const { data: files, error: filesErr } = await admin.rpc("account_storage_objects", { _user_id: r.user_id });
+        const { data: files, error: filesErr } = await admin.rpc("account_storage_objects", {
+          _user_id: r.user_id,
+        });
         if (filesErr) throw filesErr;
         const byBucket = new Map<string, string[]>();
         for (const f of (files ?? []) as { bucket_id: string; name: string }[]) {
@@ -46,37 +49,51 @@ Deno.serve(async (req) => {
         }
         for (const [bucket, names] of byBucket) {
           for (let i = 0; i < names.length; i += REMOVE_CHUNK) {
-            const { error: rmErr } = await admin.storage.from(bucket).remove(names.slice(i, i + REMOVE_CHUNK));
+            const { error: rmErr } = await admin.storage
+              .from(bucket)
+              .remove(names.slice(i, i + REMOVE_CHUNK));
             if (rmErr) throw rmErr;
           }
         }
 
-        const { error: purgeErr } = await admin.rpc("account_purge_user_data", { _request_id: r.id });
+        const { error: purgeErr } = await admin.rpc("account_purge_user_data", {
+          _request_id: r.id,
+        });
         if (purgeErr) throw purgeErr;
       }
 
       // The auth account is shared with So1o and Vault: never delete it while those apps hold data.
-      const { data: blockers, error: blockErr } = await admin.rpc("account_purge_blockers", { _user_id: r.user_id });
+      const { data: blockers, error: blockErr } = await admin.rpc("account_purge_blockers", {
+        _user_id: r.user_id,
+      });
       if (blockErr) throw blockErr;
       if (Array.isArray(blockers) && blockers.length > 0) {
         await requests()
-          .update({ admin_note: `ลบข้อมูล SAMECOR แล้ว แต่บัญชีใช้ร่วมกับ ${blockers.join(", ")} — แอดมินต้องตัดสินใจเรื่องบัญชีเอง` })
+          .update({
+            admin_note: `ลบข้อมูล SAMECOR แล้ว แต่บัญชีใช้ร่วมกับ ${blockers.join(", ")} — แอดมินต้องตัดสินใจเรื่องบัญชีเอง`,
+          })
           .eq("id", r.id);
         results.push({ request_id: r.id, outcome: "needs_admin" });
         continue;
       }
 
+      // Sign in with Apple accounts: Apple must be told the account is gone (App Review 5.1.1(v)).
+      const appleRevoke = await revokeStoredAppleToken(admin, r.user_id);
       const { error: authErr } = await admin.auth.admin.deleteUser(r.user_id);
       if (authErr && !/not.?found/i.test(authErr.message)) throw authErr;
 
-      await requests().update({ status: "completed", completed_at: new Date().toISOString() }).eq("id", r.id);
-      await sharedDb(admin).from("admin_audit_log").insert({
-        actor_id: r.user_id,
-        action: "account_deletion_completed",
-        target_type: "user",
-        target_id: r.user_id,
-        metadata: { request_id: r.id },
-      });
+      await requests()
+        .update({ status: "completed", completed_at: new Date().toISOString() })
+        .eq("id", r.id);
+      await sharedDb(admin)
+        .from("admin_audit_log")
+        .insert({
+          actor_id: r.user_id,
+          action: "account_deletion_completed",
+          target_type: "user",
+          target_id: r.user_id,
+          metadata: { request_id: r.id, apple_revoke: appleRevoke },
+        });
       results.push({ request_id: r.id, outcome: "deleted" });
     } catch (e) {
       // Left as approved, so the next daily run retries it.
