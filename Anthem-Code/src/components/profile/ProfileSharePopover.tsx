@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import ShareDialogPanel from "@/components/share/ShareDialogPanel";
 import ProfileQrCode from "@/components/profile/ProfileQrCode";
+import { shareFromApp } from "@/lib/nativeShell";
 
 type Props = {
   url: string;
@@ -36,6 +37,8 @@ const ProfileSharePopover = ({
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const open = openProp ?? uncontrolledOpen;
   const setOpen = (next: boolean) => {
+    // In the store apps the phone's share sheet opens directly (the owner's view keeps the panel for its QR code).
+    if (next && !showQr && shareFromApp({ title, url }, onShared)) return;
     if (openProp === undefined) setUncontrolledOpen(next);
     onOpenChange?.(next);
   };

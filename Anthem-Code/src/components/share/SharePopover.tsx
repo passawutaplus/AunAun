@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import ShareDialogPanel from "@/components/share/ShareDialogPanel";
 import { useAuth } from "@/hooks/useAuth";
 import { logImageShare } from "@/hooks/useImageStats";
+import { shareFromApp } from "@/lib/nativeShell";
 
 interface Props {
   open: boolean;
@@ -33,7 +34,14 @@ const SharePopover = ({ open, onOpenChange, title, url, imageUrl, projectId, chi
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        // In the store apps the phone's share sheet opens directly.
+        if (next && shareFromApp({ title, url }, () => void trackShare("web_share"))) return;
+        onOpenChange(next);
+      }}
+    >
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent
         // Above the image lightbox (z-100), which also opens this dialog.

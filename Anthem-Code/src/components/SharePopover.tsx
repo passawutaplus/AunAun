@@ -5,6 +5,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import ShareDialogPanel from "@/components/share/ShareDialogPanel";
+import { shareFromApp } from "@/lib/nativeShell";
 
 type Props = {
   url: string;
@@ -31,7 +32,12 @@ const SharePopover = ({
 }: Props) => {
   const [internalOpen, setInternalOpen] = useState(false);
   const open = controlledOpen ?? internalOpen;
-  const setOpen = controlledOnOpenChange ?? setInternalOpen;
+  const setPanelOpen = controlledOnOpenChange ?? setInternalOpen;
+  // In the store apps the phone's share sheet opens directly.
+  const setOpen = (next: boolean) => {
+    if (next && shareFromApp({ title, url })) return;
+    setPanelOpen(next);
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
