@@ -830,3 +830,449 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* ================= Event tab ================= */
+.sc-app .mn-ev-hl {
+  padding-bottom: 56px;
+}
+
+.sc-app .mn-ev-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 36px; /* same height with or without the previous / next buttons */
+  padding: 16px 0;
+  border-top: 1px solid #282929;
+}
+
+.sc-app .mn-ev-bar h2 {
+  margin: 0;
+  font-size: 14px;
+  letter-spacing: .08em;
+  font-weight: 400;
+}
+
+.sc-app .mn-ev-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sc-app .mn-ev-pos {
+  font-size: 12px;
+  color: #8A8A87;
+  margin-right: 4px;
+}
+
+.sc-app .mn-ev-wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 48px;
+  align-items: center;
+}
+
+.sc-app .mn-ev-pic {
+  display: block;
+  aspect-ratio: 16 / 9;
+  border-radius: 20px;
+  background: #E6E6E3 center / cover no-repeat;
+}
+
+.sc-app .mn-ev-info {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sc-app .mn-ev-kind {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  letter-spacing: .08em;
+  color: #666666;
+}
+
+.sc-app .mn-ev-kind > :first-child {
+  color: #282929;
+}
+
+.sc-app .mn-ev-kind i {
+  width: 1px;
+  height: 12px;
+  background: #D4D4D1;
+}
+
+.sc-app .mn-ev-status {
+  color: #8A8A87;
+}
+
+.sc-app .mn-ev-status[data-live] {
+  color: #EE3D29;
+}
+
+.sc-app .mn-ev-info h3 {
+  margin: 0;
+  font-size: 34px;
+  font-weight: 300;
+  line-height: 1.15;
+  letter-spacing: -.01em;
+}
+
+.sc-app .mn-ev-dates {
+  margin: 0;
+  font-size: 14px;
+  color: #666666;
+}
+
+.sc-app .mn-ev-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.sc-app .mn-ev-pill {
+  all: unset;
+  cursor: pointer;
+  height: 40px;
+  padding: 0 16px;
+  box-sizing: border-box;
+  border: 1px solid #D4D4D1;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sc-app .mn-ev-venues {
+  margin: 0;
+  padding: 12px 16px;
+  list-style: none;
+  border-radius: 20px;
+  background: #F5F5F3;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.sc-app .mn-ev-venues li {
+  display: flex;
+  gap: 10px;
+}
+
+.sc-app .mn-ev-venues li > :first-child {
+  width: 18px;
+  color: #8A8A87;
+}
+
+.sc-app .mn-ev-acts {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.sc-app .mn-ev-save {
+  all: unset;
+  cursor: pointer;
+  height: 44px;
+  padding: 0 18px;
+  box-sizing: border-box;
+  border: 1px solid #D4D4D1;
+  border-radius: 999px;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sc-app .mn-ev-save svg {
+  fill: none;
+}
+
+.sc-app .mn-ev-save[aria-pressed="true"] svg {
+  fill: #282929;
+}
+
+.sc-app .mn-ev-share {
+  all: unset;
+  cursor: pointer;
+  width: 44px;
+  height: 44px;
+  box-sizing: border-box;
+  border: 1px solid #D4D4D1;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sc-app .mn-ev-copied {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: #282929;
+  color: #FFFFFF;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.sc-app .mn-ev-copied[data-on] {
+  opacity: 1;
+}
+
+.sc-app :is(.mn-ev-pill, .mn-ev-save, .mn-ev-share, .mn-ev-day):focus-visible {
+  outline: 2px solid #282929;
+  outline-offset: 3px;
+}
+
+/* list: month column + day rows, three events per row */
+.sc-app .mn-ev-list {
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr);
+  gap: 24px;
+  padding-bottom: 56px;
+}
+
+.sc-app .mn-ev-month {
+  border-top: 1px solid #282929;
+  padding-top: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 20px;
+  font-size: 22px;
+  font-weight: 400;
+  letter-spacing: .02em;
+}
+
+.sc-app .mn-ev-days {
+  display: flex;
+  flex-direction: column;
+}
+
+.sc-app .mn-ev-group,
+.sc-app .mn-ev-end {
+  border-top: 1px solid #282929;
+}
+
+.sc-app .mn-ev-day {
+  all: unset;
+  cursor: pointer;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 16px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 22px;
+  font-weight: 400;
+  letter-spacing: .02em;
+}
+
+.sc-app .mn-ev-day[aria-expanded="false"] svg {
+  rotate: 180deg;
+}
+
+.sc-app .mn-ev-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: 40px;
+  padding-bottom: 8px;
+}
+
+.sc-app .mn-ev-cell {
+  position: relative;
+  min-width: 0;
+  padding: 20px 0 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* thin rule between the cells of a row */
+.sc-app .mn-ev-cell:not(:nth-child(3n + 1))::before {
+  content: "";
+  position: absolute;
+  left: -20px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: #DADAD7;
+}
+
+.sc-app .mn-ev-cell > svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.sc-app .mn-ev-item {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-decoration: none;
+  color: #282929;
+  height: 100%;
+}
+
+.sc-app .mn-ev-item img,
+.sc-app .mn-ev-item .mn-ev-noimg {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 5px;
+  object-fit: cover;
+  background: #E6E6E3;
+}
+
+.sc-app .mn-ev-item:hover img {
+  opacity: .75;
+}
+
+.sc-app .mn-ev-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 16px;
+  font-size: 11px;
+  letter-spacing: .06em;
+  color: #666666;
+  white-space: nowrap;
+}
+
+.sc-app .mn-ev-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #EE3D29;
+  display: block;
+}
+
+.sc-app .mn-ev-tag {
+  margin-left: auto;
+  color: #8A8A87;
+}
+
+.sc-app .mn-ev-title {
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.4;
+  height: 2.8em;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.sc-app .mn-ev-ww {
+  display: grid;
+  grid-template-columns: 1fr 1.6fr;
+  gap: 12px;
+  height: 16px;
+  font-size: 11px;
+  letter-spacing: .04em;
+  color: #4A4A4A;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.sc-app .mn-ev-ww > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sc-app .mn-ev-day svg {
+    transition: rotate .3s ease;
+  }
+
+  .sc-app .mn-ev-item img {
+    transition: opacity .5s ease;
+  }
+
+  .sc-app .mn-ev-copied {
+    translate: 0 6px;
+    scale: .92;
+    transition: translate .45s cubic-bezier(.34, 1.56, .64, 1), scale .45s cubic-bezier(.34, 1.56, .64, 1), opacity .3s ease;
+  }
+
+  .sc-app .mn-ev-copied[data-on] {
+    translate: none;
+    scale: none;
+  }
+
+  @supports (animation-timeline: view()) {
+    .sc-app .mn-ev-grid > * {
+      animation: sc-rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 70%;
+    }
+  }
+}
+
+@media (max-width: 900px) {
+  .sc-app .mn-ev-wrap,
+  .sc-app .mn-ev-list,
+  .sc-app .mn-ev-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sc-app .mn-ev-grid {
+    column-gap: 0;
+  }
+
+  .sc-app .mn-ev-cell {
+    padding: 16px 0;
+  }
+
+  .sc-app .mn-ev-cell::before {
+    display: none;
+  }
+}
+
+/* phone: no black rules, every event is its own grey card, no crossed-out empty boxes */
+@media (max-width: 600px) {
+  .sc-app .mn-ev-bar,
+  .sc-app .mn-ev-month,
+  .sc-app .mn-ev-group,
+  .sc-app .mn-ev-end {
+    border-top: 0;
+  }
+
+  .sc-app .mn-ev-grid {
+    row-gap: 12px;
+    padding-bottom: 16px;
+  }
+
+  .sc-app .mn-ev-cell {
+    background: #F5F5F3;
+    border-radius: 20px;
+    padding: 8px 8px 18px;
+    box-sizing: border-box;
+  }
+
+  .sc-app .mn-ev-cell[data-empty] {
+    display: none;
+  }
+
+  .sc-app .mn-ev-item {
+    gap: 10px;
+  }
+
+  .sc-app .mn-ev-item img,
+  .sc-app .mn-ev-item .mn-ev-noimg {
+    aspect-ratio: 16 / 10;
+    border-radius: 14px;
+  }
+
+  .sc-app .mn-ev-item > :not(img):not(.mn-ev-noimg) {
+    padding: 0 8px;
+  }
+}

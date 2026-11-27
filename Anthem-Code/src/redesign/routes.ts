@@ -19,7 +19,7 @@ export type ShellPage = {
 /** The old URLs stay (owner decision), so the new frame links to them. */
 export const SC_LINKS = {
   home: "/",
-  events: "/exhibition",
+  events: "/?tab=event",
   getInTouch: "/learn",
   feedback: "/me/feedback",
   search: "/search",

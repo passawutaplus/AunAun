@@ -7,7 +7,9 @@ import { SC_CATEGORIES, isScCategory } from "../lib/categories";
 import { SC_LINKS } from "../routes";
 import { BENTO_FIRST, BENTO_STEP, MASONRY_GAP, bentoBlocks, masonrySpan } from "../main/bento";
 import Creators from "../main/Creators";
+import Events from "../main/Events";
 import ScLoader from "../main/ScLoader";
+import { EVENT_TYPES, EVENT_VIEWS, EVENT_VIEW_LABEL, isEventType, type EventView } from "../main/useHomeEvents";
 import { CREATOR_VIEWS, type CreatorView } from "../main/useCreators";
 import WorkTile, { type TileWork } from "../main/WorkTile";
 import { SHOWCASE_VIEWS, VIEW_NEEDS_LOGIN, useShowcaseWorks, type ShowcaseView } from "../main/useShowcaseWorks";
@@ -35,7 +37,10 @@ export default function Main() {
   const catParam = params.get("cat");
   const category = isScCategory(catParam) ? catParam : null;
 
-  const set = (key: "tab" | "cat" | "view", value: string | null) => {
+  const typeParam = params.get("type");
+  const evType = isEventType(typeParam) ? typeParam : null;
+
+  const set = (key: "tab" | "cat" | "view" | "type", value: string | null) => {
     const next = new URLSearchParams(params);
     if (value) next.set(key, value);
     else next.delete(key);
@@ -48,6 +53,7 @@ export default function Main() {
     if (m === "showcase") next.delete("tab");
     else next.set("tab", m);
     next.delete("view");
+    if (m !== "event") next.delete("type");
     setParams(next, { preventScrollReset: true });
   };
 
@@ -67,6 +73,7 @@ export default function Main() {
     if (v === "following" && !user) navigate(SC_LINKS.login);
     else set("view", v === "discover" ? null : v);
   };
+  const evView: EventView = (EVENT_VIEWS as readonly string[]).includes(viewParam ?? "") ? (viewParam as EventView) : "now";
   const saves = useWorkSaves();
   const toggleSave = useCallback(
     (id: string) => {
@@ -129,7 +136,22 @@ export default function Main() {
             ))}
           </div>
         </div>
-      ) : null}
+      ) : (
+        <div className="mn-fld">
+          <ViewMenu label="ช่วงเวลา" options={EVENT_VIEWS} labels={EVENT_VIEW_LABEL} value={evView} onPick={(v) => set("view", v === "now" ? null : v)} />
+          <span aria-hidden="true" className="mn-fld-rule" />
+          <div className="mn-chips" role="group" aria-label="ประเภทอีเว้นท์">
+            <button type="button" className="mn-chip" aria-pressed={!evType} onClick={() => set("type", null)}>
+              All
+            </button>
+            {EVENT_TYPES.map(([key, label]) => (
+              <button key={key} type="button" className="mn-chip" aria-pressed={evType === key} onClick={() => set("type", key)}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="mn-card">
         <h1 className="sc-sr">Samecor — ผลงานล่าสุด</h1>
@@ -137,7 +159,9 @@ export default function Main() {
           <Showcase key={`${view}:${category ?? "all"}`} view={view} category={category} label={MODE_LABEL[mode]} savedIds={saves.ids} onToggleSave={toggleSave} />
         ) : mode === "creators" ? (
           <Creators view={crView} category={category} />
-        ) : null}
+        ) : (
+          <Events view={evView} type={evType} />
+        )}
       </div>
     </main>
   );
