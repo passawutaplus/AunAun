@@ -26,10 +26,12 @@ const bg = (url: string) => (url ? { backgroundImage: `url(${JSON.stringify(url)
  * mounts on these routes (see LegacyChrome in App.tsx). Data comes from the existing hooks only.
  */
 export default function RedesignShell() {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const cfg = shellPageFor(pathname) ?? FALLBACK;
+  // On the home page the Event tab of the page is the Event button of the tab bar.
+  const tab = cfg.page === "main" && new URLSearchParams(search).get("tab") === "event" ? "event" : cfg.tab;
 
   const { user, loading } = useAuth();
   const { data: profile } = useProfile(user?.id);
@@ -74,7 +76,7 @@ export default function RedesignShell() {
   };
 
   return (
-    <div className="sc-app" data-page={cfg.page || undefined} data-tab={cfg.tabbar ? "on" : "off"}>
+    <div className="sc-app" data-page={cfg.page || undefined} data-tab={cfg.tabbar ? "on" : "off"} data-header={cfg.header}>
       <header className="sc-hd">
         <div className="sc-hd-in">
           <Link to={SC_LINKS.home} aria-label="samecor. หน้าแรก" className="sc-hd-logo">
@@ -83,12 +85,14 @@ export default function RedesignShell() {
           <nav aria-label="เมนูบัญชี" className="sc-hd-nav">
             <Link to={SC_LINKS.getInTouch} className="sc-hd-text">Get in Touch</Link>
             {/* Search and notifications become panels with the Main page (step 3); until then they open the old pages. */}
-            <Link to={SC_LINKS.search} aria-label="ค้นหา" title="ค้นหา" className="sc-ib">
-              <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.33" strokeLinecap="round">
-                <circle cx="11" cy="11" r="6.5" />
-                <path d="M16 16l4 4" />
-              </svg>
-            </Link>
+            {cfg.header === "main" ? null : (
+              <Link to={SC_LINKS.search} aria-label="ค้นหา" title="ค้นหา" className="sc-ib">
+                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.33" strokeLinecap="round">
+                  <circle cx="11" cy="11" r="6.5" />
+                  <path d="M16 16l4 4" />
+                </svg>
+              </Link>
+            )}
             <Link to={SC_LINKS.feedback} aria-label="ส่งฟีดแบ็ก" className="sc-ib sc-hd-fb">
               <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.33" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="8.5" />
@@ -164,13 +168,13 @@ export default function RedesignShell() {
       ) : null}
 
       <nav className="sc-tb" aria-label="เมนูหลัก">
-        <Link to={SC_LINKS.home} data-k="home" aria-current={cfg.tab === "home" ? "page" : undefined}>
+        <Link to={SC_LINKS.home} data-k="home" aria-current={tab === "home" ? "page" : undefined}>
           <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" strokeWidth="1.4" strokeLinejoin="round">
             <path d="M4 10.5L12 4l8 6.5V20h-5.5v-5h-5v5H4z" />
           </svg>
           หน้าแรก
         </Link>
-        <Link to={SC_LINKS.events} data-k="event" aria-current={cfg.tab === "event" ? "page" : undefined}>
+        <Link to={SC_LINKS.events} data-k="event" aria-current={tab === "event" ? "page" : undefined}>
           <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
             <rect x="3.5" y="5" width="17" height="15.5" rx="2" />
             <path d="M3.5 10h17M8 3v4M16 3v4" />
@@ -190,7 +194,7 @@ export default function RedesignShell() {
           แชท
           {chatUnread ? <span className="sc-tb-bd" aria-hidden="true">{chatUnread}</span> : null}
         </Link>
-        <Link to={user ? SC_LINKS.myProfile : SC_LINKS.login} data-k="me" aria-current={cfg.tab === "me" ? "page" : undefined}>
+        <Link to={user ? SC_LINKS.myProfile : SC_LINKS.login} data-k="me" aria-current={tab === "me" ? "page" : undefined}>
           <span className="sc-tb-av" aria-hidden="true" style={bg(avatar)} />
           ฉัน
         </Link>

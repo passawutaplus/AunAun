@@ -1,0 +1,546 @@
+/* Home (mock: pages/Main.dc.html). Showcase tab: mode row, category row, white card with the work grid. */
+
+.sc-app .mn {
+  width: 100%;
+  max-width: 1520px; /* mock: 1440 content + 2 × 40 padding */
+  box-sizing: border-box;
+  margin-inline: auto;
+  padding: 53px 40px 80px;
+}
+
+/* ---------- mode row: colour search · search · Showcase / Creators / Event · + ---------- */
+.sc-app .mn-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 16px 40px;
+}
+
+.sc-app .mn-tools {
+  display: flex;
+  gap: 4px;
+}
+
+.sc-app .mn-tool {
+  all: unset;
+  position: relative;
+  cursor: pointer;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sc-app .mn-modes {
+  display: flex;
+  align-items: baseline;
+  gap: 28px;
+}
+
+.sc-app .mn-mode {
+  all: unset;
+  cursor: pointer;
+  font-size: 28px;
+  letter-spacing: -0.01em;
+  color: #A3A3A0;
+  font-weight: 300;
+}
+
+.sc-app .mn-mode[aria-pressed="true"] {
+  color: #282929;
+  font-weight: 500;
+}
+
+.sc-app .mn-add {
+  width: 44px;
+  height: 44px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 1px solid #282929;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.sc-app :is(.mn-tool, .mn-mode, .mn-view, .mn-chip, .mn-save):focus-visible {
+  outline: 2px solid #282929;
+  outline-offset: 3px;
+}
+
+/* ---------- category row ---------- */
+.sc-app .mn-fld {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 12px;
+  margin: 16px 0 0;
+  position: relative;
+  z-index: 2;
+}
+
+.sc-app .mn-view-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.sc-app .mn-view {
+  all: unset;
+  cursor: pointer;
+  padding: 8px 4px 14px;
+  font-size: 13px;
+  color: #282929;
+  font-weight: 400;
+}
+
+.sc-app .mn-view-menu {
+  position: absolute;
+  top: 40px;
+  left: -12px;
+  z-index: 10;
+  width: 240px;
+  box-sizing: border-box;
+  background: #FFFFFF;
+  border-radius: 20px;
+  box-shadow: 0 1px 2px rgba(40, 41, 41, .06), 0 16px 48px rgba(40, 41, 41, .12);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+.sc-app .mn-view-opt {
+  all: unset;
+  cursor: pointer;
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14px;
+  color: #4A4A4A;
+}
+
+.sc-app .mn-view-opt[aria-checked="true"] {
+  color: #282929;
+  font-weight: 400;
+  background: #F2F2F0;
+}
+
+.sc-app .mn-fld-rule {
+  flex-shrink: 0;
+  width: 1px;
+  height: 14px;
+  background: #D4D4D1;
+  margin-bottom: 16px;
+}
+
+.sc-app .mn-chips {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  overflow-x: auto;
+  flex: 0 1 auto;
+  min-width: 0;
+  padding: 0 16px;
+  scrollbar-width: none;
+}
+
+.sc-app .mn-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.sc-app .mn-chip {
+  all: unset;
+  cursor: pointer;
+  flex-shrink: 0;
+  position: relative;
+  padding: 8px 8px 14px;
+  font-size: 13px;
+  white-space: nowrap;
+  color: #666666;
+}
+
+/* the chosen category is a folder tab that joins the white card below */
+.sc-app .mn-chip[aria-pressed="true"] {
+  padding: 12px 20px 14px;
+  border-radius: 14px 14px 0 0;
+  color: #282929;
+  font-weight: 400;
+  isolation: isolate;
+}
+
+.sc-app .mn-chip[aria-pressed="true"]::before {
+  content: "";
+  position: absolute;
+  inset: 0 -6px;
+  z-index: -1;
+  background: #FFFFFF;
+  border-radius: 12px 12px 0 0;
+  transform: perspective(60px) rotateX(9deg);
+  transform-origin: 50% 100%;
+  pointer-events: none;
+}
+
+/* ---------- card + work tiles ---------- */
+.sc-app .mn-card {
+  position: relative;
+  z-index: 1;
+  background: #FFFFFF;
+  border-radius: 38px;
+  box-shadow: 0 1px 3px rgba(40, 41, 41, .08), 0 10px 32px rgba(40, 41, 41, .12);
+  padding: 96px 96px 44px;
+}
+
+.sc-app .mn-bento {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-bottom: 52px;
+}
+
+.sc-app .mn-bk {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.sc-app .mn-bcol {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  flex: 0 0 auto;
+}
+
+.sc-app .mn-mas {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-rows: 10px;
+  column-gap: 20px;
+  grid-auto-flow: row dense;
+  padding-bottom: 52px;
+}
+
+.sc-app .mn-cell {
+  min-height: 0;
+}
+
+.sc-app .mn-tile {
+  position: relative;
+  width: 100%;
+  border-radius: 5px;
+  overflow: hidden;
+  background: #E6E6E3;
+}
+
+.sc-app .mn-tile > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* the frame already has the picture's own ratio, so nothing is cut */
+  display: block;
+}
+
+.sc-app .mn-shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, .82) 0%, rgba(0, 0, 0, .52) 28%, rgba(0, 0, 0, .16) 50%, rgba(0, 0, 0, 0) 68%);
+}
+
+.sc-app .mn-open {
+  position: absolute;
+  inset: 0;
+}
+
+.sc-app .mn-name {
+  position: absolute;
+  left: 20px;
+  right: 72px;
+  bottom: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: #FFFFFF;
+  pointer-events: none;
+}
+
+.sc-app .mn-name-t {
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.sc-app .mn-name-s {
+  font-size: 13px;
+  color: rgba(255, 255, 255, .9);
+}
+
+.sc-app .mn-save {
+  all: unset;
+  cursor: pointer;
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, .14);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+.sc-app .mn-save svg {
+  fill: none;
+  stroke: rgba(255, 255, 255, .85);
+}
+
+.sc-app .mn-save[aria-pressed="true"] {
+  background: rgba(255, 255, 255, .95);
+}
+
+.sc-app .mn-save[aria-pressed="true"] svg {
+  fill: #282929;
+  stroke: #282929;
+}
+
+.sc-app .mn-none {
+  margin: 20px 0;
+  padding-bottom: 52px;
+  text-align: center;
+  font-size: 14px;
+  color: #8A8A87;
+}
+
+.sc-app .sc-more {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0 36px;
+}
+
+/* Work title over the picture: hidden until hover or keyboard focus; touch screens show it always */
+@media (hover: hover) {
+  .sc-app .mn-tile .mn-shade,
+  .sc-app .mn-tile .mn-name {
+    opacity: 0;
+  }
+
+  .sc-app .mn-tile:hover .mn-shade,
+  .sc-app .mn-tile:hover .mn-name,
+  .sc-app .mn-tile:focus-within .mn-shade,
+  .sc-app .mn-tile:focus-within .mn-name {
+    opacity: 1;
+  }
+}
+
+/* ---------- motion ---------- */
+@keyframes sc-in {
+  from { opacity: 0; translate: 0 24px; }
+  to { opacity: 1; translate: none; }
+}
+
+@keyframes sc-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes sc-rise {
+  from { opacity: 0; translate: 0 48px; }
+  to { opacity: 1; translate: none; }
+}
+
+@keyframes sc-spin {
+  0%, 25% { rotate: 0deg; }
+  75%, 100% { rotate: 180deg; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sc-app .mn-card {
+    animation: sc-in .9s var(--sc-ease) both;
+  }
+
+  .sc-app .mn-card > section {
+    animation: sc-fade .6s ease both;
+  }
+
+  .sc-app .mn-tile > img {
+    transition: scale 1.2s var(--sc-ease);
+  }
+
+  .sc-app .mn-tile:hover > img {
+    scale: 1.035;
+  }
+
+  .sc-app .sc-load {
+    animation: sc-spin 2.4s cubic-bezier(.65, 0, .35, 1) infinite;
+    transform-origin: 50% 50%;
+  }
+
+  @supports (animation-timeline: view()) {
+    .sc-app .mn-bento .mn-tile,
+    .sc-app .mn-mas .mn-tile {
+      animation: sc-rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 70%;
+    }
+  }
+
+  /* works added by "load more": wait off screen, then rise in when they scroll into view */
+  .sc-app .mn-bento .mn-tile[data-new] {
+    animation: none;
+    opacity: 0;
+    translate: 0 48px;
+    transition: opacity 1s ease, translate 1.2s var(--sc-ease);
+  }
+
+  .sc-app .mn-bento .mn-tile[data-new][data-in] {
+    opacity: 1;
+    translate: none;
+  }
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .sc-app .mn-tile .mn-shade,
+  .sc-app .mn-tile .mn-name {
+    transition: opacity .35s ease, translate .45s var(--sc-ease);
+  }
+
+  .sc-app .mn-tile .mn-name {
+    translate: 0 6px;
+  }
+
+  .sc-app .mn-tile:hover .mn-name,
+  .sc-app .mn-tile:focus-within .mn-name {
+    translate: none;
+  }
+}
+
+/* ---------- tablet ---------- */
+@media (max-width: 900px) {
+  .sc-app .mn-mas {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sc-app .mn-card {
+    padding: 32px 20px 0;
+  }
+}
+
+/* ---------- phone: tabs on top, category capsules that scroll sideways, two columns ---------- */
+@media (max-width: 600px) {
+  .sc-app .mn {
+    padding: 28px 10px 64px;
+  }
+
+  .sc-app .mn-row {
+    justify-content: flex-start;
+    gap: 12px 8px;
+    padding: 0 4px;
+  }
+
+  .sc-app .mn-modes {
+    order: -1;
+    width: 100%;
+    justify-content: flex-start;
+    gap: 20px;
+  }
+
+  .sc-app .mn-mode {
+    font-size: 22px;
+  }
+
+  .sc-app .mn-add {
+    display: none; /* the tab bar already has + */
+  }
+
+  .sc-app .mn-tool {
+    width: 40px;
+    height: 40px;
+  }
+
+  .sc-app .mn-fld {
+    justify-content: flex-start;
+    align-items: center;
+    gap: 8px;
+    margin: 12px -10px 12px 4px;
+  }
+
+  .sc-app .mn-view {
+    padding: 0 4px;
+  }
+
+  .sc-app .mn-fld-rule {
+    margin: 0;
+  }
+
+  .sc-app .mn-chips {
+    align-items: center;
+    gap: 8px;
+    padding: 0 16px 0 0;
+    -webkit-mask-image: linear-gradient(to right, #000 80%, transparent);
+    mask-image: linear-gradient(to right, #000 80%, transparent);
+  }
+
+  .sc-app .mn-chip,
+  .sc-app .mn-chip[aria-pressed="true"] {
+    height: 36px;
+    padding: 0 16px;
+    box-sizing: border-box;
+    border: 1px solid #E2E2DF;
+    border-radius: 999px;
+    color: #282929;
+    display: inline-flex;
+    align-items: center;
+    font-weight: 300;
+  }
+
+  .sc-app .mn-chip[aria-pressed="true"] {
+    background: #282929;
+    border-color: #282929;
+    color: #FFFFFF;
+  }
+
+  .sc-app .mn-chip[aria-pressed="true"]::before {
+    display: none;
+  }
+
+  .sc-app .mn-card {
+    padding: 16px 10px 0;
+    border-radius: 24px;
+  }
+
+  .sc-app .mn-bento {
+    display: block;
+    columns: 2;
+    column-gap: 8px;
+    padding-bottom: 32px;
+  }
+
+  .sc-app .mn-bk,
+  .sc-app .mn-bcol {
+    display: contents;
+  }
+
+  .sc-app .mn-bento .mn-tile {
+    break-inside: avoid;
+    margin: 0 0 8px;
+  }
+
+  .sc-app .mn-name,
+  .sc-app .mn-shade {
+    display: none;
+  }
+
+  .sc-app .mn-save {
+    width: 32px;
+    height: 32px;
+    top: 8px;
+    right: 8px;
+  }
+}

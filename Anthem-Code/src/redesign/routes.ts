@@ -12,6 +12,8 @@ export type ShellPage = {
   /** Tab shown as current. */
   tab: ShellTab;
   footer: boolean;
+  /** "main": the home header — search sits in the page instead of the header. */
+  header?: "main";
 };
 
 /** The old URLs stay (owner decision), so the new frame links to them. */
@@ -34,6 +36,7 @@ export const SC_LINKS = {
 } as const;
 
 const PAGES: ReadonlyArray<{ match: RegExp; page: ShellPage }> = [
+  { match: /^\/$/, page: { page: "main", tabbar: true, tab: "home", footer: true, header: "main" } },
   // Preview of the frame while pages are being rebuilt (step 2a).
   { match: /^\/sc\/shell\/?$/, page: { page: "not-found", tabbar: true, tab: "", footer: true } },
 ];

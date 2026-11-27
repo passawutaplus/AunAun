@@ -409,6 +409,7 @@ const BillingPreviewPage = lazy(
 
 const RedesignShell = lazy(() => import("./redesign/shell/RedesignShell.tsx"));
 const RedesignNotFound = lazy(() => import("./redesign/pages/NotFound.tsx"));
+const RedesignMain = lazy(() => import("./redesign/pages/Main.tsx"));
 
 /** Old site chrome (top nav, floating nav, banners, prompts): never mounted on a page of the new design. */
 const LegacyChrome = ({ children }: { children: ReactNode }) => {
@@ -472,12 +473,13 @@ const App = () => (
                     {/* New design (VITE_REDESIGN): its own frame, no old chrome, no PageTransition. */}
                     {isRedesignEnabled() ? (
                       <Route element={<RedesignShell />}>
+                        <Route path="/" element={<RedesignMain />} />
                         <Route path="/sc/shell" element={<RedesignNotFound />} />
                       </Route>
                     ) : null}
                     <Route element={<LaunchMinimalGate />}>
                       <Route element={<PageTransition />}>
-                        <Route path="/" element={<Index />} />
+                        {isRedesignEnabled() ? null : <Route path="/" element={<Index />} />}
                         <Route path="/learn" element={<LearnShell />}>
                           <Route index element={<PlatformLandingPage />} />
                         </Route>

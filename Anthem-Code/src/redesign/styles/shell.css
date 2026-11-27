@@ -145,6 +145,22 @@
   rotate: 180deg;
 }
 
+/* Home header: the row may wrap on narrow desktop windows (the search button lives in the page there) */
+.sc-app[data-header="main"] .sc-hd-in {
+  flex-wrap: wrap;
+  gap: 16px 24px;
+}
+
+/* visually hidden, still read by screen readers */
+.sc-app .sc-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
 /* Pages pull their <main> up under the header fade */
 .sc-app .sc-main {
   margin-top: -96px;
@@ -389,7 +405,9 @@
     padding-bottom: 28px;
   }
 
-  .sc-app .sc-hd-in {
+  .sc-app .sc-hd-in,
+  .sc-app[data-header="main"] .sc-hd-in {
+    min-height: 44px; /* thin header stays 56px even when no button is shown (signed out) */
     padding: 6px 8px 6px 16px;
     gap: 8px;
     flex-wrap: nowrap;
