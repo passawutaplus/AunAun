@@ -1,0 +1,533 @@
+/* Shared frame of the new design: header, footer, mobile tab bar, account menu.
+   Values come from the mock (site/index.html, pages/NotFound.dc.html, pages/AccountMenu.dc.html). */
+
+/* ---------- header ---------- */
+.sc-app .sc-hd {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  pointer-events: none;
+  padding: 22px 8px 96px;
+  background: rgba(242, 242, 240, .1);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  backdrop-filter: blur(24px) saturate(1.4);
+  --sc-hd-fade: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 1) 12%, rgba(0, 0, 0, .946) 25%, rgba(0, 0, 0, .794) 38%, rgba(0, 0, 0, .578) 52%, rgba(0, 0, 0, .345) 65%, rgba(0, 0, 0, .146) 78%, rgba(0, 0, 0, .024) 91%, rgba(0, 0, 0, 0) 100%);
+  -webkit-mask-image: var(--sc-hd-fade);
+  mask-image: var(--sc-hd-fade);
+}
+
+.sc-app .sc-hd-in {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 16px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  pointer-events: auto;
+}
+
+.sc-app .sc-hd-logo {
+  display: flex;
+  align-items: center;
+}
+
+.sc-app .sc-hd-logo img {
+  height: 34px;
+  width: auto;
+  display: block;
+}
+
+.sc-app .sc-hd-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sc-app .sc-hd-text {
+  height: 44px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.sc-app .sc-ib {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Feedback: the label slides out on hover / keyboard focus */
+.sc-app .sc-hd-fb {
+  width: auto;
+  height: 44px;
+  padding: 0 13px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  color: #282929;
+}
+
+.sc-app .sc-hd-fb svg {
+  flex: none;
+  position: relative;
+  z-index: 1;
+}
+
+.sc-app .sc-hd-fb .sc-lb {
+  display: block;
+  max-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 14px;
+  opacity: 0;
+}
+
+.sc-app .sc-hd-fb:hover .sc-lb,
+.sc-app .sc-hd-fb:focus-visible .sc-lb {
+  max-width: 90px;
+  margin-left: 8px;
+  opacity: 1;
+}
+
+.sc-app .sc-hd-bd {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  background: #282929;
+  color: #FFFFFF;
+  font-size: 11px;
+  font-weight: 400;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sc-app .sc-hd-acct {
+  all: unset;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 44px;
+  padding-left: 8px;
+}
+
+.sc-app .sc-hd-acct:focus-visible {
+  outline: 2px solid #282929;
+  outline-offset: 3px;
+}
+
+.sc-app .sc-av {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #D9D9D6 center / cover no-repeat;
+  display: block;
+}
+
+.sc-app .sc-hd-acct[aria-expanded="true"] .sc-av {
+  box-shadow: 0 0 0 2px #F2F2F0, 0 0 0 3.5px #282929;
+}
+
+.sc-app .sc-hd-acct[aria-expanded="true"] svg {
+  rotate: 180deg;
+}
+
+/* Pages pull their <main> up under the header fade */
+.sc-app .sc-main {
+  margin-top: -96px;
+}
+
+/* keeps the footer at the bottom while a page chunk loads */
+.sc-app .sc-main-wait {
+  flex: 1;
+}
+
+/* ---------- footer ---------- */
+.sc-app .sc-ft {
+  border-top: 1px solid #E0E0DD;
+}
+
+.sc-app .sc-ft-in {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 40px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 24px;
+  font-size: 13px;
+  color: #4A4A4A;
+}
+
+.sc-app .sc-ft-in p {
+  margin: 0;
+}
+
+.sc-app .sc-ft-plain {
+  color: inherit;
+  text-decoration: none;
+}
+
+.sc-app .sc-ft-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+/* ---------- mobile tab bar (shown ≤600px on top-level pages) ---------- */
+.sc-app .sc-tb {
+  display: none;
+}
+
+/* ---------- account menu ---------- */
+.sc-app .am-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 39;
+}
+
+.sc-app .am-box {
+  position: fixed;
+  top: 96px;
+  right: max(48px, calc((100% - 1360px) / 2 + 48px));
+  z-index: 40;
+  width: 288px;
+  box-sizing: border-box;
+  background: #FFFFFF;
+  border-radius: 24px;
+  box-shadow: 0 1px 2px rgba(40, 41, 41, .06), 0 16px 48px rgba(40, 41, 41, .14);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+.sc-app .am-i {
+  all: unset;
+  cursor: pointer;
+  box-sizing: border-box;
+  width: 100%;
+  height: 44px;
+  padding: 0 12px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: #282929;
+  text-decoration: none;
+}
+
+.sc-app .am-i:hover,
+.sc-app .am-i:focus-visible,
+.sc-app .am-i[aria-current="page"] {
+  background: #F2F2F0;
+}
+
+.sc-app .am-i svg {
+  flex: none;
+}
+
+.sc-app .am-i.am-me {
+  height: 68px;
+  gap: 14px;
+}
+
+.sc-app .am-me-av {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #D9D9D6 center / cover no-repeat;
+  flex: none;
+}
+
+.sc-app .am-me-tx {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sc-app .am-me-name {
+  font-size: 15px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sc-app .am-me-sub {
+  font-size: 12px;
+  color: #8A8A87;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sc-app .am-grow {
+  flex: 1;
+}
+
+.sc-app .am-i[aria-expanded="true"] .am-arrow {
+  rotate: 180deg;
+}
+
+.sc-app .am-rule {
+  height: 1px;
+  background: #ECECEA;
+  margin: 6px 12px;
+}
+
+.sc-app .am-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 4px;
+}
+
+.sc-app .am-sub {
+  all: unset;
+  cursor: pointer;
+  box-sizing: border-box;
+  width: 100%;
+  height: 44px;
+  padding: 0 12px 0 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: #282929;
+  text-decoration: none;
+}
+
+.sc-app .am-sub svg {
+  flex: none;
+}
+
+.sc-app .am-sub:hover,
+.sc-app .am-sub:focus-visible {
+  background: #F2F2F0;
+}
+
+.sc-app .am-i.am-out {
+  color: #B8321F;
+}
+
+/* ---------- motion (design rules A6: only without reduced motion, scale/translate/rotate, end at none) ---------- */
+@keyframes sc-pv-drop {
+  from { opacity: 0; scale: .98; translate: 0 -8px; }
+  to { opacity: 1; scale: none; translate: none; }
+}
+
+@keyframes sc-pv-drop-out {
+  from { opacity: 1; translate: none; }
+  to { opacity: 0; translate: 0 -6px; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sc-app .sc-hd-fb svg {
+    transition: rotate .6s cubic-bezier(.34, 1.56, .64, 1), scale .6s cubic-bezier(.34, 1.56, .64, 1);
+  }
+
+  .sc-app .sc-hd-fb:hover svg,
+  .sc-app .sc-hd-fb:focus-visible svg {
+    rotate: -12deg;
+    scale: 1.1;
+  }
+
+  .sc-app .sc-hd-fb .sc-lb {
+    translate: -18px 0;
+    scale: .9;
+    transform-origin: left center;
+    transition:
+      max-width .5s var(--sc-ease),
+      margin .5s var(--sc-ease),
+      opacity .3s ease,
+      translate .6s cubic-bezier(.34, 1.56, .64, 1),
+      scale .6s cubic-bezier(.34, 1.56, .64, 1);
+  }
+
+  .sc-app .sc-hd-fb:hover .sc-lb,
+  .sc-app .sc-hd-fb:focus-visible .sc-lb {
+    translate: none;
+    scale: none;
+  }
+
+  .sc-app .sc-hd-acct svg,
+  .sc-app .am-arrow {
+    transition: rotate .25s ease;
+  }
+
+  .sc-app .pv-drop {
+    animation: sc-pv-drop .32s var(--sc-ease) both;
+    transform-origin: top right;
+  }
+
+  .sc-app .pv-drop[data-leaving] {
+    animation: sc-pv-drop-out .18s ease both;
+    pointer-events: none;
+  }
+}
+
+/* ---------- phone (≤600px): thin header + floating tab bar ---------- */
+@media (max-width: 600px) {
+  .sc-app .sc-hd {
+    padding-top: 2px;
+    padding-bottom: 28px;
+  }
+
+  .sc-app .sc-hd-in {
+    padding: 6px 8px 6px 16px;
+    gap: 8px;
+    flex-wrap: nowrap;
+  }
+
+  .sc-app .sc-hd-logo img {
+    height: 24px;
+  }
+
+  .sc-app .sc-hd-nav {
+    gap: 0;
+  }
+
+  /* Get in Touch, Feedback and chat move to the account menu / tab bar */
+  .sc-app .sc-hd-text,
+  .sc-app .sc-hd-fb,
+  .sc-app .sc-hd-chat {
+    display: none;
+  }
+
+  /* the account menu opens from ☰ on My Profile only */
+  .sc-app .sc-hd-acct {
+    display: none;
+  }
+
+  .sc-app[data-page="my-profile"] .sc-hd-acct {
+    display: inline-flex;
+    width: 44px;
+    padding: 0;
+    justify-content: center;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23282929' stroke-width='1.4' stroke-linecap='round'%3E%3Cpath d='M4 7h16M4 12h16M4 17h16'/%3E%3C/svg%3E") center / 20px no-repeat;
+  }
+
+  .sc-app[data-page="my-profile"] .sc-hd-acct > * {
+    display: none;
+  }
+
+  .sc-app:not([data-page="event"]) .sc-main {
+    margin-top: -28px;
+  }
+
+  .sc-app .sc-ft-nav {
+    row-gap: 10px;
+  }
+
+  .sc-app[data-tab="on"] {
+    padding-bottom: 96px;
+  }
+
+  .sc-app[data-tab="on"] .sc-tb {
+    display: flex;
+  }
+
+  .sc-app .sc-tb {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: 20px;
+    z-index: 40;
+    height: 64px;
+    padding: 0 6px;
+    box-sizing: border-box;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .92);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    box-shadow: 0 1px 3px rgba(40, 41, 41, .08), 0 10px 32px rgba(40, 41, 41, .14);
+    align-items: center;
+    justify-content: space-around;
+  }
+
+  .sc-app .sc-tb a {
+    position: relative;
+    width: 56px;
+    height: 52px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    text-decoration: none;
+    font-size: 10px;
+    color: #8A8A87;
+  }
+
+  .sc-app .sc-tb a svg {
+    stroke: #8A8A87;
+  }
+
+  .sc-app .sc-tb a[aria-current="page"] {
+    color: #282929;
+    font-weight: 500;
+  }
+
+  .sc-app .sc-tb a[aria-current="page"] svg {
+    stroke: #282929;
+  }
+
+  .sc-app .sc-tb a[data-k="home"][aria-current="page"] svg {
+    fill: #282929;
+  }
+
+  .sc-app .sc-tb a[data-k="add"] {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #282929;
+  }
+
+  .sc-app .sc-tb a[data-k="add"] svg {
+    stroke: #FFFFFF;
+  }
+
+  .sc-app .sc-tb-av {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #D9D9D6 center / cover;
+  }
+
+  .sc-app .sc-tb a[aria-current="page"] .sc-tb-av {
+    box-shadow: 0 0 0 1.5px #FFFFFF, 0 0 0 3px #282929;
+  }
+
+  .sc-app .sc-tb-bd {
+    position: absolute;
+    top: 2px;
+    right: 8px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    box-sizing: border-box;
+    border-radius: 999px;
+    background: #EE3D29;
+    color: #FFFFFF;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}

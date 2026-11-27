@@ -1,0 +1,87 @@
+/* 404 (mock: pages/NotFound.dc.html) */
+.sc-app .nf-main {
+  flex: 1;
+  width: 100%;
+  max-width: 1440px;
+  margin-inline: auto;
+  padding: 53px 40px 80px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sc-app .nf-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px;
+  text-align: center;
+  padding: 80px 0;
+}
+
+.sc-app .nf-frame {
+  width: 280px;
+  aspect-ratio: 4 / 3;
+  border-radius: 20px;
+  border: 1.5px dashed #C8C8C5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sc-app .nf-frame span {
+  font-size: 72px;
+  font-weight: 300;
+  letter-spacing: -.04em;
+  line-height: 1;
+  color: #C8C8C5;
+}
+
+.sc-app .nf-tx {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sc-app .nf-tx h1 {
+  margin: 0;
+  font-size: 40px;
+  font-weight: 400;
+  letter-spacing: -.02em;
+  line-height: 1.1;
+}
+
+.sc-app .nf-tx p {
+  margin: 0;
+  font-size: 15px;
+  color: #666666;
+}
+
+.sc-app .nf-home {
+  height: 48px;
+  padding: 0 32px;
+  border-radius: 999px;
+  background: #282929;
+  color: #FFFFFF;
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 400;
+  display: inline-flex;
+  align-items: center;
+}
+
+.sc-app .nf-home:focus-visible {
+  outline: 2px solid #282929;
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sc-app .nf-home {
+    transition: translate .2s ease;
+  }
+
+  .sc-app .nf-home:hover {
+    translate: 0 -1px;
+  }
+}

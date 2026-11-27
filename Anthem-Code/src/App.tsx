@@ -12,6 +12,8 @@ import {
 } from "react-router-dom";
 import { getBackgroundLocation } from "@/lib/projectOverlay";
 import { isInspireEnabled } from "@/lib/aplus1Launch";
+import { isRedesignEnabled } from "./redesign/flag";
+import { isRedesignPath } from "./redesign/routes";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
@@ -405,6 +407,15 @@ const BillingPreviewPage = lazy(
   () => import("./pages/dev/BillingPreviewPage.tsx"),
 );
 
+const RedesignShell = lazy(() => import("./redesign/shell/RedesignShell.tsx"));
+const RedesignNotFound = lazy(() => import("./redesign/pages/NotFound.tsx"));
+
+/** Old site chrome (top nav, floating nav, banners, prompts): never mounted on a page of the new design. */
+const LegacyChrome = ({ children }: { children: ReactNode }) => {
+  const { pathname } = useLocation();
+  return isRedesignEnabled() && isRedesignPath(pathname) ? null : <>{children}</>;
+};
+
 /** Routes render the page underneath; a work opened with router state `backgroundLocation` sits on top as an overlay. */
 const BackgroundAwareRoutes = ({ children }: { children: ReactNode }) => {
   const location = useLocation();
@@ -453,9 +464,17 @@ const App = () => (
                 <AvatarPoolBootstrap />
                 <ReferralAttribution />
                 <CreatorInviteAccountGuards />
-                <DesktopTopNav />
+                <LegacyChrome>
+                  <DesktopTopNav />
+                </LegacyChrome>
                 <Suspense fallback={<RouteFallback />}>
                   <BackgroundAwareRoutes>
+                    {/* New design (VITE_REDESIGN): its own frame, no old chrome, no PageTransition. */}
+                    {isRedesignEnabled() ? (
+                      <Route element={<RedesignShell />}>
+                        <Route path="/sc/shell" element={<RedesignNotFound />} />
+                      </Route>
+                    ) : null}
                     <Route element={<LaunchMinimalGate />}>
                       <Route element={<PageTransition />}>
                         <Route path="/" element={<Index />} />
@@ -1467,25 +1486,33 @@ const App = () => (
                   </BackgroundAwareRoutes>
                 </Suspense>
                 <OfflineBanner />
-                <CookieConsent />
+                <LegacyChrome>
+                  <CookieConsent />
+                </LegacyChrome>
                 <GoogleAnalytics />
                 <PolicyReconsentGate />
-                <FloatingNav />
-                <AndroidAppBanner />
+                <LegacyChrome>
+                  <FloatingNav />
+                  <AndroidAppBanner />
+                </LegacyChrome>
                 <Suspense fallback={null}>
                   <AuthDialog />
                 </Suspense>
                 <Suspense fallback={null}>
                   <FeedbackTicketHost />
                 </Suspense>
-                <PullToRefresh />
-                <Suspense fallback={null}>
-                  <RatingPrompt />
-                </Suspense>
+                <LegacyChrome>
+                  <PullToRefresh />
+                  <Suspense fallback={null}>
+                    <RatingPrompt />
+                  </Suspense>
+                </LegacyChrome>
                 <CloudPrefsSync />
-                <Suspense fallback={null}>
-                  <InterestSurveyGate />
-                </Suspense>
+                <LegacyChrome>
+                  <Suspense fallback={null}>
+                    <InterestSurveyGate />
+                  </Suspense>
+                </LegacyChrome>
               </ErrorBoundary>
             </BrowserRouter>
           </TooltipProvider>
