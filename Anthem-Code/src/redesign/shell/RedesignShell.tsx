@@ -113,7 +113,7 @@ export default function RedesignShell() {
                     <path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z" />
                     <path d="M10 20.5a2 2 0 0 0 4 0" />
                   </svg>
-                  {unreadCount ? <span aria-hidden="true" className="sc-hd-bd">{unreadCount}</span> : null}
+                  {unreadCount ? <span aria-hidden="true" className="sc-hd-bd">{unreadCount > 99 ? "99+" : unreadCount}</span> : null}
                 </Link>
                 <button
                   ref={acctRef}
