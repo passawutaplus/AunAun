@@ -7,6 +7,10 @@ schemas = ["public", "graphql_public", "shared", "anthem", "so1o", "ops"]
 [functions.similar-images]
 verify_jwt = false
 
+# Called by the event-scout workflow with a one-time database ticket (no JWT); see the function header.
+[functions.scout-cover]
+verify_jwt = false
+
 [functions.generate-contract]
 verify_jwt = false
 
