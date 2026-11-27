@@ -31,6 +31,7 @@ const CATEGORIES = [
   "art_fair",
   "talk_forum",
   "open_call",
+  "meetup",
   "other",
 ] as const;
 

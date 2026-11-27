@@ -9,6 +9,7 @@ export const EVENT_CATEGORIES = [
   { id: "art_fair", label: "Art Fair", th: "อาร์ตแฟร์" },
   { id: "talk_forum", label: "Talk & Forum", th: "ทอล์ก & ฟอรัม" },
   { id: "open_call", label: "Open Call", th: "เปิดรับผลงาน" },
+  { id: "meetup", label: "Meetup", th: "มีตอัป" },
   { id: "other", label: "Other", th: "อื่น ๆ" },
 ] as const;
 
@@ -208,6 +209,7 @@ const CATEGORY_ENTRY: Record<EventCategory, Entry> = {
   art_fair: S.catArtFair,
   talk_forum: S.catTalkForum,
   open_call: S.catOpenCall,
+  meetup: S.catMeetup,
   other: S.catOther,
 };
 

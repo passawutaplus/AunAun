@@ -136,6 +136,7 @@ const EVENT_CATEGORY_LABEL: Record<string, string> = {
   art_fair: "Art Fair",
   talk_forum: "Talk & Forum",
   open_call: "Open Call",
+  meetup: "Meetup",
   other: "Other",
 };
 

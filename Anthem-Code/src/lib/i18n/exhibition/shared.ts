@@ -8,6 +8,7 @@ export const EXHIBITION_SHARED = {
   catArtFair: { th: "Art Fair", en: "Art Fair", zh: "艺术博览会" },
   catTalkForum: { th: "Talk & Forum", en: "Talk & Forum", zh: "讲座与论坛" },
   catOpenCall: { th: "Open Call", en: "Open Call", zh: "公开征集" },
+  catMeetup: { th: "Meetup", en: "Meetup", zh: "聚会" },
   catOther: { th: "Other", en: "Other", zh: "其他" },
   catEvent: { th: "Event", en: "Event", zh: "活动" },
 

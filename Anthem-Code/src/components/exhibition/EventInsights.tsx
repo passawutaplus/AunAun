@@ -71,6 +71,7 @@ const CATEGORY_BLOCKS: Partial<Record<ExhibitionEvent["category"], Array<Partial
   talk_forum: [{ key: "speakers" }, { key: "schedule" }, { key: "steps", title: DETAIL.stepsRegister }],
   art_fair: [{ key: "highlights" }, { key: "schedule", title: DETAIL.scheduleTickets }, { key: "steps", title: DETAIL.stepsTickets }],
   exhibition: [{ key: "who_for" }, { key: "takeaways" }, { key: "know_before" }],
+  meetup: [{ key: "who_for" }, { key: "schedule" }, { key: "steps", title: DETAIL.stepsRegister }],
   other: [{ key: "who_for" }, { key: "takeaways" }, { key: "know_before" }],
 };
 
