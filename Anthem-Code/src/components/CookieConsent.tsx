@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { isAuthRoute } from "@/lib/onboardingRoutes";
+import { isNativeApp } from "@/lib/appShell";
 import { Cookie, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/lib/i18n";
@@ -26,7 +27,9 @@ const CookieConsent = () => {
   const [prefsOpen, setPrefsOpen] = useState(false);
 
   useEffect(() => {
-    setBannerOpen(hasConsentBannerPending());
+    // The store apps never show the banner: with no saved choice only essential cookies run
+    // (isCategoryAllowed is false for the rest). Settings can still open the preferences dialog.
+    setBannerOpen(!isNativeApp() && hasConsentBannerPending());
   }, []);
 
   useEffect(() => {
