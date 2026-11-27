@@ -19,12 +19,17 @@ const BUCKET = "project-media";
 const OWNER = "82039b6d-cdf4-4c46-958a-d770d849382c";
 const MAX_BYTES = 8 * 1024 * 1024;
 const MAX_REDIRECTS = 4;
-const EXT: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
+const EXT: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 
-const ascii = (b: Uint8Array, from: number, to: number) => String.fromCharCode(...b.subarray(from, to));
+const ascii = (b: Uint8Array, from: number, to: number) =>
+  String.fromCharCode(...b.subarray(from, to));
 
 /** Type from the first bytes: a server's Content-Type is not trusted. */
 function sniff(b: Uint8Array): string | null {
@@ -86,7 +91,8 @@ async function download(start: string): Promise<Uint8Array> {
       throw new Error("picture is larger than 8 MB");
     }
     const bytes = new Uint8Array(await res.arrayBuffer());
-    if (bytes.byteLength === 0 || bytes.byteLength > MAX_BYTES) throw new Error("picture is empty or larger than 8 MB");
+    if (bytes.byteLength === 0 || bytes.byteLength > MAX_BYTES)
+      throw new Error("picture is empty or larger than 8 MB");
     return bytes;
   }
   throw new Error("too many redirects");
@@ -103,11 +109,14 @@ Deno.serve(async (req) => {
   }
   const ticket = typeof body.ticket === "string" ? body.ticket : "";
   const source = typeof body.url === "string" ? body.url.trim() : "";
-  if (!/^[0-9a-f]{64}$/.test(ticket) || !source || source.length > 2000) return json({ error: "bad_request" }, 400);
+  if (!/^[0-9a-f]{64}$/.test(ticket) || !source || source.length > 2000)
+    return json({ error: "bad_request" }, 400);
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const admin = createClient(supabaseUrl, supabaseSecretKey());
-  const { data: allowed, error: ticketError } = await admin.rpc("scout_cover_spend", { _token: ticket });
+  const { data: allowed, error: ticketError } = await admin.rpc("scout_cover_spend", {
+    _token: ticket,
+  });
   if (ticketError || allowed !== true) return json({ error: "unauthorized" }, 401);
 
   let bytes: Uint8Array;
