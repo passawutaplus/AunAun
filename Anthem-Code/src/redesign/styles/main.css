@@ -544,3 +544,289 @@
     right: 8px;
   }
 }
+
+/* ================= Creators tab ================= */
+.sc-app .cr {
+  display: flex;
+  flex-direction: column;
+  gap: 56px;
+  padding-bottom: 56px;
+}
+
+.sc-app .cr-sec {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.sc-app .cr-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sc-app .cr-head h2 {
+  margin: 0;
+  font-size: 14px;
+  letter-spacing: .08em;
+  font-weight: 400;
+}
+
+.sc-app .cr-arrows {
+  display: flex;
+  gap: 8px;
+}
+
+.sc-app .cr-arrow {
+  all: unset;
+  cursor: pointer;
+  width: 36px;
+  height: 36px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 1px solid #D4D4D1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sc-app :is(.cr-arrow, .cr-badge, .cr-follow):focus-visible {
+  outline: 2px solid #282929;
+  outline-offset: 3px;
+}
+
+/* NEW THIS WEEK: two cards per view, scrolls sideways */
+.sc-app .cr-track {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: calc((100% - 24px) / 2);
+  gap: 24px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.sc-app .cr-track::-webkit-scrollbar {
+  display: none;
+}
+
+.sc-app .cr-new {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  border-radius: 20px;
+  padding: 24px;
+  text-align: center;
+  min-width: 0;
+  background: #F5F5F3;
+  scroll-snap-align: start;
+}
+
+.sc-app .cr-new-av {
+  position: relative;
+}
+
+.sc-app .cr-av-link {
+  display: block;
+  flex-shrink: 0;
+}
+
+.sc-app .cr-av {
+  display: block;
+  border-radius: 50%;
+  background: #D9D9D6;
+  object-fit: cover;
+}
+
+.sc-app .cr-av-72 {
+  width: 72px;
+  height: 72px;
+}
+
+.sc-app .cr-av-44 {
+  width: 44px;
+  height: 44px;
+}
+
+.sc-app .cr-badge {
+  all: unset;
+  cursor: pointer;
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  font-weight: 300;
+  line-height: 1;
+  box-shadow: 0 0 0 3px #F5F5F3;
+  background: #282929;
+  color: #FFFFFF;
+}
+
+.sc-app .cr-badge[aria-pressed="true"] {
+  font-size: 13px;
+  background: #FFFFFF;
+  color: #282929;
+}
+
+.sc-app .cr-who {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
+  text-decoration: none;
+  color: #282929;
+}
+
+.sc-app .cr-who-n {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.sc-app .cr-who-s {
+  font-size: 13px;
+  color: #666666;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* row kept for "ทักทาย" (say hi), which arrives with the Chat step */
+.sc-app .cr-hi {
+  height: 36px;
+}
+
+/* Small previews of a creator's works. The mock crops these to one shape (not a work on show). */
+.sc-app .cr-th {
+  display: grid;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.sc-app .cr-th4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  width: 100%;
+}
+
+.sc-app .cr-th3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.sc-app .cr-th img {
+  width: 100%;
+  border-radius: 5px;
+  object-fit: cover;
+  display: block;
+  background: #E6E6E3;
+}
+
+.sc-app .cr-th4 img {
+  aspect-ratio: 1 / 1;
+}
+
+.sc-app .cr-th3 img {
+  aspect-ratio: 4 / 3;
+}
+
+.sc-app .cr-th:hover img {
+  opacity: .75;
+}
+
+/* ALL CREATORS */
+.sc-app .cr-all {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.sc-app .cr-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: #F5F5F3;
+  border-radius: 24px;
+  padding: 16px;
+  min-width: 0;
+}
+
+.sc-app .cr-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.sc-app .cr-row-who {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+  text-decoration: none;
+  color: #282929;
+}
+
+.sc-app .cr-row-n {
+  font-size: 15px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sc-app .cr-follow {
+  all: unset;
+  cursor: pointer;
+  flex-shrink: 0;
+  height: 36px;
+  padding: 0 18px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #282929;
+  color: #FFFFFF;
+}
+
+.sc-app .cr-follow[aria-pressed="true"] {
+  width: 36px;
+  padding: 0;
+  border: 1px solid #D4D4D1;
+  background: transparent;
+  color: #282929;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sc-app .cr-track {
+    scroll-behavior: smooth;
+  }
+
+  .sc-app .cr-th img {
+    transition: opacity .5s ease;
+  }
+
+  @supports (animation-timeline: view()) {
+    .sc-app .cr-all > *,
+    .sc-app .cr-track > * {
+      animation: sc-rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 70%;
+    }
+  }
+}
+
+@media (max-width: 900px) {
+  .sc-app .cr-all {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

@@ -6,7 +6,9 @@ import { releaseBoot } from "@/lib/bootGate";
 import { SC_CATEGORIES, isScCategory } from "../lib/categories";
 import { SC_LINKS } from "../routes";
 import { BENTO_FIRST, BENTO_STEP, MASONRY_GAP, bentoBlocks, masonrySpan } from "../main/bento";
+import Creators from "../main/Creators";
 import ScLoader from "../main/ScLoader";
+import { CREATOR_VIEWS, type CreatorView } from "../main/useCreators";
 import WorkTile, { type TileWork } from "../main/WorkTile";
 import { SHOWCASE_VIEWS, VIEW_NEEDS_LOGIN, useShowcaseWorks, type ShowcaseView } from "../main/useShowcaseWorks";
 import { useWorkSaves } from "../main/useWorkSaves";
@@ -40,14 +42,30 @@ export default function Main() {
     setParams(next, { preventScrollReset: true });
   };
 
+  // The view names differ per tab, so changing tab drops ?view (the category stays).
+  const pickMode = (m: Mode) => {
+    const next = new URLSearchParams(params);
+    if (m === "showcase") next.delete("tab");
+    else next.set("tab", m);
+    next.delete("view");
+    setParams(next, { preventScrollReset: true });
+  };
+
   const { user, loading: authLoading } = useAuth();
-  const viewParam = params.get("view") as ShowcaseView | null;
-  const wanted: ShowcaseView = viewParam && SHOWCASE_VIEWS.includes(viewParam) ? viewParam : "explore";
+  const signedOut = !user && !authLoading;
+  const viewParam = params.get("view");
+  const wanted: ShowcaseView = (SHOWCASE_VIEWS as readonly string[]).includes(viewParam ?? "") ? (viewParam as ShowcaseView) : "explore";
   // Following and Collections belong to a signed-in person; a signed-out visitor gets Explore.
-  const view: ShowcaseView = VIEW_NEEDS_LOGIN[wanted] && !user && !authLoading ? "explore" : wanted;
+  const view: ShowcaseView = VIEW_NEEDS_LOGIN[wanted] && signedOut ? "explore" : wanted;
   const pickView = (v: ShowcaseView) => {
     if (VIEW_NEEDS_LOGIN[v] && !user) navigate(SC_LINKS.login);
     else set("view", v === "explore" ? null : v);
+  };
+  const crWanted: CreatorView = (CREATOR_VIEWS as readonly string[]).includes(viewParam ?? "") ? (viewParam as CreatorView) : "discover";
+  const crView: CreatorView = crWanted === "following" && signedOut ? "discover" : crWanted;
+  const pickCrView = (v: CreatorView) => {
+    if (v === "following" && !user) navigate(SC_LINKS.login);
+    else set("view", v === "discover" ? null : v);
   };
   const saves = useWorkSaves();
   const toggleSave = useCallback(
@@ -77,7 +95,7 @@ export default function Main() {
         </div>
         <div role="group" aria-label="เลือกมุมมอง" className="mn-modes">
           {MODES.map(([key, label]) => (
-            <button key={key} type="button" className="mn-mode" aria-pressed={mode === key} onClick={() => set("tab", key === "showcase" ? null : key)}>
+            <button key={key} type="button" className="mn-mode" aria-pressed={mode === key} onClick={() => pickMode(key)}>
               {label}
             </button>
           ))}
@@ -89,9 +107,13 @@ export default function Main() {
         </Link>
       </div>
 
-      {mode === "showcase" ? (
+      {mode === "showcase" || mode === "creators" ? (
         <div className="mn-fld">
-          <ViewMenu view={view} onPick={pickView} />
+          {mode === "showcase" ? (
+            <ViewMenu label="มุมมองผลงาน" options={SHOWCASE_VIEWS} labels={VIEW_LABEL} value={view} onPick={pickView} />
+          ) : (
+            <ViewMenu label="มุมมองครีเอเตอร์" options={CREATOR_VIEWS} labels={CREATOR_VIEW_LABEL} value={crView} onPick={pickCrView} />
+          )}
           <span aria-hidden="true" className="mn-fld-rule" />
           <div className="mn-chips" role="group" aria-label="หมวดงาน">
             {(["All", ...SC_CATEGORIES] as const).map((f) => (
@@ -113,6 +135,8 @@ export default function Main() {
         <h1 className="sc-sr">Samecor — ผลงานล่าสุด</h1>
         {mode === "showcase" ? (
           <Showcase key={`${view}:${category ?? "all"}`} view={view} category={category} label={MODE_LABEL[mode]} savedIds={saves.ids} onToggleSave={toggleSave} />
+        ) : mode === "creators" ? (
+          <Creators view={crView} category={category} />
         ) : null}
       </div>
     </main>
@@ -120,9 +144,19 @@ export default function Main() {
 }
 
 const VIEW_LABEL: Record<ShowcaseView, string> = { explore: "Explore", following: "Following", latest: "Latest", collections: "Collections" };
+const CREATOR_VIEW_LABEL: Record<CreatorView, string> = { discover: "Discover", new: "New", following: "Following" };
+
+type ViewMenuProps<V extends string> = {
+  /** Accessible name of the menu. */
+  label: string;
+  options: readonly V[];
+  labels: Record<V, string>;
+  value: V;
+  onPick: (v: V) => void;
+};
 
 /** Order of the grid. "Samecor Picks" of the mock stays hidden until the Picker community feeds it. */
-function ViewMenu({ view, onPick }: { view: ShowcaseView; onPick: (v: ShowcaseView) => void }) {
+function ViewMenu<V extends string>({ label, options, labels, value, onPick }: ViewMenuProps<V>) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
 
@@ -145,24 +179,24 @@ function ViewMenu({ view, onPick }: { view: ShowcaseView; onPick: (v: ShowcaseVi
   return (
     <div className="mn-view-wrap" ref={wrapRef}>
       <button type="button" className="mn-view" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
-        {VIEW_LABEL[view]}
+        {labels[value]}
       </button>
       {open ? (
-        <div role="menu" aria-label="มุมมองผลงาน" className="mn-view-menu">
-          {SHOWCASE_VIEWS.map((v) => (
+        <div role="menu" aria-label={label} className="mn-view-menu">
+          {options.map((v) => (
             <button
               key={v}
               type="button"
               role="menuitemradio"
-              aria-checked={v === view}
+              aria-checked={v === value}
               className="mn-view-opt"
               onClick={() => {
                 setOpen(false);
                 onPick(v);
               }}
             >
-              <span>{VIEW_LABEL[v]}</span>
-              {v === view ? (
+              <span>{labels[v]}</span>
+              {v === value ? (
                 <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M5 12.5l4.5 4.5L19 7.5" />
                 </svg>
