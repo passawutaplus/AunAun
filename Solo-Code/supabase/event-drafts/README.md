@@ -18,6 +18,14 @@ hot-linked. Only the event's own official artwork — never a photo of an artist
 picture from a media site. No suitable picture? Leave the key out; the event is published
 without a cover. Never set `cover_url` yourself.
 
+**More pictures (the slider on the event page).** Add `"gallery_source_urls"`: up to 5 direct
+`https://` links (JPEG / PNG / WebP) of pictures **published on that same organiser or venue page for
+this event** — further official artwork, the programme graphic, photos of the venue or the activity.
+Not the cover again, no logos, sponsor strips, avatars or icons, nothing from media sites or other
+events, and no close-up of a private person. The workflow stores copies like the cover (the table
+holds at most 8). Nothing suitable on the page? Leave the key out. Never set `gallery_urls` or
+`media_sizes` yourself. Drafts (`scout_event_draft`) carry no pictures.
+
 Each event is one call:
 
 ```sql
@@ -63,8 +71,8 @@ Rules the function enforces (same as the team editor): `title` ≤ 100, `descrip
 `time_note` ≤ 60, `fee_note` ≤ 60, `category` ∈ open_call · exhibition · workshop · talk_forum (Talk) ·
 art_fair (any creative fair: art, design, craft, book, zine, art toy) · meetup, `fee_type` ∈ free · paid · unspecified, links must be `https://` and not
 shorteners. A draft is skipped (returns NULL) when the same `source_url` already exists or a
-very similar title is already in the table. No images are ever copied: `cover_url` and
-`gallery_urls` stay empty.
+very similar title is already in the table. Pictures only ever arrive through `cover_source_url` /
+`gallery_source_urls` (see above); a batch never writes `cover_url` or `gallery_urls` itself.
 
 `insights` ("สรุปโดย SAMECOR" on the event page) is optional: exactly the best **2** lines each for
 `who_for`, `takeaways` and `know_before` (the page shows two; more reads as repetition). `know_before`
