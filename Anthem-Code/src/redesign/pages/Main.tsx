@@ -8,7 +8,7 @@ import { SC_LINKS } from "../routes";
 import { BENTO_FIRST, BENTO_STEP, MASONRY_GAP, bentoBlocks, masonrySpan } from "../main/bento";
 import ScLoader from "../main/ScLoader";
 import WorkTile, { type TileWork } from "../main/WorkTile";
-import { useShowcaseWorks } from "../main/useShowcaseWorks";
+import { SHOWCASE_VIEWS, VIEW_NEEDS_LOGIN, useShowcaseWorks, type ShowcaseView } from "../main/useShowcaseWorks";
 import { useWorkSaves } from "../main/useWorkSaves";
 import "../styles/main.css";
 
@@ -22,7 +22,7 @@ type Mode = (typeof MODES)[number][0];
 const MODE_LABEL: Record<Mode, string> = { showcase: "ผลงาน", creators: "ครีเอเตอร์", event: "อีเว้นท์" };
 
 /**
- * Home (mock: pages/Main.dc.html). State lives in the URL: `?tab=creators|event`, `?cat=<CATEGORY>`.
+ * Home (mock: pages/Main.dc.html). State lives in the URL: `?tab=creators|event`, `?view=following|latest|collections`, `?cat=<CATEGORY>`.
  * This step has the Showcase tab; Creators / Event and the search panels follow.
  */
 export default function Main() {
@@ -33,14 +33,22 @@ export default function Main() {
   const catParam = params.get("cat");
   const category = isScCategory(catParam) ? catParam : null;
 
-  const set = (key: "tab" | "cat", value: string | null) => {
+  const set = (key: "tab" | "cat" | "view", value: string | null) => {
     const next = new URLSearchParams(params);
     if (value) next.set(key, value);
     else next.delete(key);
     setParams(next, { preventScrollReset: true });
   };
 
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const viewParam = params.get("view") as ShowcaseView | null;
+  const wanted: ShowcaseView = viewParam && SHOWCASE_VIEWS.includes(viewParam) ? viewParam : "explore";
+  // Following and Collections belong to a signed-in person; a signed-out visitor gets Explore.
+  const view: ShowcaseView = VIEW_NEEDS_LOGIN[wanted] && !user && !authLoading ? "explore" : wanted;
+  const pickView = (v: ShowcaseView) => {
+    if (VIEW_NEEDS_LOGIN[v] && !user) navigate(SC_LINKS.login);
+    else set("view", v === "explore" ? null : v);
+  };
   const saves = useWorkSaves();
   const toggleSave = useCallback(
     (id: string) => {
@@ -83,7 +91,7 @@ export default function Main() {
 
       {mode === "showcase" ? (
         <div className="mn-fld">
-          <ViewMenu />
+          <ViewMenu view={view} onPick={pickView} />
           <span aria-hidden="true" className="mn-fld-rule" />
           <div className="mn-chips" role="group" aria-label="หมวดงาน">
             {(["All", ...SC_CATEGORIES] as const).map((f) => (
@@ -104,15 +112,17 @@ export default function Main() {
       <div className="mn-card">
         <h1 className="sc-sr">Samecor — ผลงานล่าสุด</h1>
         {mode === "showcase" ? (
-          <Showcase key={category ?? "all"} category={category} label={MODE_LABEL[mode]} savedIds={saves.ids} onToggleSave={toggleSave} />
+          <Showcase key={`${view}:${category ?? "all"}`} view={view} category={category} label={MODE_LABEL[mode]} savedIds={saves.ids} onToggleSave={toggleSave} />
         ) : null}
       </div>
     </main>
   );
 }
 
-/** "Explore" is the only order with real data so far; the other views of the mock stay hidden until they have one. */
-function ViewMenu() {
+const VIEW_LABEL: Record<ShowcaseView, string> = { explore: "Explore", following: "Following", latest: "Latest", collections: "Collections" };
+
+/** Order of the grid. "Samecor Picks" of the mock stays hidden until the Picker community feeds it. */
+function ViewMenu({ view, onPick }: { view: ShowcaseView; onPick: (v: ShowcaseView) => void }) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
 
@@ -135,16 +145,30 @@ function ViewMenu() {
   return (
     <div className="mn-view-wrap" ref={wrapRef}>
       <button type="button" className="mn-view" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
-        Explore
+        {VIEW_LABEL[view]}
       </button>
       {open ? (
         <div role="menu" aria-label="มุมมองผลงาน" className="mn-view-menu">
-          <button type="button" role="menuitemradio" aria-checked="true" className="mn-view-opt" onClick={() => setOpen(false)}>
-            <span>Explore</span>
-            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M5 12.5l4.5 4.5L19 7.5" />
-            </svg>
-          </button>
+          {SHOWCASE_VIEWS.map((v) => (
+            <button
+              key={v}
+              type="button"
+              role="menuitemradio"
+              aria-checked={v === view}
+              className="mn-view-opt"
+              onClick={() => {
+                setOpen(false);
+                onPick(v);
+              }}
+            >
+              <span>{VIEW_LABEL[v]}</span>
+              {v === view ? (
+                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12.5l4.5 4.5L19 7.5" />
+                </svg>
+              ) : null}
+            </button>
+          ))}
         </div>
       ) : null}
     </div>
@@ -152,14 +176,15 @@ function ViewMenu() {
 }
 
 type ShowcaseProps = {
+  view: ShowcaseView;
   category: (typeof SC_CATEGORIES)[number] | null;
   label: string;
   savedIds: Set<string>;
   onToggleSave: (id: string) => void;
 };
 
-function Showcase({ category, label, savedIds, onToggleSave }: ShowcaseProps) {
-  const { data: rows, isPending, isError, hasNextPage, isFetchingNextPage, fetchNextPage } = useShowcaseWorks(category);
+function Showcase({ view, category, label, savedIds, onToggleSave }: ShowcaseProps) {
+  const { data: rows, isPending, isError, hasNextPage, isFetchingNextPage, fetchNextPage } = useShowcaseWorks(view, category);
   const owners = useMemo(() => [...new Set((rows ?? []).map((r) => r.owner_id).filter((id): id is string => !!id))], [rows]);
   const { data: profiles } = useProfilesByIds(owners);
 
