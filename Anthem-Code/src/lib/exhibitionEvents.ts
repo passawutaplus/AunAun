@@ -3,13 +3,14 @@ import { COMMON, formatDateRange, getLang, tr, type Entry, type Lang } from "@/l
 import { EXHIBITION_SHARED as S } from "@/lib/i18n/exhibition/shared";
 
 /** Exhibition & events (anthem.events). Writes go through the event_* RPCs; see the migration for the rules. */
+/** Same six as the type chips of the Event tab, in that order. A legacy "other" row still loads; it is labelled "Event". */
 export const EVENT_CATEGORIES = [
+  { id: "open_call", label: "Open Call", th: "เปิดรับผลงาน" },
   { id: "exhibition", label: "Exhibition", th: "นิทรรศการ" },
   { id: "workshop", label: "Workshop", th: "เวิร์กช็อป" },
+  { id: "talk_forum", label: "Talk", th: "ทอล์ก" },
   { id: "art_fair", label: "Art Fair", th: "อาร์ตแฟร์" },
-  { id: "talk_forum", label: "Talk & Forum", th: "ทอล์ก & ฟอรัม" },
-  { id: "open_call", label: "Open Call", th: "เปิดรับผลงาน" },
-  { id: "other", label: "Other", th: "อื่น ๆ" },
+  { id: "meetup", label: "Meetup", th: "มีตอัป" },
 ] as const;
 
 export type EventCategory = (typeof EVENT_CATEGORIES)[number]["id"];
@@ -208,7 +209,7 @@ const CATEGORY_ENTRY: Record<EventCategory, Entry> = {
   art_fair: S.catArtFair,
   talk_forum: S.catTalkForum,
   open_call: S.catOpenCall,
-  other: S.catOther,
+  meetup: S.catMeetup,
 };
 
 /** Category name in the UI language ("Event" for an unknown id). Thai keeps the English names shown today. */

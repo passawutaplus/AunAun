@@ -1,9 +1,22 @@
-# Event drafts (scout)
+# Event scout batches
 
 One file per scout run, named `YYYY-MM-DD.sql`, written by the weekly "SAMECOR event scout"
 cloud routine and applied to production by `.github/workflows/event-drafts-apply.yml` after
-the PR is merged. Every statement creates a **draft** — nothing is published until an admin
-opens it in `/admin/events` and presses publish.
+the PR is merged.
+
+**Since 2026-11-27 the scout publishes by itself** (owner decision: no approval step; the owner
+reports anything wrong and it is edited or removed afterwards). Use
+`public.scout_event_publish(...)` with the same object as below. Use
+`public.scout_event_draft(...)` only when something is uncertain (dates not final, unclear
+venue, a source you could not fully confirm): that creates a **draft** for the team in
+`/admin/events`. An event without `starts_on` or `location_name` always stays a draft.
+
+**Cover picture.** Add `"cover_source_url"`: the direct `https://` link of the event's official
+poster / key visual **taken from the organiser's or the venue's own page** (usually its
+`og:image`). The apply workflow stores a copy in our storage and sets the cover; nothing is
+hot-linked. Only the event's own official artwork — never a photo of an artist's work or a
+picture from a media site. No suitable picture? Leave the key out; the event is published
+without a cover. Never set `cover_url` yourself.
 
 Each event is one call:
 
@@ -47,8 +60,8 @@ blank line (the first paragraph is also the link-preview text). Repeating the su
 
 Rules the function enforces (same as the team editor): `title` ≤ 100, `description` ≤ 2000,
 `location_name` / `location_note` / `source_name` ≤ 120, `organizer_name` ≤ 100,
-`time_note` ≤ 60, `fee_note` ≤ 60, `category` ∈ exhibition · workshop · art_fair · talk_forum ·
-open_call · other, `fee_type` ∈ free · paid · unspecified, links must be `https://` and not
+`time_note` ≤ 60, `fee_note` ≤ 60, `category` ∈ open_call · exhibition · workshop · talk_forum (Talk) ·
+art_fair (any creative fair: art, design, craft, book, zine, art toy) · meetup, `fee_type` ∈ free · paid · unspecified, links must be `https://` and not
 shorteners. A draft is skipped (returns NULL) when the same `source_url` already exists or a
 very similar title is already in the table. No images are ever copied: `cover_url` and
 `gallery_urls` stay empty.

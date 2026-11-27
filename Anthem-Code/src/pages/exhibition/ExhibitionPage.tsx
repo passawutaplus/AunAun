@@ -64,7 +64,7 @@ const CATEGORY_SEO: Record<EventCategory, string> = {
   art_fair: "อาร์ตแฟร์และดีไซน์แฟร์ในไทย — วันจัดงาน สถานที่ บัตร และไฮไลต์ รวมไว้ที่ SAMECOR",
   talk_forum: "ทอล์กและฟอรัมด้านศิลปะ ดีไซน์ และความคิดสร้างสรรค์ — วิทยากร กำหนดการ และการลงทะเบียน บน SAMECOR",
   open_call: "Open Call ประกวดและเปิดรับผลงานศิลปะ ดีไซน์ ภาพถ่าย — คุณสมบัติ รางวัล ขั้นตอน และวันปิดรับ บน SAMECOR",
-  other: "อีเวนต์สร้างสรรค์อื่น ๆ ในไทย — ตลาดนัดศิลปะ เทศกาล และงานเปิดตัว รวมไว้ที่ SAMECOR",
+  meetup: "มีตอัปและนัดพบของคนทำงานสร้างสรรค์ในไทย — วันเวลา สถานที่ และวิธีเข้าร่วม รวมไว้ที่ SAMECOR",
 };
 
 /** One dropdown (like Creators' Discovery menu): what's on now, three sorts of it, or ended events. */

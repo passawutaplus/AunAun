@@ -41,7 +41,7 @@ export const STATIC_PATHS = [
 ];
 
 /** Event categories (DB id → URL segment: "_" becomes "-"). */
-export const EVENT_CATEGORIES = ["exhibition", "workshop", "art_fair", "talk_forum", "open_call", "other"];
+export const EVENT_CATEGORIES = ["open_call", "exhibition", "workshop", "talk_forum", "art_fair", "meetup"];
 
 /** Journal's article list is a category page in Exhibition mode. */
 export const JOURNAL_LIST_PATH = "/exhibition/category/journal";

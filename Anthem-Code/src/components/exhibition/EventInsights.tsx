@@ -71,7 +71,7 @@ const CATEGORY_BLOCKS: Partial<Record<ExhibitionEvent["category"], Array<Partial
   talk_forum: [{ key: "speakers" }, { key: "schedule" }, { key: "steps", title: DETAIL.stepsRegister }],
   art_fair: [{ key: "highlights" }, { key: "schedule", title: DETAIL.scheduleTickets }, { key: "steps", title: DETAIL.stepsTickets }],
   exhibition: [{ key: "who_for" }, { key: "takeaways" }, { key: "know_before" }],
-  other: [{ key: "who_for" }, { key: "takeaways" }, { key: "know_before" }],
+  meetup: [{ key: "who_for" }, { key: "schedule" }, { key: "steps", title: DETAIL.stepsRegister }],
 };
 
 const GENERIC_ORDER: ListKey[] = [
@@ -288,7 +288,7 @@ const EDITOR_FIELDS: Array<{ key: ListKey; title: string; hint: string; placehol
   { key: "eligibility", title: "ใครสมัครได้", hint: "Open call", placeholder: "ทำงานมาแล้วอย่างน้อย 4 ปี" },
   { key: "benefits", title: "รางวัล / สิ่งที่ได้", hint: "Open call", placeholder: "ทุนผลิตงาน 70,000 บาท" },
   { key: "bring", title: "สิ่งที่ต้องเตรียม", hint: "Workshop", placeholder: "ผ้ากันเปื้อน" },
-  { key: "speakers", title: "วิทยากร", hint: "Talk & Forum", placeholder: "ชื่อ — ตำแหน่ง / สังกัด" },
+  { key: "speakers", title: "วิทยากร", hint: "Talk", placeholder: "ชื่อ — ตำแหน่ง / สังกัด" },
   { key: "schedule", title: "กำหนดการ / รอบ", hint: "Talk · Workshop · Art fair", placeholder: "16:00–18:00 เวิร์กช็อป" },
   { key: "highlights", title: "ไฮไลต์", hint: "Art fair", placeholder: "บูธจากแกลเลอรี 40 แห่ง" },
 ];
