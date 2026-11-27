@@ -1,9 +1,22 @@
-# Event drafts (scout)
+# Event scout batches
 
 One file per scout run, named `YYYY-MM-DD.sql`, written by the weekly "SAMECOR event scout"
 cloud routine and applied to production by `.github/workflows/event-drafts-apply.yml` after
-the PR is merged. Every statement creates a **draft** — nothing is published until an admin
-opens it in `/admin/events` and presses publish.
+the PR is merged.
+
+**Since 2026-11-27 the scout publishes by itself** (owner decision: no approval step; the owner
+reports anything wrong and it is edited or removed afterwards). Use
+`public.scout_event_publish(...)` with the same object as below. Use
+`public.scout_event_draft(...)` only when something is uncertain (dates not final, unclear
+venue, a source you could not fully confirm): that creates a **draft** for the team in
+`/admin/events`. An event without `starts_on` or `location_name` always stays a draft.
+
+**Cover picture.** Add `"cover_source_url"`: the direct `https://` link of the event's official
+poster / key visual **taken from the organiser's or the venue's own page** (usually its
+`og:image`). The apply workflow stores a copy in our storage and sets the cover; nothing is
+hot-linked. Only the event's own official artwork — never a photo of an artist's work or a
+picture from a media site. No suitable picture? Leave the key out; the event is published
+without a cover. Never set `cover_url` yourself.
 
 Each event is one call:
 

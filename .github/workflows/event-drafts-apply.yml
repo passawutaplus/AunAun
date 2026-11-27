@@ -1,10 +1,14 @@
-name: Apply event drafts
+name: Apply event scout batches
 
 # The weekly "SAMECOR event scout" routine opens a PR adding
 # Solo-Code/supabase/event-drafts/<date>.sql. Once that PR is merged, this applies the new
-# file(s) to production as DRAFT events through the event_scout role (see
-# Solo-Code/supabase/migrations/20261104100000_event_scout.sql). Already-merged files are
-# not re-run: only files added or changed by the merge commit are applied.
+# file(s) to production through the event_scout role. A statement decides what it creates:
+# scout_event_draft(...) a DRAFT for the team, scout_event_publish(...) a published event
+# (owner decision 2026-11-27, see Solo-Code/supabase/event-drafts/README.md). For events with
+# "cover_source_url" the organiser's poster is first stored in our own storage
+# (.github/scripts/event-scout-covers.mjs; needs the SUPABASE_SERVICE_ROLE_KEY secret, and
+# simply skips pictures without it). Already-merged files are not re-run: only files added or
+# changed by the merge commit are applied.
 
 on:
   push:
@@ -23,9 +27,10 @@ jobs:
       - name: Install psql
         run: sudo apt-get update -q && sudo apt-get install -y -q postgresql-client
 
-      - name: Apply new draft files
+      - name: Apply new batch files
         env:
           EVENT_SCOUT_DB_URL: ${{ secrets.EVENT_SCOUT_DB_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
           set -euo pipefail
           if [ -z "$EVENT_SCOUT_DB_URL" ]; then
@@ -35,5 +40,7 @@ jobs:
           if [ -z "$files" ]; then echo "no new draft files"; exit 0; fi
           for f in $files; do
             echo "== $f"
-            psql "$EVENT_SCOUT_DB_URL" -v ON_ERROR_STOP=1 -q -f "$f"
+            ready="$RUNNER_TEMP/$(basename "$f")"
+            node .github/scripts/event-scout-covers.mjs "$f" "$ready"
+            psql "$EVENT_SCOUT_DB_URL" -v ON_ERROR_STOP=1 -q -f "$ready"
           done

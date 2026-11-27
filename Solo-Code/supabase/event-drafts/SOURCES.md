@@ -12,7 +12,9 @@ exhibition, workshop, art fair, talk, open call or other event.
 5. Copy title, dates, venue, organiser and registration link from the original.
 6. Every event keeps its original link in `source_url`.
 7. If the gallery only rents out the space, trace the real organiser.
-8. Everything lands as a draft; the SAMECOR team approves before it goes live.
+8. Confirmed events are published directly (owner decision 2026-11-27); anything uncertain lands
+   as a draft for the team. The owner reviews after the fact and asks for edits or removal.
+9. A cover picture is only ever the event's official poster from the organiser's or venue's own page.
 
 ## Websites
 
