@@ -134,7 +134,7 @@ const EVENT_CATEGORY_LABEL: Record<string, string> = {
   exhibition: "Exhibition",
   workshop: "Workshop",
   art_fair: "Art Fair",
-  talk_forum: "Talk & Forum",
+  talk_forum: "Talk",
   open_call: "Open Call",
   meetup: "Meetup",
   other: "Other",

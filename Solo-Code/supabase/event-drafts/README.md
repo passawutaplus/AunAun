@@ -60,8 +60,8 @@ blank line (the first paragraph is also the link-preview text). Repeating the su
 
 Rules the function enforces (same as the team editor): `title` ≤ 100, `description` ≤ 2000,
 `location_name` / `location_note` / `source_name` ≤ 120, `organizer_name` ≤ 100,
-`time_note` ≤ 60, `fee_note` ≤ 60, `category` ∈ exhibition · workshop · art_fair · talk_forum ·
-open_call · meetup · other, `fee_type` ∈ free · paid · unspecified, links must be `https://` and not
+`time_note` ≤ 60, `fee_note` ≤ 60, `category` ∈ open_call · exhibition · workshop · talk_forum (Talk) ·
+art_fair (any creative fair: art, design, craft, book, zine, art toy) · meetup, `fee_type` ∈ free · paid · unspecified, links must be `https://` and not
 shorteners. A draft is skipped (returns NULL) when the same `source_url` already exists or a
 very similar title is already in the table. No images are ever copied: `cover_url` and
 `gallery_urls` stay empty.
