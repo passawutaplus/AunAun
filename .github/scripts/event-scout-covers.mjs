@@ -14,8 +14,11 @@
  * A picture is optional: any failure (no secret, download error, wrong type) is logged and the
  * event goes on without a cover. The batch itself never fails because of a picture.
  *
- * Env: SUPABASE_SERVICE_ROLE_KEY (GitHub secret; without it no picture is stored),
- *      SUPABASE_URL (optional, defaults to the production project).
+ * Env (GitHub secrets; without them no picture is stored):
+ *   SCOUT_UPLOADER_EMAIL + SCOUT_UPLOADER_PASSWORD + SUPABASE_PUBLISHABLE_KEY
+ *     a sign-in that may do one thing only: add scout-* pictures to that folder
+ *     (storage policy scout_cover_upload, migration 20261127231000). A leak cannot touch anything else.
+ *   SUPABASE_URL (optional, defaults to the production project).
  */
 import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
@@ -27,7 +30,10 @@ if (!inFile || !outFile) {
 }
 
 const SUPABASE_URL = (process.env.SUPABASE_URL || "https://zkflkpbmbozrchqncpzi.supabase.co").replace(/\/+$/, "");
-const KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+const PUBLISHABLE = process.env.SUPABASE_PUBLISHABLE_KEY || "";
+const EMAIL = process.env.SCOUT_UPLOADER_EMAIL || "";
+const PASSWORD = process.env.SCOUT_UPLOADER_PASSWORD || "";
+const CAN_UPLOAD = !!(PUBLISHABLE && EMAIL && PASSWORD);
 /** Team account that owns scout events (same id as in public.scout_event_draft). */
 const OWNER = "82039b6d-cdf4-4c46-958a-d770d849382c";
 const MAX_BYTES = 8 * 1024 * 1024;
@@ -65,6 +71,22 @@ function size(b, type) {
   return null;
 }
 
+let token = "";
+/** Signs the uploader in once per run. */
+async function uploaderToken() {
+  if (token) return token;
+  const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+    method: "POST",
+    headers: { apikey: PUBLISHABLE, "content-type": "application/json" },
+    body: JSON.stringify({ email: EMAIL, password: PASSWORD }),
+    signal: AbortSignal.timeout(20_000),
+  });
+  if (!res.ok) throw new Error(`uploader sign-in failed (${res.status})`);
+  token = (await res.json()).access_token || "";
+  if (!token) throw new Error("uploader sign-in returned no token");
+  return token;
+}
+
 async function store(sourceUrl) {
   if (!/^https:\/\//i.test(sourceUrl)) throw new Error("cover_source_url must be https");
   const res = await fetch(sourceUrl, { redirect: "follow", signal: AbortSignal.timeout(20_000), headers: { "user-agent": "event-cover-fetch/1.0" } });
@@ -82,11 +104,12 @@ async function store(sourceUrl) {
   const path = `project-media/anthem/${OWNER}/events/${name}`;
   const up = await fetch(`${SUPABASE_URL}/storage/v1/object/${path}`, {
     method: "POST",
-    headers: { authorization: `Bearer ${KEY}`, apikey: KEY, "content-type": type, "x-upsert": "true", "cache-control": "max-age=31536000" },
+    headers: { authorization: `Bearer ${await uploaderToken()}`, apikey: PUBLISHABLE, "content-type": type, "cache-control": "max-age=31536000" },
     body: bytes,
     signal: AbortSignal.timeout(60_000),
   });
-  if (!up.ok) throw new Error(`upload failed (${up.status})`);
+  // The file name is a hash of the picture: "already exists" means this very picture is stored.
+  if (!up.ok && !/duplicate|already exists/i.test(await up.text())) throw new Error(`upload failed (${up.status})`);
   return { cover_url: `${SUPABASE_URL}/storage/v1/object/public/${path}`, cover_width: dims[0], cover_height: dims[1] };
 }
 
@@ -113,8 +136,8 @@ for (const m of blocks) {
   delete event.cover_width;
   delete event.cover_height;
   if (source) {
-    if (!KEY) {
-      console.log(`no cover (SUPABASE_SERVICE_ROLE_KEY is not set): ${event.title}`);
+    if (!CAN_UPLOAD) {
+      console.log(`no cover (uploader secrets are not set): ${event.title}`);
     } else {
       try {
         Object.assign(event, await store(source));
