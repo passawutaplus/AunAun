@@ -249,6 +249,7 @@ export default function Main() {
       else next.set("tab", m);
       next.delete("view");
       if (m !== "event") ["type", "q"].forEach((k) => next.delete(k));
+      else next.delete(FIND_PARAM);
       if (m !== "showcase") next.delete("color");
     }
     if (value) next.set(key, value);
@@ -297,6 +298,7 @@ export default function Main() {
       out.push({ key: "color", name: "สี", label, onRemove: () => set("color", null) });
     }
     if (mode === "event" && q) out.push({ key: "q", name: `"${q}"`, label: `“${q}”`, onRemove: () => setQuery("") });
+    if (find) out.push({ key: FIND_PARAM, name: `"${find}"`, label: `“${find}”`, onRemove: () => clearFind() });
     return out;
   };
 
@@ -424,7 +426,7 @@ export default function Main() {
       {appSlot ? <AppActiveFilters items={appActiveFilters()} onOpen={(e) => openAppSearch(e.currentTarget)} /> : null}
       <div ref={cardRef} className="mn-card">
         <h1 className="sc-sr">Samecor — ผลงานล่าสุด</h1>
-        {find ? (
+        {find && !appSlot ? (
           <div className="mn-find">
             <button type="button" className="mn-find-chip" aria-label={`ล้างคำค้น ${find}`} onClick={clearFind}>
               <span className="mn-find-t">{find}</span>

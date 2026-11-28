@@ -122,7 +122,7 @@ export default function AppSearch({ initialMode, initialValue, colors, leaving, 
               </Link>
             ))}
             {ready && !shown.length ? (
-              <p className="as-p">{mode === "event" ? "กดค้นหาเพื่อดูทั้งหมดได้เลย" : "ไม่เจอที่ตรงกัน ลองคำอื่นดูนะ"}</p>
+              <p className="as-p">กดค้นหาเพื่อดูทั้งหมดได้เลย</p>
             ) : null}
           </div>
         ) : (
