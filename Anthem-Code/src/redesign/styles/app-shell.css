@@ -28,6 +28,11 @@ html[data-native-app] .sc-app .sc-hd {
     object-position: left center;
   }
 
+  /* app on a phone: no "Log In" in the header — the "ฉัน" tab in the tab bar already leads there (owner 2026-11-28) */
+  html[data-native-app] .sc-app .sc-hd-login {
+    display: none;
+  }
+
   /* top-level pages: slides up while scrolling down, back on scroll up (useAppHeaderChrome); stays while a key is in it */
   .sc-app .sc-hd[data-hide]:not(:focus-within) {
     transform: translateY(-100%);

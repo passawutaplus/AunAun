@@ -443,7 +443,16 @@ export default function RedesignShell({ children }: { children?: ReactNode }) {
             {chatUnread ? <span className="sc-tb-bd" aria-hidden="true">{chatUnread}</span> : null}
           </Link>
           <Link to={user ? SC_LINKS.myProfile : loginTo(SC_LINKS.myProfile)} data-k="me" aria-label="ฉัน" aria-current={tab === "me" ? "page" : undefined}>
-            <span className="sc-tb-av" aria-hidden="true" style={bg(avatar)} />
+            {avatar ? (
+              <span className="sc-tb-av" aria-hidden="true" style={bg(avatar)} />
+            ) : (
+              // No photo (or signed out): a person in a circle instead of a grey dot (owner 2026-11-28).
+              <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="9.5" />
+                <circle cx="12" cy="10" r="3.2" />
+                <path d="M6 18.6c1.3-2.3 3.4-3.6 6-3.6s4.7 1.3 6 3.6" />
+              </svg>
+            )}
             <span className="sc-tb-lb" aria-hidden="true">Me</span>
           </Link>
         </div>
