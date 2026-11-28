@@ -1,0 +1,1453 @@
+/*
+ * My Studio (mock MyStudio.dc.html). Uses profile.css for the page grid (.pf-m / .pf-grid) and the
+ * work cards (.pf-pin / .pf-tile); everything of its own is `.sc-app .ms-*`.
+ */
+
+.sc-app .ms-wait {
+  min-height: 60vh;
+}
+
+.sc-app .ms-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.sc-app .ms-file {
+  position: fixed;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.sc-app .ms-grow {
+  flex: 1;
+}
+
+.sc-app .ms-dash {
+  margin: 8px 0;
+  font-size: 14px;
+  color: #A3A3A0;
+}
+
+.sc-app .ms-mute {
+  color: #A3A3A0;
+}
+
+.sc-app .ms-h3 {
+  margin: 0 0 8px;
+  font-size: 22px;
+  font-weight: 300;
+}
+
+/* shared buttons */
+.sc-app :is(.ms-hb2, .ms-pill, .ms-cpill, .ms-cbtn, .ms-tl2, .ms-addt, .ms-coll, .ms-pick, .ms-met, .ms-bw, .ms-stb, .ms-btn-line, .ms-btn-ink) {
+  appearance: none;
+  margin: 0;
+  font: inherit;
+  color: #282929;
+  cursor: pointer;
+  box-sizing: border-box;
+  text-decoration: none;
+}
+
+.sc-app .ms-hb2 {
+  height: 48px;
+  padding: 0;
+  border: 1px solid #282929;
+  border-radius: 999px;
+  background: none;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.sc-app .ms-hb2:hover {
+  background: #F2F2F0;
+}
+
+.sc-app .ms-hb2-ink,
+.sc-app .ms-hb2-ink:hover {
+  background: #282929;
+  color: #FFFFFF;
+}
+
+.sc-app .ms-hb2-soft {
+  border-color: #D4D4D1;
+}
+
+.sc-app .ms-hb2-s {
+  height: 36px;
+  padding: 0 16px;
+  font-size: 13px;
+  border-color: #D4D4D1;
+  flex: none;
+}
+
+.sc-app .ms-hb2-xs {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 12px;
+  border-color: #D4D4D1;
+  flex: none;
+}
+
+.sc-app .ms-pill {
+  height: 36px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: #F2F2F0;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.sc-app .ms-pill-on {
+  background: #282929;
+  color: #FFFFFF;
+}
+
+.sc-app .ms-cpill {
+  height: 44px;
+  padding: 0 16px;
+  border: 1px solid #E2E2DF;
+  border-radius: 999px;
+  background: none;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sc-app .ms-cpill:disabled {
+  opacity: .5;
+  cursor: progress;
+}
+
+.sc-app .ms-cbtn {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  padding: 0;
+  border: 1px solid #E2E2DF;
+  border-radius: 50%;
+  background: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sc-app .ms-cbtn:hover {
+  border-color: #282929;
+}
+
+.sc-app .ms-cbtn-del {
+  color: #B8321F;
+}
+
+/* ---------- frame ---------- */
+.sc-app .ms-aside {
+  position: sticky;
+  top: 112px;
+  margin-left: -40px;
+  padding: 48px 32px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.sc-app .ms-aside h1 {
+  margin: -5px 0 0;
+  font-size: 40px;
+  font-weight: 400;
+  line-height: 1.15;
+}
+
+.sc-app .ms-aside p {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: #8A8A87;
+}
+
+.sc-app .ms-aside-btns {
+  display: grid;
+  gap: 8px;
+  margin-top: 32px;
+  width: 200px;
+}
+
+.sc-app .ms-card {
+  background: #FFFFFF;
+  border-radius: 38px;
+  box-shadow: 0 1px 3px rgba(40, 41, 41, .08), 0 10px 32px rgba(40, 41, 41, .12);
+  padding: 48px 48px 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  min-height: 900px;
+  min-width: 0;
+}
+
+.sc-app .ms-tabs {
+  display: flex;
+  align-items: baseline;
+  gap: 28px;
+  flex-wrap: wrap;
+}
+
+.sc-app .ms-tabs button {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 28px;
+  letter-spacing: -.01em;
+  color: #A3A3A0;
+  cursor: pointer;
+}
+
+.sc-app .ms-tabs button[aria-pressed="true"] {
+  color: #282929;
+  font-weight: 500;
+}
+
+.sc-app .ms-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 40px;
+  transform: translateX(-50%);
+  z-index: 70;
+  height: 44px;
+  padding: 0 20px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  background: #282929;
+  color: #FFFFFF;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+/* confirm dialog (Upload's look) */
+.sc-app .ms-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(242, 242, 240, .35);
+  -webkit-backdrop-filter: blur(10px) saturate(1.1);
+  backdrop-filter: blur(10px) saturate(1.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.sc-app .ms-veil-hit {
+  position: absolute;
+  inset: 0;
+}
+
+.sc-app .ms-box {
+  position: relative;
+  width: 380px;
+  max-width: 100%;
+  box-sizing: border-box;
+  background: #FFFFFF;
+  border-radius: 28px;
+  box-shadow: 0 1px 3px rgba(40, 41, 41, .08), 0 10px 32px rgba(40, 41, 41, .12);
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.sc-app .ms-box h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.sc-app .ms-box p {
+  margin: 0;
+  font-size: 13px;
+  color: #666666;
+}
+
+.sc-app .ms-box-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.sc-app :is(.ms-btn-line, .ms-btn-ink) {
+  height: 44px;
+  padding: 0 20px;
+  border-radius: 999px;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.sc-app .ms-btn-line {
+  border: 1px solid #D4D4D1;
+  background: none;
+}
+
+.sc-app .ms-btn-ink {
+  border: 0;
+  background: #282929;
+  color: #FFFFFF;
+}
+
+.sc-app .ms-btn-ink[aria-busy="true"] {
+  opacity: .6;
+}
+
+.sc-app .ms-btn-del {
+  background: #B8321F;
+}
+
+/* ---------- Profile ---------- */
+.sc-app .ms-pf {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 48px;
+  align-items: start;
+  max-width: 920px;
+}
+
+.sc-app .ms-pf-l {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.sc-app .ms-pf-av {
+  display: block;
+  width: 128px;
+  height: 128px;
+  border-radius: 50%;
+  background: #B9B9B6 center / cover no-repeat;
+}
+
+.sc-app .ms-pf-av-none {
+  background: #F2F2F0;
+  box-shadow: inset 0 0 0 1.5px #D4D4D1;
+}
+
+.sc-app .ms-pf-l .ms-cpill {
+  height: 40px;
+}
+
+.sc-app .ms-pf-r {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+
+.sc-app .ms-pfr {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.sc-app .ms-pf-row {
+  display: flex;
+  justify-content: space-between;
+}
+
+.sc-app .ms-pfl {
+  font-size: 11px;
+  letter-spacing: .08em;
+  color: #8A8A87;
+}
+
+.sc-app .ms-pf-note {
+  letter-spacing: 0;
+}
+
+.sc-app .ms-pfi {
+  width: 100%;
+  height: 48px;
+  box-sizing: border-box;
+  border: 1px solid #E2E2DF;
+  border-radius: 14px;
+  padding: 0 16px;
+  font: inherit;
+  font-size: 15px;
+  color: #282929;
+  background: #FFFFFF;
+  outline-color: #282929;
+}
+
+.sc-app .ms-pfi:hover {
+  border-color: #C8C8C5;
+}
+
+.sc-app .ms-pfi:read-only {
+  color: #8A8A87;
+  background: #F5F5F3;
+}
+
+.sc-app .ms-pfi::placeholder {
+  color: #A3A3A0;
+}
+
+.sc-app .ms-pfta {
+  height: auto;
+  padding: 12px 16px;
+  resize: none;
+  line-height: 1.6;
+}
+
+.sc-app .ms-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sc-app .ms-pf-two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.sc-app .ms-pf-three {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.sc-app .ms-pf-save {
+  padding-top: 8px;
+}
+
+.sc-app .ms-pf-save .ms-btn-ink {
+  height: 48px;
+  padding: 0 40px;
+}
+
+/* ---------- Works ---------- */
+.sc-app .ms-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sc-app .ms-search {
+  position: relative;
+  display: block;
+}
+
+.sc-app .ms-search svg {
+  position: absolute;
+  left: 14px;
+  top: 10px;
+  color: #8A8A87;
+}
+
+.sc-app .ms-search input {
+  width: 200px;
+  height: 36px;
+  box-sizing: border-box;
+  border: 0;
+  border-radius: 999px;
+  background: #F2F2F0;
+  padding: 0 14px 0 38px;
+  font: inherit;
+  font-size: 13px;
+  color: #282929;
+  outline-color: #282929;
+}
+
+.sc-app .ms-addt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  break-inside: avoid;
+  margin: 0 0 20px;
+  border: 1px dashed #C8C8C5;
+  border-radius: 5px;
+  background: none;
+  font-size: 14px;
+  transition: background .3s ease;
+}
+
+.sc-app .ms-addt:hover {
+  background: #F7F7F5;
+}
+
+.sc-app .ms-addt-43 {
+  aspect-ratio: 4 / 3;
+  margin: 0;
+}
+
+.sc-app .ms-tile {
+  background: #ECECEA;
+}
+
+.sc-app .ms-stc {
+  position: absolute;
+  left: 14px;
+  top: 14px;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+.sc-app .ms-stc-draft {
+  background: #FFFFFF;
+  color: #282929;
+}
+
+.sc-app .ms-stc-priv {
+  background: rgba(40, 41, 41, .6);
+  color: #FFFFFF;
+}
+
+.sc-app .ms-stc-latest {
+  background: rgba(255, 255, 255, .14);
+  color: #FFFFFF;
+  letter-spacing: .06em;
+}
+
+.sc-app .ms-tools {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: flex;
+  gap: 6px;
+}
+
+.sc-app .ms-tl2 {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(40, 41, 41, .48);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+.sc-app .ms-tl2:hover {
+  background: rgba(40, 41, 41, .7);
+}
+
+/* ---------- Catalogs ---------- */
+.sc-app .ms-cats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 28px 20px;
+}
+
+.sc-app .ms-coll {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  min-width: 0;
+}
+
+.sc-app .ms-mos {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 4px;
+  aspect-ratio: 4 / 3;
+  margin-bottom: 6px;
+  width: 100%;
+}
+
+.sc-app .ms-mos > * {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  object-fit: cover;
+  border-radius: 5px;
+  background: #ECECEA;
+}
+
+.sc-app .ms-mos > :first-child {
+  grid-row: span 2;
+}
+
+.sc-app .ms-coll:hover .ms-mos {
+  opacity: .85;
+}
+
+.sc-app .ms-coll-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 400;
+}
+
+.sc-app .ms-coll-n {
+  font-size: 12px;
+  color: #8A8A87;
+}
+
+.sc-app .ms-cat-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sc-app .ms-cname {
+  flex: 0 1 360px;
+  min-width: 0;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  background: transparent;
+  font: inherit;
+  font-size: 28px;
+  font-weight: 300;
+  color: #282929;
+  padding: 4px 0;
+  outline: none;
+}
+
+.sc-app .ms-cname:hover,
+.sc-app .ms-cname:focus {
+  border-bottom-color: #D4D4D1;
+}
+
+.sc-app .ms-cat-n {
+  font-size: 13px;
+  color: #8A8A87;
+  white-space: nowrap;
+}
+
+.sc-app .ms-pick-on {
+  box-shadow: 0 0 0 3px #282929;
+}
+
+/* the tile's own opacity is taken by profile.css's rise animation, so dim what is inside */
+.sc-app .ms-pick-off > :not(.ms-pick) {
+  opacity: .55;
+}
+
+.sc-app .ms-pick {
+  position: absolute;
+  inset: 0;
+  padding: 14px;
+  border: 0;
+  background: none;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+}
+
+.sc-app .ms-ck {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #FFFFFF;
+  background: rgba(0, 0, 0, .15);
+}
+
+.sc-app .ms-ck-on {
+  border: 0;
+  background: #282929;
+}
+
+.sc-app .ms-empty {
+  margin: 0;
+  padding: 40px 0;
+  text-align: center;
+  font-size: 14px;
+  color: #8A8A87;
+}
+
+.sc-app .ms-catbar {
+  position: sticky;
+  bottom: 24px;
+  align-self: center;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 6px 6px 20px;
+  border-radius: 999px;
+  background: #282929;
+  color: #FFFFFF;
+  box-shadow: 0 8px 24px rgba(40, 41, 41, .24);
+  font-size: 13px;
+}
+
+.sc-app .ms-catbar span {
+  margin-right: 12px;
+  white-space: nowrap;
+}
+
+.sc-app .ms-catbar button {
+  height: 40px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 999px;
+  background: #FFFFFF;
+  color: #282929;
+  font: inherit;
+  cursor: pointer;
+}
+
+/* ---------- rows (Event, Inbox, Top works) ---------- */
+.sc-app .ms-evr {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 16px 0;
+  border-bottom: 1px solid #ECECEA;
+  text-decoration: none;
+  color: #282929;
+}
+
+.sc-app .ms-evr:first-of-type {
+  border-top: 1px solid #ECECEA;
+}
+
+.sc-app .ms-evd {
+  width: 56px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.sc-app .ms-evd span:first-child {
+  font-size: 26px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.sc-app .ms-evd span:last-child {
+  font-size: 11px;
+  letter-spacing: .08em;
+  color: #8A8A87;
+  margin-top: 4px;
+}
+
+.sc-app .ms-evimg {
+  display: block;
+  width: 120px;
+  aspect-ratio: 4 / 3;
+  flex: none;
+  border-radius: 5px;
+  object-fit: cover;
+  background: #ECECEA;
+}
+
+.sc-app .ms-evtx {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sc-app .ms-evk {
+  font-size: 11px;
+  letter-spacing: .08em;
+  color: #666666;
+}
+
+.sc-app .ms-evk-oc {
+  color: #EE3D29;
+}
+
+.sc-app .ms-evt {
+  font-size: 16px;
+  font-weight: 400;
+}
+
+.sc-app .ms-evp {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #8A8A87;
+}
+
+.sc-app .ms-evs {
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.sc-app .ms-evgo {
+  width: 40px;
+  flex: none;
+  text-align: center;
+  color: #A3A3A0;
+}
+
+.sc-app .ms-cc {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 1px solid #E2E2DF;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #282929;
+}
+
+.sc-app .ms-evr:hover .ms-cc {
+  border-color: #282929;
+}
+
+/* ---------- Insights ---------- */
+.sc-app .ms-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.sc-app .ms-wrap {
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sc-app .ms-seg {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: #F2F2F0;
+}
+
+.sc-app .ms-seg button {
+  height: 32px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  color: #8A8A87;
+  cursor: pointer;
+}
+
+.sc-app .ms-seg .ms-seg-on {
+  background: #FFFFFF;
+  color: #282929;
+  box-shadow: 0 1px 3px rgba(40, 41, 41, .08);
+}
+
+.sc-app .ms-nums {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.sc-app .ms-num {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sc-app .ms-num b {
+  font-size: 40px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.sc-app .ms-num span {
+  font-size: 13px;
+  color: #8A8A87;
+}
+
+.sc-app .ms-chartcard {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 28px;
+  border-radius: 24px;
+  background: #FAFAF9;
+}
+
+.sc-app .ms-met {
+  height: 34px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  background: #FFFFFF;
+  box-shadow: inset 0 0 0 1px #E2E2DF;
+}
+
+.sc-app .ms-met-on {
+  background: #282929;
+  color: #FFFFFF;
+  box-shadow: none;
+}
+
+.sc-app .ms-csum {
+  display: flex;
+  align-items: baseline;
+  gap: 28px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: #8A8A87;
+}
+
+.sc-app .ms-csum b {
+  font-weight: 400;
+  color: #282929;
+}
+
+.sc-app .ms-csum .ms-ctotal {
+  font-size: 28px;
+  font-weight: 300;
+}
+
+.sc-app .ms-chart {
+  position: relative;
+  height: 220px;
+  margin-left: 36px;
+}
+
+.sc-app .ms-gl {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px solid #F0F0EE;
+  font-size: 11px;
+  color: #A3A3A0;
+}
+
+.sc-app .ms-gl span {
+  position: absolute;
+  left: -36px;
+  top: -8px;
+  width: 28px;
+  text-align: right;
+}
+
+.sc-app .ms-avg {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px dashed #A3A3A0;
+}
+
+.sc-app .ms-avg span {
+  position: absolute;
+  right: 0;
+  top: -20px;
+  font-size: 11px;
+  color: #8A8A87;
+  background: #FAFAF9;
+  padding: 0 4px;
+}
+
+.sc-app .ms-bars {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.sc-app .ms-bw {
+  position: relative;
+  flex: 1;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: default;
+  display: flex;
+  align-items: flex-end;
+}
+
+.sc-app .ms-bar {
+  display: block;
+  width: 100%;
+  border-radius: 4px 4px 0 0;
+  background: #D4D4D1;
+  min-height: 3px;
+  transition: height .4s ease, background .2s ease;
+}
+
+.sc-app .ms-bar-last,
+.sc-app .ms-bw:hover .ms-bar,
+.sc-app .ms-bw:focus-visible .ms-bar {
+  background: #282929;
+}
+
+.sc-app .ms-tip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: #282929;
+  color: #FFFFFF;
+  font-size: 11px;
+  white-space: nowrap;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.sc-app .ms-tip b {
+  font-size: 15px;
+  font-weight: 400;
+}
+
+.sc-app .ms-bw:hover .ms-tip,
+.sc-app .ms-bw:focus-visible .ms-tip {
+  display: flex;
+}
+
+.sc-app .ms-xl {
+  display: flex;
+  gap: 6px;
+  margin-left: 36px;
+  font-size: 11px;
+  color: #8A8A87;
+}
+
+.sc-app .ms-xl {
+  overflow: hidden;
+}
+
+/* 30 labels on a phone: each may spill over its empty neighbours, never past the edge */
+.sc-app .ms-xl span {
+  flex: 1 1 0;
+  min-width: 0;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.sc-app .ms-xl span:last-child {
+  direction: rtl;
+}
+
+.sc-app .ms-top {
+  padding: 14px 0;
+}
+
+.sc-app .ms-rank {
+  width: 24px;
+  font-size: 13px;
+  color: #8A8A87;
+}
+
+.sc-app .ms-thumb {
+  display: block;
+  width: 56px;
+  height: 56px;
+  flex: none;
+  border-radius: 5px;
+  object-fit: cover;
+  background: #ECECEA;
+}
+
+.sc-app .ms-top-t {
+  flex: 1;
+  min-width: 0;
+  font-size: 16px;
+  font-weight: 400;
+}
+
+.sc-app .ms-top-v {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #4A4A4A;
+}
+
+/* ---------- Overview ---------- */
+.sc-app .ms-ov {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 32px;
+  align-items: start;
+}
+
+.sc-app .ms-latest {
+  display: block;
+  border-radius: 20px;
+  margin: 0;
+}
+
+.sc-app .ms-eye {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sc-app .ms-ov-r {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  min-width: 0;
+}
+
+.sc-app .ms-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.sc-app .ms-inbox {
+  padding: 14px 0;
+}
+
+.sc-app .ms-av44 {
+  display: block;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #D9D9D6;
+}
+
+.sc-app .ms-av44-sq {
+  border-radius: 5px;
+}
+
+.sc-app .ms-inbox-tx {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sc-app .ms-inbox-t {
+  font-size: 15px;
+  font-weight: 400;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sc-app .ms-inbox-s {
+  font-size: 13px;
+  color: #8A8A87;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sc-app .ms-steps-w {
+  gap: 14px;
+}
+
+.sc-app .ms-steps-w .ms-h3 {
+  margin: 0;
+}
+
+.sc-app .ms-steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.sc-app .ms-steps li {
+  min-width: 0;
+}
+
+.sc-app .ms-stb {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+}
+
+.sc-app .ms-sbar {
+  display: block;
+  height: 6px;
+  border-radius: 999px;
+  background: #ECECEA;
+  transition: background .4s ease;
+}
+
+.sc-app .ms-stb-done .ms-sbar {
+  background: #282929;
+}
+
+.sc-app .ms-stb-next .ms-sbar {
+  background: #C8C8C5;
+}
+
+.sc-app .ms-stb:hover .ms-sbar {
+  opacity: .8;
+}
+
+.sc-app .ms-slb {
+  display: flex;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #A3A3A0;
+  transition: color .3s ease;
+}
+
+.sc-app .ms-slb svg {
+  flex: none;
+  margin-top: 3px;
+}
+
+.sc-app .ms-stb-done .ms-slb {
+  color: #8A8A87;
+}
+
+.sc-app .ms-stb-next .ms-slb {
+  color: #282929;
+  font-weight: 400;
+}
+
+.sc-app .ms-ov3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 40px;
+  padding-top: 32px;
+  border-top: 1px solid #ECECEA;
+}
+
+.sc-app .ms-ov3 .ms-h3 {
+  margin-bottom: 4px;
+}
+
+.sc-app .ms-h3-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sc-app .ms-foryou {
+  height: 22px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: #282929;
+  color: #FFFFFF;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: .08em;
+  display: inline-flex;
+  align-items: center;
+}
+
+.sc-app .ms-row14 {
+  gap: 14px;
+  padding: 12px 0;
+}
+
+.sc-app .ms-row12 {
+  gap: 12px;
+  padding: 12px 0;
+}
+
+.sc-app .ms-th64 {
+  display: block;
+  width: 64px;
+  aspect-ratio: 4 / 3;
+  flex: none;
+  border-radius: 5px;
+  object-fit: cover;
+  background: #ECECEA;
+}
+
+.sc-app .ms-av40 {
+  display: block;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #D9D9D6;
+}
+
+.sc-app .ms-oc-t {
+  font-size: 14px;
+  font-weight: 400;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sc-app .ms-oc-s {
+  font-size: 12px;
+  color: #8A8A87;
+}
+
+.sc-app .ms-red {
+  color: #EE3D29;
+}
+
+.sc-app .ms-upd {
+  width: 40px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.sc-app .ms-upd span:first-child {
+  font-size: 22px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.sc-app .ms-upd span:last-child {
+  font-size: 10px;
+  letter-spacing: .08em;
+  color: #8A8A87;
+  margin-top: 4px;
+}
+
+/* ---------- phones (mock ≤600px, 23 + 26 พ.ย.) ---------- */
+@media (max-width: 600px) {
+  .sc-app .ms-m {
+    padding: 36px 10px 64px;
+  }
+
+  .sc-app .ms-aside {
+    position: static;
+    margin: 0;
+    padding: 24px 16px 20px;
+  }
+
+  .sc-app .ms-aside h1 {
+    font-size: 28px;
+  }
+
+  /* the tab bar's + already posts a work */
+  .sc-app .ms-new-work {
+    display: none;
+  }
+
+  .sc-app .ms-card {
+    padding: 20px 12px 40px;
+    border-radius: 24px;
+    min-height: 0;
+  }
+
+  .sc-app .ms-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 18px;
+    scrollbar-width: none;
+    margin: 0 -12px;
+    padding: 0 12px;
+    -webkit-mask-image: linear-gradient(to right, #000 75%, transparent);
+    mask-image: linear-gradient(to right, #000 75%, transparent);
+  }
+
+  .sc-app .ms-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .sc-app .ms-tabs button {
+    font-size: 20px;
+    white-space: nowrap;
+    flex: none;
+  }
+
+  .sc-app .ms-pf {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  .sc-app .ms-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .sc-app :is(.ms-nums, .ms-ov3, .ms-pf-three, .ms-cats) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .sc-app :is(.ms-ov, .ms-pf-two) {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+
+  .sc-app .ms-tl2 {
+    width: 34px;
+    height: 34px;
+  }
+
+  .sc-app .ms-evr {
+    gap: 10px;
+  }
+
+  .sc-app .ms-evd {
+    width: 40px;
+  }
+
+  .sc-app .ms-evimg {
+    width: 64px;
+  }
+
+  .sc-app .ms-search input {
+    width: 160px;
+  }
+
+  .sc-app .ms-addt {
+    margin-bottom: 8px;
+  }
+
+  .sc-app .ms-toast {
+    bottom: 100px;
+  }
+}

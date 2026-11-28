@@ -1,0 +1,179 @@
+/*
+ * Tag / tool pages and Similar pictures (not in the mock — owner asked 2026-11-28): laid out like a profile
+ * (profile.css: .pf-m / .pf-grid / .pf-aside / .pf-card / .pf-tabs) — what they are about on the left, the
+ * works on the right in the home grid (main.css: Masonry, tiles).
+ */
+
+.sc-app .ex-aside {
+  gap: 10px;
+}
+
+.sc-app .ex-kick {
+  font-size: 12px;
+  letter-spacing: .08em;
+  color: #8A8A87;
+}
+
+.sc-app .ex-aside h1 {
+  margin: 0;
+  font-size: 40px;
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: -.01em;
+  overflow-wrap: anywhere;
+}
+
+.sc-app .ex-count {
+  margin: 0;
+  font-size: 13px;
+  color: #8A8A87;
+  min-height: 18px;
+}
+
+.sc-app .ex-follow {
+  margin-top: 14px;
+  width: 200px;
+  height: 48px;
+  box-sizing: border-box;
+  border: 1px solid #282929;
+  border-radius: 999px;
+  background: none;
+  font: inherit;
+  font-size: 14px;
+  color: #282929;
+  cursor: pointer;
+}
+
+.sc-app .ex-follow[data-on] {
+  background: #282929;
+  color: #FFFFFF;
+}
+
+.sc-app .ex-from {
+  font-size: 13px;
+  color: #666666;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+
+.sc-app .ex-from:hover {
+  border-bottom-color: #666666;
+}
+
+/* the source picture at its own ratio (never cropped) */
+.sc-app .ex-src {
+  display: block;
+  width: 100%;
+  max-width: 260px;
+  margin-top: 14px;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #ECECEA;
+}
+
+.sc-app .ex-src img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sc-app .ex-thumbs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  max-width: 260px;
+}
+
+.sc-app .ex-thumb {
+  display: block;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  overflow: hidden;
+  opacity: .55;
+  transition: opacity .2s ease;
+}
+
+.sc-app .ex-thumb:hover,
+.sc-app .ex-thumb[aria-current] {
+  opacity: 1;
+}
+
+.sc-app .ex-thumb[aria-current] {
+  box-shadow: 0 0 0 2px #F2F2F0, 0 0 0 3.5px #282929;
+}
+
+.sc-app .ex-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sc-app .ex-aspects-lab {
+  margin-top: 14px;
+  font-size: 11px;
+  letter-spacing: .08em;
+  color: #8A8A87;
+}
+
+.sc-app .ex-aspects {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  max-width: 260px;
+}
+
+.sc-app .ex-aspect {
+  height: 36px;
+  padding: 0 16px;
+  box-sizing: border-box;
+  border: 1px solid #D4D4D1;
+  border-radius: 999px;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  color: #666666;
+  cursor: pointer;
+}
+
+.sc-app .ex-aspect[aria-pressed="true"] {
+  border-color: #282929;
+  background: #282929;
+  color: #FFFFFF;
+}
+
+/* the works: three columns in the card (four on the home page) */
+.sc-app .ex-card .mn-mas {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding-bottom: 0;
+}
+
+.sc-app .ex-sec + .ex-sec {
+  margin-top: 40px;
+}
+
+.sc-app .ex-h2 {
+  margin: 0 0 20px;
+  font-size: 22px;
+  font-weight: 300;
+}
+
+@media (max-width: 900px) {
+  .sc-app .ex-card .mn-mas {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .sc-app .ex-aside h1 {
+    font-size: 28px;
+  }
+
+  .sc-app .ex-src {
+    max-width: 200px;
+  }
+}

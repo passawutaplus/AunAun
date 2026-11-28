@@ -1,0 +1,150 @@
+/*
+ * Baseline of the new design.
+ *
+ * The old site sets global rules (Tailwind preflight + the base rules in index.css). The design mock
+ * was written against plain browser defaults, so inside .sc-app those globals are rolled back with
+ * `revert`. Presentation attributes (svg stroke/fill/width…) are left alone on purpose.
+ *
+ * Specificity contract, so nothing depends on which stylesheet loads first:
+ *   old globals  (0,0,1) / :lang(th) (0,1,0)
+ *   this file    (0,1,1)            — `.sc-app el`, `.sc-app *:not(sc-x)` (sc-x is never an element)
+ *   components   (0,2,0) or higher  — always written `.sc-app .name`
+ */
+
+html.sc-root,
+html.sc-root body {
+  background: #F2F2F0;
+}
+
+.sc-app {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--sc-bg);
+  color: var(--sc-ink);
+  font-family: var(--sc-font);
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 300;
+  line-height: normal;
+  letter-spacing: normal;
+  text-align: start;
+  -webkit-font-smoothing: auto;
+  -moz-osx-font-smoothing: auto;
+  text-rendering: auto;
+}
+
+.sc-app *:not(sc-x),
+.sc-app ::before,
+.sc-app ::after {
+  box-sizing: revert;
+  border-width: revert;
+  border-style: revert;
+  border-color: revert;
+}
+
+/* index.css sets line-height on every :lang(th) element */
+.sc-app *:not(sc-x) {
+  line-height: revert;
+}
+
+.sc-app :is(h1, h2, h3, h4, h5, h6) {
+  margin: revert;
+  font-family: revert;
+  font-size: revert;
+  font-weight: revert;
+  font-synthesis-weight: revert;
+  letter-spacing: revert;
+}
+
+.sc-app :is(p, blockquote, dl, dd, figure, pre, hr, ol, ul, menu, fieldset, legend) {
+  margin: revert;
+  padding: revert;
+}
+
+.sc-app :is(ol, ul, menu) {
+  list-style: revert;
+}
+
+.sc-app hr {
+  height: revert;
+  color: revert;
+}
+
+.sc-app :is(b, strong) {
+  font-weight: revert;
+}
+
+.sc-app :is(small, sub, sup, code, kbd, samp, pre) {
+  font-family: revert;
+  font-size: revert;
+}
+
+.sc-app table {
+  border-collapse: revert;
+  text-indent: revert;
+}
+
+/* mock: a{color:#282929} a:hover{color:#000} — :where keeps hover below component colours */
+.sc-app a {
+  color: var(--sc-ink);
+  text-decoration: revert;
+}
+
+.sc-app a:where(:hover) {
+  color: #000;
+}
+
+.sc-app :is(button, input, optgroup, select, textarea) {
+  margin: revert;
+  padding: revert;
+  font: revert;
+  letter-spacing: revert;
+  color: revert;
+  text-transform: revert;
+  background: revert;
+  -webkit-appearance: revert;
+  appearance: revert;
+  cursor: revert;
+}
+
+.sc-app textarea {
+  resize: revert;
+}
+
+.sc-app ::placeholder {
+  color: revert;
+  opacity: revert;
+  font-size: revert;
+  font-weight: revert;
+  line-height: revert;
+  letter-spacing: revert;
+}
+
+.sc-app :is(img, svg, video, canvas, audio, iframe, embed, object) {
+  display: revert;
+  vertical-align: revert;
+}
+
+.sc-app :is(img, video) {
+  max-width: revert;
+}
+
+/* Press feedback (mock index.html, C6): every button, menu item and tab sinks a little while pressed.
+   The doubled class lifts it above component rules, as the mock's !important did. */
+@media (prefers-reduced-motion: no-preference) {
+  .sc-app.sc-app :is(button, [role="menuitem"], [role="tab"]) {
+    transition:
+      scale var(--sc-t-fast) var(--sc-ease),
+      background-color .2s ease,
+      color .2s ease,
+      box-shadow .2s ease,
+      opacity .2s ease,
+      border-color .2s ease;
+  }
+
+  .sc-app.sc-app :is(button:not(:disabled), [role="menuitem"], [role="tab"]):active {
+    scale: var(--sc-press);
+  }
+}

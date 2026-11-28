@@ -109,6 +109,20 @@ Deno.serve(async (req) => {
     return json(req, { skipped: true, reason: "system_message" });
   }
 
+  // Muted this chat (shared.conversation_prefs) = no bell, email or LINE. On any error
+  // (e.g. table not created yet: 42P01 / PGRST205) nobody counts as muted, as before.
+  const { data: mutedRows, error: muteErr } = await shared
+    .from("conversation_prefs")
+    .select("user_id")
+    .eq("conversation_id", conv.id)
+    .eq("muted", true)
+    .in("user_id", recipientIds);
+  if (!muteErr && mutedRows?.length) {
+    const muted = new Set(mutedRows.map((r) => r.user_id as string));
+    recipientIds = recipientIds.filter((id) => !muted.has(id));
+    if (recipientIds.length === 0) return json(req, { skipped: true, reason: "muted" });
+  }
+
   const { data: senderProfile } = await admin
     .from("profiles")
     .select("display_name")

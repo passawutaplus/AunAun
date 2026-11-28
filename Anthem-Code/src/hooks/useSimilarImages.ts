@@ -71,8 +71,10 @@ export function projectImageUrls(row: {
   return urls;
 }
 
-function pickImages(row: CandidateRow, preferredIndex = 0): string[] {
+function pickImages(row: CandidateRow, preferredIndex = 0, preferredUrl?: string): string[] {
   const urls = projectImageUrls(row);
+  // The new design numbers pictures its own way (Template rows), so it names the picture instead.
+  if (preferredUrl) return [preferredUrl, ...urls.filter((u) => u !== preferredUrl)].slice(0, MAX_IMAGES_PER_CANDIDATE);
   if (!urls.length) return [];
   if (preferredIndex > 0 && preferredIndex < urls.length) {
     return [urls[preferredIndex], ...urls.filter((_, i) => i !== preferredIndex)].slice(
@@ -181,10 +183,12 @@ export const useSimilarImages = (
   projectId: string | undefined,
   aspects: SimilarAspect[] = DEFAULT_SIMILAR_ASPECTS,
   imageIndex = 0,
+  /** The source picture by URL (new design); wins over imageIndex. */
+  imageUrl?: string,
 ) => {
   const select = useWithoutBlockedOwners();
   return useQuery({
-    queryKey: ["similar-images", projectId, aspects, imageIndex],
+    queryKey: ["similar-images", projectId, aspects, imageIndex, imageUrl ?? ""],
     enabled: !!projectId && aspects.length > 0,
     staleTime: 5 * 60_000,
     queryFn: async (): Promise<SimilarImage[]> => {
@@ -196,7 +200,7 @@ export const useSimilarImages = (
       if (srcErr || !source) throw srcErr ?? new Error("project not found");
 
       const sourceRow = source as unknown as CandidateRow;
-      const sourceImages = pickImages(sourceRow, imageIndex);
+      const sourceImages = pickImages(sourceRow, imageIndex, imageUrl);
       const sourceImage = sourceImages[0] ?? "";
       const sourceMeta = toMeta(sourceRow, sourceImage);
 

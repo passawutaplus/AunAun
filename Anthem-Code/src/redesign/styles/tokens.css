@@ -1,0 +1,40 @@
+/* Samecor design values (samecor-design-rules.md, A9), scoped to the new design root.
+   Light only: the mock has no dark colours yet, so .sc-app stays light even when <html> has .dark. */
+.sc-app {
+  /* colour */
+  --sc-bg: #F2F2F0;
+  --sc-card: #FFFFFF;
+  --sc-soft: #F5F5F3;
+  --sc-seg: #E6E6E3;
+  --sc-line: #E2E2DF;
+  --sc-divider: #ECECEA;
+  --sc-ink: #282929;
+  --sc-ink-2: #666666;
+  --sc-ink-3: #8A8A87;
+  --sc-red: #EE3D29;
+  --sc-veil: rgba(242, 242, 240, .35);
+  /* type */
+  --sc-font: "Elms Sans", "IBM Plex Sans Thai", sans-serif;
+  /* radius */
+  --sc-r-card: 38px;
+  --sc-r-card-m: 24px;
+  --sc-r-box: 20px;
+  --sc-r-input: 14px;
+  --sc-r-img: 5px;
+  /* size */
+  --sc-h-input: 48px;
+  --sc-h-chip: 36px;
+  --sc-btn-round: 44px;
+  --sc-h-header-m: 56px;
+  --sc-h-tabbar-m: 64px;
+  /* shadow */
+  --sc-shadow: 0 1px 3px rgba(40, 41, 41, .08), 0 10px 32px rgba(40, 41, 41, .12);
+  /* motion */
+  --sc-ease: cubic-bezier(.22, 1, .36, 1);
+  --sc-t-fast: .18s;
+  --sc-t-pop: .55s;
+  --sc-t-page: .55s;
+  --sc-press: .96;
+
+  color-scheme: light;
+}

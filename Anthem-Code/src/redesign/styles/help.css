@@ -1,0 +1,237 @@
+/* Help Center (mock: pages/Help.dc.html) */
+.sc-app .hp-main {
+  width: 100%;
+  max-width: 1440px;
+  margin-inline: auto;
+  padding: 53px 40px 80px;
+  box-sizing: border-box;
+}
+
+.sc-app .hp-card {
+  background: #FFFFFF;
+  border-radius: 38px;
+  box-shadow: 0 1px 3px rgba(40, 41, 41, .08), 0 10px 32px rgba(40, 41, 41, .12);
+  max-width: 920px;
+  margin: 24px auto 0;
+  padding: 64px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.sc-app .hp-card h1 {
+  margin: 0;
+  font-size: 44px;
+  font-weight: 400;
+  letter-spacing: -.02em;
+}
+
+.sc-app .hp-search {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 56px;
+  padding: 0 22px;
+  border-radius: 999px;
+  background: #F5F5F3;
+}
+
+.sc-app .hp-search svg {
+  flex: none;
+}
+
+.sc-app .hp-search input {
+  all: unset;
+  flex: 1;
+  min-width: 0;
+  font-size: 16px;
+  color: #282929;
+}
+
+.sc-app .hp-topics {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sc-app .hp-topics button {
+  all: unset;
+  cursor: pointer;
+  height: 36px;
+  padding: 0 16px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  background: #F2F2F0;
+}
+
+.sc-app .hp-topics button[aria-pressed="true"] {
+  background: #282929;
+  color: #FFFFFF;
+}
+
+.sc-app .hp-item {
+  border-top: 1px solid #ECECEA;
+}
+
+.sc-app .hp-item button {
+  all: unset;
+  cursor: pointer;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 16px;
+  font-weight: 400;
+}
+
+.sc-app .hp-item svg {
+  flex: none;
+}
+
+.sc-app .hp-item button[aria-expanded="true"] svg {
+  rotate: 180deg;
+}
+
+.sc-app .hp-item p {
+  margin: 0;
+  padding: 0 40px 24px 0;
+  font-size: 15px;
+  line-height: 1.75;
+  color: #4A4A4A;
+}
+
+.sc-app .hp-none {
+  margin: 0;
+  padding: 24px 0;
+  border-top: 1px solid #ECECEA;
+  font-size: 15px;
+  color: #8A8A87;
+}
+
+.sc-app .hp-more {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 24px 28px;
+  border-radius: 24px;
+  background: #F5F5F3;
+}
+
+.sc-app .hp-more span {
+  font-size: 15px;
+}
+
+.sc-app .hp-more div {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sc-app :is(.hp-mail, .hp-fb) {
+  height: 44px;
+  padding: 0 20px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.sc-app .hp-mail {
+  background: #FFFFFF;
+}
+
+.sc-app .hp-fb {
+  background: #282929;
+  color: #FFFFFF;
+}
+
+.sc-app :is(.hp-topics button, .hp-item button, .hp-mail, .hp-fb):focus-visible {
+  outline: 2px solid #282929;
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sc-app .hp-item svg {
+    transition: rotate .25s ease;
+  }
+}
+
+@media (max-width: 900px) {
+  .sc-app .hp-card {
+    padding: 32px 20px;
+  }
+}
+
+/* phones: full-width card, 12px edge, no shadow; content starts right under the header */
+@media (max-width: 600px) {
+  .sc-app .hp-main {
+    padding: 28px 12px 32px;
+  }
+
+  .sc-app .hp-card {
+    margin-top: 0;
+    padding: 24px 16px 28px;
+    border-radius: 24px;
+    box-shadow: none;
+  }
+
+  .sc-app .hp-card h1 {
+    font-size: 30px;
+  }
+}
+
+/* the old site's help articles, linked from here (owner 2026-11-28; not in the mock) */
+.sc-app .hp-guides {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 24px;
+  border-top: 1px solid #E2E2DF;
+}
+
+.sc-app .hp-guides > span {
+  font-size: 12px;
+  letter-spacing: .08em;
+  font-weight: 400;
+  color: #8A8A87;
+}
+
+.sc-app .hp-guides > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sc-app .hp-guides a {
+  height: 36px;
+  padding: 0 16px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  border: 1px solid #E2E2DF;
+  font-size: 13px;
+  color: #282929;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  transition: border-color .2s ease;
+}
+
+.sc-app .hp-guides a:hover {
+  border-color: #282929;
+}
+
+.sc-app .hp-guides a:focus-visible {
+  outline: 2px solid #282929;
+  outline-offset: 3px;
+}

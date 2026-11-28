@@ -1,0 +1,636 @@
+/* Locations (mock: site/pages/Locations.dc.html) — venues of a multi-venue event, inside the Event page and on
+   /exhibition/:id/locations. */
+
+.sc-app .lc-m {
+  background: var(--sc-card);
+  border-radius: var(--sc-r-card);
+  box-shadow: var(--sc-shadow);
+  padding: 40px 40px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.sc-app .lc-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.sc-app .lc-top h2 {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 28px;
+  font-weight: 300;
+}
+
+.sc-app .lc-top h2 span {
+  font-size: 16px;
+  color: var(--sc-ink-3);
+}
+
+.sc-app .lc-top-acts {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sc-app .lc-pill {
+  height: 44px;
+  padding: 0 18px;
+  box-sizing: border-box;
+  border: 1px solid #D4D4D1;
+  border-radius: 999px;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  color: var(--sc-ink);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.sc-app .lc-pill:hover {
+  border-color: var(--sc-ink);
+}
+
+.sc-app .lc-pill[aria-pressed="true"],
+.sc-app .lc-pill[data-dark] {
+  background: var(--sc-ink);
+  border-color: var(--sc-ink);
+  color: #FFFFFF;
+}
+
+.sc-app .lc-pill:focus-visible,
+.sc-app .lc-save:focus-visible,
+.sc-app .lc-opt:focus-visible,
+.sc-app .lc-pin:focus-visible {
+  outline: 2px solid var(--sc-ink);
+  outline-offset: 2px;
+}
+
+.sc-app .lc-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 32px;
+  align-items: start;
+}
+
+/* ---------- map ---------- */
+.sc-app .lc-map {
+  position: sticky;
+  top: 112px;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--sc-r-box);
+  overflow: hidden;
+  background: #ECECE9;
+  isolation: isolate;
+}
+
+.sc-app .lc-map-canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.sc-app .lc-zoombox {
+  position: absolute;
+  z-index: 2;
+  left: 16px;
+  top: 16px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 14px;
+  background: #FFFFFF;
+  box-shadow: 0 1px 3px rgba(40, 41, 41, .12);
+  overflow: hidden;
+}
+
+.sc-app .lc-zoom {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sc-app .lc-zoom:first-child {
+  border-bottom: 1px solid var(--sc-divider);
+}
+
+.sc-app .lc-zoom[aria-disabled="true"] {
+  opacity: .35;
+  cursor: default;
+}
+
+/* numbered round pin with a small tail; red = in the route or the start */
+.sc-app .lc-pin {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  margin-bottom: 6px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--sc-ink);
+  color: #FFFFFF;
+  font: inherit;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .25);
+  transition: transform .15s ease;
+}
+
+.sc-app .lc-pin::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  margin-left: -5px;
+  border: 5px solid transparent;
+  border-top: 6px solid var(--sc-ink);
+  border-bottom: 0;
+}
+
+.sc-app .lc-pin[aria-pressed="true"] {
+  background: var(--sc-red);
+}
+
+.sc-app .lc-pin[aria-pressed="true"]::after {
+  border-top-color: var(--sc-red);
+}
+
+.sc-app .lc-pin:hover {
+  transform: scale(1.12);
+}
+
+.sc-app .lc-map .maplibregl-ctrl-attrib {
+  font-family: var(--sc-font);
+  font-size: 10px;
+}
+
+/* ---------- list ---------- */
+.sc-app .lc-side {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.sc-app .lc-start {
+  padding: 16px;
+  border-radius: var(--sc-r-box);
+  background: var(--sc-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sc-app .lc-start p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--sc-ink-2);
+}
+
+.sc-app .lc-start-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--sc-ink-2);
+}
+
+.sc-app .lc-start-btn {
+  height: 40px;
+  max-width: 260px;
+  min-width: 0;
+  padding: 0 14px;
+  box-sizing: border-box;
+  border: 1px solid var(--sc-line);
+  border-radius: 999px;
+  background: #FFFFFF;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  color: var(--sc-ink);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sc-app .lc-start-btn svg {
+  flex: none;
+}
+
+.sc-app .lc-start-btn span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sc-app .lc-clear {
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--sc-ink);
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  color: var(--sc-ink);
+}
+
+.sc-app .lc-list {
+  position: absolute;
+  z-index: 3;
+  left: 52px;
+  top: 46px;
+  width: 280px;
+  max-height: 320px;
+  overflow: auto;
+  padding: 6px;
+  box-sizing: border-box;
+  border-radius: 16px;
+  background: #FFFFFF;
+  box-shadow: 0 1px 3px rgba(40, 41, 41, .1), 0 12px 32px rgba(40, 41, 41, .16);
+  color: var(--sc-ink);
+}
+
+.sc-app .lc-opt {
+  width: 100%;
+  padding: 10px 14px;
+  box-sizing: border-box;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  color: var(--sc-ink);
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sc-app .lc-opt:hover,
+.sc-app .lc-opt[aria-selected="true"] {
+  background: var(--sc-bg);
+}
+
+.sc-app .lc-opt[aria-selected="true"] {
+  font-weight: 400;
+}
+
+.sc-app .lc-opt > span {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--sc-ink);
+  color: #FFFFFF;
+  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sc-app .lc-opt > span[data-me] {
+  background: var(--sc-red);
+}
+
+.sc-app .lc-group + .lc-group {
+  margin-top: 16px;
+}
+
+.sc-app .lc-group-hd {
+  margin: 0 0 4px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.sc-app .lc-group-hd span:first-child {
+  font-weight: 400;
+}
+
+.sc-app .lc-group-hd span:last-child {
+  color: var(--sc-ink-3);
+  white-space: nowrap;
+}
+
+.sc-app .lc-group ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sc-app .lc-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--sc-divider);
+}
+
+.sc-app .lc-pick {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  color: var(--sc-ink);
+  text-align: left;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.sc-app .lc-pick:focus-visible {
+  outline: 2px solid var(--sc-ink);
+  outline-offset: 4px;
+  border-radius: 8px;
+}
+
+.sc-app .lc-box {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  margin-top: 5px;
+  box-sizing: border-box;
+  border-radius: 5px;
+  border: 1.5px solid #C8C8C5;
+  background: #FFFFFF;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sc-app .lc-pick[aria-checked="true"] .lc-box {
+  background: var(--sc-ink);
+  border-color: var(--sc-ink);
+}
+
+.sc-app .lc-num {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--sc-ink);
+  color: #FFFFFF;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sc-app .lc-pick[aria-checked="true"] .lc-num {
+  background: var(--sc-red);
+}
+
+.sc-app .lc-txt {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.sc-app .lc-th {
+  font-size: 16px;
+  font-weight: 400;
+}
+
+.sc-app .lc-en {
+  font-size: 13px;
+  color: var(--sc-ink-3);
+}
+
+.sc-app .lc-meta {
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+
+.sc-app .lc-st {
+  height: 24px;
+  padding: 0 10px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  background: #ECECEA;
+  color: var(--sc-ink-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.sc-app .lc-st[data-k="open"] {
+  background: #E8F3EC;
+  color: #2E7D4F;
+}
+
+.sc-app .lc-st i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.sc-app .lc-hours {
+  color: var(--sc-ink-2);
+}
+
+.sc-app .lc-save {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+  color: var(--sc-ink);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sc-app .lc-save:hover {
+  background: var(--sc-bg);
+}
+
+.sc-app .lc-more {
+  height: 40px;
+  margin-top: 8px;
+  padding: 0 16px;
+}
+
+/* ---------- own page (/exhibition/:id/locations) ---------- */
+.sc-app .lc-pg {
+  width: 100%;
+  max-width: 1360px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 53px 40px 80px;
+  box-sizing: border-box;
+}
+
+.sc-app .lc-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 24px;
+  font-size: 14px;
+  color: var(--sc-ink-2);
+}
+
+.sc-app .lc-nav a {
+  color: var(--sc-ink-2);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.sc-app .lc-nav a:hover {
+  color: var(--sc-ink);
+}
+
+.sc-app .lc-nav .lc-nav-ev {
+  max-width: 360px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sc-app .lc-nav > span[aria-current] {
+  color: var(--sc-ink);
+}
+
+.sc-app .lc-nav .lc-nav-back {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 1px solid var(--sc-line);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sc-ink);
+}
+
+.sc-app .lc-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 32px;
+  transform: translateX(-50%);
+  z-index: 70;
+  height: 44px;
+  padding: 0 20px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  background: var(--sc-ink);
+  color: #FFFFFF;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .2);
+}
+
+/* phones (mock ≤600px): one column, map on top, list under it */
+@media (max-width: 600px) {
+  .sc-app .lc-m {
+    padding: 20px 14px 24px;
+    border-radius: var(--sc-r-card-m);
+    gap: 16px;
+  }
+
+  .sc-app .lc-top {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .sc-app .lc-top h2 {
+    font-size: 22px;
+  }
+
+  .sc-app .lc-top-acts {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .sc-app .lc-top-acts .lc-pill {
+    height: 40px;
+    padding: 0 14px;
+  }
+
+  .sc-app .lc-body {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  .sc-app .lc-map {
+    position: relative;
+    top: auto;
+  }
+
+  .sc-app .lc-list {
+    left: 0;
+    width: 100%;
+  }
+
+  .sc-app .lc-row {
+    gap: 10px;
+  }
+
+  .sc-app .lc-meta {
+    flex-wrap: wrap;
+    row-gap: 4px;
+  }
+
+  .sc-app .lc-hours {
+    white-space: nowrap;
+  }
+
+  .sc-app .lc-pg {
+    padding: 4px 12px 40px;
+  }
+
+  .sc-app .lc-nav {
+    padding: 4px 0 12px;
+    gap: 8px;
+  }
+
+  .sc-app .lc-nav > a:not(.lc-nav-back),
+  .sc-app .lc-nav > svg,
+  .sc-app .lc-nav > span:not([aria-current]) {
+    display: none;
+  }
+
+  .sc-app .lc-nav > span[aria-current] {
+    font-size: 15px;
+  }
+
+  .sc-app .lc-toast {
+    bottom: 24px;
+  }
+}

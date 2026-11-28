@@ -1,0 +1,339 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
+import { useMyEventInterests } from "@/hooks/useExhibitionEvents";
+import { eventPath } from "@/lib/exhibitionEvents";
+import { proxiedImageUrl } from "@/lib/imageProxy";
+import { toggleEventInterest } from "@/server/mutations/eventInterest";
+import type { HomeEventRow } from "@/server/queries/homeEvents";
+import { usePosterLabel } from "../event/usePosterLabel";
+import { loginHref } from "../lib/loginHref";
+import LoadError from "../shell/LoadError";
+import { useShellPanels } from "../shell/panels";
+import EventSearch from "./EventSearch";
+import ScLoader from "./ScLoader";
+import { EVENT_KIND, dayOf, inView, isoDay, lastDay, monthCaps, shortDate, useHomeEvents, viewDays, weekdayDay, type EventType, type EventView } from "./useHomeEvents";
+import { useEventSearch, type EventSearch as Search } from "./useEventSearch";
+
+const DAY = 24 * 60 * 60 * 1000;
+const fullDate = (iso: string) => shortDate(iso, true);
+
+const Chevron = ({ d }: { d: string }) => (
+  <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+    <path d={d} />
+  </svg>
+);
+
+/**
+ * Event tab of the home page (mock: Main.dc.html, isEvents): HIGHLIGHT, then the list.
+ * "ดูเส้นทาง" opens the Locations page of a multi-venue highlight (step 6).
+ * The search field on top (owner 2026-11-28) replaces both with its results while it has text.
+ */
+export default function Events({ view, type, q, onQuery }: { view: EventView; type: EventType | null; q: string; onQuery: (q: string) => void }) {
+  const { data, isPending, isError, refetch } = useHomeEvents();
+  const today = isoDay(new Date());
+  const search = useEventSearch(q, data?.events, type && type !== "highlight" ? type : null);
+
+  const featured = useMemo(
+    () => (data?.events ?? []).filter((e) => e.is_featured && (!e.featured_until || e.featured_until >= today) && (lastDay(e) ?? today) >= today),
+    [data, today],
+  );
+
+  const listed = useMemo(() => {
+    const rows = (data?.events ?? []).filter((e) => inView(e, view, today) && (!type || type === "highlight" || e.category === type));
+    if (view === "now") return [...rows].sort((a, b) => (lastDay(a) ?? "9").localeCompare(lastDay(b) ?? "9"));
+    if (view === "past") return [...rows].sort((a, b) => (b.starts_on ?? "").localeCompare(a.starts_on ?? ""));
+    return rows;
+  }, [data, view, type, today]);
+
+  if (isPending) return <ScLoader label="กำลังโหลดอีเว้นท์" />;
+  if (isError && !data) return <LoadError onRetry={() => void refetch()} />;
+
+  const field = <EventSearch q={q} onQuery={onQuery} search={search} />;
+  if (search) {
+    return (
+      <>
+        {field}
+        <SearchResults search={search} />
+      </>
+    );
+  }
+
+  return (
+    <>
+      {field}
+      {/* The highlight shows on All and Highlight only, not on one type of event (owner 2026-11-28). */}
+      {featured.length && (!type || type === "highlight") ? <Highlight events={featured} venues={data!.venues} today={today} /> : null}
+      {type === "highlight" ? (
+        featured.length ? null : <p className="mn-none">ไม่เจอสิ่งที่ตรงกัน</p>
+      ) : listed.length ? (
+        <EventList events={listed} byDay={view !== "now"} today={today} days={viewDays(view, today)} />
+      ) : (
+        <p className="mn-none">ไม่เจอสิ่งที่ตรงกัน</p>
+      )}
+    </>
+  );
+}
+
+function Highlight({ events, venues, today }: { events: HomeEventRow[]; venues: Map<string, HomeEventRow[]>; today: string }) {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  const [index, setIndex] = useState(0);
+  // Which way the last arrow went, so the next highlight slides in from that side (owner 2026-11-28).
+  const [dir, setDir] = useState<1 | -1 | 0>(0);
+  const [venuesOpen, setVenuesOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const copiedTimer = useRef<number | undefined>(undefined);
+  useEffect(() => () => window.clearTimeout(copiedTimer.current), []);
+
+  const e = events[index % events.length];
+  const ids = useMemo(() => events.map((x) => x.id), [events]);
+  const { data: mine } = useMyEventInterests(ids);
+  const interested = !!mine?.has(e.id);
+  const toggle = useMutation({
+    mutationFn: toggleEventInterest,
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: ["events", "my-interests"] });
+      void qc.invalidateQueries({ queryKey: ["events", "stats"] });
+      void qc.invalidateQueries({ queryKey: ["events", "my-list"] });
+    },
+  });
+
+  const go = (step: 1 | -1) => {
+    setDir(step);
+    setIndex((i) => (i + step + events.length) % events.length);
+    setVenuesOpen(false);
+  };
+
+  const share = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.origin + eventPath(e));
+    } catch {
+      return; // clipboard blocked: say nothing rather than claim it was copied
+    }
+    setCopied(true);
+    window.clearTimeout(copiedTimer.current);
+    copiedTimer.current = window.setTimeout(() => setCopied(false), 1800);
+  };
+
+  const live = !!e.starts_on && e.starts_on <= today;
+  const end = lastDay(e);
+  const daysLeft = end ? Math.round((dayOf(end).getTime() - dayOf(today).getTime()) / DAY) : null;
+  const places = venues.get(e.id) ?? [];
+
+  return (
+    <section aria-label="Highlight" className="mn-ev-hl">
+      <div className="mn-ev-bar">
+        <h2 lang="en">HIGHLIGHT</h2>
+        {events.length > 1 ? (
+          <div className="mn-ev-nav">
+            <span className="mn-ev-pos">{`${(index % events.length) + 1} / ${events.length}`}</span>
+            <button type="button" className="cr-arrow" aria-label="ไฮไลต์ก่อนหน้า" onClick={() => go(-1)}>
+              <Chevron d="M14.5 6l-6 6 6 6" />
+            </button>
+            <button type="button" className="cr-arrow" aria-label="ไฮไลต์ถัดไป" onClick={() => go(1)}>
+              <Chevron d="M9.5 6l6 6-6 6" />
+            </button>
+          </div>
+        ) : null}
+      </div>
+      <div className="mn-ev-wrap" key={e.id} data-dir={dir || undefined}>
+        <Link
+          to={eventPath(e)}
+          aria-label={`เปิด ${e.title}`}
+          className="mn-ev-pic"
+          style={e.cover_url ? { backgroundImage: `url(${JSON.stringify(proxiedImageUrl(e.cover_url, 1200))})` } : undefined}
+        />
+        <div className="mn-ev-info">
+          <p className="mn-ev-kind">
+            <span>{EVENT_KIND[e.category] ?? EVENT_KIND.other}</span>
+            <i aria-hidden="true" />
+            <span className="mn-ev-status" data-live={live ? "" : undefined}>
+              {live ? (daysLeft !== null ? `ON NOW · จบใน ${daysLeft} วัน` : "ON NOW") : "COMING SOON"}
+            </span>
+          </p>
+          <h3>{e.title}</h3>
+          {e.starts_on ? (
+            <p className="mn-ev-dates">{end && end !== e.starts_on ? `${fullDate(e.starts_on)} – ${fullDate(end)}` : fullDate(e.starts_on)}</p>
+          ) : null}
+          {places.length ? (
+            <div className="mn-ev-chips">
+              <button type="button" className="mn-ev-pill" aria-expanded={venuesOpen} onClick={() => setVenuesOpen((v) => !v)}>
+                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z" />
+                  <circle cx="12" cy="10" r="2.3" />
+                </svg>
+                {places.length > 1 ? `${places[0].title} + อีก ${places.length - 1} แห่ง` : places[0].title}
+              </button>
+            </div>
+          ) : null}
+          {venuesOpen ? (
+            <ol className="mn-ev-venues">
+              {places.map((p, i) => (
+                <li key={p.id}>
+                  <span>{i + 1}</span>
+                  <span>{p.title}</span>
+                </li>
+              ))}
+            </ol>
+          ) : null}
+          <div className="mn-ev-acts">
+            {places.length ? (
+              <Link to={`${eventPath(e)}/locations`} className="mn-ev-route">
+                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="6" cy="18" r="2.5" />
+                  <circle cx="18" cy="6" r="2.5" />
+                  <path d="M8.5 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.5" />
+                </svg>
+                ดูเส้นทาง
+              </Link>
+            ) : null}
+            <button
+              type="button"
+              className="mn-ev-save"
+              aria-pressed={interested}
+              onClick={() => (user ? toggle.mutate(e.id) : navigate(loginHref()))}
+            >
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" stroke="#282929" strokeWidth="1.5" strokeLinejoin="round">
+                <path d="M6 3h12v18l-6-4.5L6 21z" />
+              </svg>
+              {interested ? "สนใจแล้ว" : "สนใจ"}
+            </button>
+            <button type="button" className="mn-ev-share" aria-label="แชร์ (คัดลอกลิงก์)" onClick={() => void share()}>
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="18" cy="5.5" r="2.5" />
+                <circle cx="6" cy="12" r="2.5" />
+                <circle cx="18" cy="18.5" r="2.5" />
+                <path d="M8.2 10.8l7.6-4.1M8.2 13.2l7.6 4.1" />
+              </svg>
+            </button>
+            <span role="status" aria-hidden={!copied} className="mn-ev-copied" data-on={copied ? "" : undefined}>
+              คัดลอกลิงก์แล้ว
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function EventList({ events, byDay, today, days }: { events: HomeEventRow[]; byDay: boolean; today: string; days: string | null }) {
+  const groups = useMemo(() => {
+    if (!byDay) return [{ day: today, items: events }];
+    const map = new Map<string, HomeEventRow[]>();
+    for (const e of events) map.set(e.starts_on!, [...(map.get(e.starts_on!) ?? []), e]);
+    return [...map.entries()].map(([day, items]) => ({ day, items }));
+  }, [events, byDay, today]);
+
+  const first = groups[0].day;
+  const panels = useShellPanels();
+  // Every day starts open and folds on a click (owner 2026-11-28; the mock opened the first two only).
+  const [closed, setClosed] = useState<Record<string, boolean>>({});
+  const isOpen = (day: string) => !closed[day];
+
+  return (
+    <section aria-label="อีเว้นท์" className="mn-ev-list">
+      <div className="mn-ev-month">
+        <span className="mn-ev-mo">
+          <span lang="en">{monthCaps(first)}</span>
+          {days ? (
+            <span className="mn-ev-range" lang="en">
+              {days}
+            </span>
+          ) : null}
+        </span>
+        <button type="button" className="mn-ev-cal" lang="en" aria-haspopup="dialog" onClick={(e) => panels.openCalendar(e.currentTarget)}>
+          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3.5" y="5" width="17" height="15.5" rx="2" />
+            <path d="M3.5 10h17M8 3v4M16 3v4" />
+          </svg>
+          Full Calendar
+        </button>
+      </div>
+      <div className="mn-ev-days">
+        {groups.map((g) => (
+          <div className="mn-ev-group" key={g.day}>
+            {byDay ? (
+              <button type="button" className="mn-ev-day" aria-expanded={isOpen(g.day)} onClick={() => setClosed((c) => ({ ...c, [g.day]: isOpen(g.day) }))}>
+                <span lang="en">{g.day.slice(0, 7) === first.slice(0, 7) ? weekdayDay(g.day) : `${weekdayDay(g.day)} ${monthCaps(g.day)}`}</span>
+                <svg aria-hidden="true" width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="#282929" strokeWidth="1">
+                  <path d="M14 25V3M5 12l9-9 9 9" />
+                </svg>
+              </button>
+            ) : null}
+            {!byDay || isOpen(g.day) ? (
+              <div className="mn-ev-grid">
+                {g.items.map((e) => (
+                  <div className="mn-ev-cell" key={e.id}>
+                    <EventItem event={e} untilEnd={!byDay} />
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        ))}
+        <div className="mn-ev-end" />
+      </div>
+    </section>
+  );
+}
+
+function SearchResults({ search }: { search: Search }) {
+  const { events, exact, loading } = search;
+  if (loading && !events.length) return <ScLoader label="กำลังหางาน" />;
+  if (!events.length) return <p className="mn-none">ไม่เจอสิ่งที่ตรงกัน</p>;
+  return (
+    <section aria-label="ผลการค้นหา" className="mn-es-res" data-loading={loading ? "" : undefined}>
+      <p className="mn-es-count" aria-live="polite">
+        {exact ? `เจอ ${events.length} งาน` : "ยังไม่เจองานตรงเป๊ะ ลองดูงานใกล้เคียงนะ"}
+      </p>
+      <div className="mn-ev-grid">
+        {events.map((e) => (
+          <div className="mn-ev-cell" key={e.id}>
+            <EventItem event={e} untilEnd />
+          </div>
+        ))}
+        {Array.from({ length: (3 - (events.length % 3)) % 3 }, (_, k) => (
+          <div className="mn-ev-cell" data-empty="" key={`empty-${k}`}>
+            <svg aria-hidden="true" viewBox="0 0 100 100" preserveAspectRatio="none">
+              <line x1="0" y1="100" x2="100" y2="0" stroke="#C8C8C5" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+            </svg>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function EventItem({ event: e, untilEnd }: { event: HomeEventRow; untilEnd: boolean }) {
+  const poster = usePosterLabel(e.origin, e.owner_id);
+  const openCall = e.category === "open_call";
+  const end = lastDay(e);
+  const when = openCall
+    ? end ? `ปิดรับ ${shortDate(end)}` : ""
+    : untilEnd
+      ? end ? `ถึง ${shortDate(end)}` : (e.time_note ?? "")
+      : e.time_note?.trim() || (end && end !== e.starts_on ? `ถึง ${shortDate(end)}` : "");
+
+  return (
+    <Link to={eventPath(e)} className="mn-ev-item">
+      {e.cover_url ? (
+        <img alt="" src={proxiedImageUrl(e.cover_url, 640)} loading="lazy" decoding="async" />
+      ) : (
+        <span aria-hidden="true" className="mn-ev-noimg" />
+      )}
+      <span className="mn-ev-meta">
+        {openCall ? <span aria-hidden="true" className="mn-ev-dot" /> : null}
+        {EVENT_KIND[e.category] ?? EVENT_KIND.other}
+        {poster ? <span className="mn-ev-tag">{poster}</span> : null}
+      </span>
+      <span className="mn-ev-title">{e.title}</span>
+      <span className="mn-ev-ww">
+        <span>{when}</span>
+        <span>{e.location_name?.trim() || e.area?.trim() || ""}</span>
+      </span>
+    </Link>
+  );
+}

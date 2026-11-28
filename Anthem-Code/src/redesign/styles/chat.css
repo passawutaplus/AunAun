@@ -1,0 +1,1592 @@
+/* Chat (mock: pages/Chat.dc.html) — page `/chat` and the big chat popup of ChatDock (`.ch-emb`) */
+
+.sc-app .ch-main {
+  width: 100%;
+  max-width: 1440px;
+  margin-inline: auto;
+  padding: 53px 40px 80px;
+  box-sizing: border-box;
+}
+
+.sc-app .ch-wrap {
+  position: relative;
+  max-width: 1020px;
+  margin: 24px auto 0;
+  transition: max-width .45s var(--sc-ease);
+}
+
+.sc-app .ch-wrap[data-info] {
+  max-width: 1320px;
+}
+
+.sc-app .ch-card {
+  background: #FFFFFF;
+  border-radius: 38px;
+  box-shadow: var(--sc-shadow);
+  height: 780px;
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.sc-app .ch-card[data-info] {
+  grid-template-columns: 320px minmax(0, 1fr) 300px;
+}
+
+/* zero specificity, so every class rule below wins */
+.sc-app .ch-card :where(button, input) {
+  font: inherit;
+  color: inherit;
+}
+
+.sc-app .ch-av {
+  border-radius: 50%;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #B9B9B6 center / cover no-repeat;
+  color: #FFFFFF;
+  font-size: 14px;
+}
+
+/* ---------- room list ---------- */
+.sc-app .ch-list {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 1px solid #ECECEA;
+}
+
+.sc-app .ch-lh {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 28px 20px 16px 28px;
+}
+
+.sc-app .ch-lh h1 {
+  flex: 1;
+  margin: 0;
+  font-size: 28px;
+  font-weight: 400;
+  letter-spacing: -.01em;
+}
+
+.sc-app .ch-q {
+  padding: 0 20px 12px;
+}
+
+.sc-app .ch-q > div {
+  position: relative;
+}
+
+.sc-app .ch-q svg {
+  position: absolute;
+  left: 16px;
+  top: 14px;
+}
+
+.sc-app .ch-q input,
+.sc-app .ch-find input,
+.sc-app .ch-cmp textarea {
+  min-width: 0;
+  box-sizing: border-box;
+  border: 0;
+  border-radius: 999px;
+  background: #F2F2F0;
+  font-size: 14px;
+  color: #282929;
+  outline-color: #282929;
+}
+
+.sc-app .ch-q input {
+  width: 100%;
+  height: 44px;
+  padding: 0 18px 0 42px;
+}
+
+.sc-app .ch-filters {
+  display: flex;
+  gap: 6px;
+  padding: 0 20px 8px;
+}
+
+.sc-app .ch-chip {
+  border: 0;
+  cursor: pointer;
+  height: 32px;
+  padding: 0 14px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  background: #F2F2F0;
+  color: #4A4A4A;
+}
+
+.sc-app .ch-chip[aria-pressed="true"] {
+  background: #282929;
+  color: #FFFFFF;
+}
+
+.sc-app .ch-hint {
+  margin: 0;
+  padding: 4px 28px 8px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #8A8A87;
+}
+
+.sc-app .ch-notice {
+  margin: 4px 20px 8px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: #F2F2F0;
+  font-size: 13px;
+  color: #4A4A4A;
+}
+
+.sc-app .ch-rows {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 4px 12px 16px;
+}
+
+.sc-app .ch-row {
+  border: 0;
+  background: none;
+  cursor: pointer;
+  box-sizing: border-box;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  border-radius: 18px;
+  text-align: left;
+  text-decoration: none;
+  transition: background .2s ease;
+}
+
+.sc-app .ch-row:hover {
+  background: #F7F7F5;
+}
+
+.sc-app .ch-row[aria-current="true"] {
+  background: #F2F2F0;
+}
+
+.sc-app .ch-rt {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.sc-app .ch-r1,
+.sc-app .ch-r2 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sc-app .ch-r2 {
+  gap: 8px;
+}
+
+.sc-app .ch-name {
+  font-size: 15px;
+  font-weight: 400;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sc-app .ch-name[data-unread] {
+  font-weight: 500;
+}
+
+.sc-app .ch-mut {
+  flex: none;
+}
+
+.sc-app .ch-time {
+  margin-left: auto;
+  font-size: 12px;
+  color: #8A8A87;
+  flex: none;
+}
+
+.sc-app .ch-last {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #8A8A87;
+}
+
+.sc-app .ch-last[data-unread] {
+  color: #282929;
+}
+
+.sc-app .ch-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--sc-red);
+  flex: none;
+}
+
+.sc-app .ch-empty {
+  padding: 48px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+}
+
+.sc-app .ch-empty p {
+  margin: 0;
+  font-size: 14px;
+  color: #8A8A87;
+}
+
+.sc-app .ch-empty a {
+  font-size: 14px;
+  color: #282929;
+}
+
+/* ---------- room ---------- */
+.sc-app .ch-room {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.sc-app .ch-pick {
+  margin: auto;
+  font-size: 15px;
+  color: #8A8A87;
+}
+
+.sc-app .ch-rb {
+  border: 0;
+  background: none;
+  cursor: pointer;
+  box-sizing: border-box;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  color: #282929;
+  transition: background .2s ease;
+}
+
+.sc-app .ch-rb:hover,
+.sc-app .ch-rb[data-on] {
+  background: #F2F2F0;
+}
+
+.sc-app .ch-rh {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 20px 20px 44px 28px;
+  pointer-events: none;
+  background: rgba(255, 255, 255, .1);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  backdrop-filter: blur(24px) saturate(1.4);
+  --ch-fade: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 1) 45%, rgba(0, 0, 0, .794) 58%, rgba(0, 0, 0, .578) 68%, rgba(0, 0, 0, .345) 78%, rgba(0, 0, 0, .146) 88%, rgba(0, 0, 0, 0) 100%);
+  -webkit-mask-image: var(--ch-fade);
+  mask-image: var(--ch-fade);
+}
+
+.sc-app .ch-rh > * {
+  pointer-events: auto;
+}
+
+.sc-app .ch-who {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-decoration: none;
+  color: #282929;
+}
+
+.sc-app .ch-whot {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sc-app .ch-whon {
+  font-size: 17px;
+  font-weight: 400;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sc-app .ch-whos {
+  font-size: 13px;
+  color: #8A8A87;
+}
+
+.sc-app .ch-back,
+.sc-app .ch-more {
+  display: none;
+}
+
+.sc-app .ch-find {
+  position: absolute;
+  top: 82px;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 20px 0 28px;
+}
+
+.sc-app .ch-find input {
+  flex: 1;
+  height: 40px;
+  padding: 0 18px;
+}
+
+.sc-app .ch-find span {
+  font-size: 12px;
+  color: #8A8A87;
+  flex: none;
+}
+
+.sc-app .ch-log {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 104px 32px 24px;
+}
+
+.sc-app .ch-start {
+  margin: auto;
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #8A8A87;
+}
+
+.sc-app .ch-m {
+  display: flex;
+  flex-direction: column;
+}
+
+.sc-app .ch-day {
+  align-self: center;
+  margin: 16px 0 10px;
+  font-size: 12px;
+  color: #8A8A87;
+}
+
+.sc-app .ch-mr {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  transition: opacity .2s ease;
+}
+
+.sc-app .ch-mr[data-me] {
+  justify-content: flex-end;
+}
+
+.sc-app .ch-mr[data-gap] {
+  margin-top: 10px;
+}
+
+.sc-app .ch-mr[data-miss] {
+  opacity: .25;
+}
+
+.sc-app .ch-t {
+  font-size: 11px;
+  color: #A3A3A0;
+  flex: none;
+}
+
+.sc-app .ch-clock {
+  display: block;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sc-app .ch-clock .hand {
+    transform-origin: 12px 12px;
+    animation: ch-tick 1.2s linear infinite;
+  }
+}
+
+@keyframes ch-tick {
+  to { transform: rotate(360deg); }
+}
+
+.sc-app .ch-bub {
+  max-width: 440px;
+  padding: 10px 16px;
+  font-size: 15px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: #F2F2F0;
+  border-radius: 20px 20px 20px 6px;
+}
+
+.sc-app .ch-bub[data-me] {
+  background: #282929;
+  color: #FFFFFF;
+  border-radius: 20px 20px 6px 20px;
+}
+
+.sc-app .ch-img {
+  display: block;
+  width: 260px;
+  aspect-ratio: 4 / 3;
+  border-radius: 20px;
+  background: #ECECEA center / cover no-repeat;
+}
+
+.sc-app .ch-exp {
+  width: 260px;
+  aspect-ratio: 4 / 3;
+  box-sizing: border-box;
+  border-radius: 20px;
+  background: #F7F7F5;
+  box-shadow: inset 0 0 0 1px #ECECEA;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #A3A3A0;
+}
+
+.sc-app .ch-work {
+  width: 260px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 20px;
+  background: #FFFFFF;
+  box-shadow: inset 0 0 0 1px #ECECEA;
+  text-decoration: none;
+  color: #282929;
+}
+
+.sc-app .ch-wth {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 14px;
+  background: #ECECEA center / cover no-repeat;
+}
+
+.sc-app .ch-wt {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 6px 4px;
+}
+
+.sc-app .ch-wt > :first-child {
+  font-size: 11px;
+  color: #8A8A87;
+}
+
+.sc-app .ch-wt > :nth-child(2) {
+  font-size: 14px;
+}
+
+.sc-app .ch-wt > :nth-child(2),
+.sc-app .ch-cs {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sc-app .ch-wt .ch-cs {
+  font-size: 12px;
+  color: #8A8A87;
+}
+
+/* profile · event · document cards: a row (picture + words) */
+.sc-app .ch-card-l {
+  width: 260px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border-radius: 20px;
+  background: #FFFFFF;
+  box-shadow: inset 0 0 0 1px #ECECEA;
+  text-decoration: none;
+  color: #282929;
+}
+
+.sc-app .ch-card-l .ch-wt {
+  min-width: 0;
+  flex: 1;
+  padding: 0 4px 0 0;
+}
+
+.sc-app :is(.ch-ev-th, .ch-doc-ic) {
+  width: 56px;
+  height: 56px;
+  flex: none;
+  border-radius: 12px;
+  background: #ECECEA center / cover no-repeat;
+}
+
+.sc-app :is(.ch-doc-ic, .ch-ev-th) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sc-app .ch-doc-ic {
+  background: #F2F2F0;
+}
+
+/* a text that links to an event: the bubble, then the event card under it */
+.sc-app .ch-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+}
+
+.sc-app .ch-stack[data-me] {
+  align-items: flex-end;
+}
+
+/* "ทักจากงาน": the work a greeting came from, until the first message takes it along */
+.sc-app .ch-about {
+  align-self: center;
+  width: 300px;
+  max-width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 10px;
+  border-radius: 20px;
+  background: #F7F7F5;
+  text-decoration: none;
+  color: #282929;
+}
+
+.sc-app .ch-about .ch-wt {
+  min-width: 0;
+  flex: 1;
+}
+
+.sc-app .ch-about-th {
+  width: 52px;
+  height: 52px;
+  flex: none;
+  border-radius: 10px;
+  background: #ECECEA center / cover no-repeat;
+}
+
+/* studio document (quotation / invoice / receipt): live status, "ดูเอกสาร" opens it */
+.sc-app .ch-docc {
+  width: 260px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 10px 12px;
+  border-radius: 20px;
+  background: #FFFFFF;
+  box-shadow: inset 0 0 0 1px #ECECEA;
+  color: #282929;
+}
+
+.sc-app .ch-docc-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.sc-app .ch-docc-top .ch-wt {
+  min-width: 0;
+  flex: 1;
+  padding: 0;
+}
+
+.sc-app .ch-docc-amt {
+  padding: 0 4px;
+  font-size: 20px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.sc-app .ch-docc-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 0 4px;
+  font-size: 12px;
+  color: #8A8A87;
+}
+
+.sc-app .ch-docc-st {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #F2F2F0;
+  color: #4A4A4A;
+}
+
+.sc-app .ch-docc-st[data-tone="success"] {
+  background: #E7F3EA;
+  color: #2E6B3F;
+}
+
+.sc-app .ch-docc-st[data-tone="warning"] {
+  background: #FBF1DE;
+  color: #8A5A12;
+}
+
+.sc-app .ch-docc-st[data-tone="danger"] {
+  background: #FBE7E5;
+  color: #C8372D;
+}
+
+.sc-app .ch-docc-st[data-tone="info"] {
+  background: #E8EEF8;
+  color: #2F4F86;
+}
+
+.sc-app .ch-docc-btn {
+  min-height: 40px;
+  border: 0;
+  border-radius: 999px;
+  background: #282929;
+  color: #FFFFFF;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* unsent (old chat "ข้อความถูกยกเลิก") */
+.sc-app .ch-bub.ch-unsent,
+.sc-app .ch-bub.ch-unsent[data-me] {
+  background: transparent;
+  color: #A3A3A0;
+  font-style: italic;
+  box-shadow: inset 0 0 0 1px #ECECEA;
+}
+
+/* reply: the quoted message on top of the bubble (tap → that message) */
+.sc-app .ch-quote {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 100%;
+  min-width: 0;
+  margin: 0 0 6px;
+  padding: 6px 10px;
+  box-sizing: border-box;
+  border: 0;
+  border-left: 3px solid #C8C8C5;
+  border-radius: 10px;
+  background: rgba(40, 41, 41, .06);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  white-space: normal;
+  cursor: pointer;
+}
+
+.sc-app .ch-bub[data-me] .ch-quote {
+  border-left-color: rgba(255, 255, 255, .6);
+  background: rgba(255, 255, 255, .14);
+}
+
+.sc-app .ch-quote > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sc-app .ch-quote > :first-child {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.sc-app .ch-quote > :last-child {
+  font-size: 12px;
+  opacity: .75;
+}
+
+.sc-app .ch-mr[data-hl] .ch-bub {
+  box-shadow: 0 0 0 3px rgba(238, 61, 41, .35);
+}
+
+/* Reply · Unsend beside a message: hover / keyboard on PC, a tap on the row on phones */
+.sc-app .ch-macts {
+  display: inline-flex;
+  flex: none;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity .15s ease;
+}
+
+.sc-app .ch-macts[data-me] {
+  order: -1;
+}
+
+.sc-app .ch-mr:hover .ch-macts,
+.sc-app .ch-mr:focus-within .ch-macts,
+.sc-app .ch-mr[data-sel] .ch-macts {
+  opacity: 1;
+}
+
+/* touch screens: the buttons take no room until the row is tapped */
+@media (hover: none) {
+  .sc-app .ch-mr:not([data-sel]) .ch-macts {
+    display: none;
+  }
+}
+
+.sc-app .ch-mact {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #8A8A87;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.sc-app .ch-mact:hover {
+  background: #F2F2F0;
+  color: #282929;
+}
+
+/* the message the next text answers, above the text box */
+.sc-app .ch-replybar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 24px -4px;
+  padding: 8px 6px 8px 14px;
+  border-left: 3px solid #282929;
+  border-radius: 12px;
+  background: #F7F7F5;
+}
+
+.sc-app .ch-replybar-t {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.sc-app .ch-replybar-t > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sc-app .ch-replybar-t > :first-child {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.sc-app .ch-replybar-t > :last-child {
+  font-size: 13px;
+  color: #8A8A87;
+}
+
+/* a picture on its way up */
+.sc-app .ch-up {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sc-app .ch-up::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(255, 255, 255, .45);
+}
+
+.sc-app .ch-spin {
+  position: relative;
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 2px solid rgba(40, 41, 41, .2);
+  border-top-color: #282929;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sc-app .ch-spin {
+    animation: ch-tick .9s linear infinite;
+  }
+}
+
+/* a room opened by link: loading, or not there */
+.sc-app .ch-rh-bare {
+  display: none;
+}
+
+.sc-app .ch-gone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 0 24px;
+  text-align: center;
+}
+
+.sc-app .ch-gone p {
+  margin: 0;
+}
+
+.sc-app .ch-gone p:first-child {
+  font-size: 16px;
+  color: #282929;
+}
+
+.sc-app .ch-gone p + p {
+  font-size: 13px;
+}
+
+.sc-app .ch-gone button {
+  margin-top: 10px;
+  min-height: 42px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 999px;
+  background: #282929;
+  color: #FFFFFF;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* request bar (Requests): Report · Ignore · Accept */
+.sc-app .ch-req {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 28px 24px;
+  border-top: 1px solid #ECECEA;
+}
+
+.sc-app .ch-req p {
+  flex: 1;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #4A4A4A;
+}
+
+.sc-app .ch-req p span {
+  font-weight: 500;
+  color: #282929;
+}
+
+.sc-app .ch-req > div {
+  display: flex;
+  gap: 8px;
+}
+
+.sc-app .ch-req button {
+  border: 0;
+  cursor: pointer;
+  height: 44px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  border-radius: 12px;
+}
+
+.sc-app .ch-req button:disabled {
+  cursor: default;
+  opacity: .6;
+}
+
+.sc-app .ch-rq-rep {
+  padding: 0 12px;
+  background: none;
+  color: #8A8A87;
+}
+
+.sc-app .ch-rq-ign {
+  padding: 0 20px;
+  background: #F2F2F0;
+}
+
+.sc-app .ch-rq-ok {
+  padding: 0 22px;
+  background: #282929;
+  color: #FFFFFF;
+}
+
+/* composer: Enter sends, Shift+Enter is a new line (the box grows up to 5 lines) */
+.sc-app .ch-cmp {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  padding: 12px 24px 24px;
+}
+
+.sc-app .ch-cmp > .ch-rb {
+  margin-bottom: 2px;
+}
+
+.sc-app .ch-cmp textarea {
+  flex: 1;
+  height: 48px;
+  min-height: 48px;
+  max-height: 140px;
+  padding: 13px 20px;
+  margin-left: 6px;
+  border-radius: 24px;
+  font: inherit;
+  font-size: 15px;
+  line-height: 22px;
+  resize: none;
+  overflow-y: auto;
+}
+
+/* blocked person / old hire room that was closed: why, instead of the text field */
+.sc-app .ch-lock {
+  margin: 0;
+  padding: 18px 28px 24px;
+  border-top: 1px solid #ECECEA;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #8A8A87;
+  text-align: center;
+}
+
+.sc-app .ch-send {
+  border: 0;
+  cursor: pointer;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .2s ease;
+  background: #C8C8C5;
+}
+
+.sc-app .ch-send[data-on] {
+  background: #282929;
+}
+
+.sc-app .ch-shm {
+  position: absolute;
+  left: 24px;
+  bottom: 100%;
+  z-index: 4;
+  width: 288px;
+  max-height: 360px;
+  overflow-y: auto;
+  padding: 8px;
+  box-sizing: border-box;
+  background: #FFFFFF;
+  border-radius: 20px;
+  box-shadow: 0 1px 2px rgba(40, 41, 41, .06), 0 12px 32px rgba(40, 41, 41, .16);
+}
+
+.sc-app .ch-shm > p {
+  margin: 8px 12px 6px;
+  font-size: 12px;
+  color: #8A8A87;
+}
+
+.sc-app .ch-shm .ch-row {
+  padding: 8px;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.sc-app .ch-shth {
+  width: 44px;
+  height: 44px;
+  border-radius: 5px;
+  flex: none;
+  background: #ECECEA center / cover no-repeat;
+}
+
+.sc-app .ch-none {
+  margin: 0;
+  font-size: 13px;
+  color: #8A8A87;
+}
+
+.sc-app .ch-shm .ch-none {
+  padding: 4px 12px 8px;
+}
+
+/* ---------- chat info ---------- */
+.sc-app .ch-info {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 102px 24px 24px;
+  border-left: 1px solid #ECECEA;
+}
+
+.sc-app .ch-info[hidden] {
+  display: none;
+}
+
+.sc-app .ch-id {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.sc-app .ch-idn {
+  margin-top: 10px;
+  font-size: 20px;
+  font-weight: 400;
+}
+
+.sc-app .ch-idf {
+  font-size: 13px;
+  color: #8A8A87;
+}
+
+.sc-app .ch-acts {
+  display: flex;
+  justify-content: center;
+}
+
+.sc-app .ch-act {
+  border: 0;
+  background: none;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #4A4A4A;
+  text-decoration: none;
+}
+
+.sc-app .ch-act .ic {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #F2F2F0;
+  color: #282929;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .2s ease;
+}
+
+.sc-app .ch-act:hover .ic {
+  background: #E6E6E3;
+}
+
+.sc-app .ch-act .ic[data-on] {
+  background: #282929;
+  color: #FFFFFF;
+}
+
+.sc-app .ch-secs {
+  display: flex;
+  flex-direction: column;
+}
+
+.sc-app .ch-sw {
+  border-top: 1px solid #ECECEA;
+}
+
+.sc-app .ch-sw-last {
+  border-bottom: 1px solid #ECECEA;
+}
+
+.sc-app .ch-sec {
+  border: 0;
+  background: none;
+  cursor: pointer;
+  box-sizing: border-box;
+  width: 100%;
+  height: 48px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 15px;
+  font-weight: 400;
+}
+
+.sc-app .ch-sect {
+  display: inline-flex;
+  align-items: center;
+}
+
+.sc-app .ch-chev {
+  transition: transform .25s ease;
+}
+
+.sc-app .ch-chev[data-open] {
+  transform: rotate(180deg);
+}
+
+.sc-app .ch-sb {
+  padding: 0 0 16px;
+}
+
+.sc-app .ch-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.sc-app .ch-th {
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  display: block;
+  aspect-ratio: 1 / 1;
+  border-radius: 5px;
+  background: #ECECEA center / cover no-repeat;
+}
+
+.sc-app span.ch-th {
+  cursor: default;
+}
+
+.sc-app .ch-more-w {
+  border: 0;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  display: inline-flex;
+  margin-top: 12px;
+  font-size: 13px;
+  color: #666666;
+}
+
+.sc-app .ch-i {
+  position: relative;
+  display: inline-flex;
+  margin-left: 6px;
+  color: #A3A3A0;
+  cursor: help;
+  border-radius: 50%;
+}
+
+.sc-app .ch-i:hover,
+.sc-app .ch-i:focus-visible {
+  color: #282929;
+  outline: none;
+}
+
+.sc-app .ch-i::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: -12px;
+  bottom: calc(100% + 8px);
+  white-space: nowrap;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: #282929;
+  color: #FFFFFF;
+  font-size: 12px;
+  font-weight: 300;
+  opacity: 0;
+  transform: translateY(4px);
+  pointer-events: none;
+  transition: opacity .2s ease, transform .2s ease;
+}
+
+.sc-app .ch-i:hover::after,
+.sc-app .ch-i:focus-visible::after {
+  opacity: 1;
+  transform: none;
+}
+
+.sc-app .ch-priv {
+  display: flex;
+  flex-direction: column;
+  padding: 0 0 12px;
+  margin: 0 -12px;
+}
+
+.sc-app .ch-mi {
+  border: 0;
+  background: none;
+  cursor: pointer;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+}
+
+.sc-app .ch-mi:hover {
+  background: #F5F5F3;
+}
+
+.sc-app .ch-mi-red {
+  color: #C8372D;
+}
+
+/* ---------- × and the info tab on the card edge ---------- */
+.sc-app .ch-x {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 5;
+}
+
+.sc-app .ch-tab {
+  border: 0;
+  cursor: pointer;
+  position: absolute;
+  top: 50%;
+  right: -22px;
+  box-sizing: border-box;
+  width: 22px;
+  height: 64px;
+  margin-top: -32px;
+  border-radius: 0 12px 12px 0;
+  background: #FFFFFF;
+  color: #8A8A87;
+  box-shadow: var(--sc-shadow);
+  clip-path: inset(-40px -40px -40px 0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color .2s ease, background .2s ease;
+}
+
+.sc-app .ch-tab:hover {
+  color: #282929;
+  background: #F7F7F5;
+}
+
+.sc-app .ch-tab svg {
+  transition: transform .45s var(--sc-ease);
+}
+
+.sc-app .ch-tab[data-on] svg {
+  transform: rotate(180deg);
+}
+
+.sc-app :is(.ch-rb, .ch-row, .ch-act, .ch-tab, .ch-chip, .ch-sec, .ch-mi, .ch-th, .ch-req button, .ch-send):focus-visible {
+  outline: 2px solid #282929;
+  outline-offset: 2px;
+}
+
+/* ---------- big chat popup (ChatDock): centred box over a blurred veil, no header ---------- */
+.sc-app .ch-veil {
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sc-app .ch-veil-hit {
+  position: absolute;
+  inset: 0;
+}
+
+.sc-app .ch-main.ch-emb {
+  position: relative;
+  z-index: 1;
+  max-width: none;
+  padding: 0 40px;
+}
+
+.sc-app .ch-emb .ch-wrap {
+  margin-top: 0;
+}
+
+.sc-app .ch-emb .ch-card {
+  height: min(780px, calc(100vh - 48px));
+}
+
+/* ---------- ≤1100: two columns, no chat info (mock) ---------- */
+@media (max-width: 1100px) {
+  .sc-app .ch-card,
+  .sc-app .ch-card[data-info] {
+    grid-template-columns: 300px minmax(0, 1fr);
+  }
+
+  .sc-app .ch-wrap,
+  .sc-app .ch-wrap[data-info] {
+    max-width: calc(100% - 24px);
+  }
+
+  .sc-app .ch-tab,
+  .sc-app .ch-info {
+    display: none;
+  }
+}
+
+/* ---------- phones (≤600px, mock 26 พ.ย.): list ↔ room, each its own screen ---------- */
+@media (max-width: 600px) {
+  .sc-app .ch-main {
+    padding: 0 12px 24px;
+  }
+
+  .sc-app .ch-wrap,
+  .sc-app .ch-wrap[data-info] {
+    max-width: 100%;
+    margin: 0;
+  }
+
+  .sc-app .ch-card,
+  .sc-app .ch-card[data-info] {
+    grid-template-columns: minmax(0, 1fr);
+    height: auto;
+    min-height: calc(100dvh - 200px);
+    border-radius: 24px;
+    box-shadow: none;
+    position: relative;
+  }
+
+  .sc-app .ch-list {
+    border-right: 0;
+  }
+
+  .sc-app .ch-lh {
+    padding: 20px 16px 12px;
+  }
+
+  .sc-app .ch-lh h1 {
+    font-size: 26px;
+  }
+
+  .sc-app :is(.ch-q, .ch-filters, .ch-hint, .ch-notice) {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .sc-app .ch-rows {
+    padding: 4px 4px 16px;
+    overflow: visible;
+  }
+
+  .sc-app .ch-list .ch-row {
+    padding: 10px 8px;
+  }
+
+  .sc-app .ch-main[data-chv$="list"] .ch-room,
+  .sc-app .ch-main[data-chv$="conv"] .ch-list {
+    display: none;
+  }
+
+  .sc-app .ch-main:is([data-chv="list"], [data-chv$="conv"]) .ch-x,
+  .sc-app .ch-tab {
+    display: none;
+  }
+
+  .sc-app .ch-main[data-chv="elist"] .ch-x {
+    top: 12px;
+    right: 12px;
+  }
+
+  /* room + popup list = full screen */
+  .sc-app .ch-main:is([data-chv$="conv"], [data-chv="elist"]) .ch-card {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    height: 100dvh;
+    min-height: 0;
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sc-app .ch-main[data-chv$="conv"] .ch-room {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .sc-app .ch-main[data-chv="elist"] .ch-list {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .sc-app .ch-main[data-chv="elist"] .ch-rows {
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  .sc-app:has(.ch-main[data-chv="conv"]) :is(.sc-hd, .sc-tb) {
+    display: none;
+  }
+
+  .sc-app .ch-back,
+  .sc-app .ch-more {
+    display: inline-flex;
+  }
+
+  .sc-app .ch-rh {
+    padding: 8px 8px 28px;
+    align-items: center;
+    gap: 2px;
+    z-index: 7;
+  }
+
+  .sc-app .ch-who {
+    gap: 10px;
+  }
+
+  .sc-app .ch-find {
+    top: 64px;
+    padding: 0 12px;
+    z-index: 8;
+  }
+
+  .sc-app .ch-log {
+    padding: 76px 12px 16px;
+  }
+
+  .sc-app .ch-bub {
+    max-width: 72vw;
+  }
+
+  .sc-app :is(.ch-img, .ch-exp, .ch-work, .ch-card-l, .ch-about, .ch-docc) {
+    width: min(240px, 62vw);
+  }
+
+  .sc-app .ch-replybar {
+    margin: 0 12px 0;
+  }
+
+  .sc-app .ch-mact {
+    width: 36px;
+    height: 36px;
+  }
+
+  .sc-app .ch-cmp {
+    padding: 8px 12px calc(12px + env(safe-area-inset-bottom));
+    gap: 2px;
+    border-top: 1px solid #ECECEA;
+  }
+
+  .sc-app .ch-cmp textarea {
+    margin-left: 4px;
+    height: 44px;
+    min-height: 44px;
+    padding: 11px 18px;
+    border-radius: 22px;
+  }
+
+  .sc-app .ch-cmp > .ch-rb {
+    margin-bottom: 0;
+  }
+
+  .sc-app .ch-lock {
+    padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
+  }
+
+  .sc-app .ch-rh-bare {
+    display: flex;
+  }
+
+  .sc-app .ch-shm {
+    left: 12px;
+    bottom: 100%;
+    width: calc(100% - 24px);
+  }
+
+  .sc-app .ch-req {
+    flex-wrap: wrap;
+    padding: 14px 12px calc(14px + env(safe-area-inset-bottom));
+    gap: 10px;
+  }
+
+  .sc-app .ch-req p {
+    flex-basis: 100%;
+  }
+
+  .sc-app .ch-req > div {
+    width: 100%;
+  }
+
+  .sc-app .ch-req > div > button:last-child {
+    flex: 1;
+    justify-content: center;
+  }
+
+  /* chat info (⋯) = a sheet under the room header */
+  .sc-app .ch-main[data-chv$="conv"] .ch-info:not([hidden]) {
+    display: flex;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 64px;
+    bottom: 0;
+    z-index: 6;
+    background: #FFFFFF;
+    border-left: 0;
+    padding: 16px 16px 32px;
+  }
+}
+
+/* header chat button on the chat page: grey circle (mock Chat.dc.html aria-current) */
+.sc-app .sc-hd-chat[aria-current="page"] {
+  border-radius: 50%;
+  background: #E6E6E3;
+}

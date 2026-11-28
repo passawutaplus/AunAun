@@ -93,7 +93,21 @@ async function fetchJson(url, headers) {
 }
 
 /** Paths we intentionally serve as public shells (bots get 200). */
-function isKnownPublicPath(pathname) {
+/**
+ * New design (VITE_REDESIGN=true): URLs it cuts show its 404 to people, so bots get a 404 + noindex too.
+ * Same decisions as Anthem-Code/src/redesign/routes.ts (step 14); tested against its route table.
+ */
+const REDESIGN_CUT_PATHS = [
+  /^\/(forum|jobs|hiring|org|advertise|ads|research|upgrade|changelog|drill|founding|s|studio|community|service|object|earnings|referrals|contracts|verify|hire|hire-requests|collab-requests)(\/|$)/i,
+  // Explore has tool and tag pages only.
+  /^\/explore\/(?!(tool|tag)\/[^/]+\/?$)/i,
+];
+
+export function isRedesignCutPath(pathname, env = process.env) {
+  return env.VITE_REDESIGN === "true" && REDESIGN_CUT_PATHS.some((re) => re.test(pathname));
+}
+
+export function isKnownPublicPath(pathname) {
   if (pathname === "/") return true;
   if (
     /^\/(jobs|advertise|research|upgrade|learn|auth|forum|help|explore|collections|inspire|series|s|error|exhibition|hiring|journal)(\/|$)/i.test(
@@ -525,7 +539,7 @@ async function resolveMeta(pathname, base) {
     status: 200,
   };
 
-  if (!isKnownPublicPath(pathname)) {
+  if (!isKnownPublicPath(pathname) || isRedesignCutPath(pathname)) {
     return {
       ...defaultMeta,
       title: "ไม่พบหน้า | SAMECOR",
@@ -619,12 +633,15 @@ async function resolveMeta(pathname, base) {
       : defaultMeta.image;
     const url = `${base}/showcase/${p.id}`;
     let author = null;
+    let hiddenFromSearch = false;
     if (p.owner_id) {
       const owners = await fetchJson(
-        `${rest}/profiles_public?select=user_id,username,display_name&user_id=eq.${p.owner_id}&limit=1`,
+        `${rest}/profiles_public?select=user_id,username,display_name,public_visibility&user_id=eq.${p.owner_id}&limit=1`,
         headers,
       );
       const o = owners?.[0];
+      // Settings → Privacy "ให้ค้นเจอจาก Google" off: the owner's works are not indexed either.
+      if (o?.public_visibility?.search === false) hiddenFromSearch = true;
       if (o) {
         author = {
           name: o.display_name || o.username || "ครีเอเตอร์",
@@ -649,7 +666,7 @@ async function resolveMeta(pathname, base) {
       description: (desc || p.title || "").slice(0, 160),
       url,
       image: cover,
-      noindex: false,
+      noindex: hiddenFromSearch,
       type: "article",
       status: 200,
       published: p.created_at || undefined,
@@ -816,7 +833,7 @@ async function resolveMeta(pathname, base) {
       ? `username=eq.${encodeURIComponent(vanityMatch[1])}`
       : `user_id=eq.${uuidMatch[1]}`;
     const rows = await fetchJson(
-      `${rest}/profiles_public?select=user_id,username,display_name,bio,avatar_url&${q}&limit=1`,
+      `${rest}/profiles_public?select=user_id,username,display_name,bio,avatar_url,public_visibility&${q}&limit=1`,
       headers,
     );
     const profile = rows?.[0];
@@ -830,7 +847,8 @@ async function resolveMeta(pathname, base) {
     }
     const name = profile.display_name || profile.username || "ครีเอเตอร์";
     const path = profile.username ? `/@${profile.username}` : `/u/${profile.user_id}`;
-    const thin = !(profile.bio && profile.bio.trim().length >= 40);
+    // Thin profiles, and anyone who turned "ให้ค้นเจอจาก Google" off (Settings → Privacy), are not indexed.
+    const thin = !(profile.bio && profile.bio.trim().length >= 40) || profile.public_visibility?.search === false;
     return {
       title: `${name} | SAMECOR`,
       description: (profile.bio || `ดูพอร์ตโฟลิโอของ ${name} บน SAMECOR`).slice(0, 160),

@@ -12,6 +12,8 @@ import {
 } from "react-router-dom";
 import { getBackgroundLocation } from "@/lib/projectOverlay";
 import { isInspireEnabled } from "@/lib/aplus1Launch";
+import { isRedesignEnabled } from "./redesign/flag";
+import { isRedesignPath } from "./redesign/routes";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
@@ -405,6 +407,38 @@ const BillingPreviewPage = lazy(
   () => import("./pages/dev/BillingPreviewPage.tsx"),
 );
 
+const RedesignShell = lazy(() => import("./redesign/shell/RedesignShell.tsx"));
+const RedesignNotFound = lazy(() => import("./redesign/pages/NotFound.tsx"));
+const RedesignMain = lazy(() => import("./redesign/pages/Main.tsx"));
+const RedesignWork = lazy(() => import("./redesign/pages/Work.tsx"));
+const RedesignProfile = lazy(() => import("./redesign/pages/Profile.tsx"));
+const RedesignEvent = lazy(() => import("./redesign/pages/Event.tsx"));
+const RedesignLogin = lazy(() => import("./redesign/pages/Login.tsx"));
+const RedesignSettings = lazy(() => import("./redesign/pages/Settings.tsx"));
+const RedesignMyProfile = lazy(() => import("./redesign/pages/MyProfile.tsx"));
+const RedesignUpload = lazy(() => import("./redesign/pages/Upload.tsx"));
+const RedesignMyStudio = lazy(() => import("./redesign/pages/MyStudio.tsx"));
+const RedesignEventPost = lazy(() => import("./redesign/pages/EventPost.tsx"));
+const RedesignExplore = lazy(() => import("./redesign/pages/Explore.tsx"));
+const RedesignSimilar = lazy(() => import("./redesign/pages/Similar.tsx"));
+const RedesignLocations = lazy(() => import("./redesign/pages/Locations.tsx"));
+const RedesignWorkOverlay = lazy(() =>
+  import("./redesign/pages/Work.tsx").then((m) => ({ default: m.WorkOverlay })),
+);
+const RedesignTerms = lazy(() => import("./redesign/pages/Terms.tsx"));
+const RedesignPrivacy = lazy(() => import("./redesign/pages/Privacy.tsx"));
+const RedesignHelp = lazy(() => import("./redesign/pages/Help.tsx"));
+const RedesignFeedback = lazy(() => import("./redesign/pages/Feedback.tsx"));
+const RedesignGetInTouch = lazy(() => import("./redesign/pages/GetInTouch.tsx"));
+const RedesignChat = lazy(() => import("./redesign/pages/Chat.tsx"));
+const RedesignRouteGate = lazy(() => import("./redesign/shell/RouteGate.tsx"));
+
+/** Old site chrome (top nav, floating nav, banners, prompts): never mounted on a page of the new design. */
+const LegacyChrome = ({ children }: { children: ReactNode }) => {
+  const { pathname } = useLocation();
+  return isRedesignEnabled() && isRedesignPath(pathname) ? null : <>{children}</>;
+};
+
 /** Routes render the page underneath; a work opened with router state `backgroundLocation` sits on top as an overlay. */
 const BackgroundAwareRoutes = ({ children }: { children: ReactNode }) => {
   const location = useLocation();
@@ -414,7 +448,18 @@ const BackgroundAwareRoutes = ({ children }: { children: ReactNode }) => {
       <Routes location={background ?? location}>{children}</Routes>
       {background ? (
         <Routes>
-          <Route path="/showcase/:id" element={<ProjectOverlay />} />
+          <Route
+            path="/showcase/:id"
+            element={
+              isRedesignEnabled() ? (
+                <Suspense fallback={null}>
+                  <RedesignWorkOverlay />
+                </Suspense>
+              ) : (
+                <ProjectOverlay />
+              )
+            }
+          />
           <Route path="*" element={null} />
         </Routes>
       ) : null}
@@ -453,12 +498,74 @@ const App = () => (
                 <AvatarPoolBootstrap />
                 <ReferralAttribution />
                 <CreatorInviteAccountGuards />
-                <DesktopTopNav />
+                <LegacyChrome>
+                  <DesktopTopNav />
+                </LegacyChrome>
                 <Suspense fallback={<RouteFallback />}>
                   <BackgroundAwareRoutes>
-                    <Route element={<LaunchMinimalGate />}>
+                    {/* New design (VITE_REDESIGN): its own frame, no old chrome, no PageTransition. */}
+                    {isRedesignEnabled() ? (
+                      <Route element={<RedesignShell />}>
+                        <Route path="/" element={<RedesignMain />} />
+                        <Route path="/showcase/:id" element={<RedesignWork />} />
+                        <Route path="/sc/shell" element={<RedesignNotFound />} />
+                        {/* Same paths as old pages below: on equal rank React Router takes the first route, so these win. */}
+                        <Route path="/legal/terms" element={<RedesignTerms />} />
+                        <Route path="/legal/privacy" element={<RedesignPrivacy />} />
+                        {/* Index route like the old /help, so it ranks the same; old article pages under /help/… stay. */}
+                        <Route path="/help">
+                          <Route index element={<RedesignHelp />} />
+                        </Route>
+                        {/* Open to everyone; sending asks to log in (the old page needed a login to open). */}
+                        <Route path="/me/feedback" element={<RedesignFeedback />} />
+                        {/* Unknown URLs still reach the old 404 (catch-all) until step 14; single-segment ones go to /error/404 (Profile). */}
+                        <Route path="/error/404" element={<RedesignNotFound />} />
+                        <Route path="/learn">
+                          <Route index element={<RedesignGetInTouch />} />
+                        </Route>
+                        {/* Profile on its old URLs: /@handle reaches /:vanityHandle (React Router cannot match `/@:x`). */}
+                        {/* Login, sign-up and password pages on their old URLs (step 7). */}
+                        <Route path="/auth" element={<RedesignLogin />} />
+                        <Route path="/auth/forgot" element={<RedesignLogin />} />
+                        <Route path="/reset-password" element={<RedesignLogin />} />
+                        <Route path="/settings" element={<RedesignSettings />} />
+                        {/* My profile (step 8) on the old URLs; /portfolio/saved and /collections open Saved, /portfolio/followers Following. */}
+                        <Route path="/portfolio" element={<RedesignMyProfile />} />
+                        <Route path="/portfolio/saved" element={<RedesignMyProfile />} />
+                        <Route path="/portfolio/followers" element={<RedesignMyProfile />} />
+                        <Route path="/collections" element={<RedesignMyProfile />} />
+                        {/* Post or edit a work (step 9) on the old editor URLs; one element so the first save (new → :id/edit) keeps the page. */}
+                        <Route path="/portfolio/new" element={<RedesignUpload />} />
+                        <Route path="/portfolio/:id/edit" element={<RedesignUpload />} />
+                        {/* My Studio (step 10) on /dashboard; the old studio URLs open the matching tab. */}
+                        <Route path="/dashboard" element={<RedesignMyStudio />} />
+                        <Route path="/dashboard/projects" element={<RedesignMyStudio />} />
+                        <Route path="/dashboard/catalogs" element={<RedesignMyStudio />} />
+                        <Route path="/dashboard/insights" element={<RedesignMyStudio />} />
+                        <Route path="/dashboard/exhibition" element={<RedesignMyStudio />} />
+                        <Route path="/portfolio/manage" element={<RedesignMyStudio />} />
+                        {/* Post or edit an event (step 11) on the old editor URLs; one element so the first save (new → :id/edit) keeps the page. */}
+                        <Route path="/dashboard/exhibition/new" element={<RedesignEventPost />} />
+                        <Route path="/dashboard/exhibition/:id/edit" element={<RedesignEventPost />} />
+                        {/* Works of one tag / one tool, and pictures like one picture: old URLs, new look (owner 2026-11-28; not in the mock). */}
+                        <Route path="/explore/tag/:value" element={<RedesignExplore />} />
+                        <Route path="/explore/tool/:value" element={<RedesignExplore />} />
+                        <Route path="/similar/:projectId" element={<RedesignSimilar />} />
+                        {/* Event or venue on its old URL (step 6). */}
+                        <Route path="/exhibition/:id" element={<RedesignEvent />} />
+                        <Route path="/exhibition/:id/locations" element={<RedesignLocations />} />
+                        {/* Chat (step 12) on the old URLs; the same page opens as the big popup of ChatDock. */}
+                        <Route path="/chat" element={<RedesignChat />} />
+                        <Route path="/chat/:id" element={<RedesignChat />} />
+                        <Route path="/u/:userId" element={<RedesignProfile />} />
+                        <Route path="/:vanityHandle" element={<RedesignProfile />} />
+                      </Route>
+                    ) : null}
+                    {/* New design: cut old routes and unknown URLs (the `*` below) move to their new page
+                        or show the new 404 in the new frame; kept old pages go on (RouteGate, step 14). */}
+                    <Route element={isRedesignEnabled() ? <RedesignRouteGate /> : <LaunchMinimalGate />}>
                       <Route element={<PageTransition />}>
-                        <Route path="/" element={<Index />} />
+                        {isRedesignEnabled() ? null : <Route path="/" element={<Index />} />}
                         <Route path="/learn" element={<LearnShell />}>
                           <Route index element={<PlatformLandingPage />} />
                         </Route>
@@ -836,10 +943,12 @@ const App = () => (
                             </RequireAuth>
                           }
                         />
-                        <Route
-                          path="/showcase/:id"
-                          element={<ProjectDetailPage />}
-                        />
+                        {isRedesignEnabled() ? null : (
+                          <Route
+                            path="/showcase/:id"
+                            element={<ProjectDetailPage />}
+                          />
+                        )}
                         <Route
                           path="/project/:id"
                           element={<ProjectToShowcaseRedirect />}
@@ -1467,25 +1576,33 @@ const App = () => (
                   </BackgroundAwareRoutes>
                 </Suspense>
                 <OfflineBanner />
-                <CookieConsent />
+                <LegacyChrome>
+                  <CookieConsent />
+                </LegacyChrome>
                 <GoogleAnalytics />
                 <PolicyReconsentGate />
-                <FloatingNav />
-                <AndroidAppBanner />
+                <LegacyChrome>
+                  <FloatingNav />
+                  <AndroidAppBanner />
+                </LegacyChrome>
                 <Suspense fallback={null}>
                   <AuthDialog />
                 </Suspense>
                 <Suspense fallback={null}>
                   <FeedbackTicketHost />
                 </Suspense>
-                <PullToRefresh />
-                <Suspense fallback={null}>
-                  <RatingPrompt />
-                </Suspense>
+                <LegacyChrome>
+                  <PullToRefresh />
+                  <Suspense fallback={null}>
+                    <RatingPrompt />
+                  </Suspense>
+                </LegacyChrome>
                 <CloudPrefsSync />
-                <Suspense fallback={null}>
-                  <InterestSurveyGate />
-                </Suspense>
+                <LegacyChrome>
+                  <Suspense fallback={null}>
+                    <InterestSurveyGate />
+                  </Suspense>
+                </LegacyChrome>
               </ErrorBoundary>
             </BrowserRouter>
           </TooltipProvider>

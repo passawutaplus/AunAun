@@ -1,0 +1,911 @@
+/* ChatDock (mock: pages/ChatDock.dc.html, chat parts): round chat button, room list "Chat", small chat window
+   "แชทกับ …", minimised faces, big popup (= Chat page, chat.css). Larger screens only — phones (≤600px) use the
+   tab bar's chat button → /chat (design rule B2: no floating chat button). */
+
+.sc-app .cd-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---------- round chat button ---------- */
+.sc-app .cd-fab {
+  all: unset;
+  cursor: pointer;
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 42;
+  box-sizing: border-box;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #FFFFFF;
+  box-shadow: 0 1px 2px rgba(40, 41, 41, .08), 0 8px 24px rgba(40, 41, 41, .14);
+}
+
+.sc-app .cd-fab[aria-expanded="true"] {
+  background: #282929;
+}
+
+.sc-app .cd-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  background: #EE3D29;
+  color: #FFFFFF;
+  font-size: 11px;
+  font-weight: 400;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 0 2px #FFFFFF;
+}
+
+.sc-app :is(.cd-fab, .cd-face, .cd-row, .cd-ib, .cd-chip, .cd-send, .cd-rq-btn, .cd-hi):focus-visible {
+  outline: 2px solid #282929;
+  outline-offset: 2px;
+}
+
+.sc-app .cd-ib {
+  all: unset;
+  cursor: pointer;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #282929;
+  flex: none;
+}
+
+.sc-app .cd-ib:hover {
+  background: #F2F2F0;
+}
+
+.sc-app .cd-av {
+  border-radius: 50%;
+  flex: none;
+  background: #B9B9B6 center / cover no-repeat;
+}
+
+/* ---------- room list (popover over the button) ---------- */
+.sc-app .cd-list {
+  position: fixed;
+  right: 24px;
+  bottom: 96px;
+  z-index: 41;
+  width: 340px;
+  max-height: min(520px, calc(100vh - 140px));
+  box-sizing: border-box;
+  background: #FFFFFF;
+  border-radius: 24px;
+  box-shadow: 0 1px 2px rgba(40, 41, 41, .06), 0 16px 48px rgba(40, 41, 41, .16);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sc-app .cd-list-hd {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 16px 12px 8px 20px;
+}
+
+.sc-app .cd-list-hd h2 {
+  flex: 1;
+  margin: 0;
+  font-size: 20px;
+  font-weight: 400;
+}
+
+.sc-app .cd-q {
+  padding: 0 16px 8px;
+}
+
+.sc-app .cd-q-in {
+  position: relative;
+}
+
+.sc-app .cd-q-in svg {
+  position: absolute;
+  left: 14px;
+  top: 12px;
+}
+
+.sc-app .cd-q input {
+  width: 100%;
+  height: 40px;
+  box-sizing: border-box;
+  border: 0;
+  border-radius: 999px;
+  background: #F2F2F0;
+  padding: 0 16px 0 38px;
+  font: inherit;
+  font-size: 14px;
+  color: #282929;
+  outline-color: #282929;
+}
+
+.sc-app .cd-chips {
+  display: flex;
+  gap: 6px;
+  padding: 0 16px 8px;
+}
+
+.sc-app .cd-chip {
+  all: unset;
+  cursor: pointer;
+  height: 30px;
+  padding: 0 12px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  background: #F2F2F0;
+  color: #4A4A4A;
+}
+
+.sc-app .cd-chip[aria-pressed="true"] {
+  background: #282929;
+  color: #FFFFFF;
+}
+
+.sc-app .cd-hint {
+  margin: 0;
+  padding: 0 20px 8px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #8A8A87;
+}
+
+.sc-app .cd-note {
+  margin: 0 16px 8px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #F2F2F0;
+  font-size: 12px;
+  color: #4A4A4A;
+}
+
+.sc-app .cd-rows {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 8px 8px;
+}
+
+.sc-app .cd-row {
+  all: unset;
+  cursor: pointer;
+  box-sizing: border-box;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+}
+
+.sc-app .cd-row:hover {
+  background: #F5F5F3;
+}
+
+.sc-app .cd-row-tx {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sc-app .cd-row-l1 {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.sc-app .cd-row-l1 svg {
+  flex: none;
+}
+
+.sc-app .cd-row-n {
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.sc-app .cd-row-n[data-unread] {
+  font-weight: 500;
+}
+
+.sc-app .cd-row-t {
+  margin-left: auto;
+  font-size: 11px;
+  color: #8A8A87;
+  flex: none;
+}
+
+.sc-app .cd-row-l2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sc-app .cd-row-last {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #8A8A87;
+}
+
+.sc-app .cd-row-last[data-unread] {
+  color: #282929;
+}
+
+.sc-app .cd-row-un {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  background: #EE3D29;
+  color: #FFFFFF;
+  font-size: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.sc-app .cd-empty {
+  padding: 32px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+}
+
+.sc-app .cd-empty p {
+  margin: 0;
+  font-size: 13px;
+  color: #8A8A87;
+}
+
+.sc-app .cd-empty a {
+  font-size: 13px;
+  color: #282929;
+  text-decoration: underline;
+}
+
+/* ---------- small chat window: on the bottom edge, next to the button (like LINE) ---------- */
+.sc-app .cd-win {
+  position: fixed;
+  right: 96px;
+  bottom: 0;
+  z-index: 40;
+  width: 340px;
+  height: min(480px, calc(100vh - 96px));
+  box-sizing: border-box;
+  background: #FFFFFF;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 1px 2px rgba(40, 41, 41, .06), 0 16px 48px rgba(40, 41, 41, .18);
+}
+
+.sc-app .cd-win-hd {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 8px 10px 14px;
+  border-bottom: 1px solid #ECECEA;
+}
+
+.sc-app .cd-who {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  color: #282929;
+}
+
+.sc-app .cd-who-n {
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sc-app .cd-who-s {
+  font-size: 11px;
+  color: #8A8A87;
+}
+
+.sc-app .cd-log {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 12px;
+  background: #F7F7F5;
+}
+
+.sc-app .cd-work {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px 8px 8px;
+  margin-bottom: 8px;
+  border-radius: 14px;
+  background: #FFFFFF;
+  box-shadow: 0 0 0 1px #ECECEA;
+  text-decoration: none;
+  color: #282929;
+}
+
+.sc-app .cd-work-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 5px;
+  flex: none;
+  background: #D4D4D1;
+  object-fit: cover;
+  display: block;
+}
+
+.sc-app .cd-work-tx {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sc-app .cd-work-k {
+  font-size: 11px;
+  color: #8A8A87;
+}
+
+.sc-app .cd-work-t {
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sc-app .cd-work svg {
+  flex: none;
+}
+
+.sc-app .cd-nomsg {
+  margin: auto 0;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #8A8A87;
+}
+
+.sc-app .cd-day {
+  align-self: center;
+  height: 22px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(40, 41, 41, .08);
+  font-size: 11px;
+  color: #666666;
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.sc-app .cd-msg {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.sc-app .cd-msg[data-me] {
+  justify-content: flex-end;
+}
+
+.sc-app .cd-msg[data-gap] {
+  margin-top: 6px;
+}
+
+.sc-app .cd-st {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  font-size: 10px;
+  color: #8A8A87;
+  flex: none;
+}
+
+.sc-app .cd-st > span:first-child {
+  display: inline-flex;
+}
+
+.sc-app .cd-t {
+  font-size: 10px;
+  color: #8A8A87;
+  flex: none;
+}
+
+.sc-app .cd-bub {
+  max-width: 210px;
+  padding: 9px 13px;
+  font-size: 14px;
+  line-height: 1.5;
+  word-break: break-word;
+  white-space: pre-line;
+  background: #FFFFFF;
+  border-radius: 18px 18px 18px 6px;
+  box-shadow: 0 0 0 1px #ECECEA;
+}
+
+.sc-app .cd-msg[data-me] .cd-bub {
+  background: #282929;
+  color: #FFFFFF;
+  border-radius: 18px 18px 6px 18px;
+  box-shadow: none;
+}
+
+/* request from someone I do not follow: Accept · Ignore · Report instead of the text field */
+.sc-app .cd-rq {
+  padding: 14px 14px 16px;
+  border-top: 1px solid #ECECEA;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sc-app .cd-rq p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #4A4A4A;
+}
+
+.sc-app .cd-rq p b {
+  font-weight: 500;
+  color: #282929;
+}
+
+.sc-app .cd-rq-acts {
+  display: flex;
+  gap: 8px;
+}
+
+.sc-app .cd-rq-btn {
+  all: unset;
+  cursor: pointer;
+  flex: 1;
+  height: 40px;
+  border-radius: 12px;
+  background: #F2F2F0;
+  color: #282929;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sc-app .cd-rq-btn[data-k="accept"] {
+  background: #282929;
+  color: #FFFFFF;
+}
+
+.sc-app .cd-rq-btn[data-k="report"] {
+  flex: none;
+  padding: 0 10px;
+  background: transparent;
+  font-size: 13px;
+  color: #8A8A87;
+}
+
+.sc-app .cd-rq-btn:disabled {
+  cursor: default;
+}
+
+.sc-app .cd-win-note {
+  margin: 8px 12px 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #F2F2F0;
+  font-size: 12px;
+  color: #4A4A4A;
+}
+
+/* text box: Enter sends, Shift+Enter is a new line (grows up to 5 lines) */
+.sc-app .cd-comp {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 10px 12px;
+}
+
+.sc-app .cd-comp textarea {
+  flex: 1;
+  min-width: 0;
+  height: 42px;
+  min-height: 42px;
+  max-height: 120px;
+  box-sizing: border-box;
+  border: 1px solid #E2E2DF;
+  border-radius: 21px;
+  padding: 10px 16px;
+  font: inherit;
+  font-size: 14px;
+  line-height: 20px;
+  color: #282929;
+  outline-color: #282929;
+  resize: none;
+  overflow-y: auto;
+  display: block;
+}
+
+/* blocked person / old hire room that was closed: why, instead of the text box */
+.sc-app .cd-lock {
+  margin: 0;
+  padding: 14px 16px 16px;
+  border-top: 1px solid #ECECEA;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #8A8A87;
+  text-align: center;
+}
+
+/* a card (work, profile, event, product) as a short link */
+.sc-app .cd-bub-link {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-color: rgba(138, 138, 135, .6);
+}
+
+/* a studio document: one line, opens the document */
+.sc-app button.cd-doc {
+  border: 0;
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sc-app .cd-msg:not([data-me]) button.cd-doc {
+  color: #282929;
+}
+
+/* unsent (old chat "ข้อความถูกยกเลิก") */
+.sc-app .cd-bub.cd-unsent,
+.sc-app .cd-msg[data-me] .cd-bub.cd-unsent {
+  background: transparent;
+  color: #A3A3A0;
+  font-style: italic;
+  box-shadow: 0 0 0 1px #ECECEA;
+}
+
+/* reply: the quoted message on top of the bubble */
+.sc-app .cd-quote {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  margin: 0 0 5px;
+  padding: 4px 8px;
+  box-sizing: border-box;
+  border: 0;
+  border-left: 3px solid #C8C8C5;
+  border-radius: 8px;
+  background: rgba(40, 41, 41, .06);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  white-space: normal;
+  cursor: pointer;
+}
+
+.sc-app .cd-msg[data-me] .cd-quote {
+  border-left-color: rgba(255, 255, 255, .6);
+  background: rgba(255, 255, 255, .14);
+}
+
+.sc-app .cd-quote > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sc-app .cd-quote > :first-child {
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.sc-app .cd-quote > :last-child {
+  font-size: 11px;
+  opacity: .75;
+}
+
+.sc-app .cd-msg[data-hl] .cd-bub {
+  box-shadow: 0 0 0 3px rgba(238, 61, 41, .35);
+}
+
+/* Reply · Unsend beside a message (hover / keyboard) */
+.sc-app .cd-macts {
+  display: inline-flex;
+  flex: none;
+  opacity: 0;
+  transition: opacity .15s ease;
+}
+
+.sc-app .cd-macts[data-me] {
+  order: -1;
+}
+
+.sc-app .cd-msg:hover .cd-macts,
+.sc-app .cd-msg:focus-within .cd-macts {
+  opacity: 1;
+}
+
+.sc-app .cd-mact {
+  all: unset;
+  cursor: pointer;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #8A8A87;
+}
+
+.sc-app .cd-mact:hover,
+.sc-app .cd-mact:focus-visible {
+  background: #ECECEA;
+  color: #282929;
+}
+
+.sc-app .cd-mact:focus-visible {
+  outline: 2px solid #282929;
+}
+
+/* the message the next text answers, above the text box */
+.sc-app .cd-replybar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 12px 0;
+  padding: 6px 4px 6px 10px;
+  border-left: 3px solid #282929;
+  border-radius: 10px;
+  background: #F2F2F0;
+}
+
+.sc-app .cd-replybar-t {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sc-app .cd-replybar-t > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sc-app .cd-replybar-t > :first-child {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.sc-app .cd-replybar-t > :last-child {
+  font-size: 12px;
+  color: #8A8A87;
+}
+
+.sc-app .cd-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+}
+
+.sc-app .cd-msg[data-me] .cd-stack {
+  align-items: flex-end;
+}
+
+.sc-app .cd-send {
+  all: unset;
+  cursor: pointer;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #C8C8C5;
+}
+
+.sc-app .cd-send[data-on] {
+  background: #282929;
+}
+
+/* ---------- minimised chats: faces above the button ---------- */
+.sc-app .cd-mins {
+  position: fixed;
+  right: 30px;
+  bottom: 96px;
+  z-index: 40;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 10px;
+}
+
+.sc-app .cd-face {
+  all: unset;
+  cursor: pointer;
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #B9B9B6 center / cover no-repeat;
+  box-shadow: 0 4px 12px rgba(40, 41, 41, .18);
+}
+
+/* ---------- "ทักทาย" pill on the home creator cards (mock Main, followed creators) ---------- */
+.sc-app .cd-hi {
+  all: unset;
+  cursor: pointer;
+  flex-shrink: 0;
+  height: 36px;
+  padding: 0 16px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  border: 1px solid #D4D4D1;
+  font-size: 13px;
+  color: #282929;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* why a "ทักทาย" did not open the chat: the pages' dark pill (wk-toast / mp-toast / ms-toast) */
+.sc-app .cd-say {
+  position: fixed;
+  left: 50%;
+  bottom: 40px;
+  transform: translateX(-50%);
+  z-index: 70;
+  max-width: calc(100% - 32px);
+  min-height: 44px;
+  padding: 10px 20px;
+  box-sizing: border-box;
+  border-radius: 22px;
+  background: #282929;
+  color: #FFFFFF;
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: center;
+  display: flex;
+  align-items: center;
+}
+
+/* ---------- motion (A6: only without reduced motion; the list / window rise from the button) ---------- */
+@keyframes sc-pv-rise {
+  from { opacity: 0; scale: .98; translate: 0 10px; }
+  to { opacity: 1; scale: none; translate: none; }
+}
+
+@keyframes sc-pv-rise-out {
+  from { opacity: 1; translate: none; }
+  to { opacity: 0; translate: 0 8px; }
+}
+
+@keyframes sc-cd-tick {
+  from { transform: rotate(0); }
+  to { transform: rotate(360deg); }
+}
+
+.sc-app .pv-rise[data-leaving] {
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sc-app .pv-rise {
+    animation: sc-pv-rise .38s var(--sc-ease) both;
+    transform-origin: bottom right;
+  }
+
+  .sc-app .pv-rise[data-leaving] {
+    animation: sc-pv-rise-out .18s ease both;
+  }
+
+  .sc-app .cd-fab {
+    transition: transform .25s ease, background .25s ease;
+  }
+
+  .sc-app .cd-fab:hover {
+    transform: translateY(-2px);
+  }
+
+  .sc-app .cd-face {
+    transition: transform .2s ease;
+  }
+
+  .sc-app .cd-face:hover {
+    transform: scale(1.06);
+  }
+
+  .sc-app .cd-row {
+    transition: background .2s ease;
+  }
+
+  .sc-app .cd-send {
+    transition: background .2s ease;
+  }
+
+  .sc-app .cd-clock .hand {
+    transform-origin: 12px 12px;
+    animation: sc-cd-tick 1.2s linear infinite;
+  }
+}
+
+/* ---------- phone (≤600px, mock 26 พ.ย. + index.html): no round button, no faces; list / window full screen ---------- */
+@media (max-width: 600px) {
+  .sc-app .cd-fab,
+  .sc-app .cd-mins {
+    display: none;
+  }
+
+  .sc-app :is(.cd-win, .cd-list) {
+    inset: 0;
+    width: 100%;
+    height: 100dvh;
+    max-height: none;
+    border-radius: 0;
+    box-shadow: none;
+    z-index: 70;
+  }
+
+  .sc-app .cd-win :is(.cd-big, .cd-min) {
+    display: none;
+  }
+
+  .sc-app .cd-win-hd {
+    padding: 8px 8px 8px 16px;
+    min-height: 56px;
+    box-sizing: border-box;
+  }
+
+  .sc-app .cd-win > :is(.cd-comp, .cd-rq, .cd-lock):last-child {
+    padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  }
+
+  .sc-app .cd-say {
+    bottom: 100px;
+  }
+}
