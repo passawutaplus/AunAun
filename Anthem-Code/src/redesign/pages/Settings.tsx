@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { Navigate, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { checkUsernameAvailability } from "@/hooks/useUsernameAvailability";
 import { requestOpenCookiePreferences } from "@/lib/cookieConsent";
 import { proxiedImageUrl } from "@/lib/imageProxy";
+import { PROFILE_PUBLIC_FIELDS, saveProfileVisibility, type ProfilePublicField } from "@/lib/profileVisibility";
 import {
   disablePush,
   enablePush,
@@ -760,6 +761,8 @@ function useExportMyData(handle: string, say: Say) {
   return { kind, open, setOpen, proof, setProof, err, setErr, busy, start, confirm: () => void run(true) };
 }
 
+type VisKey = "creators" | "search" | ProfilePublicField;
+
 function PrivacyTab({ handle, say }: { handle: string; say: Say }) {
   const { user } = useAuth();
   const uid = user!.id;
@@ -771,16 +774,25 @@ function PrivacyTab({ handle, say }: { handle: string; say: Say }) {
   const [blockOpen, setBlockOpen] = useState(false);
   const [visErr, setVisErr] = useState("");
   const pv = vis.data ?? {};
-  const isOn = (k: "creators" | "search") => pv[k] !== false;
+  // Every key is on unless saved as false (same default as lib/profileVisibility).
+  const isOn = (k: VisKey) => pv[k] !== false;
 
-  const toggleVis = async (k: "creators" | "search") => {
+  const toggleVis = async (k: VisKey) => {
     const before = vis.data;
     const on = !isOn(k);
-    qc.setQueryData(["sc-visibility", uid], { ...(before ?? {}), [k]: on });
+    const next = { ...(before ?? {}), [k]: on };
+    qc.setQueryData(["sc-visibility", uid], next);
     setVisErr("");
     try {
       await setVisibilitySwitch(uid, k, on);
-      void qc.invalidateQueries({ queryKey: ["sc-creators"] });
+      if (k === "creators" || k === "search") void qc.invalidateQueries({ queryKey: ["sc-creators"] });
+      else {
+        // The old site's copy for this browser (its fallback), and the profile pages that read it.
+        saveProfileVisibility(uid, Object.fromEntries(PROFILE_PUBLIC_FIELDS.map((f) => [f.key, next[f.key] !== false])) as Record<ProfilePublicField, boolean>);
+        void qc.invalidateQueries({ queryKey: ["sc-my-profile", uid] });
+        void qc.invalidateQueries({ queryKey: ["sc-profile"] });
+        void qc.invalidateQueries({ queryKey: ["profile", uid] });
+      }
     } catch {
       qc.setQueryData(["sc-visibility", uid], before);
       setVisErr("บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง");
@@ -864,6 +876,19 @@ function PrivacyTab({ handle, say }: { handle: string; say: Say }) {
           ตั้งค่าคุกกี้
         </button>
       </Row>
+
+      {/* Old ProfileVisibilitySection: the same public_visibility keys, which the profile pages respect. */}
+      <div className="st-group">
+        <h2>ใครเห็นอะไรบนโปรไฟล์</h2>
+        <Link to={handle ? `/@${handle}` : `/u/${uid}`} target="_blank" rel="noopener" className="st-group-ln">
+          ดูแบบคนอื่นเห็น
+        </Link>
+      </div>
+      {PROFILE_PUBLIC_FIELDS.map((f) => (
+        <Row key={f.key} label={f.label} sub={isOn(f.key) ? "ทุกคนเห็น" : "ซ่อนอยู่"}>
+          <Switch label={`โชว์${f.label}บนโปรไฟล์`} on={isOn(f.key)} onToggle={() => void toggleVis(f.key)} />
+        </Row>
+      ))}
       {err || visErr ? (
         <p role="alert" className="st-err">
           {err || visErr}

@@ -544,3 +544,32 @@
 .sc-app .st-toast[data-bad] {
   background: #B8321F;
 }
+
+/* Privacy: "ใครเห็นอะไรบนโปรไฟล์" heading over its switches */
+.sc-app .st-group {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 32px 0 12px;
+  border-bottom: 1px solid var(--sc-divider);
+}
+
+.sc-app .st-group h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 400;
+}
+
+.sc-app .st-group-ln {
+  font-size: 13px;
+  color: var(--sc-ink-2);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  white-space: nowrap;
+}
+
+.sc-app .st-group-ln:focus-visible {
+  outline: 2px solid var(--sc-ink);
+  outline-offset: 2px;
+}
