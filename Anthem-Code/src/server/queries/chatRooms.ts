@@ -53,6 +53,8 @@ export type MessageRow = {
   attachment_url: string | null;
   message_type: string | null;
   project_id: string | null;
+  /** Whose profile a "profile" message shares (old rows without it share the sender). */
+  profile_user_id?: string | null;
   created_at: string;
   deleted_at: string | null;
   read_at: string | null;
@@ -88,15 +90,25 @@ export async function getMyRooms(me: string): Promise<RoomRow[]> {
 }
 
 /** An old hire room whose request was declined with "lock the chat" refuses new messages (HIRE_CHAT_LOCKED). */
-export async function isHireRoomLocked(requestId: string): Promise<boolean> {
+export async function getHireRoomLocked(requestId: string): Promise<boolean> {
   const { data, error } = await supabase
     .from("hiring_requests")
     .select("id")
     .eq("id", requestId)
     .eq("post_reject_chat", "locked")
     .maybeSingle();
-  if (error) return true;
+  if (error) throw error;
   return !!data;
+}
+
+/** Same, for reusing a room when greeting: an error counts as locked (a new chat is opened instead). */
+export const isHireRoomLocked = (requestId: string): Promise<boolean> => getHireRoomLocked(requestId).catch(() => true);
+
+/** People I blocked (the chat says why I cannot write; blocks the other way get the plain reason). */
+export async function getMyBlockedIds(me: string): Promise<Set<string>> {
+  const { data, error } = await supabase.from("user_blocks").select("blocked_id").eq("blocker_id", me);
+  if (error) throw error;
+  return new Set(((data ?? []) as Array<{ blocked_id: string }>).map((r) => r.blocked_id));
 }
 
 /** Mute / accepted / seen / unread per room (one RPC); before the step-12 SQL: unread + "I wrote here" from messages. */
@@ -161,21 +173,51 @@ export async function getUnreadRooms(): Promise<number> {
   return Number(old.data ?? 0);
 }
 
-export async function getRoom(id: string): Promise<RoomRow | null> {
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * One room by id (`/chat/:id` from a notification, older than the newest 100). `null` when it is not there,
+ * not mine, or a group room (group rooms are not shown in the new design).
+ */
+export async function getRoom(id: string, me: string): Promise<RoomRow | null> {
+  if (!UUID.test(id)) return null;
   const { data, error } = await supabase
     .from("conversations")
-    .select("id, kind, client_id, freelancer_id, created_by, last_message_at, created_at")
+    .select("id, kind, request_id, client_id, freelancer_id, created_by, last_message_at, created_at, conversation_type")
     .eq("id", id)
     .maybeSingle();
   if (error) throw error;
-  return (data as RoomRow | null) ?? null;
+  const r = data as (RoomRow & { conversation_type: string | null }) | null;
+  if (!r || (r.conversation_type ?? "direct") !== "direct" || r.kind === "group" || r.kind === "studio") return null;
+  if (r.client_id !== me && r.freelancer_id !== me) return null;
+  return otherOf(r, me) ? r : null;
+}
+
+export type ChatEventRow = {
+  id: string;
+  title: string | null;
+  cover_url: string | null;
+  starts_on: string | null;
+  ends_on: string | null;
+  location_name: string | null;
+};
+
+/** Events linked in chat texts (`/exhibition/<id>`): the card under the bubble. */
+export async function getChatEvents(ids: string[]): Promise<Record<string, ChatEventRow>> {
+  if (!ids.length) return {};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase.from("events" as never) as any).select("id, title, cover_url, starts_on, ends_on, location_name").in("id", ids);
+  if (error) throw error;
+  const out: Record<string, ChatEventRow> = {};
+  for (const e of (data ?? []) as unknown as ChatEventRow[]) out[e.id] = e;
+  return out;
 }
 
 /** Newest 150 messages of a room, oldest first. */
 export async function getRoomMessages(id: string): Promise<MessageRow[]> {
   const { data, error } = await supabase
     .from("messages")
-    .select("id, conversation_id, sender_id, content, attachment_url, message_type, project_id, created_at, deleted_at, read_at")
+    .select("id, conversation_id, sender_id, content, attachment_url, message_type, project_id, profile_user_id, created_at, deleted_at, read_at")
     .eq("conversation_id", id)
     .order("created_at", { ascending: false })
     .limit(MESSAGE_LIMIT);

@@ -89,7 +89,7 @@
 
 .sc-app .ch-q input,
 .sc-app .ch-find input,
-.sc-app .ch-cmp input {
+.sc-app .ch-cmp textarea {
   min-width: 0;
   box-sizing: border-box;
   border: 0;
@@ -526,8 +526,175 @@
   color: #8A8A87;
 }
 
-.sc-app .ch-wt > :last-child {
+.sc-app .ch-wt > :nth-child(2) {
   font-size: 14px;
+}
+
+.sc-app .ch-wt > :nth-child(2),
+.sc-app .ch-cs {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sc-app .ch-wt .ch-cs {
+  font-size: 12px;
+  color: #8A8A87;
+}
+
+/* profile · event · document cards: a row (picture + words) */
+.sc-app .ch-card-l {
+  width: 260px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border-radius: 20px;
+  background: #FFFFFF;
+  box-shadow: inset 0 0 0 1px #ECECEA;
+  text-decoration: none;
+  color: #282929;
+}
+
+.sc-app .ch-card-l .ch-wt {
+  min-width: 0;
+  flex: 1;
+  padding: 0 4px 0 0;
+}
+
+.sc-app :is(.ch-ev-th, .ch-doc-ic) {
+  width: 56px;
+  height: 56px;
+  flex: none;
+  border-radius: 12px;
+  background: #ECECEA center / cover no-repeat;
+}
+
+.sc-app :is(.ch-doc-ic, .ch-ev-th) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sc-app .ch-doc-ic {
+  background: #F2F2F0;
+}
+
+/* a text that links to an event: the bubble, then the event card under it */
+.sc-app .ch-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+}
+
+.sc-app .ch-stack[data-me] {
+  align-items: flex-end;
+}
+
+/* "ทักจากงาน": the work a greeting came from, until the first message takes it along */
+.sc-app .ch-about {
+  align-self: center;
+  width: 300px;
+  max-width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 10px;
+  border-radius: 20px;
+  background: #F7F7F5;
+  text-decoration: none;
+  color: #282929;
+}
+
+.sc-app .ch-about .ch-wt {
+  min-width: 0;
+  flex: 1;
+}
+
+.sc-app .ch-about-th {
+  width: 52px;
+  height: 52px;
+  flex: none;
+  border-radius: 10px;
+  background: #ECECEA center / cover no-repeat;
+}
+
+/* a picture on its way up */
+.sc-app .ch-up {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sc-app .ch-up::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(255, 255, 255, .45);
+}
+
+.sc-app .ch-spin {
+  position: relative;
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 2px solid rgba(40, 41, 41, .2);
+  border-top-color: #282929;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sc-app .ch-spin {
+    animation: ch-tick .9s linear infinite;
+  }
+}
+
+/* a room opened by link: loading, or not there */
+.sc-app .ch-rh-bare {
+  display: none;
+}
+
+.sc-app .ch-gone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 0 24px;
+  text-align: center;
+}
+
+.sc-app .ch-gone p {
+  margin: 0;
+}
+
+.sc-app .ch-gone p:first-child {
+  font-size: 16px;
+  color: #282929;
+}
+
+.sc-app .ch-gone p + p {
+  font-size: 13px;
+}
+
+.sc-app .ch-gone button {
+  margin-top: 10px;
+  min-height: 42px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 999px;
+  background: #282929;
+  color: #FFFFFF;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
 }
 
 /* request bar (Requests): Report · Ignore · Accept */
@@ -589,21 +756,43 @@
   color: #FFFFFF;
 }
 
-/* composer */
+/* composer: Enter sends, Shift+Enter is a new line (the box grows up to 5 lines) */
 .sc-app .ch-cmp {
   position: relative;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 6px;
   padding: 12px 24px 24px;
 }
 
-.sc-app .ch-cmp input[type="text"] {
+.sc-app .ch-cmp > .ch-rb {
+  margin-bottom: 2px;
+}
+
+.sc-app .ch-cmp textarea {
   flex: 1;
   height: 48px;
-  padding: 0 20px;
+  min-height: 48px;
+  max-height: 140px;
+  padding: 13px 20px;
   margin-left: 6px;
+  border-radius: 24px;
+  font: inherit;
   font-size: 15px;
+  line-height: 22px;
+  resize: none;
+  overflow-y: auto;
+}
+
+/* blocked person / old hire room that was closed: why, instead of the text field */
+.sc-app .ch-lock {
+  margin: 0;
+  padding: 18px 28px 24px;
+  border-top: 1px solid #ECECEA;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #8A8A87;
+  text-align: center;
 }
 
 .sc-app .ch-send {
@@ -627,7 +816,7 @@
 .sc-app .ch-shm {
   position: absolute;
   left: 24px;
-  bottom: 84px;
+  bottom: 100%;
   z-index: 4;
   width: 288px;
   max-height: 360px;
@@ -1100,7 +1289,7 @@
     max-width: 72vw;
   }
 
-  .sc-app :is(.ch-img, .ch-exp, .ch-work) {
+  .sc-app :is(.ch-img, .ch-exp, .ch-work, .ch-card-l, .ch-about) {
     width: min(240px, 62vw);
   }
 
@@ -1110,14 +1299,29 @@
     border-top: 1px solid #ECECEA;
   }
 
-  .sc-app .ch-cmp input[type="text"] {
+  .sc-app .ch-cmp textarea {
     margin-left: 4px;
     height: 44px;
+    min-height: 44px;
+    padding: 11px 18px;
+    border-radius: 22px;
+  }
+
+  .sc-app .ch-cmp > .ch-rb {
+    margin-bottom: 0;
+  }
+
+  .sc-app .ch-lock {
+    padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
+  }
+
+  .sc-app .ch-rh-bare {
+    display: flex;
   }
 
   .sc-app .ch-shm {
     left: 12px;
-    bottom: 68px;
+    bottom: 100%;
     width: calc(100% - 24px);
   }
 

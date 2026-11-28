@@ -6,14 +6,20 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
+import { BLOCKED_USER_IDS_KEY, useBlockedUserIds } from "@/hooks/useBlockedUserIds";
 import { useSendMessage } from "@/hooks/useChat";
 import { useFollowedUserIds } from "@/hooks/useFollow";
 import { openConnectChat } from "@/lib/chat/openConnectChat";
+import { formatEventDates } from "@/lib/exhibitionEvents";
 import { proxiedImageUrl } from "@/lib/imageProxy";
 import {
+  getChatEvents,
   getChatPeople,
+  getHireRoomLocked,
   getLastMessages,
+  getMyBlockedIds,
   getMyRooms,
+  getRoom,
   getRoomMessages,
   getRoomMeta,
   getUnreadRooms,
@@ -22,19 +28,33 @@ import {
   subscribeRoom,
   subscribeRooms,
   type ChatPersonRow,
+  type LastMessageRow,
   type MessageRow,
   type RoomMeta,
   type RoomRow,
 } from "@/server/queries/chatRooms";
 import { getProfileWorks, getWorksByIds, type ProfileWorkRow } from "@/server/queries/profilePage";
-import { blockPerson, hideRoom, markRoomRead, reportPerson, setRoomPref, unhideRoom, uploadChatImage, type RoomPrefPatch } from "@/server/mutations/chatRooms";
+import {
+  blockPerson,
+  hideRoom,
+  markRoomRead,
+  reportPerson,
+  setRoomPref,
+  unhideRoom,
+  uploadChatImage,
+  type ChatReportReason,
+  type RoomPrefPatch,
+} from "@/server/mutations/chatRooms";
 import { profileHref } from "../main/useCreators";
-import { msgKind, msgLabel, type MsgKind } from "./chatFormat";
+import { docOf, eventOf, msgKind, msgLabel, objectOf, textOf, type DocCard, type MsgKind, type ObjectCard } from "./chatFormat";
 
 export const chatKeys = {
   rooms: (uid?: string) => ["sc-chat-rooms", uid] as const,
+  /** A room opened by link that is not in the newest 100 (under `rooms`, so the same refreshes reach it). */
+  room: (uid?: string, roomId?: string | null) => ["sc-chat-rooms", uid, "one", roomId] as const,
   unread: (uid?: string) => ["sc-chat-unread", uid] as const,
   msgs: (uid?: string, roomId?: string | null) => ["sc-chat-msgs", uid, roomId] as const,
+  lock: ["sc-chat-lock"] as const,
 };
 
 export type ChatPerson = {
@@ -58,19 +78,33 @@ export type ChatRoom = {
   muted: boolean;
   /** Someone I do not follow opened this chat and I have not accepted or replied yet (mock "Requests"). */
   request: boolean;
+  /** Room kind (connect, or an old hire / collab room shown as a plain chat) and its hire request. */
+  kind: string | null;
+  requestId: string | null;
 };
 
 export type ChatWork = { id: string; title: string; cover: string };
+
+export type ChatEvent = { id: string; title: string; cover: string; when: string };
 
 export type ChatMsg = {
   id: string;
   me: boolean;
   at: string;
   kind: MsgKind;
+  /** Bubble text (a text that links to an event: without the link line; it can be empty then). */
   text: string;
   /** Storage path of a picture. */
   path: string | null;
   work: ChatWork | null;
+  /** Shared profile (kind "profile"). */
+  profile: ChatPerson | null;
+  /** Event card under a text that links to an event page. */
+  event: ChatEvent | null;
+  doc: DocCard | null;
+  object: ObjectCard | null;
+  /** Picture still uploading: a preview from this device (null when the browser cannot show it, e.g. HEIC). */
+  localUrl: string | null;
   pending: boolean;
 };
 
@@ -110,6 +144,60 @@ const person = (id: string, p: ChatPersonRow | undefined): ChatPerson => {
 
 /* ───────────── rooms ───────────── */
 
+type RoomsData = {
+  rows: RoomRow[];
+  meta: Record<string, RoomMeta>;
+  last: Record<string, LastMessageRow>;
+  people: Record<string, ChatPersonRow>;
+};
+
+async function loadRooms(uid: string, rows: RoomRow[]): Promise<RoomsData> {
+  const ids = rows.map((r) => r.id);
+  const others = [...new Set(rows.map((r) => otherOf(r, uid)).filter((x): x is string => !!x))];
+  const [meta, last, people] = await Promise.all([getRoomMeta(uid, ids), getLastMessages(ids), getChatPeople(others)]);
+  return { rows, meta, last, people };
+}
+
+function toRooms(d: RoomsData, uid: string, follows: ReadonlySet<string> | undefined): ChatRoom[] {
+  const local = readLocal(uid);
+  const now = new Date();
+  return d.rows.map((r) => {
+    const otherId = otherOf(r, uid)!;
+    const m: RoomMeta = { ...(d.meta[r.id] ?? { muted: false, acceptedAt: null, seenAt: null, iSent: false, unread: 0 }) };
+    const lp = local[r.id];
+    if (lp?.muted !== undefined) m.muted = lp.muted;
+    if (lp?.accepted_at) m.acceptedAt = lp.accepted_at;
+    if (lp?.seen_at && (!m.seenAt || lp.seen_at > m.seenAt)) m.seenAt = lp.seen_at;
+    const last = d.last[r.id];
+    const lastAt = last?.created_at ?? r.last_message_at;
+    const request = r.kind === "connect" && r.created_by !== uid && !follows?.has(otherId) && !m.iSent && !m.acceptedAt;
+    const seenAll = !!m.seenAt && !!lastAt && m.seenAt >= lastAt;
+    return {
+      id: r.id,
+      other: person(otherId, d.people[otherId]),
+      lastAt,
+      last: last ? msgLabel(last, now) : "",
+      lastMine: !!last && last.sender_id === uid,
+      unread: seenAll ? 0 : m.unread,
+      muted: m.muted,
+      request,
+      kind: r.kind,
+      requestId: r.request_id ?? null,
+    };
+  });
+}
+
+/** Re-renders when mute / accept / seen kept on this device change (step-12 SQL not run yet). */
+function useLocalPrefsTick() {
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const on = () => setTick((n) => n + 1);
+    window.addEventListener("sc-chat-prefs", on);
+    return () => window.removeEventListener("sc-chat-prefs", on);
+  }, []);
+  return tick;
+}
+
 export function useChatRooms(enabled = true) {
   const { user } = useAuth();
   const uid = user?.id;
@@ -120,13 +208,7 @@ export function useChatRooms(enabled = true) {
     queryKey: chatKeys.rooms(uid),
     enabled: enabled && !!uid,
     staleTime: 15_000,
-    queryFn: async () => {
-      const rows = await getMyRooms(uid!);
-      const ids = rows.map((r) => r.id);
-      const others = [...new Set(rows.map((r) => otherOf(r, uid!)).filter((x): x is string => !!x))];
-      const [meta, last, people] = await Promise.all([getRoomMeta(uid!, ids), getLastMessages(ids), getChatPeople(others)]);
-      return { rows, meta, last, people };
-    },
+    queryFn: async () => loadRooms(uid!, await getMyRooms(uid!)),
   });
 
   useEffect(() => {
@@ -138,44 +220,75 @@ export function useChatRooms(enabled = true) {
     });
   }, [enabled, uid, qc]);
 
-  const [localTick, setLocalTick] = useState(0);
-  useEffect(() => {
-    const on = () => setLocalTick((n) => n + 1);
-    window.addEventListener("sc-chat-prefs", on);
-    return () => window.removeEventListener("sc-chat-prefs", on);
-  }, []);
-
+  const localTick = useLocalPrefsTick();
   const rooms = useMemo((): ChatRoom[] => {
-    const d = query.data;
-    if (!d || !uid) return [];
     void localTick;
-    const local = readLocal(uid);
-    const now = new Date();
-    return d.rows.map((r) => {
-      const otherId = otherOf(r, uid)!;
-      const m: RoomMeta = { ...(d.meta[r.id] ?? { muted: false, acceptedAt: null, seenAt: null, iSent: false, unread: 0 }) };
-      const lp = local[r.id];
-      if (lp?.muted !== undefined) m.muted = lp.muted;
-      if (lp?.accepted_at) m.acceptedAt = lp.accepted_at;
-      if (lp?.seen_at && (!m.seenAt || lp.seen_at > m.seenAt)) m.seenAt = lp.seen_at;
-      const last = d.last[r.id];
-      const lastAt = last?.created_at ?? r.last_message_at;
-      const request = r.kind === "connect" && r.created_by !== uid && !follows?.has(otherId) && !m.iSent && !m.acceptedAt;
-      const seenAll = !!m.seenAt && !!lastAt && m.seenAt >= lastAt;
-      return {
-        id: r.id,
-        other: person(otherId, d.people[otherId]),
-        lastAt,
-        last: last ? msgLabel(last, now) : "",
-        lastMine: !!last && last.sender_id === uid,
-        unread: seenAll ? 0 : m.unread,
-        muted: m.muted,
-        request,
-      };
-    });
+    return query.data && uid ? toRooms(query.data, uid, follows) : [];
   }, [query.data, uid, follows, localTick]);
 
   return { rooms, loading: query.isLoading, error: query.error, refetch: query.refetch };
+}
+
+/**
+ * The open room: from the list, or read by itself when it is not in the newest 100 (old ChatInboxPage did the
+ * same, e.g. `/chat/:id` from a notification). `missing` = it really is not there (or not mine, or a group room).
+ */
+export function useChatRoom(roomId: string | null, list: Pick<ReturnType<typeof useChatRooms>, "rooms" | "loading">) {
+  const { user } = useAuth();
+  const uid = user?.id;
+  const inList = roomId ? list.rooms.find((r) => r.id === roomId) ?? null : null;
+  const need = !!uid && !!roomId && !inList && !list.loading;
+  const { data: follows } = useFollowedUserIds(need ? uid : undefined);
+  const query = useQuery({
+    queryKey: chatKeys.room(uid, roomId),
+    enabled: need,
+    staleTime: 15_000,
+    queryFn: async () => {
+      const row = await getRoom(roomId!, uid!);
+      return row ? loadRooms(uid!, [row]) : null;
+    },
+  });
+  const localTick = useLocalPrefsTick();
+  const direct = useMemo(() => {
+    void localTick;
+    return query.data && uid ? toRooms(query.data, uid, follows)[0] ?? null : null;
+  }, [query.data, uid, follows, localTick]);
+  const room = inList ?? (need ? direct : null);
+  return {
+    room,
+    loading: !!roomId && !room && (list.loading || (need && query.isLoading)),
+    missing: need && query.isSuccess && !query.data,
+    error: need && !query.data ? query.error : null,
+    refetch: query.refetch,
+  };
+}
+
+const LOCK_BLOCKED_BY_ME = "คุณบล็อกคนนี้อยู่ เลยส่งข้อความไม่ได้ ปลดบล็อกได้ใน Settings นะ";
+const LOCK_BLOCKED = "ตอนนี้ส่งข้อความถึงคนนี้ไม่ได้นะ";
+const LOCK_HIRE = "แชทนี้ปิดแล้ว ทั้งสองฝ่ายพิมพ์ต่อไม่ได้นะ";
+
+/** Why I cannot write in this room (a block either way, or an old hire room that was locked), or null. */
+export function useRoomLock(room: Pick<ChatRoom, "other" | "kind" | "requestId"> | null): string | null {
+  const { user } = useAuth();
+  const uid = user?.id;
+  const either = useBlockedUserIds();
+  const mine = useQuery({
+    queryKey: [...chatKeys.lock, "mine", uid],
+    enabled: !!uid && !!room,
+    staleTime: 60_000,
+    queryFn: () => getMyBlockedIds(uid!),
+  });
+  const requestId = room?.kind === "hire" ? room.requestId : null;
+  const hire = useQuery({
+    queryKey: [...chatKeys.lock, "hire", requestId],
+    enabled: !!requestId,
+    staleTime: 60_000,
+    queryFn: () => getHireRoomLocked(requestId!),
+  });
+  if (!room) return null;
+  if (mine.data?.has(room.other.id)) return LOCK_BLOCKED_BY_ME;
+  if (either.has(room.other.id)) return LOCK_BLOCKED;
+  return hire.data ? LOCK_HIRE : null;
 }
 
 /** Red number on the chat buttons (header, tab bar, ChatDock): unread rooms that are not muted. */
@@ -193,7 +306,10 @@ export function useUnreadRooms() {
 
 /* ───────────── messages ───────────── */
 
-type PendingRow = MessageRow & { pending?: boolean };
+type PendingRow = MessageRow & { pending?: boolean; local_url?: string | null };
+
+const eventWhen = (e: { starts_on: string | null; ends_on: string | null; location_name: string | null } | undefined) =>
+  e?.starts_on ? `${formatEventDates(e.starts_on, e.ends_on)}${e.location_name ? ` · ${e.location_name}` : ""}` : "";
 
 export function useRoomMessages(roomId: string | null) {
   const { user } = useAuth();
@@ -223,6 +339,28 @@ export function useRoomMessages(roomId: string | null) {
     queryFn: () => getWorksByIds(workIds),
   });
 
+  // Shared profiles and linked events: one read each for the whole room.
+  const profileIds = useMemo(
+    () => [...new Set((query.data ?? []).filter((m) => m.message_type === "profile" && !m.deleted_at).map((m) => m.profile_user_id || m.sender_id))].sort(),
+    [query.data],
+  );
+  const { data: profiles } = useQuery({
+    queryKey: ["sc-chat-profiles", profileIds],
+    enabled: profileIds.length > 0,
+    staleTime: 5 * 60_000,
+    queryFn: () => getChatPeople(profileIds),
+  });
+  const eventIds = useMemo(
+    () => [...new Set((query.data ?? []).map((m) => (m.deleted_at ? null : eventOf(m)?.toLowerCase())).filter((x): x is string => !!x))].sort(),
+    [query.data],
+  );
+  const { data: events } = useQuery({
+    queryKey: ["sc-chat-events", eventIds],
+    enabled: eventIds.length > 0,
+    staleTime: 5 * 60_000,
+    queryFn: () => getChatEvents(eventIds),
+  });
+
   const items = useMemo((): ChatMsg[] => {
     const now = new Date();
     const byId = new Map((works ?? []).map((w) => [w.id, w]));
@@ -231,21 +369,29 @@ export function useRoomMessages(roomId: string | null) {
       const kind = msgKind(m, now);
       if (!kind) continue;
       const w = kind === "work" ? byId.get(m.project_id!) : undefined;
+      const profileId = kind === "profile" ? m.profile_user_id || m.sender_id : null;
+      const eventId = kind === "text" ? eventOf(m)?.toLowerCase() ?? null : null;
+      const ev = eventId ? events?.[eventId] : undefined;
       out.push({
         id: m.id,
         me: m.sender_id === uid,
         at: m.created_at,
         kind,
-        text: kind === "work" ? w?.title?.trim() || m.content?.trim() || "ผลงาน" : msgLabel(m, now),
+        text: kind === "work" ? w?.title?.trim() || m.content?.trim() || "ผลงาน" : kind === "text" ? textOf(m) : msgLabel(m, now),
         path: kind === "img" ? m.attachment_url : null,
         work: kind === "work" ? { id: m.project_id!, title: w?.title?.trim() || m.content?.trim() || "ผลงาน", cover: workCover(w) } : null,
+        profile: profileId ? { ...person(profileId, profiles?.[profileId]), ...(profiles ? null : { name: "โปรไฟล์" }) } : null,
+        event: eventId ? { id: eventId, title: ev?.title?.trim() || "อีเวนต์", cover: proxiedImageUrl(ev?.cover_url, 240), when: eventWhen(ev) } : null,
+        doc: kind === "doc" ? docOf(m.content) : null,
+        object: kind === "object" ? objectOf(m.content) : null,
+        localUrl: m.local_url ?? null,
         pending: !!m.pending,
       });
     }
     return out;
-  }, [query.data, works, uid]);
+  }, [query.data, works, profiles, events, uid]);
 
-  return { items, loading: query.isLoading, error: query.error };
+  return { items, loading: query.isLoading, error: query.error, refetch: query.refetch };
 }
 
 export const workCover = (w: Pick<ProfileWorkRow, "cover_url" | "gallery_urls"> | undefined, width = 520) =>
@@ -279,7 +425,7 @@ export function useChatActions() {
 
   /** Shows the message at once with a clock (mock ChatDock), then the stored one replaces it. */
   const post = useCallback(
-    async (roomId: string, row: Partial<MessageRow> & { message_type: string }, run: () => Promise<unknown>) => {
+    async (roomId: string, row: Partial<PendingRow> & { message_type: string }, run: () => Promise<unknown>) => {
       const key = chatKeys.msgs(uid, roomId);
       const tmp: PendingRow = {
         id: `tmp-${Date.now()}-${Math.random().toString(36).slice(2)}`,
@@ -293,12 +439,16 @@ export function useChatActions() {
         deleted_at: null,
         read_at: null,
         pending: true,
+        local_url: row.local_url ?? null,
       };
       qc.setQueryData<PendingRow[]>(key, (old) => [...(old ?? []), tmp]);
       try {
         await run();
       } catch (e) {
         qc.setQueryData<PendingRow[]>(key, (old) => (old ?? []).filter((m) => m.id !== tmp.id));
+        // A block or a locked hire room may have just happened: the composer re-checks and says why.
+        void qc.invalidateQueries({ queryKey: chatKeys.lock });
+        void qc.invalidateQueries({ queryKey: [BLOCKED_USER_IDS_KEY, uid] });
         throw new Error(errText(e, "ส่งไม่สำเร็จ ลองอีกครั้ง"));
       } finally {
         void qc.invalidateQueries({ queryKey: key });
@@ -324,18 +474,28 @@ export function useChatActions() {
     [uid, qc],
   );
 
+  const sendWork = (roomId: string, work: ChatWork) =>
+    post(roomId, { message_type: "project", content: work.title, project_id: work.id }, () =>
+      send.mutateAsync({ conversationId: roomId, content: work.title, messageType: "project", projectId: work.id }),
+    );
+
   return {
-    sendText: (roomId: string, text: string) =>
-      post(roomId, { message_type: "text", content: text }, () => send.mutateAsync({ conversationId: roomId, content: text })),
-    sendWork: (roomId: string, work: ChatWork) =>
-      post(roomId, { message_type: "project", content: work.title, project_id: work.id }, () =>
-        send.mutateAsync({ conversationId: roomId, content: work.title, messageType: "project", projectId: work.id }),
-      ),
-    sendImage: async (roomId: string, file: File) => {
-      const path = await uploadChatImage(roomId, file);
-      return post(roomId, { message_type: "image", attachment_url: path }, () =>
-        send.mutateAsync({ conversationId: roomId, content: "", attachmentUrl: path, messageType: "image" }),
-      );
+    /** `about`: greeting from a work — its card goes right after the text, so the other person sees what it is about. */
+    sendText: async (roomId: string, text: string, about?: ChatWork | null) => {
+      await post(roomId, { message_type: "text", content: text }, () => send.mutateAsync({ conversationId: roomId, content: text }));
+      // Best effort, like the old greeting ("From : <work>"): the text already went out.
+      if (about) await sendWork(roomId, about).catch(() => undefined);
+    },
+    sendWork,
+    /** The picture shows at once with a clock while it uploads (HEIC has no preview in most browsers: a grey box). */
+    sendImage: (roomId: string, file: File) => {
+      const local = /^image\/(jpeg|png|webp|gif)$/.test(file.type) ? URL.createObjectURL(file) : null;
+      return post(roomId, { message_type: "image", local_url: local }, async () => {
+        const path = await uploadChatImage(roomId, file);
+        await send.mutateAsync({ conversationId: roomId, content: "", attachmentUrl: path, messageType: "image" });
+      }).finally(() => {
+        if (local) window.setTimeout(() => URL.revokeObjectURL(local), 30_000);
+      });
     },
     /** Opening a room: read it; a request is only marked seen, so the sender does not learn it was read. */
     openRoom: async (room: Pick<ChatRoom, "id" | "request" | "unread">) => {
@@ -358,15 +518,16 @@ export function useChatActions() {
       await hideRoom(uid!, roomId);
       refresh();
     },
-    report: async (room: Pick<ChatRoom, "id" | "other">) => {
-      await reportPerson(room.other.id, room.id);
+    report: async (room: Pick<ChatRoom, "id" | "other">, reason: ChatReportReason) => {
+      await reportPerson(room.other.id, room.id, reason);
       await hideRoom(uid!, room.id);
       refresh();
     },
     block: async (room: Pick<ChatRoom, "id" | "other">) => {
       await blockPerson(uid!, room.other.id);
       await hideRoom(uid!, room.id);
-      void qc.invalidateQueries({ queryKey: ["blocked-user-ids", uid] });
+      void qc.invalidateQueries({ queryKey: [BLOCKED_USER_IDS_KEY, uid] });
+      void qc.invalidateQueries({ queryKey: chatKeys.lock });
       refresh();
     },
   };

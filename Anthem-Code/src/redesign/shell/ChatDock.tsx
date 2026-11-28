@@ -6,6 +6,7 @@ import {
   useCallback,
   useEffect,
   useImperativeHandle,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -16,8 +17,20 @@ import { Link, useLocation } from "react-router-dom";
 import { SC_LINKS } from "../routes";
 import { usePresence } from "../lib/usePresence";
 import { clock, dayWord, listTime, newDay } from "../chat/chatFormat";
-import { useChatActions, useChatRooms, useRoomMessages, useUnreadRooms, type ChatMsg, type ChatRoom, type ChatWork } from "../chat/useChatStore";
+import ReportPicker from "../chat/ReportPicker";
+import {
+  useChatActions,
+  useChatRoom,
+  useChatRooms,
+  useRoomLock,
+  useRoomMessages,
+  useUnreadRooms,
+  type ChatMsg,
+  type ChatRoom,
+  type ChatWork,
+} from "../chat/useChatStore";
 import { getBackgroundLocation } from "@/lib/projectOverlay";
+import LoadError from "./LoadError";
 import { onEscape, workOverlayOpen } from "./panels";
 import "../styles/chat-dock.css";
 
@@ -35,14 +48,27 @@ export type ChatDockHandle = {
 
 const CREATORS = `${SC_LINKS.home}?tab=creators`;
 const MAX_MINS = 3;
-const REPORTED = "ส่งรายงานแล้ว ทีมงานจะตรวจสอบ";
+const REPORTED = "ส่งรายงานแล้ว ทีมงานจะตรวจสอบให้นะ";
 
 const bg = (url: string) => (url ? { backgroundImage: `url(${JSON.stringify(url)})` } : undefined);
 const plainClick = (e: MouseEvent) => e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey;
 const errText = (e: unknown, fallback: string) => (e instanceof Error && e.message ? e.message : fallback);
 
-/** Words for a message in the small window (mock ChatStore.label): pictures and works as short text. */
-const label = (m: ChatMsg) => (m.kind === "work" ? `แชร์ผลงาน ${m.work?.title ?? m.text}`.trim() : m.text);
+/** Words for a message in the small window (mock ChatStore.label): pictures and cards as short text. */
+const label = (m: ChatMsg) => {
+  if (m.kind === "work") return `แชร์ผลงาน ${m.work?.title ?? m.text}`.trim();
+  if (m.kind === "img" && m.pending) return "กำลังส่งรูป…";
+  if (m.kind === "profile") return `แชร์โปรไฟล์ ${m.profile?.name ?? ""}`.trim();
+  return m.text;
+};
+
+/** Where a card in the small window leads (work, profile, product), or null for plain words. */
+const cardHref = (m: ChatMsg): string | null => {
+  if (m.kind === "work" && m.work) return `/showcase/${m.work.id}`;
+  if (m.kind === "profile" && m.profile) return m.profile.href;
+  if (m.kind === "object" && m.object?.id) return `/object/${m.object.id}`;
+  return null;
+};
 
 function Face({ room, size, hidden }: { room: ChatRoom; size: number; hidden?: boolean }) {
   return (
@@ -91,9 +117,10 @@ const ChatDock = forwardRef<ChatDockHandle>(function ChatDock(_props, ref) {
   /** Room of the small window (kept while it fades out). */
   const [active, setActive] = useState<string | null>(null);
   const [mins, setMins] = useState<string[]>([]);
-  /** "ทักจากงาน": the work a greeting came from, per room (this visit only, like the mock). */
+  /** "ทักจากงาน": the work a greeting came from, per room (this visit only, like the mock), until the first message takes it along. */
   const [works, setWorks] = useState<Record<string, ChatWork>>({});
-  const [big, setBig] = useState<{ room: string | null } | null>(null);
+  const [big, setBig] = useState<{ room: string | null; work: ChatWork | null } | null>(null);
+  const [reporting, setReporting] = useState(false);
   const [filter, setFilter] = useState<"all" | "req">("all");
   const [q, setQ] = useState("");
   const [draft, setDraft] = useState("");
@@ -103,16 +130,20 @@ const ChatDock = forwardRef<ChatDockHandle>(function ChatDock(_props, ref) {
   const noticeTimer = useRef<number | undefined>(undefined);
   const fabRef = useRef<HTMLButtonElement>(null);
   const qRef = useRef<HTMLInputElement>(null);
+  const inRef = useRef<HTMLTextAreaElement>(null);
   const winRef = useRef<HTMLDivElement>(null);
   const logRef = useRef<HTMLDivElement>(null);
   const opener = useRef<HTMLElement | null>(null);
 
-  const { rooms, loading } = useChatRooms(list.mounted || win.mounted || mins.length > 0);
+  const { rooms, loading, error: listError, refetch: refetchList } = useChatRooms(list.mounted || win.mounted || mins.length > 0);
   const byId = useMemo(() => new Map(rooms.map((r) => [r.id, r])), [rooms]);
   const openId = win.isOpen ? active : null;
-  const cur = win.mounted && active ? byId.get(active) ?? null : null;
+  // A room that is not in the newest 100 is read by itself (same as the Chat page).
+  const { room: winRoom } = useChatRoom(win.mounted ? active : null, { rooms, loading });
+  const cur = win.mounted && active ? winRoom : null;
   const curId = cur?.id ?? null;
-  const { items, loading: msgsLoading } = useRoomMessages(curId);
+  const lock = useRoomLock(cur);
+  const { items, loading: msgsLoading, error: msgsError, refetch: refetchMsgs } = useRoomMessages(curId);
 
   const say = (text: string) => {
     window.clearTimeout(noticeTimer.current);
@@ -132,6 +163,7 @@ const ChatDock = forwardRef<ChatDockHandle>(function ChatDock(_props, ref) {
     if (id !== openId) {
       setDraft("");
       setWinErr("");
+      setReporting(false);
     }
     setActive(id);
     closeList();
@@ -161,7 +193,7 @@ const ChatDock = forwardRef<ChatDockHandle>(function ChatDock(_props, ref) {
     opener.current = el ?? null;
     closeList();
     closeWin();
-    setBig({ room: roomId });
+    setBig({ room: roomId, work: roomId ? works[roomId] ?? null : null });
   };
 
   const closeBig = useCallback(() => {
@@ -237,14 +269,33 @@ const ChatDock = forwardRef<ChatDockHandle>(function ChatDock(_props, ref) {
     if (el) el.scrollTop = el.scrollHeight;
   }, [curId, items.length]);
 
+  // The text box grows with the lines (Shift+Enter), up to its max height in chat-dock.css.
+  useLayoutEffect(() => {
+    const el = inRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [draft, curId]);
+
+  const work = cur ? works[cur.id] ?? null : null;
+  /** The greeting's work, until it is in the room (the other person then sees it as a work card). */
+  const aboutWork = work && !items.some((m) => m.work?.id === work.id) ? work : null;
+
   const send = async () => {
     const text = draft.trim();
-    if (!cur || !text) return;
+    if (!cur || !text || lock) return;
     const roomId = cur.id;
+    const about = aboutWork;
     setDraft("");
     setWinErr("");
     try {
-      await actions.sendText(roomId, text);
+      await actions.sendText(roomId, text, about);
+      if (about)
+        setWorks((w) => {
+          const next = { ...w };
+          delete next[roomId];
+          return next;
+        });
     } catch (e) {
       setWinErr(errText(e, "ส่งไม่สำเร็จ ลองอีกครั้ง"));
       setDraft((d) => d || text);
@@ -270,7 +321,6 @@ const ChatDock = forwardRef<ChatDockHandle>(function ChatDock(_props, ref) {
   const reqN = rooms.filter((r) => r.request).length;
   const rows = rooms.filter((r) => (onReq ? r.request : !r.request) && (!term || r.other.name.toLowerCase().includes(term)));
   const faces = mins.map((id) => byId.get(id)).filter((r): r is ChatRoom => !!r);
-  const work = cur ? works[cur.id] ?? null : null;
 
   const bigLink = (roomId: string | null) => (e: MouseEvent) => {
     if (!plainClick(e)) return;
@@ -356,7 +406,8 @@ const ChatDock = forwardRef<ChatDockHandle>(function ChatDock(_props, ref) {
                 </span>
               </button>
             ))}
-            {!loading && !rows.length ? (
+            {listError && !rooms.length ? <LoadError label="โหลดแชทไม่ขึ้น ลองใหม่อีกทีนะ" onRetry={() => void refetchList()} /> : null}
+            {!loading && !listError && !rows.length ? (
               <div className="cd-empty">
                 <p>{term ? "ไม่มีแชทที่ตรงกัน" : onReq ? "ไม่มีคำขอใหม่" : "ยังไม่มีแชท ลองทักทายครีเอเตอร์ที่ชอบดูสิ"}</p>
                 {!term && !onReq ? <Link to={CREATORS}>ไปดูครีเอเตอร์ในหน้าแรก</Link> : null}
@@ -394,23 +445,26 @@ const ChatDock = forwardRef<ChatDockHandle>(function ChatDock(_props, ref) {
             </button>
           </div>
           <div ref={logRef} role="log" aria-live="polite" className="cd-log">
-            {work ? (
-              <Link to={`/showcase/${work.id}`} className="cd-work">
-                {work.cover ? <img src={work.cover} alt="" className="cd-work-img" /> : <span aria-hidden="true" className="cd-work-img" />}
+            {aboutWork ? (
+              <Link to={`/showcase/${aboutWork.id}`} className="cd-work">
+                {aboutWork.cover ? <img src={aboutWork.cover} alt="" className="cd-work-img" /> : <span aria-hidden="true" className="cd-work-img" />}
                 <span className="cd-work-tx">
-                  <span className="cd-work-k">ทักจากงาน</span>
-                  <span className="cd-work-t">{work.title}</span>
+                  <span className="cd-work-k">ทักจากงาน · ส่งข้อความแรกแล้วเขาจะเห็นงานนี้ด้วย</span>
+                  <span className="cd-work-t">{aboutWork.title}</span>
                 </span>
                 <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8A8A87" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M9 5l7 7-7 7" />
                 </svg>
               </Link>
             ) : null}
-            {!msgsLoading && !items.length ? <p className="cd-nomsg">ลองบอกเขาสั้นๆ ว่าชอบอะไรในงานนี้</p> : null}
+            {msgsError && !items.length ? <LoadError label="โหลดข้อความไม่ขึ้น ลองใหม่อีกทีนะ" onRetry={() => void refetchMsgs()} /> : null}
+            {!msgsLoading && !msgsError && !items.length ? <p className="cd-nomsg">ลองบอกเขาสั้นๆ ว่าชอบอะไรในงานนี้</p> : null}
             {items.map((m, k) => {
               const prev = items[k - 1];
               const day = newDay(prev?.at, m.at);
               const first = !prev || prev.me !== m.me || day;
+              const href = cardHref(m);
+              const words = label(m);
               return (
                 <Fragment key={m.id}>
                   {day ? <span className="cd-day">{dayWord(m.at, now)}</span> : null}
@@ -437,7 +491,20 @@ const ChatDock = forwardRef<ChatDockHandle>(function ChatDock(_props, ref) {
                     ) : (
                       <Face room={cur} size={28} hidden={!first} />
                     )}
-                    <span className="cd-bub">{label(m)}</span>
+                    {href ? (
+                      <Link to={href} className="cd-bub cd-bub-link">
+                        {words}
+                      </Link>
+                    ) : m.event ? (
+                      <span className="cd-stack">
+                        {words ? <span className="cd-bub">{words}</span> : null}
+                        <Link to={`/exhibition/${m.event.id}`} className="cd-bub cd-bub-link">
+                          {`อีเวนต์ ${m.event.title}`}
+                        </Link>
+                      </span>
+                    ) : (
+                      <span className="cd-bub">{words}</span>
+                    )}
                     {m.me ? null : <span className="cd-t">{clock(m.at)}</span>}
                   </div>
                 </Fragment>
@@ -449,7 +516,7 @@ const ChatDock = forwardRef<ChatDockHandle>(function ChatDock(_props, ref) {
               {winErr}
             </p>
           ) : null}
-          {cur.request ? (
+          {cur.request && !lock ? (
             <div className="cd-rq">
               <p>
                 <b>{cur.other.name}</b> อยากทักทายคุณ
@@ -475,27 +542,36 @@ const ChatDock = forwardRef<ChatDockHandle>(function ChatDock(_props, ref) {
                   className="cd-rq-btn"
                   data-k="report"
                   disabled={busy}
-                  onClick={() => void run(() => actions.report(cur), () => removeConv(cur.id, REPORTED))}
+                  aria-haspopup="dialog"
+                  onClick={() => setReporting(true)}
                 >
                   Report
                 </button>
               </div>
             </div>
+          ) : lock ? (
+            <p role="status" className="cd-lock">
+              {lock}
+            </p>
           ) : (
             <div className="cd-comp">
               <label htmlFor="cd-input" className="cd-sr">{`พิมพ์ข้อความถึง ${cur.other.name}`}</label>
-              <input
+              <textarea
                 id="cd-input"
-                type="text"
+                ref={inRef}
+                rows={1}
                 value={draft}
+                maxLength={4000}
                 onChange={(e) => setDraft(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+                  // Enter sends, Shift+Enter is a new line (not while a Thai / IME word is being composed).
+                  if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
                     e.preventDefault();
                     void send();
                   }
                 }}
                 placeholder="พิมพ์ข้อความ"
+                enterKeyHint="send"
               />
               <button type="button" className="cd-send" aria-label="ส่ง" data-on={draft.trim() ? "" : undefined} onClick={() => void send()}>
                 <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -504,6 +580,22 @@ const ChatDock = forwardRef<ChatDockHandle>(function ChatDock(_props, ref) {
               </button>
             </div>
           )}
+          {reporting ? (
+            <ReportPicker
+              name={cur.other.name}
+              busy={busy}
+              onClose={() => setReporting(false)}
+              onSend={(reason) =>
+                void run(
+                  () => actions.report(cur, reason),
+                  () => {
+                    setReporting(false);
+                    removeConv(cur.id, REPORTED);
+                  },
+                )
+              }
+            />
+          ) : null}
         </div>
       ) : null}
 
@@ -526,7 +618,7 @@ const ChatDock = forwardRef<ChatDockHandle>(function ChatDock(_props, ref) {
 
       {big ? (
         <Suspense fallback={null}>
-          <ChatView embedded onClose={closeBig} initialRoomId={big.room} />
+          <ChatView embedded onClose={closeBig} initialRoomId={big.room} greetWork={big.work} />
         </Suspense>
       ) : null}
 

@@ -1,10 +1,17 @@
 /**
  * Chat of the new design: what a stored message becomes on screen, and the time words (mock Chat / ChatDock).
- * The new design has text, pictures (gone after 30 days) and work cards only. System lines and the old
- * hiring / collab protocol blobs (`__APLUS1_…`) are not shown (owner rule: no hiring in the new design).
+ * The new design has text, pictures (gone after 30 days) and cards (work, profile, event, document, product).
+ * System lines and the old hiring / collab protocol blobs (`__APLUS1_…`) are not shown (owner rule: no hiring
+ * in the new design). Card blobs (`__SAMECOR_DOC__:`, `[[object]]`) never show as raw JSON.
  */
+import { parseEventLink, stripEventLinkLine } from "@/lib/chat/eventLink";
+import { parseStudioDocCard, STUDIO_DOC_KIND_LABEL, STUDIO_DOC_PREFIX } from "@/lib/documents/studioDocuments";
+import { OBJECT_CHAT_PREFIX, parseObjectChatCard } from "@/lib/objects/chatCard";
+
 export const IMAGE_DAYS = 30;
 const DAY = 86_400_000;
+/** Old system lines written as text before the message_type migration (lib/chatContext SYSTEM_MESSAGE_PREFIX). */
+const CONTEXT_PREFIX = "[context]";
 
 export type MsgInput = {
   sender_id: string;
@@ -12,24 +19,58 @@ export type MsgInput = {
   attachment_url?: string | null;
   message_type: string | null;
   project_id?: string | null;
+  profile_user_id?: string | null;
   created_at: string;
   deleted_at?: string | null;
 };
 
-export type MsgKind = "text" | "img" | "exp" | "work" | "file";
+export type MsgKind = "text" | "img" | "exp" | "work" | "file" | "profile" | "doc" | "object";
 
 /** How a message shows, or null when the new design leaves it out. */
 export function msgKind(m: MsgInput, now: Date): MsgKind | null {
   if (m.deleted_at) return null;
   const type = m.message_type || "text";
+  const content = (m.content ?? "").trim();
   if (type === "system" || type === "service") return null;
-  if ((m.content ?? "").startsWith("__APLUS1_")) return null;
+  if (content.startsWith("__APLUS1_") || content.startsWith(CONTEXT_PREFIX)) return null;
   if (type === "image") return now.getTime() - new Date(m.created_at).getTime() > IMAGE_DAYS * DAY ? "exp" : "img";
-  if (type === "project") return m.project_id ? "work" : "text";
+  if (type === "project") return m.project_id ? "work" : content ? "text" : null;
   if (type === "file") return "file";
-  if (type === "profile") return "text";
-  return (m.content ?? "").trim() ? "text" : null;
+  if (type === "profile") return "profile";
+  if (content.startsWith(STUDIO_DOC_PREFIX)) return "doc";
+  if (content.startsWith(OBJECT_CHAT_PREFIX)) return "object";
+  return content ? "text" : null;
 }
+
+export type DocCard = { kind: string; number: string; title: string; net: number };
+
+/** Studio document card (quotation / invoice / receipt). A blob that does not parse still gets a plain card. */
+export function docOf(content: string | null | undefined): DocCard {
+  const c = parseStudioDocCard(content?.trim());
+  if (!c) return { kind: "เอกสาร", number: "", title: "", net: 0 };
+  return { kind: STUDIO_DOC_KIND_LABEL[c.kind], number: c.number, title: c.title, net: c.net };
+}
+
+export type ObjectCard = { id: string | null; title: string; price: number; cover: string | null; note: string };
+
+/** Product card ("[[object]]{…}"). A blob that does not parse still gets a plain card, never the JSON. */
+export function objectOf(content: string | null | undefined): ObjectCard {
+  const c = parseObjectChatCard(content);
+  if (!c) return { id: null, title: "สินค้า", price: 0, cover: null, note: "" };
+  const note = [c.option, c.qty ? `${c.qty} ชิ้น` : ""].filter(Boolean).join(" · ");
+  return { id: c.id, title: c.title, price: c.price_thb, cover: c.cover_url, note };
+}
+
+/** Event id when a text links to an event page (`/exhibition/<id>`), so the bubble gets an event card. */
+export const eventOf = (m: MsgInput): string | null => ((m.message_type || "text") === "text" ? parseEventLink(m.content) : null);
+
+/** Text of a bubble: without the event link line when the card below shows that event. */
+export function textOf(m: MsgInput): string {
+  const text = (m.content ?? "").trim();
+  return eventOf(m) ? stripEventLinkLine(text).trim() : text;
+}
+
+export const baht = (n: number) => `฿${Math.round(n).toLocaleString("en-US")}`;
 
 /** Short words for the room list and the small chat (mock ChatStore.label). */
 export function msgLabel(m: MsgInput, now: Date): string {
@@ -38,8 +79,16 @@ export function msgLabel(m: MsgInput, now: Date): string {
   if (kind === "exp") return "รูปหมดอายุแล้ว";
   if (kind === "work") return `แชร์ผลงาน ${m.content?.trim() || ""}`.trim();
   if (kind === "file") return "ไฟล์แนบ";
-  if (m.message_type === "profile") return "แชร์โปรไฟล์";
-  if (kind === "text") return (m.content ?? "").trim();
+  if (kind === "profile") return "แชร์โปรไฟล์";
+  if (kind === "doc") {
+    const d = docOf(m.content);
+    return `${d.kind} ${d.number}`.trim();
+  }
+  if (kind === "object") {
+    const o = objectOf(m.content);
+    return o.id ? `สินค้า ${o.title}` : "สินค้า";
+  }
+  if (kind === "text") return textOf(m) || (eventOf(m) ? "แชร์อีเวนต์" : "");
   return "";
 }
 

@@ -49,13 +49,17 @@ export async function blockPerson(me: string, otherId: string): Promise<void> {
   if (error && String(error.code) !== "23505" && !String(error.message).includes("duplicate")) throw error;
 }
 
+/** Reasons a chat report can give (the `create_report` allow-list; same codes as the old ReportDialog). */
+export const CHAT_REPORT_REASONS = ["spam", "harassment", "scam", "nsfw", "impersonation", "other"] as const;
+export type ChatReportReason = (typeof CHAT_REPORT_REASONS)[number];
+
 /** "Report" in a chat or on a chat request: the person, with the room in the details for the team. */
-export async function reportPerson(otherId: string, roomId: string): Promise<void> {
+export async function reportPerson(otherId: string, roomId: string, reason: ChatReportReason = "other"): Promise<void> {
   const { error } = await rpc("create_report", {
     _target_type: "user",
     _target_id: otherId,
     _target_owner_id: otherId,
-    _reason: "other",
+    _reason: CHAT_REPORT_REASONS.includes(reason) ? reason : "other",
     _details: `รายงานจากแชท (ห้อง ${roomId})`,
   });
   if (error && !String(error.message).startsWith("DUPLICATE:")) throw error;

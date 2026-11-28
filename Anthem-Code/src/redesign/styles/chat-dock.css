@@ -538,25 +538,63 @@
   color: #4A4A4A;
 }
 
+/* text box: Enter sends, Shift+Enter is a new line (grows up to 5 lines) */
 .sc-app .cd-comp {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 8px;
   padding: 10px 12px;
 }
 
-.sc-app .cd-comp input {
+.sc-app .cd-comp textarea {
   flex: 1;
   min-width: 0;
   height: 42px;
+  min-height: 42px;
+  max-height: 120px;
   box-sizing: border-box;
   border: 1px solid #E2E2DF;
-  border-radius: 999px;
-  padding: 0 16px;
+  border-radius: 21px;
+  padding: 10px 16px;
   font: inherit;
   font-size: 14px;
+  line-height: 20px;
   color: #282929;
   outline-color: #282929;
+  resize: none;
+  overflow-y: auto;
+  display: block;
+}
+
+/* blocked person / old hire room that was closed: why, instead of the text box */
+.sc-app .cd-lock {
+  margin: 0;
+  padding: 14px 16px 16px;
+  border-top: 1px solid #ECECEA;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #8A8A87;
+  text-align: center;
+}
+
+/* a card (work, profile, event, product) as a short link */
+.sc-app .cd-bub-link {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-color: rgba(138, 138, 135, .6);
+}
+
+.sc-app .cd-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+}
+
+.sc-app .cd-msg[data-me] .cd-stack {
+  align-items: flex-end;
 }
 
 .sc-app .cd-send {
@@ -722,7 +760,7 @@
     box-sizing: border-box;
   }
 
-  .sc-app .cd-win > :is(.cd-comp, .cd-rq):last-child {
+  .sc-app .cd-win > :is(.cd-comp, .cd-rq, .cd-lock):last-child {
     padding-bottom: calc(10px + env(safe-area-inset-bottom));
   }
 

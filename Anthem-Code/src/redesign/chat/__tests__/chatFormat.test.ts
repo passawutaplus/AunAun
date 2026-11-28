@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dayWord, listTime, msgKind, msgLabel, newDay } from "../chatFormat";
+import { dayWord, docOf, eventOf, listTime, msgKind, msgLabel, newDay, objectOf, textOf } from "../chatFormat";
 
 const now = new Date(2026, 10, 29, 10, 0);
 const at = (d: number, h = 9, mo = 10, y = 2026) => new Date(y, mo, d, h, 5).toISOString();
@@ -29,6 +29,40 @@ describe("chat message kinds", () => {
   it("labels like the mock", () => {
     expect(msgLabel(msg({ message_type: "image" }), now)).toBe("ส่งรูป");
     expect(msgLabel(msg({ message_type: "project", project_id: "p", content: "Soft Machine" }), now)).toBe("แชร์ผลงาน Soft Machine");
+  });
+
+  it("old system lines written as text are left out", () => {
+    expect(msgKind(msg({ content: "[context] คุยโอกาสจากผลงาน" }), now)).toBeNull();
+  });
+
+  it("document cards never show their JSON", () => {
+    const doc = `__SAMECOR_DOC__:${JSON.stringify({ id: "d1", kind: "invoice", number: "INV-0001", title: "Poster", net: 1500 })}\nส่งใบแจ้งหนี้ INV-0001`;
+    expect(msgKind(msg({ content: doc }), now)).toBe("doc");
+    expect(msgLabel(msg({ content: doc }), now)).toBe("ใบแจ้งหนี้ INV-0001");
+    expect(docOf(doc)).toEqual({ kind: "ใบแจ้งหนี้", number: "INV-0001", title: "Poster", net: 1500 });
+    const broken = "__SAMECOR_DOC__:{not json";
+    expect(msgKind(msg({ content: broken }), now)).toBe("doc");
+    expect(msgLabel(msg({ content: broken }), now)).toBe("เอกสาร");
+  });
+
+  it("product cards never show their JSON", () => {
+    const obj = `[[object]]${JSON.stringify({ id: "o1", title: "Mug", price_thb: 350, cover_url: null, qty: 2 })}`;
+    expect(msgKind(msg({ content: obj }), now)).toBe("object");
+    expect(msgLabel(msg({ content: obj }), now)).toBe("สินค้า Mug");
+    expect(objectOf(obj)).toEqual({ id: "o1", title: "Mug", price: 350, cover: null, note: "2 ชิ้น" });
+    expect(msgLabel(msg({ content: "[[object]]{oops" }), now)).toBe("สินค้า");
+  });
+
+  it("shared profiles and event links get cards", () => {
+    expect(msgKind(msg({ message_type: "profile", content: "โปรไฟล์" }), now)).toBe("profile");
+    expect(msgLabel(msg({ message_type: "profile", content: "โปรไฟล์" }), now)).toBe("แชร์โปรไฟล์");
+    const id = "0a1b2c3d-0000-4000-8000-00000000abcd";
+    const linked = msg({ content: `ไปงานนี้กัน\nhttps://samecor.com/exhibition/${id}` });
+    expect(eventOf(linked)).toBe(id);
+    expect(textOf(linked)).toBe("ไปงานนี้กัน");
+    expect(msgLabel(linked, now)).toBe("ไปงานนี้กัน");
+    expect(msgLabel(msg({ content: `/exhibition/${id}` }), now)).toBe("แชร์อีเวนต์");
+    expect(eventOf(msg({ message_type: "project", project_id: "p", content: `/exhibition/${id}` }))).toBeNull();
   });
 });
 
