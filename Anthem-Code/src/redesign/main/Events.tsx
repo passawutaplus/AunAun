@@ -65,6 +65,8 @@ function Highlight({ events, venues, today }: { events: HomeEventRow[]; venues: 
   const { user } = useAuth();
   const qc = useQueryClient();
   const [index, setIndex] = useState(0);
+  // Which way the last arrow went, so the next highlight slides in from that side (owner 2026-11-28).
+  const [dir, setDir] = useState<1 | -1 | 0>(0);
   const [venuesOpen, setVenuesOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const copiedTimer = useRef<number | undefined>(undefined);
@@ -83,7 +85,8 @@ function Highlight({ events, venues, today }: { events: HomeEventRow[]; venues: 
     },
   });
 
-  const go = (step: number) => {
+  const go = (step: 1 | -1) => {
+    setDir(step);
     setIndex((i) => (i + step + events.length) % events.length);
     setVenuesOpen(false);
   };
@@ -120,7 +123,7 @@ function Highlight({ events, venues, today }: { events: HomeEventRow[]; venues: 
           </div>
         ) : null}
       </div>
-      <div className="mn-ev-wrap">
+      <div className="mn-ev-wrap" key={e.id} data-dir={dir || undefined}>
         <Link
           to={eventPath(e)}
           aria-label={`เปิด ${e.title}`}

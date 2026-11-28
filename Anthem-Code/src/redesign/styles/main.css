@@ -387,6 +387,27 @@
   75%, 100% { rotate: 180deg; }
 }
 
+/* Highlight arrows: the next event slides in from the side the arrow points to */
+@keyframes mn-hl-next {
+  from { opacity: 0; translate: 48px 0; }
+  to { opacity: 1; translate: none; }
+}
+
+@keyframes mn-hl-prev {
+  from { opacity: 0; translate: -48px 0; }
+  to { opacity: 1; translate: none; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sc-app .mn-ev-wrap[data-dir="1"] {
+    animation: mn-hl-next .6s var(--sc-ease) both;
+  }
+
+  .sc-app .mn-ev-wrap[data-dir="-1"] {
+    animation: mn-hl-prev .6s var(--sc-ease) both;
+  }
+}
+
 /* ScLoader shows the site's own logo loader (components/ui/BrandLoader, animated in index.css); light only here */
 .sc-app .brand-loader-ghost {
   fill: #DADAD7;
