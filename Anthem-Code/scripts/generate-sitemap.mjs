@@ -80,7 +80,7 @@ async function fetchLiveCatalog(supabaseUrl, anonKey) {
 
   const [projectsRes, profilesRes, seriesRes, collectionsRes, jobsRes, servicesRes, objectsRes] = await Promise.all([
     fetch(
-      `${rest}/projects?select=id,cover_url,title&status=eq.Published&order=created_at.desc&limit=120`,
+      `${rest}/projects?select=id,cover_url,title,owner_id&status=eq.Published&order=created_at.desc&limit=120`,
       { headers: anthemHeaders },
     ),
     fetch(
@@ -112,11 +112,14 @@ async function fetchLiveCatalog(supabaseUrl, anonKey) {
     ),
   ]);
   const events = await fetchEvents(rest, anthemHeaders);
+  // People who turned "ให้ค้นเจอจาก Google" off (Settings → Privacy): their profile and works stay out.
+  const hiddenRes = await fetch(`${rest}/profiles_public?select=user_id&public_visibility->>search=eq.false&limit=5000`, { headers });
+  const hiddenOwners = new Set(hiddenRes.ok ? (await hiddenRes.json()).map((p) => p.user_id) : []);
 
   if (!projectsRes.ok) {
     throw new Error(`projects fetch ${projectsRes.status}`);
   }
-  const projects = await projectsRes.json();
+  const projects = (await projectsRes.json()).filter((p) => !hiddenOwners.has(p.owner_id));
   const projectIds = projects.map((p) => p.id).filter((id) => id && !isTestId(id));
   const images = projects
     .filter((p) => p.cover_url && p.id)
@@ -137,7 +140,7 @@ async function fetchLiveCatalog(supabaseUrl, anonKey) {
         (typeof p.username === "string" ||
           (typeof p.bio === "string" && p.bio.trim().length >= 20)),
     );
-    const real = usable.filter((p) => !isTestId(p.user_id) && !isTestHandle(p.username));
+    const real = usable.filter((p) => !isTestId(p.user_id) && !isTestHandle(p.username) && !hiddenOwners.has(p.user_id));
     profileUserIds = real.map((p) => p.user_id).filter(Boolean);
     vanityHandles = real
       .map((p) => p.username)

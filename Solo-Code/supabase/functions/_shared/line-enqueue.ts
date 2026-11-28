@@ -59,6 +59,9 @@ export async function enqueueLineNotification(opts: {
   if (!profile.line_notify_enabled) return { sent: false, reason: "disabled" };
   if (!prefsAllow(profile.line_notify_prefs, opts.kind))
     return { sent: false, reason: "kind_disabled" };
+  // Settings → Notifications switches (redesign step 7c); the RPC answers true for kinds without a switch.
+  const { data: allowed } = await admin.rpc("notification_allowed", { _user: opts.userId, _kind: opts.kind });
+  if (allowed === false) return { sent: false, reason: "switched_off" };
 
   const tier = profile.subscription_tier ?? "free";
   if (tier !== "pro" && tier !== "pro_plus" && tier !== "inhouse") {

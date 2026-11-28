@@ -58,3 +58,25 @@ export async function cancelAccountDeletion(): Promise<boolean> {
   if (error) throw error;
   return (data as { cancelled?: boolean } | null)?.cancelled === true;
 }
+
+/** One switch of Settings → Notifications ("chat" / "comment" / "follow" / "event") or "greet_from". */
+export async function setMySetting(key: "chat" | "comment" | "follow" | "event" | "greet_from", value: boolean | "everyone" | "following"): Promise<void> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase.rpc as any)("set_my_setting", { _key: key, _value: String(value) });
+  if (error) throw error;
+}
+
+/** "creators" / "search" in profiles.public_visibility; the other keys (bio, location …) are kept. */
+export async function setVisibilitySwitch(userId: string, key: "creators" | "search", on: boolean): Promise<void> {
+  const { data, error: readErr } = await supabase.from("profiles").select("public_visibility" as "*").eq("user_id", userId).maybeSingle();
+  if (readErr) throw readErr;
+  const pv = (data as { public_visibility?: unknown } | null)?.public_visibility;
+  const next = { ...(pv && typeof pv === "object" ? (pv as Record<string, unknown>) : {}), [key]: on };
+  const { error } = await supabase.from("profiles").update({ public_visibility: next } as never).eq("user_id", userId);
+  if (error) throw error;
+}
+
+export async function unblockPerson(userId: string, blockedId: string): Promise<void> {
+  const { error } = await supabase.from("user_blocks" as never).delete().eq("blocker_id", userId).eq("blocked_id", blockedId);
+  if (error) throw error;
+}

@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useFeedProjectSelect } from "@/hooks/useFeedProjectSelect";
 import { getCreatorProfiles } from "@/server/queries/creators";
 import { getHomeHiddenIds, getShowcaseRows } from "@/server/queries/showcase";
+import { listedOnCreators } from "../lib/visibility";
 
 export const CREATOR_VIEWS = ["discover", "new", "following"] as const;
 export type CreatorView = (typeof CREATOR_VIEWS)[number];
@@ -56,6 +57,8 @@ export function useCreators() {
         covers.set(w.owner_id, list);
       }
       return profiles.flatMap((p) => {
+        // Settings → Privacy "โชว์โปรไฟล์ในหน้า Creators" off: the profile stays reachable by its link only.
+        if (!listedOnCreators(p.public_visibility)) return [];
         const own = covers.get(p.user_id);
         if (!own?.length) return [];
         const categories = p.sc_categories ?? [];

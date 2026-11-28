@@ -12,16 +12,28 @@ import {
   requestEmailChange,
   resendEmailChange,
   sendPasswordLink,
+  setMySetting,
+  setVisibilitySwitch,
   signOutOtherDevices,
+  unblockPerson,
 } from "@/server/mutations/account";
-import { getMyAccount, getMyDeleteRequest, getMySessionCount } from "@/server/queries/account";
+import {
+  DEFAULT_SETTINGS,
+  getBlockedPeople,
+  getMyAccount,
+  getMyDeleteRequest,
+  getMySessionCount,
+  getMySettings,
+  getMyVisibility,
+  type MySettings,
+} from "@/server/queries/account";
 import { SC_LINKS } from "../routes";
 import "../styles/fonts.css";
 import "../styles/tokens.css";
 import "../styles/reset.css";
 import "../styles/settings.css";
 
-const TABS = ["Account"] as const;
+const TABS = ["Account", "Notifications", "Privacy"] as const;
 type Tab = (typeof TABS)[number];
 
 const HANDLE_LOCK_DAYS = 30;
@@ -37,7 +49,7 @@ function handleFormatError(h: string): string {
 
 const errMessage = (e: unknown) => String((e as { message?: string } | null)?.message ?? "");
 
-/** `/settings` (mock: Settings.dc.html). Account now; Notifications and Privacy arrive with their switches. */
+/** `/settings` (mock: Settings.dc.html): Account, Notifications, Privacy. Plan is hidden with the Pro page. */
 export default function SettingsPage() {
   const { user, loading } = useAuth();
   if (loading) return <main className="sc-main st-m" aria-busy="true" style={{ minHeight: "70vh" }} />;
@@ -98,6 +110,8 @@ function SettingsView() {
             ))}
           </nav>
           {tab === "Account" ? <AccountTab key={account.data ? "ready" : "wait"} handle={handle} changedAt={account.data?.username_changed_at ?? null} /> : null}
+          {tab === "Notifications" ? <NotificationsTab /> : null}
+          {tab === "Privacy" ? <PrivacyTab /> : null}
         </section>
       </div>
     </main>
@@ -420,5 +434,147 @@ function AccountTab({ handle: savedHandle, changedAt }: { handle: string; change
         </div>
       ) : null}
     </>
+  );
+}
+
+function Switch({ label, on, onToggle }: { label: string; on: boolean; onToggle: () => void }) {
+  return (
+    <button type="button" className="st-sw" role="switch" aria-checked={on} aria-label={label} onClick={onToggle}>
+      <i />
+    </button>
+  );
+}
+
+type SwitchKey = "chat" | "comment" | "follow" | "event";
+
+/** Mock rows; "อีเมลสรุปรายสัปดาห์" stays hidden until there is such an e-mail (question for the owner / Beam). */
+const NOTI_ROWS: Array<[SwitchKey, string, string]> = [
+  ["chat", "ข้อความใหม่", "มีคนทักทายหรือตอบแชท"],
+  ["comment", "คอมเมนต์", "มีคนคอมเมนต์บนงานของฉัน"],
+  ["follow", "ผู้ติดตามใหม่", "มีคนกดติดตาม"],
+  ["event", "Open call ใกล้ปิดรับ", "งานที่กดสนใจไว้ เหลือ 3 วัน"],
+];
+
+/** Settings shared by the Notifications and Privacy tabs, saved one switch at a time (optimistic). */
+function useMySettings() {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  const key = ["sc-settings", user?.id];
+  const q = useQuery({ queryKey: key, queryFn: getMySettings, staleTime: 60_000 });
+  const [err, setErr] = useState("");
+  const set = async <K extends keyof MySettings>(k: K, v: MySettings[K]) => {
+    const before = qc.getQueryData<MySettings & { ready: boolean }>(key);
+    qc.setQueryData(key, { ...(before ?? { ...DEFAULT_SETTINGS, ready: false }), [k]: v });
+    setErr("");
+    try {
+      await setMySetting(k, v as never);
+    } catch {
+      qc.setQueryData(key, before);
+      setErr("บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง");
+    }
+  };
+  return { settings: q.data ?? { ...DEFAULT_SETTINGS, ready: false }, set, err };
+}
+
+function NotificationsTab() {
+  const { settings, set, err } = useMySettings();
+  return (
+    <div>
+      {NOTI_ROWS.map(([k, label, sub]) => (
+        <Row key={k} label={label} sub={sub}>
+          <Switch label={label} on={settings[k]} onToggle={() => void set(k, !settings[k])} />
+        </Row>
+      ))}
+      {err ? (
+        <p role="alert" className="st-err">
+          {err}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+const GREET_OPTIONS = [
+  ["everyone", "ทุกคน"],
+  ["following", "คนที่ฉันติดตาม"],
+] as const;
+
+function PrivacyTab() {
+  const { user } = useAuth();
+  const uid = user!.id;
+  const qc = useQueryClient();
+  const { settings, set, err } = useMySettings();
+  const vis = useQuery({ queryKey: ["sc-visibility", uid], queryFn: () => getMyVisibility(uid), staleTime: 60_000 });
+  const blocked = useQuery({ queryKey: ["sc-blocked", uid], queryFn: () => getBlockedPeople(uid), staleTime: 60_000 });
+  const [blockOpen, setBlockOpen] = useState(false);
+  const [visErr, setVisErr] = useState("");
+  const pv = vis.data ?? {};
+  const isOn = (k: "creators" | "search") => pv[k] !== false;
+
+  const toggleVis = async (k: "creators" | "search") => {
+    const before = vis.data;
+    const on = !isOn(k);
+    qc.setQueryData(["sc-visibility", uid], { ...(before ?? {}), [k]: on });
+    setVisErr("");
+    try {
+      await setVisibilitySwitch(uid, k, on);
+      void qc.invalidateQueries({ queryKey: ["sc-creators"] });
+    } catch {
+      qc.setQueryData(["sc-visibility", uid], before);
+      setVisErr("บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง");
+    }
+  };
+
+  const unblock = async (id: string) => {
+    try {
+      await unblockPerson(uid, id);
+    } finally {
+      void qc.invalidateQueries({ queryKey: ["sc-blocked", uid] });
+      void qc.invalidateQueries({ queryKey: ["blocked-user-ids"] });
+    }
+  };
+
+  const people = blocked.data ?? [];
+  return (
+    <div>
+      <Row label="ใครทักทายฉันได้" sub="ข้อความแรกในแชท">
+        <div className="st-seg" role="group" aria-label="ใครทักทายฉันได้">
+          {GREET_OPTIONS.map(([v, label]) => (
+            <button key={v} type="button" aria-pressed={settings.greet_from === v} onClick={() => void set("greet_from", v)}>
+              {label}
+            </button>
+          ))}
+        </div>
+      </Row>
+      <Row label="โชว์โปรไฟล์ในหน้า Creators" sub="ปิดแล้วคนยังเข้าโปรไฟล์ได้จากลิงก์">
+        <Switch label="โชว์โปรไฟล์ในหน้า Creators" on={isOn("creators")} onToggle={() => void toggleVis("creators")} />
+      </Row>
+      <Row label="ให้ค้นเจอจาก Google" sub="โปรไฟล์และผลงานที่เปิดสาธารณะ">
+        <Switch label="ให้ค้นเจอจาก Google" on={isOn("search")} onToggle={() => void toggleVis("search")} />
+      </Row>
+      <Row label="คนที่บล็อกไว้" sub={`${people.length} คน`}>
+        <button type="button" className="st-ln" aria-expanded={blockOpen} disabled={!people.length} onClick={() => setBlockOpen((v) => !v)}>
+          {blockOpen ? "ซ่อน" : "ดูรายชื่อ"}
+        </button>
+      </Row>
+      {blockOpen
+        ? people.map((b) => (
+            <div key={b.user_id} className="st-row st-blocked">
+              <span className="st-person">
+                <span aria-hidden="true" style={b.avatar_url ? { backgroundImage: `url(${JSON.stringify(proxiedImageUrl(b.avatar_url, 72))})` } : undefined} />
+                {b.name}
+              </span>
+              <button type="button" className="st-ln st-ln-sm" onClick={() => void unblock(b.user_id)}>
+                เลิกบล็อก
+              </button>
+            </div>
+          ))
+        : null}
+      {err || visErr ? (
+        <p role="alert" className="st-err">
+          {err || visErr}
+        </p>
+      ) : null}
+    </div>
   );
 }

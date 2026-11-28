@@ -27,6 +27,7 @@ import {
   type ProfileEvent,
 } from "../profile/useProfilePage";
 import NotFound from "./NotFound";
+import { indexableBySearch, useNoIndex } from "../lib/visibility";
 import "../styles/fonts.css";
 import "../styles/tokens.css";
 import "../styles/reset.css";
@@ -71,6 +72,8 @@ function ProfileView({ slug, byId }: { slug: string; byId: boolean }) {
   const profile = useProfilePage(slug);
   const p = profile.data ?? null;
   const uid = p?.user_id;
+  // Settings → Privacy "ให้ค้นเจอจาก Google" off.
+  useNoIndex(!!p && !indexableBySearch(p.public_visibility));
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();

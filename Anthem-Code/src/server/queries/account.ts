@@ -1,5 +1,6 @@
 /** The signed-in person's own account rows for the new design (welcome step, Settings). */
 import { supabase } from "@/integrations/supabase/client";
+import { profilesPublicFrom } from "@/lib/profileAccess";
 
 export type OnboardingRow = {
   user_id: string;
@@ -62,4 +63,46 @@ export async function getMySessionCount(): Promise<number | null> {
   const { data, error } = await (supabase.rpc as any)("my_session_count");
   if (error || typeof data !== "number") return null;
   return data;
+}
+
+export type MySettings = { chat: boolean; comment: boolean; follow: boolean; event: boolean; greet_from: "everyone" | "following" };
+
+export const DEFAULT_SETTINGS: MySettings = { chat: true, comment: true, follow: true, event: true, greet_from: "everyone" };
+
+/** Settings → Notifications / "who can greet me" (step 7c SQL); defaults until that SQL has run. */
+export async function getMySettings(): Promise<MySettings & { ready: boolean }> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase.rpc as any)("get_my_settings");
+  if (error || !data || typeof data !== "object") return { ...DEFAULT_SETTINGS, ready: false };
+  return { ...DEFAULT_SETTINGS, ...(data as Partial<MySettings>), ready: true };
+}
+
+/** profiles.public_visibility of the signed-in person (holds the "creators" and "search" switches). */
+export async function getMyVisibility(userId: string): Promise<Record<string, unknown>> {
+  const { data, error } = await supabase.from("profiles").select("public_visibility" as "*").eq("user_id", userId).maybeSingle();
+  if (error) throw error;
+  const pv = (data as { public_visibility?: unknown } | null)?.public_visibility;
+  return pv && typeof pv === "object" ? (pv as Record<string, unknown>) : {};
+}
+
+export type BlockedPerson = { user_id: string; name: string; username: string | null; avatar_url: string | null };
+
+/** People I blocked, newest first, with their public name. */
+export async function getBlockedPeople(userId: string): Promise<BlockedPerson[]> {
+  const { data, error } = await supabase
+    .from("user_blocks" as never)
+    .select("blocked_id, created_at")
+    .eq("blocker_id", userId)
+    .order("created_at", { ascending: false });
+  if (error) return [];
+  const ids = ((data ?? []) as Array<{ blocked_id: string }>).map((r) => r.blocked_id);
+  if (!ids.length) return [];
+  const { data: people } = await profilesPublicFrom()
+    .select("user_id, display_name, username, avatar_url" as "*")
+    .in("user_id", ids);
+  const byId = new Map(((people ?? []) as unknown as Array<{ user_id: string; display_name: string | null; username: string | null; avatar_url: string | null }>).map((p) => [p.user_id, p]));
+  return ids.map((id) => {
+    const p = byId.get(id);
+    return { user_id: id, name: p?.display_name?.trim() || p?.username || "ผู้ใช้ Samecor", username: p?.username ?? null, avatar_url: p?.avatar_url ?? null };
+  });
 }

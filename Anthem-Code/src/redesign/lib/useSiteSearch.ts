@@ -6,6 +6,7 @@ import { proxiedImageUrl } from "@/lib/imageProxy";
 import type { HomeEventRow } from "@/server/queries/homeEvents";
 import { homeWorksQuery, profileHref } from "../main/useCreators";
 import { homeEventsQuery, isoDay } from "../main/useHomeEvents";
+import { listedOnCreators } from "./visibility";
 
 export type SearchKind = "CREATOR" | "WORK" | "EVENT";
 
@@ -53,7 +54,7 @@ export function useSiteSearch(query: string) {
       return p ? p.display_name?.trim() || p.username || "" : "";
     };
     const owners = new Set(works.map((w) => w.owner_id));
-    const creators = [...people.values()].filter((p) => owners.has(p.user_id));
+    const creators = [...people.values()].filter((p) => owners.has(p.user_id) && listedOnCreators(p.public_visibility));
 
     // Events that are on or still to come first (nearest start), then past ones (latest first).
     const today = isoDay(new Date());

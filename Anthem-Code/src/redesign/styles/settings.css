@@ -483,3 +483,34 @@
     margin-left: auto;
   }
 }
+
+.sc-app .st-err {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: #B8321F;
+}
+
+.sc-app .st-blocked {
+  min-height: 60px;
+  padding-left: 16px;
+}
+
+.sc-app .st-person {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  min-width: 0;
+}
+
+.sc-app .st-person > span {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border-radius: 50%;
+  background: #D4D4D1 center / cover no-repeat;
+}
+
+.sc-app .st-ln-sm {
+  height: 36px;
+}

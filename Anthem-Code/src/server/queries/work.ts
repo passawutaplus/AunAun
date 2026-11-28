@@ -45,12 +45,14 @@ export type WorkOwner = {
   instagram: string | null;
   website: string | null;
   contact_email: string | null;
+  /** Holds the "search" switch of Settings → Privacy (noindex when off). */
+  public_visibility: unknown;
 };
 
 /** The public profile of a work's owner, with the contact links the Work page shows. */
 export async function getWorkOwner(userId: string): Promise<WorkOwner | null> {
   const { data, error } = await profilesPublicFrom()
-    .select("user_id, display_name, username, avatar_url, instagram, website, contact_email" as "*")
+    .select("user_id, display_name, username, avatar_url, instagram, website, contact_email, public_visibility" as "*")
     .eq("user_id", userId)
     .maybeSingle();
   if (error) throw error;
