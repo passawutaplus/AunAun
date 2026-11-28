@@ -27,17 +27,25 @@ const WORKS_SCANNED = 300;
  * Creators = people with at least one work on the home page. Built from the same works the Showcase
  * shows (not hidden, not blocked), newest work first.
  */
+export const homeWorksQuery = {
+  queryKey: ["sc-creators"] as const,
+  staleTime: 5 * 60_000,
+  /** Works on the home page (newest first) and the public profiles of their owners; the search panel reads the same cache. */
+  queryFn: async () => {
+    const hidden = await getHomeHiddenIds();
+    const works = await getShowcaseRows({ excludeIds: hidden }, 0, WORKS_SCANNED - 1);
+    const owners = [...new Set(works.map((w) => w.owner_id).filter((id): id is string => !!id))];
+    return { works, profiles: await getCreatorProfiles(owners) };
+  },
+};
+
+export const profileHref = (p: { user_id: string; username: string | null }) =>
+  p.username ? `/@${p.username}` : `/u/${p.user_id}`;
+
 export function useCreators() {
   const visible = useFeedProjectSelect();
   return useQuery({
-    queryKey: ["sc-creators"],
-    staleTime: 5 * 60_000,
-    queryFn: async () => {
-      const hidden = await getHomeHiddenIds();
-      const works = await getShowcaseRows({ excludeIds: hidden }, 0, WORKS_SCANNED - 1);
-      const owners = [...new Set(works.map((w) => w.owner_id).filter((id): id is string => !!id))];
-      return { works, profiles: await getCreatorProfiles(owners) };
-    },
+    ...homeWorksQuery,
     select: ({ works, profiles }): Creator[] => {
       const covers = new Map<string, string[]>();
       for (const w of visible(works)) {
@@ -54,7 +62,7 @@ export function useCreators() {
         return [{
           id: p.user_id,
           name: p.display_name?.trim() || p.username || "",
-          href: p.username ? `/@${p.username}` : `/u/${p.user_id}`,
+          href: profileHref(p),
           avatar: p.avatar_url ?? "",
           categories,
           sub: [categories[0], p.location?.trim()].filter(Boolean).join(" · "),

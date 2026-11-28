@@ -64,11 +64,12 @@ export function inView(e: HomeEventRow, view: EventView, today = isoDay(new Date
 export type HomeEvents = { events: HomeEventRow[]; venues: Map<string, HomeEventRow[]> };
 
 /** Published events for the Event tab: top-level events, plus the venues of multi-venue events by parent. */
+/** Shared with the search panel. */
+export const homeEventsQuery = { queryKey: ["sc-home-events"] as const, staleTime: 5 * 60_000, queryFn: getHomeEvents };
+
 export function useHomeEvents() {
   return useQuery({
-    queryKey: ["sc-home-events"],
-    staleTime: 5 * 60_000,
-    queryFn: getHomeEvents,
+    ...homeEventsQuery,
     select: (rows): HomeEvents => {
       const venues = new Map<string, HomeEventRow[]>();
       for (const r of rows) {

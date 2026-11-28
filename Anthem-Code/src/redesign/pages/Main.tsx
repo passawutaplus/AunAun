@@ -5,6 +5,7 @@ import { useProfilesByIds } from "@/core/profiles/useProfilesByIds";
 import { releaseBoot } from "@/lib/bootGate";
 import { SC_CATEGORIES, isScCategory } from "../lib/categories";
 import { SC_LINKS } from "../routes";
+import { useShellPanels } from "../shell/panels";
 import { BENTO_FIRST, BENTO_STEP, MASONRY_GAP, bentoBlocks, masonrySpan } from "../main/bento";
 import Creators from "../main/Creators";
 import Events from "../main/Events";
@@ -25,6 +26,12 @@ type Mode = (typeof MODES)[number][0];
 
 const MODE_LABEL: Record<Mode, string> = { showcase: "ผลงาน", creators: "ครีเอเตอร์", event: "อีเว้นท์" };
 
+const AddIcon = () => (
+  <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.33">
+    <path d="M12 5v14M5 12h14" />
+  </svg>
+);
+
 /**
  * Home (mock: pages/Main.dc.html). State lives in the URL: `?tab=creators|event`, `?view=following|latest|collections`, `?cat=<CATEGORY>`.
  * This step has the Showcase tab; Creators / Event and the search panels follow.
@@ -32,6 +39,7 @@ const MODE_LABEL: Record<Mode, string> = { showcase: "ผลงาน", creators
 export default function Main() {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
+  const panels = useShellPanels();
   const tab = params.get("tab");
   const mode: Mode = tab === "creators" || tab === "event" ? tab : "showcase";
   const catParam = params.get("cat");
@@ -92,13 +100,18 @@ export default function Main() {
     <main className="sc-main mn">
       <div className="mn-row">
         <div className="mn-tools">
-          {/* Colour search and the search panel come with step 3c; until then search opens the old page. */}
-          <Link to={SC_LINKS.search} aria-label="ค้นหา" className="mn-tool">
+          <button
+            type="button"
+            aria-label="ค้นหา"
+            aria-haspopup="dialog"
+            className="mn-tool"
+            onClick={(e) => panels.openSearch(e.currentTarget, "main")}
+          >
             <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.33">
               <circle cx="11" cy="11" r="7" />
               <path d="M20 20l-3.5-3.5" />
             </svg>
-          </Link>
+          </button>
         </div>
         <div role="group" aria-label="เลือกมุมมอง" className="mn-modes">
           {MODES.map(([key, label]) => (
@@ -107,11 +120,15 @@ export default function Main() {
             </button>
           ))}
         </div>
-        <Link to={user ? SC_LINKS.upload : SC_LINKS.login} aria-label="ลงงาน" className="mn-add">
-          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.33">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-        </Link>
+        {user ? (
+          <button type="button" aria-label="ลงงาน" aria-haspopup="dialog" className="mn-add" onClick={(e) => panels.openNew(e.currentTarget)}>
+            <AddIcon />
+          </button>
+        ) : (
+          <Link to={SC_LINKS.login} aria-label="ลงงาน" className="mn-add">
+            <AddIcon />
+          </Link>
+        )}
       </div>
 
       {mode === "showcase" || mode === "creators" ? (

@@ -22,10 +22,11 @@ export const SC_LINKS = {
   events: "/?tab=event",
   getInTouch: "/learn",
   feedback: "/me/feedback",
-  search: "/search",
   chat: "/chat",
   notifications: "/notifications",
   upload: "/portfolio/new",
+  /** Any member can post an event; it waits for the team's review. */
+  eventNew: "/dashboard/exhibition/new",
   myProfile: "/portfolio",
   myStudio: "/dashboard",
   settings: "/settings",

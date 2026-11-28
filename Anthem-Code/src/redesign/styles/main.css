@@ -66,7 +66,13 @@
   text-decoration: none;
 }
 
-.sc-app :is(.mn-tool, .mn-mode, .mn-view, .mn-chip, .mn-save):focus-visible {
+.sc-app button.mn-add {
+  padding: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.sc-app :is(.mn-tool, .mn-add, .mn-mode, .mn-view, .mn-chip, .mn-save):focus-visible {
   outline: 2px solid #282929;
   outline-offset: 3px;
 }

@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useRef } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,11 +10,15 @@ import { signOutApp } from "@/lib/signOutApp";
 import { usePresence } from "../lib/usePresence";
 import { SC_LINKS, shellPageFor, type ShellPage } from "../routes";
 import AccountMenu from "./AccountMenu";
+import NewChooser from "./NewChooser";
+import SearchPanel from "./SearchPanel";
+import { ShellPanelsContext, type ShellPanels } from "./panels";
 import logoUrl from "../assets/logo.svg";
 import "../styles/fonts.css";
 import "../styles/tokens.css";
 import "../styles/reset.css";
 import "../styles/shell.css";
+import "../styles/panels.css";
 
 const FALLBACK: ShellPage = { page: "", tabbar: false, tab: "", footer: true };
 
@@ -42,6 +46,50 @@ export default function RedesignShell() {
   const closeMenu = menu.close;
   const acctRef = useRef<HTMLButtonElement>(null);
 
+  // Search capsule and the "+" chooser: centre popups over a blurred veil, opened from the header or a page.
+  const spotlight = usePresence(220);
+  const chooser = usePresence(220);
+  const { open: openSearch, close: closeSearch } = spotlight;
+  const { open: openChooser, close: closeChooser } = chooser;
+  const opener = useRef<HTMLElement | null>(null);
+  const [spot, setSpot] = useState({ top: "38%", centred: true });
+
+  const closePanel = useCallback(
+    (restoreFocus = true) => {
+      closeSearch();
+      closeChooser();
+      if (restoreFocus) opener.current?.focus();
+    },
+    [closeSearch, closeChooser],
+  );
+
+  const panels = useMemo<ShellPanels>(
+    () => ({
+      openSearch: (el, from) => {
+        opener.current = el;
+        const vh = window.innerHeight;
+        const r = el?.getBoundingClientRect();
+        const y = r ? (r.top + r.bottom) / 2 : 0;
+        // Mock: on a very tall screen the capsule sits near its button; otherwise 18vh (home) or centred at 38% (header).
+        const top =
+          from === "main"
+            ? vh > 1200 && y ? `${y + 60}px` : "18vh"
+            : vh > 1200 && y ? `${Math.max(200, y + 160)}px` : "38%";
+        setSpot({ top, centred: from === "header" });
+        closeMenu();
+        closeChooser();
+        openSearch();
+      },
+      openNew: (el) => {
+        opener.current = el;
+        closeMenu();
+        closeSearch();
+        openChooser();
+      },
+    }),
+    [closeMenu, closeChooser, closeSearch, openSearch, openChooser],
+  );
+
   // Page background outside .sc-app (overscroll, short pages), while the new frame is on screen.
   useEffect(() => {
     const root = document.documentElement;
@@ -51,7 +99,9 @@ export default function RedesignShell() {
 
   useEffect(() => {
     closeMenu();
-  }, [pathname, closeMenu]);
+    closeSearch();
+    closeChooser();
+  }, [pathname, closeMenu, closeSearch, closeChooser]);
 
   const name = profile?.display_name?.trim() || profile?.username || "";
   const handle = profile?.username || null;
@@ -84,14 +134,21 @@ export default function RedesignShell() {
           </Link>
           <nav aria-label="เมนูบัญชี" className="sc-hd-nav">
             <Link to={SC_LINKS.getInTouch} className="sc-hd-text">Get in Touch</Link>
-            {/* Search and notifications become panels with the Main page (step 3); until then they open the old pages. */}
+            {/* On the home page the search button sits in the page (Main) instead. */}
             {cfg.header === "main" ? null : (
-              <Link to={SC_LINKS.search} aria-label="ค้นหา" title="ค้นหา" className="sc-ib">
+              <button
+                type="button"
+                aria-label="ค้นหา"
+                title="ค้นหา"
+                aria-haspopup="dialog"
+                className="sc-ib"
+                onClick={(e) => panels.openSearch(e.currentTarget, "header")}
+              >
                 <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.33" strokeLinecap="round">
                   <circle cx="11" cy="11" r="6.5" />
                   <path d="M16 16l4 4" />
                 </svg>
-              </Link>
+              </button>
             )}
             <Link to={SC_LINKS.feedback} aria-label="ส่งฟีดแบ็ก" className="sc-ib sc-hd-fb">
               <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.33" strokeLinecap="round" strokeLinejoin="round">
@@ -142,9 +199,11 @@ export default function RedesignShell() {
         </div>
       </header>
 
-      <Suspense fallback={<div className="sc-main-wait" />}>
-        <Outlet />
-      </Suspense>
+      <ShellPanelsContext.Provider value={panels}>
+        <Suspense fallback={<div className="sc-main-wait" />}>
+          <Outlet />
+        </Suspense>
+      </ShellPanelsContext.Provider>
 
       {cfg.footer ? (
         <footer className="sc-ft">
@@ -211,6 +270,9 @@ export default function RedesignShell() {
           onLogOut={() => void logOut()}
         />
       ) : null}
+
+      {spotlight.mounted ? <SearchPanel top={spot.top} centred={spot.centred} leaving={spotlight.leaving} onClose={closePanel} /> : null}
+      {user && chooser.mounted ? <NewChooser leaving={chooser.leaving} onClose={closePanel} /> : null}
     </div>
   );
 }
