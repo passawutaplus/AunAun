@@ -1,0 +1,68 @@
+/* A work's body as its owner laid it out (Upload Preview = Work page). Values from the mock Upload Preview. */
+.sc-app .sc-wb {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sc-app .sc-wb-img {
+  position: relative;
+  width: 100%;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #F2F2F0;
+}
+
+.sc-app .sc-wb-img img,
+.sc-app .sc-wb-cell img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sc-app .sc-wb-video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 20px;
+  background: #111111;
+  object-fit: contain;
+}
+
+.sc-app .sc-wb-text,
+.sc-app .sc-wb-celltext {
+  margin: 0;
+  white-space: pre-wrap;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.sc-app .sc-wb-row {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-auto-rows: 84px;
+  gap: 16px;
+}
+
+.sc-app .sc-wb-cell {
+  position: relative;
+  min-width: 0;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #EDEDEA;
+}
+
+.sc-app .sc-wb-empty {
+  background: #F2F2F0;
+}
+
+.sc-app .sc-wb-celltext {
+  border-radius: 0;
+  background: none;
+}
+
+/* Fit — the whole picture inside its frame */
+.sc-app .sc-wb-fit img {
+  object-fit: contain;
+}

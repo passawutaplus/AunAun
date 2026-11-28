@@ -11,6 +11,9 @@ import { SC_LINKS } from "../routes";
 import { homeWorksQuery, profileHref } from "../main/useCreators";
 import { useFollows } from "../main/useFollows";
 import { useSaveFlow } from "../main/useSaveFlow";
+import { ensureTextFonts } from "../lib/textFonts";
+import { isScContent } from "../work/workContent";
+import WorkBody, { bodyFromBlocks } from "../work/WorkBody";
 import WorkComments from "../work/WorkComments";
 import { useImageLikes, useOwnerWorks, useWork, useWorkCatalog } from "../work/useWork";
 import { formatCount, licenceLine, neighbour, pickSimilar, workDateLine } from "../work/workContent";
@@ -21,6 +24,7 @@ import "../styles/fonts.css";
 import "../styles/tokens.css";
 import "../styles/reset.css";
 import "../styles/work.css";
+import "../styles/work-body.css";
 
 /** Router state of a work opened over another page (home grid): the page underneath and the ‹ › list. */
 export type WorkOverlayState = { backgroundLocation: Location; scList?: string[] };
@@ -59,6 +63,33 @@ function WorkView({ id, overlay, list, linkState, close }: ViewProps) {
   const profHref = isOwn ? SC_LINKS.myProfile : who ? profileHref(who) : SC_LINKS.home;
 
   const likes = useImageLikes(id, media.find((m) => m.kind === "image")?.url);
+  const firstAlt = artistName ? `${title} โดย ${artistName}` : title;
+  const body = useMemo(() => (row && isScContent(row.content_blocks) ? bodyFromBlocks(row.content_blocks, row.media_sizes) : null), [row]);
+  useEffect(() => {
+    if (body?.some((b) => b.kind === "text" || b.kind === "row")) ensureTextFonts();
+  }, [body]);
+  /** The heart on each picture (likes per picture, owner 2026-11-28). */
+  const likeButton = (url: string, i: number) => {
+    const like = likes.likeFor(url, i);
+    if (!like) return null;
+    return (
+      <button
+        type="button"
+        className="wk-lk"
+        aria-label={`ถูกใจ ${formatCount(like.likes)}`}
+        aria-pressed={like.liked}
+        data-on={like.liked ? "" : undefined}
+        onClick={() => {
+          if (!likes.toggle(url)) navigate(SC_LINKS.login);
+        }}
+      >
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill={like.liked ? "#282929" : "none"} stroke="#282929" strokeWidth="1.33" strokeLinejoin="round">
+          <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" />
+        </svg>
+        {formatCount(like.likes)}
+      </button>
+    );
+  };
   const follows = useFollows();
   const followed = !!ownerId && follows.ids.has(ownerId);
   const saves = useSaveFlow();
@@ -230,8 +261,9 @@ function WorkView({ id, overlay, list, linkState, close }: ViewProps) {
       <div className="wk-wrap" role={overlay ? "dialog" : undefined} aria-modal={overlay ? true : undefined} aria-label={`ผลงาน ${title}`}>
         <article ref={cardRef} className="wk-card">
           <section aria-label="ตัวงาน" className="wk-body">
-            {media.map((m, i) => {
-              const like = m.kind === "image" ? likes.likeFor(m.url, i) : null;
+            {/* Made in the new editor: the body exactly as Upload's Preview showed it (owner 2026-11-28). */}
+            {body ? <WorkBody items={body} firstAlt={firstAlt} sizes="(max-width: 1000px) 100vw, 1000px" imageExtra={likeButton} /> : null}
+            {body ? null : media.map((m, i) => {
               return (
                 <div key={m.url} className="wk-pic">
                   {m.kind === "video" ? (
@@ -251,29 +283,13 @@ function WorkView({ id, overlay, list, linkState, close }: ViewProps) {
                       src={proxiedImageUrl(m.url, 1600)}
                       srcSet={proxiedImageSrcSet(m.url, [640, 1080, 1920]) || undefined}
                       sizes="(max-width: 1000px) 100vw, 1000px"
-                      alt={i === 0 ? (artistName ? `${title} โดย ${artistName}` : title) : ""}
+                      alt={i === 0 ? firstAlt : ""}
                       loading={i < 2 ? "eager" : "lazy"}
                       decoding="async"
                       style={m.ratio ? { aspectRatio: String(m.ratio), minHeight: 0 } : undefined}
                     />
                   )}
-                  {like ? (
-                    <button
-                      type="button"
-                      className="wk-lk"
-                      aria-label={`ถูกใจ ${formatCount(like.likes)}`}
-                      aria-pressed={like.liked}
-                      data-on={like.liked ? "" : undefined}
-                      onClick={() => {
-                        if (!likes.toggle(m.url)) navigate(SC_LINKS.login);
-                      }}
-                    >
-                      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill={like.liked ? "#282929" : "none"} stroke="#282929" strokeWidth="1.33" strokeLinejoin="round">
-                        <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" />
-                      </svg>
-                      {formatCount(like.likes)}
-                    </button>
-                  ) : null}
+                  {m.kind === "image" ? likeButton(m.url, i) : null}
                 </div>
               );
             })}

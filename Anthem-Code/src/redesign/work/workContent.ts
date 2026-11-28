@@ -77,6 +77,11 @@ export function htmlToText(html: string): string {
     .trim();
 }
 
+/** True when the blocks come from the new editor (upload/model.ts): the Work page then shows them like Upload's Preview. */
+export function isScContent(raw: unknown): boolean {
+  return Array.isArray(raw) && raw.some((b) => !!b && typeof b === "object" && ((b as Record<string, unknown>).type === "sc_layout" || "scStyle" in (b as object)));
+}
+
 const sameLine = (s: string) => s.replace(/\s+/g, " ").trim().toLocaleLowerCase("th");
 
 /**
@@ -86,6 +91,8 @@ const sameLine = (s: string) => s.replace(/\s+/g, " ").trim().toLocaleLowerCase(
  */
 export function workText(row: Pick<WorkRow, "description" | "content_blocks">): string {
   const desc = htmlToText(row.description ?? "");
+  // Works from the new editor show their texts in place (WorkBody), so only the description goes here.
+  if (isScContent(row.content_blocks)) return desc;
   const known = new Set(desc.split("\n").map(sameLine).filter(Boolean));
   const blocks = htmlToText(flattenContentBlocks(parseContentBlocks(row.content_blocks)))
     .split("\n")
