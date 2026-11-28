@@ -40,18 +40,21 @@ export const SC_LINKS = {
   privacy: "/legal/privacy",
 } as const;
 
+/** Frame of the 404 page (mock `not-found`): also used for every unknown or cut URL (step 14). */
+export const NOT_FOUND_PAGE: ShellPage = { page: "not-found", tabbar: true, tab: "", footer: true };
+
 const PAGES: ReadonlyArray<{ match: RegExp; page: ShellPage }> = [
   { match: /^\/$/, page: { page: "main", tabbar: true, tab: "home", footer: true, header: "main" } },
   // Work on its own page: no header, footer or tab bar, only the × of the page (mock: body[data-tab="off"]).
   { match: /^\/showcase\/[^/]+\/?$/, page: { page: "work", tabbar: false, tab: "", footer: false, header: "none" } },
   // Preview of the frame while pages are being rebuilt (step 2a).
-  { match: /^\/sc\/shell\/?$/, page: { page: "not-found", tabbar: true, tab: "", footer: true } },
+  { match: /^\/sc\/shell\/?$/, page: NOT_FOUND_PAGE },
   // Text pages (step 13), on their old URLs.
   { match: /^\/legal\/terms\/?$/, page: { page: "terms", tabbar: true, tab: "", footer: true } },
   { match: /^\/legal\/privacy\/?$/, page: { page: "privacy", tabbar: true, tab: "", footer: true } },
   { match: /^\/help\/?$/, page: { page: "help", tabbar: true, tab: "", footer: true } },
   { match: /^\/me\/feedback\/?$/, page: { page: "feedback", tabbar: true, tab: "", footer: true } },
-  { match: /^\/error\/404\/?$/, page: { page: "not-found", tabbar: true, tab: "", footer: true } },
+  { match: /^\/error\/404\/?$/, page: NOT_FOUND_PAGE },
   { match: /^\/learn\/?$/, page: { page: "get-in-touch", tabbar: true, tab: "", footer: true } },
   // Login, sign-up and password pages (step 7): the mock's centre box only, no header, footer or tab bar.
   { match: /^\/(auth|auth\/forgot|reset-password)\/?$/, page: { page: "login", tabbar: false, tab: "", footer: false, header: "none" } },
@@ -76,8 +79,94 @@ const PAGES: ReadonlyArray<{ match: RegExp; page: ShellPage }> = [
   { match: /^\/exhibition\/[^/]+\/locations\/?$/, page: { page: "locations", tabbar: false, tab: "event", footer: true } },
 ];
 
+/**
+ * Old pages that stay as they are, in the old frame (step 14). Every other old URL is cut:
+ * it moves to its new page (REDIRECTS) or shows the new 404.
+ */
+const LEGACY_KEPT: ReadonlyArray<RegExp> = [
+  // Back office: keeps its old look (owner decision 4).
+  /^\/admin(\/|$)/,
+  // Dev-only previews (they exist in `npm run dev` only).
+  ...(import.meta.env.DEV ? [/^\/dev\//] : []),
+  // Chat and notifications: step 12 rebuilds them (until then the old pages).
+  /^\/chat(\/[^/]+)?\/?$/,
+  /^\/notifications\/?$/,
+  // Sign-in logic, and accounts the team created must set their own password first.
+  /^\/auth\/callback\/?$/,
+  /^\/account\/set-password\/?$/,
+  // Creator invitation links never expire (owner decision 3).
+  /^\/invite\/(creator\/[^/]+(\/form)?|review\/[^/]+)\/?$/,
+  // Journal (SEO), Shop / Support / Donate (real orders), the other legal pages: old pages for now (decision 3).
+  /^\/journal(\/[^/]+)?\/?$/,
+  /^\/exhibition\/category\/journal\/?$/,
+  /^\/support(\/(donate|partners))?\/?$/,
+  /^\/shop(\/bag|\/order\/[^/]+|\/[^/]+)?\/?$/,
+  /^\/legal(\/[^/]+)?\/?$/,
+  // Old help articles (step 13 kept them).
+  /^\/help\/[^/]+(\/[^/]+)?\/?$/,
+  // A public catalog (series) or collection on its own page: no page in the new design yet.
+  /^\/(series|collections)\/[^/]+\/?$/,
+  // Error pages other than 404: the mock has a 404 only.
+  /^\/error(\/(400|403|405|500|502|503))?\/?$/,
+];
+
+/** Event types of the Event tab (`?type=`), as in main/useHomeEvents EVENT_TYPES without "highlight". */
+const EVENT_TYPE_IDS = ["open_call", "exhibition", "workshop", "talk_forum", "art_fair", "meetup"] as const;
+
+/** Old `/exhibition/category/<slug>` ("_" written "-") → the Event tab with that type. */
+function eventsOfType(slug: string): string {
+  const type = slug.toLowerCase().replace(/-/g, "_");
+  return (EVENT_TYPE_IDS as ReadonlyArray<string>).includes(type) ? `${SC_LINKS.events}&type=${type}` : SC_LINKS.events;
+}
+
+/** Old URLs of a page the new design has elsewhere. The query of the old URL is kept (RedirectTo rules). */
+const REDIRECTS: ReadonlyArray<{ match: RegExp; to: (m: RegExpMatchArray) => string }> = [
+  { match: /^\/exhibition\/?$/, to: () => SC_LINKS.events },
+  { match: /^\/exhibition\/category\/([^/]+)\/?$/, to: (m) => eventsOfType(m[1]) },
+  { match: /^\/project\/([^/]+)\/?$/, to: (m) => `/showcase/${m[1]}` },
+  { match: /^\/u\/([^/]+)\/followers\/?$/, to: (m) => `/u/${m[1]}` },
+  // App-icon shortcut: search sits on the home page.
+  { match: /^\/search\/?$/, to: () => SC_LINKS.home },
+  { match: /^\/learn\/faq\/?$/, to: () => SC_LINKS.help },
+  { match: /^\/learn\/[^/]+\/?$/, to: () => SC_LINKS.getInTouch },
+  { match: /^\/(me\/reports|reports|feedback|research\/feedback)\/?$/, to: () => SC_LINKS.feedback },
+  // Studio tabs of cut features (hire, collab, packages, objects, documents, payout, reviews, billing / Pro)
+  // and the packages editor → My Studio. The tabs My Studio has are pages above.
+  { match: /^\/dashboard\/.+$/, to: () => SC_LINKS.myStudio },
+  { match: /^\/portfolio\/packages(\/.*)?$/, to: () => SC_LINKS.myStudio },
+  // My catalogs (series) are a tab of My Studio.
+  { match: /^\/series\/?$/, to: () => "/dashboard/catalogs" },
+  // Mood boards were already off: they went to My Profile, as today.
+  { match: /^\/inspire(\/.*)?$/, to: () => SC_LINKS.myProfile },
+];
+
+/** What a URL does under the new design. */
+export type RedesignRoute =
+  | { kind: "page"; page: ShellPage }
+  | { kind: "legacy" }
+  | { kind: "redirect"; to: string }
+  /** A package / object link (cut): its creator's profile, looked up as today (CommerceLinkRedirect). */
+  | { kind: "commerce"; type: "service" | "object"; id: string }
+  | { kind: "not-found" };
+
+export function redesignRouteFor(pathname: string): RedesignRoute {
+  const page = PAGES.find((p) => p.match.test(pathname))?.page;
+  if (page) return { kind: "page", page };
+  if (LEGACY_KEPT.some((re) => re.test(pathname))) return { kind: "legacy" };
+  for (const r of REDIRECTS) {
+    const m = pathname.match(r.match);
+    if (m) return { kind: "redirect", to: r.to(m) };
+  }
+  const commerce = pathname.match(/^\/(service|object)\/([^/]+)\/?$/);
+  if (commerce) return { kind: "commerce", type: commerce[1] as "service" | "object", id: commerce[2] };
+  return { kind: "not-found" };
+}
+
+/** Frame for a URL: null = an old page in the old frame. Cut and unknown URLs get the frame of the 404. */
 export function shellPageFor(pathname: string): ShellPage | null {
-  return PAGES.find((p) => p.match.test(pathname))?.page ?? null;
+  const route = redesignRouteFor(pathname);
+  if (route.kind === "page") return route.page;
+  return route.kind === "legacy" ? null : NOT_FOUND_PAGE;
 }
 
 export function isRedesignPath(pathname: string): boolean {

@@ -24,6 +24,8 @@ const fullProduct =
   (process.env.VITE_APLUS1_FULL_PRODUCT || "").toLowerCase() === "true";
 const hiringBoard =
   (process.env.VITE_APLUS1_HIRING_BOARD_ENABLED || "").toLowerCase() === "true";
+// New design: leave out the URLs it cuts or moves (REDESIGN_DROPPED_PATHS).
+const redesign = (process.env.VITE_REDESIGN || "").toLowerCase() === "true";
 
 function loadDotEnv() {
   const envPath = join(root, ".env");
@@ -230,6 +232,7 @@ const opts = {
   useSeedCatalog: !isProductionBase,
   fullProduct,
   hiringBoard,
+  redesign,
   ...(live || {}),
   images: [...(live?.images || []), ...journalImages],
 };

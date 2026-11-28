@@ -1,4 +1,4 @@
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useProfilesByIds } from "@/core/profiles/useProfilesByIds";
@@ -38,7 +38,7 @@ const bg = (url: string) => (url ? { backgroundImage: `url(${JSON.stringify(url)
  * Pages render their own <main class="sc-main"> through the outlet. None of the old site chrome
  * mounts on these routes (see LegacyChrome in App.tsx). Data comes from the existing hooks only.
  */
-export default function RedesignShell() {
+export default function RedesignShell({ children }: { children?: ReactNode }) {
   const { pathname, search } = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -306,7 +306,7 @@ export default function RedesignShell() {
 
       <ShellPanelsContext.Provider value={panels}>
         <Suspense fallback={<div className="sc-main-wait" />}>
-          <Outlet />
+          {children ?? <Outlet />}
         </Suspense>
       </ShellPanelsContext.Provider>
 
