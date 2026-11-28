@@ -1151,6 +1151,8 @@
   letter-spacing: .06em;
   color: #666666;
   white-space: nowrap;
+  min-width: 0;
+  overflow: hidden; /* narrow columns (≈800px window): the tag must not run into the next card */
 }
 
 .sc-app .mn-ev-dot {
@@ -1163,6 +1165,9 @@
 
 .sc-app .mn-ev-tag {
   margin-left: auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   color: #8A8A87;
 }
 
