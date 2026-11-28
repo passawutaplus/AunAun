@@ -11,7 +11,7 @@ import { usePosterLabel } from "../event/usePosterLabel";
 import { SC_LINKS } from "../routes";
 import { useShellPanels } from "../shell/panels";
 import ScLoader from "./ScLoader";
-import { EVENT_KIND, dayOf, inView, isoDay, lastDay, monthCaps, shortDate, useHomeEvents, weekdayDay, type EventType, type EventView } from "./useHomeEvents";
+import { EVENT_KIND, dayOf, inView, isoDay, lastDay, monthCaps, shortDate, useHomeEvents, viewDays, weekdayDay, type EventType, type EventView } from "./useHomeEvents";
 
 const DAY = 24 * 60 * 60 * 1000;
 const fullDate = (iso: string) => shortDate(iso, true);
@@ -52,7 +52,7 @@ export default function Events({ view, type }: { view: EventView; type: EventTyp
       {type === "highlight" ? (
         featured.length ? null : <p className="mn-none">ไม่เจอสิ่งที่ตรงกัน</p>
       ) : listed.length ? (
-        <EventList events={listed} byDay={view !== "now"} today={today} />
+        <EventList events={listed} byDay={view !== "now"} today={today} days={viewDays(view, today)} />
       ) : (
         <p className="mn-none">ไม่เจอสิ่งที่ตรงกัน</p>
       )}
@@ -203,7 +203,7 @@ function Highlight({ events, venues, today }: { events: HomeEventRow[]; venues: 
   );
 }
 
-function EventList({ events, byDay, today }: { events: HomeEventRow[]; byDay: boolean; today: string }) {
+function EventList({ events, byDay, today, days }: { events: HomeEventRow[]; byDay: boolean; today: string; days: string | null }) {
   const groups = useMemo(() => {
     if (!byDay) return [{ day: today, items: events }];
     const map = new Map<string, HomeEventRow[]>();
@@ -220,7 +220,14 @@ function EventList({ events, byDay, today }: { events: HomeEventRow[]; byDay: bo
   return (
     <section aria-label="อีเว้นท์" className="mn-ev-list">
       <div className="mn-ev-month">
-        <span lang="en">{monthCaps(first)}</span>
+        <span className="mn-ev-mo">
+          <span lang="en">{monthCaps(first)}</span>
+          {days ? (
+            <span className="mn-ev-range" lang="en">
+              {days}
+            </span>
+          ) : null}
+        </span>
         <button type="button" className="mn-ev-cal" lang="en" aria-haspopup="dialog" onClick={(e) => panels.openCalendar(e.currentTarget)}>
           <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <rect x="3.5" y="5" width="17" height="15.5" rx="2" />

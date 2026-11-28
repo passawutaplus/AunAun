@@ -1151,6 +1151,21 @@
   letter-spacing: .02em;
 }
 
+/* days the view covers, under the month: "Today · 28 Nov" / "23 – 29 Nov" (owner 2026-11-28, not in the mock) */
+.sc-app .mn-ev-mo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sc-app .mn-ev-range {
+  font-size: 13px;
+  font-weight: 300;
+  letter-spacing: .04em;
+  color: #8A8A87;
+  white-space: nowrap;
+}
+
 /* "Full Calendar" under the month (mock Main: opens the Event Calendar popup) */
 .sc-app .mn-ev-cal {
   height: 40px;

@@ -137,7 +137,7 @@ export default function Main() {
     if (v === "following" && !user) navigate(SC_LINKS.login);
     else set("view", v === "discover" ? null : v);
   };
-  const evView: EventView = (EVENT_VIEWS as readonly string[]).includes(viewParam ?? "") ? (viewParam as EventView) : "now";
+  const evView: EventView = (EVENT_VIEWS as readonly string[]).includes(viewParam ?? "") ? (viewParam as EventView) : "all";
   // Saving opens SaveToast (collections); signed out → log-in page.
   const saves = useSaveFlow();
   const { toggle: saveWork } = saves;
@@ -213,7 +213,7 @@ export default function Main() {
         </div>
       ) : (
         <div className="mn-fld">
-          <ViewMenu label="ช่วงเวลา" options={EVENT_VIEWS} labels={EVENT_VIEW_LABEL} value={evView} onPick={(v) => set("view", v === "now" ? null : v)} />
+          <ViewMenu label="ช่วงเวลา" options={EVENT_VIEWS} labels={EVENT_VIEW_LABEL} value={evView} onPick={(v) => set("view", v === "all" ? null : v)} />
           <span aria-hidden="true" className="mn-fld-rule" />
           <div className="mn-chips" role="group" aria-label="ประเภทอีเว้นท์">
             <button type="button" className="mn-chip" aria-pressed={!evType} onClick={() => set("type", null)}>
