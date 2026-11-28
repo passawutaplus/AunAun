@@ -338,7 +338,7 @@ export default function Main() {
 
   // Event filters: When + Type. On the website they sit over the card; in the store app they are part of the
   // header (owner 2026-11-28), so they hide and come back with it while scrolling.
-  // In the app the When menu sits in the header bar before the search button (owner 2026-11-28), the type chips below.
+  // The app has no When menu (owner 2026-11-28: always Anytime); its header shows the type chips below the bar.
   const eventView = (
     <ViewMenu label="ช่วงเวลา" options={EVENT_VIEWS} labels={EVENT_VIEW_LABEL} value={evView} onPick={(v) => set("view", v === "all" ? null : v)} />
   );
@@ -468,7 +468,6 @@ export default function Main() {
               mode={mode}
               onPick={pickMode}
               onSearch={(e) => openAppSearch(e.currentTarget)}
-              lead={mode === "event" ? eventView : null}
               onCalendar={mode === "event" ? (e) => panels.openCalendar(e.currentTarget) : undefined}
               below={
                 mode === "event" ? (
