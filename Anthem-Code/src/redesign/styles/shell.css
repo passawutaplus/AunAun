@@ -576,3 +576,31 @@
     justify-content: center;
   }
 }
+
+/* Load error with a retry button (shell/LoadError.tsx) — used by every page and list. */
+.sc-app .sc-load-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 48px 16px;
+  text-align: center;
+  color: var(--sc-ink-2);
+}
+.sc-app .sc-load-error p {
+  margin: 0;
+}
+.sc-app .sc-load-error-btn {
+  min-height: 44px;
+  padding: 0 20px;
+  border: 1px solid var(--sc-ink);
+  border-radius: var(--sc-btn-round);
+  background: transparent;
+  color: var(--sc-ink);
+  font: inherit;
+  cursor: pointer;
+}
+.sc-app .sc-load-error-btn:focus-visible {
+  outline: 2px solid var(--sc-ink);
+  outline-offset: 2px;
+}
