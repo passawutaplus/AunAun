@@ -2,7 +2,13 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tier } from "@/core/subscription";
 import { compressCommunityVideo } from "@/lib/compressCommunityVideo";
 import { abortable } from "@/lib/ffmpegCore";
+import { fetchTaggedUserSummaries, type TaggedUserSummary } from "@/lib/communityTaggedUsers";
 import { LEGAL_ATTESTATION_VERSION } from "@/lib/legalConfig";
+import { cancelProjectCollabInvite, fetchProjectCollabInvites, syncProjectCollabInvites } from "@/lib/portfolioCollabInvites";
+import { createProjectFileAsset, type ProjectAsset } from "@/lib/projectAssets";
+import { applyScanResult, evaluateProjectAssetOnAdd } from "@/lib/projectAssetScan";
+import { enqueueProjectAssetScan } from "@/lib/triggerProjectAssetScan";
+import { uploadProjectAssetFile } from "@/lib/uploadProjectAsset";
 import { uploadAnthemMedia } from "@/lib/sharedMediaUpload";
 import { isSchemaMismatchError } from "@/lib/supabaseErrors";
 import { isGifFile, uploadProjectGif } from "@/lib/uploadProjectGif";
@@ -102,6 +108,9 @@ export type WorkWrite = {
   license_note: string;
   ai_assisted: boolean;
   ai_disclosure_note: string;
+  /** FILES & LINKS, as the old ProjectAssetsEditor. */
+  project_assets: unknown[];
+  external_links: unknown[];
 };
 
 /**
@@ -129,14 +138,83 @@ export async function saveWork(id: string, ownerId: string, fields: WorkWrite, o
   if (error) throw error;
 }
 
-/** Upload's fields that `getWork` does not read (licence terms, AI disclosure). */
-export type WorkEditExtras = { license_note: string | null; ai_assisted: boolean | null; ai_disclosure_note: string | null };
+/** Upload's fields that `getWork` does not read (licence terms, AI disclosure, attachments, credited people). */
+export type WorkEditExtras = {
+  license_note: string | null;
+  ai_assisted: boolean | null;
+  ai_disclosure_note: string | null;
+  project_assets: unknown;
+  external_links: unknown;
+  collab_user_ids: string[] | null;
+};
 
 export async function getWorkEditExtras(workId: string): Promise<WorkEditExtras | null> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase.from("projects") as any).select("license_note, ai_assisted, ai_disclosure_note").eq("id", workId).maybeSingle();
+  const { data, error } = await supabase
+    .from("projects")
+    .select("license_note, ai_assisted, ai_disclosure_note, project_assets, external_links, collab_user_ids")
+    .eq("id", workId)
+    .maybeSingle();
   if (error) throw error;
   return (data as WorkEditExtras | null) ?? null;
+}
+
+// ---------- CREDITS: people tagged on the work (old PortfolioCollabUserPicker) ----------
+
+/**
+ * Accepted (on the work), waiting (tag not answered yet, can be cancelled) and declined (cannot be tagged again
+ * on this work). Accepted ids come from `collab_user_ids`, which only the database writes (respond_project_collab_invite).
+ */
+export type WorkCredits = { accepted: TaggedUserSummary[]; pending: TaggedUserSummary[]; declined: TaggedUserSummary[]; inviteIds: Record<string, string> };
+
+export const NO_CREDITS: WorkCredits = { accepted: [], pending: [], declined: [], inviteIds: {} };
+
+export async function getWorkCredits(workId: string, acceptedIds: readonly string[]): Promise<WorkCredits> {
+  const invites = await fetchProjectCollabInvites(workId);
+  const pendingIds = invites.filter((i) => i.status === "pending").map((i) => i.invited_user_id);
+  const declinedIds = invites
+    .filter((i) => (i.status === "declined" || i.status === "withdrawn") && !acceptedIds.includes(i.invited_user_id) && !pendingIds.includes(i.invited_user_id))
+    .map((i) => i.invited_user_id);
+  const ids = [...new Set([...acceptedIds, ...pendingIds, ...declinedIds])];
+  const people = ids.length ? await fetchTaggedUserSummaries(ids) : [];
+  const by = new Map(people.map((p) => [p.user_id, p]));
+  const pick = (list: readonly string[]) => [...new Set(list)].map((id) => by.get(id)).filter((p): p is TaggedUserSummary => !!p);
+  return {
+    accepted: pick(acceptedIds),
+    pending: pick(pendingIds),
+    declined: pick(declinedIds),
+    inviteIds: Object.fromEntries(invites.filter((i) => i.status === "pending").map((i) => [i.invited_user_id, i.id])),
+  };
+}
+
+/**
+ * Tags new people on a saved work (old editor's syncProjectCollabInvites): only mutual follows who allow tags
+ * ("who can tag me", checked by the database). They are told once the work is Published.
+ */
+export async function tagWorkPeople(workId: string, ownerId: string, credits: WorkCredits, added: readonly TaggedUserSummary[]): Promise<void> {
+  await syncProjectCollabInvites({
+    projectId: workId,
+    ownerId,
+    desiredUserIds: [...added, ...credits.pending, ...credits.accepted].map((u) => u.user_id),
+    acceptedUserIds: credits.accepted.map((u) => u.user_id),
+  });
+}
+
+/** Cancels a tag nobody has answered yet (that person can be tagged again later). */
+export const cancelWorkTag = cancelProjectCollabInvite;
+
+// ---------- FILES & LINKS (old ProjectAssetsEditor) ----------
+
+/** One attachment into the private `project-assets` bucket (PDF, ZIP… ≤ 25 MB, contents checked against the extension). */
+export async function uploadWorkAttachment(file: File, userId: string, folder: string, tier: Tier): Promise<ProjectAsset> {
+  const uploaded = await uploadProjectAssetFile(file, userId, folder, tier);
+  const label = file.name.replace(/\.[^.]+$/, "").trim() || file.name;
+  const draft = createProjectFileAsset({ label, ...uploaded });
+  return applyScanResult(draft, evaluateProjectAssetOnAdd(draft));
+}
+
+/** The server scan of new attachments (scan-project-assets), in the background; `done` gets the verdicts. */
+export function scanWorkAttachments(workId: string, done: (assets: ProjectAsset[], blocked: number) => void): void {
+  enqueueProjectAssetScan(workId, ({ assets, blockedCount }) => done(assets, blockedCount));
 }
 
 /** Every catalog (project_series) the work is in, oldest first — Upload's CATALOG field. */

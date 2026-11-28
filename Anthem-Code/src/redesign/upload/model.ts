@@ -11,6 +11,7 @@
 import type { CSSProperties } from "react";
 import { isAiUseLevel, parseAiUseLevel, serializeAiUseLevel, type AiUseLevel } from "@/lib/aiDisclosure";
 import { isLicenseType, type LicenseType } from "@/lib/licenses";
+import { parseProjectAssets, projectAssetsToExternalLinks, toStoredProjectAssets, type ProjectAsset } from "@/lib/projectAssets";
 import { isScCategory, type ScCategory } from "../lib/categories";
 import { htmlToText, isScContent } from "../work/workContent";
 
@@ -205,6 +206,8 @@ export type Draft = {
   license: LicenseType;
   licenseNote: string;
   ai: AiUseLevel | null;
+  /** More: FILES & LINKS (`project_assets`; clean links also in the legacy `external_links`), as the old ProjectAssetsEditor. */
+  assets: ProjectAsset[];
   /** More: YEAR (the year the work was made) and ASK VIEWERS (owner 2026-11-28; migration 20261129110000). */
   year: string;
   ask: string;
@@ -229,6 +232,7 @@ export function emptyDraft(firstRowId: string): Draft {
     license: "all_rights",
     licenseNote: "",
     ai: null,
+    assets: [],
     year: String(new Date().getFullYear()),
     ask: "",
   };
@@ -374,6 +378,8 @@ export type WorkFields = {
   license_note: string;
   ai_assisted: boolean;
   ai_disclosure_note: string;
+  project_assets: unknown[];
+  external_links: unknown[];
 };
 
 /** The columns of `anthem.projects` for a work, from what is on screen. Unfinished uploads and errors are left out. */
@@ -444,6 +450,9 @@ export function toWorkFields(mode: Mode, d: Draft, media: Record<string, Media>)
     license_note: d.license === "custom" ? d.licenseNote.trim() : "",
     ai_assisted: d.ai !== null,
     ai_disclosure_note: serializeAiUseLevel(d.ai !== null, d.ai),
+    // The database keeps the scan function's verdict of an unchanged item, whatever is sent (migration 20261010100000).
+    project_assets: toStoredProjectAssets(d.assets),
+    external_links: projectAssetsToExternalLinks(d.assets),
   };
 }
 
@@ -468,6 +477,8 @@ export type StoredWork = {
   license_note?: string | null;
   ai_assisted?: boolean | null;
   ai_disclosure_note?: string | null;
+  project_assets?: unknown;
+  external_links?: unknown;
 };
 
 /** Same reading as the old editor (parseAiUseLevel): the flag off = no AI, whatever the note says. */
@@ -596,6 +607,7 @@ export function fromWork(row: StoredWork, newId: () => string): { mode: Mode; dr
     license: row.license_type && isLicenseType(row.license_type) ? row.license_type : "all_rights",
     licenseNote: row.license_note ?? "",
     ai: aiOf(row),
+    assets: parseProjectAssets(row.project_assets, row.external_links),
     year: row.made_year ? String(row.made_year) : "",
     ask: row.ask_viewers ?? "",
   };

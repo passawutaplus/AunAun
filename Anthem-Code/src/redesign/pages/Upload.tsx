@@ -1,12 +1,29 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type DragEvent } from "react";
 import { Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSubscription } from "@/core/subscription";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { takeSharedMedia } from "@/lib/sharedMedia";
+import type { TaggedUserSummary } from "@/lib/communityTaggedUsers";
+import { needsServerScan, type ProjectAssetScanStatus } from "@/lib/projectAssets";
 import { isUuid } from "@/lib/uuid";
 import { isVideoFile, PROJECT_VIDEO_ACCEPT } from "@/lib/videoAccept";
-import { getWorkCatalogIds, getWorkEditExtras, saveWork, setWorkCatalogs, type WorkEditExtras, type WorkWrite } from "@/server/mutations/upload";
+import {
+  cancelWorkTag,
+  getWorkCatalogIds,
+  getWorkCredits,
+  getWorkEditExtras,
+  NO_CREDITS,
+  saveWork,
+  scanWorkAttachments,
+  setWorkCatalogs,
+  tagWorkPeople,
+  uploadWorkAttachment,
+  type WorkCredits,
+  type WorkEditExtras,
+  type WorkWrite,
+} from "@/server/mutations/upload";
 import { getWork, type WorkRow } from "@/server/queries/work";
 import logoUrl from "../assets/logo.svg";
 import { SC_CATEGORIES } from "../lib/categories";
@@ -17,6 +34,7 @@ import { useMyCatalogs, useMyProfile } from "../profile/useMyProfile";
 import { SC_LINKS } from "../routes";
 import LoadError from "../shell/LoadError";
 import BasicEditor, { mediaSrc } from "../upload/BasicEditor";
+import { AttachmentsField, CreditsField } from "../upload/ExtrasFields";
 import { AiField, CatalogField, LicenseField, ToolsField } from "../upload/MetaFields";
 import {
   basicCoverId,
@@ -155,12 +173,14 @@ function UploadEditor({ uid, ownerId, opened }: { uid: string; ownerId: string; 
   const [workId, setWorkId] = useState(init.id);
   // The row's owner: me, or someone else when an admin edits (their catalogs are not shown then).
   const [owner, setOwner] = useState(ownerId);
+  // Catalogs and credits are the owner's own (an admin editing someone's work sees neither).
   const canCatalog = owner === uid;
   const [status, setStatus] = useState<Status>(init.status);
   const [mode, setMode] = useState<Mode>(init.mode);
   const h = useDraftHistory(() => init.draft);
   const d = h.draft;
   const up = useWorkUploads(uid, workId, init.media);
+  const { tier } = useSubscription();
   const media = up.media;
   const profile = useMyProfile(uid).data;
   const catalogsQ = useMyCatalogs(uid).q;
@@ -205,16 +225,54 @@ function UploadEditor({ uid, ownerId, opened }: { uid: string; ownerId: string; 
   }, [canCatalog, catalogsQ.isSuccess, catalogs, d.catalogIds]);
   const savedCats = useRef<string[]>(opened?.catalogIds ?? []);
   const catsDirty = !!cats && !sameIds(cats, savedCats.current.filter((c) => catalogs.some((x) => x.id === c)));
-  const changed = fieldsFp !== savedFp.current || catsDirty;
-  const fp = `${fieldsFp}|${cats ? cats.join(",") : "-"}`;
+  // CREDITS: people already on the work / waiting / declined, and the ones picked now (invited on the next save).
+  const [credits, setCredits] = useState<WorkCredits>(NO_CREDITS);
+  const [tagged, setTagged] = useState<TaggedUserSummary[]>([]);
+  useEffect(() => {
+    if (!opened || ownerId !== uid) return;
+    let on = true;
+    getWorkCredits(opened.id, opened.extras?.collab_user_ids ?? [])
+      .then((c) => on && setCredits(c))
+      .catch(() => undefined);
+    return () => {
+      on = false;
+    };
+  }, [opened, ownerId, uid]);
+  // FILES & LINKS: verdicts of the server scan after a save; uploads still running (Publish waits for them).
+  const [verdicts, setVerdicts] = useState<Record<string, { status: ProjectAssetScanStatus; reason: string | null }>>({});
+  const scannedFp = useRef<string | null>(null);
+  const attJobs = useRef(new Set<Promise<unknown>>());
+  const [attBusy, setAttBusy] = useState(0);
+  const uploadAttachment = useCallback(
+    (file: File) => {
+      const p = uploadWorkAttachment(file, uid, workId, tier);
+      attJobs.current.add(p);
+      setAttBusy((n) => n + 1);
+      void p
+        .catch(() => undefined)
+        .finally(() => {
+          attJobs.current.delete(p);
+          setAttBusy((n) => n - 1);
+        });
+      return p;
+    },
+    [uid, workId, tier],
+  );
+  const settleAll = useCallback(async () => {
+    await up.settle();
+    while (attJobs.current.size) await Promise.allSettled([...attJobs.current]);
+  }, [up]);
+
+  const changed = fieldsFp !== savedFp.current || catsDirty || tagged.length > 0;
+  const fp = `${fieldsFp}|${cats ? cats.join(",") : "-"}|${tagged.map((u) => u.user_id).join(",")}`;
   const dirty = status === "new" ? hasContent(d) : changed;
   const ready = readiness(mode, d, media);
   const tryMiss = tried && !ready.ready;
 
   // What an async step (a save after an upload, a queued save) must read: the newest, not the render it began in.
-  const live = useRef({ mode, d, status, workId, owner, cats });
+  const live = useRef({ mode, d, status, workId, owner, cats, credits, tagged, mine: canCatalog });
   useLayoutEffect(() => {
-    live.current = { mode, d, status, workId, owner, cats };
+    live.current = { mode, d, status, workId, owner, cats, credits, tagged, mine: canCatalog };
   });
 
   useEffect(() => {
@@ -230,7 +288,7 @@ function UploadEditor({ uid, ownerId, opened }: { uid: string; ownerId: string; 
   const persist = useCallback(
     (next: WorkWrite["status"], attest = false) => {
       const run = async () => {
-        const { mode: m, d: dd, status: st, workId: id, owner: ow, cats: cc } = live.current;
+        const { mode: m, d: dd, status: st, workId: id, owner: ow, cats: cc, credits: cr, tagged: tg, mine } = live.current;
         const md = up.latest();
         const f = toWorkFields(m, dd, md);
         const insert = st === "new";
@@ -243,6 +301,25 @@ function UploadEditor({ uid, ownerId, opened }: { uid: string; ownerId: string; 
           savedCats.current = cc;
         }
         savedFp.current = JSON.stringify(f);
+        // Tags go out once the work exists (they are told when it is Published, as in the old editor).
+        if (tg.length && mine) {
+          try {
+            await tagWorkPeople(id, ow, cr, tg);
+            setCredits(await getWorkCredits(id, cr.accepted.map((u) => u.user_id)));
+          } catch (e) {
+            say(e instanceof Error && e.message ? e.message : "แท็กไม่สำเร็จ ลองใหม่นะ");
+          }
+          setTagged((cur) => cur.filter((u) => !tg.some((x) => x.user_id === u.user_id)));
+        }
+        // New or changed attachments: the server scan, once per list (old editor: after each save).
+        const stored = JSON.stringify(f.project_assets);
+        if (needsServerScan(dd.assets) && stored !== scannedFp.current) {
+          scannedFp.current = stored;
+          scanWorkAttachments(id, (assets, blocked) => {
+            setVerdicts(Object.fromEntries(assets.map((a) => [a.id, { status: a.scan_status, reason: a.scan_reason ?? null }])));
+            if (blocked) say("มีไฟล์หรือลิงก์ไม่ผ่านการตรวจ เอาออกได้เลยนะ");
+          });
+        }
         setSavedAt(hhmm());
         if (insert) navigate(`/portfolio/${id}/edit`, { replace: true });
         for (const key of invalidateKeys(ow, id)) void qc.invalidateQueries({ queryKey: key });
@@ -251,7 +328,7 @@ function UploadEditor({ uid, ownerId, opened }: { uid: string; ownerId: string; 
       chain.current = p.catch(() => undefined);
       return p;
     },
-    [up, navigate, qc],
+    [up, navigate, qc, say],
   );
 
   // Drafts save themselves (mock "Saved HH:MM"); a work that is already out saves only with "บันทึกการแก้ไข".
@@ -267,7 +344,7 @@ function UploadEditor({ uid, ownerId, opened }: { uid: string; ownerId: string; 
   }, [autosave, changed, fp, status, fields.title, fields.cover_url, persist, say]);
 
   // Closing the tab with unsaved work or a running upload asks first.
-  const guard = up.uploading || dirty;
+  const guard = up.uploading || attBusy > 0 || dirty;
   useEffect(() => {
     if (!guard) return;
     const f = (e: BeforeUnloadEvent) => {
@@ -455,6 +532,13 @@ function UploadEditor({ uid, ownerId, opened }: { uid: string; ownerId: string; 
 
   const setField = <K extends "title" | "desc" | "tags" | "year" | "ask" | "licenseNote">(k: K, v: string) => h.update((dd) => ({ ...dd, [k]: v }), k);
   const setMeta = (p: Partial<Pick<Draft, "tools" | "catalogIds" | "license" | "ai">>) => h.update((dd) => ({ ...dd, ...p }));
+  const cancelTag = (u: TaggedUserSummary) => {
+    const inviteId = credits.inviteIds[u.user_id];
+    if (!inviteId) return;
+    cancelWorkTag(inviteId)
+      .then(() => setCredits((c) => ({ ...c, pending: c.pending.filter((x) => x.user_id !== u.user_id) })))
+      .catch(() => say("ยกเลิกแท็กไม่สำเร็จ ลองใหม่นะ"));
+  };
   const moveBlock = (i: number, dir: -1 | 1) =>
     h.update((dd) => {
       const j = i + dir;
@@ -539,7 +623,7 @@ function UploadEditor({ uid, ownerId, opened }: { uid: string; ownerId: string; 
   const publish = async () => {
     setBusy(true);
     try {
-      await up.settle();
+      await settleAll();
       if (!readyNow()) {
         setConfirmOpen(false);
         setTried(true);
@@ -558,7 +642,7 @@ function UploadEditor({ uid, ownerId, opened }: { uid: string; ownerId: string; 
   const saveEdits = async () => {
     setBusy(true);
     try {
-      await up.settle();
+      await settleAll();
       if (!readyNow()) {
         setTried(true);
         return;
@@ -597,7 +681,7 @@ function UploadEditor({ uid, ownerId, opened }: { uid: string; ownerId: string; 
   const leaveJob = useRef<Promise<unknown> | null>(null);
   /** New work or draft with something on it: it is kept as a draft first (mock), then "บันทึกเป็นร่างแล้ว". */
   const keepAndAsk = () => {
-    leaveJob.current = up.settle().then(() => persist("Draft"));
+    leaveJob.current = settleAll().then(() => persist("Draft"));
     leaveJob.current.catch(() => say(SAVE_FAILED));
     setLeaveOpen(true);
   };
@@ -631,10 +715,14 @@ function UploadEditor({ uid, ownerId, opened }: { uid: string; ownerId: string; 
     const id = crypto.randomUUID();
     const keep = { desc: d.desc, tags: d.tags, tools: d.tools, license: d.license, licenseNote: d.licenseNote, ai: d.ai };
     const next = { ...emptyDraft(bid()), rows: d.rows, slotTexts: d.slotTexts, ...keep, catalogIds: canCatalog ? d.catalogIds : [] };
-    live.current = { mode, d: next, status: "new", workId: id, owner: uid, cats: canCatalog ? cats : null };
+    live.current = { mode, d: next, status: "new", workId: id, owner: uid, cats: canCatalog ? cats : null, credits: NO_CREDITS, tagged: [], mine: true };
     savedFp.current = null;
     savedCats.current = [];
+    scannedFp.current = null;
     setOwner(uid);
+    setCredits(NO_CREDITS);
+    setTagged([]);
+    setVerdicts({});
     setWorkId(id);
     setStatus("new");
     h.reset(next);
@@ -880,6 +968,23 @@ function UploadEditor({ uid, ownerId, opened }: { uid: string; ownerId: string; 
                   </label>
                   <textarea id="up-ask" className="up-ta" rows={2} maxLength={140} value={d.ask} onChange={(e) => setField("ask", e.target.value)} placeholder="ตรงไหนดึงสายตาที่สุด?" />
                 </div>
+                {canCatalog ? (
+                  <CreditsField
+                    uid={uid}
+                    credits={credits}
+                    added={tagged}
+                    onAdd={(u) => setTagged((cur) => (cur.some((x) => x.user_id === u.user_id) ? cur : [...cur, u]))}
+                    onUnadd={(id) => setTagged((cur) => cur.filter((x) => x.user_id !== id))}
+                    onCancelPending={cancelTag}
+                  />
+                ) : null}
+                <AttachmentsField
+                  assets={d.assets}
+                  verdicts={verdicts}
+                  upload={uploadAttachment}
+                  onAdd={(a) => h.update((dd) => ({ ...dd, assets: [...dd.assets, a] }))}
+                  onRemove={(id) => h.update((dd) => ({ ...dd, assets: dd.assets.filter((x) => x.id !== id) }))}
+                />
                 <LicenseField
                   value={d.license}
                   note={d.licenseNote}
