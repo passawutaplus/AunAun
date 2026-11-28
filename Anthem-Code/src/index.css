@@ -1941,6 +1941,26 @@ strong, b,
   font-weight: 400;
 }
 
+/* Brand Guidelines v1.0 type hierarchy — Heading: Elms Sans Bold Italic.
+   Page and section headings set at 24–48px. Small h1/h2 used as labels stay Regular, and the huge
+   Display titles (6xl and up, or font-light) keep their light cut. Titles inside a card or a link
+   (work, event and creator names in lists) stay Regular so a grid of them reads quietly.
+   IBM Plex Sans Thai has no italic, so Thai letters stay upright Bold instead of a faked slant.
+   Policy pages, CV sheets and the paper pop-ups keep their own type. */
+:is(h1, h2):is(
+    [class*="text-2xl"],
+    [class*="text-3xl"],
+    [class*="text-4xl"],
+    [class*="text-5xl"],
+    [class*="text-[2."]
+  ):where(:not(.font-light, .font-thin, .font-extralight, .not-italic)):where(
+    :not(article *, a *, .font-legal *, .about-cv-sheet *, .paper-popup *, .monolith-hero-copy *)
+  ) {
+  font-style: italic;
+  font-weight: 700;
+  font-synthesis: none;
+}
+
 .font-legal .font-medium { font-weight: 500; }
 .font-legal .font-semibold,
 .font-legal h2,
