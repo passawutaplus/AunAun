@@ -100,9 +100,18 @@ export function SsoButtons({ verb, redirectTo, onError }: { verb: "Continue" | "
         {providers.map((p) => {
           const Mark = MARK[p.key];
           return (
-            <button key={p.key} type="button" className="lg-sso" aria-busy={busy === p.id} onClick={() => void start(p.id, p.name)}>
+            // Logo only, all providers in one row (owner 2026-11-28); the name stays for screen readers and the tooltip.
+            <button
+              key={p.key}
+              type="button"
+              className="lg-sso"
+              lang="en"
+              aria-label={`${verb} with ${p.name}`}
+              title={p.name}
+              aria-busy={busy === p.id}
+              onClick={() => void start(p.id, p.name)}
+            >
               <Mark />
-              <span lang="en">{`${verb} with ${p.name}`}</span>
             </button>
           );
         })}

@@ -80,9 +80,11 @@
   gap: 16px;
 }
 
+/* logo-only buttons in one row (owner 2026-11-28), equal widths */
 .sc-app .lg-sso-list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
   gap: 10px;
 }
 
