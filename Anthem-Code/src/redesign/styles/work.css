@@ -1260,6 +1260,34 @@ html.sc-wk-open:not(.sc-wk-closing) .sc-app .sc-tb {
   cursor: default;
 }
 
+/* Phones: room for five full labels in the one row. */
+@media (max-width: 480px) {
+  .sc-app .sh-veil {
+    padding: 16px 12px;
+  }
+
+  .sc-app .sh-box {
+    padding: 24px 18px;
+  }
+
+  .sc-app .sh-t,
+  .sc-app .sh-person {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 370px) {
+  .sc-app .sh-t {
+    font-size: 10px;
+  }
+
+  /* A long name may run a few px into the gap rather than lose letters. */
+  .sc-app .sh-t .sh-tl {
+    max-width: none;
+    overflow: visible;
+  }
+}
+
 .sc-app .sh-t {
   display: flex;
   flex-direction: column;
