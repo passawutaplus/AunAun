@@ -10,8 +10,10 @@ import type { HomeEventRow } from "@/server/queries/homeEvents";
 import { usePosterLabel } from "../event/usePosterLabel";
 import { SC_LINKS } from "../routes";
 import { useShellPanels } from "../shell/panels";
+import EventSearch from "./EventSearch";
 import ScLoader from "./ScLoader";
 import { EVENT_KIND, dayOf, inView, isoDay, lastDay, monthCaps, shortDate, useHomeEvents, viewDays, weekdayDay, type EventType, type EventView } from "./useHomeEvents";
+import { useEventSearch, type EventSearch as Search } from "./useEventSearch";
 
 const DAY = 24 * 60 * 60 * 1000;
 const fullDate = (iso: string) => shortDate(iso, true);
@@ -25,10 +27,12 @@ const Chevron = ({ d }: { d: string }) => (
 /**
  * Event tab of the home page (mock: Main.dc.html, isEvents): HIGHLIGHT, then the list.
  * "ดูเส้นทาง" opens the Locations page of a multi-venue highlight (step 6).
+ * The search field on top (owner 2026-11-28) replaces both with its results while it has text.
  */
-export default function Events({ view, type }: { view: EventView; type: EventType | null }) {
+export default function Events({ view, type, q, onQuery }: { view: EventView; type: EventType | null; q: string; onQuery: (q: string) => void }) {
   const { data, isPending, isError } = useHomeEvents();
   const today = isoDay(new Date());
+  const search = useEventSearch(q, data?.events, type && type !== "highlight" ? type : null);
 
   const featured = useMemo(
     () => (data?.events ?? []).filter((e) => e.is_featured && (!e.featured_until || e.featured_until >= today) && (lastDay(e) ?? today) >= today),
@@ -45,8 +49,19 @@ export default function Events({ view, type }: { view: EventView; type: EventTyp
   if (isPending) return <ScLoader label="กำลังโหลดผลงานเพิ่ม" />;
   if (isError) return null;
 
+  const field = <EventSearch q={q} onQuery={onQuery} search={search} />;
+  if (search) {
+    return (
+      <>
+        {field}
+        <SearchResults search={search} />
+      </>
+    );
+  }
+
   return (
     <>
+      {field}
       {/* The highlight shows on All and Highlight only, not on one type of event (owner 2026-11-28). */}
       {featured.length && (!type || type === "highlight") ? <Highlight events={featured} venues={data!.venues} today={today} /> : null}
       {type === "highlight" ? (
@@ -259,6 +274,33 @@ function EventList({ events, byDay, today, days }: { events: HomeEventRow[]; byD
           </div>
         ))}
         <div className="mn-ev-end" />
+      </div>
+    </section>
+  );
+}
+
+function SearchResults({ search }: { search: Search }) {
+  const { events, exact, loading } = search;
+  if (loading && !events.length) return <ScLoader label="กำลังหางาน" />;
+  if (!events.length) return <p className="mn-none">ไม่เจอสิ่งที่ตรงกัน</p>;
+  return (
+    <section aria-label="ผลการค้นหา" className="mn-es-res" data-loading={loading ? "" : undefined}>
+      <p className="mn-es-count" aria-live="polite">
+        {exact ? `เจอ ${events.length} งาน` : "ยังไม่เจองานตรงเป๊ะ ลองดูงานใกล้เคียงนะ"}
+      </p>
+      <div className="mn-ev-grid">
+        {events.map((e) => (
+          <div className="mn-ev-cell" key={e.id}>
+            <EventItem event={e} untilEnd />
+          </div>
+        ))}
+        {Array.from({ length: (3 - (events.length % 3)) % 3 }, (_, k) => (
+          <div className="mn-ev-cell" data-empty="" key={`empty-${k}`}>
+            <svg aria-hidden="true" viewBox="0 0 100 100" preserveAspectRatio="none">
+              <line x1="0" y1="100" x2="100" y2="0" stroke="#C8C8C5" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+            </svg>
+          </div>
+        ))}
       </div>
     </section>
   );

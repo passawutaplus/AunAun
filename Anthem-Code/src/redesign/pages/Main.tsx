@@ -110,13 +110,29 @@ export default function Main() {
     setParams(next, { preventScrollReset: true });
   };
 
+  // The Event search text (?q=): typing replaces the history entry instead of adding one per word.
+  // Reads the newest params: the field pushes after a short pause, other params may have changed meanwhile.
+  const setQuery = (value: string) =>
+    setParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (value) next.set("q", value);
+        else next.delete("q");
+        return next;
+      },
+      { replace: true, preventScrollReset: true },
+    );
+
   // The view names differ per tab, so changing tab drops ?view (the category stays).
   const pickMode = (m: Mode) => {
     const next = new URLSearchParams(params);
     if (m === "showcase") next.delete("tab");
     else next.set("tab", m);
     next.delete("view");
-    if (m !== "event") next.delete("type");
+    if (m !== "event") {
+      next.delete("type");
+      next.delete("q");
+    }
     if (m !== "showcase") next.delete("color");
     setParams(next, { preventScrollReset: true });
   };
@@ -243,7 +259,7 @@ export default function Main() {
         ) : mode === "creators" ? (
           <Creators view={crView} category={category} />
         ) : (
-          <Events view={evView} type={evType} />
+          <Events view={evView} type={evType} q={params.get("q") ?? ""} onQuery={setQuery} />
         )}
       </div>
       {saves.element}

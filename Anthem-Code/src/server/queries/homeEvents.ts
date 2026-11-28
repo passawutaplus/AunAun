@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 const HOME_EVENT_SELECT =
-  "id, title, category, starts_on, ends_on, time_note, location_name, area, cover_url, origin, owner_id, is_featured, featured_until, parent_id, sort_order, slug";
+  "id, title, category, starts_on, ends_on, time_note, location_name, area, fee_type, cover_url, origin, owner_id, is_featured, featured_until, parent_id, sort_order, slug";
 
 export type HomeEventRow = {
   id: string;
@@ -12,6 +12,8 @@ export type HomeEventRow = {
   time_note: string | null;
   location_name: string | null;
   area: string | null;
+  /** "free" | "paid" | "unspecified" — "ฟรี" in the search while the server search is not there yet. */
+  fee_type?: string | null;
   cover_url: string | null;
   origin: string | null;
   /** Who posted it: the team for curated events, else a member (label "CURATED BY …"). */
