@@ -375,6 +375,15 @@
   75%, 100% { rotate: 180deg; }
 }
 
+/* ScLoader shows the site's own logo loader (components/ui/BrandLoader, animated in index.css); light only here */
+.sc-app .brand-loader-ghost {
+  fill: #DADAD7;
+}
+
+.sc-app .brand-loader-reveal {
+  fill: #282929;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .sc-app .mn-card {
     animation: sc-in .9s var(--sc-ease) both;
