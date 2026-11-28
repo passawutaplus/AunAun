@@ -2,7 +2,10 @@ import { useState, type MouseEvent } from "react";
 import { Link } from "react-router-dom";
 import { eventPath } from "@/lib/exhibitionEvents";
 import { proxiedImageUrl } from "@/lib/imageProxy";
+import EmptyNote from "../main/EmptyNote";
 import ScLoader from "../main/ScLoader";
+import { SC_LINKS } from "../routes";
+import LoadError from "../shell/LoadError";
 import { dayOf, EVENT_KIND, isoDay, monthCaps } from "../main/useHomeEvents";
 import { useInterestedSwitch, useMyEvents, type MyEvent } from "./useMyProfile";
 
@@ -37,7 +40,7 @@ function rowState(e: MyEvent, today: string) {
 
 /** Events: what I host (everyone sees) and what I marked "สนใจ" (one switch decides who sees those). */
 export default function MyEvents({ uid, say }: { uid: string; say: (t: string) => void }) {
-  const { list, pending, toggle } = useMyEvents(uid, true);
+  const { list, pending, failed, retry, toggle } = useMyEvents(uid, true);
   const shown = useInterestedSwitch(uid);
   const [filter, setFilter] = useState<Filter>("all");
   const [past, setPast] = useState(false);
@@ -45,8 +48,8 @@ export default function MyEvents({ uid, say }: { uid: string; say: (t: string) =
   const [off, setOff] = useState<ReadonlySet<string>>(new Set());
   const today = isoDay(new Date());
 
-  const rows = list
-    .filter((e) => filter === "all" || (filter === "host" ? e.hosted : !e.hosted))
+  const inFilter = list.filter((e) => filter === "all" || (filter === "host" ? e.hosted : !e.hosted));
+  const rows = inFilter
     .map((e) => ({ e, st: rowState(e, today) }))
     .filter(({ st }) => st.past === past);
 
@@ -156,9 +159,17 @@ export default function MyEvents({ uid, say }: { uid: string; say: (t: string) =
             );
           })}
         </div>
-      ) : past && !pending ? (
+      ) : pending ? null : failed ? (
+        <LoadError onRetry={retry} />
+      ) : past ? (
         <p className="mp-empty">อีเว้นท์ที่จบแล้วจะย้ายมาอยู่ตรงนี้</p>
-      ) : null}
+      ) : inFilter.length ? (
+        <EmptyNote text="ยังไม่มีอีเว้นท์ที่กำลังจะมานะ" action={{ label: "ดูอีเว้นท์", to: SC_LINKS.events }} />
+      ) : filter === "host" ? (
+        <EmptyNote text="ยังไม่ได้จัดอีเว้นท์เลย" action={{ label: "ลงอีเว้นท์", to: SC_LINKS.eventNew }} />
+      ) : (
+        <EmptyNote text={filter === "int" ? "ยังไม่ได้กดสนใจอีเว้นท์ไหนเลย" : "อีเว้นท์ที่จัดหรือกดสนใจจะมาอยู่ตรงนี้นะ"} action={{ label: "ดูอีเว้นท์", to: SC_LINKS.events }} />
+      )}
       {pending ? <ScLoader label="กำลังโหลดอีเว้นท์" /> : null}
     </>
   );

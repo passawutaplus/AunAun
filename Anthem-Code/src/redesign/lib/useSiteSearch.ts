@@ -4,6 +4,7 @@ import { useFeedProjectSelect } from "@/hooks/useFeedProjectSelect";
 import { eventPath } from "@/lib/exhibitionEvents";
 import { proxiedImageUrl } from "@/lib/imageProxy";
 import type { HomeEventRow } from "@/server/queries/homeEvents";
+import { getWorkSearchText } from "@/server/queries/siteSearch";
 import { homeWorksQuery, profileHref } from "../main/useCreators";
 import { homeEventsQuery, isoDay } from "../main/useHomeEvents";
 import { listedOnCreators } from "./visibility";
@@ -16,6 +17,19 @@ export type SearchHit = {
   name: string;
   href: string;
   thumb: string;
+};
+
+/**
+ * A term the next search panel opens with: `/?q=` (Google's search box, SearchAction) and the `/search`
+ * shortcut land on the home page, which opens the panel. The panel reads it once, then clears it.
+ */
+let seed = "";
+export const seedSiteSearch = (q: string) => {
+  seed = q;
+};
+export const siteSearchSeed = () => seed;
+export const clearSiteSearchSeed = () => {
+  seed = "";
 };
 
 /** Mock (Main.dc.html): 3 creators, then 5 works, then 2 events. */
@@ -36,14 +50,17 @@ function pick<T>(rows: T[], q: string, name: (r: T) => string, text: (r: T) => s
 
 /**
  * Search panel results, matched in the browser over what the home page already loads: the works on the
- * home page (title, creator, category), their creators (name, handle, categories, city) and published
- * events (title, venue, area). Enough for today's size; a server search comes with scale.
+ * home page (title, creator, category, and once typed: tags, tools, description), their creators (name,
+ * handle, categories, city) and published events (title, venue, area). Enough for today's size; a server
+ * search comes with scale.
  */
 export function useSiteSearch(query: string) {
   const visible = useFeedProjectSelect();
   const home = useQuery(homeWorksQuery);
   const events = useQuery(homeEventsQuery);
   const q = query.trim().toLocaleLowerCase("th");
+  // Read only once something is typed; the home grid does not need these words.
+  const words = useQuery({ queryKey: ["sc-search-text"], queryFn: () => getWorkSearchText(), enabled: !!q, staleTime: 5 * 60_000 });
 
   const hits = useMemo((): SearchHit[] => {
     if (!q) return [];
@@ -53,6 +70,7 @@ export function useSiteSearch(query: string) {
       const p = id ? people.get(id) : undefined;
       return p ? p.display_name?.trim() || p.username || "" : "";
     };
+    const extra = new Map((words.data ?? []).map((w) => [w.id, [...(w.tags ?? []), ...(w.tools ?? []), w.description ?? ""].join(" ")]));
     const owners = new Set(works.map((w) => w.owner_id));
     const creators = [...people.values()].filter((p) => owners.has(p.user_id) && listedOnCreators(p.public_visibility));
 
@@ -81,7 +99,7 @@ export function useSiteSearch(query: string) {
         works,
         q,
         (w) => w.title ?? "",
-        (w) => [w.title, nameOf(w.owner_id), w.sc_category].filter(Boolean).join(" "),
+        (w) => [w.title, nameOf(w.owner_id), w.sc_category, extra.get(w.id)].filter(Boolean).join(" "),
         LIMIT.WORK,
       ).map((w) => ({
         key: "w" + w.id,
@@ -104,7 +122,7 @@ export function useSiteSearch(query: string) {
         thumb: proxiedImageUrl(e.cover_url, 64),
       })),
     ];
-  }, [q, home.data, events.data, visible]);
+  }, [q, home.data, events.data, words.data, visible]);
 
-  return { hits, ready: !home.isLoading && !events.isLoading };
+  return { hits, ready: !home.isLoading && !events.isLoading && !words.isLoading };
 }

@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { SC_LINKS } from "../routes";
+import { loginHref } from "../lib/loginHref";
 import { usePresence } from "../lib/usePresence";
 import SaveToast from "../shell/SaveToast";
 import { useWorkSaves } from "./useWorkSaves";
@@ -9,7 +9,7 @@ export type SaveTarget = { id: string; title: string };
 
 /**
  * Save button of a work (home grid, Work page). Saving opens SaveToast to put it in a collection;
- * pressing it again un-saves without a popup (mock). Signed out → log-in page.
+ * pressing it again un-saves without a popup (mock). Signed out → log-in page, then back to this page.
  */
 export function useSaveFlow() {
   const saves = useWorkSaves();
@@ -23,7 +23,7 @@ export function useSaveFlow() {
   const toggle = useCallback(
     (work: SaveTarget, el?: HTMLElement | null) => {
       if (!signedIn) {
-        navigate(SC_LINKS.login);
+        navigate(loginHref());
         return;
       }
       const wasSaved = ids.has(work.id);

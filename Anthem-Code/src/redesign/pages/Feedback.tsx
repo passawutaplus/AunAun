@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import type { FeedbackKind } from "@/lib/feedbackTicket";
 import { feedbackErrorText, submitFeedback } from "@/server/mutations/feedback";
 import { SC_LINKS } from "../routes";
+import { usePageSeo } from "../lib/usePageSeo";
 import "../styles/feedback.css";
 
 /** The three types of the mock and the kind each one is stored as (anthem.app_feedback.kind). */
@@ -30,6 +31,8 @@ function readDraft(): string {
  * Type lives in the URL (?type=bug|idea, Love when absent). Notes go to the existing feedback inbox.
  */
 export default function Feedback() {
+  // A form for members: not a page to find from Google.
+  usePageSeo({ title: "Feedback", path: SC_LINKS.feedback, noindex: true });
   const { user, loading } = useAuth();
   const { pathname, search, state } = useLocation();
   const navigate = useNavigate();

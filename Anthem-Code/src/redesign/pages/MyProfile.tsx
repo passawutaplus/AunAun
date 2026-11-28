@@ -6,6 +6,7 @@ import { proxiedImageSrcSet, proxiedImageUrl } from "@/lib/imageProxy";
 import { displayProfileAddress } from "@/lib/profileAddress";
 import { SC_LINKS } from "../routes";
 import { instagramHandle, instagramUrl, mailUrl, websiteLabel, websiteUrl } from "../lib/contactLinks";
+import EmptyNote from "../main/EmptyNote";
 import ScLoader from "../main/ScLoader";
 import { profileHref } from "../main/useCreators";
 import AboutPanel from "../profile/AboutPanel";
@@ -16,6 +17,9 @@ import MyFollowing from "../profile/MyFollowing";
 import MySaved from "../profile/MySaved";
 import { count, toTile, toolsOf, type Tile } from "../profile/tiles";
 import { useMyCatalogs, useMyProfile, useMyWorks } from "../profile/useMyProfile";
+import { usePageSeo } from "../lib/usePageSeo";
+import { PinMark } from "../studio/StudioWorks";
+import LoadError from "../shell/LoadError";
 import "../styles/fonts.css";
 import "../styles/tokens.css";
 import "../styles/reset.css";
@@ -30,6 +34,9 @@ const TABS: ReadonlyArray<[Tab, string]> = [
   ["following", "Following"],
   ["about", "About"],
 ];
+
+/** Old tab names of `?tab=`: collections → Saved, designers (people I follow) → Following, inspire (mood boards, cut) → Saved. */
+const OLD_TAB: Record<string, Tab> = { collections: "saved", designers: "following", inspire: "saved" };
 
 /** Old URLs that land on a tab: /portfolio/saved and /collections → Saved, /portfolio/followers → Following. */
 const tabOfPath = (path: string): Tab => (/^\/(portfolio\/saved|collections)\/?$/.test(path) ? "saved" : /^\/portfolio\/followers\/?$/.test(path) ? "following" : "works");
@@ -64,8 +71,9 @@ function MyProfileView({ uid }: { uid: string }) {
   }, []);
   useEffect(() => () => window.clearTimeout(toastTimer.current), []);
 
-  const asked = params.get("tab") as Tab | null;
-  const tab: Tab = asked && TABS.some(([t]) => t === asked) ? asked : tabOfPath(location.pathname);
+  const askedRaw = params.get("tab");
+  const asked = askedRaw ? OLD_TAB[askedRaw] ?? askedRaw : null;
+  const tab: Tab = asked && TABS.some(([t]) => t === asked) ? (asked as Tab) : tabOfPath(location.pathname);
   const pickTab = (t: Tab) => {
     const next = new URLSearchParams(params);
     if (t === tabOfPath(location.pathname)) next.delete("tab");
@@ -75,26 +83,31 @@ function MyProfileView({ uid }: { uid: string }) {
 
   const name = p?.display_name?.trim() || p?.username || "";
   const handle = p?.username ?? "";
-  useEffect(() => {
-    const before = document.title;
-    document.title = name ? `${name} | samecor.` : "My Profile | samecor.";
-    return () => {
-      document.title = before;
-    };
-  }, [name]);
+  // Only the owner sees this page: never indexed; the public one is /@handle.
+  usePageSeo({ title: name || "My Profile", path: location.pathname, noindex: true });
 
   const current = catalogs.find((k) => k.id === cat) ?? null;
   const tiles = useMemo(() => {
+    // Works come in the profile order: pinned first, numbered like the old site (pinned in My Studio › Works).
+    let pins = 0;
     const all = works.map((w) => {
       const t = toTile(w);
-      return t ? { ...t, locked: w.status === "Private" } : null;
-    }).filter((t): t is Tile & { locked: boolean } => !!t);
+      const pin = w.is_pinned ? ++pins : 0;
+      return t ? { ...t, locked: w.status === "Private", pin } : null;
+    }).filter((t): t is MyTile => !!t);
     if (!current) return all;
     const byId = new Map(all.map((t) => [t.id, t]));
-    return current.projectIds.map((id) => byId.get(id)).filter((t): t is Tile & { locked: boolean } => !!t);
+    return current.projectIds.map((id) => byId.get(id)).filter((t): t is MyTile => !!t);
   }, [works, current]);
 
   if (profile.isPending) return <div className="pf-wait" aria-busy="true" />;
+  if (profile.isError && !p) {
+    return (
+      <main className="sc-main pf-m mp-m">
+        <LoadError onRetry={() => void profile.refetch()} />
+      </main>
+    );
+  }
 
   const cats = p?.sc_categories ?? [];
   const city = p ? displayProfileAddress(p.profile_address, p.location, "short") : "";
@@ -116,7 +129,7 @@ function MyProfileView({ uid }: { uid: string }) {
     say("คัดลอกลิงก์โปรไฟล์แล้ว");
   };
 
-  const toggleLock = (t: Tile & { locked: boolean }) => {
+  const toggleLock = (t: MyTile) => {
     lock.mutate({ id: t.id, locked: !t.locked });
     say(t.locked ? "โชว์ในโปรไฟล์แล้ว" : "ล็อกไว้ เห็นแค่คุณ");
   };
@@ -221,7 +234,17 @@ function MyProfileView({ uid }: { uid: string }) {
                 </div>
               ) : null}
               <MyPin tiles={tiles} onLock={toggleLock} />
-              {worksQ.isPending ? <ScLoader label="กำลังโหลดผลงาน" /> : null}
+              {worksQ.isPending ? (
+                <ScLoader label="กำลังโหลดผลงาน" />
+              ) : worksQ.isError && !worksQ.data ? (
+                <LoadError onRetry={() => void worksQ.refetch()} />
+              ) : !tiles.length ? (
+                current ? (
+                  <EmptyNote text={`ยังไม่มีงานใน ${current.title} นะ`} action={{ label: "จัดงาน", to: `${SC_LINKS.myStudio}?tab=catalogs` }} />
+                ) : (
+                  <EmptyNote text="ยังไม่มีผลงานเลย ลงงานแรกกันนะ" action={{ label: "ลงงาน", to: SC_LINKS.upload }} />
+                )
+              ) : null}
             </>
           ) : null}
 
@@ -258,8 +281,10 @@ function MyProfileView({ uid }: { uid: string }) {
   );
 }
 
+type MyTile = Tile & { locked: boolean; pin: number };
+
 /** My works: each opens over this page; the corner button is the globe (shown) / lock (only me). */
-function MyPin({ tiles, onLock }: { tiles: Array<Tile & { locked: boolean }>; onLock: (t: Tile & { locked: boolean }) => void }) {
+function MyPin({ tiles, onLock }: { tiles: MyTile[]; onLock: (t: MyTile) => void }) {
   const location = useLocation();
   const linkState = useMemo(() => ({ backgroundLocation: location, scList: tiles.map((t) => t.id) }), [location, tiles]);
   return (
@@ -282,6 +307,7 @@ function MyPin({ tiles, onLock }: { tiles: Array<Tile & { locked: boolean }>; on
             />
             <span className="pf-art pf-shade" aria-hidden="true" />
             <Link to={`/showcase/${t.id}`} state={linkState} aria-label={`เปิด ${t.title}`} className="pf-open" />
+            {t.pin ? <PinMark n={t.pin} /> : null}
             <span className="pf-tt">
               <b>{t.title}</b>
               {t.cat ? <span>{t.cat}</span> : null}

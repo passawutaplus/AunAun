@@ -4,6 +4,7 @@ import { proxiedImageUrl } from "@/lib/imageProxy";
 import { getStudioInsights, type InsightDay, type StudioWork } from "@/server/queries/studio";
 import { count } from "../profile/tiles";
 import { coverOf } from "./StudioWorks";
+import LoadError from "../shell/LoadError";
 
 type Metric = "views" | "followers" | "likes";
 const METRICS: ReadonlyArray<readonly [Metric, string]> = [
@@ -116,7 +117,7 @@ export default function StudioInsights({ uid, works }: { uid: string; works: Stu
                   const v = r[metric];
                   return (
                     <button key={r.day} type="button" className="ms-bw" aria-label={`${thDay(r.day)} ${v}`}>
-                      <span className={last ? "ms-bar ms-bar-last" : "ms-bar"} style={{ height: `${Math.max(1.5, (v / top) * 100)}%` }} />
+                      <span className={last ? "ms-chartbar ms-chartbar-last" : "ms-chartbar"} style={{ height: `${Math.max(1.5, (v / top) * 100)}%` }} />
                       <span className="ms-tip">
                         {thDay(r.day)}
                         {last ? " (วันนี้)" : ""}
@@ -137,7 +138,7 @@ export default function StudioInsights({ uid, works }: { uid: string; works: Stu
             </div>
           </>
         ) : (
-          <p className="ms-dash">{q.isPending ? "" : "—"}</p>
+          q.isError ? <LoadError onRetry={() => void q.refetch()} /> : <p className="ms-dash">{q.isPending ? "" : "—"}</p>
         )}
       </div>
       <div>

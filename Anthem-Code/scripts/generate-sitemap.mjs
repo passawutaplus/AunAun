@@ -24,7 +24,9 @@ const fullProduct =
   (process.env.VITE_APLUS1_FULL_PRODUCT || "").toLowerCase() === "true";
 const hiringBoard =
   (process.env.VITE_APLUS1_HIRING_BOARD_ENABLED || "").toLowerCase() === "true";
-// New design: leave out the URLs it cuts or moves (REDESIGN_DROPPED_PATHS).
+// New design: leave out the URLs it cuts or moves (REDESIGN_DROPPED_PATHS). Vercel runs this before
+// every build (vercel.json buildCommand), so turning VITE_REDESIGN on for Production and redeploying
+// writes the new sitemap; locally: VITE_REDESIGN=true npm run sitemap:gen
 const redesign = (process.env.VITE_REDESIGN || "").toLowerCase() === "true";
 
 function loadDotEnv() {
@@ -143,10 +145,10 @@ async function fetchLiveCatalog(supabaseUrl, anonKey) {
           (typeof p.bio === "string" && p.bio.trim().length >= 20)),
     );
     const real = usable.filter((p) => !isTestId(p.user_id) && !isTestHandle(p.username) && !hiddenOwners.has(p.user_id));
-    profileUserIds = real.map((p) => p.user_id).filter(Boolean);
-    vanityHandles = real
-      .map((p) => p.username)
-      .filter((u) => typeof u === "string" && /^[a-z0-9_.]{2,}$/i.test(u));
+    const hasHandle = (p) => typeof p.username === "string" && /^[a-z0-9_.]{2,}$/i.test(p.username);
+    // New design: /u/<id> of someone with a handle only redirects to /@handle, so only the /@handle URL is listed.
+    profileUserIds = real.filter((p) => !(redesign && hasHandle(p))).map((p) => p.user_id).filter(Boolean);
+    vanityHandles = real.filter(hasHandle).map((p) => p.username);
   }
 
   let seriesIds = [];

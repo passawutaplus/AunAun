@@ -2,8 +2,10 @@ import { useMemo, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { proxiedImageUrl } from "@/lib/imageProxy";
 import type { ScCategory } from "../lib/categories";
-import { SC_LINKS } from "../routes";
+import { loginHref } from "../lib/loginHref";
+import LoadError from "../shell/LoadError";
 import { useGreet } from "../shell/panels";
+import EmptyNote from "./EmptyNote";
 import ScLoader from "./ScLoader";
 import { useCreators, type Creator, type CreatorView } from "./useCreators";
 import { useFollows } from "./useFollows";
@@ -24,9 +26,9 @@ type FollowProps = { creator: Creator; followed: boolean; onToggle: (id: string)
  * "ALL CREATORS" grid. No follower counts and nothing about hiring, by design.
  * "ทักทาย" (say hi) next to a followed creator opens the small chat window (ChatDock), or the chat page on phones.
  */
-export default function Creators({ view, category }: { view: CreatorView; category: ScCategory | null }) {
+export default function Creators({ view, category, onClear }: { view: CreatorView; category: ScCategory | null; onClear?: () => void }) {
   const navigate = useNavigate();
-  const { data, isPending, isError } = useCreators();
+  const { data, isPending, isError, refetch } = useCreators();
   const follows = useFollows();
   const greeting = useGreet();
   const onGreet = (id: string, el: HTMLElement) => greeting.greet({ otherId: id }, el);
@@ -35,7 +37,7 @@ export default function Creators({ view, category }: { view: CreatorView; catego
   const seed = useRef(Math.random());
 
   const onToggle = (id: string) => {
-    if (!follows.signedIn) navigate(SC_LINKS.login);
+    if (!follows.signedIn) navigate(loginHref());
     else follows.toggle(id);
   };
 
@@ -67,8 +69,8 @@ export default function Creators({ view, category }: { view: CreatorView; catego
   };
 
   if (isPending) return <ScLoader label="กำลังโหลดผลงานเพิ่ม" />;
-  if (isError) return null;
-  if (!all.length) return <p className="mn-none">ไม่เจอสิ่งที่ตรงกัน</p>;
+  if (isError && !data) return <LoadError onRetry={() => void refetch()} />;
+  if (!all.length) return <EmptyNote text="ไม่เจอสิ่งที่ตรงกัน" action={onClear ? { label: "ล้างตัวกรอง", onClick: onClear } : null} />;
 
   return (
     <section aria-label="ครีเอเตอร์" className="cr">

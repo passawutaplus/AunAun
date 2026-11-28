@@ -16,13 +16,13 @@ export async function getMyProfile(userId: string): Promise<ProfilePageRow | nul
 }
 
 /** 'Published' works show on the profile; 'Private' ones (the lock) only to their owner. */
-export type MyWorkRow = ProfileWorkRow & { status: "Published" | "Private" };
+export type MyWorkRow = ProfileWorkRow & { status: "Published" | "Private"; is_pinned?: boolean | null };
 
 /** Own works in the profile order (pinned, own order, newest); drafts stay in the studio. */
 export async function getMyWorks(userId: string): Promise<MyWorkRow[]> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase.from("projects") as any)
-    .select(PROFILE_WORK_SELECT + ", status")
+    .select(PROFILE_WORK_SELECT + ", status, is_pinned")
     .eq("owner_id", userId)
     .in("status", ["Published", "Private"])
     .order("is_pinned", { ascending: false })

@@ -32,6 +32,7 @@ import NotFound from "./NotFound";
 import { bigChatOpen, useShellPanels } from "../shell/panels";
 import { instagramUrl, websiteUrl } from "../lib/contactLinks";
 import { indexableBySearch, useNoIndex } from "../lib/visibility";
+import { usePageSeo, workSeo } from "../lib/usePageSeo";
 import "../styles/fonts.css";
 import "../styles/tokens.css";
 import "../styles/reset.css";
@@ -63,6 +64,7 @@ function WorkView({ id, overlay, list, linkState, close }: ViewProps) {
   const { work, owner, media, text } = useWork(id);
   const row = work.data;
   const who = owner.data;
+  usePageSeo(workSeo(id, row, who));
   // The owner turned "ให้ค้นเจอจาก Google" off (Settings → Privacy): their works are not indexed either.
   useNoIndex(!!who && !indexableBySearch(who.public_visibility));
   const ownerId = row?.owner_id ?? null;

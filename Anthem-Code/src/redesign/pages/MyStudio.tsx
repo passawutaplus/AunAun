@@ -7,6 +7,8 @@ import { getStudioEvents, type StudioWork } from "@/server/queries/studio";
 import ScLoader from "../main/ScLoader";
 import { useMyCatalogs } from "../profile/useMyProfile";
 import { SC_LINKS } from "../routes";
+import { usePageSeo } from "../lib/usePageSeo";
+import LoadError from "../shell/LoadError";
 import StudioCatalogs from "../studio/StudioCatalogs";
 import StudioEvents from "../studio/StudioEvents";
 import StudioInsights from "../studio/StudioInsights";
@@ -63,7 +65,8 @@ function MyStudioView({ uid }: { uid: string }) {
   const worksQ = useStudioWorks(uid);
   const works = worksQ.data ?? [];
   const counts = useFollowState(uid);
-  const catalogs = useMyCatalogs(uid).q.data ?? [];
+  const catalogsQ = useMyCatalogs(uid).q;
+  const catalogs = catalogsQ.data ?? [];
   const events = useQuery({ queryKey: ["sc-studio-events", uid], queryFn: () => getStudioEvents(uid), enabled: tab === "event", staleTime: 30_000 });
   const del = useDeleteWork(uid);
   const [confirm, setConfirm] = useState<StudioWork | null>(null);
@@ -78,6 +81,15 @@ function MyStudioView({ uid }: { uid: string }) {
   useEffect(() => () => window.clearTimeout(toastTimer.current), []);
 
   const handle = profile?.username ?? "";
+  // The back office: only the owner sees it, never indexed.
+  usePageSeo({ title: "My Studio", path: location.pathname, noindex: true });
+
+  // A tab that could not load shows the retry box, never an empty form or list (the Profile tab would save over it).
+  const baseFailed = (profileQ.isError && !profileQ.data) || (worksQ.isError && !worksQ.data);
+  const retryBase = () => {
+    if (profileQ.isError) void profileQ.refetch();
+    if (worksQ.isError) void worksQ.refetch();
+  };
 
   return (
     <main className="sc-main pf-m ms-m">
@@ -113,16 +125,30 @@ function MyStudioView({ uid }: { uid: string }) {
 
           {profileQ.isPending || worksQ.isPending ? (
             <ScLoader label="กำลังโหลด" />
+          ) : baseFailed ? (
+            <LoadError onRetry={retryBase} />
           ) : tab === "overview" ? (
             <StudioOverview uid={uid} profile={profile} works={works} followers={counts.followers} goTab={goTab} />
           ) : tab === "profile" ? (
             <StudioProfile key={profile?.user_id ?? "none"} uid={uid} profile={profile} say={say} />
           ) : tab === "works" ? (
-            <StudioWorks works={works} onDelete={setConfirm} />
+            <StudioWorks uid={uid} works={works} onDelete={setConfirm} say={say} />
           ) : tab === "event" ? (
-            events.isPending ? <ScLoader label="กำลังโหลด" /> : <StudioEvents events={events.data ?? []} />
+            events.isPending ? (
+              <ScLoader label="กำลังโหลด" />
+            ) : events.isError && !events.data ? (
+              <LoadError onRetry={() => void events.refetch()} />
+            ) : (
+              <StudioEvents events={events.data ?? []} />
+            )
           ) : tab === "catalogs" ? (
-            <StudioCatalogs uid={uid} catalogs={catalogs} works={works} say={say} />
+            catalogsQ.isPending ? (
+              <ScLoader label="กำลังโหลด" />
+            ) : catalogsQ.isError && !catalogsQ.data ? (
+              <LoadError onRetry={() => void catalogsQ.refetch()} />
+            ) : (
+              <StudioCatalogs uid={uid} catalogs={catalogs} works={works} say={say} />
+            )
           ) : (
             <StudioInsights uid={uid} works={works} />
           )}

@@ -92,7 +92,12 @@ export function useMyFollowing(uid: string | undefined, open: boolean) {
     enabled: !!ids.data?.length,
     staleTime: STALE,
   });
-  return { list: cards.data ?? [], pending: ids.isPending || (!!ids.data?.length && cards.isPending) };
+  return {
+    list: cards.data ?? [],
+    pending: ids.isPending || (!!ids.data?.length && cards.isPending),
+    failed: ids.isError || cards.isError,
+    retry: () => void (ids.isError ? ids.refetch() : cards.refetch()),
+  };
 }
 
 export const ALL_SAVED = "saved";
@@ -163,6 +168,10 @@ export function useMySaved(uid: string | undefined, open: boolean) {
     works,
     owners: owners.data?.map ?? {},
     pending: savedQ.isPending || collQ.isPending || (allIds.length > 0 && worksQ.isPending),
+    failed: savedQ.isError || collQ.isError || worksQ.isError,
+    retry: () => {
+      for (const q of [savedQ, collQ, worksQ]) if (q.isError) void q.refetch();
+    },
     rename,
     setPublic,
     remove,
@@ -195,7 +204,15 @@ export function useMyEvents(uid: string | undefined, open: boolean) {
       for (const k of [["sc-profile-interested", uid], ["events", "my-interests"]]) void qc.invalidateQueries({ queryKey: k });
     },
   });
-  return { list, pending: hosted.isPending || ids.isPending || (otherIds.length > 0 && interested.isPending), toggle };
+  return {
+    list,
+    pending: hosted.isPending || ids.isPending || (otherIds.length > 0 && interested.isPending),
+    failed: hosted.isError || ids.isError || interested.isError,
+    retry: () => {
+      for (const q of [hosted, ids, interested]) if (q.isError) void q.refetch();
+    },
+    toggle,
+  };
 }
 
 /** "Interested · ทุกคนเห็น / เห็นแค่คุณ": one switch per person (public_visibility.interested_events, default off). */

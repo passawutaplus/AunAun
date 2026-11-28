@@ -1,0 +1,41 @@
+/* main/EmptyNote: a list with nothing in it (home, profiles, My Studio). Same grey line as .mn-none. */
+.sc-app .sc-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  margin: 0;
+  padding: 40px 16px 52px;
+  text-align: center;
+  font-size: 14px;
+  color: #8A8A87;
+}
+
+.sc-app .sc-empty p {
+  margin: 0;
+}
+
+.sc-app .sc-empty-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 20px;
+  border: 1px solid var(--sc-ink);
+  border-radius: var(--sc-btn-round);
+  background: transparent;
+  color: var(--sc-ink);
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.sc-app .sc-empty-btn:hover {
+  background: var(--sc-ink);
+  color: #FFFFFF;
+}
+
+.sc-app .sc-empty-btn:focus-visible {
+  outline: 2px solid var(--sc-ink);
+  outline-offset: 2px;
+}

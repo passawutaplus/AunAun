@@ -2,9 +2,11 @@ import { Link } from "react-router-dom";
 import { proxiedImageUrl } from "@/lib/imageProxy";
 import { displayProfileAddress } from "@/lib/profileAddress";
 import { parseProfileVisibility } from "@/lib/profileVisibility";
+import EmptyNote from "../main/EmptyNote";
 import ScLoader from "../main/ScLoader";
 import { profileHref } from "../main/useCreators";
 import { useFollows } from "../main/useFollows";
+import LoadError from "../shell/LoadError";
 import { useGreet } from "../shell/panels";
 import { useMyFollowing } from "./useMyProfile";
 
@@ -22,7 +24,7 @@ export const OnlyYou = () => (
 
 /** Following: a card per person I follow — three newest works, name, CATEGORY · city, ทักทาย, follow toggle. */
 export default function MyFollowing({ uid }: { uid: string }) {
-  const { list, pending } = useMyFollowing(uid, true);
+  const { list, pending, failed, retry } = useMyFollowing(uid, true);
   const follows = useFollows();
   // Small chat window (ChatDock) on larger screens, the chat page on phones.
   const greeting = useGreet();
@@ -63,7 +65,13 @@ export default function MyFollowing({ uid }: { uid: string }) {
           );
         })}
       </div>
-      {pending ? <ScLoader label="กำลังโหลด" /> : null}
+      {pending ? (
+        <ScLoader label="กำลังโหลด" />
+      ) : failed && !list.length ? (
+        <LoadError onRetry={retry} />
+      ) : !list.length ? (
+        <EmptyNote text="ยังไม่ได้ติดตามใครเลย" action={{ label: "ดูครีเอเตอร์", to: "/?tab=creators" }} />
+      ) : null}
       {greeting.error ? (
         <div role="status" className="cd-say">
           {greeting.error}
