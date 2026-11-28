@@ -1,25 +1,41 @@
 /* Store app layout (owner 2026-11-28, arranged like the old app, drawn in Beam's design) + the glass tab bar.
-   "App home" = the header slot is filled: only the home page inside the Android / iOS app (shell/appHeaderSlot.ts). */
+   html[data-native-app] = inside the Android / iOS app; "app home" = the header slot is filled (shell/appHeaderSlot.ts). */
 
-/* ---------- app home header: [mark] …… 🔔 🔍 [▦ 👥 ▥] ---------- */
-.sc-app .sc-hd-slot {
-  display: contents; /* empty on the website: no box, no gap */
-}
-
-.sc-app .sc-hd:has(.sc-hd-slot > *) {
-  padding-top: max(2px, env(safe-area-inset-top));
+/* ---------- every app header: logo mark only, under the safe area ---------- */
+html[data-native-app] .sc-app .sc-hd {
+  padding-top: max(22px, env(safe-area-inset-top));
   transition: transform .3s var(--sc-ease);
 }
 
-/* slides up while scrolling down, back on scroll up (useAppHeaderAutoHide); stays while a key is in it */
+/* the mark only, no "samecor." (the app icon already says it) */
+html[data-native-app] .sc-app .sc-hd-logo img {
+  height: 26px;
+  aspect-ratio: 1;
+  width: auto;
+  object-fit: cover;
+  object-position: left center;
+}
+
+/* top-level pages: slides up while scrolling down, back on scroll up (useAppHeaderChrome); stays while a key is in it */
 .sc-app .sc-hd[data-hide]:not(:focus-within) {
   transform: translateY(-100%);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sc-app .sc-hd:has(.sc-hd-slot > *) {
+  html[data-native-app] .sc-app .sc-hd {
     transition: none;
   }
+}
+
+@media (max-width: 600px) {
+  html[data-native-app] .sc-app .sc-hd {
+    padding-top: max(2px, env(safe-area-inset-top));
+  }
+}
+
+/* ---------- app home header: [mark] …… 🔔 🔍 [▦ 👥 ▥] ---------- */
+.sc-app .sc-hd-slot {
+  display: contents; /* empty on the website: no box, no gap */
 }
 
 .sc-app .sc-hd-in:has(.sc-hd-slot > *) {
@@ -30,15 +46,6 @@
 
 .sc-app .sc-hd-in:has(.sc-hd-slot > *) .sc-hd-nav {
   margin-left: auto;
-}
-
-/* the mark only, no "samecor." (the app icon already says it) */
-.sc-app .sc-hd-in:has(.sc-hd-slot > *) .sc-hd-logo img {
-  height: 26px;
-  aspect-ratio: 1;
-  width: auto;
-  object-fit: cover;
-  object-position: left center;
 }
 
 /* search and the tabs moved up; the colour search lives in the search screen */

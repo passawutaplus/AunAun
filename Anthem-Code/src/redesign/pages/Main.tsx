@@ -21,7 +21,7 @@ import { SHOWCASE_VIEWS, VIEW_NEEDS_LOGIN, useShowcaseWorks, type ShowcaseView }
 import { useSaveFlow } from "../main/useSaveFlow";
 import { createPortal } from "react-dom";
 import { usePresence } from "../lib/usePresence";
-import { useAppHeaderAutoHide, useAppHeaderSlot } from "../shell/appHeaderSlot";
+import { useAppHeaderSlot } from "../shell/appHeaderSlot";
 import AppHomeBar from "../main/AppHomeBar";
 import AppSearch from "../main/AppSearch";
 import "../styles/main.css";
@@ -51,7 +51,6 @@ export default function Main() {
   const panels = useShellPanels();
   // Store apps (owner 2026-11-28): search + mode switch sit in the header; search opens a full-screen search.
   const appSlot = useAppHeaderSlot();
-  useAppHeaderAutoHide(appSlot);
   const appSearch = usePresence(260);
   const appSearchBtn = useRef<HTMLButtonElement | null>(null);
   const tab = params.get("tab");

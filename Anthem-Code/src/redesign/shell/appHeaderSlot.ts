@@ -21,12 +21,21 @@ export function useAppHeaderSlot(): HTMLElement | null {
 const SCROLL_STEP = 6;
 
 /**
- * Old app behaviour (owner 2026-11-28): the header slides up while scrolling down and comes back on
- * any scroll up. Only runs while `slot` is set, i.e. the store app's home.
+ * Store app header rules (owner 2026-11-28), called once by RedesignShell:
+ * - marks <html data-native-app> so app-shell.css shows the logo mark only, under the safe area;
+ * - on the top-level pages (`autoHide`: home, My Profile / My Studio, chat) the header slides up while
+ *   scrolling down and comes back on any scroll up, as in the old app.
+ * `routeKey` (the path) finds the header again after a page change.
  */
-export function useAppHeaderAutoHide(slot: HTMLElement | null): void {
+export function useAppHeaderChrome(autoHide: boolean, routeKey: string): void {
   useEffect(() => {
-    const header = slot?.closest<HTMLElement>(".sc-hd");
+    if (!isNativeApp()) return;
+    document.documentElement.setAttribute("data-native-app", "");
+  }, []);
+
+  useEffect(() => {
+    if (!autoHide || !isNativeApp()) return;
+    const header = document.querySelector<HTMLElement>(".sc-app .sc-hd");
     if (!header) return;
     let lastY = Math.max(0, window.scrollY);
     let frame = 0;
@@ -46,5 +55,5 @@ export function useAppHeaderAutoHide(slot: HTMLElement | null): void {
       window.cancelAnimationFrame(frame);
       header.removeAttribute("data-hide");
     };
-  }, [slot]);
+  }, [autoHide, routeKey]);
 }
