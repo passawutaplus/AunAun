@@ -6,6 +6,7 @@ import { proxiedImageSrcSet, proxiedImageUrl } from "@/lib/imageProxy";
 import { displayProfileAddress } from "@/lib/profileAddress";
 import { SC_LINKS } from "../routes";
 import { instagramHandle, instagramUrl, mailUrl, websiteLabel, websiteUrl } from "../lib/contactLinks";
+import EmptyNote from "../main/EmptyNote";
 import ScLoader from "../main/ScLoader";
 import { profileHref } from "../main/useCreators";
 import AboutPanel from "../profile/AboutPanel";
@@ -14,6 +15,8 @@ import MyFollowing from "../profile/MyFollowing";
 import MySaved from "../profile/MySaved";
 import { count, toTile, toolsOf, type Tile } from "../profile/tiles";
 import { useMyCatalogs, useMyProfile, useMyWorks } from "../profile/useMyProfile";
+import { usePageSeo } from "../lib/usePageSeo";
+import LoadError from "../shell/LoadError";
 import "../styles/fonts.css";
 import "../styles/tokens.css";
 import "../styles/reset.css";
@@ -28,6 +31,9 @@ const TABS: ReadonlyArray<[Tab, string]> = [
   ["following", "Following"],
   ["about", "About"],
 ];
+
+/** Old tab names of `?tab=`: collections → Saved, designers (people I follow) → Following, inspire (mood boards, cut) → Saved. */
+const OLD_TAB: Record<string, Tab> = { collections: "saved", designers: "following", inspire: "saved" };
 
 /** Old URLs that land on a tab: /portfolio/saved and /collections → Saved, /portfolio/followers → Following. */
 const tabOfPath = (path: string): Tab => (/^\/(portfolio\/saved|collections)\/?$/.test(path) ? "saved" : /^\/portfolio\/followers\/?$/.test(path) ? "following" : "works");
@@ -62,8 +68,9 @@ function MyProfileView({ uid }: { uid: string }) {
   }, []);
   useEffect(() => () => window.clearTimeout(toastTimer.current), []);
 
-  const asked = params.get("tab") as Tab | null;
-  const tab: Tab = asked && TABS.some(([t]) => t === asked) ? asked : tabOfPath(location.pathname);
+  const askedRaw = params.get("tab");
+  const asked = askedRaw ? OLD_TAB[askedRaw] ?? askedRaw : null;
+  const tab: Tab = asked && TABS.some(([t]) => t === asked) ? (asked as Tab) : tabOfPath(location.pathname);
   const pickTab = (t: Tab) => {
     const next = new URLSearchParams(params);
     if (t === tabOfPath(location.pathname)) next.delete("tab");
@@ -73,13 +80,8 @@ function MyProfileView({ uid }: { uid: string }) {
 
   const name = p?.display_name?.trim() || p?.username || "";
   const handle = p?.username ?? "";
-  useEffect(() => {
-    const before = document.title;
-    document.title = name ? `${name} | samecor.` : "My Profile | samecor.";
-    return () => {
-      document.title = before;
-    };
-  }, [name]);
+  // Only the owner sees this page: never indexed; the public one is /@handle.
+  usePageSeo({ title: name || "My Profile", path: location.pathname, noindex: true });
 
   const current = catalogs.find((k) => k.id === cat) ?? null;
   const tiles = useMemo(() => {
@@ -93,6 +95,13 @@ function MyProfileView({ uid }: { uid: string }) {
   }, [works, current]);
 
   if (profile.isPending) return <div className="pf-wait" aria-busy="true" />;
+  if (profile.isError && !p) {
+    return (
+      <main className="sc-main pf-m mp-m">
+        <LoadError onRetry={() => void profile.refetch()} />
+      </main>
+    );
+  }
 
   const cats = p?.sc_categories ?? [];
   const city = p ? displayProfileAddress(p.profile_address, p.location, "short") : "";
@@ -216,7 +225,17 @@ function MyProfileView({ uid }: { uid: string }) {
                 </div>
               ) : null}
               <MyPin tiles={tiles} onLock={toggleLock} />
-              {worksQ.isPending ? <ScLoader label="กำลังโหลดผลงาน" /> : null}
+              {worksQ.isPending ? (
+                <ScLoader label="กำลังโหลดผลงาน" />
+              ) : worksQ.isError && !worksQ.data ? (
+                <LoadError onRetry={() => void worksQ.refetch()} />
+              ) : !tiles.length ? (
+                current ? (
+                  <EmptyNote text={`ยังไม่มีงานใน ${current.title} นะ`} action={{ label: "จัดงาน", to: `${SC_LINKS.myStudio}?tab=catalogs` }} />
+                ) : (
+                  <EmptyNote text="ยังไม่มีผลงานเลย ลงงานแรกกันนะ" action={{ label: "ลงงาน", to: SC_LINKS.upload }} />
+                )
+              ) : null}
             </>
           ) : null}
 

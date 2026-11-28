@@ -81,6 +81,12 @@ export const REDESIGN_DROPPED_PATHS = [
   /^\/(service|object|hiring|jobs|s|advertise|community|research)(\/|$)/,
 ];
 
+/** New design: public pages it adds (Help Center, Get in Touch). */
+export const REDESIGN_STATIC_PATHS = [
+  { loc: "/help", priority: "0.5", changefreq: "monthly", group: "static" },
+  { loc: "/learn", priority: "0.5", changefreq: "monthly", group: "static" },
+];
+
 /** Routes that must never appear in the public sitemap. */
 export const EXCLUDED_PATHS = [
   "/admin",
@@ -177,6 +183,7 @@ export function buildSitemapUrls(opts = {}) {
       { loc: "/research", priority: "0.5", changefreq: "weekly", group: "static" },
     );
   }
+  if (redesign) staticPaths.push(...REDESIGN_STATIC_PATHS.map((p) => ({ ...p })));
 
   const urls = [
     ...staticPaths,

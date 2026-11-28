@@ -1,4 +1,6 @@
 import LegalCard, { type LegalSection } from "../text/LegalCard";
+import { SC_LINKS } from "../routes";
+import { usePageSeo } from "../lib/usePageSeo";
 
 /** Text copied as is from the mock (pages/Terms.dc.html); the owner reviews it before launch. */
 const SECTIONS: readonly LegalSection[] = [
@@ -73,5 +75,6 @@ const SECTIONS: readonly LegalSection[] = [
 ];
 
 export default function Terms() {
+  usePageSeo({ title: "ข้อกำหนดการใช้งาน", description: "ข้อกำหนดการใช้งาน SAMECOR", path: SC_LINKS.terms });
   return <LegalCard current="terms" heading="ข้อกำหนดการใช้งาน" sections={SECTIONS} />;
 }

@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { proxiedImageSrcSet, proxiedImageUrl } from "@/lib/imageProxy";
+import EmptyNote from "../main/EmptyNote";
 import ScLoader from "../main/ScLoader";
+import { SC_LINKS } from "../routes";
+import LoadError from "../shell/LoadError";
 import { OnlyYou } from "./MyFollowing";
 import { count, toTile, type Tile } from "./tiles";
 import { ALL_SAVED, useMySaved } from "./useMyProfile";
@@ -91,7 +94,13 @@ export default function MySaved({ uid, say }: { uid: string; say: (t: string) =>
             );
           })}
         </div>
-        {s.pending ? <ScLoader label="กำลังโหลด" /> : null}
+        {s.pending ? (
+          <ScLoader label="กำลังโหลด" />
+        ) : s.failed ? (
+          <LoadError onRetry={s.retry} />
+        ) : !s.allIds.length && !s.colls.length ? (
+          <EmptyNote text="งานที่บันทึกไว้จะมาอยู่ตรงนี้นะ" action={{ label: "ดูผลงาน", to: SC_LINKS.home }} />
+        ) : null}
       </>
     );
   }
@@ -232,6 +241,11 @@ export default function MySaved({ uid, say }: { uid: string; say: (t: string) =>
         </div>
       ) : null}
       <SavedPin tiles={tiles} selecting={selecting} picked={picked} onPick={flip} />
+      {tiles.length || s.pending ? null : s.failed ? (
+        <LoadError onRetry={s.retry} />
+      ) : (
+        <EmptyNote text={isAll ? "ยังไม่ได้บันทึกงานไหนเลย" : "ยังไม่มีงานในคอลเลคชั่นนี้นะ"} />
+      )}
       {selecting && picked.size ? (
         <div role="toolbar" aria-label="จัดการงานที่เลือก" className="mp-bar">
           <span className="mp-bar-n">เลือก {picked.size}</span>

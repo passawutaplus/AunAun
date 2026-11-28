@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { proxiedImageUrl } from "@/lib/imageProxy";
 import { SC_LINKS } from "../routes";
+import { usePageSeo } from "../lib/usePageSeo";
 import SamecorMark from "../text/SamecorMark";
 import { useTouchWorks, type TouchWork } from "../text/useTouchWorks";
 import p1 from "../assets/people/p1.jpg";
@@ -64,6 +65,7 @@ function Work({ work, width, className, style, step, fx }: { work?: TouchWork; w
 }
 
 export default function GetInTouch() {
+  usePageSeo({ title: "Get in Touch", description: "รู้จัก SAMECOR พื้นที่โชว์ผลงานของครีเอเตอร์ไทย You Create. We Connect.", path: SC_LINKS.getInTouch });
   const { user } = useAuth();
   const works = useTouchWorks();
   const [anim, setAnim] = useState(false);

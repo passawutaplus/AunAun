@@ -8,10 +8,16 @@ import { useCoverColorScores } from "@/hooks/useCoverColorScores";
 import { SC_CATEGORIES, isScCategory } from "../lib/categories";
 import { SC_LINKS } from "../routes";
 import { useShellPanels } from "../shell/panels";
+import LoadError from "../shell/LoadError";
+import { loginHref } from "../lib/loginHref";
+import { seedSiteSearch } from "../lib/useSiteSearch";
+import { usePageSeo, type PageSeo } from "../lib/usePageSeo";
+import { absoluteUrl } from "@/lib/seo";
 import { BENTO_FIRST, BENTO_STEP, bentoBlocks } from "../main/bento";
 import ColorSearch from "../main/ColorSearch";
 import Creators from "../main/Creators";
 import Events from "../main/Events";
+import EmptyNote from "../main/EmptyNote";
 import ScLoader from "../main/ScLoader";
 import { EVENT_TYPES, EVENT_VIEWS, EVENT_VIEW_LABEL, isEventType, type EventView } from "../main/useHomeEvents";
 import { CREATOR_VIEWS, type CreatorView } from "../main/useCreators";
@@ -30,6 +36,29 @@ type Mode = (typeof MODES)[number][0];
 
 const MODE_LABEL: Record<Mode, string> = { showcase: "ผลงาน", creators: "ครีเอเตอร์", event: "อีเว้นท์" };
 
+/** Old home links: `?mode=creators` (`designers` before the rename), `?mode=event(s)`; other modes were cut → Showcase. */
+const OLD_MODE_TAB: Record<string, "creators" | "event"> = { creators: "creators", designers: "creators", event: "event", events: "event" };
+
+/** The home page's tags; the search box of Google (SearchAction) opens `/?q=`, like api/seo-preview.js. */
+const homeSeo = (mode: Mode): PageSeo =>
+  mode === "showcase"
+    ? {
+        path: "/",
+        jsonLd: [
+          { "@type": "Organization", name: "SAMECOR", url: absoluteUrl("/"), logo: absoluteUrl("/icons/icon-512.png"), email: "support@samecor.com" },
+          {
+            "@type": "WebSite",
+            name: "SAMECOR",
+            url: absoluteUrl("/"),
+            inLanguage: ["th", "en"],
+            potentialAction: { "@type": "SearchAction", target: `${absoluteUrl("/")}?q={search_term_string}`, "query-input": "required name=search_term_string" },
+          },
+        ],
+      }
+    : mode === "creators"
+      ? { title: "Creators", description: "ครีเอเตอร์ไทยบน SAMECOR ดูผลงาน ติดตาม แล้วทักทายกันได้เลย", path: "/" }
+      : { title: "Events", description: "นิทรรศการ เวิร์กช็อป ทอล์ก และ Open Call สายสร้างสรรค์ บน SAMECOR", path: "/" };
+
 const AddIcon = () => (
   <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.33">
     <path d="M12 5v14M5 12h14" />
@@ -44,8 +73,10 @@ export default function Main() {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
   const panels = useShellPanels();
-  const tab = params.get("tab");
+  const oldMode = params.get("mode");
+  const tab = params.get("tab") ?? (oldMode ? OLD_MODE_TAB[oldMode.toLowerCase()] : null);
   const mode: Mode = tab === "creators" || tab === "event" ? tab : "showcase";
+  usePageSeo(homeSeo(mode));
   const catParam = params.get("cat");
   const category = isScCategory(catParam) ? catParam : null;
 
@@ -103,6 +134,28 @@ export default function Main() {
     };
   }, [mode, category, evType]);
 
+  // `/?q=` (Google's search box), the `/search` shortcut (`?search`): the search panel opens with the term.
+  // On the Event tab `?q=` is the Event search instead. `?mode=` (old links) becomes `?tab=`. Read once.
+  const searchBtn = useRef<HTMLButtonElement>(null);
+  const askedQ = mode === "event" ? "" : params.get("q")?.trim() ?? "";
+  const askedSearch = params.has("search");
+  useEffect(() => {
+    if (!oldMode && !askedSearch && !askedQ) return;
+    const next = new URLSearchParams(params);
+    if (oldMode) {
+      next.delete("mode");
+      const t = OLD_MODE_TAB[oldMode.toLowerCase()];
+      if (t && !next.has("tab")) next.set("tab", t);
+    }
+    if (askedSearch || askedQ) {
+      next.delete("search");
+      if (askedQ) next.delete("q");
+      seedSiteSearch(askedQ);
+      panels.openSearch(searchBtn.current, "main");
+    }
+    setParams(next, { replace: true, preventScrollReset: true });
+  }, [oldMode, askedSearch, askedQ, params, setParams, panels]);
+
   const set = (key: "tab" | "cat" | "view" | "type" | "color", value: string | null) => {
     const next = new URLSearchParams(params);
     if (value) next.set(key, value);
@@ -144,16 +197,23 @@ export default function Main() {
   // Following and Collections belong to a signed-in person; a signed-out visitor gets Explore.
   const view: ShowcaseView = VIEW_NEEDS_LOGIN[wanted] && signedOut ? "explore" : wanted;
   const pickView = (v: ShowcaseView) => {
-    if (VIEW_NEEDS_LOGIN[v] && !user) navigate(SC_LINKS.login);
+    if (VIEW_NEEDS_LOGIN[v] && !user) navigate(loginHref());
     else set("view", v === "explore" ? null : v);
   };
   const crWanted: CreatorView = (CREATOR_VIEWS as readonly string[]).includes(viewParam ?? "") ? (viewParam as CreatorView) : "discover";
   const crView: CreatorView = crWanted === "following" && signedOut ? "discover" : crWanted;
   const pickCrView = (v: CreatorView) => {
-    if (v === "following" && !user) navigate(SC_LINKS.login);
+    if (v === "following" && !user) navigate(loginHref());
     else set("view", v === "discover" ? null : v);
   };
   const evView: EventView = (EVENT_VIEWS as readonly string[]).includes(viewParam ?? "") ? (viewParam as EventView) : "all";
+  // "ไม่เจอสิ่งที่ตรงกัน" → "ล้างตัวกรอง": back to every work / creator of this tab.
+  const filtered = mode === "showcase" ? !!category || colors.length > 0 || view !== "explore" : mode === "creators" && (!!category || crView !== "discover");
+  const clearFilters = () => {
+    const next = new URLSearchParams(params);
+    for (const k of ["cat", "color", "view"]) next.delete(k);
+    setParams(next, { preventScrollReset: true });
+  };
   // Saving opens SaveToast (collections); signed out → log-in page.
   const saves = useSaveFlow();
   const { toggle: saveWork } = saves;
@@ -175,6 +235,7 @@ export default function Main() {
             />
           ) : null}
           <button
+            ref={searchBtn}
             type="button"
             aria-label="ค้นหา"
             aria-haspopup="dialog"
@@ -199,7 +260,7 @@ export default function Main() {
             <AddIcon />
           </button>
         ) : (
-          <Link to={SC_LINKS.login} aria-label="ลงงาน" className="mn-add">
+          <Link to={loginHref(SC_LINKS.upload)} aria-label="ลงงาน" className="mn-add">
             <AddIcon />
           </Link>
         )}
@@ -255,9 +316,10 @@ export default function Main() {
             label={MODE_LABEL[mode]}
             savedIds={saves.ids}
             onToggleSave={toggleSave}
+            onClear={filtered ? clearFilters : undefined}
           />
         ) : mode === "creators" ? (
-          <Creators view={crView} category={category} />
+          <Creators view={crView} category={category} onClear={filtered ? clearFilters : undefined} />
         ) : (
           <Events view={evView} type={evType} q={params.get("q") ?? ""} onQuery={setQuery} />
         )}
@@ -341,10 +403,12 @@ type ShowcaseProps = {
   label: string;
   savedIds: Set<string>;
   onToggleSave: (work: TileWork, button: HTMLElement) => void;
+  /** Set while a category, colour or view narrows the grid. */
+  onClear?: () => void;
 };
 
-function Showcase({ view, category, colors, label, savedIds, onToggleSave }: ShowcaseProps) {
-  const { data: rows, isPending, isError, hasNextPage, isFetchingNextPage, fetchNextPage } = useShowcaseWorks(view, category);
+function Showcase({ view, category, colors, label, savedIds, onToggleSave, onClear }: ShowcaseProps) {
+  const { data: rows, isPending, isError, isFetchNextPageError, hasNextPage, isFetchingNextPage, fetchNextPage, refetch } = useShowcaseWorks(view, category);
   const owners = useMemo(() => [...new Set((rows ?? []).map((r) => r.owner_id).filter((id): id is string => !!id))], [rows]);
   const { data: profiles } = useProfilesByIds(owners);
 
@@ -419,8 +483,8 @@ function Showcase({ view, category, colors, label, savedIds, onToggleSave }: Sho
   }, [isPending]);
 
   if (isPending || (colorKey && measuring && !works.length)) return <ScLoader label="กำลังโหลดผลงานเพิ่ม" />;
-  if (isError) return null;
-  if (!works.length) return <p className="mn-none">ไม่เจอสิ่งที่ตรงกัน</p>;
+  if (isError && !works.length) return <LoadError onRetry={() => void refetch()} />;
+  if (!works.length) return <EmptyNote text="ไม่เจอสิ่งที่ตรงกัน" action={onClear ? { label: "ล้างตัวกรอง", onClick: onClear } : null} />;
 
   return (
     <>
@@ -450,7 +514,9 @@ function Showcase({ view, category, colors, label, savedIds, onToggleSave }: Sho
           ))}
         </section>
       )}
-      {moreLeft ? (
+      {moreLeft && isFetchNextPageError && !moreLoaded ? (
+        <LoadError onRetry={() => void fetchNextPage()} />
+      ) : moreLeft ? (
         <div ref={moreRef}>
           <ScLoader label="กำลังโหลดผลงานเพิ่ม" />
         </div>

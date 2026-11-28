@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { useSiteSearch } from "../lib/useSiteSearch";
+import { clearSiteSearchSeed, siteSearchSeed, useSiteSearch } from "../lib/useSiteSearch";
 import { onEscape } from "./panels";
 
 type Props = {
@@ -19,13 +19,17 @@ const thumb = (url: string) => (url ? { backgroundImage: `url(${JSON.stringify(u
  * blurred veil; suggestions only after typing; a result opens the work / profile / event.
  */
 export default function SearchPanel({ top, centred, leaving, onClose }: Props) {
-  const [q, setQ] = useState("");
+  // Opened from `/?q=` or the `/search` shortcut: starts with that term (read once).
+  const [q, setQ] = useState(siteSearchSeed);
   const inputRef = useRef<HTMLInputElement>(null);
   const { hits, ready } = useSiteSearch(q);
   const typed = !!q.trim();
 
   useEffect(() => {
-    inputRef.current?.focus();
+    clearSiteSearchSeed();
+    const el = inputRef.current;
+    el?.focus();
+    el?.setSelectionRange(el.value.length, el.value.length);
   }, []);
 
   useEffect(() => onEscape(() => onClose()), [onClose]);

@@ -9,6 +9,7 @@ import ScLoader from "../main/ScLoader";
 import { useSaveFlow } from "../main/useSaveFlow";
 import type { TileWork } from "../main/WorkTile";
 import { useWork } from "../work/useWork";
+import { similarSeo, usePageSeo } from "../lib/usePageSeo";
 import "../styles/fonts.css";
 import "../styles/tokens.css";
 import "../styles/reset.css";
@@ -37,6 +38,7 @@ export default function SimilarPage() {
   // Looking for similar pictures is not a visit to the work: no view counted.
   const { work, owner, media } = useWork(projectId, { countView: false });
   const row = work.data;
+  usePageSeo(similarSeo(row));
   const pictures = useMemo(() => media.filter((m) => m.kind === "image"), [media]);
   const source = src ?? pictures[img]?.url ?? pictures[0]?.url ?? "";
   const sourceRatio = pictures.find((p) => p.url === source)?.ratio ?? null;

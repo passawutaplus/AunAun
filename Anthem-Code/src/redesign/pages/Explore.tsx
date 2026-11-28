@@ -7,6 +7,7 @@ import { setExploreFollow } from "@/server/mutations/explore";
 import { exploreFollowValue, getExploreFollowing, getExplorePool } from "@/server/queries/explore";
 import { filterExplore, type ExploreKind, type ExploreSort } from "../explore/explore";
 import { useTiles } from "../explore/useTiles";
+import { usePageSeo } from "../lib/usePageSeo";
 import Masonry from "../main/Masonry";
 import ScLoader from "../main/ScLoader";
 import { useSaveFlow } from "../main/useSaveFlow";
@@ -49,6 +50,13 @@ export default function ExplorePage() {
   const pool = useQuery(explorePoolQuery);
   const rows = useMemo(() => filterExplore(pool.data ?? [], kind, value, sort), [pool.data, kind, value, sort]);
   const tiles = useTiles(rows);
+  // Same words as the bots' version (api/seo-preview.js).
+  usePageSeo({
+    title: kind === "tool" ? `ผลงานที่ใช้ ${value}` : `ผลงานแท็ก #${value}`,
+    description: kind === "tool" ? `ค้นพบผลงานครีเอเตอร์ที่ใช้ ${value} บน SAMECOR` : `ค้นพบผลงานแท็ก #${value} บน SAMECOR`,
+    path: location.pathname,
+    image: tiles[0]?.cover || null,
+  });
   const linkState = useMemo(() => ({ backgroundLocation: location, scList: tiles.map((t) => t.id) }), [location, tiles]);
   const saves = useSaveFlow();
   const toggleSave = (w: TileWork, el: HTMLElement) => saves.toggle({ id: w.id, title: w.title }, el);
