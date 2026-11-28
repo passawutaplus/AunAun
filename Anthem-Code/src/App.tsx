@@ -543,6 +543,9 @@ const App = () => (
                         <Route path="/dashboard/catalogs" element={<RedesignMyStudio />} />
                         <Route path="/dashboard/insights" element={<RedesignMyStudio />} />
                         <Route path="/dashboard/exhibition" element={<RedesignMyStudio />} />
+                        {/* Quotations / invoices / receipts came back (owner 2026-11-28): the Documents tab. */}
+                        <Route path="/dashboard/documents" element={<RedesignMyStudio />} />
+                        <Route path="/dashboard/billing" element={<RedesignMyStudio />} />
                         <Route path="/portfolio/manage" element={<RedesignMyStudio />} />
                         {/* Post or edit an event (step 11) on the old editor URLs; one element so the first save (new → :id/edit) keeps the page. */}
                         <Route path="/dashboard/exhibition/new" element={<RedesignEventPost />} />

@@ -1,0 +1,693 @@
+/* Chat tools (chat/ChatTools.tsx + the boxes it opens): quotation, invoice, receipt, collab invite and plan.
+   Inside the Chat page, the big popup and ChatDock; the boxes are ChatSheets (chat-sheet.css). */
+
+/* ---------- "+" and its menu ---------- */
+.sc-app .ct-wrap {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+}
+
+.sc-app .ch-cmp > .ct-wrap {
+  margin-bottom: 2px;
+}
+
+.sc-app .ct-wrap[data-small] {
+  align-self: flex-end;
+}
+
+.sc-app .ct-plus[data-on] {
+  background: #F2F2F0;
+}
+
+.sc-app .ct-menu {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 8px);
+  z-index: 6;
+  width: 224px;
+  padding: 8px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: #FFFFFF;
+  border-radius: 20px;
+  box-shadow: 0 1px 2px rgba(40, 41, 41, .06), 0 12px 32px rgba(40, 41, 41, .16);
+}
+
+/* in-chat pieces sit in .ch-card, whose `:where(button)` reset (chat.css, loaded later) wins ties: one class more */
+.sc-app .ct-menu .ct-mi {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 14px;
+  background: none;
+  color: #282929;
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sc-app .ct-menu .ct-mi:hover,
+.sc-app .ct-menu .ct-mi:focus-visible {
+  background: #F2F2F0;
+  outline: none;
+}
+
+.sc-app .ct-mi-ic {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: 10px;
+  background: #F2F2F0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---------- forms in the boxes ---------- */
+.sc-app .cs-box[data-wide]:has(> .ct-form),
+.sc-app .cs-box[data-wide]:has(> .ct-plan),
+.sc-app .cs-box[data-wide]:has(> .ct-empty) {
+  max-width: 580px;
+}
+
+.sc-app .ct-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sc-app .ct-f {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.sc-app .ct-f > span,
+.sc-app .ct-f > legend {
+  padding: 0;
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: #666666;
+}
+
+.sc-app label.ct-f > span {
+  margin: 0;
+}
+
+.sc-app .ct-form :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea),
+.sc-app .ct-panel textarea,
+.sc-app .cr-opts + input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid #E2E2DF;
+  border-radius: 12px;
+  background: #FFFFFF;
+  color: #282929;
+  font: inherit;
+  font-size: 15px;
+}
+
+.sc-app .ct-form textarea,
+.sc-app .ct-panel textarea {
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.sc-app .ct-form :is(input, select, textarea):focus,
+.sc-app .ct-panel textarea:focus,
+.sc-app .cr-opts + input:focus {
+  outline: none;
+  border-color: #282929;
+}
+
+.sc-app .cr-opts + input {
+  margin-top: 8px;
+}
+
+.sc-app .ct-two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.sc-app .ct-items {
+  gap: 8px;
+}
+
+.sc-app .ct-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sc-app .ct-item-name {
+  flex: 1;
+  min-width: 0;
+}
+
+.sc-app .ct-item-qty {
+  width: 64px;
+  flex: none;
+}
+
+.sc-app .ct-item-price {
+  width: 116px;
+  flex: none;
+}
+
+.sc-app .ct-item-qty input {
+  text-align: center;
+}
+
+.sc-app .ct-item-price input {
+  text-align: right;
+}
+
+.sc-app .ct-ib {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border: 0;
+  border-radius: 50%;
+  background: #F2F2F0;
+  color: #282929;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.sc-app .ct-add {
+  align-self: flex-start;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: #F2F2F0;
+  color: #282929;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.sc-app .ct-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sc-app .ct-chip {
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid #E2E2DF;
+  border-radius: 999px;
+  background: #FFFFFF;
+  color: #282929;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.sc-app .ct-chip[aria-pressed="true"] {
+  border-color: #282929;
+  background: #282929;
+  color: #FFFFFF;
+}
+
+.sc-app .ct-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.sc-app .ct-check input,
+.sc-app .cr-opt input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  flex: none;
+  accent-color: #282929;
+}
+
+.sc-app .cr-opt[data-off] {
+  opacity: .5;
+  cursor: default;
+}
+
+.sc-app .ct-opt-t {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 0;
+}
+
+.sc-app .ct-opt-t > span:last-child,
+.sc-app .ct-quote > span:last-child {
+  font-size: 12px;
+  color: #8A8A87;
+}
+
+.sc-app .ct-opt-t [data-tone="success"] {
+  color: #2E6B3F;
+}
+
+.sc-app .ct-opt-t [data-tone="warning"] {
+  color: #8A5A12;
+}
+
+.sc-app .ct-opt-t [data-tone="danger"] {
+  color: #C8372D;
+}
+
+.sc-app .ct-quote {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #F7F7F5;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 14px;
+}
+
+.sc-app .ct-works {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 8px;
+}
+
+.sc-app .ct-work {
+  aspect-ratio: 1;
+  border: 0;
+  border-radius: 10px;
+  background: #ECECEA center / cover no-repeat;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(40, 41, 41, .06);
+}
+
+.sc-app .ct-work[aria-pressed="true"] {
+  box-shadow: 0 0 0 2px #FFFFFF, 0 0 0 4px #282929;
+}
+
+.sc-app .ct-role {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.sc-app .ct-role + .ct-role {
+  margin-top: 8px;
+}
+
+.sc-app .ct-role > span {
+  width: 96px;
+  flex: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* totals of a quotation */
+.sc-app .ct-sum {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: #F7F7F5;
+}
+
+.sc-app .ct-sum-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.sc-app .ct-sum-sub {
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 400;
+  color: #4A4A4A;
+}
+
+.sc-app .ct-note {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #8A8A87;
+}
+
+.sc-app .ct-note-c {
+  margin: 0 0 12px;
+  text-align: center;
+}
+
+.sc-app .ct-err {
+  margin: 12px 0 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #FBE7E5;
+  color: #C8372D;
+  font-size: 13px;
+}
+
+.sc-app .ct-msg {
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #E7F3EA;
+  color: #2E6B3F;
+  font-size: 13px;
+}
+
+.sc-app .ct-preview {
+  max-height: 60vh;
+  overflow: auto;
+}
+
+/* buttons */
+.sc-app .ct-go,
+.sc-app .ct-line {
+  min-height: 42px;
+  padding: 0 18px;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.sc-app .ct-go {
+  border: 0;
+  background: #282929;
+  color: #FFFFFF;
+}
+
+.sc-app .ct-go-red {
+  background: #C8372D;
+}
+
+.sc-app .ct-line {
+  border: 1px solid #E2E2DF;
+  background: #FFFFFF;
+  color: #282929;
+}
+
+.sc-app .ct-line-red {
+  color: #C8372D;
+}
+
+.sc-app :is(.ct-go, .ct-line):disabled {
+  opacity: .5;
+  cursor: default;
+}
+
+.sc-app .ct-acts {
+  flex-wrap: wrap;
+}
+
+/* what this person can do with a document (DocViewer) */
+.sc-app .ct-docacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.sc-app .ct-panel {
+  margin-bottom: 16px;
+  padding: 14px;
+  border-radius: 16px;
+  background: #F7F7F5;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sc-app .ct-panel .cs-acts {
+  margin-top: 4px;
+}
+
+.sc-app .ct-panel-h {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.sc-app .ct-panel .ct-note {
+  margin: 0;
+}
+
+.sc-app .ct-fact {
+  margin: 0 0 10px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #F2F2F0;
+  font-size: 13px;
+  color: #4A4A4A;
+}
+
+.sc-app .ct-fact[data-tone="warning"] {
+  background: #FBF1DE;
+  color: #8A5A12;
+}
+
+.sc-app .ct-empty {
+  padding: 8px 4px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.sc-app .ct-empty p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #4A4A4A;
+}
+
+/* ---------- collab plan (view) ---------- */
+.sc-app .ct-plan dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 10px 16px;
+  font-size: 14px;
+}
+
+.sc-app .ct-plan dt {
+  color: #8A8A87;
+}
+
+.sc-app .ct-plan dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.sc-app .ct-plan-role {
+  display: block;
+}
+
+.sc-app .ct-plan-role b {
+  font-weight: 600;
+}
+
+.sc-app .ct-pre {
+  white-space: pre-line;
+}
+
+.sc-app .ct-acks {
+  margin: 16px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sc-app .ct-acks span {
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: #F2F2F0;
+  font-size: 13px;
+  color: #8A8A87;
+}
+
+.sc-app .ct-acks span[data-on] {
+  background: #E7F3EA;
+  color: #2E6B3F;
+}
+
+/* ---------- collab cards in the chat ---------- */
+.sc-app .ct-collab-msg {
+  padding: 0 4px;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.sc-app .ct-collab-ref {
+  padding: 0 4px;
+  font-size: 12px;
+  color: #666666;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sc-app a.ct-collab-ref {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.sc-app .ct-collab-acts {
+  display: flex;
+  gap: 8px;
+}
+
+.sc-app .ct-collab-acts > * {
+  flex: 1;
+}
+
+.sc-app .ct-collab .ct-line {
+  min-height: 40px;
+  font-size: 14px;
+  color: #282929;
+}
+
+/* "X ชวนคุณคอลแลป" says what the card is: it wraps instead of being cut */
+.sc-app .ct-collab .ch-wt > :nth-child(2) {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* top of a collab room: under the glass room header (like the search row), the log starts lower */
+.sc-app .ct-bar {
+  position: absolute;
+  top: 84px;
+  left: 28px;
+  right: 28px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 8px 8px 14px;
+  border-radius: 999px;
+  background: #F7F7F5;
+  font-size: 13px;
+}
+
+.sc-app .ch-log[data-collab] {
+  padding-top: 148px;
+}
+
+.sc-app .ct-bar-k {
+  font-weight: 600;
+}
+
+.sc-app .ct-bar-t {
+  flex: 1;
+  min-width: 0;
+  color: #666666;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sc-app .ct-bar .ct-bar-btn {
+  flex: none;
+  min-height: 32px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: #282929;
+  color: #FFFFFF;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* "Collab" next to a name in the room list */
+.sc-app .ct-tag {
+  flex: none;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #F2F2F0;
+  font-size: 11px;
+  color: #666666;
+}
+
+.sc-app .ct-room-note {
+  margin: 0 24px 8px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: #F2F2F0;
+  font-size: 13px;
+  color: #4A4A4A;
+}
+
+@media (max-width: 600px) {
+  .sc-app .ct-two {
+    grid-template-columns: 1fr;
+  }
+
+  .sc-app .ct-item-qty {
+    width: 52px;
+  }
+
+  .sc-app .ct-item-price {
+    width: 96px;
+  }
+
+  .sc-app .ct-plan dl {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+
+  .sc-app .ct-plan dd + dt {
+    margin-top: 10px;
+  }
+
+  .sc-app .ct-bar {
+    top: 64px;
+    left: 12px;
+    right: 12px;
+  }
+
+  .sc-app .ch-log[data-collab] {
+    padding-top: 120px;
+  }
+
+  .sc-app .ct-room-note {
+    margin-left: 12px;
+    margin-right: 12px;
+  }
+
+  .sc-app .ct-menu {
+    width: 216px;
+  }
+}

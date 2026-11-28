@@ -17,7 +17,9 @@ import { Link, useLocation } from "react-router-dom";
 import { SC_LINKS } from "../routes";
 import { usePresence } from "../lib/usePresence";
 import { clock, dayWord, listTime, newDay } from "../chat/chatFormat";
-import DocCardView from "../chat/DocCard";
+import ChatTools from "../chat/ChatTools";
+import { PlanCard } from "../chat/CollabCards";
+import DocCardView, { OfferCardView } from "../chat/DocCard";
 import ReportPicker from "../chat/ReportPicker";
 import {
   chatMsgQuote,
@@ -154,6 +156,14 @@ const ChatDock = forwardRef<ChatDockHandle>(function ChatDock(_props, ref) {
     setNotice(text);
     if (text) noticeTimer.current = window.setTimeout(() => setNotice(""), 2600);
   };
+  /** A chat tool's words, in the small window (the list is not in view there). */
+  const winTimer = useRef<number | undefined>(undefined);
+  const sayWin = (text: string) => {
+    window.clearTimeout(winTimer.current);
+    setWinErr(text);
+    winTimer.current = window.setTimeout(() => setWinErr(""), 2600);
+  };
+  useEffect(() => () => window.clearTimeout(winTimer.current), []);
   useEffect(() => () => window.clearTimeout(noticeTimer.current), []);
 
   const focusBack = () => {
@@ -414,6 +424,11 @@ const ChatDock = forwardRef<ChatDockHandle>(function ChatDock(_props, ref) {
                 <span className="cd-row-tx">
                   <span className="cd-row-l1">
                     <span className="cd-row-n" data-unread={r.unread ? "" : undefined}>{r.other.name}</span>
+                {r.kind === "collab" ? (
+                  <span lang="en" className="ct-tag">
+                    Collab
+                  </span>
+                ) : null}
                     {r.muted ? (
                       <svg role="img" aria-label="ปิดเสียงแล้ว" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8A8A87" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M6 16V11a6 6 0 0 1 9.5-4.9M18 11v5l1.5 2H8" />
@@ -524,6 +539,15 @@ const ChatDock = forwardRef<ChatDockHandle>(function ChatDock(_props, ref) {
                     )}
                     {m.kind === "doc" && m.doc ? (
                       <DocCardView doc={m.doc} compact />
+                    ) : m.kind === "offer" && m.offer ? (
+                      <OfferCardView offer={m.offer} compact />
+                    ) : m.kind === "plan" ? (
+                      <PlanCard room={cur} say={sayWin} compact />
+                    ) : m.kind === "collab" ? (
+                      // The invite is answered in the big chat (its card has room for the buttons).
+                      <Link to={`${SC_LINKS.chat}/${cur.id}`} className="cd-bub cd-bub-link" onClick={bigLink(cur.id)}>
+                        {m.me ? `คุณชวน ${cur.other.name} คอลแลป` : `${cur.other.name} ชวนคุณคอลแลป`}
+                      </Link>
                     ) : m.kind === "gone" ? (
                       <span className="cd-bub cd-unsent">{words}</span>
                     ) : href ? (
@@ -629,6 +653,7 @@ const ChatDock = forwardRef<ChatDockHandle>(function ChatDock(_props, ref) {
               </div>
             ) : null}
             <div className="cd-comp">
+              <ChatTools small room={cur} say={sayWin} onOpenRoom={(id) => openConv(id)} />
               <label htmlFor="cd-input" className="cd-sr">{`พิมพ์ข้อความถึง ${cur.other.name}`}</label>
               <textarea
                 id="cd-input"

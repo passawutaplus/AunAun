@@ -11,7 +11,7 @@ import { coverOf, editHref, ratioOf } from "./StudioWorks";
 import { interestWords, rankOpenCalls } from "./forYou";
 import { splitPeriods, useInsights } from "./StudioInsights";
 
-export type StudioTab = "overview" | "profile" | "works" | "event" | "catalogs" | "insights";
+export type StudioTab = "overview" | "profile" | "works" | "event" | "catalogs" | "documents" | "insights";
 
 const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 const DONE_KEY = "sc-studio-inbox-done";

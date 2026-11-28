@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { dayWord, docOf, eventOf, listTime, msgKind, msgLabel, newDay, objectOf, quoteText, textOf } from "../chatFormat";
+import { collabOf, dayWord, docOf, eventOf, listTime, msgKind, msgLabel, newDay, objectOf, offerOf, quoteText, textOf } from "../chatFormat";
+import { encodeChatOffer, offerInstallmentAmounts, planFromPreset } from "@/lib/chatOffer";
+import { buildCollabInviteChatMessage } from "@/lib/collabBrief";
 
 const now = new Date(2026, 10, 29, 10, 0);
 const at = (d: number, h = 9, mo = 10, y = 2026) => new Date(y, mo, d, h, 5).toISOString();
@@ -79,6 +81,54 @@ describe("chat message kinds", () => {
     expect(msgLabel(linked, now)).toBe("ไปงานนี้กัน");
     expect(msgLabel(msg({ content: `/exhibition/${id}` }), now)).toBe("แชร์อีเวนต์");
     expect(eventOf(msg({ message_type: "project", project_id: "p", content: `/exhibition/${id}` }))).toBeNull();
+  });
+});
+
+describe("quotation and collab cards (back 2026-11-28)", () => {
+  const offer = {
+    v: 4 as const,
+    title: "Poster",
+    amount: 10000,
+    currency: "THB" as const,
+    deliverables: "",
+    items: [{ id: "a", name: "Poster", quantity: 2, unitPrice: 5000 }],
+    number: "QT-2026-0001",
+    docId: "d9",
+    party: { issuer: { type: "individual" as const, name: "Tum" }, client: { type: "corporate" as const, companyName: "ACME", name: "ACME" } },
+    paymentPlan: planFromPreset("50-50"),
+    whtEnabled: true,
+    whtRate: 3,
+  };
+
+  it("a quotation is a card with what the client pays (one formula), never the JSON", () => {
+    const content = encodeChatOffer(offer);
+    expect(msgKind(msg({ content }), now)).toBe("offer");
+    expect(msgLabel(msg({ content }), now)).toBe("ใบเสนอราคา Poster");
+    const o = offerOf(content)!;
+    const rows = offerInstallmentAmounts(o.offer);
+    expect([o.title, o.number, o.docId, o.parts]).toEqual(["Poster", "QT-2026-0001", "d9", 2]);
+    expect(o.net).toBe(rows.reduce((s, r) => s + r.net, 0));
+    expect(o.net).toBe(9700);
+  });
+
+  it("the hiring blobs stay hidden", () => {
+    expect(msgKind(msg({ content: '__APLUS1_HIRE_CANCEL__:{"v":1}' }), now)).toBeNull();
+    expect(msgKind(msg({ content: '__APLUS1_COLLAB_END__:{"v":1}' }), now)).toBeNull();
+  });
+
+  it("a collab invite is a card with its words, not the labelled lines", () => {
+    const content = buildCollabInviteChatMessage({ project_title: "Soft Machine", collab_types: ["joint-project"], message: "อยากทำซีนด้วยกัน", sender_username: "tum.3d" });
+    expect(msgKind(msg({ content }), now)).toBe("collab");
+    expect(msgLabel(msg({ content }), now)).toBe("ชวนคอลแลป");
+    const c = collabOf(content);
+    expect(c.type).toBe("ร่วมโปรเจกต์");
+    expect(c.message).toBe("อยากทำซีนด้วยกัน");
+    expect(c.work?.title).toBe("Soft Machine");
+  });
+
+  it("the collab plan line is a plan card; the welcome line stays text", () => {
+    expect(msgKind(msg({ content: "🤝 แผนคอลแลป" }), now)).toBe("plan");
+    expect(msgKind(msg({ content: "🎉 เริ่มคอลแลปแล้ว" }), now)).toBe("text");
   });
 });
 

@@ -1,0 +1,237 @@
+/* My Studio › Documents (studio/StudioDocuments.tsx): issued / received, money still open, filters, rows. */
+
+.sc-app .ms-docs {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.sc-app .ms-seg {
+  align-self: flex-start;
+  display: inline-flex;
+  padding: 4px;
+  border-radius: 999px;
+  background: #F2F2F0;
+}
+
+.sc-app .ms-seg button {
+  min-height: 36px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: #666666;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.sc-app .ms-seg button[aria-pressed="true"] {
+  background: #FFFFFF;
+  color: #282929;
+  box-shadow: 0 1px 2px rgba(40, 41, 41, .12);
+}
+
+.sc-app .ms-dsum {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.sc-app .ms-dsum > div {
+  padding: 16px 18px;
+  border-radius: 20px;
+  background: #F7F7F5;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.sc-app .ms-dsum span {
+  font-size: 12px;
+  color: #8A8A87;
+}
+
+.sc-app .ms-dsum b {
+  font-size: 22px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.sc-app .ms-dsum [data-red] b {
+  color: #C8372D;
+}
+
+.sc-app .ms-dsel select,
+.sc-app .ms-dq input {
+  height: 36px;
+  box-sizing: border-box;
+  border: 1px solid #E2E2DF;
+  border-radius: 999px;
+  background: #FFFFFF;
+  color: #282929;
+  font: inherit;
+  font-size: 13px;
+}
+
+.sc-app .ms-dsel select {
+  padding: 0 12px;
+}
+
+.sc-app .ms-dq {
+  flex: 1;
+  min-width: 180px;
+}
+
+.sc-app .ms-dq input {
+  width: 100%;
+  padding: 0 16px;
+}
+
+.sc-app :is(.ms-dsel select, .ms-dq input):focus {
+  outline: none;
+  border-color: #282929;
+}
+
+.sc-app .ms-dcsv {
+  cursor: pointer;
+}
+
+/* rows */
+.sc-app .ms-dcr {
+  padding: 0;
+}
+
+.sc-app .ms-dcr-a {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sc-app .ms-dcr-a:focus-visible {
+  outline: 2px solid #282929;
+  outline-offset: 2px;
+}
+
+.sc-app .ms-dck {
+  width: 48px;
+  height: 48px;
+  flex: none;
+  border-radius: 14px;
+  background: #F2F2F0;
+  color: #282929;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sc-app .ms-dck[data-k="receipt"] {
+  background: #E7F3EA;
+  color: #2E6B3F;
+}
+
+.sc-app .ms-dct {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sc-app .ms-dcm {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.sc-app .ms-dca {
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+.sc-app .ms-dcs {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #F2F2F0;
+  color: #4A4A4A;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.sc-app .ms-dcs[data-tone="success"] {
+  background: #E7F3EA;
+  color: #2E6B3F;
+}
+
+.sc-app .ms-dcs[data-tone="warning"] {
+  background: #FBF1DE;
+  color: #8A5A12;
+}
+
+.sc-app .ms-dcs[data-tone="danger"] {
+  background: #FBE7E5;
+  color: #C8372D;
+}
+
+.sc-app .ms-dcs[data-tone="info"] {
+  background: #E8EEF8;
+  color: #2F4F86;
+}
+
+.sc-app .ms-dchat {
+  margin-left: 12px;
+  text-decoration: none;
+}
+
+.sc-app .ms-dchat:hover {
+  border-color: #282929;
+}
+
+@media (max-width: 900px) {
+  .sc-app .ms-dsum {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .sc-app .ms-docs {
+    gap: 18px;
+  }
+
+  .sc-app .ms-dsum > div {
+    padding: 12px 14px;
+    border-radius: 16px;
+  }
+
+  .sc-app .ms-dsum b {
+    font-size: 18px;
+  }
+
+  .sc-app .ms-dq {
+    flex-basis: 100%;
+  }
+
+  .sc-app .ms-dcr-a {
+    gap: 12px;
+  }
+
+  .sc-app .ms-dck {
+    width: 40px;
+    height: 40px;
+  }
+
+  .sc-app .ms-dchat {
+    margin-left: 6px;
+  }
+}
