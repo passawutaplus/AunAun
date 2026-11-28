@@ -592,3 +592,17 @@ html[data-native-app] .sc-app .sc-main {
     box-shadow: 0 0 0 1px rgba(40, 41, 41, .18);
   }
 }
+
+/* App Event list (owner 2026-11-28): a rule between the Highlight and the list, and month names twice as big */
+@media (max-width: 600px) {
+  html[data-native-app] .sc-app .mn-ev-hl + .mn-ev-months {
+    margin-top: 8px;
+    padding-top: 24px;
+    border-top: 1px solid #D4D4D1;
+  }
+
+  html[data-native-app] .sc-app .mn-ev-mo > span:first-child {
+    font-size: 44px;
+    line-height: 1.05;
+  }
+}
