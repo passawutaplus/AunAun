@@ -413,6 +413,7 @@ const RedesignMain = lazy(() => import("./redesign/pages/Main.tsx"));
 const RedesignTerms = lazy(() => import("./redesign/pages/Terms.tsx"));
 const RedesignPrivacy = lazy(() => import("./redesign/pages/Privacy.tsx"));
 const RedesignHelp = lazy(() => import("./redesign/pages/Help.tsx"));
+const RedesignFeedback = lazy(() => import("./redesign/pages/Feedback.tsx"));
 
 /** Old site chrome (top nav, floating nav, banners, prompts): never mounted on a page of the new design. */
 const LegacyChrome = ({ children }: { children: ReactNode }) => {
@@ -485,6 +486,8 @@ const App = () => (
                         <Route path="/help">
                           <Route index element={<RedesignHelp />} />
                         </Route>
+                        {/* Open to everyone; sending asks to log in (the old page needed a login to open). */}
+                        <Route path="/me/feedback" element={<RedesignFeedback />} />
                       </Route>
                     ) : null}
                     <Route element={<LaunchMinimalGate />}>
