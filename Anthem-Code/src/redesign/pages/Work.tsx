@@ -147,7 +147,8 @@ function WorkView({ id, overlay, list, linkState, close }: ViewProps) {
   const nextId = neighbour(list, id, 1);
 
   // Over the home page, closing plays the opening backwards (owner 2026-11-28): the card sinks and
-  // fades, the buttons and the veil fade out, then the page underneath is back.
+  // fades, the buttons and the veil fade out, then the page underneath is back. Quick (~320 ms, owner:
+  // "a little faster, no judder"): it moves from the first frame, and the tab bar comes back under the veil.
   const cardRef = useRef<HTMLElement>(null);
   const closing = useRef(false);
   const dismiss = useCallback(() => {
@@ -156,11 +157,12 @@ function WorkView({ id, overlay, list, linkState, close }: ViewProps) {
     if (!overlay || calm() || !card || !layer || typeof card.animate !== "function") return close();
     if (closing.current) return;
     closing.current = true;
-    const out = "cubic-bezier(.55, 0, .78, 0)";
+    document.documentElement.classList.add("sc-wk-closing");
     const runs = [
-      card.animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: "translateY(120px)" }], { duration: 520, easing: out, fill: "forwards" }),
-      ...Array.from(layer.querySelectorAll<HTMLElement>(".wk-ui, .wk-rail")).map((el) => el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 240, easing: "ease", fill: "forwards" })),
-      ...Array.from(layer.querySelectorAll<HTMLElement>(".wk-veil")).map((el) => el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 380, delay: 200, easing: "ease", fill: "forwards" })),
+      card.animate([{ transform: "none" }, { transform: "translateY(96px)" }], { duration: 300, easing: "cubic-bezier(.4, 0, 1, 1)", fill: "forwards" }),
+      card.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 260, delay: 40, easing: "cubic-bezier(.2, 0, .6, 1)", fill: "forwards" }),
+      ...Array.from(layer.querySelectorAll<HTMLElement>(".wk-ui, .wk-rail")).map((el) => el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 160, easing: "ease-out", fill: "forwards" })),
+      ...Array.from(layer.querySelectorAll<HTMLElement>(".wk-veil")).map((el) => el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 260, delay: 60, easing: "ease-out", fill: "forwards" })),
     ];
     let done = false;
     const finish = () => {
@@ -169,7 +171,7 @@ function WorkView({ id, overlay, list, linkState, close }: ViewProps) {
       close();
     };
     void Promise.all(runs.map((a) => a.finished)).then(finish, finish);
-    window.setTimeout(finish, 900);
+    window.setTimeout(finish, 600);
   }, [overlay, close]);
 
   // Esc closes (the save popup handles its own Esc first).
@@ -208,11 +210,12 @@ function WorkView({ id, overlay, list, linkState, close }: ViewProps) {
     }
   }, [id]);
 
-  // Share (owner 2026-11-28): the store apps open the phone's share sheet; the web opens the share panel
+  // Share (owner 2026-11-28): signed out, the store apps open the phone's share sheet; otherwise the share panel
   // (preview, link + copy, places to send it) like the old site. A picture's button previews that picture.
   const shareUrl = `${typeof window === "undefined" ? "" : window.location.origin}/showcase/${id}`;
   const share = (picture?: string) => {
-    if (shareFromApp({ title: title || "SAMECOR", url: shareUrl })) return;
+    // Signed in, the app shows the panel too: its "ส่งในแชท" row is not in the phone sheet.
+    if (!user && shareFromApp({ title: title || "SAMECOR", url: shareUrl })) return;
     const cover = row?.cover_url || media.find((m) => m.kind === "image")?.url || "";
     const image = picture || cover;
     const ratio =
@@ -553,7 +556,7 @@ function WorkView({ id, overlay, list, linkState, close }: ViewProps) {
         </div>
       ) : null}
       {saves.element}
-      {shareFor ? <SharePanel url={shareUrl} title={title} image={shareFor.image} imageRatio={shareFor.ratio} onClose={() => setShareFor(null)} say={say} /> : null}
+      {shareFor ? <SharePanel url={shareUrl} title={title} image={shareFor.image} imageRatio={shareFor.ratio} onClose={() => setShareFor(null)} say={say} chat={user && id ? { userId: user.id, work: { id, title } } : null} /> : null}
     </>
   );
 }
@@ -598,7 +601,7 @@ export function WorkOverlay() {
   useEffect(() => {
     const root = document.documentElement;
     root.classList.add("sc-wk-open");
-    return () => root.classList.remove("sc-wk-open");
+    return () => root.classList.remove("sc-wk-open", "sc-wk-closing");
   }, []);
 
   const close = useCallback(() => {

@@ -126,3 +126,6 @@ export const SC_SHARE_TARGETS: ScShareTarget[] = [
     href: (url, title) => `mailto:?subject=${enc(title)}&body=${enc(url)}`,
   },
 ];
+
+/** The one row shown before "เพิ่มเติม" (owner 2026-11-28: the main socials first, the rest folded away). */
+export const SC_SHARE_MAIN = ["facebook", "instagram", "line", "x"];

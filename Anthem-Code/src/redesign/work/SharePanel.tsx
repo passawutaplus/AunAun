@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { proxiedImageUrl } from "@/lib/imageProxy";
 import { sharePageHost } from "@/lib/shareTargets";
-import { SC_SHARE_TARGETS } from "./shareTargets";
+import { isNativeApp } from "@/lib/appShell";
+import { SC_SHARE_MAIN, SC_SHARE_TARGETS } from "./shareTargets";
+import ShareChat from "./ShareChat";
 import logoUrl from "../assets/logo.svg";
 
 type Props = {
@@ -12,14 +14,30 @@ type Props = {
   imageRatio: number | null;
   onClose: () => void;
   say: (t: string) => void;
+  /** Signed in + a work: the "ส่งในแชท" row. */
+  chat?: { userId: string; work: { id: string; title: string } } | null;
 };
 
 /**
  * Share a work (owner 2026-11-28: the old site's share sheet, in the new look): a preview of what is shared,
  * the link with Copy, then the places to send it (./shareTargets).
  */
-export default function SharePanel({ url, title, image, imageRatio, onClose, say }: Props) {
+const MAIN = SC_SHARE_TARGETS.filter((t) => SC_SHARE_MAIN.includes(t.key));
+const ORDERED = [...MAIN, ...SC_SHARE_TARGETS.filter((t) => !SC_SHARE_MAIN.includes(t.key))];
+
+const dots = (
+  <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.6" strokeLinecap="round">
+    <circle cx="6" cy="12" r="1" />
+    <circle cx="12" cy="12" r="1" />
+    <circle cx="18" cy="12" r="1" />
+  </svg>
+);
+
+export default function SharePanel({ url, title, image, imageRatio, onClose, say, chat }: Props) {
   const [canNative] = useState(() => typeof navigator !== "undefined" && typeof navigator.share === "function");
+  // The store apps: the phone's own share sheet already lists every installed app.
+  const [inApp] = useState(() => isNativeApp());
+  const [more, setMore] = useState(false);
 
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
@@ -70,42 +88,59 @@ export default function SharePanel({ url, title, image, imageRatio, onClose, say
           </button>
         </div>
 
-        <div className="sh-targets">
-          {SC_SHARE_TARGETS.map((t) => (
-            <a
-              key={t.key}
-              href={t.href(url, title, image)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="sh-t"
-              onClick={() => {
-                if (t.copyHint) void copy(t.copyHint);
-              }}
-            >
-              <span className="sh-ic">{t.icon}</span>
-              <span>{t.label}</span>
-            </a>
-          ))}
-          {canNative ? (
-            <button
-              type="button"
-              className="sh-t"
-              onClick={() => {
-                navigator.share({ title, url }).catch(() => undefined);
-              }}
-            >
-              <span className="sh-ic">
-                <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.6" strokeLinecap="round">
-                  <circle cx="6" cy="12" r="1" />
-                  <circle cx="12" cy="12" r="1" />
-                  <circle cx="18" cy="12" r="1" />
-                </svg>
-              </span>
-              <span>แอปอื่น</span>
-            </button>
-          ) : null}
-        </div>
+        {chat ? <ShareChat userId={chat.userId} work={chat.work} say={say} /> : null}
+
+        <section className="sh-sec" aria-labelledby="sh-to-h">
+          <h3 id="sh-to-h">แชร์ไปยัง</h3>
+          <div className="sh-targets">
+            {inApp ? null : (more ? ORDERED : MAIN).map((t) => (
+              <a
+                key={t.key}
+                href={t.href(url, title, image)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="sh-t"
+                onClick={() => {
+                  if (t.copyHint) void copy(t.copyHint);
+                }}
+              >
+                <span className="sh-ic">{t.icon}</span>
+                <span className="sh-tl">{t.label}</span>
+              </a>
+            ))}
+            {inApp || (more && canNative) ? (
+              <Target
+                label={inApp ? "แชร์ไปแอป" : "แอปอื่น"}
+                icon={dots}
+                onClick={() => {
+                  navigator.share?.({ title, url }).catch(() => undefined);
+                }}
+              />
+            ) : null}
+            {inApp ? null : (
+              <Target
+                label={more ? "ย่อ" : "เพิ่มเติม"}
+                expanded={more}
+                icon={
+                  <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                    <path d={more ? "M6 15l6-6 6 6" : "M6 9l6 6 6-6"} />
+                  </svg>
+                }
+                onClick={() => setMore((m) => !m)}
+              />
+            )}
+          </div>
+        </section>
       </div>
     </div>
+  );
+}
+
+function Target({ label, icon, onClick, expanded }: { label: string; icon: ReactNode; onClick: () => void; expanded?: boolean }) {
+  return (
+    <button type="button" className="sh-t" aria-expanded={expanded} onClick={onClick}>
+      <span className="sh-ic">{icon}</span>
+      <span className="sh-tl">{label}</span>
+    </button>
   );
 }
