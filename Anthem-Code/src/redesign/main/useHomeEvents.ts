@@ -4,7 +4,7 @@ import { getHomeEvents, type HomeEventRow } from "@/server/queries/homeEvents";
 /** "all" (owner 2026-11-28): every event that has not ended, by start day — Now alone often showed nothing. */
 export const EVENT_VIEWS = ["all", "now", "week", "upcoming", "past"] as const;
 export type EventView = (typeof EVENT_VIEWS)[number];
-export const EVENT_VIEW_LABEL: Record<EventView, string> = { all: "All", now: "Now", week: "This Week", upcoming: "Upcoming", past: "Past" };
+export const EVENT_VIEW_LABEL: Record<EventView, string> = { all: "Anytime", now: "Now", week: "This Week", upcoming: "Upcoming", past: "Past" };
 
 /** Type chips of the mock, in its order. "highlight" is not a category: it shows the highlight alone. */
 export const EVENT_TYPES = [
