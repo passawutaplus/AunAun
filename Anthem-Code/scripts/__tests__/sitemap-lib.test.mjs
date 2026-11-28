@@ -167,4 +167,31 @@ describe("journal + test-data filtering", () => {
     const paths = buildSitemapUrls({ useSeedCatalog: false }).map((u) => u.loc);
     expect(paths.filter((p) => p.startsWith("/showcase/") || p.startsWith("/u/"))).toHaveLength(0);
   });
+  it("leaves out what the new design cuts or moves (VITE_REDESIGN)", () => {
+    const opts = {
+      useSeedCatalog: false,
+      fullProduct: true,
+      hiringBoard: true,
+      projectIds: ["11111111-1111-1111-1111-111111111111"],
+      vanityHandles: ["nok"],
+      seriesIds: ["s1"],
+      collectionIds: ["c1"],
+      serviceIds: ["p1"],
+      objectIds: ["o1"],
+      jobIds: ["j1"],
+      events: [{ id: "e1", slug: "bkk-design-week" }],
+    };
+    const old = buildSitemapUrls(opts).map((u) => u.loc);
+    const next = buildSitemapUrls({ ...opts, redesign: true }).map((u) => u.loc);
+    for (const p of ["/forum", "/forum/c/help", "/exhibition", "/exhibition/category/workshop", "/service/p1", "/object/o1", "/hiring", "/hiring/j1", "/advertise", "/community", "/research"]) {
+      expect(old).toContain(p);
+      expect(next).not.toContain(p);
+    }
+    expect(next.some((p) => p.startsWith("/s/"))).toBe(false);
+    // Kept: home, works, profiles, events, Journal (old list URL), legal, public series / collections.
+    for (const p of ["/", "/showcase/11111111-1111-1111-1111-111111111111", "/@nok", "/exhibition/bkk-design-week", "/exhibition/category/journal", "/legal/terms", "/legal/cookies", "/series/s1", "/collections/c1"]) {
+      expect(next).toContain(p);
+    }
+    expect(next.some((p) => p.startsWith("/journal/"))).toBe(true);
+  });
 });

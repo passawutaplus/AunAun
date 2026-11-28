@@ -41,8 +41,8 @@ type EventFilter = "all" | "host" | "int";
 /** `/@handle` (through `/:vanityHandle`) and `/u/:userId`. */
 export default function ProfilePage() {
   const { userId, vanityHandle } = useParams();
-  // Single-segment URLs that are not a handle used to reach the old 404 through the same route.
-  if (!userId && !vanityHandle?.startsWith("@")) return <Navigate to="/error/404" replace />;
+  // Single-segment URLs that are not a handle: the 404 of the new design on the same URL (step 14).
+  if (!userId && !vanityHandle?.startsWith("@")) return <NotFound />;
   return <ProfileView key={userId ?? vanityHandle} slug={userId ?? vanityHandle!.slice(1)} byId={!!userId} />;
 }
 

@@ -70,6 +70,17 @@ export const STUDIO_SLUGS = [
   "talay-creative",
 ];
 
+/**
+ * New design (VITE_REDESIGN=true): URLs it cuts (404) or moves elsewhere (redirect) stay out of the sitemap.
+ * Same decisions as Anthem-Code/src/redesign/routes.ts (step 14). The Journal list keeps its old URL.
+ */
+export const REDESIGN_DROPPED_PATHS = [
+  /^\/forum(\/|$)/,
+  /^\/exhibition\/?$/,
+  /^\/exhibition\/category\/(?!journal\/?$)/,
+  /^\/(service|object|hiring|jobs|s|advertise|community|research)(\/|$)/,
+];
+
 /** Routes that must never appear in the public sitemap. */
 export const EXCLUDED_PATHS = [
   "/admin",
@@ -113,6 +124,7 @@ export function catalogProjectId(i) {
  * @param {{
  *   fullProduct?: boolean,
  *   hiringBoard?: boolean,
+ *   redesign?: boolean,
  *   projectIds?: string[],
  *   profileUserIds?: string[],
  *   vanityHandles?: string[],
@@ -128,6 +140,7 @@ export function catalogProjectId(i) {
 export function buildSitemapUrls(opts = {}) {
   const fullProduct = opts.fullProduct === true;
   const hiringBoard = opts.hiringBoard === true;
+  const redesign = opts.redesign === true;
   // Seed catalog is only a local/demo fallback; production passes useSeedCatalog:false.
   const useSeed = opts.useSeedCatalog !== false;
   const projectIds =
@@ -259,8 +272,9 @@ export function buildSitemapUrls(opts = {}) {
   // "/collections" is excluded as a list page; individual public collections are listed on purpose.
   return urls.filter(
     (u) =>
-      u.group === "collections" ||
-      !EXCLUDED_PATHS.some((ex) => u.loc === ex || u.loc.startsWith(`${ex}/`)),
+      (u.group === "collections" ||
+        !EXCLUDED_PATHS.some((ex) => u.loc === ex || u.loc.startsWith(`${ex}/`))) &&
+      !(redesign && REDESIGN_DROPPED_PATHS.some((re) => re.test(u.loc))),
   );
 }
 

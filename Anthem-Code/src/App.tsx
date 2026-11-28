@@ -431,6 +431,7 @@ const RedesignHelp = lazy(() => import("./redesign/pages/Help.tsx"));
 const RedesignFeedback = lazy(() => import("./redesign/pages/Feedback.tsx"));
 const RedesignGetInTouch = lazy(() => import("./redesign/pages/GetInTouch.tsx"));
 const RedesignChat = lazy(() => import("./redesign/pages/Chat.tsx"));
+const RedesignRouteGate = lazy(() => import("./redesign/shell/RouteGate.tsx"));
 
 /** Old site chrome (top nav, floating nav, banners, prompts): never mounted on a page of the new design. */
 const LegacyChrome = ({ children }: { children: ReactNode }) => {
@@ -560,7 +561,9 @@ const App = () => (
                         <Route path="/:vanityHandle" element={<RedesignProfile />} />
                       </Route>
                     ) : null}
-                    <Route element={<LaunchMinimalGate />}>
+                    {/* New design: cut old routes and unknown URLs (the `*` below) move to their new page
+                        or show the new 404 in the new frame; kept old pages go on (RouteGate, step 14). */}
+                    <Route element={isRedesignEnabled() ? <RedesignRouteGate /> : <LaunchMinimalGate />}>
                       <Route element={<PageTransition />}>
                         {isRedesignEnabled() ? null : <Route path="/" element={<Index />} />}
                         <Route path="/learn" element={<LearnShell />}>

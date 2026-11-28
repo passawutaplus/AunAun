@@ -59,8 +59,8 @@ export async function cancelAccountDeletion(): Promise<boolean> {
   return (data as { cancelled?: boolean } | null)?.cancelled === true;
 }
 
-/** One switch of Settings → Notifications ("chat" / "comment" / "follow" / "event") or "greet_from". */
-export async function setMySetting(key: "chat" | "comment" | "follow" | "event" | "greet_from", value: boolean | "everyone" | "following"): Promise<void> {
+/** One switch of Settings → Notifications ("chat" / "comment" / "follow" / "event" / "weekly") or "greet_from". */
+export async function setMySetting(key: "chat" | "comment" | "follow" | "event" | "weekly" | "greet_from", value: boolean | "everyone" | "following"): Promise<void> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await (supabase.rpc as any)("set_my_setting", { _key: key, _value: String(value) });
   if (error) throw error;

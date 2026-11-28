@@ -93,7 +93,21 @@ async function fetchJson(url, headers) {
 }
 
 /** Paths we intentionally serve as public shells (bots get 200). */
-function isKnownPublicPath(pathname) {
+/**
+ * New design (VITE_REDESIGN=true): URLs it cuts show its 404 to people, so bots get a 404 + noindex too.
+ * Same decisions as Anthem-Code/src/redesign/routes.ts (step 14); tested against its route table.
+ */
+const REDESIGN_CUT_PATHS = [
+  /^\/(forum|jobs|hiring|org|advertise|ads|research|upgrade|changelog|drill|founding|s|studio|community|service|object|earnings|referrals|contracts|verify|hire|hire-requests|collab-requests)(\/|$)/i,
+  // Explore has tool and tag pages only.
+  /^\/explore\/(?!(tool|tag)\/[^/]+\/?$)/i,
+];
+
+export function isRedesignCutPath(pathname, env = process.env) {
+  return env.VITE_REDESIGN === "true" && REDESIGN_CUT_PATHS.some((re) => re.test(pathname));
+}
+
+export function isKnownPublicPath(pathname) {
   if (pathname === "/") return true;
   if (
     /^\/(jobs|advertise|research|upgrade|learn|auth|forum|help|explore|collections|inspire|series|s|error|exhibition|hiring|journal)(\/|$)/i.test(
@@ -525,7 +539,7 @@ async function resolveMeta(pathname, base) {
     status: 200,
   };
 
-  if (!isKnownPublicPath(pathname)) {
+  if (!isKnownPublicPath(pathname) || isRedesignCutPath(pathname)) {
     return {
       ...defaultMeta,
       title: "ไม่พบหน้า | SAMECOR",

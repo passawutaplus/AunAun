@@ -5,7 +5,7 @@
 import { samecorLink, samecorSiteUrl } from "./samecor-site.ts";
 
 // Brand Book v1.0 — Gallery Black ink on Studio White, one red accent (never small red text: 3.7:1)
-const brand = {
+export const brand = {
   red: "#EE3D29",
   redSoft: "#FDECE9",
   /** Emphasis inside body copy — ink, not red (contrast) */
@@ -22,8 +22,8 @@ const brand = {
 } as const;
 
 /** Elms Sans for Latin headings, IBM Plex Sans Thai for Thai; most mail apps fall back to the system fonts. */
-const FONT = "'IBM Plex Sans Thai','Helvetica Neue',Arial,sans-serif";
-const FONT_HEADING = "'Elms Sans','IBM Plex Sans Thai','Helvetica Neue',Arial,sans-serif";
+export const FONT = "'IBM Plex Sans Thai','Helvetica Neue',Arial,sans-serif";
+export const FONT_HEADING = "'Elms Sans','IBM Plex Sans Thai','Helvetica Neue',Arial,sans-serif";
 const FONTS_CSS =
   "https://fonts.googleapis.com/css2?family=Elms+Sans:wght@500;600&amp;family=IBM+Plex+Sans+Thai:wght@400;600&amp;display=swap";
 const SUPPORT_EMAIL = "support@samecor.com";
@@ -112,6 +112,10 @@ export function layout(opts: {
   afterCtaHtml?: string;
   /** Pre-built href (e.g. a Supabase Go-template expression) used verbatim instead of escaping ctaUrl */
   ctaHrefRaw?: string;
+  /** Where "notification settings" points (default: the old site's /settings#notifications) */
+  settingsUrl?: string;
+  /** One-click turn-off link for this kind of email, shown in the footer (weekly summary) */
+  unsubscribeUrl?: string;
 }): { html: string; text: string } {
   const siteUrl = anthemSiteUrl();
   const siteDomain = new URL(siteUrl).host;
@@ -119,7 +123,10 @@ export function layout(opts: {
   const iconUrl = `${siteUrl}/email/flat/${icon}.png`;
   // Logo on its own white plate: invisible on the white card, still readable when a mail app darkens it.
   const logoUrl = `${siteUrl}/email/logo-email.png`;
-  const settingsUrl = `${siteUrl}/settings#notifications`;
+  const settingsUrl = opts.settingsUrl
+    ? samecorLink(opts.settingsUrl, siteUrl)
+    : `${siteUrl}/settings#notifications`;
+  const unsubscribeUrl = opts.unsubscribeUrl ? samecorLink(opts.unsubscribeUrl, siteUrl) : "";
   const year = new Date().getFullYear();
   const en = opts.lang === "en";
   const t = en
@@ -132,6 +139,7 @@ export function layout(opts: {
           "SAMECOR will never ask for your password, OTP or card details by email, phone or LINE",
         help: "Questions? Reach us at",
         links: ["Help", "Privacy", "Terms"],
+        unsubscribe: "Unsubscribe from this email",
       }
     : {
         reason: "คุณได้รับอีเมลนี้เพราะมีความเคลื่อนไหวในบัญชี SAMECOR ของคุณ",
@@ -142,6 +150,7 @@ export function layout(opts: {
           "SAMECOR จะไม่ขอรหัสผ่าน รหัส OTP หรือข้อมูลบัตรของคุณทางอีเมล โทรศัพท์ หรือ LINE",
         help: "มีคำถาม ทักมาได้เลยที่",
         links: ["ศูนย์ช่วยเหลือ", "ความเป็นส่วนตัว", "ข้อกำหนด"],
+        unsubscribe: "เลิกรับอีเมลนี้",
       };
   const reason = opts.reason ?? t.reason;
   const optOut = opts.optOut !== false;
@@ -204,7 +213,7 @@ ${opts.afterCtaHtml ?? ""}
 </td></tr>
 <tr><td class="sc-px" style="padding:28px 40px 0;font-family:${FONT};font-size:12px;line-height:1.7;color:${brand.mute}">
 <p style="margin:0 0 14px;font-family:${FONT_HEADING};font-size:14px;font-weight:500;color:${brand.ink}">${TAGLINE}</p>
-<p style="margin:0 0 10px">${escapeHtml(reason)}${optOut ? ` ${t.manage} ${link(settingsUrl, t.settings)}` : ""}</p>
+<p style="margin:0 0 10px">${escapeHtml(reason)}${optOut ? ` ${t.manage} ${link(escapeHtml(settingsUrl), t.settings)}` : ""}${unsubscribeUrl ? ` · ${link(escapeHtml(unsubscribeUrl), t.unsubscribe)}` : ""}</p>
 <p style="margin:0 0 10px">${t.help} ${link(`mailto:${SUPPORT_EMAIL}`, SUPPORT_EMAIL)} · ${link(LINE_URL, `LINE ${LINE_ID}`)} · ${link(FACEBOOK_URL, "Facebook")}</p>
 <p style="margin:0 0 10px"><a href="${siteUrl}" target="_blank" style="color:${brand.ink};font-weight:600;text-decoration:none">${siteDomain}</a> · ${link(`${siteUrl}/help`, t.links[0], false)} · ${link(`${siteUrl}/legal/privacy`, t.links[1], false)} · ${link(`${siteUrl}/legal/terms`, t.links[2], false)}</p>
 <p style="margin:0;font-size:11px;line-height:1.6">© ${year} ${LEGAL_NAME} · ${LEGAL_ADDRESS}</p>
@@ -221,7 +230,7 @@ ${opts.preview}
 ${opts.ctaLabel}: ${ctaUrl}
 
 —
-${reason}${optOut ? `\n${t.settings}: ${settingsUrl}` : ""}
+${reason}${optOut ? `\n${t.settings}: ${settingsUrl}` : ""}${unsubscribeUrl ? `\n${t.unsubscribe}: ${unsubscribeUrl}` : ""}
 ${t.help} ${SUPPORT_EMAIL} · LINE ${LINE_ID}
 ${siteDomain} · © ${year} ${LEGAL_NAME} · ${LEGAL_ADDRESS}`;
   return { html, text };
