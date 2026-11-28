@@ -2,15 +2,22 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 import { Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-import { getWorkCatalogId, saveWork, setWorkCatalog, type WorkWrite } from "@/server/mutations/upload";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { takeSharedMedia } from "@/lib/sharedMedia";
+import { isUuid } from "@/lib/uuid";
+import { isVideoFile, PROJECT_VIDEO_ACCEPT } from "@/lib/videoAccept";
+import { getWorkCatalogIds, getWorkEditExtras, saveWork, setWorkCatalogs, type WorkEditExtras, type WorkWrite } from "@/server/mutations/upload";
 import { getWork, type WorkRow } from "@/server/queries/work";
 import logoUrl from "../assets/logo.svg";
 import { SC_CATEGORIES } from "../lib/categories";
+import { loginHref } from "../lib/loginHref";
 import { ensureTextFonts } from "../lib/textFonts";
 import ScLoader from "../main/ScLoader";
 import { useMyCatalogs, useMyProfile } from "../profile/useMyProfile";
 import { SC_LINKS } from "../routes";
+import LoadError from "../shell/LoadError";
 import BasicEditor, { mediaSrc } from "../upload/BasicEditor";
+import { AiField, CatalogField, LicenseField, ToolsField } from "../upload/MetaFields";
 import {
   basicCoverId,
   cellsOf,
@@ -52,10 +59,13 @@ const hhmm = () => {
   const d = new Date();
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 };
-const fpOf = (mode: Mode, d: Draft, media: Record<string, Media>) => `${JSON.stringify(toWorkFields(mode, d, media))}|${d.catalogId ?? ""}`;
+const fpOf = (mode: Mode, d: Draft, media: Record<string, Media>) => JSON.stringify(toWorkFields(mode, d, media));
+const sameIds = (a: readonly string[], b: readonly string[]) => a.length === b.length && a.every((x) => b.includes(x));
 const SAVE_FAILED = "บันทึกไม่สำเร็จ ลองอีกครั้ง";
 const AUTOSAVE_MS = 1500;
-const ACCEPT_ALL = "image/*,video/mp4";
+/** Pictures + every video the old editor takes (MOV from iPhone, WebM…); videos become MP4 on upload. */
+const ACCEPT_ALL = `image/*,${PROJECT_VIDEO_ACCEPT}`;
+const isPicture = (f: File) => f.type.startsWith("image/") || /\.(heic|heif)$/i.test(f.name);
 
 /** `/portfolio/new` and `/portfolio/:id/edit` — post or edit a work (mock Upload.dc.html). */
 export default function UploadPage() {
@@ -63,35 +73,52 @@ export default function UploadPage() {
   const location = useLocation();
   const { id } = useParams<{ id: string }>();
   if (loading) return <div className="up-wait" aria-busy="true" />;
-  if (!user) return <Navigate to={`${SC_LINKS.login}?redirect=${encodeURIComponent(location.pathname + location.search)}`} replace />;
+  if (!user) return <Navigate to={loginHref(location.pathname + location.search)} replace />;
   const editId = id && !liveCreated.has(id) ? id : null;
   return <UploadLoader key={editId ?? "new"} uid={user.id} editId={editId} />;
 }
 
-type Opened = { id: string; row: WorkRow; catalogId: string | null };
+type Opened = { id: string; row: WorkRow; extras: WorkEditExtras | null; catalogIds: string[] };
+
+const loadingWork = (
+  <div className="up-wait">
+    <ScLoader label="กำลังโหลดผลงาน" />
+  </div>
+);
 
 function UploadLoader({ uid, editId }: { uid: string; editId: string | null }) {
   const q = useQuery({
     queryKey: ["sc-upload-work", editId],
     queryFn: async (): Promise<Opened | null> => {
-      const [row, catalogId] = await Promise.all([getWork(editId!), getWorkCatalogId(editId!)]);
-      return row ? { id: editId!, row, catalogId } : null;
+      const [row, extras, catalogIds] = await Promise.all([getWork(editId!), getWorkEditExtras(editId!), getWorkCatalogIds(editId!)]);
+      return row ? { id: editId!, row, extras, catalogIds } : null;
     },
     enabled: !!editId,
     staleTime: 0,
     gcTime: 0,
     refetchOnWindowFocus: false,
   });
-  if (!editId) return <UploadEditor uid={uid} opened={null} />;
-  if (q.isPending) {
-    return (
+  const admin = useIsAdmin();
+  if (!editId) return <UploadEditor uid={uid} ownerId={uid} opened={null} />;
+  if (q.isPending) return loadingWork;
+  // Could not load (network, server): try again — not the 404.
+  if (q.isError) {
+    return q.isFetching ? (
+      loadingWork
+    ) : (
       <div className="up-wait">
-        <ScLoader label="กำลังโหลดผลงาน" />
+        <LoadError onRetry={() => void q.refetch()} label="โหลดผลงานไม่ขึ้น ลองใหม่อีกทีนะ" />
       </div>
     );
   }
-  if (q.isError || !q.data || q.data.row.owner_id !== uid) return <Navigate to="/error/404" replace />;
-  return <UploadEditor uid={uid} opened={q.data} />;
+  if (!q.data) return <Navigate to="/error/404" replace />;
+  const owner = q.data.row.owner_id;
+  // Admins edit anyone's work, as in the old editor.
+  if (owner !== uid) {
+    if (admin.isPending) return loadingWork;
+    if (!owner || !admin.data) return <Navigate to="/error/404" replace />;
+  }
+  return <UploadEditor uid={uid} ownerId={owner ?? uid} opened={q.data} />;
 }
 
 const invalidateKeys = (uid: string, id: string) => [
@@ -106,20 +133,29 @@ const invalidateKeys = (uid: string, id: string) => [
   ["my-projects"],
 ];
 
-function UploadEditor({ uid, opened }: { uid: string; opened: Opened | null }) {
+function UploadEditor({ uid, ownerId, opened }: { uid: string; ownerId: string; opened: Opened | null }) {
   const navigate = useNavigate();
   const location = useLocation();
   const qc = useQueryClient();
 
   const [init] = useState(() => {
-    if (!opened) return { id: crypto.randomUUID(), status: "new" as Status, mode: "Basic" as Mode, draft: emptyDraft(bid()), media: {} as Record<string, Media>, fp: null as string | null };
-    const o = fromWork(opened.row, bid);
-    const draft = { ...o.draft, catalogId: opened.catalogId };
+    if (!opened) {
+      const draft = emptyDraft(bid());
+      // "+ ลงงาน" from a catalog page: the new work goes into that catalog (old editor ?series=).
+      const series = new URLSearchParams(location.search).get("series")?.trim();
+      if (series && isUuid(series)) draft.catalogIds = [series];
+      return { id: crypto.randomUUID(), status: "new" as Status, mode: "Basic" as Mode, draft, media: {} as Record<string, Media>, fp: null as string | null };
+    }
+    const o = fromWork({ ...opened.row, ...opened.extras }, bid);
+    const draft = { ...o.draft, catalogIds: opened.catalogIds };
     const status: Status = opened.row.status === "Published" || opened.row.status === "Private" ? opened.row.status : "Draft";
     return { id: opened.id, status, mode: o.mode, draft, media: o.media, fp: fpOf(o.mode, draft, o.media) };
   });
 
   const [workId, setWorkId] = useState(init.id);
+  // The row's owner: me, or someone else when an admin edits (their catalogs are not shown then).
+  const [owner, setOwner] = useState(ownerId);
+  const canCatalog = owner === uid;
   const [status, setStatus] = useState<Status>(init.status);
   const [mode, setMode] = useState<Mode>(init.mode);
   const h = useDraftHistory(() => init.draft);
@@ -127,14 +163,15 @@ function UploadEditor({ uid, opened }: { uid: string; opened: Opened | null }) {
   const up = useWorkUploads(uid, workId, init.media);
   const media = up.media;
   const profile = useMyProfile(uid).data;
-  const catalogs = useMyCatalogs(uid).q.data ?? [];
+  const catalogsQ = useMyCatalogs(uid).q;
+  const catalogs = useMemo(() => catalogsQ.data ?? [], [catalogsQ.data]);
 
   const [menu, setMenu] = useState<TextMenu>(null);
   const [addAt, setAddAt] = useState<number | null>(null);
   const [tplAdd, setTplAdd] = useState<TplPanel>(null);
   const [tplSwap, setTplSwap] = useState<TplPanel>(null);
   const [tgTab, setTgTab] = useState<number | null>(null);
-  const [moreOpen, setMoreOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(() => !opened && init.draft.catalogIds.length > 0);
   const [tried, setTried] = useState(false);
   const [savedAt, setSavedAt] = useState("");
   const [pvOpen, setPvOpen] = useState(false);
@@ -158,17 +195,26 @@ function UploadEditor({ uid, opened }: { uid: string; opened: Opened | null }) {
 
   const isEditPub = status === "Published" || status === "Private";
   const fields = useMemo(() => toWorkFields(mode, d, media), [mode, d, media]);
-  const fp = useMemo(() => `${JSON.stringify(fields)}|${d.catalogId ?? ""}`, [fields, d.catalogId]);
+  const fieldsFp = useMemo(() => JSON.stringify(fields), [fields]);
   const savedFp = useRef<string | null>(init.fp);
-  const savedCatalog = useRef<string | null>(opened?.catalogId ?? null);
-  const dirty = status === "new" ? hasContent(d) : fp !== savedFp.current;
+  // CATALOG: what to write — my catalogs picked; null until my catalogs are known (or when an admin edits someone's work).
+  const cats = useMemo(() => {
+    if (!canCatalog || !catalogsQ.isSuccess) return null;
+    const mine = new Set(catalogs.map((c) => c.id));
+    return d.catalogIds.filter((c) => mine.has(c));
+  }, [canCatalog, catalogsQ.isSuccess, catalogs, d.catalogIds]);
+  const savedCats = useRef<string[]>(opened?.catalogIds ?? []);
+  const catsDirty = !!cats && !sameIds(cats, savedCats.current.filter((c) => catalogs.some((x) => x.id === c)));
+  const changed = fieldsFp !== savedFp.current || catsDirty;
+  const fp = `${fieldsFp}|${cats ? cats.join(",") : "-"}`;
+  const dirty = status === "new" ? hasContent(d) : changed;
   const ready = readiness(mode, d, media);
   const tryMiss = tried && !ready.ready;
 
   // What an async step (a save after an upload, a queued save) must read: the newest, not the render it began in.
-  const live = useRef({ mode, d, status, workId });
+  const live = useRef({ mode, d, status, workId, owner, cats });
   useLayoutEffect(() => {
-    live.current = { mode, d, status, workId };
+    live.current = { mode, d, status, workId, owner, cats };
   });
 
   useEffect(() => {
@@ -184,40 +230,41 @@ function UploadEditor({ uid, opened }: { uid: string; opened: Opened | null }) {
   const persist = useCallback(
     (next: WorkWrite["status"], attest = false) => {
       const run = async () => {
-        const { mode: m, d: dd, status: st, workId: id } = live.current;
+        const { mode: m, d: dd, status: st, workId: id, owner: ow, cats: cc } = live.current;
         const md = up.latest();
         const f = toWorkFields(m, dd, md);
         const insert = st === "new";
-        await saveWork(id, uid, { ...f, status: next }, { insert, attest });
+        await saveWork(id, ow, { ...f, status: next }, { insert, attest });
         if (insert) liveCreated.add(id);
         live.current = { ...live.current, status: next };
         setStatus(next);
-        if (dd.catalogId !== savedCatalog.current) {
-          await setWorkCatalog(id, dd.catalogId);
-          savedCatalog.current = dd.catalogId;
+        if (cc && !sameIds(cc, savedCats.current)) {
+          await setWorkCatalogs(id, cc, savedCats.current);
+          savedCats.current = cc;
         }
-        savedFp.current = fpOf(m, dd, md);
+        savedFp.current = JSON.stringify(f);
         setSavedAt(hhmm());
         if (insert) navigate(`/portfolio/${id}/edit`, { replace: true });
-        for (const key of invalidateKeys(uid, id)) void qc.invalidateQueries({ queryKey: key });
+        for (const key of invalidateKeys(ow, id)) void qc.invalidateQueries({ queryKey: key });
       };
       const p = chain.current.then(run, run);
       chain.current = p.catch(() => undefined);
       return p;
     },
-    [uid, up, navigate, qc],
+    [up, navigate, qc],
   );
 
   // Drafts save themselves (mock "Saved HH:MM"); a work that is already out saves only with "บันทึกการแก้ไข".
   const autosave = !isEditPub && !busy && !leaveOpen && !pubKind;
   useEffect(() => {
-    if (!autosave || fp === savedFp.current) return;
+    if (!autosave || !changed) return;
     if (status === "new" && !(fields.title || fields.cover_url)) return;
     const t = window.setTimeout(() => {
       persist("Draft").catch(() => say(SAVE_FAILED));
     }, AUTOSAVE_MS);
     return () => window.clearTimeout(t);
-  }, [autosave, fp, status, fields.title, fields.cover_url, persist, say]);
+    // fp re-arms the timer on every edit (changed alone stays true while typing).
+  }, [autosave, changed, fp, status, fields.title, fields.cover_url, persist, say]);
 
   // Closing the tab with unsaved work or a running upload asks first.
   const guard = up.uploading || dirty;
@@ -267,7 +314,7 @@ function UploadEditor({ uid, opened }: { uid: string; opened: Opened | null }) {
 
   const addFiles = useCallback(
     (files: File[], at: number | null) => {
-      const items = files.map((f) => ({ id: bid(), file: f, type: (f.type.startsWith("video/") ? "video" : "image") as "image" | "video" }));
+      const items = files.map((f) => ({ id: bid(), file: f, type: (isVideoFile(f) ? "video" : "image") as "image" | "video" }));
       if (!items.length) return;
       h.update((dd) => {
         const blocks = dd.blocks.slice();
@@ -292,7 +339,7 @@ function UploadEditor({ uid, opened }: { uid: string; opened: Opened | null }) {
   /** Pictures dropped or pasted in Template mode: the empty picture slots in order, then new "Full" rows (mock mode switch). */
   const addToTemplate = useCallback(
     (files: File[]) => {
-      const pics = files.filter((f) => f.type.startsWith("image/"));
+      const pics = files.filter(isPicture);
       if (!pics.length) return;
       const ids = pics.map(() => bid());
       h.update((dd) => {
@@ -329,7 +376,7 @@ function UploadEditor({ uid, opened }: { uid: string; opened: Opened | null }) {
   };
   const pick = (at: number | null, videoOnly?: boolean) => {
     pickFor.current = { at };
-    openPicker(videoOnly ? "video/mp4" : ACCEPT_ALL, true);
+    openPicker(videoOnly ? PROJECT_VIDEO_ACCEPT : ACCEPT_ALL, true);
   };
   const pickSlot = (key: string) => {
     pickFor.current = { at: null, slot: key };
@@ -345,7 +392,7 @@ function UploadEditor({ uid, opened }: { uid: string; opened: Opened | null }) {
 
   const takeFiles = useCallback(
     (files: File[]) => {
-      const ok = files.filter((f) => f.type.startsWith("image/") || f.type.startsWith("video/"));
+      const ok = files.filter((f) => isPicture(f) || isVideoFile(f));
       if (!ok.length) return false;
       if (live.current.mode === "Basic") addFiles(ok, null);
       else addToTemplate(ok);
@@ -363,6 +410,34 @@ function UploadEditor({ uid, opened }: { uid: string; opened: Opened | null }) {
     return () => document.removeEventListener("paste", onPaste);
   }, [takeFiles]);
 
+  // Pictures shared from the Android share sheet (public/sw.js → /portfolio/new?shared=1), taken once.
+  const sharedTaken = useRef(false);
+  useEffect(() => {
+    if (opened || sharedTaken.current) return;
+    const params = new URLSearchParams(location.search);
+    if (params.get("shared") !== "1") return;
+    sharedTaken.current = true;
+    params.delete("shared");
+    const rest = params.toString();
+    navigate({ pathname: location.pathname, search: rest ? `?${rest}` : "" }, { replace: true });
+    void takeSharedMedia().then((files) => {
+      if (files.length) takeFiles(files);
+    });
+  }, [opened, location.search, location.pathname, navigate, takeFiles]);
+
+  // A block, slot or row taken away while its file is still going up: stop that upload (Publish no longer waits for it).
+  const cancelUpload = up.cancel;
+  useEffect(() => {
+    const used = new Set(d.blocks.map((b) => b.id));
+    for (const r of d.rows) {
+      cellsOf(r.layout).forEach((c, i) => {
+        const mid = d.fills[slotKey(r.id, i)];
+        if (mid && !isTextCell(c)) used.add(mid);
+      });
+    }
+    for (const [mid, m] of Object.entries(media)) if (m.progress != null && !used.has(mid)) cancelUpload(mid);
+  }, [d.blocks, d.rows, d.fills, media, cancelUpload]);
+
   const hasFiles = (e: DragEvent) => Array.from(e.dataTransfer.types).includes("Files");
   const onDragOver = (e: DragEvent) => {
     if (!hasFiles(e)) return;
@@ -378,7 +453,8 @@ function UploadEditor({ uid, opened }: { uid: string; opened: Opened | null }) {
 
   // ---------- editing ----------
 
-  const setField = <K extends "title" | "desc" | "tags" | "year" | "ask">(k: K, v: string) => h.update((dd) => ({ ...dd, [k]: v }), k);
+  const setField = <K extends "title" | "desc" | "tags" | "year" | "ask" | "licenseNote">(k: K, v: string) => h.update((dd) => ({ ...dd, [k]: v }), k);
+  const setMeta = (p: Partial<Pick<Draft, "tools" | "catalogIds" | "license" | "ai">>) => h.update((dd) => ({ ...dd, ...p }));
   const moveBlock = (i: number, dir: -1 | 1) =>
     h.update((dd) => {
       const j = i + dir;
@@ -501,6 +577,8 @@ function UploadEditor({ uid, opened }: { uid: string; opened: Opened | null }) {
     if (busy) return;
     if (!ready.ready) {
       setTried(true);
+      // The licence terms live under More.
+      if (!ready.hasLicense) setMoreOpen(true);
       return;
     }
     if (isEditPub) {
@@ -547,14 +625,16 @@ function UploadEditor({ uid, opened }: { uid: string; opened: Opened | null }) {
     }
   };
 
-  /** "ลงงานต่อ": a new work; description, tags, catalog and the layout rows stay (mock `again`). */
+  /** "ลงงานต่อ": a new work of mine; description, tags, tools, licence, AI, catalogs and the layout rows stay (mock `again`). */
   const again = () => {
     liveCreated.delete(workId);
     const id = crypto.randomUUID();
-    const next = { ...emptyDraft(bid()), rows: d.rows, slotTexts: d.slotTexts, desc: d.desc, tags: d.tags, catalogId: d.catalogId };
-    live.current = { mode, d: next, status: "new", workId: id };
+    const keep = { desc: d.desc, tags: d.tags, tools: d.tools, license: d.license, licenseNote: d.licenseNote, ai: d.ai };
+    const next = { ...emptyDraft(bid()), rows: d.rows, slotTexts: d.slotTexts, ...keep, catalogIds: canCatalog ? d.catalogIds : [] };
+    live.current = { mode, d: next, status: "new", workId: id, owner: uid, cats: canCatalog ? cats : null };
     savedFp.current = null;
-    savedCatalog.current = null;
+    savedCats.current = [];
+    setOwner(uid);
     setWorkId(id);
     setStatus("new");
     h.reset(next);
@@ -574,7 +654,6 @@ function UploadEditor({ uid, opened }: { uid: string; opened: Opened | null }) {
     ["Title", ready.hasTitle],
     ["Category", ready.hasCategory],
   ];
-  const catalogValue = d.catalogId && catalogs.some((c) => c.id === d.catalogId) ? d.catalogId : "";
 
   return (
     <div className="up-page">
@@ -776,6 +855,8 @@ function UploadEditor({ uid, opened }: { uid: string; opened: Opened | null }) {
               <input id="up-tags" className="up-fld" type="text" value={d.tags} onChange={(e) => setField("tags", e.target.value)} placeholder="riso, poster" />
             </div>
 
+            <ToolsField uid={uid} tools={d.tools} onChange={(tools) => setMeta({ tools })} />
+
             <button type="button" className="up-more" aria-expanded={moreOpen} onClick={() => setMoreOpen((v) => !v)}>
               More
               <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#666666" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className={moreOpen ? "up-more-ar up-more-ar-on" : "up-more-ar"}>
@@ -785,29 +866,13 @@ function UploadEditor({ uid, opened }: { uid: string; opened: Opened | null }) {
 
             {moreOpen ? (
               <div className="up-morebox">
-                {/* YEAR + ASK VIEWERS shown again (owner 2026-11-28); "+ New" waits for Beam (question 47). */}
-                <div className="up-catyr">
-                <div className="up-f">
-                  <label htmlFor="up-cat" className="up-lab">
-                    CATALOG
-                  </label>
-                  <select id="up-cat" className="up-fld up-sel" value={catalogValue} onChange={(e) => h.update((dd) => ({ ...dd, catalogId: e.target.value || null }))}>
-                    <option value="">—</option>
-                    {catalogs
-                      .filter((c) => c.title)
-                      .map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.title}
-                        </option>
-                      ))}
-                  </select>
-                </div>
+                {/* YEAR + ASK VIEWERS shown again (owner 2026-11-28); CATALOG takes several (owner); "+ New" waits for Beam (question 47). */}
+                {canCatalog ? <CatalogField catalogs={catalogs} value={d.catalogIds} onChange={(catalogIds) => setMeta({ catalogIds })} /> : null}
                 <div className="up-f">
                   <label htmlFor="up-year" className="up-lab">
                     YEAR
                   </label>
-                  <input id="up-year" className="up-fld" type="text" inputMode="numeric" maxLength={4} value={d.year} onChange={(e) => setField("year", e.target.value.replace(/\D/g, ""))} />
-                </div>
+                  <input id="up-year" className="up-fld up-fld-yr" type="text" inputMode="numeric" maxLength={4} value={d.year} onChange={(e) => setField("year", e.target.value.replace(/\D/g, ""))} />
                 </div>
                 <div className="up-f">
                   <label htmlFor="up-ask" className="up-lab">
@@ -815,6 +880,14 @@ function UploadEditor({ uid, opened }: { uid: string; opened: Opened | null }) {
                   </label>
                   <textarea id="up-ask" className="up-ta" rows={2} maxLength={140} value={d.ask} onChange={(e) => setField("ask", e.target.value)} placeholder="ตรงไหนดึงสายตาที่สุด?" />
                 </div>
+                <LicenseField
+                  value={d.license}
+                  note={d.licenseNote}
+                  missing={tryMiss && !ready.hasLicense}
+                  onChange={(license) => setMeta({ license })}
+                  onNote={(v) => setField("licenseNote", v)}
+                />
+                <AiField value={d.ai} onChange={(ai) => setMeta({ ai })} />
               </div>
             ) : null}
 
