@@ -4,7 +4,7 @@ import { useFeedProjectSelect } from "@/hooks/useFeedProjectSelect";
 import { eventPath } from "@/lib/exhibitionEvents";
 import { proxiedImageUrl } from "@/lib/imageProxy";
 import type { HomeEventRow } from "@/server/queries/homeEvents";
-import { getWorkSearchText } from "@/server/queries/siteSearch";
+import { workSearchTextQuery } from "@/server/queries/siteSearch";
 import { homeWorksQuery, profileHref } from "../main/useCreators";
 import { homeEventsQuery, isoDay } from "../main/useHomeEvents";
 import { listedOnCreators } from "./visibility";
@@ -60,7 +60,7 @@ export function useSiteSearch(query: string) {
   const events = useQuery(homeEventsQuery);
   const q = query.trim().toLocaleLowerCase("th");
   // Read only once something is typed; the home grid does not need these words.
-  const words = useQuery({ queryKey: ["sc-search-text"], queryFn: () => getWorkSearchText(), enabled: !!q, staleTime: 5 * 60_000 });
+  const words = useQuery({ ...workSearchTextQuery, enabled: !!q });
 
   const hits = useMemo((): SearchHit[] => {
     if (!q) return [];

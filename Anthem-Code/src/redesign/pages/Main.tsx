@@ -18,6 +18,7 @@ import ColorSearch from "../main/ColorSearch";
 import Creators from "../main/Creators";
 import Events from "../main/Events";
 import EmptyNote from "../main/EmptyNote";
+import { FIND_PARAM } from "../main/homeFind";
 import ScLoader from "../main/ScLoader";
 import { EVENT_TYPES, EVENT_VIEWS, EVENT_VIEW_LABEL, isEventType, type EventView } from "../main/useHomeEvents";
 import { CREATOR_VIEWS, type CreatorView } from "../main/useCreators";
@@ -88,6 +89,8 @@ export default function Main() {
   usePageSeo(homeSeo(mode));
   const catParam = params.get("cat");
   const category = isScCategory(catParam) ? catParam : null;
+  // The text filter of Showcase / Creators (`?find=`), sent by the app's search screen.
+  const find = mode === "event" ? "" : params.get(FIND_PARAM)?.trim() ?? "";
 
   const typeParam = params.get("type");
   const evType = isEventType(typeParam) ? typeParam : null;
@@ -194,12 +197,13 @@ export default function Main() {
     if (m !== "event") {
       next.delete("type");
       next.delete("q");
-    }
+    } else next.delete(FIND_PARAM); // Showcase and Creators share the term, like the old app
     if (m !== "showcase") next.delete("color");
     setParams(next, { preventScrollReset: true });
   };
 
-  // App search screen: the Event search (`?tab=event&q=`), or the colours on Showcase.
+  // App search screen: Showcase / Creators filter their grid (`?find=`), Event runs its search (`?tab=event&q=`);
+  // the colours are Showcase's.
   const closeAppSearch = () => {
     appSearch.close();
     appSearchBtn.current?.focus();
@@ -213,8 +217,9 @@ export default function Main() {
     }
     if (m !== "event") next.delete("type");
     if (m !== "showcase") next.delete("color");
-    if (q) next.set("q", q);
-    else next.delete("q");
+    next.delete("q");
+    next.delete(FIND_PARAM);
+    if (q) next.set(m === "event" ? "q" : FIND_PARAM, q);
     setParams(next);
   };
   const applyAppColors = (list: string[]) => {
@@ -245,10 +250,16 @@ export default function Main() {
   };
   const evView: EventView = (EVENT_VIEWS as readonly string[]).includes(viewParam ?? "") ? (viewParam as EventView) : "all";
   // "ไม่เจอสิ่งที่ตรงกัน" → "ล้างตัวกรอง": back to every work / creator of this tab.
-  const filtered = mode === "showcase" ? !!category || colors.length > 0 || view !== "explore" : mode === "creators" && (!!category || crView !== "discover");
+  const filtered =
+    !!find || (mode === "showcase" ? !!category || colors.length > 0 || view !== "explore" : mode === "creators" && (!!category || crView !== "discover"));
   const clearFilters = () => {
     const next = new URLSearchParams(params);
-    for (const k of ["cat", "color", "view"]) next.delete(k);
+    for (const k of ["cat", "color", "view", FIND_PARAM]) next.delete(k);
+    setParams(next, { preventScrollReset: true });
+  };
+  const clearFind = () => {
+    const next = new URLSearchParams(params);
+    next.delete(FIND_PARAM);
     setParams(next, { preventScrollReset: true });
   };
   // Saving opens SaveToast (collections); signed out → log-in page.
@@ -344,11 +355,22 @@ export default function Main() {
 
       <div ref={cardRef} className="mn-card">
         <h1 className="sc-sr">Samecor — ผลงานล่าสุด</h1>
+        {find ? (
+          <div className="mn-find">
+            <button type="button" className="mn-find-chip" aria-label={`ล้างคำค้น ${find}`} onClick={clearFind}>
+              <span className="mn-find-t">{find}</span>
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                <path d="M6 6l12 12M18 6L6 18" />
+              </svg>
+            </button>
+          </div>
+        ) : null}
         {mode === "showcase" ? (
           <Showcase
-            key={`${view}:${category ?? "all"}:${colors.join(",")}`}
+            key={`${view}:${category ?? "all"}:${colors.join(",")}:${find}`}
             view={view}
             category={category}
+            find={find}
             colors={colors}
             label={MODE_LABEL[mode]}
             savedIds={saves.ids}
@@ -356,7 +378,7 @@ export default function Main() {
             onClear={filtered ? clearFilters : undefined}
           />
         ) : mode === "creators" ? (
-          <Creators view={crView} category={category} onClear={filtered ? clearFilters : undefined} />
+          <Creators view={crView} category={category} find={find} onClear={filtered ? clearFilters : undefined} />
         ) : (
           <Events view={evView} type={evType} q={params.get("q") ?? ""} onQuery={setQuery} />
         )}
@@ -378,7 +400,7 @@ export default function Main() {
       {appSearch.mounted ? (
         <AppSearch
           initialMode={mode}
-          initialValue={params.get("q") ?? ""}
+          initialValue={(mode === "event" ? params.get("q") : find) ?? ""}
           colors={colors}
           leaving={appSearch.leaving}
           onClose={closeAppSearch}
@@ -459,6 +481,8 @@ function ViewMenu<V extends string>({ label, options, labels, value, onPick }: V
 type ShowcaseProps = {
   view: ShowcaseView;
   category: (typeof SC_CATEGORIES)[number] | null;
+  /** The text filter (`?find=`). */
+  find: string;
   /** Colour search: only works whose cover matches, closest first. */
   colors: string[];
   label: string;
@@ -468,8 +492,8 @@ type ShowcaseProps = {
   onClear?: () => void;
 };
 
-function Showcase({ view, category, colors, label, savedIds, onToggleSave, onClear }: ShowcaseProps) {
-  const { data: rows, isPending, isError, isFetchNextPageError, hasNextPage, isFetchingNextPage, fetchNextPage, refetch } = useShowcaseWorks(view, category);
+function Showcase({ view, category, find, colors, label, savedIds, onToggleSave, onClear }: ShowcaseProps) {
+  const { data: rows, isPending, isError, isFetchNextPageError, hasNextPage, isFetchingNextPage, fetchNextPage, refetch } = useShowcaseWorks(view, category, find);
   const owners = useMemo(() => [...new Set((rows ?? []).map((r) => r.owner_id).filter((id): id is string => !!id))], [rows]);
   const { data: profiles } = useProfilesByIds(owners);
 

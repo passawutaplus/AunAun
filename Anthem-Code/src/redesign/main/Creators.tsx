@@ -21,14 +21,22 @@ const Avatar = ({ src, size }: { src: string; size: 44 | 72 }) =>
 
 type FollowProps = { creator: Creator; followed: boolean; onToggle: (id: string) => void; onGreet: (id: string, el: HTMLElement) => void };
 
+type Props = {
+  view: CreatorView;
+  category: ScCategory | null;
+  /** The text filter (`?find=`). */
+  find?: string;
+  onClear?: () => void;
+};
+
 /**
  * Creators tab of the home page (mock: Main.dc.html, isCreators): "NEW THIS WEEK" strip and the
  * "ALL CREATORS" grid. No follower counts and nothing about hiring, by design.
  * "ทักทาย" (say hi) next to a followed creator opens the small chat window (ChatDock), or the chat page on phones.
  */
-export default function Creators({ view, category, onClear }: { view: CreatorView; category: ScCategory | null; onClear?: () => void }) {
+export default function Creators({ view, category, find = "", onClear }: Props) {
   const navigate = useNavigate();
-  const { data, isPending, isError, refetch } = useCreators();
+  const { data, isPending, isError, refetch } = useCreators(find);
   const follows = useFollows();
   const greeting = useGreet();
   const onGreet = (id: string, el: HTMLElement) => greeting.greet({ otherId: id }, el);
