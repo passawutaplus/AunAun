@@ -191,6 +191,15 @@
   pointer-events: none;
 }
 
+/* the tab sits over a rounded top corner: square that corner so tab and card stay one piece (Main.tsx) */
+.sc-app .mn-card[data-tab-l] {
+  border-top-left-radius: 0;
+}
+
+.sc-app .mn-card[data-tab-r] {
+  border-top-right-radius: 0;
+}
+
 /* ---------- card + work tiles ---------- */
 .sc-app .mn-card {
   position: relative;

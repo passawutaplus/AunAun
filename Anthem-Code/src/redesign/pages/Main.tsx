@@ -55,6 +55,53 @@ export default function Main() {
   const colorParam = params.get("color");
   const colors = useMemo(() => parseColorList(colorParam), [colorParam]);
 
+  // The chosen category is a folder tab joined to the card. Over the card's rounded top corner the
+  // tab would float above a gap (owner 2026-11-28), so that corner turns square while the tab is there.
+  const cardRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const card = cardRef.current;
+    const chips = card?.parentElement?.querySelector<HTMLElement>(".mn-chips");
+    if (!card || !chips) return;
+    const CORNER = 38;
+    const TAB_SPILL = 6; // the tab's ::before reaches 6px past the button on each side
+    const fit = () => {
+      const chip = chips.querySelector<HTMLElement>('.mn-chip[aria-pressed="true"]');
+      const c = card.getBoundingClientRect();
+      const box = chips.getBoundingClientRect();
+      let left = false;
+      let right = false;
+      if (chip) {
+        const r = chip.getBoundingClientRect();
+        // Only the part of the tab the scrolling row still shows counts.
+        const l = Math.max(r.left - TAB_SPILL, box.left);
+        const rt = Math.min(r.right + TAB_SPILL, box.right);
+        if (rt > l) {
+          left = l < c.left + CORNER;
+          right = rt > c.right - CORNER;
+        }
+      }
+      card.toggleAttribute("data-tab-l", left);
+      card.toggleAttribute("data-tab-r", right);
+    };
+    fit();
+    chips.addEventListener("scroll", fit, { passive: true });
+    window.addEventListener("resize", fit);
+    // Sizes also move without a resize event: the page scrollbar appearing, the fonts arriving.
+    const ro = typeof ResizeObserver === "function" ? new ResizeObserver(fit) : null;
+    ro?.observe(card);
+    ro?.observe(chips);
+    const active = chips.querySelector<HTMLElement>('.mn-chip[aria-pressed="true"]');
+    if (active) ro?.observe(active);
+    let alive = true;
+    void document.fonts?.ready.then(() => alive && fit());
+    return () => {
+      alive = false;
+      ro?.disconnect();
+      chips.removeEventListener("scroll", fit);
+      window.removeEventListener("resize", fit);
+    };
+  }, [mode, category, evType]);
+
   const set = (key: "tab" | "cat" | "view" | "type" | "color", value: string | null) => {
     const next = new URLSearchParams(params);
     if (value) next.set(key, value);
@@ -180,7 +227,7 @@ export default function Main() {
         </div>
       )}
 
-      <div className="mn-card">
+      <div ref={cardRef} className="mn-card">
         <h1 className="sc-sr">Samecor — ผลงานล่าสุด</h1>
         {mode === "showcase" ? (
           <Showcase
