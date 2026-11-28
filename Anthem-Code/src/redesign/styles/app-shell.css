@@ -610,3 +610,17 @@ html[data-native-app] .sc-app .sc-main {
     line-height: 1.1;
   }
 }
+
+/* App Creators (owner 2026-11-28): one card per row — two columns squeezed names and works on phones */
+@media (max-width: 600px) {
+  html[data-native-app] .sc-app .cr-all {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  /* NEW THIS WEEK: one card per view, the next one peeking */
+  html[data-native-app] .sc-app .cr-track {
+    grid-auto-columns: 86%;
+    gap: 12px;
+  }
+}
