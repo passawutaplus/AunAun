@@ -1151,7 +1151,7 @@
   letter-spacing: .02em;
 }
 
-/* days the view covers, under the month: "Today · 28 Nov" / "23 – 29 Nov" (owner 2026-11-28, not in the mock) */
+/* the week under the month on Now / This Week: "23 – 29 Nov", "30 Nov – 6 Dec" (owner 2026-11-28, not in the mock) */
 .sc-app .mn-ev-mo {
   display: flex;
   flex-direction: column;

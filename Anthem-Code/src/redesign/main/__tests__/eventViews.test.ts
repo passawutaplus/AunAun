@@ -19,7 +19,7 @@ describe("Event tab views", () => {
   });
 
   it("says which days a view covers", () => {
-    expect(viewDays("now", TODAY)).toBe("Today · 28 Nov");
+    expect(viewDays("now", TODAY)).toBe("23 – 29 Nov");
     expect(viewDays("week", TODAY)).toBe("23 – 29 Nov");
     expect(viewDays("week", "2026-12-02")).toBe("30 Nov – 6 Dec");
     expect(viewDays("all", TODAY)).toBeNull();

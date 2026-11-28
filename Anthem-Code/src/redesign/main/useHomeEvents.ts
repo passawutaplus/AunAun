@@ -69,11 +69,10 @@ export function inView(e: HomeEventRow, view: EventView, today = isoDay(new Date
   return e.starts_on >= monday && e.starts_on <= sunday;
 }
 
-/** Days a view covers, under the month (owner 2026-11-28): Now = "Today · 28 Nov", This Week = "23 – 29 Nov". */
+/** The week (Monday–Sunday) under the month on Now and This Week (owner 2026-11-28): "23 – 29 Nov", "30 Nov – 6 Dec". */
 export function viewDays(view: EventView, today: string): string | null {
   const day = (iso: string, month = true) => `${dayOf(iso).getDate()}${month ? ` ${MONTHS[dayOf(iso).getMonth()]}` : ""}`;
-  if (view === "now") return `Today · ${day(today)}`;
-  if (view !== "week") return null;
+  if (view !== "now" && view !== "week") return null;
   const [mon, sun] = weekOf(today);
   return `${day(mon, mon.slice(0, 7) !== sun.slice(0, 7))} – ${day(sun)}`;
 }
