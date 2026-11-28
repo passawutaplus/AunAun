@@ -325,6 +325,7 @@ function ProfileView({ slug, byId }: { slug: string; byId: boolean }) {
               instagram={p.instagram}
               website={p.website}
               email={p.contact_email}
+              cvUserId={p.user_id}
             />
           ) : null}
         </section>

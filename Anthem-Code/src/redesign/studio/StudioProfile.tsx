@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSubscription } from "@/core/subscription";
 import { proxiedImageUrl } from "@/lib/imageProxy";
@@ -7,6 +7,10 @@ import { saveStudioProfile, uploadAvatar, type StudioProfilePatch } from "@/serv
 import type { StudioProfile as Row } from "@/server/queries/studio";
 import { SC_CATEGORIES } from "../lib/categories";
 import { refreshMine } from "./useStudio";
+import "../styles/about-cv.css";
+
+// The CV editor is the old full editor (templates, A4 preview…): loaded only when opened.
+const CvEditorSheet = lazy(() => import("../profile/CvEditorSheet"));
 
 const BIO_MAX = 160;
 const NAME_MAX = 60;
@@ -40,8 +44,25 @@ export default function StudioProfile({ uid, profile, say }: { uid: string; prof
   const [avatar, setAvatar] = useState(profile?.avatar_url ?? "");
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [cvOpen, setCvOpen] = useState(false);
   const fileIn = useRef<HTMLInputElement>(null);
   const set = (p: Partial<Form>) => setF((x) => ({ ...x, ...p }));
+
+  // When the row changes underneath (CV editor saved city/tools, a new photo…), take the new values
+  // for every field not being edited here, so Save never writes an older value back.
+  const prevStart = useRef(start);
+  useEffect(() => {
+    const old = prevStart.current;
+    prevStart.current = start;
+    if (old === start) return;
+    setF((cur) => {
+      const next: Record<string, unknown> = { ...cur };
+      for (const k of Object.keys(start) as (keyof Form)[]) {
+        if (JSON.stringify(cur[k]) === JSON.stringify(old[k])) next[k] = start[k];
+      }
+      return next as Form;
+    });
+  }, [start]);
 
   // The name can change once every 30 days after sign-up (DB trigger); the welcome step does not count.
   const changedAt = profile?.display_name_changed_at && profile.profile_onboarding_at ? new Date(profile.display_name_changed_at) : null;
@@ -188,7 +209,21 @@ export default function StudioProfile({ uid, profile, say }: { uid: string; prof
             บันทึก
           </button>
         </div>
+        <div className="ms-pfr acv-studio">
+          <span className="ms-pfl">CV</span>
+          <div className="acv-studio-box">
+            <p>ประสบการณ์ การศึกษา รางวัล ภาษา — ใส่ไว้แล้วโหลดเป็น PDF ไปสมัครงานได้เลย</p>
+            <button type="button" className="ms-cpill" onClick={() => setCvOpen(true)}>
+              แก้ CV
+            </button>
+          </div>
+        </div>
       </div>
+      {cvOpen ? (
+        <Suspense fallback={null}>
+          <CvEditorSheet uid={uid} onClose={() => setCvOpen(false)} />
+        </Suspense>
+      ) : null}
     </div>
   );
 }

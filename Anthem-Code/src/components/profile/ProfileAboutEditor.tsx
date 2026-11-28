@@ -269,7 +269,26 @@ type Props = {
   profileUrl?: string | null;
   /** Leave the editor without saving (the editor asks first when there are unsaved changes). */
   onCancel?: () => void;
+  /**
+   * New design: `skills` is the profile's "tools" list, so software picked here stays in it too
+   * (in its old order) instead of moving only into the CV's own software list.
+   */
+  keepSoftwareInSkills?: boolean;
 };
+
+/** Craft skills + software as one list, keeping the order the profile already had. */
+function mergeSkillsKeepOrder(craft: string[], software: string[], before: string[]): string[] {
+  const seen = new Set<string>();
+  const merged = [...craft, ...software].filter((s) => {
+    const k = s.trim().toLowerCase();
+    if (!k || seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+  const rank = new Map(before.map((s, i) => [s.trim().toLowerCase(), i]));
+  const at = (s: string) => rank.get(s.trim().toLowerCase()) ?? Number.MAX_SAFE_INTEGER;
+  return merged.map((s, i) => ({ s, i })).sort((x, y) => at(x.s) - at(y.s) || x.i - y.i).map((x) => x.s);
+}
 
 /** The cv object exactly as it is saved — also what the live preview renders. */
 function buildCvFromForm(form: FormState, existingWorkArrangement: ReturnType<typeof parseProfileCv>["workArrangement"]) {
@@ -313,7 +332,7 @@ export default function ProfileAboutEditor(props: Props) {
   );
 }
 
-function ProfileAboutEditorInner({ userId, profile, onSaved, onCancel, sectionClassName, profileUrl }: Props) {
+function ProfileAboutEditorInner({ userId, profile, onSaved, onCancel, sectionClassName, profileUrl, keepSoftwareInSkills }: Props) {
   const { t, lang } = useAboutEditLocale();
   const updateMut = useUpdateProfile(userId);
   const [form, setForm] = useState<FormState>(() => formFromProfile(profile));
@@ -424,7 +443,9 @@ function ProfileAboutEditorInner({ userId, profile, onSaved, onCancel, sectionCl
         cvAbout: cv.about,
         website: form.website.trim(),
         socialLinks: form.socialLinks,
-        skills: form.skills,
+        skills: keepSoftwareInSkills
+          ? mergeSkillsKeepOrder(form.skills, cv.tools, parseSkills(profile.skills))
+          : form.skills,
         experience: cleanedExperience,
         cvPhotoUrl: form.cvPhotoUrl,
         education: cv.education,

@@ -237,6 +237,8 @@ function MyProfileView({ uid }: { uid: string }) {
               instagram={p?.instagram ?? null}
               website={p?.website ?? null}
               email={p?.contact_email ?? null}
+              cvUserId={uid}
+              cvOwner
             />
           ) : null}
         </section>

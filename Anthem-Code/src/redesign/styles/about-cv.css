@@ -1,0 +1,343 @@
+/* About → CV (AboutCv.tsx): the same 200px heading column as .pf-about above it (profile.css). */
+
+.sc-app .acv {
+  display: flex;
+  flex-direction: column;
+  max-width: 900px;
+  margin-top: 40px;
+}
+
+.sc-app .acv-row {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: 32px;
+  padding: 28px 0;
+  border-top: 1px solid #E2E2DF;
+}
+
+.sc-app .acv-row h3 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 300;
+  line-height: 1.3;
+}
+
+.sc-app .acv-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  font-size: 15px;
+  line-height: 1.7;
+  color: #4A4A4A;
+}
+
+.sc-app .acv-body p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.sc-app .acv-who {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 10px;
+}
+
+.sc-app .acv-who b {
+  font-size: 18px;
+  font-weight: 400;
+  color: #282929;
+}
+
+.sc-app .acv-who span {
+  color: #8A8A87;
+}
+
+.sc-app .acv-bio {
+  white-space: pre-line;
+}
+
+.sc-app .acv-warn {
+  font-size: 13px;
+  color: #8A5A00;
+}
+
+/* ---------- buttons ---------- */
+.sc-app .acv-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sc-app .acv-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 38px;
+  padding: 0 16px;
+  border: 1px solid #E2E2DF;
+  border-radius: 999px;
+  background: #FFFFFF;
+  color: #282929;
+  font-size: 14px;
+  font-weight: 300;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.sc-app .acv-btn:hover {
+  border-color: #282929;
+}
+
+.sc-app .acv-btn:disabled {
+  opacity: .6;
+  cursor: progress;
+}
+
+.sc-app .acv-btn-ink {
+  border-color: #282929;
+  background: #282929;
+  color: #FFFFFF;
+}
+
+.sc-app .acv-btn-ink:hover {
+  background: #000;
+}
+
+/* ---------- entries ---------- */
+.sc-app .acv-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.sc-app .acv-list > li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sc-app .acv-entry-h {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.sc-app .acv-entry-h b {
+  min-width: 0;
+  font-weight: 400;
+  color: #282929;
+  overflow-wrap: anywhere;
+}
+
+.sc-app .acv-entry-h span {
+  flex: none;
+  font-size: 13px;
+  color: #8A8A87;
+  font-variant-numeric: tabular-nums;
+}
+
+.sc-app .acv-list p {
+  font-size: 14px;
+  color: #666666;
+}
+
+.sc-app .acv-list ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  list-style: disc;
+  font-size: 14px;
+}
+
+.sc-app .acv-chips {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sc-app .acv-chips li {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: #F2F2F0;
+  font-size: 14px;
+  color: #282929;
+  max-width: 100%;
+}
+
+.sc-app .acv-chips img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.sc-app .acv-plain {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sc-app .acv-dl {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.sc-app .acv-dl > div {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.sc-app .acv-dl dt {
+  color: #8A8A87;
+}
+
+.sc-app .acv-dl dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- states ---------- */
+.sc-app .acv-wait {
+  min-height: 80px;
+}
+
+.sc-app .acv-err,
+.sc-app .acv-empty {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  max-width: 900px;
+  margin-top: 40px;
+  padding: 20px 24px;
+  border-radius: 20px;
+  background: #FFFFFF;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #4A4A4A;
+}
+
+.sc-app .acv-err p,
+.sc-app .acv-empty p {
+  margin: 0;
+}
+
+.sc-app .acv-empty b {
+  display: block;
+  font-size: 16px;
+  font-weight: 400;
+  color: #282929;
+}
+
+.sc-app .acv-say {
+  position: fixed;
+  left: 50%;
+  bottom: 32px;
+  z-index: 70;
+  transform: translateX(-50%);
+  max-width: calc(100vw - 32px);
+  padding: 11px 20px;
+  border-radius: 999px;
+  background: #282929;
+  color: #FFFFFF;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---------- My Studio › Profile: the CV row ---------- */
+.sc-app .acv-studio {
+  padding-top: 24px;
+  border-top: 1px solid #E2E2DF;
+}
+
+.sc-app .acv-studio-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.sc-app .acv-studio-box p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #666666;
+}
+
+.sc-app .acv-studio-box .ms-cpill {
+  flex: none;
+  height: 40px;
+}
+
+/* ---------- phones (≤600px, like .pf-about) ---------- */
+@media (max-width: 600px) {
+  .sc-app .acv {
+    margin-top: 28px;
+  }
+
+  .sc-app .acv-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+    padding: 22px 0;
+  }
+
+  .sc-app .acv-row h3 {
+    font-size: 19px;
+  }
+
+  .sc-app .acv-btn {
+    height: 36px;
+    padding: 0 13px;
+    font-size: 13px;
+  }
+
+  .sc-app .acv-dl > div {
+    grid-template-columns: 88px minmax(0, 1fr);
+  }
+
+  /* phones have no white card behind the tab */
+  .sc-app .acv-chips li {
+    background: #FFFFFF;
+  }
+
+  .sc-app .acv-studio-box {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .sc-app .acv-err,
+  .sc-app .acv-empty {
+    margin-top: 28px;
+    padding: 18px;
+  }
+
+  /* above the phone tab bar */
+  .sc-app .acv-say {
+    bottom: calc(var(--sc-h-tabbar-m, 64px) + 20px);
+  }
+}
