@@ -48,7 +48,9 @@ Find the official site first (no link yet): Bangkok Kunsthalle, ATT 19, Palette 
 
 Artist markets & illustration fairs (often announced only on Facebook / Instagram — check the
 page itself every run, in a browser): Illust Fusion (EXPO each June and December, Color Parade)
-https://if.enterdock.com · https://www.facebook.com/illustfusion · https://www.instagram.com/illustfusionth/
+https://if.enterdock.com · https://www.facebook.com/illustfusion · https://www.instagram.com/illustfusionth/ ·
+Bangkok Illustration Fair (each October, artist call June–July) https://bangkokillustrationfair.com ·
+Mango Art Festival (May, River City) https://www.mangoartfestival.com
 
 More Bangkok: Japan Foundation Bangkok https://ba.jpf.go.jp/en/category/whats-on-en/ ·
 Goethe-Institut Thailand https://www.goethe.de/ins/th/en/kul/sup.html · Meetup drawing groups
