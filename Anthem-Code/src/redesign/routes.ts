@@ -55,6 +55,8 @@ const PAGES: ReadonlyArray<{ match: RegExp; page: ShellPage }> = [
   { match: /^\/(auth|auth\/forgot|reset-password)\/?$/, page: { page: "login", tabbar: false, tab: "", footer: false, header: "none" } },
   // Settings (step 7): a sub-page of "ฉัน" — phones get the page's own ← instead of the tab bar (mock).
   { match: /^\/settings\/?$/, page: { page: "account-settings", tabbar: false, tab: "me", footer: true } },
+  // My profile (step 8): "ฉัน" in the tab bar; the account button becomes ☰ on phones (mock).
+  { match: /^\/(portfolio|portfolio\/saved|portfolio\/followers|collections)\/?$/, page: { page: "my-profile", tabbar: true, tab: "me", footer: true } },
   // Someone's profile (step 5), on the old URLs /@handle and /u/:id.
   { match: /^\/(@[^/]+|u\/[^/]+)\/?$/, page: { page: "profile", tabbar: true, tab: "", footer: true, back: true } },
   // An event or venue (step 6), on its old URL. Phones hide the header; the page has its own bottom bar.

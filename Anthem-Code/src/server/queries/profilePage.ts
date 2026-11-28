@@ -7,7 +7,7 @@ import { profilesPublicFrom } from "@/lib/profileAccess";
 import { isUuid } from "@/lib/profileRoutes";
 import { isOptionalQueryError } from "@/lib/supabaseErrors";
 
-const PROFILE_PAGE_SELECT =
+export const PROFILE_PAGE_SELECT =
   "user_id, username, display_name, avatar_url, bio, skills, location, profile_address, instagram, website, contact_email, sc_categories, public_visibility";
 
 export type ProfilePageRow = {
@@ -34,7 +34,7 @@ export async function getProfilePage(slug: string): Promise<ProfilePageRow | nul
   return (data as unknown as ProfilePageRow | null) ?? null;
 }
 
-const PROFILE_WORK_SELECT = "id, title, cover_url, gallery_urls, cover_width, cover_height, sc_category, tools, tags";
+export const PROFILE_WORK_SELECT = "id, title, cover_url, gallery_urls, cover_width, cover_height, sc_category, tools, tags";
 
 export type ProfileWorkRow = {
   id: string;
@@ -136,7 +136,7 @@ export async function getWorksByIds(ids: readonly string[]): Promise<Array<Profi
   return (data ?? []) as Array<ProfileWorkRow & { owner_id: string | null }>;
 }
 
-const PROFILE_EVENT_SELECT = "id, title, category, starts_on, ends_on, location_name, cover_url, slug, origin, owner_id";
+export const PROFILE_EVENT_SELECT = "id, title, category, starts_on, ends_on, location_name, cover_url, slug, origin, owner_id";
 
 export type ProfileEventRow = {
   id: string;

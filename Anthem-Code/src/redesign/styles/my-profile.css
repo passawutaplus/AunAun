@@ -1,0 +1,693 @@
+/*
+ * MyProfile (mock MyProfile.dc.html). Shares profile.css with Profile — the two pages must stay alike
+ * (mock rule "03 กับ 10 ต้องแก้คู่กันเสมอ"); only what MyProfile adds is here.
+ */
+
+/* aside: bio, Edit + Share, "ดูหน้าโปรไฟล์แบบคนอื่นเห็น" */
+.sc-app .mp-bio {
+  margin: 20px 0 0;
+  max-width: 260px;
+  font-size: 15px;
+  line-height: 1.65;
+  color: #4A4A4A;
+}
+
+.sc-app :is(.mp-edit, .mp-share) {
+  height: 48px;
+  box-sizing: border-box;
+  border: 1px solid #282929;
+  border-radius: 999px;
+  padding: 0;
+  font: inherit;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  color: #282929;
+  background: none;
+  text-decoration: none;
+}
+
+.sc-app .mp-share {
+  border-color: #D4D4D1;
+}
+
+.sc-app :is(.mp-edit, .mp-share):hover {
+  background: #F2F2F0;
+}
+
+.sc-app .mp-public {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #E2E2DF;
+  align-self: stretch;
+  font-size: 12px;
+  color: #8A8A87;
+  text-decoration: none;
+}
+
+/* small shared bits */
+.sc-app .mp-grow {
+  flex: 1;
+}
+
+.sc-app .mp-n {
+  font-size: 13px;
+  color: #8A8A87;
+  white-space: nowrap;
+}
+
+.sc-app .mp-priv {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #8A8A87;
+  margin: -12px 0 4px;
+}
+
+.sc-app .mp-pill {
+  height: 44px;
+  padding: 0 16px;
+  box-sizing: border-box;
+  border: 1px solid #E2E2DF;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #282929;
+  background: none;
+  cursor: pointer;
+}
+
+.sc-app .mp-pill-white {
+  height: 40px;
+  background: #FFFFFF;
+}
+
+.sc-app .mp-pill:disabled {
+  opacity: .5;
+  cursor: default;
+}
+
+.sc-app .mp-cbtn {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  padding: 0;
+  box-sizing: border-box;
+  border: 1px solid #E2E2DF;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #282929;
+  background: none;
+  cursor: pointer;
+}
+
+.sc-app .mp-cbtn:hover {
+  border-color: #282929;
+}
+
+.sc-app .mp-cbtn[data-off] {
+  opacity: .35;
+  cursor: default;
+}
+
+.sc-app .mp-cbtn[data-off]:hover {
+  border-color: #E2E2DF;
+}
+
+.sc-app .mp-rel {
+  position: relative;
+}
+
+.sc-app .mp-menu {
+  position: absolute;
+  right: 0;
+  top: 52px;
+  z-index: 5;
+  width: 200px;
+  background: #FFFFFF;
+  color: #282929;
+  border-radius: 16px;
+  box-shadow: 0 16px 48px rgba(40, 41, 41, .18);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+}
+
+.sc-app .mp-menu-up {
+  top: auto;
+  right: auto;
+  bottom: 52px;
+  left: 0;
+}
+
+.sc-app .mp-mi {
+  height: 40px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: inherit;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sc-app .mp-mi:hover {
+  background: #F2F2F0;
+}
+
+.sc-app .mp-mi-red {
+  color: #B8321F;
+}
+
+.sc-app .mp-mi-new {
+  border-bottom: 1px solid #ECECEA;
+  border-radius: 10px 10px 0 0;
+}
+
+/* Works: the catalog bar and the globe/lock on each work */
+.sc-app .mp-catbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-radius: 20px;
+  background: #F5F5F3;
+}
+
+.sc-app .mp-catbar-name {
+  font-size: 20px;
+  font-weight: 300;
+}
+
+.sc-app .pf-sv.mp-vis svg {
+  fill: none;
+}
+
+.sc-app .pf-sv.mp-vis[data-locked] {
+  background: rgba(40, 41, 41, .6);
+}
+
+/* Saved */
+.sc-app .mp-coll-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sc-app .mp-coll-hd {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sc-app .mp-cname {
+  flex: 0 1 360px;
+  min-width: 0;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  background: transparent;
+  font: inherit;
+  font-size: 28px;
+  font-weight: 300;
+  color: #282929;
+  padding: 4px 0;
+  outline: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sc-app input.mp-cname:is(:hover, :focus) {
+  border-bottom-color: #D4D4D1;
+}
+
+.sc-app .mp-selrow {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.sc-app .mp-sel {
+  height: 36px;
+  padding: 0 16px;
+  box-sizing: border-box;
+  border: 1px solid #E2E2DF;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  color: #282929;
+  background: none;
+  cursor: pointer;
+}
+
+.sc-app .mp-sel[aria-pressed="true"] {
+  border-color: #282929;
+  background: #282929;
+  color: #FFFFFF;
+}
+
+.sc-app .pf-tile[data-picked] {
+  box-shadow: 0 0 0 3px #282929;
+}
+
+.sc-app .mp-ck {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  padding: 14px;
+  border: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  background: transparent;
+  cursor: pointer;
+}
+
+.sc-app .mp-ck[aria-pressed="true"] {
+  background: rgba(255, 255, 255, .12);
+}
+
+.sc-app .mp-ck > span {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #FFFFFF;
+  background: rgba(0, 0, 0, .15);
+}
+
+.sc-app .mp-ck[aria-pressed="true"] > span {
+  border: 0;
+  background: #282929;
+}
+
+.sc-app .mp-bar {
+  position: sticky;
+  bottom: 24px;
+  align-self: center;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 6px 6px 20px;
+  border-radius: 999px;
+  background: #282929;
+  color: #FFFFFF;
+  box-shadow: 0 8px 24px rgba(40, 41, 41, .24);
+  font-size: 13px;
+}
+
+.sc-app .mp-bar-n {
+  margin-right: 8px;
+}
+
+.sc-app .mp-bb {
+  height: 40px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #FFFFFF;
+  background: none;
+  cursor: pointer;
+}
+
+.sc-app .mp-bb:hover {
+  background: rgba(255, 255, 255, .12);
+}
+
+.sc-app .mp-bb-x {
+  width: 40px;
+  padding: 0;
+  justify-content: center;
+}
+
+/* Events */
+.sc-app .mp-ev-chips {
+  align-items: center;
+}
+
+/* sits in the chip row but is a switch, not a chip */
+.sc-app .pf-chips button.mp-int-switch,
+.sc-app .pf-chips button.mp-int-switch[aria-pressed="true"] {
+  height: 36px;
+  margin-left: auto;
+  gap: 8px;
+  border: 1px solid #E2E2DF;
+  background: none;
+  color: #282929;
+}
+
+.sc-app .mp-seg {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: #F2F2F0;
+  align-self: flex-start;
+}
+
+.sc-app .mp-seg button {
+  height: 36px;
+  padding: 0 16px;
+  box-sizing: border-box;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  color: #8A8A87;
+  background: none;
+  cursor: pointer;
+}
+
+.sc-app .mp-seg button[aria-pressed="true"] {
+  background: #FFFFFF;
+  box-shadow: 0 1px 3px rgba(40, 41, 41, .08);
+  color: #282929;
+}
+
+.sc-app .mp-evr {
+  position: relative;
+}
+
+.sc-app .mp-evr:first-child {
+  border-top: 1px solid #ECECEA;
+}
+
+.sc-app .mp-evr-open {
+  position: absolute;
+  inset: 0;
+}
+
+.sc-app .mp-evr .pf-ev-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sc-app .mp-ev-date {
+  width: 56px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.sc-app .mp-ev-date > :first-child {
+  font-size: 26px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.sc-app .mp-ev-date > :last-child {
+  font-size: 11px;
+  letter-spacing: .08em;
+  color: #8A8A87;
+  margin-top: 4px;
+}
+
+.sc-app .mp-evr .pf-ev-kind [data-red] {
+  color: #EE3D29;
+}
+
+.sc-app .mp-ev-st {
+  font-size: 12px;
+  color: #666666;
+  white-space: nowrap;
+}
+
+.sc-app .mp-ev-st[data-red] {
+  color: #EE3D29;
+}
+
+.sc-app .mp-sv2 {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #282929;
+  background: none;
+}
+
+.sc-app button.mp-sv2 {
+  z-index: 1;
+  cursor: pointer;
+}
+
+.sc-app .mp-sv2:is(.mp-sv2-dim, [data-dim]) {
+  color: #B9B9B6;
+}
+
+.sc-app .mp-empty {
+  margin: 0;
+  padding: 48px 0;
+  text-align: center;
+  font-size: 14px;
+  color: #8A8A87;
+}
+
+/* Following */
+.sc-app .mp-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.sc-app .mp-crc {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 24px;
+  background: #F5F5F3;
+  min-width: 0;
+}
+
+.sc-app .mp-crc-covers {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+
+.sc-app .mp-crc-covers > * {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 5px;
+  background: #ECECEA;
+}
+
+.sc-app .mp-crc-who {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sc-app .mp-crc-av {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border-radius: 50%;
+  background: #D4D4D1;
+  object-fit: cover;
+  display: block;
+}
+
+.sc-app .mp-crc-name {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: #282929;
+  text-decoration: none;
+}
+
+.sc-app .mp-crc-name > :first-child {
+  font-size: 14px;
+  font-weight: 400;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sc-app .mp-crc-name > :last-child:not(:first-child) {
+  font-size: 12px;
+  color: #8A8A87;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sc-app .mp-ib2 {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #282929;
+  background: none;
+  cursor: pointer;
+}
+
+.sc-app .mp-ib2:hover {
+  background: #ECECEA;
+}
+
+.sc-app .mp-fol {
+  height: 36px;
+  box-sizing: border-box;
+  border: 1px solid #D4D4D1;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #282929;
+  background: none;
+  cursor: pointer;
+}
+
+.sc-app .mp-fol[aria-pressed="false"] {
+  background: #282929;
+  border-color: #282929;
+  color: #FFFFFF;
+}
+
+.sc-app .mp-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 40px;
+  transform: translateX(-50%);
+  z-index: 70;
+  height: 44px;
+  padding: 0 20px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  background: #282929;
+  color: #FFFFFF;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+/* phones (mock 03b, the same as Profile) */
+@media (max-width: 600px) {
+  .sc-app :is(.mp-bio, .mp-public) {
+    display: none;
+  }
+
+  .sc-app .mp-edit {
+    background: #282929;
+    border-color: #282929;
+    color: #FFFFFF;
+  }
+
+  .sc-app .mp-edit:hover {
+    background: #282929;
+  }
+
+  .sc-app .pf-acts.mp-acts > .mp-share {
+    flex: none;
+    width: 44px;
+    background: #FFFFFF;
+    border-color: #FFFFFF;
+  }
+
+  .sc-app .mp-share > span {
+    display: none;
+  }
+
+  .sc-app .mp-share svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  /* Following opens from the "กำลังติดตาม" number on phones */
+  .sc-app .mp-tabs button[data-tab="following"] {
+    display: none;
+  }
+
+  .sc-app .mp-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .sc-app .mp-evr {
+    gap: 10px;
+  }
+
+  .sc-app .mp-ev-date {
+    width: 40px;
+  }
+
+  .sc-app .mp-evr .pf-ev-img {
+    width: 64px;
+  }
+
+  .sc-app .pf-chips button.mp-int-switch {
+    margin-left: 0;
+  }
+
+  .sc-app .mp-cname {
+    font-size: 22px;
+  }
+
+  .sc-app .mp-coll-hd {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .sc-app .mp-toast {
+    bottom: 100px;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .sc-app :is(.mp-crc, .mp-evr) {
+      animation: pfRise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 60%;
+    }
+  }
+}

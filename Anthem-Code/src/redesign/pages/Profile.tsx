@@ -9,9 +9,10 @@ import { eventPath } from "@/lib/exhibitionEvents";
 import { proxiedImageSrcSet, proxiedImageUrl } from "@/lib/imageProxy";
 import { displayProfileAddress } from "@/lib/profileAddress";
 import { parseProfileVisibility } from "@/lib/profileVisibility";
-import type { ProfileWorkRow } from "@/server/queries/profilePage";
 import { SC_LINKS } from "../routes";
 import { instagramHandle, instagramUrl, mailUrl, websiteLabel, websiteUrl } from "../lib/contactLinks";
+import AboutPanel from "../profile/AboutPanel";
+import { count, toTile, toolsOf, type Tile } from "../profile/tiles";
 import ScLoader from "../main/ScLoader";
 import { profileHref } from "../main/useCreators";
 import { useFollows } from "../main/useFollows";
@@ -36,29 +37,6 @@ import "../styles/profile.css";
 type Tab = "works" | "collections" | "events" | "about";
 const TAB_LABEL: Record<Tab, string> = { works: "Works", collections: "Collections", events: "Events", about: "About" };
 type EventFilter = "all" | "host" | "int";
-
-type Tile = { id: string; title: string; cat: string; cover: string; ratio: number | null };
-
-const toTile = (w: ProfileWorkRow): Tile | null => {
-  const cover = w.cover_url || w.gallery_urls?.[0] || "";
-  if (!cover) return null;
-  return {
-    id: w.id,
-    title: w.title?.trim() || "",
-    cat: w.sc_category ?? "",
-    cover,
-    ratio: w.cover_width && w.cover_height ? w.cover_width / w.cover_height : null,
-  };
-};
-
-/** Tools across the person's works, most used first (mock About: "เครื่องมือ"). */
-const toolsOf = (works: readonly ProfileWorkRow[]) => {
-  const n = new Map<string, number>();
-  for (const w of works) for (const t of w.tools ?? []) if (t?.trim()) n.set(t.trim(), (n.get(t.trim()) ?? 0) + 1);
-  return [...n.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6).map(([t]) => t).join(", ");
-};
-
-const count = (n: number) => n.toLocaleString("en-US");
 
 /** `/@handle` (through `/:vanityHandle`) and `/u/:userId`. */
 export default function ProfilePage() {
@@ -339,60 +317,19 @@ function ProfileView({ slug, byId }: { slug: string; byId: boolean }) {
           ) : null}
 
           {tab === "about" ? (
-            <div className="pf-about">
-              <h3>About</h3>
-              <div className="pf-about-body">
-                {vis.bio && p.bio?.trim() ? <p>{p.bio.trim()}</p> : null}
-                <dl>
-                  {cats.length ? (
-                    <>
-                      <dt>หมวด</dt>
-                      <dd>{cats.join(", ")}</dd>
-                    </>
-                  ) : null}
-                  {toolsOf(works) ? (
-                    <>
-                      <dt>เครื่องมือ</dt>
-                      <dd>{toolsOf(works)}</dd>
-                    </>
-                  ) : null}
-                  {city ? (
-                    <>
-                      <dt>เมือง</dt>
-                      <dd>{city}</dd>
-                    </>
-                  ) : null}
-                  <dt>ผู้ติดตาม</dt>
-                  <dd>{count(counts.followers)} คน</dd>
-                </dl>
-                {contactIcons ? (
-                  <div className="pf-contact" aria-label="ติดต่อ">
-                    <h4>CONTACT</h4>
-                    {ig ? (
-                      <a href={ig} target="_blank" rel="noopener noreferrer">
-                        <span><svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.4"><rect x="4" y="4" width="16" height="16" rx="4.5" /><circle cx="12" cy="12" r="3.6" /></svg></span>
-                        <span><small>INSTAGRAM</small>{instagramHandle(p.instagram)}</span>
-                        <i aria-hidden="true">↗</i>
-                      </a>
-                    ) : null}
-                    {web ? (
-                      <a href={web} target="_blank" rel="noopener noreferrer">
-                        <span><svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.4" strokeLinecap="round"><circle cx="12" cy="12" r="8.5" /><path d="M3.5 12h17M12 3.5c2.5 2.6 2.5 14.4 0 17M12 3.5c-2.5 2.6-2.5 14.4 0 17" /></svg></span>
-                        <span><small>WEBSITE</small>{websiteLabel(p.website)}</span>
-                        <i aria-hidden="true">↗</i>
-                      </a>
-                    ) : null}
-                    {mail ? (
-                      <a href={mail}>
-                        <span><svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.4" strokeLinejoin="round"><rect x="3.5" y="6" width="17" height="12.5" rx="2" /><path d="M4 7l8 6 8-6" /></svg></span>
-                        <span><small>EMAIL</small>{p.contact_email?.trim()}</span>
-                        <i aria-hidden="true">↗</i>
-                      </a>
-                    ) : null}
-                  </div>
-                ) : null}
-              </div>
-            </div>
+            <AboutPanel
+              bio={vis.bio ? p.bio?.trim() ?? "" : ""}
+              cats={cats}
+              tools={toolsOf(works)}
+              city={city}
+              followers={counts.followers}
+              ig={ig}
+              web={web}
+              mail={mail}
+              instagram={p.instagram}
+              website={p.website}
+              email={p.contact_email}
+            />
           ) : null}
         </section>
       </div>

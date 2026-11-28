@@ -66,8 +66,8 @@ export async function setMySetting(key: "chat" | "comment" | "follow" | "event" 
   if (error) throw error;
 }
 
-/** "creators" / "search" in profiles.public_visibility; the other keys (bio, location …) are kept. */
-export async function setVisibilitySwitch(userId: string, key: "creators" | "search", on: boolean): Promise<void> {
+/** "creators" / "search" / "interested_events" in profiles.public_visibility; the other keys (bio, location …) are kept. */
+export async function setVisibilitySwitch(userId: string, key: "creators" | "search" | "interested_events", on: boolean): Promise<void> {
   const { data, error: readErr } = await supabase.from("profiles").select("public_visibility" as "*").eq("user_id", userId).maybeSingle();
   if (readErr) throw readErr;
   const pv = (data as { public_visibility?: unknown } | null)?.public_visibility;

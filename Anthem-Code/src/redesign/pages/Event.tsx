@@ -18,6 +18,7 @@ import EventPictures from "../event/EventPictures";
 import Locations from "../event/Locations";
 import { thaiHours } from "../event/venueText";
 import { EVENT_KIND, shortDate } from "../main/useHomeEvents";
+import { useInterestedSwitch } from "../profile/useMyProfile";
 import NotFound from "./NotFound";
 import "../styles/fonts.css";
 import "../styles/tokens.css";
@@ -100,13 +101,15 @@ function EventBody({ event: e, venues, parent }: { event: EventPageRow; venues: 
   // ---------- สนใจ ----------
   const ids = useMemo(() => [e.id], [e.id]);
   const { data: mine } = useMyEventInterests(ids);
+  const shown = useInterestedSwitch(user?.id);
   const [picked, setPicked] = useState<boolean | null>(null);
   const interested = picked ?? !!mine?.has(e.id);
   const toggle = useMutation({
     mutationFn: toggleEventInterest,
     onSuccess: (on) => {
       setPicked(on);
-      say(on ? "เก็บไว้ใน Interested · เห็นแค่คุณ" : "เอาออกจาก Interested แล้ว");
+      // Follows the person's Interested switch (MyProfile → Events, default "เห็นแค่คุณ").
+      say(on ? `เก็บไว้ใน Interested · ${shown.on ? "ทุกคนเห็น" : "เห็นแค่คุณ"}` : "เอาออกจาก Interested แล้ว");
     },
     onError: () => {
       setPicked(null);
