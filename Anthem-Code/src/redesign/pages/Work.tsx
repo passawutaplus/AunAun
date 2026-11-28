@@ -20,7 +20,7 @@ import WorkComments from "../work/WorkComments";
 import { useImageLikes, useOwnerWorks, useWork, useWorkCatalog } from "../work/useWork";
 import { formatCount, licenceLine, neighbour, pickSimilar, workDateLine } from "../work/workContent";
 import NotFound from "./NotFound";
-import { useShellPanels } from "../shell/panels";
+import { bigChatOpen, useShellPanels } from "../shell/panels";
 import { instagramUrl, websiteUrl } from "../lib/contactLinks";
 import { indexableBySearch, useNoIndex } from "../lib/visibility";
 import "../styles/fonts.css";
@@ -174,13 +174,13 @@ function WorkView({ id, overlay, list, linkState, close }: ViewProps) {
     window.setTimeout(finish, 600);
   }, [overlay, close]);
 
-  // Esc closes (the save popup handles its own Esc first).
+  // Esc closes (the save popup handles its own Esc first; so does the big chat popup, which sits above the work).
   const toastOpen = saves.open;
   // The share panel (below) handles its own Esc; the work stays open behind it.
   const [shareFor, setShareFor] = useState<{ image: string; ratio: number | null } | null>(null);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !toastOpen && !shareFor) dismiss();
+      if (e.key === "Escape" && !toastOpen && !shareFor && !bigChatOpen()) dismiss();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);

@@ -68,6 +68,14 @@ export function useGreet() {
   return { greet, error };
 }
 
+/**
+ * Esc closes one layer at a time. These two answer "is a layer above/beside me open?" for the page-wide
+ * (document) Esc handlers: the big chat popup is on top, then the work overlay, then the small chat window.
+ * (Esc inside the small chat stops at the chat itself — see ChatDock.)
+ */
+export const workOverlayOpen = () => document.documentElement.classList.contains("sc-wk-open");
+export const bigChatOpen = () => document.querySelector(".ch-emb") !== null;
+
 /** Esc closes every popup (design rule A7.3: veil, ×, Esc). */
 export function onEscape(handler: () => void) {
   const onKey = (e: KeyboardEvent) => {
