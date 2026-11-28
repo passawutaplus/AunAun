@@ -459,7 +459,7 @@ html[data-native-app] .sc-app .sc-hd {
 
 /* ---------- glass tab bar (phones: website and app, owner 2026-11-28) ---------- */
 @media (max-width: 600px) {
-  .sc-app[data-tab] .sc-tb {
+  .sc-app[data-tab] .sc-tb-pill {
     background: rgba(255, 255, 255, .68);
     -webkit-backdrop-filter: blur(24px) saturate(1.8);
     backdrop-filter: blur(24px) saturate(1.8);

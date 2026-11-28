@@ -413,19 +413,40 @@ export default function RedesignShell({ children }: { children?: ReactNode }) {
         </footer>
       ) : null}
 
-      {/* Icons only on phones (owner 2026-11-28); the names stay as aria-labels. */}
+      {/* Phones (owner 2026-11-28): a pill of tabs — the current one shows its name — and "+" alone at the right.
+          The names stay as aria-labels; the visible names are decoration. */}
       <nav className="sc-tb" aria-label="เมนูหลัก">
-        <Link to={SC_LINKS.home} data-k="home" aria-label="หน้าแรก" aria-current={tab === "home" ? "page" : undefined}>
-          <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" strokeWidth="1.4" strokeLinejoin="round">
-            <path d="M4 10.5L12 4l8 6.5V20h-5.5v-5h-5v5H4z" />
-          </svg>
-        </Link>
-        <Link to={SC_LINKS.events} data-k="event" aria-label="Event" aria-current={tab === "event" ? "page" : undefined}>
-          <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3.5" y="5" width="17" height="15.5" rx="2" />
-            <path d="M3.5 10h17M8 3v4M16 3v4" />
-          </svg>
-        </Link>
+        <div className="sc-tb-pill">
+          <Link to={SC_LINKS.home} data-k="home" aria-label="หน้าแรก" aria-current={tab === "home" ? "page" : undefined}>
+            <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" strokeWidth="1.4" strokeLinejoin="round">
+              <path d="M4 10.5L12 4l8 6.5V20h-5.5v-5h-5v5H4z" />
+            </svg>
+            <span className="sc-tb-lb" aria-hidden="true">Home</span>
+          </Link>
+          <Link to={SC_LINKS.events} data-k="event" aria-label="Event" aria-current={tab === "event" ? "page" : undefined}>
+            <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3.5" y="5" width="17" height="15.5" rx="2" />
+              <path d="M3.5 10h17M8 3v4M16 3v4" />
+            </svg>
+            <span className="sc-tb-lb" aria-hidden="true">Event</span>
+          </Link>
+          <Link
+            to={user ? SC_LINKS.chat : loginTo(SC_LINKS.chat)}
+            data-k="chat"
+            aria-label={chatUnread ? `แชท ${chatUnread} ข้อความใหม่` : "แชท"}
+            aria-current={tab === "chat" ? "page" : undefined}
+          >
+            <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" strokeWidth="1.4" strokeLinejoin="round">
+              <path d="M12 3.5a8.5 8.5 0 0 1 0 17c-1.5 0-2.9-.4-4.1-1L3.5 20.5l1.1-4.2A8.5 8.5 0 0 1 12 3.5z" />
+            </svg>
+            <span className="sc-tb-lb" aria-hidden="true">Chat</span>
+            {chatUnread ? <span className="sc-tb-bd" aria-hidden="true">{chatUnread}</span> : null}
+          </Link>
+          <Link to={user ? SC_LINKS.myProfile : loginTo(SC_LINKS.myProfile)} data-k="me" aria-label="ฉัน" aria-current={tab === "me" ? "page" : undefined}>
+            <span className="sc-tb-av" aria-hidden="true" style={bg(avatar)} />
+            <span className="sc-tb-lb" aria-hidden="true">Me</span>
+          </Link>
+        </div>
         {/* "+" opens the New chooser (Showcase / Event) like the home "+" (owner 2026-11-28: members can post events now). */}
         <Link
           to={user ? SC_LINKS.upload : loginTo(SC_LINKS.upload)}
@@ -438,23 +459,9 @@ export default function RedesignShell({ children }: { children?: ReactNode }) {
             panels.openNew(e.currentTarget);
           }}
         >
-          <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" strokeWidth="1.6" strokeLinecap="round">
+          <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" strokeWidth="1.8" strokeLinecap="round">
             <path d="M12 5v14M5 12h14" />
           </svg>
-        </Link>
-        <Link
-          to={user ? SC_LINKS.chat : loginTo(SC_LINKS.chat)}
-          data-k="chat"
-          aria-label={chatUnread ? `แชท ${chatUnread} ข้อความใหม่` : "แชท"}
-          aria-current={tab === "chat" ? "page" : undefined}
-        >
-          <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" strokeWidth="1.4" strokeLinejoin="round">
-            <path d="M12 3.5a8.5 8.5 0 0 1 0 17c-1.5 0-2.9-.4-4.1-1L3.5 20.5l1.1-4.2A8.5 8.5 0 0 1 12 3.5z" />
-          </svg>
-          {chatUnread ? <span className="sc-tb-bd" aria-hidden="true">{chatUnread}</span> : null}
-        </Link>
-        <Link to={user ? SC_LINKS.myProfile : loginTo(SC_LINKS.myProfile)} data-k="me" aria-label="ฉัน" aria-current={tab === "me" ? "page" : undefined}>
-          <span className="sc-tb-av" aria-hidden="true" style={bg(avatar)} />
         </Link>
       </nav>
 
