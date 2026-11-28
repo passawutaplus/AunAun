@@ -479,3 +479,10 @@
     max-height: none;
   }
 }
+
+/* "หาอีเว้นท์ …" row of the search panel: an icon instead of a picture. */
+.sc-app .sp-th-ic {
+  display: grid;
+  place-items: center;
+  background: var(--sc-soft);
+}

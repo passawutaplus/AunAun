@@ -258,18 +258,19 @@ export default function Main() {
   };
   const appFiltersFor = (m: Mode): AppFilterRow[] => {
     const here = m === mode;
-    const cats: AppFilterRow = { key: "cat", label: "หมวด", value: category ?? "", options: [["", "All"], ...SC_CATEGORIES.map((c) => [c, c] as const)] };
+    // Section headings in English (owner 2026-11-28).
+    const cats: AppFilterRow = { key: "cat", label: "Category", value: category ?? "", options: [["", "All"], ...SC_CATEGORIES.map((c) => [c, c] as const)] };
     if (m === "showcase") {
       const options = SHOWCASE_VIEWS.map((v) => [v === "explore" ? "" : v, VIEW_LABEL[v]] as const);
-      return [{ key: "view", label: "มุมมอง", value: here && view !== "explore" ? view : "", options }, cats];
+      return [{ key: "view", label: "View", value: here && view !== "explore" ? view : "", options }, cats];
     }
     if (m === "creators") {
       const options = CREATOR_VIEWS.map((v) => [v === "discover" ? "" : v, CREATOR_VIEW_LABEL[v]] as const);
-      return [{ key: "view", label: "มุมมอง", value: here && crView !== "discover" ? crView : "", options }, cats];
+      return [{ key: "view", label: "View", value: here && crView !== "discover" ? crView : "", options }, cats];
     }
     return [
-      { key: "view", label: "ช่วงเวลา", value: here && evView !== "all" ? evView : "", options: EVENT_VIEWS.map((v) => [v === "all" ? "" : v, EVENT_VIEW_LABEL[v]] as const) },
-      { key: "type", label: "ประเภท", value: here ? (evType ?? "") : "", options: [["", "All"], ...EVENT_TYPES] },
+      { key: "view", label: "When", value: here && evView !== "all" ? evView : "", options: EVENT_VIEWS.map((v) => [v === "all" ? "" : v, EVENT_VIEW_LABEL[v]] as const) },
+      { key: "type", label: "Type", value: here ? (evType ?? "") : "", options: [["", "All"], ...EVENT_TYPES] },
     ];
   };
   // What the page is filtered by, as tags over the card (the rows themselves are in the search screen).

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { clearSiteSearchSeed, siteSearchSeed, useSiteSearch } from "../lib/useSiteSearch";
 import { onEscape } from "./panels";
 
@@ -22,8 +22,27 @@ export default function SearchPanel({ top, centred, leaving, onClose }: Props) {
   // Opened from `/?q=` or the `/search` shortcut: starts with that term (read once).
   const [q, setQ] = useState(siteSearchSeed);
   const inputRef = useRef<HTMLInputElement>(null);
-  const { hits, ready } = useSiteSearch(q);
+  // No "nothing found" line any more: the event search row is always there once something is typed.
+  const { hits } = useSiteSearch(q);
   const typed = !!q.trim();
+  // Event search by sentence (owner 2026-11-28): it moved from the Event tab into this panel. On the Event tab
+  // its row comes first and Enter runs it; elsewhere it is the last row.
+  const loc = useLocation();
+  const navigate = useNavigate();
+  const onEventTab = loc.pathname === "/" && new URLSearchParams(loc.search).get("tab") === "event";
+  const eventHref = `/?tab=event&q=${encodeURIComponent(q.trim())}`;
+  const eventRow = (
+    <Link key="event-search" to={eventHref} className="sp-hit" onClick={() => onClose(false)}>
+      <span aria-hidden="true" className="sp-th sp-th-ic">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3.5" y="5" width="17" height="15.5" rx="2" />
+          <path d="M3.5 10h17M8 3v4M16 3v4" />
+        </svg>
+      </span>
+      <span className="sp-name">หาอีเว้นท์ “{q.trim()}”</span>
+      <span className="sp-kind">EVENT</span>
+    </Link>
+  );
 
   useEffect(() => {
     clearSiteSearchSeed();
@@ -57,11 +76,17 @@ export default function SearchPanel({ top, centred, leaving, onClose }: Props) {
             type="text"
             className="sp-in"
             aria-label="ค้นหาผลงาน ศิลปิน อีเว้นท์"
-            placeholder="ค้นหาผลงาน ศิลปิน อีเว้นท์"
+            placeholder={onEventTab ? "อยากไปงานไหน เช่น วาดรูปฟรี เชียงใหม่ เสาร์นี้" : "ค้นหาผลงาน ศิลปิน อีเว้นท์"}
             enterKeyHint="search"
             autoComplete="off"
             value={q}
             onChange={(e) => setQ(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key !== "Enter" || !typed || !onEventTab) return;
+              e.preventDefault();
+              onClose(false);
+              navigate(eventHref);
+            }}
           />
           <button type="button" aria-label="ปิดค้นหา" className="sp-esc" onClick={() => onClose()}>
             <span aria-hidden="true" className="sp-esc-t">esc</span>
@@ -72,6 +97,7 @@ export default function SearchPanel({ top, centred, leaving, onClose }: Props) {
         </div>
         {typed ? (
           <div className="sp-res">
+            {onEventTab ? eventRow : null}
             {hits.map((h) => (
               <Link key={h.key} to={h.href} className="sp-hit" onClick={() => onClose(false)}>
                 <span aria-hidden="true" className="sp-th" data-round={h.kind === "CREATOR" ? "" : undefined} style={thumb(h.thumb)} />
@@ -79,7 +105,7 @@ export default function SearchPanel({ top, centred, leaving, onClose }: Props) {
                 <span className="sp-kind">{h.kind}</span>
               </Link>
             ))}
-            {ready && !hits.length ? <p className="sp-none">ไม่เจอสิ่งที่ตรงกัน</p> : null}
+            {onEventTab ? null : eventRow}
           </div>
         ) : null}
       </div>

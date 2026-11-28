@@ -162,3 +162,35 @@
     align-items: flex-start;
   }
 }
+
+/* Website Event tab: the asked sentence as a tag + what was understood (EventQueryBar). */
+.sc-app .mn-es-on {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  margin: 0 0 20px;
+}
+
+.sc-app .mn-es-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 36px;
+  padding: 0 4px 0 14px;
+  border-radius: 999px;
+  background: var(--sc-soft);
+  color: var(--sc-ink);
+  font-size: 14px;
+  max-width: 100%;
+}
+
+.sc-app .mn-es-tag-t {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sc-app .mn-es-on .mn-es-sum {
+  margin: 0;
+}

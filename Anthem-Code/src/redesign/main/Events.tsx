@@ -11,7 +11,8 @@ import { usePosterLabel } from "../event/usePosterLabel";
 import { loginHref } from "../lib/loginHref";
 import LoadError from "../shell/LoadError";
 import { useShellPanels } from "../shell/panels";
-import EventSearch from "./EventSearch";
+import { isNativeApp } from "@/lib/appShell";
+import { EventQueryBar } from "./EventSearch";
 import ScLoader from "./ScLoader";
 import { EVENT_KIND, dayOf, inView, isoDay, lastDay, monthCaps, shortDate, useHomeEvents, viewDays, weekdayDay, type EventType, type EventView } from "./useHomeEvents";
 import { useEventSearch, type EventSearch as Search } from "./useEventSearch";
@@ -50,7 +51,9 @@ export default function Events({ view, type, q, onQuery }: { view: EventView; ty
   if (isPending) return <ScLoader label="กำลังโหลดอีเว้นท์" />;
   if (isError && !data) return <LoadError onRetry={() => void refetch()} />;
 
-  const field = <EventSearch q={q} onQuery={onQuery} search={search} />;
+  // Owner 2026-11-28: no search field on the tab — the sentence is typed in the search button (SearchPanel).
+  // The website shows what was asked as one line; the app already shows it as a tag over the card.
+  const field = isNativeApp() ? null : <EventQueryBar q={q} onQuery={onQuery} search={search} />;
   if (search) {
     return (
       <>
@@ -222,9 +225,17 @@ function Highlight({ events, venues, today }: { events: HomeEventRow[]; venues: 
 function EventList({ events, byDay, today, days }: { events: HomeEventRow[]; byDay: boolean; today: string; days: string | null }) {
   const groups = useMemo(() => {
     if (!byDay) return [{ day: today, items: events }];
+    // Current + coming lists (owner 2026-11-28: "All" = now and later, nothing that has ended): an event that
+    // started before today but is still on sits under today, not under its old start day (no "MAY 1" on top).
+    const coming = events.every((e) => (lastDay(e) ?? e.starts_on!) >= today);
     const map = new Map<string, HomeEventRow[]>();
-    for (const e of events) map.set(e.starts_on!, [...(map.get(e.starts_on!) ?? []), e]);
-    return [...map.entries()].map(([day, items]) => ({ day, items }));
+    for (const e of events) {
+      const day = coming && e.starts_on! < today ? today : e.starts_on!;
+      map.set(day, [...(map.get(day) ?? []), e]);
+    }
+    const entries = [...map.entries()];
+    if (coming) entries.sort(([a], [b]) => a.localeCompare(b));
+    return entries.map(([day, items]) => ({ day, items }));
   }, [events, byDay, today]);
 
   const first = groups[0].day;

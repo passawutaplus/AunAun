@@ -107,11 +107,12 @@ export default function AppSearch({ initialMode, initialValue, colors, leaving, 
       className="as"
       role="dialog"
       aria-modal="true"
-      aria-label={`ค้นหาใน ${meta.label}`}
+      aria-label={`Search in ${meta.label}`}
       data-leaving={leaving ? "" : undefined}
     >
       <div className="as-in">
-        <h2 className="as-h">ค้นหาใน {meta.label}</h2>
+        {/* Headings in English, no hint line under the title (owner 2026-11-28). */}
+        <h2 className="as-h">Search in {meta.label}</h2>
         {typed ? (
           <div className="as-hits">
             {shown.map((h) => (
@@ -127,7 +128,7 @@ export default function AppSearch({ initialMode, initialValue, colors, leaving, 
           </div>
         ) : (
           <>
-            <p className="as-p">{recent.length ? "ค้นหาล่าสุดของคุณ" : meta.hint}</p>
+            {recent.length ? <span className="as-flabel">Recent</span> : null}
             {recent.length ? (
               <ul className="as-recent">
                 {recent.map((q) => (
@@ -156,8 +157,8 @@ export default function AppSearch({ initialMode, initialValue, colors, leaving, 
         <div className="as-filters">
           {mode === "event" ? (
             <div className="as-frow">
-              <span className="as-flabel">ค้นหาด่วน</span>
-              <div className="as-chips" role="group" aria-label="ค้นหาด่วน">
+              <span className="as-flabel">Quick</span>
+              <div className="as-chips" role="group" aria-label="Quick">
                 {QUICK.map(([kind, label]) => (
                   <button
                     key={kind}
