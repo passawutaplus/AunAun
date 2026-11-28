@@ -35,7 +35,7 @@
 }
 
 /* buttons shared by the page — every name here must be ONE class, so this stays (0,2,0) and the rules below win */
-.sc-app :is(.up-round40, .up-close, .up-tb36, .up-tb34, .up-tb, .up-addbtn, .up-mode, .up-drop, .up-slot-e, .up-tg-tab, .up-tg-o, .up-font, .up-fontopt, .up-sw, .up-chip, .up-more, .up-pub, .up-pv-btn, .up-draft-btn, .up-pvback, .up-pvpub, .up-cf-cancel, .up-cf-pub) {
+.sc-app :is(.up-round40, .up-close, .up-tb36, .up-tb34, .up-tb, .up-addbtn, .up-mode, .up-drop, .up-slot-e, .up-tg-tab, .up-tg-o, .up-font, .up-fontopt, .up-sw, .up-chip, .up-opt, .up-tool-x, .up-tool-s, .up-ppl-pick, .up-more, .up-pub, .up-pv-btn, .up-draft-btn, .up-pvback, .up-pvpub, .up-cf-cancel, .up-cf-pub) {
   appearance: none;
   margin: 0;
   border: 0;
@@ -963,9 +963,17 @@
 }
 
 /* ---------- sidebar ---------- */
+/* Desktop: the panel stays in view and scrolls by itself when taller than the screen (More open, TOOLS…);
+   Publish stays at its bottom. 4px padding keeps the fields' focus rings inside the scroll box. */
 .sc-app .up-side {
   position: sticky;
   top: 112px;
+  max-height: calc(100vh - 128px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  padding: 4px;
+  margin: -4px;
   display: flex;
   flex-direction: column;
   gap: 22px;
@@ -1052,15 +1060,296 @@
   margin-top: -8px;
 }
 
-/* CATALOG + YEAR on one row (mock: minmax(0,1fr) 96px, gap 12) */
-.sc-app .up-catyr {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 96px;
-  gap: 12px;
+/* YEAR: 4 digits (mock width 96) */
+.sc-app .up-fld-yr {
+  width: 96px;
 }
 
-.sc-app .up-catyr > .up-f {
+/* small grey line under a field (licence meaning, AI level, no catalogs yet) */
+.sc-app .up-fhint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #666666;
+}
+
+/* CATALOG (several) and AI: toggles in the chip look, a size smaller than CATEGORY */
+.sc-app .up-opts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sc-app .up-opt {
+  min-height: 32px;
+  max-width: 100%;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  line-height: 1.3;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #E2E2DF;
+  color: #4A4A4A;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+
+.sc-app .up-opt-on {
+  background: #282929;
+  border-color: #282929;
+  color: #FFFFFF;
+}
+
+.sc-app .up-opt:focus-visible,
+.sc-app .up-tool-x:focus-visible,
+.sc-app .up-tool-s:focus-visible {
+  outline: 2px solid #282929;
+  outline-offset: 2px;
+}
+
+/* TOOLS: picked tools as chips, then the field, then quick picks */
+.sc-app .up-tools {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.sc-app .up-tool {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 32px;
+  max-width: 100%;
+  padding: 0 4px 0 12px;
+  border-radius: 999px;
+  background: #FFFFFF;
+  border: 1px solid #E2E2DF;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.sc-app .up-tool-x {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  color: #666666;
+}
+
+.sc-app .up-tool-sug {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+}
+
+.sc-app .up-tool-s {
+  min-height: 28px;
+  font-size: 12px;
+  color: #666666;
+}
+
+@media (hover: hover) {
+  .sc-app .up-tool-x:hover,
+  .sc-app .up-tool-s:hover {
+    color: #282929;
+  }
+
+  .sc-app .up-ppl-pick:hover {
+    background: #F5F5F3;
+  }
+}
+
+.sc-app .up-opt:disabled {
+  opacity: .5;
+  cursor: default;
+}
+
+/* CREDITS: tagged people (avatar + name + state), the picker opens below */
+.sc-app .up-ppl {
+  gap: 6px;
+  padding-left: 4px;
+}
+
+.sc-app .up-ppl-av {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: none;
+}
+
+.sc-app .up-ppl-av0 {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #E2E2DF;
+  font-size: 11px;
+  color: #4A4A4A;
+}
+
+.sc-app .up-ppl-st {
+  font-size: 11px;
+  color: #666666;
+  margin-right: 8px;
+}
+
+.sc-app .up-ppl-no {
+  color: #8A8A87;
+  border-style: dashed;
+}
+
+.sc-app .up-ppl-add {
+  align-self: flex-start;
+}
+
+.sc-app .up-ppl-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #E2E2DF;
+  border-radius: 16px;
+  background: #FFFFFF;
+}
+
+.sc-app .up-ppl-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.sc-app .up-ppl-pick {
+  width: 100%;
+  min-height: 44px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+  font-size: 13px;
+}
+
+.sc-app .up-ppl-pick:focus-visible {
+  outline: 2px solid #282929;
+  outline-offset: -2px;
+}
+
+.sc-app .up-ppl-n {
   min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sc-app .up-ppl-u {
+  font-size: 12px;
+  color: #666666;
+  white-space: nowrap;
+}
+
+/* FILES & LINKS: one row per item (icon · name / type · size · scan state · remove) */
+.sc-app .up-att-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sc-app .up-att {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 6px 4px 6px 12px;
+  border: 1px solid #E2E2DF;
+  border-radius: 14px;
+  background: #FFFFFF;
+}
+
+.sc-app .up-att-no {
+  border-color: #B8321F;
+}
+
+.sc-app .up-att-busy {
+  opacity: .6;
+}
+
+.sc-app .up-att-ic {
+  display: inline-flex;
+  color: #4A4A4A;
+  flex: none;
+}
+
+.sc-app .up-att-t {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.sc-app .up-att-n {
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sc-app .up-att-m {
+  font-size: 11px;
+  color: #666666;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sc-app .up-att-st-clean {
+  color: #2E6B3A;
+}
+
+.sc-app .up-att-st-blocked {
+  color: #B8321F;
+}
+
+.sc-app .up-att-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.sc-app .up-att-row > .up-fld {
+  flex: 1;
+  min-width: 0;
+}
+
+.sc-app .up-att-file {
+  flex: none;
+  min-height: 44px;
+  padding: 0 14px;
+}
+
+.sc-app .up-att-in {
+  position: fixed;
+  left: -9999px;
+  top: 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.sc-app .up-att-err {
+  color: #B8321F;
 }
 
 .sc-app .up-hr {
@@ -1104,6 +1393,12 @@
 }
 
 .sc-app .up-act {
+  position: sticky;
+  bottom: -4px;
+  z-index: 2;
+  margin-top: -10px;
+  padding: 10px 0 4px;
+  background: #F2F2F0;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -1643,6 +1938,17 @@
 
   .sc-app .up-side {
     position: static;
+    max-height: none;
+    overflow: visible;
+    padding: 0;
+    margin: 0;
+  }
+
+  .sc-app .up-act {
+    position: static;
+    margin-top: 0;
+    padding: 0;
+    background: none;
   }
 
   .sc-app .up-card {
