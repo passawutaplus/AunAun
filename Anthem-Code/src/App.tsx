@@ -414,6 +414,11 @@ const RedesignWork = lazy(() => import("./redesign/pages/Work.tsx"));
 const RedesignWorkOverlay = lazy(() =>
   import("./redesign/pages/Work.tsx").then((m) => ({ default: m.WorkOverlay })),
 );
+const RedesignTerms = lazy(() => import("./redesign/pages/Terms.tsx"));
+const RedesignPrivacy = lazy(() => import("./redesign/pages/Privacy.tsx"));
+const RedesignHelp = lazy(() => import("./redesign/pages/Help.tsx"));
+const RedesignFeedback = lazy(() => import("./redesign/pages/Feedback.tsx"));
+const RedesignGetInTouch = lazy(() => import("./redesign/pages/GetInTouch.tsx"));
 
 /** Old site chrome (top nav, floating nav, banners, prompts): never mounted on a page of the new design. */
 const LegacyChrome = ({ children }: { children: ReactNode }) => {
@@ -491,6 +496,20 @@ const App = () => (
                         <Route path="/" element={<RedesignMain />} />
                         <Route path="/showcase/:id" element={<RedesignWork />} />
                         <Route path="/sc/shell" element={<RedesignNotFound />} />
+                        {/* Same paths as old pages below: on equal rank React Router takes the first route, so these win. */}
+                        <Route path="/legal/terms" element={<RedesignTerms />} />
+                        <Route path="/legal/privacy" element={<RedesignPrivacy />} />
+                        {/* Index route like the old /help, so it ranks the same; old article pages under /help/… stay. */}
+                        <Route path="/help">
+                          <Route index element={<RedesignHelp />} />
+                        </Route>
+                        {/* Open to everyone; sending asks to log in (the old page needed a login to open). */}
+                        <Route path="/me/feedback" element={<RedesignFeedback />} />
+                        {/* Unknown URLs still reach the old 404 (catch-all and /:vanityHandle) until step 14. */}
+                        <Route path="/error/404" element={<RedesignNotFound />} />
+                        <Route path="/learn">
+                          <Route index element={<RedesignGetInTouch />} />
+                        </Route>
                       </Route>
                     ) : null}
                     <Route element={<LaunchMinimalGate />}>

@@ -1,0 +1,195 @@
+/* Feedback, page version (mock: pages/Feedback.dc.html) */
+.sc-app .fb-main {
+  width: 100%;
+  max-width: 1440px;
+  margin-inline: auto;
+  padding: 53px 40px 80px;
+  box-sizing: border-box;
+}
+
+.sc-app .fb-card {
+  position: relative;
+  width: 440px;
+  max-width: 100%;
+  margin: 72px auto 120px;
+  padding: 24px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: #FFFFFF;
+  border-radius: 28px;
+  box-shadow: 0 1px 3px rgba(40, 41, 41, .08), 0 10px 32px rgba(40, 41, 41, .12);
+}
+
+.sc-app .fb-card h1 {
+  margin: 4px 4px 0;
+  font-size: 22px;
+  font-weight: 400;
+  letter-spacing: -.01em;
+}
+
+.sc-app .fb-kinds {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: #F2F2F0;
+}
+
+.sc-app .fb-kinds button {
+  all: unset;
+  cursor: pointer;
+  height: 36px;
+  border-radius: 999px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #8A8A87;
+}
+
+.sc-app .fb-kinds button[aria-pressed="true"] {
+  background: #FFFFFF;
+  color: #282929;
+  box-shadow: 0 1px 3px rgba(40, 41, 41, .08);
+}
+
+.sc-app .fb-text {
+  display: block;
+  width: 100%;
+  min-height: 132px;
+  box-sizing: border-box;
+  resize: none;
+  border: 0;
+  border-radius: 16px;
+  padding: 16px;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #282929;
+  background: #F5F5F3;
+  outline-color: #282929;
+}
+
+.sc-app .fb-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sc-app .fb-shot {
+  all: unset;
+  cursor: pointer;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #666666;
+}
+
+.sc-app .fb-shot[aria-pressed="true"] {
+  background: #282929;
+  color: #FFFFFF;
+}
+
+.sc-app .fb-send {
+  all: unset;
+  cursor: pointer;
+  height: 44px;
+  padding: 0 24px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  background: #282929;
+  color: #FFFFFF;
+}
+
+.sc-app .fb-send[aria-disabled="true"] {
+  cursor: default;
+  background: #ECECEA;
+  color: #A3A3A0;
+}
+
+.sc-app .fb-send[aria-busy="true"] {
+  cursor: progress;
+}
+
+/* Error line: the mock has none (question for Beam); uses the secondary text style of the card. */
+.sc-app .fb-err {
+  margin: 0 4px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #666666;
+}
+
+.sc-app .fb-done {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px;
+}
+
+.sc-app .fb-card .fb-done h1 {
+  margin: 0;
+  letter-spacing: normal;
+  outline: none;
+}
+
+.sc-app .fb-done p {
+  margin: 0;
+  font-size: 14px;
+  color: #8A8A87;
+}
+
+.sc-app .fb-row-done {
+  margin-top: 8px;
+}
+
+.sc-app .fb-again {
+  all: unset;
+  cursor: pointer;
+  height: 44px;
+  padding: 0 4px;
+  font-size: 14px;
+  color: #666666;
+}
+
+.sc-app .fb-ok {
+  height: 44px;
+  padding: 0 22px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  background: #282929;
+  color: #FFFFFF;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.sc-app :is(.fb-kinds button, .fb-shot, .fb-send, .fb-again, .fb-ok):focus-visible {
+  outline: 2px solid #282929;
+  outline-offset: 3px;
+}
+
+/* phones: full-width card, 12px edge, no shadow */
+@media (max-width: 600px) {
+  .sc-app .fb-main {
+    padding: 28px 12px 40px;
+  }
+
+  .sc-app .fb-card {
+    width: 100%;
+    margin: 0;
+    padding: 20px 16px;
+    border-radius: 24px;
+    box-shadow: none;
+  }
+}

@@ -1,0 +1,681 @@
+/* Get in Touch (mock: pages/GetInTouch.dc.html)
+ * Default (reduced motion, or a window over 2400px tall) = one plain column of white room.
+ * .gt-anim (set by the page script) = the room stays on screen, each chapter at its own depth. */
+
+.sc-app .gt-page {
+  width: 100%;
+}
+
+.sc-app .gt-dive {
+  max-width: 1440px;
+  margin: -96px auto 0;
+  padding: 53px 40px 0;
+  box-sizing: border-box;
+}
+
+.sc-app .gt-room {
+  position: relative;
+  background: #FFFFFF;
+  border-radius: 38px;
+  box-shadow: 0 1px 3px rgba(40, 41, 41, .08), 0 10px 32px rgba(40, 41, 41, .12);
+  padding: 112px 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 150px;
+  overflow: hidden;
+}
+
+.sc-app .gt-item {
+  width: min(1040px, 100%);
+}
+
+.sc-app :is(.gt-deco, .gt-hud) {
+  display: none;
+}
+
+.sc-app .gt-item.gt-logo {
+  width: min(480px, 70%);
+  margin: 0;
+}
+
+.sc-app .gt-logo svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.sc-app .gt-word {
+  margin: 0;
+  text-align: center;
+  font-size: clamp(56px, 9.5vw, 136px);
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: -.04em;
+}
+
+.sc-app .gt-word.gt-bold {
+  font-weight: 600;
+}
+
+.sc-app .gt-word.gt-w2 {
+  font-size: clamp(44px, 6.4vw, 92px);
+  line-height: 1.2;
+  letter-spacing: -.03em;
+}
+
+.sc-app .gt-word.gt-w3 {
+  font-size: clamp(40px, 6.4vw, 92px);
+  line-height: 1.12;
+  letter-spacing: -.03em;
+}
+
+.sc-app .gt-word.gt-w4 {
+  font-size: clamp(44px, 7.4vw, 108px);
+  line-height: 1.02;
+}
+
+.sc-app .gt-nw {
+  white-space: nowrap;
+}
+
+/* the chat and notification chips of "มิตรภาพ" bob gently, each on its own beat */
+@keyframes gtBob {
+  0%,
+  100% {
+    translate: none;
+  }
+
+  50% {
+    translate: 0 -5px;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sc-app .gt-bob {
+    animation: gtBob 3.2s ease-in-out infinite;
+  }
+
+  .sc-app .gt-bob:nth-of-type(2n) {
+    animation-duration: 2.6s;
+    animation-delay: -.8s;
+  }
+
+  .sc-app .gt-bob:nth-of-type(3n) {
+    animation-duration: 3.8s;
+    animation-delay: -1.6s;
+  }
+}
+
+.sc-app .gt-sub {
+  margin: 24px auto 0;
+  text-align: center;
+  max-width: 44ch;
+  font-size: clamp(16px, 1.5vw, 20px);
+  line-height: 1.6;
+  color: #3E3E3C;
+}
+
+.sc-app .gt-offer {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: 56px;
+  align-items: center;
+}
+
+.sc-app .gt-offer h3 {
+  margin: 0;
+  font-size: clamp(40px, 4.6vw, 64px);
+  font-weight: 300;
+  letter-spacing: -.02em;
+  line-height: 1.15;
+}
+
+.sc-app .gt-offer .gt-en {
+  margin: 6px 0 0;
+  font-size: 15px;
+  color: #6B6B68;
+}
+
+.sc-app .gt-offer .gt-tx {
+  margin: 18px 0 0;
+  max-width: 40ch;
+  font-size: 17px;
+  line-height: 1.65;
+  color: #3E3E3C;
+}
+
+/* pictures: frames take the work's own proportions, so nothing is cropped */
+.sc-app :is(.gt-deco, .gt-opp-pic, .gt-tile, .gt-prof-w) {
+  border-radius: 5px;
+  background: #ECECEA;
+  overflow: hidden;
+}
+
+.sc-app :is(.gt-deco, .gt-opp-pic, .gt-tile, .gt-prof-w) img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* โอกาส */
+.sc-app .gt-opp {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sc-app .gt-opp-row {
+  display: grid;
+  grid-template-columns: 56px 88px minmax(0, 1fr);
+  align-items: center;
+  gap: 18px;
+  padding: 14px 18px;
+  border-radius: 20px;
+  background: #F5F5F3;
+}
+
+.sc-app .gt-opp-row:nth-child(2) {
+  margin-left: 40px;
+}
+
+.sc-app .gt-opp-row:nth-child(3) {
+  margin-left: 80px;
+}
+
+.sc-app .gt-opp-date {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.sc-app .gt-opp-date span {
+  display: block;
+  font-size: 12px;
+  color: #6B6B68;
+  margin-top: 4px;
+}
+
+.sc-app .gt-opp-pic {
+  justify-self: center;
+}
+
+.sc-app .gt-opp-tx {
+  min-width: 0;
+}
+
+.sc-app .gt-opp-label {
+  display: block;
+  white-space: nowrap;
+  font-size: 13px;
+  color: #6B6B68;
+}
+
+.sc-app .gt-opp-label.gt-red {
+  color: #EE3D29;
+}
+
+.sc-app .gt-opp-title {
+  display: block;
+  font-size: 17px;
+  margin-top: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* พื้นที่ */
+.sc-app .gt-space {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.sc-app .gt-space-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: none;
+}
+
+.sc-app .gt-tile {
+  display: block;
+}
+
+/* มิตรภาพ */
+.sc-app .gt-fr {
+  position: relative;
+  height: 320px;
+}
+
+.sc-app .gt-fr > * {
+  position: absolute;
+}
+
+.sc-app .gt-fr-people {
+  left: 0;
+  top: 112px;
+  display: flex;
+}
+
+.sc-app .gt-fr-people > span {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 6px #FFFFFF;
+}
+
+.sc-app .gt-fr-people > span + span {
+  margin-left: -24px;
+}
+
+.sc-app .gt-fr-people .gt-fr-more {
+  background: #F2F2F0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #6B6B68;
+}
+
+.sc-app .gt-chip {
+  height: 40px;
+  padding: 0 16px 0 8px;
+  border-radius: 999px;
+  background: #FFFFFF;
+  box-shadow: 0 1px 2px rgba(40, 41, 41, .06), 0 8px 24px rgba(40, 41, 41, .12);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.sc-app .gt-chip b {
+  font-weight: 500;
+}
+
+.sc-app .gt-chip-av {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: block;
+  flex: none;
+}
+
+.sc-app .gt-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #EE3D29;
+  display: block;
+  flex: none;
+}
+
+.sc-app .gt-bubble {
+  padding: 12px 16px;
+  background: #F2F2F0;
+  white-space: nowrap;
+  font-size: 15px;
+  border-radius: 18px 18px 18px 4px;
+}
+
+.sc-app .gt-bubble.gt-me {
+  background: #282929;
+  color: #FFFFFF;
+  border-radius: 18px 18px 4px 18px;
+}
+
+.sc-app .gt-hi {
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 999px;
+  background: #282929;
+  color: #FFFFFF;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.sc-app .gt-c1 { left: 8px; top: 30px; }
+.sc-app .gt-c2 { left: 330px; top: 8px; }
+.sc-app .gt-c3 { left: 360px; top: 72px; }
+.sc-app .gt-c4 { left: 340px; top: 136px; }
+.sc-app .gt-c5 { left: 24px; top: 238px; }
+.sc-app .gt-c6 { left: 250px; top: 214px; }
+.sc-app .gt-c7 { left: 420px; top: 270px; }
+
+/* โปรไฟล์ */
+.sc-app .gt-prof {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.sc-app .gt-prof-card {
+  width: 250px;
+  flex: none;
+  padding: 26px 22px 22px;
+  box-sizing: border-box;
+  border-radius: 28px;
+  background: #FFFFFF;
+  box-shadow: 0 1px 3px rgba(40, 41, 41, .08), 0 16px 40px rgba(40, 41, 41, .10);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.sc-app .gt-prof-av {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+}
+
+.sc-app .gt-prof-name {
+  font-size: 19px;
+  font-weight: 400;
+  margin-top: 6px;
+}
+
+.sc-app .gt-prof-handle {
+  height: 28px;
+  padding: 0 12px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  border: 1px solid #E4E4E1;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.sc-app .gt-prof-works {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.sc-app .gt-prof-w {
+  display: block;
+  min-width: 0;
+}
+
+.sc-app .gt-prof-url {
+  font-size: 20px;
+  letter-spacing: -.01em;
+  color: #6B6B68;
+}
+
+.sc-app .gt-prof-url span {
+  color: #282929;
+}
+
+/* สตูดิโอ */
+.sc-app .gt-studio {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.sc-app .gt-stat {
+  padding: 22px;
+  border-radius: 20px;
+  background: #F5F5F3;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sc-app .gt-stat > span:first-child {
+  font-size: 40px;
+  line-height: 1;
+  letter-spacing: -.02em;
+}
+
+.sc-app .gt-stat > span:last-child {
+  font-size: 14px;
+  color: #6B6B68;
+  white-space: nowrap;
+}
+
+.sc-app .gt-studio svg {
+  grid-column: span 3;
+  width: 100%;
+  height: 88px;
+}
+
+/* last chapter */
+.sc-app .gt-cta {
+  margin-top: 40px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.sc-app :is(.gt-cta-main, .gt-cta-alt) {
+  height: 56px;
+  padding: 0 30px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  font-size: 15px;
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.sc-app .gt-cta-main {
+  background: #282929;
+  color: #FFFFFF;
+}
+
+.sc-app .gt-cta-alt {
+  border: 1px solid #282929;
+  color: #282929;
+}
+
+/* marks on the room's edge */
+.sc-app .gt-hud-start {
+  position: absolute;
+  right: 36px;
+  bottom: 30px;
+  margin: 0;
+  font-size: 13px;
+  color: #6B6B68;
+  z-index: 99999;
+}
+
+.sc-app .gt-hud-bar {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  width: 100%;
+  background: #EE3D29;
+  transform-origin: left;
+  scale: 0 1;
+  z-index: 99999;
+}
+
+/* ---------- the moving room ---------- */
+.sc-app .gt-anim .gt-dive {
+  max-width: none;
+  margin: -194px 0 0;
+  padding: 0;
+  height: calc(100vh + 9000px);
+}
+
+.sc-app .gt-anim .gt-stage {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.sc-app .gt-anim .gt-room {
+  position: absolute;
+  inset: 12px;
+  padding: 0;
+  display: block;
+  perspective: 1000px;
+  perspective-origin: 50% 50%;
+}
+
+.sc-app .gt-anim .gt-item {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(1040px, 84vw);
+  translate: -50% -50%;
+  will-change: translate, opacity;
+  backface-visibility: hidden;
+}
+
+.sc-app .gt-anim .gt-item.gt-deco {
+  display: block;
+  width: auto;
+}
+
+.sc-app .gt-anim .gt-hud {
+  display: block;
+}
+
+.sc-app .gt-anim .gt-item.gt-logo {
+  width: min(520px, 62vw);
+}
+
+/* ---------- contact card ---------- */
+.sc-app .gt-main {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 16px 40px 80px;
+  box-sizing: border-box;
+}
+
+.sc-app .gt-card {
+  background: #FFFFFF;
+  border-radius: 38px;
+  box-shadow: 0 1px 3px rgba(40, 41, 41, .08), 0 10px 32px rgba(40, 41, 41, .12);
+  padding: 80px 104px;
+  display: grid;
+  grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
+  gap: 48px;
+  align-items: start;
+}
+
+.sc-app .gt-card h2 {
+  margin: 0;
+  font-size: 56px;
+  font-weight: 300;
+  letter-spacing: -.03em;
+  line-height: 1.05;
+}
+
+.sc-app .gt-links {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 48px;
+}
+
+.sc-app .gt-link {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 20px 0;
+  text-decoration: none;
+  color: #282929;
+}
+
+.sc-app .gt-link b {
+  font-weight: 400;
+  font-size: 24px;
+  letter-spacing: -.01em;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 6px;
+  text-decoration-thickness: 1px;
+}
+
+.sc-app .gt-link:is(:hover, :focus-visible) b {
+  text-decoration-color: #282929;
+}
+
+.sc-app .gt-link span {
+  font-size: 14px;
+  color: #6B6B68;
+}
+
+.sc-app :is(.gt-cta-main, .gt-cta-alt, .gt-link):focus-visible {
+  outline: 2px solid #282929;
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sc-app .gt-link b {
+    transition: text-decoration-color .25s ease;
+  }
+}
+
+@media (max-width: 900px) {
+  .sc-app .gt-dive {
+    padding: 53px 16px 0;
+  }
+
+  .sc-app .gt-room {
+    padding: 72px 24px;
+    gap: 96px;
+  }
+
+  .sc-app .gt-offer {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+
+  .sc-app .gt-anim .gt-offer .gt-vis {
+    zoom: .8;
+  }
+
+  .sc-app :is(.gt-card, .gt-links) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sc-app .gt-card {
+    padding: 48px 24px;
+  }
+}
+
+/* phones: the chat and notification chips of "มิตรภาพ" stack as a chat feed (fixed places overflow a phone);
+   the people come first */
+@media (max-width: 600px) {
+  /* specific enough to also undo the .8 zoom of the moving room */
+  .sc-app .gt-offer .gt-vis.gt-fr {
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    zoom: 1;
+  }
+
+  .sc-app .gt-fr > * {
+    position: static;
+    max-width: 100%;
+  }
+
+  .sc-app .gt-fr > .gt-fr-people {
+    margin: 0 0 10px 6px;
+    zoom: .62;
+  }
+
+  .sc-app .gt-fr > span {
+    white-space: normal;
+    font-size: 13px;
+  }
+
+  .sc-app .gt-fr > .gt-me {
+    align-self: flex-end;
+  }
+}
