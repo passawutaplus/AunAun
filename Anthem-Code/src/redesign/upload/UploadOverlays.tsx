@@ -239,7 +239,7 @@ export function PublishedDialog(p: PublishedProps) {
             ดูงาน
           </Link>
           {p.isEditPub ? (
-            <Link to={SC_LINKS.myStudio} className="up-btn-line">
+            <Link to={SC_LINKS.studioWorks} className="up-btn-line">
               กลับ My Studio
             </Link>
           ) : (

@@ -31,6 +31,8 @@ export const SC_LINKS = {
   eventNew: "/dashboard/exhibition/new",
   myProfile: "/portfolio",
   myStudio: "/dashboard",
+  /** Upload × / "กลับ My Studio" land on the Works tab (mock scStudioTab). */
+  studioWorks: "/dashboard?tab=works",
   settings: "/settings",
   login: "/auth",
   help: "/help",
@@ -57,6 +59,8 @@ const PAGES: ReadonlyArray<{ match: RegExp; page: ShellPage }> = [
   { match: /^\/settings\/?$/, page: { page: "account-settings", tabbar: false, tab: "me", footer: true } },
   // My profile (step 8): "ฉัน" in the tab bar; the account button becomes ☰ on phones (mock).
   { match: /^\/(portfolio|portfolio\/saved|portfolio\/followers|collections)\/?$/, page: { page: "my-profile", tabbar: true, tab: "me", footer: true } },
+  // My Studio (step 10) on /dashboard and the old studio URLs; "ฉัน" in the tab bar (mock). /dashboard/exhibition/new and :id/edit stay old (step 11).
+  { match: /^\/(dashboard(\/(projects|catalogs|insights|exhibition))?|portfolio\/manage)\/?$/, page: { page: "my-studio", tabbar: true, tab: "me", footer: true } },
   // Post / edit a work (step 9): the page has its own header (logo · New Work · ↶ ↷ · ×); no tab bar, no footer on phones (mock).
   { match: /^\/portfolio\/(new|[^/]+\/edit)\/?$/, page: { page: "upload", tabbar: false, tab: "", footer: true, header: "none" } },
   // Someone's profile (step 5), on the old URLs /@handle and /u/:id.

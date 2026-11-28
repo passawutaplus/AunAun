@@ -417,6 +417,7 @@ const RedesignLogin = lazy(() => import("./redesign/pages/Login.tsx"));
 const RedesignSettings = lazy(() => import("./redesign/pages/Settings.tsx"));
 const RedesignMyProfile = lazy(() => import("./redesign/pages/MyProfile.tsx"));
 const RedesignUpload = lazy(() => import("./redesign/pages/Upload.tsx"));
+const RedesignMyStudio = lazy(() => import("./redesign/pages/MyStudio.tsx"));
 const RedesignLocations = lazy(() => import("./redesign/pages/Locations.tsx"));
 const RedesignWorkOverlay = lazy(() =>
   import("./redesign/pages/Work.tsx").then((m) => ({ default: m.WorkOverlay })),
@@ -531,6 +532,13 @@ const App = () => (
                         {/* Post or edit a work (step 9) on the old editor URLs; one element so the first save (new → :id/edit) keeps the page. */}
                         <Route path="/portfolio/new" element={<RedesignUpload />} />
                         <Route path="/portfolio/:id/edit" element={<RedesignUpload />} />
+                        {/* My Studio (step 10) on /dashboard; the old studio URLs open the matching tab. Event editing stays on the old pages until step 11. */}
+                        <Route path="/dashboard" element={<RedesignMyStudio />} />
+                        <Route path="/dashboard/projects" element={<RedesignMyStudio />} />
+                        <Route path="/dashboard/catalogs" element={<RedesignMyStudio />} />
+                        <Route path="/dashboard/insights" element={<RedesignMyStudio />} />
+                        <Route path="/dashboard/exhibition" element={<RedesignMyStudio />} />
+                        <Route path="/portfolio/manage" element={<RedesignMyStudio />} />
                         {/* Event or venue on its old URL (step 6). */}
                         <Route path="/exhibition/:id" element={<RedesignEvent />} />
                         <Route path="/exhibition/:id/locations" element={<RedesignLocations />} />

@@ -228,7 +228,7 @@ function MyProfileView({ uid }: { uid: string }) {
             <AboutPanel
               bio={bio}
               cats={cats}
-              tools={toolsOf(works.filter((w) => w.status === "Published"))}
+              tools={p?.skills?.length ? p.skills.join(", ") : toolsOf(works.filter((w) => w.status === "Published"))}
               city={city}
               followers={counts.followers}
               ig={ig}

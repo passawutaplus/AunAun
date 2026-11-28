@@ -534,13 +534,13 @@ function UploadEditor({ uid, opened }: { uid: string; opened: Opened | null }) {
   };
   const leaveGo = async () => {
     if (isEditPub) {
-      goAway(SC_LINKS.myStudio);
+      goAway(SC_LINKS.studioWorks);
       return;
     }
     setLeaving(true);
     try {
       await leaveJob.current;
-      goAway(SC_LINKS.myStudio);
+      goAway(SC_LINKS.studioWorks);
     } catch {
       setLeaving(false);
       say(SAVE_FAILED);

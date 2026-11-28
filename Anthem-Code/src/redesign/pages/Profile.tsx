@@ -320,7 +320,7 @@ function ProfileView({ slug, byId }: { slug: string; byId: boolean }) {
             <AboutPanel
               bio={vis.bio ? p.bio?.trim() ?? "" : ""}
               cats={cats}
-              tools={toolsOf(works)}
+              tools={p.skills?.length ? p.skills.join(", ") : toolsOf(works)}
               city={city}
               followers={counts.followers}
               ig={ig}
