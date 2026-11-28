@@ -6,6 +6,19 @@
 html[data-native-app] .sc-app .sc-hd {
   padding-top: max(22px, env(safe-area-inset-top));
   transition: transform .3s var(--sc-ease);
+  /* owner 2026-11-28: a solid header in the page colour — the see-through fade was hard to read */
+  background: var(--sc-bg);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  -webkit-mask-image: none;
+  mask-image: none;
+  padding-bottom: 16px;
+}
+
+/* The website pulls pages up under its fade (28px phone / 96px wide); the solid app header has no fade, so
+   pages start at its bottom edge instead of hiding their top under it (owner 2026-11-28). */
+html[data-native-app] .sc-app .sc-main {
+  margin-top: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -26,6 +39,11 @@ html[data-native-app] .sc-app .sc-hd {
     width: auto;
     object-fit: cover;
     object-position: left center;
+  }
+
+  /* app on a phone: no "Log In" in the header — the "ฉัน" tab in the tab bar already leads there (owner 2026-11-28) */
+  html[data-native-app] .sc-app .sc-hd-login {
+    display: none;
   }
 
   /* top-level pages: slides up while scrolling down, back on scroll up (useAppHeaderChrome); stays while a key is in it */
@@ -56,13 +74,75 @@ html[data-native-app] .sc-app .sc-hd {
     margin-left: auto;
   }
 
-  /* search and the tabs moved up; categories / views and the Event search moved into the search screen */
-  .sc-app:has(.sc-hd-slot > *) :is(.mn-row, .mn-fld, .mn-es) {
+  /* search and the tabs moved up; categories / views and the Event search moved into the search screen.
+     The Event page keeps its When + Type row under the header, like the website (owner 2026-11-28). */
+  .sc-app:has(.sc-hd-slot > *) .mn :is(.mn-row, .mn-fld, .mn-es) {
     display: none;
   }
 
+  /* Event page: When + Type are a second header row, right under the bar, and scroll away / back with it */
+  .sc-app .sc-hd-in:has(.ap-hd-below) {
+    flex-wrap: wrap;
+    padding-bottom: 0;
+  }
+
+  .sc-app .ap-hd-below {
+    flex: 0 0 100%;
+    order: 99;
+    min-width: 0;
+  }
+
+  /* owner 2026-11-28: a lower header — the chip row tucks up under the bar; chips are words, no outline
+     (the chosen one stays a dark capsule). The solid app header needs no room for the web's fade. */
+  html[data-native-app] .sc-app .sc-hd {
+    padding-bottom: 4px;
+  }
+
+  .sc-app .sc-hd-in:has(.ap-hd-below) {
+    min-height: 0;
+    padding-top: 2px;
+  }
+
+  .sc-app .ap-hd-below .mn-fld {
+    margin: -4px -8px 6px 0;
+  }
+
+  /* Event page: the When menu sits before the search button, a thin rule between (owner 2026-11-28) */
+  .sc-app .ap-hd-lead {
+    display: flex;
+    align-items: center;
+  }
+
+  .sc-app .ap-hd-rule {
+    width: 1px;
+    height: 18px;
+    margin: 0 4px;
+    background: var(--sc-line);
+  }
+
+  /* the list's "Full Calendar" button moved up into the header as an icon */
+  .sc-app:has(.sc-hd-slot > *) .mn-ev-cal {
+    display: none;
+  }
+
+  .sc-app .ap-hd-below .mn-chips {
+    gap: 2px;
+  }
+
+  .sc-app .ap-hd-below .mn-chip {
+    height: 32px;
+    padding: 0 12px;
+    border-color: transparent;
+    background: none;
+  }
+
+  .sc-app .ap-hd-below .mn-chip[aria-pressed="true"] {
+    background: #282929;
+    border-color: #282929;
+  }
+
   .sc-app:has(.sc-hd-slot > *) .mn {
-    padding-top: 12px;
+    padding-top: 0;
   }
 
   /* the line split the in-page Event search from its results; that field is gone here */
@@ -289,8 +369,33 @@ html[data-native-app] .sc-app .sc-hd {
   margin: 10px;
 }
 
-.sc-app .as .ap-modes {
-  margin-top: 24px;
+/* mode switch right above the search field, words only: no icons, no pill (owner 2026-11-28) */
+.sc-app .as-modebar {
+  align-self: stretch;
+  margin-top: 20px;
+}
+
+.sc-app .as-modebar .ap-modes {
+  gap: 20px;
+  padding: 0;
+  background: none;
+}
+
+.sc-app .as-modebar .ap-mode {
+  height: 40px;
+  min-width: 0;
+  padding: 0;
+  font-size: 17px;
+  font-weight: 500;
+}
+
+.sc-app .as-modebar .ap-mode svg {
+  display: none;
+}
+
+.sc-app .as-modebar .ap-mode[aria-pressed="true"] {
+  background: none;
+  box-shadow: none;
 }
 
 /* filter buttons of the mode (moved here from the page): label + a row that scrolls sideways */
@@ -459,13 +564,31 @@ html[data-native-app] .sc-app .sc-hd {
 
 /* ---------- glass tab bar (phones: website and app, owner 2026-11-28) ---------- */
 @media (max-width: 600px) {
-  .sc-app[data-tab] .sc-tb {
-    background: rgba(255, 255, 255, .5);
+  .sc-app[data-tab] .sc-tb-pill {
+    background: rgba(255, 255, 255, .68);
     -webkit-backdrop-filter: blur(24px) saturate(1.8);
     backdrop-filter: blur(24px) saturate(1.8);
     box-shadow:
       inset 0 0 0 1px rgba(255, 255, 255, .55),
       0 1px 3px rgba(40, 41, 41, .06),
       0 10px 32px rgba(40, 41, 41, .12);
+  }
+
+  /* On the see-through bar the mock's grey (#8A8A87) washes out over bright pictures (owner 2026-11-28):
+     idle icons and labels use the dark ink, a touch lighter than the current tab. */
+  .sc-app[data-tab] .sc-tb a:not([data-k="add"]) {
+    color: #4A4B4A;
+  }
+
+  .sc-app[data-tab] .sc-tb a:not([data-k="add"]):not([aria-current="page"]) svg {
+    stroke: #4A4B4A;
+  }
+
+  .sc-app[data-tab] .sc-tb a[aria-current="page"] {
+    color: #282929;
+  }
+
+  .sc-app[data-tab] .sc-tb-av {
+    box-shadow: 0 0 0 1px rgba(40, 41, 41, .18);
   }
 }

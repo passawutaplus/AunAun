@@ -18,6 +18,7 @@ import ColorSearch from "../main/ColorSearch";
 import Creators from "../main/Creators";
 import Events from "../main/Events";
 import EmptyNote from "../main/EmptyNote";
+import { FIND_PARAM } from "../main/homeFind";
 import ScLoader from "../main/ScLoader";
 import { EVENT_TYPES, EVENT_VIEWS, EVENT_VIEW_LABEL, isEventType, type EventView } from "../main/useHomeEvents";
 import { CREATOR_VIEWS, type CreatorView } from "../main/useCreators";
@@ -88,6 +89,8 @@ export default function Main() {
   usePageSeo(homeSeo(mode));
   const catParam = params.get("cat");
   const category = isScCategory(catParam) ? catParam : null;
+  // The text filter of Showcase / Creators (`?find=`), sent by the app's search screen.
+  const find = mode === "event" ? "" : params.get(FIND_PARAM)?.trim() ?? "";
 
   const typeParam = params.get("type");
   const evType = isEventType(typeParam) ? typeParam : null;
@@ -194,12 +197,13 @@ export default function Main() {
     if (m !== "event") {
       next.delete("type");
       next.delete("q");
-    }
+    } else next.delete(FIND_PARAM); // Showcase and Creators share the term, like the old app
     if (m !== "showcase") next.delete("color");
     setParams(next, { preventScrollReset: true });
   };
 
-  // App search screen: the Event search (`?tab=event&q=`), or the colours on Showcase.
+  // App search screen: Showcase / Creators filter their grid (`?find=`), Event runs its search (`?tab=event&q=`);
+  // the colours are Showcase's.
   const closeAppSearch = () => {
     appSearch.close();
     appSearchBtn.current?.focus();
@@ -213,8 +217,9 @@ export default function Main() {
     }
     if (m !== "event") next.delete("type");
     if (m !== "showcase") next.delete("color");
-    if (q) next.set("q", q);
-    else next.delete("q");
+    next.delete("q");
+    next.delete(FIND_PARAM);
+    if (q) next.set(m === "event" ? "q" : FIND_PARAM, q);
     setParams(next);
   };
   const applyAppColors = (list: string[]) => {
@@ -244,6 +249,7 @@ export default function Main() {
       else next.set("tab", m);
       next.delete("view");
       if (m !== "event") ["type", "q"].forEach((k) => next.delete(k));
+      else next.delete(FIND_PARAM);
       if (m !== "showcase") next.delete("color");
     }
     if (value) next.set(key, value);
@@ -252,19 +258,18 @@ export default function Main() {
   };
   const appFiltersFor = (m: Mode): AppFilterRow[] => {
     const here = m === mode;
-    const cats: AppFilterRow = { key: "cat", label: "หมวด", value: category ?? "", options: [["", "All"], ...SC_CATEGORIES.map((c) => [c, c] as const)] };
+    // Section headings in English (owner 2026-11-28).
+    const cats: AppFilterRow = { key: "cat", label: "Category", value: category ?? "", options: [["", "All"], ...SC_CATEGORIES.map((c) => [c, c] as const)] };
     if (m === "showcase") {
       const options = SHOWCASE_VIEWS.map((v) => [v === "explore" ? "" : v, VIEW_LABEL[v]] as const);
-      return [{ key: "view", label: "มุมมอง", value: here && view !== "explore" ? view : "", options }, cats];
+      return [{ key: "view", label: "View", value: here && view !== "explore" ? view : "", options }, cats];
     }
     if (m === "creators") {
       const options = CREATOR_VIEWS.map((v) => [v === "discover" ? "" : v, CREATOR_VIEW_LABEL[v]] as const);
-      return [{ key: "view", label: "มุมมอง", value: here && crView !== "discover" ? crView : "", options }, cats];
+      return [{ key: "view", label: "View", value: here && crView !== "discover" ? crView : "", options }, cats];
     }
-    return [
-      { key: "view", label: "ช่วงเวลา", value: here && evView !== "all" ? evView : "", options: EVENT_VIEWS.map((v) => [v === "all" ? "" : v, EVENT_VIEW_LABEL[v]] as const) },
-      { key: "type", label: "ประเภท", value: here ? (evType ?? "") : "", options: [["", "All"], ...EVENT_TYPES] },
-    ];
+    // Event: When + Type sit on the Event page under the header (owner 2026-11-28), not in the search screen.
+    return [];
   };
   // What the page is filtered by, as tags over the card (the rows themselves are in the search screen).
   const appActiveFilters = (): ActiveFilter[] => {
@@ -274,12 +279,7 @@ export default function Main() {
     if (mode === "creators" && crView !== "discover") {
       out.push({ key: "view", name: CREATOR_VIEW_LABEL[crView], label: CREATOR_VIEW_LABEL[crView], onRemove: () => set("view", null) });
     }
-    if (mode === "event" && evView !== "all") out.push({ key: "view", name: EVENT_VIEW_LABEL[evView], label: EVENT_VIEW_LABEL[evView], onRemove: () => set("view", null) });
     if (mode !== "event" && category) out.push({ key: "cat", name: category, label: category, onRemove: () => set("cat", null) });
-    if (mode === "event" && evType) {
-      const name = EVENT_TYPES.find(([k]) => k === evType)?.[1] ?? evType;
-      out.push({ key: "type", name, label: name, onRemove: () => set("type", null) });
-    }
     if (mode === "showcase" && colors.length) {
       const label = (
         <>
@@ -292,6 +292,7 @@ export default function Main() {
       out.push({ key: "color", name: "สี", label, onRemove: () => set("color", null) });
     }
     if (mode === "event" && q) out.push({ key: "q", name: `"${q}"`, label: `“${q}”`, onRemove: () => setQuery("") });
+    if (find) out.push({ key: FIND_PARAM, name: `"${find}"`, label: `“${find}”`, onRemove: () => clearFind() });
     return out;
   };
 
@@ -313,10 +314,16 @@ export default function Main() {
   };
   const evView: EventView = (EVENT_VIEWS as readonly string[]).includes(viewParam ?? "") ? (viewParam as EventView) : "all";
   // "ไม่เจอสิ่งที่ตรงกัน" → "ล้างตัวกรอง": back to every work / creator of this tab.
-  const filtered = mode === "showcase" ? !!category || colors.length > 0 || view !== "explore" : mode === "creators" && (!!category || crView !== "discover");
+  const filtered =
+    !!find || (mode === "showcase" ? !!category || colors.length > 0 || view !== "explore" : mode === "creators" && (!!category || crView !== "discover"));
   const clearFilters = () => {
     const next = new URLSearchParams(params);
-    for (const k of ["cat", "color", "view"]) next.delete(k);
+    for (const k of ["cat", "color", "view", FIND_PARAM]) next.delete(k);
+    setParams(next, { preventScrollReset: true });
+  };
+  const clearFind = () => {
+    const next = new URLSearchParams(params);
+    next.delete(FIND_PARAM);
     setParams(next, { preventScrollReset: true });
   };
   // Saving opens SaveToast (collections); signed out → log-in page.
@@ -328,6 +335,32 @@ export default function Main() {
   useEffect(() => {
     if (mode !== "showcase") releaseBoot();
   }, [mode]);
+
+  // Event filters: When + Type. On the website they sit over the card; in the store app they are part of the
+  // header (owner 2026-11-28), so they hide and come back with it while scrolling.
+  // In the app the When menu sits in the header bar before the search button (owner 2026-11-28), the type chips below.
+  const eventView = (
+    <ViewMenu label="ช่วงเวลา" options={EVENT_VIEWS} labels={EVENT_VIEW_LABEL} value={evView} onPick={(v) => set("view", v === "all" ? null : v)} />
+  );
+  const eventChips = (
+    <div className="mn-chips" role="group" aria-label="ประเภทอีเว้นท์">
+      <button type="button" className="mn-chip" aria-pressed={!evType} onClick={() => set("type", null)}>
+        All
+      </button>
+      {EVENT_TYPES.map(([key, label]) => (
+        <button key={key} type="button" className="mn-chip" aria-pressed={evType === key} onClick={() => set("type", key)}>
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+  const eventFld = (
+    <div className="mn-fld" data-mode="event">
+      {eventView}
+      <span aria-hidden="true" className="mn-fld-rule" />
+      {eventChips}
+    </div>
+  );
 
   return (
     <main className="sc-main mn">
@@ -394,30 +427,28 @@ export default function Main() {
           </div>
         </div>
       ) : (
-        <div className="mn-fld">
-          <ViewMenu label="ช่วงเวลา" options={EVENT_VIEWS} labels={EVENT_VIEW_LABEL} value={evView} onPick={(v) => set("view", v === "all" ? null : v)} />
-          <span aria-hidden="true" className="mn-fld-rule" />
-          <div className="mn-chips" role="group" aria-label="ประเภทอีเว้นท์">
-            <button type="button" className="mn-chip" aria-pressed={!evType} onClick={() => set("type", null)}>
-              All
-            </button>
-            {EVENT_TYPES.map(([key, label]) => (
-              <button key={key} type="button" className="mn-chip" aria-pressed={evType === key} onClick={() => set("type", key)}>
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
+        eventFld
       )}
 
       {appSlot ? <AppActiveFilters items={appActiveFilters()} onOpen={(e) => openAppSearch(e.currentTarget)} /> : null}
       <div ref={cardRef} className="mn-card">
         <h1 className="sc-sr">Samecor — ผลงานล่าสุด</h1>
+        {find && !appSlot ? (
+          <div className="mn-find">
+            <button type="button" className="mn-find-chip" aria-label={`ล้างคำค้น ${find}`} onClick={clearFind}>
+              <span className="mn-find-t">{find}</span>
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                <path d="M6 6l12 12M18 6L6 18" />
+              </svg>
+            </button>
+          </div>
+        ) : null}
         {mode === "showcase" ? (
           <Showcase
-            key={`${view}:${category ?? "all"}:${colors.join(",")}`}
+            key={`${view}:${category ?? "all"}:${colors.join(",")}:${find}`}
             view={view}
             category={category}
+            find={find}
             colors={colors}
             label={MODE_LABEL[mode]}
             savedIds={saves.ids}
@@ -425,7 +456,7 @@ export default function Main() {
             onClear={filtered ? clearFilters : undefined}
           />
         ) : mode === "creators" ? (
-          <Creators view={crView} category={category} onClear={filtered ? clearFilters : undefined} />
+          <Creators view={crView} category={category} find={find} onClear={filtered ? clearFilters : undefined} />
         ) : (
           <Events view={evView} type={evType} q={params.get("q") ?? ""} onQuery={setQuery} />
         )}
@@ -437,6 +468,15 @@ export default function Main() {
               mode={mode}
               onPick={pickMode}
               onSearch={(e) => openAppSearch(e.currentTarget)}
+              lead={mode === "event" ? eventView : null}
+              onCalendar={mode === "event" ? (e) => panels.openCalendar(e.currentTarget) : undefined}
+              below={
+                mode === "event" ? (
+                  <div className="mn-fld" data-mode="event">
+                    {eventChips}
+                  </div>
+                ) : null
+              }
             />,
             appSlot,
           )
@@ -444,7 +484,7 @@ export default function Main() {
       {appSearch.mounted ? (
         <AppSearch
           initialMode={mode}
-          initialValue={params.get("q") ?? ""}
+          initialValue={(mode === "event" ? params.get("q") : find) ?? ""}
           colors={colors}
           leaving={appSearch.leaving}
           onClose={closeAppSearch}
@@ -527,6 +567,8 @@ function ViewMenu<V extends string>({ label, options, labels, value, onPick }: V
 type ShowcaseProps = {
   view: ShowcaseView;
   category: (typeof SC_CATEGORIES)[number] | null;
+  /** The text filter (`?find=`). */
+  find: string;
   /** Colour search: only works whose cover matches, closest first. */
   colors: string[];
   label: string;
@@ -536,8 +578,8 @@ type ShowcaseProps = {
   onClear?: () => void;
 };
 
-function Showcase({ view, category, colors, label, savedIds, onToggleSave, onClear }: ShowcaseProps) {
-  const { data: rows, isPending, isError, isFetchNextPageError, hasNextPage, isFetchingNextPage, fetchNextPage, refetch } = useShowcaseWorks(view, category);
+function Showcase({ view, category, find, colors, label, savedIds, onToggleSave, onClear }: ShowcaseProps) {
+  const { data: rows, isPending, isError, isFetchNextPageError, hasNextPage, isFetchingNextPage, fetchNextPage, refetch } = useShowcaseWorks(view, category, find);
   const owners = useMemo(() => [...new Set((rows ?? []).map((r) => r.owner_id).filter((id): id is string => !!id))], [rows]);
   const { data: profiles } = useProfilesByIds(owners);
 

@@ -108,19 +108,43 @@ type BarProps = {
   mode: HomeMode;
   onPick: (mode: HomeMode) => void;
   onSearch: (e: MouseEvent<HTMLButtonElement>) => void;
+  /** Before the search button, with a thin vertical rule (the Event page's When menu). */
+  lead?: ReactNode;
+  /** A second header row (the Event page's type chips), which hides and returns with the header. */
+  below?: ReactNode;
+  /** Event page: the full calendar as an icon before the search button (owner 2026-11-28). */
+  onCalendar?: (e: MouseEvent<HTMLButtonElement>) => void;
 };
 
-/** Store app home, right end of the header: search, then the mode switch (the bell sits before them). */
-export default function AppHomeBar({ mode, onPick, onSearch }: BarProps) {
+/**
+ * Store app home, right end of the header: search, then the mode switch (the bell sits before them).
+ * On the Event page there is no mode switch — the tab bar's Event tab is the way in (owner 2026-11-28).
+ */
+export default function AppHomeBar({ mode, onPick, onSearch, lead, below, onCalendar }: BarProps) {
   return (
     <>
+      {lead ? (
+        <>
+          <div className="ap-hd-lead">{lead}</div>
+          <span aria-hidden="true" className="ap-hd-rule" />
+        </>
+      ) : null}
+      {onCalendar ? (
+        <button type="button" aria-label="Full Calendar" title="Full Calendar" aria-haspopup="dialog" className="sc-ib" onClick={onCalendar}>
+          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.33" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3.5" y="5" width="17" height="15.5" rx="2" />
+            <path d="M3.5 10h17M8 3v4M16 3v4" />
+          </svg>
+        </button>
+      ) : null}
       <button type="button" aria-label="ค้นหา" title="ค้นหา" aria-haspopup="dialog" className="sc-ib" onClick={onSearch}>
         <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.33" strokeLinecap="round">
           <circle cx="11" cy="11" r="6.5" />
           <path d="M16 16l4 4" />
         </svg>
       </button>
-      <AppModeSwitch value={mode} onPick={onPick} />
+      {mode === "event" ? null : <AppModeSwitch value={mode} onPick={onPick} />}
+      {below ? <div className="ap-hd-below">{below}</div> : null}
     </>
   );
 }

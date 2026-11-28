@@ -488,3 +488,115 @@
     height: 52px;
   }
 }
+
+/* Day header: the date, then its count on the same line at the right (owner 2026-11-28). */
+.sc-app .cal-dayhd {
+  justify-content: flex-start;
+  align-items: baseline;
+}
+
+.sc-app .cal-cnt {
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--sc-ink-3);
+  white-space: nowrap;
+}
+
+.sc-app .cal-cnt + .cal-today {
+  align-self: center;
+}
+
+/* "i" after Follow in Google Calendar + its explanation bubble (owner 2026-11-28) */
+.sc-app .cal-ft {
+  position: relative;
+  align-items: center;
+  gap: 8px;
+}
+
+.sc-app .cal-info-btn {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--sc-line);
+  border-radius: 50%;
+  background: none;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.sc-app .cal-info-btn[aria-expanded="true"] {
+  border-color: var(--sc-ink);
+}
+
+.sc-app .cal-info {
+  position: absolute;
+  right: 40px;
+  bottom: calc(100% - 8px);
+  z-index: 3;
+  width: min(340px, calc(100% - 24px));
+  box-sizing: border-box;
+  padding: 16px 18px;
+  border-radius: 16px;
+  background: var(--sc-card);
+  box-shadow: 0 8px 28px rgba(40, 41, 41, .16);
+  color: var(--sc-ink);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.sc-app .cal-info-h {
+  margin: 0 0 8px;
+  font-weight: 500;
+}
+
+.sc-app .cal-info ul {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+}
+
+.sc-app .cal-info-ok {
+  margin-top: 12px;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--sc-ink);
+  border-radius: 999px;
+  background: none;
+  color: var(--sc-ink);
+  font: inherit;
+  cursor: pointer;
+}
+
+.sc-app :is(.cal-info-btn, .cal-info-ok):focus-visible {
+  outline: 2px solid var(--sc-ink);
+  outline-offset: 2px;
+}
+
+@media (max-width: 600px) {
+  .sc-app .cal-info {
+    right: 12px;
+    left: 12px;
+    width: auto;
+  }
+}
+
+/* narrow right column (tablet): the date stays on one line; the count drops under it if there is no room */
+.sc-app .cal-dayhd {
+  flex-wrap: wrap;
+  row-gap: 4px;
+}
+
+.sc-app .cal-dayhd p:first-child {
+  white-space: nowrap;
+}
+
+/* tablet widths: two columns left the day list ~150px wide — stack them like on phones */
+@media (min-width: 601px) and (max-width: 960px) {
+  .sc-app .cal-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+    overflow-y: auto;
+  }
+}

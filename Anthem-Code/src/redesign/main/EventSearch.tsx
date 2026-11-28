@@ -122,3 +122,39 @@ export default function EventSearch({ q, onQuery, search }: Props) {
     </div>
   );
 }
+
+/**
+ * Website Event tab (owner 2026-11-28): no search field on the tab any more — the sentence is typed in the
+ * header search (SearchPanel → `/?tab=event&q=`). While a search is on, this one line shows what was asked,
+ * what was understood, and × to clear it. The store app shows the same as a tag over the card instead.
+ */
+export function EventQueryBar({ q, onQuery, search }: Props) {
+  const near = search?.near;
+  const nearLabel = near?.status === "ok" ? near.provinces[0]?.label : null;
+  const summary = search && !search.intent.empty ? intentSummary(search.intent, nearLabel) : "";
+  const note =
+    search?.intent.nearMe && near?.status === "failed"
+      ? "เปิดตำแหน่งไม่ได้ ลองพิมพ์ชื่อจังหวัดแทนนะ"
+      : search?.intent.nearMe && near?.status === "asking"
+        ? "กำลังหาตำแหน่ง…"
+        : "";
+  if (!q.trim()) return null;
+  return (
+    <div className="mn-es-on" role="status">
+      <span className="mn-es-tag">
+        <span className="mn-es-tag-t">“{q.trim()}”</span>
+        <button type="button" className="mn-es-x" aria-label="ล้างคำค้น" onClick={() => onQuery("")}>
+          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.6" strokeLinecap="round">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+      </span>
+      {summary || note ? (
+        <p className="mn-es-sum" aria-live="polite">
+          {summary}
+          {note ? <span className="mn-es-note">{note}</span> : null}
+        </p>
+      ) : null}
+    </div>
+  );
+}

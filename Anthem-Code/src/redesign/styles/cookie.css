@@ -214,26 +214,50 @@
     max-width: none;
     width: auto;
     bottom: calc(16px + env(safe-area-inset-bottom, 0px));
-    padding: 16px;
+    padding: 12px 12px 12px 16px;
     border-radius: var(--sc-r-card-m);
     flex-direction: column;
     align-items: stretch;
-    gap: 12px;
+    gap: 8px;
   }
 
   .sc-app[data-tab="on"] .ck-bar {
     bottom: calc(96px + env(safe-area-inset-bottom, 0px));
   }
 
+  /* Two rows only (owner 2026-11-28): one line of text, then ตั้งค่า + both buttons on one row. */
   .sc-app .ck-bar .ck-btns {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  .sc-app .ck-bar .ck-b {
+    padding: 0 14px;
   }
 
   .sc-app .ck-bar .ck-b-ln {
-    grid-column: 1 / -1;
-    order: 3;
-    min-height: 36px;
+    margin-right: auto;
+    padding: 0 4px;
+  }
+
+  /* Store app: one question on first open, two equal buttons. */
+  .sc-app .ck-app .ck-tx b {
+    font-weight: 500;
+  }
+
+  .sc-app .ck-app .ck-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .sc-app .ck-app .ck-ic {
+    flex: none;
+    margin: 2px 4px 0 auto;
+  }
+
+  .sc-app .ck-app .ck-btns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
   }
 
   .sc-app .ck-box {

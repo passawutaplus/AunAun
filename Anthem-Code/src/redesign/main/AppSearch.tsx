@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useSearchHistory, type SearchHistoryScope } from "@/hooks/useSearchHistory";
@@ -6,18 +6,9 @@ import { useSiteSearch, type SearchKind } from "../lib/useSiteSearch";
 import { onEscape } from "../shell/panels";
 import { AppModeSwitch, type HomeMode } from "./AppHomeBar";
 import ColorSearch from "./ColorSearch";
-import { hasIntent, parseEventIntent, toggleIntentWord } from "./eventIntent";
-import { isoDay } from "./useHomeEvents";
 
 const RECENT_LIMIT = 8;
 const HIT_LIMIT = 6;
-
-/** Words the Event search understands, as buttons (they were under the old in-page Event search field). */
-const QUICK = [
-  ["free", "ฟรี"],
-  ["weekend", "สุดสัปดาห์นี้"],
-  ["near", "ใกล้ฉัน"],
-] as const;
 
 /** One row of filter buttons: a URL param of the home page and its choices ("" = the default). */
 export type AppFilterRow = {
@@ -43,7 +34,7 @@ type Props = {
   colors: string[];
   leaving: boolean;
   onClose: () => void;
-  /** Runs the Event search on the home page (`?tab=event&q=`); the screen closes itself. */
+  /** Filters the home page: Showcase / Creators grid (`?find=`), Event list (`?tab=event&q=`). The screen closes itself. */
   onSubmit: (mode: HomeMode, query: string) => void;
   onColors: (colors: string[]) => void;
   /** The view / category / type buttons of a mode (they moved here from the page, owner 2026-11-28). */
@@ -55,8 +46,8 @@ type Props = {
 /**
  * Store app search (owner 2026-11-28: "เหมือนแอปเก่าเป๊ะ"): the old app's full-screen phone search in the new
  * design. Title, recent searches, the mode pill and the text box sit at the bottom near the thumb; Showcase
- * also has the colour search. Typing lists matching works / creators / events of that mode; Event's search
- * button runs the Event tab's own search.
+ * also has the colour search. Typing lists matching works / creators / events of that mode; the search button
+ * filters that tab of the home page and closes the screen, like the old app.
  */
 export default function AppSearch({ initialMode, initialValue, colors, leaving, onClose, onSubmit, onColors, filtersFor, onFilter }: Props) {
   const [mode, setMode] = useState<HomeMode>(initialMode);
@@ -70,7 +61,6 @@ export default function AppSearch({ initialMode, initialValue, colors, leaving, 
   const { hits, ready } = useSiteSearch(typed ? value : "");
   const shown = hits.filter((h) => h.kind === meta.kind).slice(0, HIT_LIMIT);
   const recent = queries.slice(0, RECENT_LIMIT);
-  const intent = useMemo(() => parseEventIntent(value, isoDay(new Date())), [value]);
 
   useEffect(() => {
     // Focus once the screen has slid up, so the keyboard does not fight the animation.
@@ -93,18 +83,12 @@ export default function AppSearch({ initialMode, initialValue, colors, leaving, 
     [onClose],
   );
 
-  // Only the Event tab filters its list by text (`?tab=event&q=`). Showcase / Creators have no text filter
-  // (home `?q=` opens the Spotlight panel instead), so their matches stay listed right here.
+  // Search filters the feed (old app): Showcase / Creators by `?find=`, Event by its own search (`?q=`).
   const submit = (q: string) => {
     const query = q.trim();
     if (query) record(query);
-    if (mode === "event") {
-      onSubmit(mode, query);
-      onClose();
-      return;
-    }
-    setValue(query);
-    inputRef.current?.blur();
+    onSubmit(mode, query);
+    onClose();
   };
 
   return (
@@ -113,11 +97,12 @@ export default function AppSearch({ initialMode, initialValue, colors, leaving, 
       className="as"
       role="dialog"
       aria-modal="true"
-      aria-label={`ค้นหาใน ${meta.label}`}
+      aria-label={`Search in ${meta.label}`}
       data-leaving={leaving ? "" : undefined}
     >
       <div className="as-in">
-        <h2 className="as-h">ค้นหาใน {meta.label}</h2>
+        {/* Headings in English, no hint line under the title (owner 2026-11-28). */}
+        <h2 className="as-h">Search in {meta.label}</h2>
         {typed ? (
           <div className="as-hits">
             {shown.map((h) => (
@@ -128,12 +113,11 @@ export default function AppSearch({ initialMode, initialValue, colors, leaving, 
               </Link>
             ))}
             {ready && !shown.length ? (
-              <p className="as-p">{mode === "event" ? "กดค้นหาเพื่อดูทั้งหมดได้เลย" : "ไม่เจอที่ตรงกัน ลองคำอื่นดูนะ"}</p>
+              <p className="as-p">กดค้นหาเพื่อดูทั้งหมดได้เลย</p>
             ) : null}
           </div>
         ) : (
           <>
-            <p className="as-p">{recent.length ? "ค้นหาล่าสุดของคุณ" : meta.hint}</p>
             {recent.length ? (
               <ul className="as-recent">
                 {recent.map((q) => (
@@ -157,27 +141,7 @@ export default function AppSearch({ initialMode, initialValue, colors, leaving, 
           </>
         )}
 
-        <AppModeSwitch labels value={mode} onPick={setMode} />
-
         <div className="as-filters">
-          {mode === "event" ? (
-            <div className="as-frow">
-              <span className="as-flabel">ค้นหาด่วน</span>
-              <div className="as-chips" role="group" aria-label="ค้นหาด่วน">
-                {QUICK.map(([kind, label]) => (
-                  <button
-                    key={kind}
-                    type="button"
-                    className="as-chip"
-                    aria-pressed={hasIntent(intent, kind)}
-                    onClick={() => setValue(toggleIntentWord(value, intent, kind))}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : null}
           {filtersFor(mode).map((row) => (
             <div key={row.key} className="as-frow">
               <span className="as-flabel">{row.label}</span>
@@ -190,6 +154,11 @@ export default function AppSearch({ initialMode, initialValue, colors, leaving, 
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Owner 2026-11-28: the mode switch sits right above the search field, words only. */}
+        <div className="as-modebar">
+          <AppModeSwitch labels value={mode} onPick={setMode} />
         </div>
 
         <form

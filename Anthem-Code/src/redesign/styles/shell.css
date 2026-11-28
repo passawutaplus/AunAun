@@ -503,6 +503,8 @@
     display: flex;
   }
 
+  /* Owner 2026-11-28: a pill with Home / Event / Chat / Me (the current one = white capsule with its name)
+     and the "+" on its own as a red circle at the right. */
   .sc-app .sc-tb {
     position: fixed;
     left: 12px;
@@ -510,26 +512,65 @@
     bottom: calc(20px + env(safe-area-inset-bottom, 0px)); /* iPhone home bar */
     z-index: 40;
     height: 64px;
-    padding: 0 6px;
+    box-sizing: border-box;
+    align-items: center;
+    gap: 12px;
+    pointer-events: none; /* the gap between the pill and "+" lets taps through */
+  }
+
+  .sc-app .sc-tb > * {
+    pointer-events: auto;
+  }
+
+  .sc-app .sc-tb-pill {
+    flex: 1;
+    min-width: 0;
+    height: 64px;
+    padding: 0 8px;
     box-sizing: border-box;
     border-radius: 999px;
     background: rgba(255, 255, 255, .92);
     -webkit-backdrop-filter: blur(20px);
     backdrop-filter: blur(20px);
     box-shadow: 0 1px 3px rgba(40, 41, 41, .08), 0 10px 32px rgba(40, 41, 41, .14);
+    display: flex;
     align-items: center;
-    justify-content: space-around;
+    justify-content: space-between;
   }
 
   .sc-app .sc-tb a {
     position: relative;
-    width: 56px;
-    height: 52px;
+    flex: none;
+    min-width: 48px;
+    height: 48px;
+    padding: 0 12px;
+    box-sizing: border-box;
+    border-radius: 999px;
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 6px;
     text-decoration: none;
     color: #8A8A87;
+    transition: background-color var(--sc-t-fast) var(--sc-ease), padding var(--sc-t-fast) var(--sc-ease);
+  }
+
+  .sc-app .sc-tb-pill a[aria-current="page"] {
+    padding: 0 16px 0 14px;
+    background: #FFFFFF;
+    box-shadow: 0 1px 4px rgba(40, 41, 41, .12);
+  }
+
+  .sc-app .sc-tb-lb {
+    display: none;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .sc-app .sc-tb a[aria-current="page"] .sc-tb-lb {
+    display: inline;
   }
 
   .sc-app .sc-tb a svg {
@@ -549,10 +590,12 @@
   }
 
   .sc-app .sc-tb a[data-k="add"] {
-    width: 48px;
-    height: 48px;
+    width: 64px;
+    height: 64px;
+    padding: 0;
     border-radius: 50%;
-    background: #282929;
+    background: #282929; /* owner 2026-11-28: dark grey, not red */
+    box-shadow: 0 6px 18px rgba(40, 41, 41, .28);
   }
 
   .sc-app .sc-tb a[data-k="add"] svg {

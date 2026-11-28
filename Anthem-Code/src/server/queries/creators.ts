@@ -6,6 +6,9 @@ export type CreatorProfileRow = {
   username: string | null;
   avatar_url: string | null;
   location: string | null;
+  /** Read by the home grid's text filter (`?find=`), like the old Creators search. */
+  role: string | null;
+  skills: string[] | null;
   created_at: string | null;
   /** The 22-CATEGORY list of the new design (in profiles_public since migration 20261127200000). */
   sc_categories: string[] | null;
@@ -18,7 +21,7 @@ export async function getCreatorProfiles(ids: readonly string[]): Promise<Creato
   if (!ids.length) return [];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (profilesPublicFrom() as any)
-    .select("user_id, display_name, username, avatar_url, location, created_at, sc_categories, public_visibility")
+    .select("user_id, display_name, username, avatar_url, location, role, skills, created_at, sc_categories, public_visibility")
     .in("user_id", ids);
   if (error) throw error;
   return (data ?? []) as CreatorProfileRow[];

@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { eventPath } from "@/lib/exhibitionEvents";
 import { proxiedImageUrl } from "@/lib/imageProxy";
-import { SC_LINKS } from "../routes";
 import { EVENT_KIND, dayOf, isoDay, lastDay, shortDate, useHomeEvents } from "../main/useHomeEvents";
 import { onEscape } from "./panels";
 
@@ -34,6 +33,8 @@ export default function CalendarPanel({ leaving, onClose }: Props) {
   const now = new Date();
   const today = { y: now.getFullYear(), m: now.getMonth(), d: now.getDate() };
   const [sel, setSel] = useState(today);
+  // "i" next to Follow in Google Calendar: what the button does (owner 2026-11-28).
+  const [info, setInfo] = useState(false);
   const closeRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -69,7 +70,6 @@ export default function CalendarPanel({ leaving, onClose }: Props) {
         <div className="cal-hd">
           <div>
             <h2 id="sc-cal-h" lang="en">Event Calendar</h2>
-            <p>อีเว้นท์และ open call ที่กำลังจะมาถึง</p>
           </div>
           <button ref={closeRef} type="button" aria-label="ปิดปฏิทิน" className="cal-x" onClick={() => onClose()}>
             <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -127,21 +127,13 @@ export default function CalendarPanel({ leaving, onClose }: Props) {
                 );
               })}
             </div>
-            <a href={SUBSCRIBE} target="_blank" rel="noopener noreferrer" className="cal-sub">
-              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#666666" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3.5" y="5" width="17" height="15.5" rx="2" />
-                <path d="M3.5 10h17M8 3v4M16 3v4" />
-              </svg>
-              ติดตามปฏิทินนี้ใน Google Calendar ↗
-            </a>
           </div>
 
           <div className="cal-right">
+            {/* The count sits on the date's line, at the right (owner 2026-11-28). */}
             <div className="cal-dayhd">
-              <div>
-                <p lang="en">{`${DW[new Date(y, m, sel.d).getDay()]}, ${sel.d} ${MS[m]} ${y}`}</p>
-                <p>{`${list.length} อีเว้นท์`}</p>
-              </div>
+              <p lang="en">{`${DW[new Date(y, m, sel.d).getDay()]}, ${sel.d} ${MS[m]} ${y}`}</p>
+              <span className="cal-cnt">{`${list.length} อีเว้นท์`}</span>
               {isToday ? null : (
                 <button type="button" className="cal-today" onClick={() => setSel(today)} lang="en">
                   Today
@@ -197,12 +189,41 @@ export default function CalendarPanel({ leaving, onClose }: Props) {
         </div>
 
         <div className="cal-ft">
-          <Link to={SC_LINKS.events} className="cal-all" onClick={() => onClose(false)} lang="en">
-            View All Events
+          {/* Owner 2026-11-28: the footer button subscribes in Google Calendar (was "View All Events"). */}
+          <a href={SUBSCRIBE} target="_blank" rel="noopener noreferrer" className="cal-all" lang="en">
+            Follow in Google Calendar
             <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M5 12h14M13 6l6 6-6 6" />
+              <path d="M7 17L17 7M9 7h8v8" />
             </svg>
-          </Link>
+          </a>
+          <button
+            type="button"
+            className="cal-info-btn"
+            aria-label="Follow in Google Calendar คืออะไร"
+            aria-expanded={info}
+            aria-controls="sc-cal-info"
+            onClick={() => setInfo((v) => !v)}
+          >
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.5" strokeLinecap="round">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 11v5.5" />
+              <path d="M12 7.6v.01" strokeWidth="2.2" />
+            </svg>
+          </button>
+          {info ? (
+            <div id="sc-cal-info" className="cal-info" role="note">
+              <p className="cal-info-h">ติดตามปฏิทินนี้ใน Google Calendar</p>
+              <ul>
+                <li>กดแล้ว Google Calendar จะเปิดขึ้นมา กด “เพิ่ม” ได้เลย</li>
+                <li>อีเว้นท์ของ SAMECOR จะขึ้นในปฏิทินคุณ แยกเป็นอีกปฏิทิน</li>
+                <li>มีงานใหม่ก็อัปเดตเอง (Google ดึงใหม่ทุกไม่กี่ชั่วโมง)</li>
+                <li>ไม่อยากเห็นแล้ว ลบปฏิทินนี้ออกใน Google Calendar ได้ทุกเมื่อ</li>
+              </ul>
+              <button type="button" className="cal-info-ok" onClick={() => setInfo(false)}>
+                เข้าใจแล้ว
+              </button>
+            </div>
+          ) : null}
         </div>
       </div>
     </div>
