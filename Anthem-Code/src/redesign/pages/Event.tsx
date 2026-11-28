@@ -17,6 +17,7 @@ import { useCountEventView, useEventPage, useEventVenues, useParentEvent } from 
 import EventPictures from "../event/EventPictures";
 import Locations from "../event/Locations";
 import { thaiHours } from "../event/venueText";
+import { usePosterLabel } from "../event/usePosterLabel";
 import { EVENT_KIND, shortDate } from "../main/useHomeEvents";
 import { useInterestedSwitch } from "../profile/useMyProfile";
 import NotFound from "./NotFound";
@@ -86,6 +87,7 @@ function EventBody({ event: e, venues, parent }: { event: EventPageRow; venues: 
   const rows = multi ? [] : summaryRows(insights, e.category);
   const about = paragraphs(e.description);
   const openCall = e.category === "open_call";
+  const poster = usePosterLabel(e.origin, e.owner_id);
   const path = eventPath(e);
   const url = typeof window === "undefined" ? path : window.location.origin + path;
 
@@ -308,10 +310,10 @@ function EventBody({ event: e, venues, parent }: { event: EventPageRow; venues: 
             <div className="ev-head">
               <p className="ev-kind" lang="en">
                 <span data-open-call={openCall ? "" : undefined}>{EVENT_KIND[e.category] ?? EVENT_KIND.other}</span>
-                {e.origin === "curated" ? (
+                {poster ? (
                   <>
                     <i aria-hidden="true" />
-                    <span>CURATED BY SAMECOR</span>
+                    <span>{poster}</span>
                   </>
                 ) : null}
               </p>

@@ -7,6 +7,7 @@ import { eventPath } from "@/lib/exhibitionEvents";
 import { proxiedImageUrl } from "@/lib/imageProxy";
 import { toggleEventInterest } from "@/server/mutations/eventInterest";
 import type { HomeEventRow } from "@/server/queries/homeEvents";
+import { usePosterLabel } from "../event/usePosterLabel";
 import { SC_LINKS } from "../routes";
 import { useShellPanels } from "../shell/panels";
 import ScLoader from "./ScLoader";
@@ -260,6 +261,7 @@ function EventList({ events, byDay, today }: { events: HomeEventRow[]; byDay: bo
 }
 
 function EventItem({ event: e, untilEnd }: { event: HomeEventRow; untilEnd: boolean }) {
+  const poster = usePosterLabel(e.origin, e.owner_id);
   const openCall = e.category === "open_call";
   const end = lastDay(e);
   const when = openCall
@@ -278,7 +280,7 @@ function EventItem({ event: e, untilEnd }: { event: HomeEventRow; untilEnd: bool
       <span className="mn-ev-meta">
         {openCall ? <span aria-hidden="true" className="mn-ev-dot" /> : null}
         {EVENT_KIND[e.category] ?? EVENT_KIND.other}
-        {e.origin === "curated" ? <span className="mn-ev-tag">CURATED BY SAMECOR</span> : null}
+        {poster ? <span className="mn-ev-tag">{poster}</span> : null}
       </span>
       <span className="mn-ev-title">{e.title}</span>
       <span className="mn-ev-ww">

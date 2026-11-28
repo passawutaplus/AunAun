@@ -23,7 +23,7 @@ const note = (over: Partial<Notification>): Notification => ({
 const people: Record<string, { name: string; avatar: string }> = { u1: { name: "mintra.k", avatar: "https://x/a.png" } };
 const ev: HomeEventRow = {
   id: "e1", title: "Riso Open Studio", category: "workshop", starts_on: "2026-11-29", ends_on: "2026-11-29",
-  time_note: null, location_name: "BACC", area: null, cover_url: "https://x/c.png", origin: null,
+  time_note: null, location_name: "BACC", area: null, cover_url: "https://x/c.png", origin: null, owner_id: null,
   is_featured: null, featured_until: null, parent_id: null, sort_order: null, slug: null,
 };
 const ctx = {
