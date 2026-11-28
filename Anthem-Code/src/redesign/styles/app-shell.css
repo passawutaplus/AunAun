@@ -12,6 +12,13 @@ html[data-native-app] .sc-app .sc-hd {
   backdrop-filter: none;
   -webkit-mask-image: none;
   mask-image: none;
+  padding-bottom: 16px;
+}
+
+/* The website pulls pages up under its fade (28px phone / 96px wide); the solid app header has no fade, so
+   pages start at its bottom edge instead of hiding their top under it (owner 2026-11-28). */
+html[data-native-app] .sc-app .sc-main {
+  margin-top: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -130,7 +137,7 @@ html[data-native-app] .sc-app .sc-hd {
   }
 
   .sc-app:has(.sc-hd-slot > *) .mn {
-    padding-top: 12px;
+    padding-top: 0;
   }
 
   /* the line split the in-page Event search from its results; that field is gone here */
