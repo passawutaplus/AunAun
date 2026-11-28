@@ -146,7 +146,7 @@ export default function Main() {
     setParams(next, { preventScrollReset: true });
   };
 
-  // App search screen: runs the text in the chosen mode (`?q=`), or the colours on Showcase.
+  // App search screen: the Event search (`?tab=event&q=`), or the colours on Showcase.
   const closeAppSearch = () => {
     appSearch.close();
     appSearchBtn.current?.focus();

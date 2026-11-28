@@ -26,7 +26,7 @@ type Props = {
   colors: string[];
   leaving: boolean;
   onClose: () => void;
-  /** Runs the search on the home page in the chosen mode; the screen closes itself. */
+  /** Runs the Event search on the home page (`?tab=event&q=`); the screen closes itself. */
   onSubmit: (mode: HomeMode, query: string) => void;
   onColors: (colors: string[]) => void;
 };
@@ -34,7 +34,8 @@ type Props = {
 /**
  * Store app search (owner 2026-11-28: "เหมือนแอปเก่าเป๊ะ"): the old app's full-screen phone search in the new
  * design. Title, recent searches, the mode pill and the text box sit at the bottom near the thumb; Showcase
- * also has the colour search. Typing lists matching works / creators / events of that mode.
+ * also has the colour search. Typing lists matching works / creators / events of that mode; Event's search
+ * button runs the Event tab's own search.
  */
 export default function AppSearch({ initialMode, initialValue, colors, leaving, onClose, onSubmit, onColors }: Props) {
   const [mode, setMode] = useState<HomeMode>(initialMode);
@@ -70,11 +71,18 @@ export default function AppSearch({ initialMode, initialValue, colors, leaving, 
     [onClose],
   );
 
+  // Only the Event tab filters its list by text (`?tab=event&q=`). Showcase / Creators have no text filter
+  // (home `?q=` opens the Spotlight panel instead), so their matches stay listed right here.
   const submit = (q: string) => {
     const query = q.trim();
     if (query) record(query);
-    onSubmit(mode, query);
-    onClose();
+    if (mode === "event") {
+      onSubmit(mode, query);
+      onClose();
+      return;
+    }
+    setValue(query);
+    inputRef.current?.blur();
   };
 
   return (
@@ -97,7 +105,9 @@ export default function AppSearch({ initialMode, initialValue, colors, leaving, 
                 <span className="sp-kind">{h.kind}</span>
               </Link>
             ))}
-            {ready && !shown.length ? <p className="as-p">กดค้นหาเพื่อดูทั้งหมดได้เลย</p> : null}
+            {ready && !shown.length ? (
+              <p className="as-p">{mode === "event" ? "กดค้นหาเพื่อดูทั้งหมดได้เลย" : "ไม่เจอที่ตรงกัน ลองคำอื่นดูนะ"}</p>
+            ) : null}
           </div>
         ) : (
           <>
