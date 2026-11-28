@@ -981,6 +981,37 @@
   margin-top: 8px;
 }
 
+/* "ดูเส้นทาง" → the Locations page of a multi-venue highlight */
+.sc-app .mn-ev-route {
+  height: 44px;
+  padding: 0 20px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  background: var(--sc-ink);
+  color: #FFFFFF;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.sc-app .mn-ev-route:hover {
+  color: #FFFFFF;
+}
+
+/* three buttons in a row on phones: none of them shrinks; the "copied" note gives way instead */
+.sc-app .mn-ev-acts > :is(.mn-ev-route, .mn-ev-save, .mn-ev-share) {
+  flex: none;
+}
+
+.sc-app .mn-ev-acts > .mn-ev-copied {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
 .sc-app .mn-ev-save {
   all: unset;
   cursor: pointer;

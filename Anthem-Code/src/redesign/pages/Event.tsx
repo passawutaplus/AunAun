@@ -14,6 +14,7 @@ import type { EventPageRow, EventPageVenue } from "@/server/queries/eventPage";
 import { SC_LINKS } from "../routes";
 import { closingDay, feeLabel, paragraphs, siteLabel, summaryRows } from "../event/eventSummary";
 import { useCountEventView, useEventPage, useEventVenues, useParentEvent } from "../event/useEventPage";
+import Locations from "../event/Locations";
 import { thaiHours } from "../event/venueText";
 import { EVENT_KIND, shortDate } from "../main/useHomeEvents";
 import NotFound from "./NotFound";
@@ -474,6 +475,12 @@ function EventBody({ event: e, venues, parent }: { event: EventPageRow; venues: 
             )}
           </aside>
         </div>
+        {/* Venues of a multi-venue event (mock: dc-import Locations embedded). */}
+        {multi ? (
+          <div className="ev-locs">
+            <Locations event={e} venues={venues} onToast={say} />
+          </div>
+        ) : null}
       </main>
       {toast ? (
         <div role="status" className="ev-toast">

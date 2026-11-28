@@ -22,7 +22,7 @@ const Chevron = ({ d }: { d: string }) => (
 
 /**
  * Event tab of the home page (mock: Main.dc.html, isEvents): HIGHLIGHT, then the list.
- * "Full Calendar" and "ดูเส้นทาง" arrive with the Calendar / Locations pages (step 6).
+ * "ดูเส้นทาง" opens the Locations page of a multi-venue highlight (step 6).
  */
 export default function Events({ view, type }: { view: EventView; type: EventType | null }) {
   const { data, isPending, isError } = useHomeEvents();
@@ -158,6 +158,16 @@ function Highlight({ events, venues, today }: { events: HomeEventRow[]; venues: 
             </ol>
           ) : null}
           <div className="mn-ev-acts">
+            {places.length ? (
+              <Link to={`${eventPath(e)}/locations`} className="mn-ev-route">
+                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="6" cy="18" r="2.5" />
+                  <circle cx="18" cy="6" r="2.5" />
+                  <path d="M8.5 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.5" />
+                </svg>
+                ดูเส้นทาง
+              </Link>
+            ) : null}
             <button
               type="button"
               className="mn-ev-save"
