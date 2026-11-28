@@ -16,7 +16,9 @@ export type TileWork = {
 type Props = {
   work: TileWork;
   saved: boolean;
-  onToggleSave: (id: string) => void;
+  onToggleSave: (work: TileWork, button: HTMLElement) => void;
+  /** Router state of the link: opens the work over the home page, with ‹ › going through this list. */
+  linkState?: unknown;
   /** Added by "load more": rises in when it scrolls into view. */
   isNew?: boolean;
   delay?: number;
@@ -27,7 +29,7 @@ type Props = {
  * A work on the home grid. The frame always has the picture's own ratio (never cropped);
  * a cover without a recorded size is shown whole inside a square frame instead.
  */
-export default function WorkTile({ work, saved, onToggleSave, isNew, delay, eager }: Props) {
+export default function WorkTile({ work, saved, onToggleSave, linkState, isNew, delay, eager }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const [inView, setInView] = useState(false);
 
@@ -69,7 +71,7 @@ export default function WorkTile({ work, saved, onToggleSave, isNew, delay, eage
         style={work.ratio ? undefined : { objectFit: "contain" }}
       />
       <span className="mn-shade" aria-hidden="true" />
-      <Link to={`/showcase/${work.id}`} aria-label={`เปิดผลงาน ${label}`} className="mn-open" />
+      <Link to={`/showcase/${work.id}`} state={linkState} aria-label={`เปิดผลงาน ${label}`} className="mn-open" />
       <span className="mn-name">
         <span className="mn-name-t">{work.title}</span>
         <span className="mn-name-s">{work.sub}</span>
@@ -79,7 +81,7 @@ export default function WorkTile({ work, saved, onToggleSave, isNew, delay, eage
         className="mn-save"
         aria-label={`เก็บ ${work.title} เข้าคอลเลคชั่น`}
         aria-pressed={saved}
-        onClick={() => onToggleSave(work.id)}
+        onClick={(e) => onToggleSave(work, e.currentTarget)}
       >
         <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" strokeWidth="1.5" strokeLinejoin="round">
           <path d="M6 3h12v18l-6-4.5L6 21z" />

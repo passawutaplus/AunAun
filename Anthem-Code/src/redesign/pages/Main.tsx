@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfilesByIds } from "@/core/profiles/useProfilesByIds";
 import { releaseBoot } from "@/lib/bootGate";
@@ -17,7 +17,7 @@ import { EVENT_TYPES, EVENT_VIEWS, EVENT_VIEW_LABEL, isEventType, type EventView
 import { CREATOR_VIEWS, type CreatorView } from "../main/useCreators";
 import WorkTile, { type TileWork } from "../main/WorkTile";
 import { SHOWCASE_VIEWS, VIEW_NEEDS_LOGIN, useShowcaseWorks, type ShowcaseView } from "../main/useShowcaseWorks";
-import { useWorkSaves } from "../main/useWorkSaves";
+import { useSaveFlow } from "../main/useSaveFlow";
 import "../styles/main.css";
 
 const MODES = [
@@ -90,14 +90,10 @@ export default function Main() {
     else set("view", v === "discover" ? null : v);
   };
   const evView: EventView = (EVENT_VIEWS as readonly string[]).includes(viewParam ?? "") ? (viewParam as EventView) : "now";
-  const saves = useWorkSaves();
-  const toggleSave = useCallback(
-    (id: string) => {
-      if (!saves.signedIn) navigate(SC_LINKS.login);
-      else saves.toggle(id);
-    },
-    [saves, navigate],
-  );
+  // Saving opens SaveToast (collections); signed out → log-in page.
+  const saves = useSaveFlow();
+  const { toggle: saveWork } = saves;
+  const toggleSave = useCallback((w: TileWork, el: HTMLElement) => saveWork({ id: w.id, title: w.title }, el), [saveWork]);
 
   // The start-up brand screen waits for the first feed on "/"; the other tabs have nothing to wait for.
   useEffect(() => {
@@ -202,6 +198,7 @@ export default function Main() {
           <Events view={evView} type={evType} />
         )}
       </div>
+      {saves.element}
     </main>
   );
 }
@@ -279,7 +276,7 @@ type ShowcaseProps = {
   colors: string[];
   label: string;
   savedIds: Set<string>;
-  onToggleSave: (id: string) => void;
+  onToggleSave: (work: TileWork, button: HTMLElement) => void;
 };
 
 function Showcase({ view, category, colors, label, savedIds, onToggleSave }: ShowcaseProps) {
@@ -349,6 +346,10 @@ function Showcase({ view, category, colors, label, savedIds, onToggleSave }: Sho
 
   const blocks = useMemo(() => (category ? [] : bentoBlocks(visible, (w) => w.ratio ?? 1)), [category, visible]);
 
+  // A tile opens the work over this page; ‹ › on the work go through the works in this order.
+  const location = useLocation();
+  const linkState = useMemo(() => ({ backgroundLocation: location, scList: works.map((w) => w.id) }), [location, works]);
+
   useEffect(() => {
     if (!isPending) releaseBoot();
   }, [isPending]);
@@ -360,7 +361,7 @@ function Showcase({ view, category, colors, label, savedIds, onToggleSave }: Sho
   return (
     <>
       {category ? (
-        <Masonry works={visible} label={label} savedIds={savedIds} onToggleSave={onToggleSave} />
+        <Masonry works={visible} label={label} savedIds={savedIds} onToggleSave={onToggleSave} linkState={linkState} />
       ) : (
         <section aria-label={label} className="mn-bento">
           {blocks.map((block, b) => (
@@ -373,6 +374,7 @@ function Showcase({ view, category, colors, label, savedIds, onToggleSave }: Sho
                       work={cell.item}
                       saved={savedIds.has(cell.item.id)}
                       onToggleSave={onToggleSave}
+                      linkState={linkState}
                       isNew={cell.isNew}
                       delay={col.delay}
                       eager={b === 0}
@@ -393,7 +395,15 @@ function Showcase({ view, category, colors, label, savedIds, onToggleSave }: Sho
   );
 }
 
-function Masonry({ works, label, savedIds, onToggleSave }: { works: TileWork[]; label: string; savedIds: Set<string>; onToggleSave: (id: string) => void }) {
+type MasonryProps = {
+  works: TileWork[];
+  label: string;
+  savedIds: Set<string>;
+  onToggleSave: (work: TileWork, button: HTMLElement) => void;
+  linkState: unknown;
+};
+
+function Masonry({ works, label, savedIds, onToggleSave, linkState }: MasonryProps) {
   const ref = useRef<HTMLElement>(null);
   // Card inner width at 1440 is 1168 → four columns of 277; measured again on every resize.
   const [grid, setGrid] = useState({ columns: 4, columnWidth: 277 });
@@ -419,7 +429,7 @@ function Masonry({ works, label, savedIds, onToggleSave }: { works: TileWork[]; 
         const span = masonrySpan(w.ratio ?? 1, grid.columnWidth, grid.columns);
         return (
           <div className="mn-cell" key={w.id} style={{ gridColumn: `span ${span.cols}`, gridRow: `span ${span.rows}` }}>
-            <WorkTile work={w} saved={savedIds.has(w.id)} onToggleSave={onToggleSave} eager={i < 4} />
+            <WorkTile work={w} saved={savedIds.has(w.id)} onToggleSave={onToggleSave} linkState={linkState} eager={i < 4} />
           </div>
         );
       })}

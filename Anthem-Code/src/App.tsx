@@ -410,6 +410,10 @@ const BillingPreviewPage = lazy(
 const RedesignShell = lazy(() => import("./redesign/shell/RedesignShell.tsx"));
 const RedesignNotFound = lazy(() => import("./redesign/pages/NotFound.tsx"));
 const RedesignMain = lazy(() => import("./redesign/pages/Main.tsx"));
+const RedesignWork = lazy(() => import("./redesign/pages/Work.tsx"));
+const RedesignWorkOverlay = lazy(() =>
+  import("./redesign/pages/Work.tsx").then((m) => ({ default: m.WorkOverlay })),
+);
 
 /** Old site chrome (top nav, floating nav, banners, prompts): never mounted on a page of the new design. */
 const LegacyChrome = ({ children }: { children: ReactNode }) => {
@@ -426,7 +430,18 @@ const BackgroundAwareRoutes = ({ children }: { children: ReactNode }) => {
       <Routes location={background ?? location}>{children}</Routes>
       {background ? (
         <Routes>
-          <Route path="/showcase/:id" element={<ProjectOverlay />} />
+          <Route
+            path="/showcase/:id"
+            element={
+              isRedesignEnabled() ? (
+                <Suspense fallback={null}>
+                  <RedesignWorkOverlay />
+                </Suspense>
+              ) : (
+                <ProjectOverlay />
+              )
+            }
+          />
           <Route path="*" element={null} />
         </Routes>
       ) : null}
@@ -474,6 +489,7 @@ const App = () => (
                     {isRedesignEnabled() ? (
                       <Route element={<RedesignShell />}>
                         <Route path="/" element={<RedesignMain />} />
+                        <Route path="/showcase/:id" element={<RedesignWork />} />
                         <Route path="/sc/shell" element={<RedesignNotFound />} />
                       </Route>
                     ) : null}
@@ -857,10 +873,12 @@ const App = () => (
                             </RequireAuth>
                           }
                         />
-                        <Route
-                          path="/showcase/:id"
-                          element={<ProjectDetailPage />}
-                        />
+                        {isRedesignEnabled() ? null : (
+                          <Route
+                            path="/showcase/:id"
+                            element={<ProjectDetailPage />}
+                          />
+                        )}
                         <Route
                           path="/project/:id"
                           element={<ProjectToShowcaseRedirect />}
