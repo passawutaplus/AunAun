@@ -27,6 +27,9 @@ export function useFeaturedEvent() {
         .select(`${EVENT_SELECT}, is_featured, featured_until, interest_count`)
         .eq("is_featured", true)
         .eq("status", "published")
+        // Several events may be highlighted (new design, migration 20261128200000): this banner shows the newest one.
+        .order("featured_at", { ascending: false, nullsFirst: false })
+        .limit(1)
         .maybeSingle();
       // Slug for the banner's links (separate so a database without the slug migration still shows the banner).
       if (data && !error) {
