@@ -86,9 +86,9 @@
   max-width: 260px;
 }
 
+/* the other pictures of the work, each at its own ratio (never cropped): one height, their own width */
 .sc-app .ex-thumb {
   display: block;
-  width: 44px;
   height: 44px;
   border-radius: 10px;
   overflow: hidden;
@@ -107,9 +107,10 @@
 
 .sc-app .ex-thumb img {
   display: block;
-  width: 100%;
+  width: auto;
+  max-width: 96px;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .sc-app .ex-aspects-lab {

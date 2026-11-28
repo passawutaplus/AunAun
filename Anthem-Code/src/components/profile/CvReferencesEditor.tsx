@@ -2,6 +2,8 @@ import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CV_REFERENCES_MAX, type ReferenceItem } from "@/lib/profileCv";
 import { useAboutEditLocale } from "@/components/profile/AboutEditLocale";
+import CvMoveButtons from "@/components/profile/CvMoveButtons";
+import { moveItem } from "@/lib/listMove";
 
 const INPUT_CLASS =
   "w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-xs placeholder:font-light placeholder:text-muted-foreground";
@@ -50,6 +52,7 @@ export default function CvReferencesEditor({ value, onChange }: Props) {
                 className={INPUT_CLASS}
               />
             </div>
+            <CvMoveButtons index={i} count={value.length} onMove={(a, b) => onChange(moveItem(value, a, b))} />
             <Button
               type="button"
               variant="ghost"

@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { awardItemSchema, type AwardItem } from "@/lib/profileCv";
 import { cn } from "@/lib/utils";
 import { useAboutEditLocale } from "@/components/profile/AboutEditLocale";
+import CvMoveButtons from "@/components/profile/CvMoveButtons";
+import { moveItem } from "@/lib/listMove";
 
 type Props = {
   value: AwardItem[];
@@ -124,6 +126,7 @@ export default function AwardEditor({ value, onChange }: Props) {
                 </p>
               </div>
               <div className="flex items-center gap-0.5 shrink-0">
+                <CvMoveButtons index={i} count={value.length} disabled={editingIndex !== null} onMove={(a, b) => onChange(moveItem(value, a, b))} />
                 <button
                   type="button"
                   onClick={() => startEdit(i)}

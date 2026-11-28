@@ -25,6 +25,11 @@ import WorkTile, { type TileWork } from "../main/WorkTile";
 import Masonry from "../main/Masonry";
 import { SHOWCASE_VIEWS, VIEW_NEEDS_LOGIN, useShowcaseWorks, type ShowcaseView } from "../main/useShowcaseWorks";
 import { useSaveFlow } from "../main/useSaveFlow";
+import { createPortal } from "react-dom";
+import { usePresence } from "../lib/usePresence";
+import { useAppHeaderSlot } from "../shell/appHeaderSlot";
+import AppHomeBar, { AppActiveFilters, type ActiveFilter } from "../main/AppHomeBar";
+import AppSearch, { type AppFilterRow } from "../main/AppSearch";
 import "../styles/main.css";
 
 const MODES = [
@@ -73,6 +78,10 @@ export default function Main() {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
   const panels = useShellPanels();
+  // Store apps (owner 2026-11-28): search + mode switch sit in the header; search opens a full-screen search.
+  const appSlot = useAppHeaderSlot();
+  const appSearch = usePresence(260);
+  const appSearchBtn = useRef<HTMLButtonElement | null>(null);
   const oldMode = params.get("mode");
   const tab = params.get("tab") ?? (oldMode ? OLD_MODE_TAB[oldMode.toLowerCase()] : null);
   const mode: Mode = tab === "creators" || tab === "event" ? tab : "showcase";
@@ -190,6 +199,102 @@ export default function Main() {
     setParams(next, { preventScrollReset: true });
   };
 
+  // App search screen: the Event search (`?tab=event&q=`), or the colours on Showcase.
+  const closeAppSearch = () => {
+    appSearch.close();
+    appSearchBtn.current?.focus();
+  };
+  const runAppSearch = (m: Mode, q: string) => {
+    const next = new URLSearchParams(params);
+    if (m !== mode) {
+      if (m === "showcase") next.delete("tab");
+      else next.set("tab", m);
+      next.delete("view");
+    }
+    if (m !== "event") next.delete("type");
+    if (m !== "showcase") next.delete("color");
+    if (q) next.set("q", q);
+    else next.delete("q");
+    setParams(next);
+  };
+  const applyAppColors = (list: string[]) => {
+    const next = new URLSearchParams(params);
+    if (mode !== "showcase") ["tab", "view", "type"].forEach((k) => next.delete(k));
+    next.delete("q");
+    if (list.length) next.set("color", list.map((c) => c.replace("#", "").toLowerCase()).join(","));
+    else next.delete("color");
+    setParams(next);
+    closeAppSearch();
+  };
+  const openAppSearch = (el: HTMLButtonElement) => {
+    appSearchBtn.current = el;
+    appSearch.open();
+  };
+  // The view / category / type rows moved from the page into the app search screen; a button applies at once.
+  const applyAppFilter = (m: Mode, key: AppFilterRow["key"], value: string) => {
+    const needsLogin = key === "view" && ((m === "showcase" && VIEW_NEEDS_LOGIN[value as ShowcaseView]) || (m === "creators" && value === "following"));
+    if (needsLogin && !user) {
+      appSearch.close();
+      navigate(SC_LINKS.login);
+      return;
+    }
+    const next = new URLSearchParams(params);
+    if (m !== mode) {
+      if (m === "showcase") next.delete("tab");
+      else next.set("tab", m);
+      next.delete("view");
+      if (m !== "event") ["type", "q"].forEach((k) => next.delete(k));
+      if (m !== "showcase") next.delete("color");
+    }
+    if (value) next.set(key, value);
+    else next.delete(key);
+    setParams(next, { replace: true, preventScrollReset: true });
+  };
+  const appFiltersFor = (m: Mode): AppFilterRow[] => {
+    const here = m === mode;
+    const cats: AppFilterRow = { key: "cat", label: "หมวด", value: category ?? "", options: [["", "All"], ...SC_CATEGORIES.map((c) => [c, c] as const)] };
+    if (m === "showcase") {
+      const options = SHOWCASE_VIEWS.map((v) => [v === "explore" ? "" : v, VIEW_LABEL[v]] as const);
+      return [{ key: "view", label: "มุมมอง", value: here && view !== "explore" ? view : "", options }, cats];
+    }
+    if (m === "creators") {
+      const options = CREATOR_VIEWS.map((v) => [v === "discover" ? "" : v, CREATOR_VIEW_LABEL[v]] as const);
+      return [{ key: "view", label: "มุมมอง", value: here && crView !== "discover" ? crView : "", options }, cats];
+    }
+    return [
+      { key: "view", label: "ช่วงเวลา", value: here && evView !== "all" ? evView : "", options: EVENT_VIEWS.map((v) => [v === "all" ? "" : v, EVENT_VIEW_LABEL[v]] as const) },
+      { key: "type", label: "ประเภท", value: here ? (evType ?? "") : "", options: [["", "All"], ...EVENT_TYPES] },
+    ];
+  };
+  // What the page is filtered by, as tags over the card (the rows themselves are in the search screen).
+  const appActiveFilters = (): ActiveFilter[] => {
+    const out: ActiveFilter[] = [];
+    const q = params.get("q");
+    if (mode === "showcase" && view !== "explore") out.push({ key: "view", name: VIEW_LABEL[view], label: VIEW_LABEL[view], onRemove: () => set("view", null) });
+    if (mode === "creators" && crView !== "discover") {
+      out.push({ key: "view", name: CREATOR_VIEW_LABEL[crView], label: CREATOR_VIEW_LABEL[crView], onRemove: () => set("view", null) });
+    }
+    if (mode === "event" && evView !== "all") out.push({ key: "view", name: EVENT_VIEW_LABEL[evView], label: EVENT_VIEW_LABEL[evView], onRemove: () => set("view", null) });
+    if (mode !== "event" && category) out.push({ key: "cat", name: category, label: category, onRemove: () => set("cat", null) });
+    if (mode === "event" && evType) {
+      const name = EVENT_TYPES.find(([k]) => k === evType)?.[1] ?? evType;
+      out.push({ key: "type", name, label: name, onRemove: () => set("type", null) });
+    }
+    if (mode === "showcase" && colors.length) {
+      const label = (
+        <>
+          {colors.map((c) => (
+            <span key={c} aria-hidden="true" className="ap-dot" style={{ background: c }} />
+          ))}
+          สี
+        </>
+      );
+      out.push({ key: "color", name: "สี", label, onRemove: () => set("color", null) });
+    }
+    if (mode === "event" && q) out.push({ key: "q", name: `"${q}"`, label: `“${q}”`, onRemove: () => setQuery("") });
+    return out;
+  };
+
   const { user, loading: authLoading } = useAuth();
   const signedOut = !user && !authLoading;
   const viewParam = params.get("view");
@@ -305,6 +410,7 @@ export default function Main() {
         </div>
       )}
 
+      {appSlot ? <AppActiveFilters items={appActiveFilters()} onOpen={(e) => openAppSearch(e.currentTarget)} /> : null}
       <div ref={cardRef} className="mn-card">
         <h1 className="sc-sr">Samecor — ผลงานล่าสุด</h1>
         {mode === "showcase" ? (
@@ -325,6 +431,29 @@ export default function Main() {
         )}
       </div>
       {saves.element}
+      {appSlot
+        ? createPortal(
+            <AppHomeBar
+              mode={mode}
+              onPick={pickMode}
+              onSearch={(e) => openAppSearch(e.currentTarget)}
+            />,
+            appSlot,
+          )
+        : null}
+      {appSearch.mounted ? (
+        <AppSearch
+          initialMode={mode}
+          initialValue={params.get("q") ?? ""}
+          colors={colors}
+          leaving={appSearch.leaving}
+          onClose={closeAppSearch}
+          onSubmit={runAppSearch}
+          onColors={applyAppColors}
+          filtersFor={appFiltersFor}
+          onFilter={applyAppFilter}
+        />
+      ) : null}
     </main>
   );
 }

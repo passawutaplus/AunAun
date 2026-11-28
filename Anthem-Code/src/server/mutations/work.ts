@@ -44,3 +44,44 @@ export async function recordWorkView(projectId: string): Promise<void> {
   const { error } = await supabase.rpc("increment_project_view", { _project_id: projectId });
   if (error) throw error;
 }
+
+/**
+ * Viewing history for For You (hooks/useProjects.ts reads anthem.project_views, newest first): one row per
+ * person and work, its time moved forward on each visit — the old page's upsert.
+ */
+export async function recordWorkHistory(userId: string, projectId: string): Promise<void> {
+  const { error } = await supabase
+    .from("project_views")
+    .upsert({ user_id: userId, project_id: projectId, viewed_at: new Date().toISOString() }, { onConflict: "user_id,project_id" });
+  if (error) throw error;
+}
+
+export type WorkReportReason = "spam" | "harassment" | "nsfw" | "copyright" | "scam" | "impersonation" | "other";
+
+/** Report a work or a comment to the review team (same RPC as the old ReportDialog). */
+export async function sendReport(input: {
+  targetType: "project" | "comment";
+  targetId: string;
+  ownerId: string | null;
+  reason: WorkReportReason;
+  details: string;
+}): Promise<void> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase.rpc as any)("create_report", {
+    _target_type: input.targetType,
+    _target_id: input.targetId,
+    _target_owner_id: input.ownerId,
+    _reason: input.reason,
+    _details: input.details.slice(0, 1000),
+    _evidence_urls: [],
+    _evidence_files: [],
+  });
+  if (error) throw error;
+}
+
+/** Block someone (same table as the old block dialog); blocking twice is fine. */
+export async function blockPerson(me: string, other: string): Promise<void> {
+  if (me === other) throw new Error("บล็อกตัวเองไม่ได้นะ");
+  const { error } = await supabase.from("user_blocks").insert({ blocker_id: me, blocked_id: other });
+  if (error && String(error.code) !== "23505") throw error;
+}

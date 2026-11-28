@@ -16,6 +16,8 @@ import {
 import { cn } from "@/lib/utils";
 import { useAboutEditLocale } from "@/components/profile/AboutEditLocale";
 import MonthYearField from "@/components/profile/MonthYearField";
+import CvMoveButtons from "@/components/profile/CvMoveButtons";
+import { moveItem } from "@/lib/listMove";
 
 type Props = {
   value: EducationItem[];
@@ -245,6 +247,7 @@ export default function EducationEditor({ value, onChange }: Props) {
                   </p>
                 </div>
                 <div className="flex items-center gap-0.5 shrink-0">
+                  <CvMoveButtons index={i} count={value.length} disabled={editingIndex !== null} onMove={(a, b) => onChange(moveItem(value, a, b))} />
                   <button
                     type="button"
                     onClick={() => startEdit(i)}

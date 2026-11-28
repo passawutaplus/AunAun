@@ -115,6 +115,7 @@
 
 .sc-app .sc-hd-bd {
   position: absolute;
+  z-index: 1;
   top: 4px;
   right: 4px;
   min-width: 18px;
@@ -129,6 +130,11 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+/* chat: red like the tab bar and ChatDock */
+.sc-app .sc-hd-bd[data-k="chat"] {
+  background: #EE3D29;
 }
 
 .sc-app .sc-hd-acct {
@@ -459,6 +465,11 @@
     display: none;
   }
 
+  /* signed out: "Log In" stays (nothing else is in the thin header then) */
+  .sc-app .sc-hd-text.sc-hd-login {
+    display: inline-flex;
+  }
+
   /* the account menu opens from ☰ on My Profile only */
   .sc-app .sc-hd-acct {
     display: none;
@@ -485,7 +496,7 @@
   }
 
   .sc-app[data-tab="on"] {
-    padding-bottom: 96px;
+    padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
   }
 
   .sc-app[data-tab="on"] .sc-tb {
@@ -496,7 +507,7 @@
     position: fixed;
     left: 12px;
     right: 12px;
-    bottom: 20px;
+    bottom: calc(20px + env(safe-area-inset-bottom, 0px)); /* iPhone home bar */
     z-index: 40;
     height: 64px;
     padding: 0 6px;
@@ -602,5 +613,28 @@
 }
 .sc-app .sc-load-error-btn:focus-visible {
   outline: 2px solid var(--sc-ink);
+  outline-offset: 2px;
+}
+
+/* NotificationPanel: "ดูทั้งหมด" → the full list (/notifications) */
+.sc-app .nt-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  margin: 0 8px 8px;
+  border-top: 1px solid #ECECEA;
+  font-size: 13px;
+  color: #282929;
+  text-decoration: none;
+}
+
+.sc-app .nt-more:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.sc-app .nt-more:focus-visible {
+  outline: 2px solid #282929;
   outline-offset: 2px;
 }

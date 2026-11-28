@@ -2,7 +2,7 @@ import { proxiedImageUrl } from "@/lib/imageProxy";
 import type { Block, Media, TextStyle } from "./model";
 import TextBox, { type TextMenu } from "./TextBox";
 
-export const HINT = "JPG · PNG · GIF · MP4 · ≤ 20 MB";
+export const HINT = "JPG · PNG · GIF · MP4 · MOV · ≤ 20 MB";
 
 /** What the editor shows for a picture: the local copy when it was picked here, else a resized copy. */
 export const mediaSrc = (m: Media | undefined, width = 1600) => (m ? m.preview ?? proxiedImageUrl(m.url, width) : "");

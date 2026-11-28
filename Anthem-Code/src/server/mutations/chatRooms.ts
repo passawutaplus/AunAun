@@ -39,6 +39,14 @@ export async function unhideRoom(me: string, roomId: string): Promise<void> {
   if (error) throw error;
 }
 
+/** Unsend one of my messages (old chat: within 24 hours; the server checks too). */
+export const UNSEND_HOURS = 24;
+export async function unsendMessage(messageId: string, createdAt: string): Promise<void> {
+  if (Date.now() - new Date(createdAt).getTime() > UNSEND_HOURS * 3_600_000) throw new Error("ยกเลิกได้ภายใน 24 ชั่วโมงเท่านั้นนะ");
+  const { error } = await rpc("unsend_message", { p_message_id: messageId });
+  if (error) throw error;
+}
+
 export async function markRoomRead(roomId: string): Promise<void> {
   const { error } = await rpc("mark_conversation_read", { p_conversation_id: roomId });
   if (error) throw error;
@@ -49,13 +57,17 @@ export async function blockPerson(me: string, otherId: string): Promise<void> {
   if (error && String(error.code) !== "23505" && !String(error.message).includes("duplicate")) throw error;
 }
 
+/** Reasons a chat report can give (the `create_report` allow-list; same codes as the old ReportDialog). */
+export const CHAT_REPORT_REASONS = ["spam", "harassment", "scam", "nsfw", "impersonation", "other"] as const;
+export type ChatReportReason = (typeof CHAT_REPORT_REASONS)[number];
+
 /** "Report" in a chat or on a chat request: the person, with the room in the details for the team. */
-export async function reportPerson(otherId: string, roomId: string): Promise<void> {
+export async function reportPerson(otherId: string, roomId: string, reason: ChatReportReason = "other"): Promise<void> {
   const { error } = await rpc("create_report", {
     _target_type: "user",
     _target_id: otherId,
     _target_owner_id: otherId,
-    _reason: "other",
+    _reason: CHAT_REPORT_REASONS.includes(reason) ? reason : "other",
     _details: `รายงานจากแชท (ห้อง ${roomId})`,
   });
   if (error && !String(error.message).startsWith("DUPLICATE:")) throw error;

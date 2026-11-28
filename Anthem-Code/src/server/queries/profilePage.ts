@@ -8,7 +8,7 @@ import { isUuid } from "@/lib/profileRoutes";
 import { isOptionalQueryError } from "@/lib/supabaseErrors";
 
 export const PROFILE_PAGE_SELECT =
-  "user_id, username, display_name, avatar_url, bio, skills, location, profile_address, instagram, website, contact_email, sc_categories, public_visibility";
+  "user_id, username, display_name, avatar_url, bio, skills, location, profile_address, instagram, website, contact_email, sc_categories, public_visibility, cover_url, facebook, line_id, social_links";
 
 export type ProfilePageRow = {
   user_id: string;
@@ -24,6 +24,11 @@ export type ProfilePageRow = {
   contact_email: string | null;
   sc_categories: string[] | null;
   public_visibility: unknown;
+  /** Cover banner (32:9 crop) and the old contact fields, shown in the profile header / About. */
+  cover_url: string | null;
+  facebook: string | null;
+  line_id: string | null;
+  social_links: unknown;
 };
 
 /** A public profile by handle (without @) or by user id. */

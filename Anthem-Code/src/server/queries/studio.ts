@@ -124,13 +124,18 @@ export async function getRecentFollowers(userId: string, limit = 3): Promise<Per
   return ids.map((id) => who.get(id)).filter((p): p is PersonRow => !!p);
 }
 
-export type StudioProfile = ProfilePageRow & { display_name_changed_at: string | null; profile_onboarding_at: string | null };
+export type StudioProfile = ProfilePageRow & {
+  display_name_changed_at: string | null;
+  profile_onboarding_at: string | null;
+  /** Uncropped cover; "ปรับตำแหน่ง" re-crops from it. */
+  cover_original_url: string | null;
+};
 
 /** My profile row with what the Profile tab needs to know about the name lock (30 days, DB trigger). */
 export async function getStudioProfile(userId: string): Promise<StudioProfile | null> {
   const { data, error } = await supabase
     .from("profiles")
-    .select(`${PROFILE_PAGE_SELECT}, display_name_changed_at, profile_onboarding_at` as "*")
+    .select(`${PROFILE_PAGE_SELECT}, display_name_changed_at, profile_onboarding_at, cover_original_url` as "*")
     .eq("user_id", userId)
     .maybeSingle();
   if (error) throw error;

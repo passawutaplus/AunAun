@@ -1,0 +1,243 @@
+/* Cookie consent (shell/CookieBanner.tsx): a floating card at the bottom, and the choices popup. */
+.sc-app .ck-bar {
+  position: fixed;
+  left: 24px;
+  right: 24px;
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  z-index: 46;
+  width: fit-content;
+  max-width: min(760px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 12px 12px 12px 24px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .94);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  box-shadow: var(--sc-shadow);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  color: var(--sc-ink);
+}
+
+.sc-app .ck-tx {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.sc-app .ck-ln {
+  color: var(--sc-ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.sc-app .ck-btns {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sc-app .ck-b {
+  min-height: 44px;
+  padding: 0 18px;
+  box-sizing: border-box;
+  border: 1px solid var(--sc-line);
+  border-radius: var(--sc-btn-round);
+  background: var(--sc-card);
+  color: var(--sc-ink);
+  font: inherit;
+  font-size: 14px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.sc-app .ck-b-pri {
+  border-color: var(--sc-ink);
+  background: var(--sc-ink);
+  color: #FFFFFF;
+}
+
+.sc-app .ck-b-ln {
+  border-color: transparent;
+  background: none;
+  padding: 0 10px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.sc-app :is(.ck-b, .ck-ln, .ck-x, .ck-sw):focus-visible {
+  outline: 2px solid var(--sc-ink);
+  outline-offset: 2px;
+}
+
+/* ---------- choices popup ---------- */
+.sc-app .ck-wrap {
+  position: fixed;
+  inset: 0;
+  z-index: 48;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.sc-app .ck-wrap .pv-veil {
+  position: absolute;
+}
+
+.sc-app .ck-box {
+  position: relative;
+  width: 480px;
+  max-width: 100%;
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 28px;
+  border-radius: var(--sc-r-card);
+  background: var(--sc-card);
+  box-shadow: var(--sc-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  color: var(--sc-ink);
+}
+
+.sc-app .ck-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sc-app .ck-hd h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 400;
+}
+
+.sc-app .ck-x {
+  all: unset;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sc-app .ck-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  border-top: 1px solid var(--sc-divider);
+}
+
+.sc-app .ck-rl {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sc-app .ck-rl b {
+  font-weight: 400;
+  font-size: 15px;
+}
+
+.sc-app .ck-rl span {
+  font-size: 13px;
+  color: var(--sc-ink-2);
+}
+
+.sc-app .ck-sw {
+  flex: none;
+  position: relative;
+  width: 48px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: #D4D4D1;
+  cursor: pointer;
+}
+
+.sc-app .ck-sw[aria-checked="true"] {
+  background: var(--sc-ink);
+}
+
+.sc-app .ck-sw:disabled {
+  cursor: default;
+  opacity: .45;
+}
+
+.sc-app .ck-sw i {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  box-shadow: 0 1px 3px rgba(40, 41, 41, .25);
+}
+
+.sc-app .ck-sw[aria-checked="true"] i {
+  transform: translateX(20px);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sc-app .ck-sw,
+  .sc-app .ck-sw i {
+    transition: background-color var(--sc-t-fast) var(--sc-ease), transform var(--sc-t-fast) var(--sc-ease);
+  }
+}
+
+.sc-app .ck-more {
+  margin: 0;
+  font-size: 13px;
+}
+
+.sc-app .ck-box .ck-btns {
+  justify-content: flex-end;
+}
+
+/* ---------- phone: full-width card above the tab bar ---------- */
+@media (max-width: 600px) {
+  .sc-app .ck-bar {
+    left: 12px;
+    right: 12px;
+    max-width: none;
+    width: auto;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    padding: 16px;
+    border-radius: var(--sc-r-card-m);
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .sc-app[data-tab="on"] .ck-bar {
+    bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .sc-app .ck-bar .ck-btns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .sc-app .ck-bar .ck-b-ln {
+    grid-column: 1 / -1;
+    order: 3;
+    min-height: 36px;
+  }
+
+  .sc-app .ck-box {
+    padding: 24px 20px;
+    border-radius: var(--sc-r-card-m);
+  }
+}
