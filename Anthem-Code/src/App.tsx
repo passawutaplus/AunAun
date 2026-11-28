@@ -488,6 +488,8 @@ const App = () => (
                         </Route>
                         {/* Open to everyone; sending asks to log in (the old page needed a login to open). */}
                         <Route path="/me/feedback" element={<RedesignFeedback />} />
+                        {/* Unknown URLs still reach the old 404 (catch-all and /:vanityHandle) until step 14. */}
+                        <Route path="/error/404" element={<RedesignNotFound />} />
                       </Route>
                     ) : null}
                     <Route element={<LaunchMinimalGate />}>

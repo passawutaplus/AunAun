@@ -45,6 +45,7 @@ const PAGES: ReadonlyArray<{ match: RegExp; page: ShellPage }> = [
   { match: /^\/legal\/privacy\/?$/, page: { page: "privacy", tabbar: true, tab: "", footer: true } },
   { match: /^\/help\/?$/, page: { page: "help", tabbar: true, tab: "", footer: true } },
   { match: /^\/me\/feedback\/?$/, page: { page: "feedback", tabbar: true, tab: "", footer: true } },
+  { match: /^\/error\/404\/?$/, page: { page: "not-found", tabbar: true, tab: "", footer: true } },
 ];
 
 export function shellPageFor(pathname: string): ShellPage | null {
