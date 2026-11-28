@@ -29,6 +29,8 @@ import "../styles/reset.css";
 import "../styles/shell.css";
 import "../styles/panels.css";
 import "../styles/calendar.css";
+import "../styles/app-shell.css";
+import { APP_HEADER_SLOT_ID } from "./appHeaderSlot";
 
 const FALLBACK: ShellPage = { page: "", tabbar: false, tab: "", footer: true };
 
@@ -367,6 +369,8 @@ export default function RedesignShell({ children }: { children?: ReactNode }) {
                 <Link to={SC_LINKS.login} className="sc-hd-text">Log In</Link>
               )}
             </nav>
+            {/* Store app home: Main puts its search and mode switch here (appHeaderSlot.ts). */}
+            <div id={APP_HEADER_SLOT_ID} className="sc-hd-slot" />
           </div>
         </header>
       )}

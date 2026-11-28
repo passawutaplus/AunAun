@@ -19,6 +19,11 @@ import WorkTile, { type TileWork } from "../main/WorkTile";
 import Masonry from "../main/Masonry";
 import { SHOWCASE_VIEWS, VIEW_NEEDS_LOGIN, useShowcaseWorks, type ShowcaseView } from "../main/useShowcaseWorks";
 import { useSaveFlow } from "../main/useSaveFlow";
+import { createPortal } from "react-dom";
+import { usePresence } from "../lib/usePresence";
+import { useAppHeaderAutoHide, useAppHeaderSlot } from "../shell/appHeaderSlot";
+import AppHomeBar from "../main/AppHomeBar";
+import AppSearch from "../main/AppSearch";
 import "../styles/main.css";
 
 const MODES = [
@@ -44,6 +49,11 @@ export default function Main() {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
   const panels = useShellPanels();
+  // Store apps (owner 2026-11-28): search + mode switch sit in the header; search opens a full-screen search.
+  const appSlot = useAppHeaderSlot();
+  useAppHeaderAutoHide(appSlot);
+  const appSearch = usePresence(260);
+  const appSearchBtn = useRef<HTMLButtonElement | null>(null);
   const tab = params.get("tab");
   const mode: Mode = tab === "creators" || tab === "event" ? tab : "showcase";
   const catParam = params.get("cat");
@@ -135,6 +145,34 @@ export default function Main() {
     }
     if (m !== "showcase") next.delete("color");
     setParams(next, { preventScrollReset: true });
+  };
+
+  // App search screen: runs the text in the chosen mode (`?q=`), or the colours on Showcase.
+  const closeAppSearch = () => {
+    appSearch.close();
+    appSearchBtn.current?.focus();
+  };
+  const runAppSearch = (m: Mode, q: string) => {
+    const next = new URLSearchParams(params);
+    if (m !== mode) {
+      if (m === "showcase") next.delete("tab");
+      else next.set("tab", m);
+      next.delete("view");
+    }
+    if (m !== "event") next.delete("type");
+    if (m !== "showcase") next.delete("color");
+    if (q) next.set("q", q);
+    else next.delete("q");
+    setParams(next);
+  };
+  const applyAppColors = (list: string[]) => {
+    const next = new URLSearchParams(params);
+    if (mode !== "showcase") ["tab", "view", "type"].forEach((k) => next.delete(k));
+    next.delete("q");
+    if (list.length) next.set("color", list.map((c) => c.replace("#", "").toLowerCase()).join(","));
+    else next.delete("color");
+    setParams(next);
+    closeAppSearch();
   };
 
   const { user, loading: authLoading } = useAuth();
@@ -263,6 +301,30 @@ export default function Main() {
         )}
       </div>
       {saves.element}
+      {appSlot
+        ? createPortal(
+            <AppHomeBar
+              mode={mode}
+              onPick={pickMode}
+              onSearch={(e) => {
+                appSearchBtn.current = e.currentTarget;
+                appSearch.open();
+              }}
+            />,
+            appSlot,
+          )
+        : null}
+      {appSearch.mounted ? (
+        <AppSearch
+          initialMode={mode}
+          initialValue={params.get("q") ?? ""}
+          colors={colors}
+          leaving={appSearch.leaving}
+          onClose={closeAppSearch}
+          onSubmit={runAppSearch}
+          onColors={applyAppColors}
+        />
+      ) : null}
     </main>
   );
 }

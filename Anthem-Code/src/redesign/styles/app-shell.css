@@ -1,0 +1,331 @@
+/* Store app layout (owner 2026-11-28, arranged like the old app, drawn in Beam's design) + the glass tab bar.
+   "App home" = the header slot is filled: only the home page inside the Android / iOS app (shell/appHeaderSlot.ts). */
+
+/* ---------- app home header: [mark] …… 🔔 🔍 [▦ 👥 ▥] ---------- */
+.sc-app .sc-hd-slot {
+  display: contents; /* empty on the website: no box, no gap */
+}
+
+.sc-app .sc-hd:has(.sc-hd-slot > *) {
+  padding-top: max(2px, env(safe-area-inset-top));
+  transition: transform .3s var(--sc-ease);
+}
+
+/* slides up while scrolling down, back on scroll up (useAppHeaderAutoHide); stays while a key is in it */
+.sc-app .sc-hd[data-hide]:not(:focus-within) {
+  transform: translateY(-100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sc-app .sc-hd:has(.sc-hd-slot > *) {
+    transition: none;
+  }
+}
+
+.sc-app .sc-hd-in:has(.sc-hd-slot > *) {
+  justify-content: flex-start;
+  flex-wrap: nowrap;
+  gap: 4px;
+}
+
+.sc-app .sc-hd-in:has(.sc-hd-slot > *) .sc-hd-nav {
+  margin-left: auto;
+}
+
+/* the mark only, no "samecor." (the app icon already says it) */
+.sc-app .sc-hd-in:has(.sc-hd-slot > *) .sc-hd-logo img {
+  height: 26px;
+  aspect-ratio: 1;
+  width: auto;
+  object-fit: cover;
+  object-position: left center;
+}
+
+/* search and the tabs moved up; the colour search lives in the search screen */
+.sc-app:has(.sc-hd-slot > *) .mn-tools,
+.sc-app:has(.sc-hd-slot > *) .mn-modes {
+  display: none;
+}
+
+/* ---------- mode switch (old app's pill, Beam's segmented look) ---------- */
+.sc-app .ap-modes {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--sc-seg);
+}
+
+.sc-app .ap-mode {
+  all: unset;
+  cursor: pointer;
+  box-sizing: border-box;
+  height: 34px;
+  min-width: 40px;
+  padding: 0 11px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--sc-ink-3);
+  transition: background var(--sc-t-fast) ease, color var(--sc-t-fast) ease;
+}
+
+.sc-app .ap-mode[aria-pressed="true"] {
+  background: var(--sc-card);
+  box-shadow: 0 1px 3px rgba(40, 41, 41, .08);
+  color: var(--sc-ink);
+}
+
+.sc-app .ap-mode:focus-visible {
+  outline: 2px solid var(--sc-ink);
+  outline-offset: 2px;
+}
+
+.sc-app .ap-modes[data-labels] {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.sc-app .ap-modes[data-labels] .ap-mode {
+  height: 40px;
+  padding: 0 12px;
+  gap: 6px;
+}
+
+/* 320px phones: names only, so the three fit */
+@media (max-width: 340px) {
+  .sc-app .ap-modes[data-labels] .ap-mode svg {
+    display: none;
+  }
+}
+
+/* ---------- app search screen (old app's phone search) ---------- */
+.sc-app .as {
+  position: fixed;
+  inset: 0;
+  z-index: 60; /* over the header (5) and the tab bar (40) */
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding: calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom));
+  background: var(--sc-bg);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.sc-app .as-in {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.sc-app .as-h {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  color: var(--sc-ink);
+}
+
+.sc-app .as-p {
+  margin: 8px 0 0;
+  font-size: 14px;
+  color: var(--sc-ink-3);
+}
+
+.sc-app .as-recent {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.sc-app .as-recent li {
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  border-radius: 999px;
+  background: var(--sc-card);
+  box-shadow: inset 0 0 0 1px var(--sc-line);
+}
+
+.sc-app .as-q {
+  all: unset;
+  cursor: pointer;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 4px 10px 16px;
+  font-size: 15px;
+  color: var(--sc-ink);
+}
+
+.sc-app .as-q span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.sc-app .as-rm {
+  all: unset;
+  cursor: pointer;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  margin-right: 4px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sc-ink-3);
+}
+
+.sc-app .as-hits {
+  width: 100%;
+  margin: 12px 0 0;
+  padding: 6px;
+  box-sizing: border-box;
+  border-radius: var(--sc-r-box);
+  background: var(--sc-card);
+}
+
+.sc-app .as-hits .as-p {
+  margin: 10px;
+}
+
+.sc-app .as .ap-modes {
+  margin-top: 24px;
+}
+
+.sc-app .as-form {
+  align-self: stretch;
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sc-app .as-box {
+  flex: 1;
+  min-width: 0;
+  height: 56px;
+  box-sizing: border-box;
+  padding: 0 20px;
+  border-radius: 999px;
+  background: var(--sc-card);
+  box-shadow: var(--sc-shadow);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sc-app .as-t {
+  all: unset;
+  flex: 1;
+  min-width: 0;
+  font-size: 17px; /* ≥16px: no zoom on iOS */
+  font-weight: 300;
+  color: var(--sc-ink);
+}
+
+.sc-app .as-t::placeholder {
+  color: #A3A3A0;
+}
+
+.sc-app .as-t::-webkit-search-cancel-button {
+  display: none;
+}
+
+.sc-app .as-x,
+.sc-app .as .cs .mn-tool {
+  all: unset;
+  cursor: pointer;
+  position: relative;
+  flex: none;
+  width: 56px;
+  height: 56px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  background: var(--sc-card);
+  box-shadow: inset 0 0 0 1px var(--sc-line);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sc-app .as .cs .mn-tool[data-open] {
+  background: var(--sc-seg);
+}
+
+.sc-app .as :is(.as-x, .as-rm, .as-q, .cs .mn-tool):focus-visible {
+  outline: 2px solid var(--sc-ink);
+  outline-offset: 2px;
+}
+
+.sc-app .as .cs-on {
+  top: 12px;
+  right: 12px;
+}
+
+/* the colour box opens upwards, right edge on the × */
+.sc-app .as .cs-box {
+  top: auto;
+  bottom: 68px;
+  left: auto;
+  right: -64px;
+  max-width: calc(100vw - 32px);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sc-app .as {
+    animation: as-up .34s var(--sc-ease);
+    transition: transform .26s var(--sc-ease);
+  }
+
+  .sc-app .as[data-leaving] {
+    transform: translateY(100%);
+  }
+}
+
+.sc-app .as[data-leaving] {
+  pointer-events: none;
+}
+
+@keyframes as-up {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+/* ---------- glass tab bar (phones: website and app, owner 2026-11-28) ---------- */
+@media (max-width: 600px) {
+  .sc-app[data-tab] .sc-tb {
+    background: rgba(255, 255, 255, .5);
+    -webkit-backdrop-filter: blur(24px) saturate(1.8);
+    backdrop-filter: blur(24px) saturate(1.8);
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 255, 255, .55),
+      0 1px 3px rgba(40, 41, 41, .06),
+      0 10px 32px rgba(40, 41, 41, .12);
+  }
+
+  .sc-app:has(.sc-hd-slot > *) .mn-row {
+    display: none; /* nothing left in it on phones: + is in the tab bar */
+  }
+
+  .sc-app:has(.sc-hd-slot > *) .mn {
+    padding-top: 4px; /* the category row sits right under the header */
+  }
+}
