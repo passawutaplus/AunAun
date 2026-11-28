@@ -9,6 +9,7 @@ import { hasCompletedProfileOnboarding } from "@/hooks/useFeedInterests";
 import { getMyOnboarding } from "@/server/queries/account";
 import { proxiedImageUrl } from "@/lib/imageProxy";
 import { signOutApp } from "@/lib/signOutApp";
+import { loginHref } from "../lib/loginHref";
 import { usePresence } from "../lib/usePresence";
 import { actorOf, isShownNotification, toNotificationRow, type NotificationRow } from "../lib/notificationRows";
 import { homeEventsQuery } from "../main/useHomeEvents";
@@ -17,6 +18,7 @@ import { SC_LINKS, shellPageFor, type ShellPage } from "../routes";
 import AccountMenu from "./AccountMenu";
 import CalendarPanel from "./CalendarPanel";
 import ChatDock, { type ChatDockHandle } from "./ChatDock";
+import CookieBanner from "./CookieBanner";
 import WelcomePanel from "./WelcomePanel";
 import NewChooser from "./NewChooser";
 import NotificationPanel from "./NotificationPanel";
@@ -213,7 +215,7 @@ export default function RedesignShell({ children }: { children?: ReactNode }) {
       // "ทักทาย" / chat icon: the room (existing or new) in the small window, or the big popup; phones → /chat/<room>.
       openChat: async (opts, el) => {
         if (!user) {
-          navigate(SC_LINKS.login);
+          navigate(loginHref());
           return;
         }
         const roomId = opts.roomId ?? (opts.otherId ? await openChatWith(opts.otherId) : null);
@@ -272,6 +274,9 @@ export default function RedesignShell({ children }: { children?: ReactNode }) {
     navigate(SC_LINKS.login);
   };
 
+  // Log In from here comes back to this page (Login reads ?redirect=).
+  const loginTo = (path?: string) => loginHref(path ?? `${pathname}${search}`);
+
   const closeMenuToButton = () => {
     closeMenu();
     acctRef.current?.focus();
@@ -323,7 +328,7 @@ export default function RedesignShell({ children }: { children?: ReactNode }) {
                   {/* Larger screens: the big chat popup (mock open-signal); the link stays for new tabs and pages without ChatDock. */}
                   <Link
                     to={SC_LINKS.chat}
-                    aria-label="แชท"
+                    aria-label={chatUnread ? `แชท ${chatUnread} ข้อความใหม่` : "แชท"}
                     aria-current={cfg.page === "chat" ? "page" : undefined}
                     aria-haspopup={dockOn ? "dialog" : undefined}
                     className="sc-ib sc-hd-chat"
@@ -336,6 +341,8 @@ export default function RedesignShell({ children }: { children?: ReactNode }) {
                     <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.33" strokeLinejoin="round">
                       <path d="M12 3.5a8.5 8.5 0 0 1 0 17c-1.5 0-2.9-.4-4.1-1L3.5 20.5l1.1-4.2A8.5 8.5 0 0 1 12 3.5z" />
                     </svg>
+                    {/* Same count as the tab bar and ChatDock: unread rooms that are not muted. */}
+                    {chatUnread ? <span aria-hidden="true" className="sc-hd-bd" data-k="chat">{chatUnread > 99 ? "99+" : chatUnread}</span> : null}
                   </Link>
                   <button
                     type="button"
@@ -368,7 +375,7 @@ export default function RedesignShell({ children }: { children?: ReactNode }) {
                 </>
               ) : loading ? null : (
                 // The mock has no signed-out header yet (question for Beam): plain text link in the existing style.
-                <Link to={SC_LINKS.login} className="sc-hd-text">Log In</Link>
+                <Link to={loginTo()} className="sc-hd-text sc-hd-login">Log In</Link>
               )}
             </nav>
             {/* Store app home: Main puts its search and mode switch here (appHeaderSlot.ts). */}
@@ -377,6 +384,8 @@ export default function RedesignShell({ children }: { children?: ReactNode }) {
         </header>
       )}
 
+      {/* Target of the skip link (components/a11y/SkipLink, "#main-content"): the page's <main> follows. */}
+      <span id="main-content" tabIndex={-1} className="sc-sr" />
       <ShellPanelsContext.Provider value={panels}>
         <Suspense fallback={<div className="sc-main-wait" />}>
           {children ?? <Outlet />}
@@ -419,7 +428,7 @@ export default function RedesignShell({ children }: { children?: ReactNode }) {
         </Link>
         {/* "+" opens the New chooser (Showcase / Event) like the home "+" (owner 2026-11-28: members can post events now). */}
         <Link
-          to={user ? SC_LINKS.upload : SC_LINKS.login}
+          to={user ? SC_LINKS.upload : loginTo(SC_LINKS.upload)}
           data-k="add"
           aria-label="ลงงาน"
           aria-haspopup={user ? "dialog" : undefined}
@@ -434,7 +443,7 @@ export default function RedesignShell({ children }: { children?: ReactNode }) {
           </svg>
         </Link>
         <Link
-          to={user ? SC_LINKS.chat : SC_LINKS.login}
+          to={user ? SC_LINKS.chat : loginTo(SC_LINKS.chat)}
           data-k="chat"
           aria-label={chatUnread ? `แชท ${chatUnread} ข้อความใหม่` : "แชท"}
           aria-current={tab === "chat" ? "page" : undefined}
@@ -444,7 +453,7 @@ export default function RedesignShell({ children }: { children?: ReactNode }) {
           </svg>
           {chatUnread ? <span className="sc-tb-bd" aria-hidden="true">{chatUnread}</span> : null}
         </Link>
-        <Link to={user ? SC_LINKS.myProfile : SC_LINKS.login} data-k="me" aria-label="ฉัน" aria-current={tab === "me" ? "page" : undefined}>
+        <Link to={user ? SC_LINKS.myProfile : loginTo(SC_LINKS.myProfile)} data-k="me" aria-label="ฉัน" aria-current={tab === "me" ? "page" : undefined}>
           <span className="sc-tb-av" aria-hidden="true" style={bg(avatar)} />
         </Link>
       </nav>
@@ -472,6 +481,7 @@ export default function RedesignShell({ children }: { children?: ReactNode }) {
         />
       ) : null}
       {dockOn ? <ChatDock ref={dockRef} /> : null}
+      <CookieBanner />
       {user && noti.mounted ? (
         <NotificationPanel
           rows={notiRows}

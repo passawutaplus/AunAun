@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { EVENT_SELECT, isEventUuid, type ExhibitionEvent } from "@/lib/exhibitionEvents";
 import { VENUE_SELECT, type EventVenue } from "@/lib/eventVenues";
 
-const EVENT_PAGE_SELECT = `${EVENT_SELECT}, slug, parent_id, insights, cover_width, cover_height, media_sizes, area, address, lat, lng, opening_hours, hours_note`;
+const EVENT_PAGE_SELECT = `${EVENT_SELECT}, slug, parent_id, insights, cover_width, cover_height, media_sizes, area, address, lat, lng, opening_hours, hours_note, name_en, transit_note, admission_note, date_note, coords_approx`;
 
 export type EventPageRow = ExhibitionEvent & {
   slug: string | null;
@@ -22,6 +22,12 @@ export type EventPageRow = ExhibitionEvent & {
   lng: number | null;
   opening_hours: unknown;
   hours_note: string | null;
+  /** Venue rows (parent_id set) only: shown on a venue's own page like the old one. */
+  name_en: string | null;
+  transit_note: string | null;
+  admission_note: string | null;
+  date_note: string | null;
+  coords_approx: boolean | null;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -51,11 +57,11 @@ export async function getEventVenues(parentId: string): Promise<EventPageVenue[]
   return ((data ?? []) as EventPageVenue[]).map((v) => ({ ...v, gallery_urls: v.gallery_urls ?? [], opening_hours: v.opening_hours ?? [] }));
 }
 
-export type ParentEventRow = { id: string; slug: string | null; title: string };
+export type ParentEventRow = { id: string; slug: string | null; title: string; cover_url: string | null };
 
-/** The event a venue belongs to (breadcrumb and back link of a venue page). */
+/** The event a venue belongs to (breadcrumb and back link of a venue page; its cover when the venue has no picture). */
 export async function getParentEvent(id: string): Promise<ParentEventRow | null> {
-  const { data, error } = await events().select("id, slug, title").eq("id", id).maybeSingle();
+  const { data, error } = await events().select("id, slug, title, cover_url").eq("id", id).maybeSingle();
   if (error) throw error;
   return (data as ParentEventRow | null) ?? null;
 }

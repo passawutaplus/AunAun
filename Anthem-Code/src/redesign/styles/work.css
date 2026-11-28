@@ -1324,3 +1324,524 @@ html.sc-wk-open:not(.sc-wk-closing) .sc-app .sc-tb {
 .sc-app .sh-t:hover .sh-ic {
   background: #ECECEA;
 }
+
+/* ---------- ⋯ menus (owner 2026-11-28, from the old site: hide / block / report; the owner's edit / delete) ---------- */
+.sc-app .wk-mn {
+  position: relative;
+  display: inline-flex;
+}
+
+.sc-app .wk-c-acts .wk-c-act {
+  color: #8A8A87;
+}
+
+.sc-app .wk-mn-list {
+  position: absolute;
+  z-index: 40;
+  width: max-content;
+  min-width: 200px;
+  max-width: min(280px, calc(100vw - 32px));
+  box-sizing: border-box;
+  padding: 6px;
+  background: #FFFFFF;
+  border-radius: 20px;
+  box-shadow: var(--sc-shadow);
+  display: flex;
+  flex-direction: column;
+}
+
+.sc-app .wk-mn[data-place="below"] .wk-mn-list {
+  top: calc(100% + 4px);
+  left: 0;
+}
+
+/* beside the rail on the right of the card (opens towards the card) */
+.sc-app .wk-mn[data-place="rail"] .wk-mn-list {
+  top: -6px;
+  right: calc(100% + 14px);
+}
+
+.sc-app .wk-mn-it {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  min-height: 44px;
+  box-sizing: border-box;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 14px;
+  background: none;
+  font: inherit;
+  font-size: 14px;
+  color: var(--sc-ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.sc-app .wk-mn-it:is(:hover, :focus-visible):not(:disabled) {
+  background: var(--sc-soft);
+  outline: none;
+}
+
+.sc-app .wk-mn-it:disabled {
+  color: var(--sc-ink-3);
+  cursor: default;
+}
+
+.sc-app .wk-mn-it[data-danger] {
+  color: #B8321F;
+}
+
+.sc-app .wk-mn-hint {
+  font-size: 12px;
+  color: var(--sc-ink-3);
+}
+
+/* ---------- yes/no and report boxes (the share panel's frame, My Studio's buttons) ---------- */
+.sc-app .wk-dlg {
+  width: 400px;
+  gap: 16px;
+}
+
+.sc-app .wk-dlg h2 {
+  font-size: 18px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.sc-app .wk-dlg-p {
+  margin: -8px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--sc-ink-2);
+}
+
+.sc-app .wk-dlg-row,
+.sc-app .wk-c-edit-row {
+  display: flex;
+  gap: 10px;
+}
+
+.sc-app :is(.wk-dlg-line, .wk-dlg-ink) {
+  appearance: none;
+  margin: 0;
+  height: 44px;
+  padding: 0 20px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.sc-app .wk-dlg-line {
+  border: 1px solid #D4D4D1;
+  background: none;
+  color: var(--sc-ink);
+}
+
+.sc-app .wk-dlg-ink {
+  border: 0;
+  background: var(--sc-ink);
+  color: #FFFFFF;
+}
+
+.sc-app .wk-dlg-ink[data-danger] {
+  background: #B8321F;
+}
+
+.sc-app :is(.wk-dlg-line, .wk-dlg-ink):disabled {
+  opacity: .5;
+  cursor: default;
+}
+
+.sc-app .wk-dlg-reasons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sc-app .wk-dlg-reason {
+  height: 36px;
+  padding: 0 14px;
+  box-sizing: border-box;
+  border: 1px solid #D4D4D1;
+  border-radius: 999px;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  color: var(--sc-ink-2);
+  cursor: pointer;
+}
+
+.sc-app .wk-dlg-reason[aria-checked="true"] {
+  border-color: var(--sc-ink);
+  background: var(--sc-ink);
+  color: #FFFFFF;
+}
+
+.sc-app .wk-dlg-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--sc-ink-3);
+}
+
+.sc-app :is(.wk-dlg-field, .wk-c-edit) textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  border: 1px solid #D4D4D1;
+  border-radius: 14px;
+  padding: 12px 14px;
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--sc-ink);
+  background: #FFFFFF;
+  outline-color: var(--sc-ink);
+}
+
+.sc-app .wk-dlg-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.sc-app .wk-dlg-check input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--sc-ink);
+}
+
+.sc-app .wk-dlg-err {
+  margin: 0;
+  font-size: 13px;
+  color: #B8321F;
+}
+
+/* a comment being edited */
+.sc-app .wk-c-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.sc-app .wk-c-edit-row :is(.wk-dlg-line, .wk-dlg-ink) {
+  height: 36px;
+  padding: 0 16px;
+  font-size: 13px;
+}
+
+/* ≤1000px the rail is a row under the card (a floating row on phones): the menu opens above it */
+@media (max-width: 1000px) {
+  .sc-app .wk-mn[data-place="rail"] .wk-mn-list {
+    top: auto;
+    bottom: calc(100% + 14px);
+    right: -6px;
+  }
+}
+
+/* ---------- Made with (old credits: made together with, team credits, studio) ---------- */
+.sc-app .wk-credits {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sc-app .wk-cr-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sc-app .wk-cr {
+  height: 36px;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 0 14px 0 4px;
+  border: 1px solid var(--sc-line);
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--sc-ink);
+  text-decoration: none;
+}
+
+.sc-app .wk-cr:hover {
+  border-color: var(--sc-ink);
+}
+
+.sc-app .wk-cr .wk-av {
+  width: 28px;
+  height: 28px;
+  flex: none;
+}
+
+.sc-app .wk-cr-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sc-app .wk-cr-tag {
+  font-size: 11px;
+  color: var(--sc-ink-3);
+}
+
+/* ---------- attached files / links with the safety scan (old ProjectAssetsSection) ---------- */
+.sc-app .wk-assets {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sc-app .wk-assets ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sc-app .wk-asset {
+  width: 100%;
+  min-height: 48px;
+  box-sizing: border-box;
+  padding: 10px 12px 10px 14px;
+  border: 1px solid var(--sc-line);
+  border-radius: 14px;
+  background: #FFFFFF;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--sc-ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.sc-app .wk-asset:hover:not(:disabled) {
+  border-color: var(--sc-ink);
+}
+
+.sc-app .wk-asset:disabled {
+  cursor: default;
+  color: var(--sc-ink-3);
+}
+
+.sc-app .wk-asset[aria-busy="true"] {
+  opacity: .6;
+}
+
+.sc-app .wk-asset > svg {
+  flex: none;
+}
+
+.sc-app .wk-asset-t {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sc-app .wk-asset-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sc-app .wk-asset-why {
+  font-size: 12px;
+  color: #B8321F;
+}
+
+.sc-app .wk-scan {
+  flex: none;
+  height: 24px;
+  padding: 0 9px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  white-space: nowrap;
+  color: var(--sc-ink-2);
+  background: var(--sc-soft);
+}
+
+.sc-app .wk-scan[data-s="clean"] {
+  color: #2E7048;
+  background: #EAF3EC;
+}
+
+.sc-app .wk-scan[data-s="blocked"] {
+  color: #B8321F;
+  background: #FBECE9;
+}
+
+/* ---------- full screen picture (old ImageLightbox): tap to zoom, drag, ‹ ›, swipe ---------- */
+.sc-app .wk-body img[data-open] {
+  cursor: zoom-in;
+}
+
+.sc-app .wk-body img[data-open]:focus-visible {
+  outline: 2px solid var(--sc-ink);
+  outline-offset: 3px;
+}
+
+.sc-app.wk-lb {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  min-height: 0;
+  display: block;
+  background: var(--sc-bg);
+}
+
+.sc-app .wk-lb-stage {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.sc-app .wk-lb-img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: calc(100vw - 176px);
+  max-height: calc(100vh - 112px);
+  max-height: calc(100dvh - 112px);
+  border-radius: var(--sc-r-img);
+  cursor: zoom-in;
+  transform-origin: center;
+  transition: transform .28s var(--sc-ease);
+  will-change: transform;
+  -webkit-user-drag: none;
+}
+
+.sc-app .wk-lb-stage[data-zoomed] .wk-lb-img {
+  cursor: grab;
+}
+
+.sc-app .wk-lb-stage[data-live] .wk-lb-img {
+  transition: none;
+}
+
+.sc-app .wk-lb-stage[data-zoomed][data-live] .wk-lb-img {
+  cursor: grabbing;
+}
+
+.sc-app .wk-lb-btn {
+  position: absolute;
+  z-index: 2;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #FFFFFF;
+  color: var(--sc-ink);
+  box-shadow: 0 1px 2px rgba(40, 41, 41, .06), 0 6px 20px rgba(40, 41, 41, .1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.sc-app .wk-lb-x {
+  top: 20px;
+  right: 24px;
+}
+
+.sc-app .wk-lb-side {
+  top: 50%;
+  margin-top: -22px;
+}
+
+.sc-app .wk-lb-prev {
+  left: 24px;
+}
+
+.sc-app .wk-lb-next {
+  right: 24px;
+}
+
+.sc-app .wk-lb-n {
+  position: absolute;
+  z-index: 2;
+  top: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 13px;
+  color: var(--sc-ink-3);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sc-app.wk-lb {
+    animation: wk-fade .25s ease both;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sc-app .wk-lb-img {
+    transition: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .sc-app .wk-lb-img {
+    max-width: 100vw;
+    max-height: calc(100vh - 160px);
+    max-height: calc(100dvh - 160px);
+    border-radius: 0;
+  }
+
+  .sc-app .wk-lb-x {
+    top: 10px;
+    right: 12px;
+  }
+
+  .sc-app .wk-lb-n {
+    top: 22px;
+  }
+
+  /* ‹ › at the bottom, like the work's own ‹ › on phones; a swipe does the same */
+  .sc-app .wk-lb-side {
+    top: auto;
+    bottom: 16px;
+    margin-top: 0;
+  }
+
+  .sc-app .wk-lb-prev {
+    left: 12px;
+  }
+
+  .sc-app .wk-lb-next {
+    right: 12px;
+  }
+}

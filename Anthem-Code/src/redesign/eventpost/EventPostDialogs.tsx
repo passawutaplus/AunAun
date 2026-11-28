@@ -32,7 +32,29 @@ export function EpLeaveDialog({ isEditPub, onGo, onStay }: { isEditPub: boolean;
   );
 }
 
-type PublishedProps = { cover: string; title: string; isEditPub: boolean; studioHref: string; onAgain: () => void };
+/** "ลบอีเว้นท์" in edit mode (old My Exhibition page asked first too): deleting cannot be undone. */
+export function EpDeleteDialog({ live, busy, onDelete, onCancel }: { live: boolean; busy: boolean; onDelete: () => void; onCancel: () => void }) {
+  useEscape(onCancel);
+  return (
+    <div className="ep-veil pv-veil">
+      <div aria-hidden="true" className="ep-veil-hit" onClick={onCancel} />
+      <div className="ep-box ep-box-lv pv-box" role="alertdialog" aria-modal="true" aria-labelledby="ep-del-h">
+        <h2 id="ep-del-h">ลบอีเว้นท์นี้?</h2>
+        <p>{live ? "จะหายจากหน้า Event ด้วย ลบแล้วกู้คืนไม่ได้นะ" : "ลบแล้วกู้คืนไม่ได้นะ"}</p>
+        <div className="ep-box-row">
+          <button type="button" className="ep-btn-line" autoFocus onClick={onCancel}>
+            ยกเลิก
+          </button>
+          <button type="button" className="ep-btn-ink ep-btn-del" aria-busy={busy || undefined} onClick={onDelete}>
+            ลบ
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type PublishedProps ={ cover: string; title: string; isEditPub: boolean; studioHref: string; onAgain: () => void };
 
 /**
  * After Publish / บันทึกการแก้ไข (mock "ลงงานแล้ว"). A member's event goes to the team first, so the line under

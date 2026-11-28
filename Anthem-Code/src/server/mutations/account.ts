@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { flushPendingSignupConsent, markPendingSignupConsent, recordSignupConsents, submitPrivacyRequest } from "@/lib/legalCompliance";
 import { buildEmailConfirmUrl, buildResetPasswordUrl } from "@/lib/oauthRedirect";
+import type { ProfilePublicField } from "@/lib/profileVisibility";
 
 /**
  * Welcome step after sign-up (mock Login "profile"): display name + CATEGORY (optional), then the home page.
@@ -67,7 +68,8 @@ export async function setMySetting(key: "chat" | "comment" | "follow" | "event" 
 }
 
 /** "creators" / "search" / "interested_events" in profiles.public_visibility; the other keys (bio, location …) are kept. */
-export async function setVisibilitySwitch(userId: string, key: "creators" | "search" | "interested_events", on: boolean): Promise<void> {
+/** One key of profiles.public_visibility: Settings → Privacy switches, incl. "ใครเห็นอะไรบนโปรไฟล์" (lib/profileVisibility). */
+export async function setVisibilitySwitch(userId: string, key: "creators" | "search" | "interested_events" | ProfilePublicField, on: boolean): Promise<void> {
   const { data, error: readErr } = await supabase.from("profiles").select("public_visibility" as "*").eq("user_id", userId).maybeSingle();
   if (readErr) throw readErr;
   const pv = (data as { public_visibility?: unknown } | null)?.public_visibility;

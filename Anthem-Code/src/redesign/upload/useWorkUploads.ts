@@ -3,7 +3,8 @@ import { useSubscription } from "@/core/subscription";
 import { measureImage } from "@/lib/imageSize";
 import { isGifFile } from "@/lib/uploadProjectGif";
 import { UPLOAD_STAGE } from "@/lib/uploadProgress";
-import { uploadWorkFile, WORK_FILE_MAX_BYTES } from "@/server/mutations/upload";
+import { isVideoFile } from "@/lib/videoAccept";
+import { uploadWorkFile } from "@/server/mutations/upload";
 import type { Media } from "./model";
 
 /** Longest side after the old pipeline's compression (lib/uploadImage: maxWidthOrHeight 1920). */
@@ -12,6 +13,8 @@ const UPLOAD_LABELS: ReadonlySet<string> = new Set([UPLOAD_STAGE.uploadingImage,
 
 const TOO_BIG = "ไฟล์เกิน 20 MB";
 const FAILED = "อัปโหลดไม่สำเร็จ";
+/** A block or slot taken away while its file was going up (Undo brings it back with Retry). */
+const CANCELLED = "ยกเลิกแล้ว";
 
 const scaled = (s: [number, number], gif: boolean): [number, number] => {
   const k = gif ? 1 : Math.min(1, COMPRESSED_MAX / Math.max(s[0], s[1]));
@@ -23,7 +26,10 @@ const scaled = (s: [number, number], gif: boolean): [number, number] => {
  * (recorded at upload, so the site never has to guess a picture's shape — mock rule "ห้ามครอป").
  */
 export type WorkUploadOptions = {
-  /** Largest file accepted (default: the 20 MB of a work) and the row's message when a file is bigger. */
+  /**
+   * Largest file accepted, checked before anything runs, and the row's message when a file is bigger.
+   * Without it the pipeline decides: a work's 20 MB applies to the compressed file (uploadWorkFile).
+   */
   maxBytes?: number;
   tooBig?: string;
   /** Another pipeline for the bytes (EventPost: pictures only, into the events folder). */
@@ -41,7 +47,7 @@ export function useWorkUploads(uid: string, folder: string, initial: Record<stri
   }, []);
   const files = useRef(new Map<string, File>());
   const jobs = useRef(new Map<string, Promise<void>>());
-  const aborts = useRef(new Set<AbortController>());
+  const aborts = useRef(new Map<string, AbortController>());
   const folderRef = useRef(folder);
   const optsRef = useRef(opts);
   useEffect(() => {
@@ -63,12 +69,21 @@ export function useWorkUploads(uid: string, folder: string, initial: Record<stri
     [setMedia],
   );
 
+  /** Stops the upload of `id` (if any): nothing waits for it and its result is dropped. */
+  const stop = useCallback((id: string) => {
+    aborts.current.get(id)?.abort();
+    aborts.current.delete(id);
+    jobs.current.delete(id);
+  }, []);
+
   const start = useCallback(
     (id: string, file: File) => {
+      stop(id);
       files.current.set(id, file);
       const gif = isGifFile(file);
-      const kind: Media["kind"] = file.type.startsWith("video/") ? "video" : "image";
-      if (file.size > (optsRef.current.maxBytes ?? WORK_FILE_MAX_BYTES)) {
+      const kind: Media["kind"] = isVideoFile(file) ? "video" : "image";
+      const max = optsRef.current.maxBytes;
+      if (max != null && file.size > max) {
         setMedia((m) => ({ ...m, [id]: { kind, url: "", size: null, progress: null, error: optsRef.current.tooBig ?? TOO_BIG, name: file.name } }));
         return;
       }
@@ -85,7 +100,7 @@ export function useWorkUploads(uid: string, folder: string, initial: Record<stri
       }
 
       const ac = new AbortController();
-      aborts.current.add(ac);
+      aborts.current.set(id, ac);
       let sending = false;
       const reporter = {
         onStage: (label: string) => {
@@ -99,8 +114,10 @@ export function useWorkUploads(uid: string, folder: string, initial: Record<stri
       };
       const job = (optsRef.current.upload ?? uploadWorkFile)(file, uid, folderRef.current, tier, reporter, ac.signal)
         .then(async (res) => {
+          if (ac.signal.aborted) return;
           // HEIC and some formats do not open as a blob in every browser: measure the uploaded copy then.
           const size = res.kind === "image" ? measured ?? (await measureImage(res.url)) : null;
+          if (ac.signal.aborted) return;
           patch(id, { kind: res.kind, url: res.url, ...(res.poster ? { poster: res.poster } : {}), size, progress: null, error: undefined });
         })
         .catch((e: unknown) => {
@@ -109,12 +126,25 @@ export function useWorkUploads(uid: string, folder: string, initial: Record<stri
           patch(id, { progress: null, error: msg });
         })
         .finally(() => {
-          aborts.current.delete(ac);
+          // Still this upload (not a newer retry of the same block): it is done.
+          if (aborts.current.get(id) !== ac) return;
+          aborts.current.delete(id);
           jobs.current.delete(id);
         });
-      jobs.current.set(id, job);
+      // A stopped upload must not hold Publish: the wait ends at once even if a step (compression) runs on.
+      jobs.current.set(id, Promise.race([job, new Promise<void>((r) => ac.signal.addEventListener("abort", () => r(), { once: true }))]));
     },
-    [uid, tier, patch, setMedia],
+    [uid, tier, patch, setMedia, stop],
+  );
+
+  /** The block or slot of `id` is gone: stop its upload; the row shows "ยกเลิกแล้ว" + Retry if Undo brings it back. */
+  const cancel = useCallback(
+    (id: string) => {
+      if (!aborts.current.has(id)) return;
+      stop(id);
+      patch(id, { progress: null, error: CANCELLED });
+    },
+    [stop, patch],
   );
 
   const retry = useCallback(
@@ -130,18 +160,19 @@ export function useWorkUploads(uid: string, folder: string, initial: Record<stri
     while (jobs.current.size) await Promise.allSettled([...jobs.current.values()]);
   }, []);
 
-  /** Media of an opened work, or a fresh start. */
+  /** Media of an opened work, or a fresh start (uploads still running are stopped). */
   const replaceAll = useCallback(
     (m: Record<string, Media>) => {
+      [...aborts.current.keys()].forEach(stop);
       files.current.clear();
       setMedia(() => m);
     },
-    [setMedia],
+    [setMedia, stop],
   );
 
   /** The newest media, also from inside an async step. */
   const latest = useCallback(() => now.current, []);
 
   const uploading = Object.values(media).some((m) => m.progress != null);
-  return { media, latest, start, retry, settle, replaceAll, uploading };
+  return { media, latest, start, retry, cancel, settle, replaceAll, uploading };
 }

@@ -132,7 +132,7 @@ function MyStudioView({ uid }: { uid: string }) {
           ) : tab === "profile" ? (
             <StudioProfile key={profile?.user_id ?? "none"} uid={uid} profile={profile} say={say} />
           ) : tab === "works" ? (
-            <StudioWorks works={works} onDelete={setConfirm} />
+            <StudioWorks uid={uid} works={works} onDelete={setConfirm} say={say} />
           ) : tab === "event" ? (
             events.isPending ? (
               <ScLoader label="กำลังโหลด" />

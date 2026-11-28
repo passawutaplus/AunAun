@@ -1,6 +1,7 @@
 import { useEffect, useRef, type MouseEvent } from "react";
 import { Link } from "react-router-dom";
 import type { NotificationRow } from "../lib/notificationRows";
+import { SC_LINKS } from "../routes";
 import { onEscape } from "./panels";
 
 type Props = {
@@ -76,6 +77,9 @@ export default function NotificationPanel({ rows, loading, top, right, leaving, 
           {/* The mock has no empty state (question for Beam): one short line. */}
           {!loading && !rows.length ? <p className="nt-none">ยังไม่มีการแจ้งเตือน</p> : null}
         </div>
+        <Link to={SC_LINKS.notifications} className="nt-more" onClick={() => onClose(false)}>
+          ดูทั้งหมด
+        </Link>
       </div>
     </>
   );

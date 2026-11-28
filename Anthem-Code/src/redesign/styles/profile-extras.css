@@ -1,0 +1,115 @@
+/* Profile cover (ProfileExtras.tsx): the 32:9 crop from My Studio › Profile, above the profile grid. */
+
+.sc-app .pf-cover {
+  position: relative;
+  aspect-ratio: 40 / 9;
+  margin: 0 0 32px;
+  border-radius: 38px;
+  overflow: hidden;
+  background: #E6E6E3;
+}
+
+.sc-app .pf-cover img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.sc-app .pf-cc-row {
+  flex-wrap: wrap;
+}
+
+@media (max-width: 600px) {
+  .sc-app .pf-cover {
+    aspect-ratio: 32 / 9;
+    margin: 0 0 8px;
+    border-radius: 20px;
+  }
+}
+
+/* ---------- My Studio › Profile: cover and links (StudioCover.tsx, StudioLinks.tsx) ---------- */
+.sc-app .sc-cov {
+  position: relative;
+  aspect-ratio: 32 / 9;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #ECECEA;
+}
+
+.sc-app .sc-cov img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.sc-app .sc-cov-none {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: #8A8A87;
+}
+
+.sc-app .sc-cov[aria-busy="true"] {
+  opacity: .6;
+}
+
+.sc-app .sc-cov-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sc-app .sc-cov-acts .ms-cpill {
+  height: 40px;
+}
+
+.sc-app .sc-pf-two {
+  margin-top: 12px;
+  gap: 12px;
+}
+
+.sc-app .sc-links {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.sc-app .sc-link-row {
+  align-self: stretch;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) 44px;
+  gap: 10px;
+  align-items: center;
+}
+
+.sc-app .sc-link-add {
+  height: 40px;
+}
+
+@media (max-width: 600px) {
+  .sc-app .sc-pf-two {
+    gap: 10px;
+  }
+
+  .sc-app .sc-link-row {
+    grid-template-columns: minmax(0, 1fr) 44px;
+  }
+
+  .sc-app .sc-link-row input[type="url"] {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .sc-app .sc-link-row .sc-link-x {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+}

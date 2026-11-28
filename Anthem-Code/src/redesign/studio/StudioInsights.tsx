@@ -117,7 +117,7 @@ export default function StudioInsights({ uid, works }: { uid: string; works: Stu
                   const v = r[metric];
                   return (
                     <button key={r.day} type="button" className="ms-bw" aria-label={`${thDay(r.day)} ${v}`}>
-                      <span className={last ? "ms-bar ms-bar-last" : "ms-bar"} style={{ height: `${Math.max(1.5, (v / top) * 100)}%` }} />
+                      <span className={last ? "ms-chartbar ms-chartbar-last" : "ms-chartbar"} style={{ height: `${Math.max(1.5, (v / top) * 100)}%` }} />
                       <span className="ms-tip">
                         {thDay(r.day)}
                         {last ? " (วันนี้)" : ""}

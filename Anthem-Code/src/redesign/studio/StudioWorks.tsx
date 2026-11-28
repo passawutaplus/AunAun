@@ -5,6 +5,8 @@ import type { StudioWork } from "@/server/queries/studio";
 import { SC_LINKS } from "../routes";
 import { count } from "../profile/tiles";
 import EmptyNote from "../main/EmptyNote";
+import { MAX_PINNED, inProfileOrder, useWorkOrder, type OrderedWork } from "./useStudio";
+import "../styles/work-pin.css";
 
 type Filter = "all" | "Published" | "Draft" | "Private";
 const FILTERS: ReadonlyArray<readonly [Filter, string]> = [
@@ -18,8 +20,23 @@ export const editHref = (id: string) => `/portfolio/${id}/edit`;
 export const coverOf = (w: Pick<StudioWork, "cover_url" | "gallery_urls">) => w.cover_url || w.gallery_urls?.[0] || "";
 export const ratioOf = (w: Pick<StudioWork, "cover_width" | "cover_height">) => (w.cover_width && w.cover_height ? w.cover_width / w.cover_height : null);
 
+const PinIcon = ({ fill = "none", stroke = "currentColor", size = 14 }: { fill?: string; stroke?: string; size?: number }) => (
+  <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke={stroke} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 17v5M9 10.8a2 2 0 0 1-1.1 1.8l-1.8.9A2 2 0 0 0 5 15.2v.8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.8a2 2 0 0 0-1.1-1.8l-1.8-.9A2 2 0 0 1 15 10.8V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z" />
+  </svg>
+);
+
+/** Pinned work: pin + its place among the pinned ones (old site), top left of the card. */
+export const PinMark = ({ n }: { n: number }) => (
+  <span className="sc-pin-mark" title="ปักหมุดไว้">
+    <PinIcon fill="#282929" />
+    {n}
+    <span className="sc-sr">ปักหมุดลำดับ {n}</span>
+  </span>
+);
+
 /** A work card of the Studio: cover at its own ratio, title, status chip; children = tools or a picker button. */
-export function StudioTile({ w, i, children, meta, className = "pf-tile ms-tile", style }: { w: StudioWork; i: number; children?: React.ReactNode; meta?: string; className?: string; style?: CSSProperties }) {
+export function StudioTile({ w, i, children, meta, pin, className = "pf-tile ms-tile", style }: { w: StudioWork; i: number; children?: React.ReactNode; meta?: string; pin?: number; className?: string; style?: CSSProperties }) {
   const cover = coverOf(w);
   const ratio = ratioOf(w);
   return (
@@ -38,6 +55,7 @@ export function StudioTile({ w, i, children, meta, className = "pf-tile ms-tile"
         />
       ) : null}
       <span className="pf-art pf-shade" aria-hidden="true" />
+      {pin ? <PinMark n={pin} /> : null}
       {w.status === "Draft" ? <span className="ms-stc ms-stc-draft">Draft</span> : w.status === "Private" ? <span className="ms-stc ms-stc-priv">Private</span> : null}
       <span className="pf-tt">
         <b>{w.title?.trim() || "Untitled"}</b>
@@ -51,17 +69,99 @@ export function StudioTile({ w, i, children, meta, className = "pf-tile ms-tile"
 /**
  * My Studio → Works: every own work with Edit and Delete (mock MyStudio "Works"). Lock/unlock stays in My Profile.
  * The card opens the work over this page, like My Profile; the two buttons sit above that link.
+ * Works are in my profile's order. "จัดลำดับ" (old ManageProjectCard): pin up to 3, move earlier / later.
  */
-export default function StudioWorks({ works, onDelete }: { works: StudioWork[]; onDelete: (w: StudioWork) => void }) {
+export default function StudioWorks({ uid, works, onDelete, say }: { uid: string; works: StudioWork[]; onDelete: (w: StudioWork) => void; say: (t: string) => void }) {
   const location = useLocation();
   const [filter, setFilter] = useState<Filter>("all");
   const [q, setQ] = useState("");
+  const [ordering, setOrdering] = useState(false);
+  // While ordering, news goes in the bar at the bottom (a toast would sit on top of it).
+  const [note, setNote] = useState("");
+  const order = useWorkOrder(uid);
   const query = q.trim().toLocaleLowerCase("th");
+  const ordered = useMemo(() => inProfileOrder(works), [works]);
+  const pinNo = useMemo(() => new Map(ordered.filter((w) => w.is_pinned).map((w, n) => [w.id, n + 1])), [ordered]);
   const list = useMemo(
-    () => works.filter((w) => (filter === "all" || w.status === filter) && (!query || (w.title ?? "").toLocaleLowerCase("th").includes(query))),
-    [works, filter, query],
+    () => ordered.filter((w) => (filter === "all" || w.status === filter) && (!query || (w.title ?? "").toLocaleLowerCase("th").includes(query))),
+    [ordered, filter, query],
   );
   const linkState = useMemo(() => ({ backgroundLocation: location, scList: list.map((w) => w.id) }), [location, list]);
+
+  const failed = () => setNote("บันทึกไม่สำเร็จ ลองอีกทีนะ");
+  const togglePin = (w: OrderedWork) => {
+    if (!w.is_pinned && pinNo.size >= MAX_PINNED) {
+      setNote(`ปักหมุดได้สูงสุด ${MAX_PINNED} งานนะ`);
+      return;
+    }
+    order.pin.mutate({ id: w.id, pinned: !w.is_pinned }, { onError: failed });
+    setNote(w.is_pinned ? "เลิกปักหมุดแล้ว" : "ปักหมุดแล้ว อยู่บนสุดของโปรไฟล์เลย");
+  };
+  // Earlier / later only among works of the same kind (pinned ones always come first).
+  const canMove = (i: number, dir: -1 | 1) => {
+    const j = i + dir;
+    return j >= 0 && j < ordered.length && !!ordered[i].is_pinned === !!ordered[j].is_pinned;
+  };
+  const startOrdering = () => {
+    setFilter("all");
+    setQ("");
+    setNote("");
+    setOrdering(true);
+  };
+  const stopOrdering = () => {
+    setOrdering(false);
+    say("บันทึกลำดับแล้ว");
+  };
+
+  if (ordering) {
+    return (
+      <>
+        <div className="ms-bar">
+          <button type="button" className="ms-pill ms-pill-on" aria-pressed="true" onClick={stopOrdering}>
+            จัดลำดับ
+          </button>
+        </div>
+        <div className="pf-pin">
+          {ordered.map((w, i) => {
+            const name = w.title?.trim() || "Untitled";
+            return (
+              <StudioTile key={w.id} w={w} i={i}>
+                <div className="ms-tools">
+                  <button
+                    type="button"
+                    className="ms-tl2"
+                    aria-pressed={!!w.is_pinned}
+                    aria-label={`${w.is_pinned ? "เลิกปักหมุด" : "ปักหมุด"} ${name}`}
+                    title={w.is_pinned ? "เลิกปักหมุด" : "ปักหมุด"}
+                    onClick={() => togglePin(w)}
+                  >
+                    <PinIcon size={16} fill={w.is_pinned ? "#282929" : "none"} stroke={w.is_pinned ? "#282929" : "rgba(255,255,255,.85)"} />
+                  </button>
+                  <button type="button" className="ms-tl2" disabled={!canMove(i, -1)} aria-label={`เลื่อน ${name} ขึ้นก่อน`} title="เลื่อนขึ้นก่อน" onClick={() => order.move(ordered, w.id, -1, { onError: failed })}>
+                    <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.85)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 19V5M6 11l6-6 6 6" />
+                    </svg>
+                  </button>
+                  <button type="button" className="ms-tl2" disabled={!canMove(i, 1)} aria-label={`เลื่อน ${name} ไปทีหลัง`} title="เลื่อนไปทีหลัง" onClick={() => order.move(ordered, w.id, 1, { onError: failed })}>
+                    <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.85)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 5v14M6 13l6 6 6-6" />
+                    </svg>
+                  </button>
+                </div>
+              </StudioTile>
+            );
+          })}
+        </div>
+        <div className="ms-catbar" role="toolbar" aria-label="จัดลำดับผลงาน">
+          <span role="status">{note || "ลำดับนี้คือที่โชว์ในโปรไฟล์"}</span>
+          <button type="button" onClick={stopOrdering}>
+            เสร็จ
+          </button>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <div className="ms-bar">
@@ -70,6 +170,11 @@ export default function StudioWorks({ works, onDelete }: { works: StudioWork[]; 
             {label}
           </button>
         ))}
+        {works.length > 1 ? (
+          <button type="button" className="ms-pill" aria-pressed="false" onClick={startOrdering}>
+            จัดลำดับ
+          </button>
+        ) : null}
         <span className="ms-grow" />
         <label className="ms-search">
           <span className="ms-sr">ค้นหาผลงาน</span>
@@ -90,7 +195,7 @@ export default function StudioWorks({ works, onDelete }: { works: StudioWork[]; 
           </Link>
         ) : null}
         {list.map((w, i) => (
-          <StudioTile key={w.id} w={w} i={i} meta={w.status === "Published" ? `${count(w.views ?? 0)} views` : ""}>
+          <StudioTile key={w.id} w={w} i={i} pin={pinNo.get(w.id)} meta={w.status === "Published" ? `${count(w.views ?? 0)} views` : ""}>
             <Link to={`/showcase/${w.id}`} state={linkState} className="pf-open" aria-label={`เปิด ${w.title?.trim() || "Untitled"}`} />
             <div className="ms-tools">
               <Link to={editHref(w.id)} className="ms-tl2" aria-label={`แก้ไข ${w.title ?? ""}`} title="แก้ไข">

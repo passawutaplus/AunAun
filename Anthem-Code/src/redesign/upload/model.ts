@@ -9,6 +9,9 @@
  * A work whose blocks carry `scStyle` or `sc_layout` was made in this editor: the Work page shows it like the Preview.
  */
 import type { CSSProperties } from "react";
+import { isAiUseLevel, parseAiUseLevel, serializeAiUseLevel, type AiUseLevel } from "@/lib/aiDisclosure";
+import { isLicenseType, type LicenseType } from "@/lib/licenses";
+import { parseProjectAssets, projectAssetsToExternalLinks, toStoredProjectAssets, type ProjectAsset } from "@/lib/projectAssets";
 import { isScCategory, type ScCategory } from "../lib/categories";
 import { htmlToText, isScContent } from "../work/workContent";
 
@@ -195,7 +198,16 @@ export type Draft = {
   category: ScCategory | null;
   desc: string;
   tags: string;
-  catalogId: string | null;
+  /** TOOLS (`tools`), as the old editor's ToolPicker. */
+  tools: string[];
+  /** CATALOG: every catalog the work is in — a work may be in many (owner 2026-11-28). */
+  catalogIds: string[];
+  /** More: LICENSE (`license_type`, `license_note` when "custom") and AI (`ai_assisted` + `ai_disclosure_note`; null = no AI). */
+  license: LicenseType;
+  licenseNote: string;
+  ai: AiUseLevel | null;
+  /** More: FILES & LINKS (`project_assets`; clean links also in the legacy `external_links`), as the old ProjectAssetsEditor. */
+  assets: ProjectAsset[];
   /** More: YEAR (the year the work was made) and ASK VIEWERS (owner 2026-11-28; migration 20261129110000). */
   year: string;
   ask: string;
@@ -215,7 +227,12 @@ export function emptyDraft(firstRowId: string): Draft {
     category: null,
     desc: "",
     tags: "",
-    catalogId: null,
+    tools: [],
+    catalogIds: [],
+    license: "all_rights",
+    licenseNote: "",
+    ai: null,
+    assets: [],
     year: String(new Date().getFullYear()),
     ask: "",
   };
@@ -261,13 +278,17 @@ export function coverMediaId(mode: Mode, d: Draft, media: Record<string, Media>)
   return k ? d.fills[k] : null;
 }
 
-/** Image · Title · Category (mock checks). */
+/** Image · Title · Category (mock checks); a "custom" licence also needs its terms (old editor rule). */
 export function readiness(mode: Mode, d: Draft, media: Record<string, Media>) {
   const hasImage = !!coverMediaId(mode, d, media);
   const hasTitle = !!d.title.trim();
   const hasCategory = !!d.category;
-  return { hasImage, hasTitle, hasCategory, ready: hasImage && hasTitle && hasCategory };
+  const hasLicense = d.license !== "custom" || !!d.licenseNote.trim();
+  return { hasImage, hasTitle, hasCategory, hasLicense, ready: hasImage && hasTitle && hasCategory && hasLicense };
 }
+
+export const TOOLS_MAX = 20;
+export const LICENSE_NOTE_MAX = 500;
 
 /** Anything worth keeping as a draft (mock hasContent). */
 export const hasContent = (d: Draft) => d.blocks.length > 0 || Object.keys(d.fills).length > 0 || !!d.title.trim();
@@ -352,6 +373,13 @@ export type WorkFields = {
   video_urls: string[];
   made_year: number | null;
   ask_viewers: string | null;
+  tools: string[];
+  license_type: LicenseType;
+  license_note: string;
+  ai_assisted: boolean;
+  ai_disclosure_note: string;
+  project_assets: unknown[];
+  external_links: unknown[];
 };
 
 /** The columns of `anthem.projects` for a work, from what is on screen. Unfinished uploads and errors are left out. */
@@ -417,6 +445,14 @@ export function toWorkFields(mode: Mode, d: Draft, media: Record<string, Media>)
     video_urls: videos,
     made_year: parseYear(d.year),
     ask_viewers: d.ask.trim() || null,
+    tools: d.tools.map((t) => t.trim()).filter(Boolean),
+    license_type: d.license,
+    license_note: d.license === "custom" ? d.licenseNote.trim() : "",
+    ai_assisted: d.ai !== null,
+    ai_disclosure_note: serializeAiUseLevel(d.ai !== null, d.ai),
+    // The database keeps the scan function's verdict of an unchanged item, whatever is sent (migration 20261010100000).
+    project_assets: toStoredProjectAssets(d.assets),
+    external_links: projectAssetsToExternalLinks(d.assets),
   };
 }
 
@@ -436,6 +472,19 @@ export type StoredWork = {
   media_sizes: Record<string, [number, number]> | null;
   made_year?: number | null;
   ask_viewers?: string | null;
+  tools?: string[] | null;
+  license_type?: string | null;
+  license_note?: string | null;
+  ai_assisted?: boolean | null;
+  ai_disclosure_note?: string | null;
+  project_assets?: unknown;
+  external_links?: unknown;
+};
+
+/** Same reading as the old editor (parseAiUseLevel): the flag off = no AI, whatever the note says. */
+const aiOf = (row: StoredWork): AiUseLevel | null => {
+  const level = parseAiUseLevel(row.ai_disclosure_note, !!row.ai_assisted);
+  return level && isAiUseLevel(level) ? level : null;
 };
 
 const isHttp = (u: unknown): u is string => typeof u === "string" && /^https?:\/\//i.test(u.trim());
@@ -445,7 +494,7 @@ export { isScContent };
 /**
  * A saved work as editor state. Works from the old editor become Basic blocks: headings and texts
  * turn into text blocks, image + text modules into a picture then its text, galleries into one
- * picture per block. Columns this editor does not show (tools, licence, …) are never written.
+ * picture per block. Columns this editor does not show (price, hire, credits, …) are never written.
  */
 export function fromWork(row: StoredWork, newId: () => string): { mode: Mode; draft: Draft; media: Record<string, Media> } {
   const media: Record<string, Media> = {};
@@ -553,7 +602,12 @@ export function fromWork(row: StoredWork, newId: () => string): { mode: Mode; dr
     category: isScCategory(row.sc_category) ? row.sc_category : null,
     desc: htmlToText(row.description ?? ""),
     tags: (row.tags ?? []).join(", "),
-    catalogId: null,
+    tools: (row.tools ?? []).filter((t): t is string => typeof t === "string" && !!t.trim()),
+    catalogIds: [],
+    license: row.license_type && isLicenseType(row.license_type) ? row.license_type : "all_rights",
+    licenseNote: row.license_note ?? "",
+    ai: aiOf(row),
+    assets: parseProjectAssets(row.project_assets, row.external_links),
     year: row.made_year ? String(row.made_year) : "",
     ask: row.ask_viewers ?? "",
   };

@@ -1,14 +1,20 @@
-import { useEffect, useMemo, useRef, useState, type ChangeEvent, type CSSProperties, type KeyboardEvent, type MouseEvent } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ChangeEvent, type CSSProperties, type KeyboardEvent, type MouseEvent } from "react";
 import { Link, Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useSignedStorageUrl } from "@/hooks/useSignedStorageUrl";
 import { SC_LINKS } from "../routes";
+import LoadError from "../shell/LoadError";
 import { onEscape } from "../shell/panels";
-import { clock, dayWord, listTime, newDay } from "../chat/chatFormat";
+import { baht, clock, dayWord, listTime, newDay } from "../chat/chatFormat";
+import DocCardView from "../chat/DocCard";
+import ReportPicker from "../chat/ReportPicker";
 import {
+  chatMsgQuote,
   useChatActions,
+  useChatRoom,
   useChatRooms,
   usePersonWorks,
+  useRoomLock,
   useRoomMessages,
   type ChatMsg,
   type ChatRoom,
@@ -25,9 +31,12 @@ type Props = {
   embedded?: boolean;
   onClose?: () => void;
   initialRoomId?: string | null;
+  /** "ทักจากงาน": the work a greeting came from (big popup from ChatDock; on its own page: `location.state.greetWork`). */
+  greetWork?: ChatWork | null;
 };
 
 const CREATORS = `${SC_LINKS.home}?tab=creators`;
+const REPORTED = "ส่งรายงานแล้ว ทีมงานจะตรวจสอบให้นะ";
 const bg = (url: string | null | undefined): CSSProperties | undefined => (url ? { backgroundImage: `url(${JSON.stringify(url)})` } : undefined);
 
 function Avatar({ room, size, hidden }: { room: ChatRoom; size: number; hidden?: boolean }) {
@@ -52,6 +61,13 @@ function Picture({ path }: { path: string }) {
   );
 }
 
+/** A picture on its way up: the preview from this device (if any) under a spinner, until the stored one replaces it. */
+const Uploading = ({ url }: { url: string | null }) => (
+  <span role="img" aria-label="กำลังส่งรูป" className="ch-img ch-up" style={bg(url)}>
+    <span aria-hidden="true" className="ch-spin" />
+  </span>
+);
+
 function MediaThumb({ path }: { path: string }) {
   const url = useSignedStorageUrl(path);
   return <span role="img" aria-label="รูปในแชท" className="ch-th" style={bg(url)} />;
@@ -67,15 +83,29 @@ const Chevron = ({ open }: { open: boolean }) => (
  * Chat (mock: pages/Chat.dc.html): list · room · chat info. On its own page (`/chat`, `/chat/:id`) and as the
  * big popup of ChatDock (`embedded`). Phones: list ↔ room, each full screen (mock data-chv list / conv).
  */
-export function ChatView({ embedded = false, onClose, initialRoomId = null }: Props) {
+export function ChatView({ embedded = false, onClose, initialRoomId = null, greetWork = null }: Props) {
   const navigate = useNavigate();
+  const location = useLocation();
   const params = useParams<{ id?: string }>();
-  const { rooms, loading } = useChatRooms(true);
+  const { rooms, loading, error: listError, refetch: refetchList } = useChatRooms(true);
   const actions = useChatActions();
 
   const [localId, setLocalId] = useState<string | null>(initialRoomId);
   const activeId = embedded ? localId : params.id ?? null;
-  const cur = useMemo(() => rooms.find((r) => r.id === activeId) ?? null, [rooms, activeId]);
+  // A room not in the newest 100 (e.g. a notification link) is read by itself.
+  const roomQ = useChatRoom(activeId, { rooms, loading });
+  const cur = roomQ.room;
+  const lock = useRoomLock(cur);
+
+  // "ทักจากงาน": the card shows on top until the first message goes out with it.
+  const stateWork = embedded ? null : (location.state as { greetWork?: ChatWork } | null)?.greetWork ?? null;
+  const [about, setAbout] = useState<{ room: string; work: ChatWork } | null>(() => {
+    const w = embedded ? greetWork : stateWork;
+    return w && activeId ? { room: activeId, work: w } : null;
+  });
+  useEffect(() => {
+    if (stateWork && params.id) setAbout({ room: params.id, work: stateWork });
+  }, [location.key]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [filter, setFilter] = useState<"all" | "req">("all");
   const [q, setQ] = useState("");
@@ -88,8 +118,15 @@ export function ChatView({ embedded = false, onClose, initialRoomId = null }: Pr
   const [worksAll, setWorksAll] = useState(false);
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
+  const [reporting, setReporting] = useState(false);
+  /** Reply: the message the next text answers (bar above the text box). */
+  const [replyTo, setReplyTo] = useState<{ id: string; mine: boolean; text: string } | null>(null);
+  /** Message whose Reply / Unsend buttons show (a tap on phones; hover / focus on PC). */
+  const [sel, setSel] = useState<string | null>(null);
+  const [hl, setHl] = useState<string | null>(null);
   const noticeTimer = useRef<number>();
   const logRef = useRef<HTMLDivElement>(null);
+  const inRef = useRef<HTMLTextAreaElement>(null);
 
   const say = (text: string) => {
     window.clearTimeout(noticeTimer.current);
@@ -109,10 +146,11 @@ export function ChatView({ embedded = false, onClose, initialRoomId = null }: Pr
     if (cur?.unread) void actions.openRoom(cur);
   }, [readKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const { items } = useRoomMessages(cur?.id ?? null);
+  const { items, loading: msgsLoading, error: msgsError, refetch: refetchMsgs } = useRoomMessages(cur?.id ?? null);
   const theirWorks = usePersonWorks(info && cur ? cur.other.id : null);
   const { user } = useAuth();
   const myWorks = usePersonWorks(share ? user?.id : null);
+  const aboutWork = about && cur && about.room === cur.id && !items.some((m) => m.work?.id === about.work.id) ? about.work : null;
 
   // Open a room / send → the newest message (mock logEnd).
   const logKey = cur ? `${cur.id}:${items.length}` : "";
@@ -120,6 +158,14 @@ export function ChatView({ embedded = false, onClose, initialRoomId = null }: Pr
     const el = logRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [logKey]);
+
+  // The text box grows with the lines (Shift+Enter), up to its max height in chat.css.
+  useLayoutEffect(() => {
+    const el = inRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [draft, cur?.id]);
 
   useEffect(() => (embedded && onClose ? onEscape(onClose) : undefined), [embedded, onClose]);
 
@@ -129,6 +175,9 @@ export function ChatView({ embedded = false, onClose, initialRoomId = null }: Pr
     setFq("");
     setShare(false);
     setWorksAll(false);
+    setReporting(false);
+    setReplyTo(null);
+    setSel(null);
     if (embedded) setLocalId(id);
     else navigate(id ? `/chat/${id}` : SC_LINKS.chat, { replace: !!id && !!activeId });
   };
@@ -159,12 +208,56 @@ export function ChatView({ embedded = false, onClose, initialRoomId = null }: Pr
 
   const send = () => {
     const text = draft.trim();
-    if (!cur || !text) return;
+    if (!cur || !text || lock) return;
+    const work = aboutWork;
+    const answer = replyTo;
     setDraft("");
-    void actions.sendText(cur.id, text).catch((e: unknown) => {
-      setDraft(text);
-      say(e instanceof Error ? e.message : "ส่งไม่สำเร็จ");
-    });
+    setReplyTo(null);
+    void actions.sendText(cur.id, text, { about: work, replyTo: answer?.id }).then(
+      () => {
+        if (work) setAbout(null);
+      },
+      (e: unknown) => {
+        setDraft((d) => d || text);
+        setReplyTo((r) => r ?? answer);
+        say(e instanceof Error ? e.message : "ส่งไม่สำเร็จ");
+      },
+    );
+  };
+  const startReply = (m: ChatMsg) => {
+    setReplyTo({ id: m.id, mine: m.me, text: chatMsgQuote(m) });
+    setSel(null);
+    inRef.current?.focus();
+  };
+  const unsend = (m: ChatMsg) => {
+    if (!cur) return;
+    setSel(null);
+    if (replyTo?.id === m.id) setReplyTo(null);
+    void actions.unsend(cur.id, m).catch((e: unknown) => say(e instanceof Error ? e.message : "ยกเลิกไม่สำเร็จ"));
+  };
+  /** Tap a quote → the message it answers (when it is among the loaded ones), lit for a moment. */
+  const jump = (id: string) => {
+    const el = logRef.current?.querySelector<HTMLElement>(`[data-mid="${id}"]`);
+    if (!el) {
+      say("ข้อความนี้เก่าไปหน่อย เลื่อนไปไม่ถึงนะ");
+      return;
+    }
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    setHl(id);
+    window.setTimeout(() => setHl((v) => (v === id ? null : v)), 1500);
+  };
+  /** A tap on a message row (not on a link / button / a box drawn over the chat) shows its buttons. */
+  const pickRow = (e: MouseEvent<HTMLDivElement>, m: ChatMsg) => {
+    const t = e.target as HTMLElement;
+    if (!e.currentTarget.contains(t) || t.closest("a, button, input, textarea, label")) return;
+    setSel((v) => (v === m.id ? null : m.id));
+  };
+  const sendReport = (reason: Parameters<typeof actions.report>[1]) => {
+    if (!cur) return;
+    removeCur(async () => {
+      await actions.report(cur, reason);
+      setReporting(false);
+    }, REPORTED);
   };
   const sendWork = (w: ChatWork) => {
     if (!cur) return;
@@ -174,13 +267,19 @@ export function ChatView({ embedded = false, onClose, initialRoomId = null }: Pr
   const pickImg = (e: ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     e.target.value = "";
-    if (!f || !cur) return;
+    if (!f || !cur || lock) return;
     void actions.sendImage(cur.id, f).catch((err: unknown) => say(err instanceof Error ? err.message : "ส่งรูปไม่สำเร็จ"));
   };
-  const onKey = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+  // Enter sends, Shift+Enter is a new line (not while a Thai / IME word is being composed).
+  const onKey = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
       send();
+    }
+    // Esc while replying drops the reply first (the big popup stays open).
+    if (e.key === "Escape" && replyTo && !e.nativeEvent.isComposing) {
+      e.stopPropagation();
+      setReplyTo(null);
     }
   };
   const toggleFind = () => {
@@ -214,7 +313,8 @@ export function ChatView({ embedded = false, onClose, initialRoomId = null }: Pr
   const works = theirWorks.data ?? [];
   const showInfo = info && !!cur;
   const now = new Date();
-  const chv = (embedded ? "e" : "") + (cur ? "conv" : "list");
+  // Phones: a room opened by link shows its column while it loads (or says it is not there).
+  const chv = (embedded ? "e" : "") + (cur || activeId ? "conv" : "list");
 
   const roomList = (
     <aside className="ch-list" aria-label="รายการแชท">
@@ -291,7 +391,8 @@ export function ChatView({ embedded = false, onClose, initialRoomId = null }: Pr
             </span>
           </button>
         ))}
-        {!loading && !list.length ? (
+        {listError && !rooms.length ? <LoadError label="โหลดแชทไม่ขึ้น ลองใหม่อีกทีนะ" onRetry={() => void refetchList()} /> : null}
+        {!loading && !listError && !list.length ? (
           <div className="ch-empty">
             <p>{query ? "ไม่มีแชทที่ตรงกัน" : onReq ? "ไม่มีคำขอใหม่" : "ยังไม่มีแชท ลองทักทายครีเอเตอร์ที่ชอบดูสิ"}</p>
             {!query && !onReq ? (
@@ -306,7 +407,48 @@ export function ChatView({ embedded = false, onClose, initialRoomId = null }: Pr
   );
 
   const bubble = (m: ChatMsg) => {
+    if (m.kind === "img" && m.pending) return <Uploading url={m.localUrl} />;
     if (m.kind === "img" && m.path) return <Picture path={m.path} />;
+    if (m.kind === "profile" && m.profile)
+      return (
+        <Link to={m.profile.href} className="ch-card-l ch-prof" onClick={toProfile}>
+          <span aria-hidden="true" className="ch-av" style={{ width: 44, height: 44, ...bg(m.profile.avatar) }}>
+            {m.profile.avatar ? null : m.profile.name.slice(0, 1).toUpperCase()}
+          </span>
+          <span className="ch-wt">
+            <span lang="en">Profile</span>
+            <span>{m.profile.name}</span>
+            {m.profile.field ? <span className="ch-cs">{m.profile.field}</span> : null}
+          </span>
+        </Link>
+      );
+    if (m.kind === "doc" && m.doc) return <DocCardView doc={m.doc} />;
+    if (m.kind === "gone")
+      return (
+        <span className="ch-bub ch-unsent" data-me={m.me || undefined}>
+          {m.text}
+        </span>
+      );
+    if (m.kind === "object" && m.object) {
+      const o = m.object;
+      const inner = (
+        <>
+          {o.cover ? <span aria-hidden="true" className="ch-wth" style={bg(o.cover)} /> : null}
+          <span className="ch-wt">
+            <span>สินค้า</span>
+            <span>{o.title}</span>
+            {o.price || o.note ? <span className="ch-cs">{[o.price ? baht(o.price) : "", o.note].filter(Boolean).join(" · ")}</span> : null}
+          </span>
+        </>
+      );
+      return o.id ? (
+        <Link to={`/object/${o.id}`} className="ch-work" onClick={toProfile}>
+          {inner}
+        </Link>
+      ) : (
+        <span className="ch-work">{inner}</span>
+      );
+    }
     if (m.kind === "exp" || (m.kind === "img" && !m.path))
       return (
         <span className="ch-exp">
@@ -327,12 +469,65 @@ export function ChatView({ embedded = false, onClose, initialRoomId = null }: Pr
           </span>
         </Link>
       );
+    const ev = m.event;
+    const q = m.replyTo;
+    const text =
+      m.text || q ? (
+        <span className="ch-bub" data-me={m.me || undefined}>
+          {q ? (
+            <button type="button" className="ch-quote" aria-label={`ไปที่ข้อความที่ตอบ: ${q.text}`} onClick={() => jump(q.id)}>
+              <span>{q.mine ? "คุณ" : cur?.other.name}</span>
+              <span>{q.text}</span>
+            </button>
+          ) : null}
+          {m.text}
+        </span>
+      ) : null;
+    if (!ev) return text;
     return (
-      <span className="ch-bub" data-me={m.me || undefined}>
-        {m.text}
+      <span className="ch-stack" data-me={m.me || undefined}>
+        {text}
+        <Link to={`/exhibition/${ev.id}`} className="ch-card-l ch-ev" onClick={toProfile}>
+          <span aria-hidden="true" className="ch-ev-th" style={bg(ev.cover)}>
+            {ev.cover ? null : (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8A8A87" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="4" y="5.5" width="16" height="14" rx="2.5" />
+                <path d="M4 10h16M8.5 3.5v4M15.5 3.5v4" />
+              </svg>
+            )}
+          </span>
+          <span className="ch-wt">
+            <span lang="en">Event</span>
+            <span>{ev.title}</span>
+            {ev.when ? <span className="ch-cs">{ev.when}</span> : null}
+          </span>
+        </Link>
       </span>
     );
   };
+
+  // Reply (when I can write here) · Unsend (mine, 24 hours). On the outer side of the bubble.
+  const canWrite = !!cur && !cur.request && !lock;
+  const msgActs = (m: ChatMsg) =>
+    m.pending || m.kind === "gone" || (!canWrite && !m.canUnsend) ? null : (
+      <span className="ch-macts" data-me={m.me || undefined}>
+        {canWrite ? (
+          <button type="button" className="ch-mact" aria-label="ตอบกลับข้อความนี้" title="ตอบกลับ" onClick={() => startReply(m)}>
+            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9.5 7L4.5 12l5 5" />
+              <path d="M4.5 12H14a5.5 5.5 0 0 1 5.5 5.5V19" />
+            </svg>
+          </button>
+        ) : null}
+        {m.canUnsend ? (
+          <button type="button" className="ch-mact" aria-label="ยกเลิกการส่งข้อความนี้" title="ยกเลิกการส่ง" onClick={() => unsend(m)}>
+            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12" />
+            </svg>
+          </button>
+        ) : null}
+      </span>
+    );
 
   const room = cur ? (
     <>
@@ -365,11 +560,29 @@ export function ChatView({ embedded = false, onClose, initialRoomId = null }: Pr
         </div>
       ) : null}
       <div role="log" aria-live="polite" className="ch-log" ref={logRef}>
-        {!items.length ? <p className="ch-start">ลองบอกเขาสั้นๆ ว่าชอบอะไรในงานของเขา</p> : null}
+        {aboutWork ? (
+          <Link to={`/showcase/${aboutWork.id}`} className="ch-about" onClick={toProfile}>
+            <span aria-hidden="true" className="ch-about-th" style={bg(aboutWork.cover)} />
+            <span className="ch-wt">
+              <span>ทักจากงาน · ส่งข้อความแรกแล้วเขาจะเห็นงานนี้ด้วยนะ</span>
+              <span>{aboutWork.title}</span>
+            </span>
+          </Link>
+        ) : null}
+        {msgsError && !items.length ? <LoadError label="โหลดข้อความไม่ขึ้น ลองใหม่อีกทีนะ" onRetry={() => void refetchMsgs()} /> : null}
+        {!msgsLoading && !msgsError && !items.length ? <p className="ch-start">ลองบอกเขาสั้นๆ ว่าชอบอะไรในงานของเขา</p> : null}
         {msgs.map(({ m, day, first, hit, gap }) => (
-          <div key={m.id} className="ch-m">
+          <div key={m.id} className="ch-m" data-mid={m.id}>
             {day ? <span className="ch-day">{dayWord(m.at, now)}</span> : null}
-            <div className="ch-mr" data-me={m.me || undefined} data-gap={gap || undefined} data-miss={hit ? undefined : ""}>
+            <div
+              className="ch-mr"
+              data-me={m.me || undefined}
+              data-gap={gap || undefined}
+              data-miss={hit ? undefined : ""}
+              data-sel={sel === m.id || undefined}
+              data-hl={hl === m.id || undefined}
+              onClick={(e) => pickRow(e, m)}
+            >
               {m.me ? null : <Avatar room={cur} size={32} hidden={!first} />}
               {m.me ? (
                 <span className="ch-t">
@@ -386,17 +599,18 @@ export function ChatView({ embedded = false, onClose, initialRoomId = null }: Pr
               ) : null}
               {bubble(m)}
               {m.me ? null : <span className="ch-t">{clock(m.at)}</span>}
+              {msgActs(m)}
             </div>
           </div>
         ))}
       </div>
-      {cur.request ? (
+      {cur.request && !lock ? (
         <div className="ch-req">
           <p>
             <span>{cur.other.name}</span> อยากทักทายคุณ
           </p>
           <div lang="en">
-            <button type="button" className="ch-rq-rep" disabled={busy} onClick={() => removeCur(() => actions.report(cur), "ส่งรายงานแล้ว ทีมงานจะตรวจสอบ")}>
+            <button type="button" className="ch-rq-rep" disabled={busy} aria-haspopup="dialog" onClick={() => setReporting(true)}>
               Report
             </button>
             <button type="button" className="ch-rq-ign" disabled={busy} onClick={() => removeCur(() => actions.ignore(cur.id), "")}>
@@ -417,7 +631,25 @@ export function ChatView({ embedded = false, onClose, initialRoomId = null }: Pr
             </button>
           </div>
         </div>
+      ) : lock ? (
+        <p role="status" className="ch-lock">
+          {lock}
+        </p>
       ) : (
+        <>
+        {replyTo ? (
+          <div className="ch-replybar" role="status">
+            <span className="ch-replybar-t">
+              <span>{replyTo.mine ? "ตอบกลับข้อความของคุณ" : `ตอบกลับ ${cur.other.name}`}</span>
+              <span>{replyTo.text}</span>
+            </span>
+            <button type="button" className="ch-rb" aria-label="ยกเลิกการตอบกลับ" title="ยกเลิก" onClick={() => setReplyTo(null)}>
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+                <path d="M6 6l12 12M18 6L6 18" />
+              </svg>
+            </button>
+          </div>
+        ) : null}
         <div className="ch-cmp">
           <label className="ch-rb" title="ส่งรูป">
             <span className="sc-sr">ส่งรูป</span>
@@ -439,7 +671,18 @@ export function ChatView({ embedded = false, onClose, initialRoomId = null }: Pr
           <label htmlFor="ch-in" className="sc-sr">
             พิมพ์ข้อความถึง {cur.other.name}
           </label>
-          <input id="ch-in" type="text" value={draft} maxLength={4000} onChange={(e) => setDraft(e.target.value)} onKeyDown={onKey} placeholder="พิมพ์ข้อความ" autoComplete="off" />
+          <textarea
+            id="ch-in"
+            ref={inRef}
+            rows={1}
+            value={draft}
+            maxLength={4000}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={onKey}
+            placeholder="พิมพ์ข้อความ"
+            autoComplete="off"
+            enterKeyHint="send"
+          />
           <button type="button" aria-label="ส่ง" className="ch-send" data-on={draft.trim() ? "" : undefined} onClick={send}>
             <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M5 12h14M13 6l6 6-6 6" />
@@ -458,6 +701,32 @@ export function ChatView({ embedded = false, onClose, initialRoomId = null }: Pr
             </div>
           ) : null}
         </div>
+        </>
+      )}
+    </>
+  ) : activeId ? (
+    <>
+      <div className="ch-rh ch-rh-bare">
+        <button type="button" className="ch-rb ch-back" aria-label="กลับไปรายการแชท" onClick={() => go(null)}>
+          <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M19 12H5M11 6l-6 6 6 6" />
+          </svg>
+        </button>
+      </div>
+      {roomQ.error ? (
+        <LoadError label="โหลดแชทนี้ไม่ขึ้น ลองใหม่อีกทีนะ" onRetry={() => void roomQ.refetch()} />
+      ) : roomQ.missing ? (
+        <div className="ch-pick ch-gone" role="status">
+          <p>ไม่พบบทสนทนานี้</p>
+          <p>อาจถูกลบไปแล้ว หรือคุณไม่ได้อยู่ในแชทนี้</p>
+          <button type="button" onClick={() => go(null)}>
+            กลับไปรายการแชท
+          </button>
+        </div>
+      ) : (
+        <p className="ch-pick" role="status" aria-label="กำลังโหลดแชท">
+          <span aria-hidden="true" className="ch-spin" />
+        </p>
       )}
     </>
   ) : (
@@ -566,7 +835,7 @@ export function ChatView({ embedded = false, onClose, initialRoomId = null }: Pr
                   <button type="button" className="ch-mi" disabled={busy} onClick={() => removeCur(() => actions.block(cur), `บล็อก ${cur.other.name} แล้ว เขาจะทักคุณไม่ได้อีก`)}>
                     Block
                   </button>
-                  <button type="button" className="ch-mi ch-mi-red" disabled={busy} onClick={() => removeCur(() => actions.report(cur), "ส่งรายงานแล้ว ทีมงานจะตรวจสอบ")}>
+                  <button type="button" className="ch-mi ch-mi-red" disabled={busy} aria-haspopup="dialog" onClick={() => setReporting(true)}>
                     Report
                   </button>
                 </div>
@@ -607,6 +876,7 @@ export function ChatView({ embedded = false, onClose, initialRoomId = null }: Pr
           </svg>
         </button>
       ) : null}
+      {reporting && cur ? <ReportPicker name={cur.other.name} busy={busy} onSend={sendReport} onClose={() => setReporting(false)} /> : null}
     </div>
   );
 

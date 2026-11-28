@@ -1156,3 +1156,38 @@
     padding-top: 16px;
   }
 }
+
+/* ---------- delete (edit mode) ---------- */
+.sc-app .ep-del {
+  align-self: center;
+  margin: 0;
+  padding: 6px 4px;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  color: #8A8A87;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sc-app .ep-del:hover {
+  color: #B8321F;
+}
+
+.sc-app .ep-del:focus-visible {
+  outline: 2px solid #282929;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.sc-app .ep-btn-del {
+  background: #B8321F;
+}
+
+.sc-app .ep-btn-del[aria-busy="true"] {
+  opacity: .6;
+  cursor: progress;
+}

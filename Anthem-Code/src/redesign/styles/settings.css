@@ -514,3 +514,62 @@
 .sc-app .st-ln-sm {
   height: 36px;
 }
+
+.sc-app .st-sw:disabled {
+  cursor: default;
+  opacity: .45;
+}
+
+/* short message at the bottom (the pages' dark pill, like ms-toast); failures in red ink */
+.sc-app .st-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(40px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  z-index: 70;
+  max-width: calc(100% - 32px);
+  min-height: 44px;
+  padding: 10px 20px;
+  box-sizing: border-box;
+  border-radius: 22px;
+  background: #282929;
+  color: #FFFFFF;
+  font-size: 14px;
+  line-height: 1.4;
+  display: flex;
+  align-items: center;
+  text-align: center;
+}
+
+.sc-app .st-toast[data-bad] {
+  background: #B8321F;
+}
+
+/* Privacy: "ใครเห็นอะไรบนโปรไฟล์" heading over its switches */
+.sc-app .st-group {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 32px 0 12px;
+  border-bottom: 1px solid var(--sc-divider);
+}
+
+.sc-app .st-group h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 400;
+}
+
+.sc-app .st-group-ln {
+  font-size: 13px;
+  color: var(--sc-ink-2);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  white-space: nowrap;
+}
+
+.sc-app .st-group-ln:focus-visible {
+  outline: 2px solid var(--sc-ink);
+  outline-offset: 2px;
+}

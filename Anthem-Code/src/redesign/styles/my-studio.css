@@ -1003,7 +1003,8 @@
   align-items: flex-end;
 }
 
-.sc-app .ms-bar {
+/* The chart's bars (was .ms-bar, which is also the filter row of Works / Event: the row turned grey). */
+.sc-app .ms-chartbar {
   display: block;
   width: 100%;
   border-radius: 4px 4px 0 0;
@@ -1012,9 +1013,9 @@
   transition: height .4s ease, background .2s ease;
 }
 
-.sc-app .ms-bar-last,
-.sc-app .ms-bw:hover .ms-bar,
-.sc-app .ms-bw:focus-visible .ms-bar {
+.sc-app .ms-chartbar-last,
+.sc-app .ms-bw:hover .ms-chartbar,
+.sc-app .ms-bw:focus-visible .ms-chartbar {
   background: #282929;
 }
 

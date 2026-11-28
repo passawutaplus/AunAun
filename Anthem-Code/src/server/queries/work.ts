@@ -30,15 +30,29 @@ export type WorkRow = {
   /** Upload YEAR / ASK VIEWERS (migration 20261129110000); undefined until it runs. */
   made_year?: number | null;
   ask_viewers?: string | null;
+  /** Credits (old ProjectSidePanel / ProjectCreditsBlock): made together with, team credits, the studio. */
+  collab_user_ids?: string[] | null;
+  credited_user_ids?: string[] | null;
+  studio_id?: string | null;
+  /** Attachments and links with their safety scan (lib/projectAssets); external_links is the older list. */
+  project_assets?: unknown;
+  external_links?: unknown;
 };
+
+/** Credits and attachments, the same columns the old page read. */
+const WORK_EXTRA_SELECT = "collab_user_ids, credited_user_ids, studio_id, project_assets, external_links";
 
 /** One work for the Work page (RLS decides who may read an unpublished one). */
 export async function getWork(id: string): Promise<WorkRow | null> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const read = (cols: string) => (supabase.from("projects") as any).select(cols).eq("id", id).maybeSingle();
-  let { data, error } = await read(`${WORK_SELECT}, made_year, ask_viewers`);
+  // Widest first; a column that does not exist (yet) drops that group rather than the page.
+  let { data, error } = await read(`${WORK_SELECT}, ${WORK_EXTRA_SELECT}, made_year, ask_viewers`);
   // Before migration 20261129110000 the two columns do not exist yet.
+  if (error && isSchemaMismatchError(error)) ({ data, error } = await read(`${WORK_SELECT}, ${WORK_EXTRA_SELECT}`));
   if (error && isSchemaMismatchError(error)) ({ data, error } = await read(WORK_SELECT));
+  // Not a work id at all (/showcase/abc): no such work — the 404, not "try again".
+  if (error && String((error as { code?: unknown }).code) === "22P02") return null;
   if (error) throw error;
   return (data as WorkRow | null) ?? null;
 }
@@ -139,4 +153,37 @@ export async function getCommentSmiles(commentIds: readonly string[]): Promise<A
     throw error;
   }
   return (data ?? []) as Array<{ comment_id: string; user_id: string }>;
+}
+
+/**
+ * The own ratio (width / height) of the pictures of some works, by picture url, from the sizes saved with
+ * each work (media_sizes, and the cover's size). Pictures of old works may have none.
+ */
+export async function getPictureRatios(projectIds: readonly string[]): Promise<Record<string, number>> {
+  if (!projectIds.length) return {};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase.from("projects") as any)
+    .select("id, cover_url, cover_width, cover_height, media_sizes")
+    .in("id", projectIds as string[]);
+  if (error) throw error;
+  const out: Record<string, number> = {};
+  for (const r of (data ?? []) as Array<Pick<WorkRow, "cover_url" | "cover_width" | "cover_height" | "media_sizes">>) {
+    for (const [url, size] of Object.entries(r.media_sizes ?? {})) {
+      if (Array.isArray(size) && size[0] > 0 && size[1] > 0) out[url] = size[0] / size[1];
+    }
+    if (r.cover_url && r.cover_width && r.cover_height && !out[r.cover_url]) out[r.cover_url] = r.cover_width / r.cover_height;
+  }
+  return out;
+}
+
+export type WorkStudio = { id: string; slug: string; name: string; avatar_url: string | null };
+
+/** The studio a work is credited to ("ผลงานในนาม Studio" on the old page). */
+export async function getWorkStudio(studioId: string): Promise<WorkStudio | null> {
+  const { data, error } = await supabase.from("studios").select("id, slug, name, avatar_url").eq("id", studioId).maybeSingle();
+  if (error) {
+    if (isOptionalQueryError(error)) return null;
+    throw error;
+  }
+  return (data as WorkStudio | null) ?? null;
 }

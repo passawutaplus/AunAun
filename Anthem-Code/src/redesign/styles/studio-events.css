@@ -1,0 +1,93 @@
+/* My Studio › Event rows (studio/StudioEvents.tsx): the row opens the event, Edit / Delete sit beside it. */
+
+.sc-app .ms-evr-a {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.sc-app .ms-ev-btns {
+  flex: none;
+  display: flex;
+  gap: 8px;
+}
+
+.sc-app .ms-ev-btns .ms-cc {
+  padding: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.sc-app .ms-ev-btns .ms-cc:hover {
+  border-color: #282929;
+}
+
+.sc-app .ms-ev-del:hover {
+  color: #B8321F;
+}
+
+.sc-app .ms-ev-btns .ms-cc:focus-visible,
+.sc-app .ms-evr-a:focus-visible {
+  outline: 2px solid #282929;
+  outline-offset: 2px;
+}
+
+.sc-app .ms-ev-btns .ms-cc:disabled {
+  opacity: .5;
+  cursor: default;
+}
+
+/* no events yet */
+.sc-app .ms-ev-empty {
+  padding: 48px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.sc-app .ms-ev-empty p {
+  margin: 0;
+  font-size: 15px;
+  color: #666666;
+}
+
+.sc-app .ms-ev-new {
+  height: 44px;
+  padding: 0 22px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  background: #282929;
+  color: #FFFFFF;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.sc-app .ms-ev-new:hover {
+  color: #FFFFFF;
+}
+
+@media (max-width: 600px) {
+  .sc-app .ms-evr-a {
+    gap: 10px;
+  }
+
+  .sc-app .ms-ev-btns {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .sc-app .ms-ev-btns .ms-cc {
+    width: 34px;
+    height: 34px;
+  }
+}

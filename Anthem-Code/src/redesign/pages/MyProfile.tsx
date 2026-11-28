@@ -10,12 +10,15 @@ import EmptyNote from "../main/EmptyNote";
 import ScLoader from "../main/ScLoader";
 import { profileHref } from "../main/useCreators";
 import AboutPanel from "../profile/AboutPanel";
+import { ProfileCover, SocialIcons } from "../profile/ProfileExtras";
+import { hasSocials, socialsOf } from "../profile/socials";
 import MyEvents from "../profile/MyEvents";
 import MyFollowing from "../profile/MyFollowing";
 import MySaved from "../profile/MySaved";
 import { count, toTile, toolsOf, type Tile } from "../profile/tiles";
 import { useMyCatalogs, useMyProfile, useMyWorks } from "../profile/useMyProfile";
 import { usePageSeo } from "../lib/usePageSeo";
+import { PinMark } from "../studio/StudioWorks";
 import LoadError from "../shell/LoadError";
 import "../styles/fonts.css";
 import "../styles/tokens.css";
@@ -85,13 +88,16 @@ function MyProfileView({ uid }: { uid: string }) {
 
   const current = catalogs.find((k) => k.id === cat) ?? null;
   const tiles = useMemo(() => {
+    // Works come in the profile order: pinned first, numbered like the old site (pinned in My Studio › Works).
+    let pins = 0;
     const all = works.map((w) => {
       const t = toTile(w);
-      return t ? { ...t, locked: w.status === "Private" } : null;
-    }).filter((t): t is Tile & { locked: boolean } => !!t);
+      const pin = w.is_pinned ? ++pins : 0;
+      return t ? { ...t, locked: w.status === "Private", pin } : null;
+    }).filter((t): t is MyTile => !!t);
     if (!current) return all;
     const byId = new Map(all.map((t) => [t.id, t]));
-    return current.projectIds.map((id) => byId.get(id)).filter((t): t is Tile & { locked: boolean } => !!t);
+    return current.projectIds.map((id) => byId.get(id)).filter((t): t is MyTile => !!t);
   }, [works, current]);
 
   if (profile.isPending) return <div className="pf-wait" aria-busy="true" />;
@@ -110,6 +116,7 @@ function MyProfileView({ uid }: { uid: string }) {
   const ig = instagramUrl(p?.instagram);
   const web = websiteUrl(p?.website);
   const mail = mailUrl(p?.contact_email);
+  const socials = socialsOf(p);
   const avatar = proxiedImageUrl(p?.avatar_url, 256);
   const publicHref = profileHref({ user_id: uid, username: handle || null });
 
@@ -122,7 +129,7 @@ function MyProfileView({ uid }: { uid: string }) {
     say("คัดลอกลิงก์โปรไฟล์แล้ว");
   };
 
-  const toggleLock = (t: Tile & { locked: boolean }) => {
+  const toggleLock = (t: MyTile) => {
     lock.mutate({ id: t.id, locked: !t.locked });
     say(t.locked ? "โชว์ในโปรไฟล์แล้ว" : "ล็อกไว้ เห็นแค่คุณ");
   };
@@ -135,6 +142,7 @@ function MyProfileView({ uid }: { uid: string }) {
 
   return (
     <main className="sc-main pf-m mp-m">
+      <ProfileCover url={p?.cover_url} />
       <div className="pf-grid">
         <aside aria-label="โปรไฟล์ของฉัน" className="pf-aside">
           {avatar ? <img alt="" src={avatar} className="pf-av" /> : <span aria-hidden="true" className="pf-av" />}
@@ -164,7 +172,7 @@ function MyProfileView({ uid }: { uid: string }) {
               <span>แชร์โปรไฟล์</span>
             </button>
           </div>
-          {ig || mail || web ? (
+          {ig || mail || web || hasSocials(socials) ? (
             <div className="pf-cc-row">
               {ig ? (
                 <a href={ig} target="_blank" rel="noopener noreferrer" className="pf-cc" aria-label={`Instagram @${instagramHandle(p?.instagram)}`} title={`Instagram @${instagramHandle(p?.instagram)}`}>
@@ -181,6 +189,7 @@ function MyProfileView({ uid }: { uid: string }) {
                   <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.33" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="8.5" /><path d="M3.5 12h17M12 3.5c2.5 2.6 2.5 14.4 0 17M12 3.5c-2.5 2.6-2.5 14.4 0 17" /></svg>
                 </a>
               ) : null}
+              <SocialIcons s={socials} />
             </div>
           ) : null}
           <Link to={publicHref} className="mp-public">
@@ -256,6 +265,9 @@ function MyProfileView({ uid }: { uid: string }) {
               instagram={p?.instagram ?? null}
               website={p?.website ?? null}
               email={p?.contact_email ?? null}
+              socials={socials}
+              cvUserId={uid}
+              cvOwner
             />
           ) : null}
         </section>
@@ -269,8 +281,10 @@ function MyProfileView({ uid }: { uid: string }) {
   );
 }
 
+type MyTile = Tile & { locked: boolean; pin: number };
+
 /** My works: each opens over this page; the corner button is the globe (shown) / lock (only me). */
-function MyPin({ tiles, onLock }: { tiles: Array<Tile & { locked: boolean }>; onLock: (t: Tile & { locked: boolean }) => void }) {
+function MyPin({ tiles, onLock }: { tiles: MyTile[]; onLock: (t: MyTile) => void }) {
   const location = useLocation();
   const linkState = useMemo(() => ({ backgroundLocation: location, scList: tiles.map((t) => t.id) }), [location, tiles]);
   return (
@@ -293,6 +307,7 @@ function MyPin({ tiles, onLock }: { tiles: Array<Tile & { locked: boolean }>; on
             />
             <span className="pf-art pf-shade" aria-hidden="true" />
             <Link to={`/showcase/${t.id}`} state={linkState} aria-label={`เปิด ${t.title}`} className="pf-open" />
+            {t.pin ? <PinMark n={t.pin} /> : null}
             <span className="pf-tt">
               <b>{t.title}</b>
               {t.cat ? <span>{t.cat}</span> : null}

@@ -11,6 +11,8 @@ import {
 } from "@/lib/profileCv";
 import { useAboutEditLocale } from "@/components/profile/AboutEditLocale";
 import { languageDisplayName } from "@/lib/aboutEditCopy";
+import CvMoveButtons from "@/components/profile/CvMoveButtons";
+import { moveItem } from "@/lib/listMove";
 
 type Props = {
   value: CvLanguageItem[];
@@ -151,6 +153,7 @@ export default function LanguageEditor({ value, onChange }: Props) {
                     </option>
                   ))}
                 </select>
+                <CvMoveButtons index={i} count={value.length} onMove={(a, b) => onChange(moveItem(value, a, b))} />
                 <button
                   type="button"
                   onClick={() => remove(i)}
