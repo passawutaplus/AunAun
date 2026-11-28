@@ -3,6 +3,7 @@ import { Link, Navigate, useLocation, useNavigate, useSearchParams } from "react
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { checkUsernameAvailability } from "@/hooks/useUsernameAvailability";
+import { isNativeApp } from "@/lib/appShell";
 import { requestOpenCookiePreferences } from "@/lib/cookieConsent";
 import { proxiedImageUrl } from "@/lib/imageProxy";
 import { PROFILE_PUBLIC_FIELDS, saveProfileVisibility, type ProfilePublicField } from "@/lib/profileVisibility";
@@ -871,9 +872,10 @@ function PrivacyTab({ handle, say }: { handle: string; say: Say }) {
           </div>
         </div>
       ) : null}
-      <Row label="คุกกี้" sub="เลือกว่าจะให้เว็บเก็บอะไรในเครื่องนี้">
+      {/* Store app: no "cookie" wording (owner 2026-11-28) — same choices, asked once on first open. */}
+      <Row label={isNativeApp() ? "สถิติการใช้งาน" : "คุกกี้"} sub={isNativeApp() ? "เลือกว่าจะให้นับสถิติการใช้งานแอปไหม" : "เลือกว่าจะให้เว็บเก็บอะไรในเครื่องนี้"}>
         <button type="button" className="st-ln" aria-haspopup="dialog" onClick={() => requestOpenCookiePreferences()}>
-          ตั้งค่าคุกกี้
+          {isNativeApp() ? "ตั้งค่า" : "ตั้งค่าคุกกี้"}
         </button>
       </Row>
 

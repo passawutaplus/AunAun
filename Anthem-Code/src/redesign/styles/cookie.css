@@ -239,6 +239,16 @@
     padding: 0 4px;
   }
 
+  /* Store app: one question on first open, two equal buttons. */
+  .sc-app .ck-app .ck-tx b {
+    font-weight: 500;
+  }
+
+  .sc-app .ck-app .ck-btns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
   .sc-app .ck-box {
     padding: 24px 20px;
     border-radius: var(--sc-r-card-m);

@@ -11,6 +11,7 @@ import {
   writeCookieConsent,
   type CookieConsentPreferences,
 } from "@/lib/cookieConsent";
+import { isNativeApp } from "@/lib/appShell";
 import { onEscape } from "./panels";
 import "../styles/cookie.css";
 
@@ -24,6 +25,7 @@ const POLICY = "/legal/cookies";
 export default function CookieBanner() {
   const [pending, setPending] = useState(() => hasConsentBannerPending());
   const [prefsOpen, setPrefsOpen] = useState(false);
+  const inApp = isNativeApp();
 
   useEffect(() => {
     const sync = () => setPending(hasConsentBannerPending());
@@ -35,6 +37,35 @@ export default function CookieBanner() {
       window.removeEventListener(COOKIE_PREFERENCES_OPEN_EVENT, openPrefs);
     };
   }, []);
+
+  // Store app (owner 2026-11-28): no cookie bar — one plain question on first open, same stored choice.
+  if (inApp) {
+    return (
+      <>
+        {pending && !prefsOpen ? (
+          <section className="ck-bar ck-app" aria-label="สถิติการใช้งาน">
+            <p className="ck-tx">
+              <b>ให้เรานับสถิติการใช้งานไหม</b>
+              <br />
+              ช่วยให้เราปรับแอปให้ดีขึ้นนะ{" "}
+              <Link to={POLICY} className="ck-ln">
+                นโยบาย
+              </Link>
+            </p>
+            <div className="ck-btns">
+              <button type="button" className="ck-b" onClick={() => acceptEssentialOnly()}>
+                ไม่เป็นไร
+              </button>
+              <button type="button" className="ck-b ck-b-pri" onClick={() => acceptAllCookies()}>
+                ได้เลย
+              </button>
+            </div>
+          </section>
+        ) : null}
+        {prefsOpen ? <CookiePrefs onClose={() => setPrefsOpen(false)} /> : null}
+      </>
+    );
+  }
 
   return (
     <>
