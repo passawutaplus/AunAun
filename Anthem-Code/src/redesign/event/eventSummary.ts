@@ -36,6 +36,49 @@ export function closingDay(insights: EventInsights | null, endsOn: string | null
   return insights?.deadline ?? endsOn ?? startsOn;
 }
 
+type ActionEvent = {
+  category: string;
+  starts_on: string | null;
+  ends_on: string | null;
+  fee_type: string | null;
+  registration_url: string | null;
+  registration_open: boolean;
+  ticket_url: string | null;
+  website_url: string | null;
+  source_url: string | null;
+};
+
+/** The main button of an event page, or the line shown in its place. `counts`: a signed-in click is recorded (old page). */
+export type MainAction = { kind: "go"; href: string; label: string; counts: boolean } | { kind: "ended" | "closed"; label: string };
+
+const isHttp = (u: string | null | undefined): u is string => !!u && /^https?:\/\//i.test(u);
+
+/**
+ * Same order as the old page (eventPrimaryAction): tickets for a paid event, then the sign-up link while
+ * registration_open, then tickets, then the event's own site. Nothing to press once the event is over or the open
+ * call has closed (`today` YYYY-MM-DD).
+ */
+export function mainAction(e: ActionEvent, insights: EventInsights | null, today: string): MainAction | null {
+  const openCall = e.category === "open_call";
+  if (openCall) {
+    const closes = closingDay(insights, e.ends_on, e.starts_on);
+    if (closes && closes < today) return { kind: "closed", label: "ปิดรับแล้ว" };
+  } else {
+    const last = e.ends_on ?? e.starts_on;
+    if (last && last < today) return { kind: "ended", label: "งานนี้จบแล้ว" };
+  }
+  const go = (href: string, label: string, counts = true): MainAction => ({ kind: "go", href, label, counts });
+  const tickets = isHttp(e.ticket_url) ? e.ticket_url : null;
+  if (tickets && e.fee_type !== "free") return go(tickets, "ไปซื้อบัตรที่เว็บผู้จัด");
+  if (isHttp(e.registration_url)) {
+    if (e.registration_open) return go(e.registration_url, openCall ? "ไปสมัครที่เว็บผู้จัด" : "ไปลงทะเบียนที่เว็บผู้จัด");
+    if (!tickets) return { kind: "closed", label: "ปิดรับแล้ว" };
+  }
+  if (tickets) return go(tickets, "ไปซื้อบัตรที่เว็บผู้จัด");
+  const site = [e.website_url, e.source_url].find(isHttp);
+  return site ? go(site, openCall ? "ไปสมัครที่เว็บผู้จัด" : "ไปเว็บไซต์งาน", openCall) : null;
+}
+
 /** Hostname for the "site" row: "ripo.kmutt.ac.th". */
 export function siteLabel(url: string | null | undefined): string {
   if (!url) return "";

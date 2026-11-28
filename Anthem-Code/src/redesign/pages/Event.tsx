@@ -6,25 +6,33 @@ import { useAuth } from "@/hooks/useAuth";
 import { useMyEventInterests } from "@/hooks/useExhibitionEvents";
 import { eventJsonLd } from "@/lib/eventJsonLd";
 import { deadlineLabel, eventPath, isEventUuid, parseEventInsights } from "@/lib/exhibitionEvents";
+import { venueMapsUrl, type OpeningHoursRule } from "@/lib/eventVenues";
 import { googleCalendarLink } from "@/lib/googleCalendarLink";
-import { reportEvent } from "@/server/mutations/eventPage";
+import { recordEventRegistration, reportEvent } from "@/server/mutations/eventPage";
 import { toggleEventInterest } from "@/server/mutations/eventInterest";
-import type { EventPageRow, EventPageVenue } from "@/server/queries/eventPage";
+import type { EventPageRow, EventPageVenue, ParentEventRow } from "@/server/queries/eventPage";
+import { loginHref } from "../lib/loginHref";
 import { SC_LINKS } from "../routes";
+import LoadError from "../shell/LoadError";
 import { useShellPanels } from "../shell/panels";
-import { closingDay, feeLabel, mapsSearchUrl, paragraphs, placeNames, siteLabel, summaryRows } from "../event/eventSummary";
+import { closingDay, feeLabel, mainAction, mapsSearchUrl, paragraphs, placeNames, siteLabel, summaryRows } from "../event/eventSummary";
 import { useCountEventView, useEventPage, useEventVenues, useParentEvent } from "../event/useEventPage";
 import EventPictures from "../event/EventPictures";
 import Locations from "../event/Locations";
-import { thaiHours } from "../event/venueText";
+import { thaiHours, venueStatus } from "../event/venueText";
 import { usePosterLabel } from "../event/usePosterLabel";
-import { EVENT_KIND, shortDate } from "../main/useHomeEvents";
+import { EVENT_KIND, isoDay, shortDate } from "../main/useHomeEvents";
 import { useInterestedSwitch } from "../profile/useMyProfile";
+import SharePanel from "../work/SharePanel";
 import NotFound from "./NotFound";
 import "../styles/fonts.css";
 import "../styles/tokens.css";
 import "../styles/reset.css";
+import "../styles/work.css";
 import "../styles/event.css";
+
+/** Unpublished events (only the owner and the team can open them): same words as My Studio › Event. */
+const STATUS_LABEL: Record<string, string> = { draft: "Draft", pending: "In review", needs_revision: "Needs edit", rejected: "Rejected" };
 
 const REPORT_WHYS = [
   ["wrong", "ข้อมูลผิด"],
@@ -71,13 +79,20 @@ function EventView({ slug }: { slug: string }) {
   useCountEventView(e?.id, e?.status === "published");
 
   if (q.isPending) return <main className="sc-main ev-wait" aria-busy="true" />;
-  if (!e) return q.isError ? <main className="sc-main ev-wait" /> : <NotFound />;
+  if (!e)
+    return q.isError ? (
+      <main className="sc-main ev-wait">
+        <LoadError onRetry={() => void q.refetch()} />
+      </main>
+    ) : (
+      <NotFound />
+    );
   // A uuid URL moves to the slug URL, like the old page.
   if (isEventUuid(slug) && e.slug) return <Navigate to={eventPath(e)} replace />;
   return <EventBody event={e} venues={venuesQ.data ?? []} parent={parentQ.data ?? null} />;
 }
 
-function EventBody({ event: e, venues, parent }: { event: EventPageRow; venues: EventPageVenue[]; parent: { id: string; slug: string | null; title: string } | null }) {
+function EventBody({ event: e, venues, parent }: { event: EventPageRow; venues: EventPageVenue[]; parent: ParentEventRow | null }) {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { user } = useAuth();
@@ -90,6 +105,9 @@ function EventBody({ event: e, venues, parent }: { event: EventPageRow; venues: 
   const poster = usePosterLabel(e.origin, e.owner_id);
   const path = eventPath(e);
   const url = typeof window === "undefined" ? path : window.location.origin + path;
+  const published = e.status === "published";
+  const isOwner = !!user && user.id === e.owner_id;
+  const venue = !!e.parent_id;
 
   const [toast, setToast] = useState("");
   const toastTimer = useRef<number | undefined>(undefined);
@@ -124,19 +142,13 @@ function EventBody({ event: e, venues, parent }: { event: EventPageRow; venues: 
     },
   });
   const onSave = () => {
-    if (!user) return navigate(SC_LINKS.login);
+    if (!user) return navigate(loginHref());
     setPicked(!interested);
     toggle.mutate(e.id);
   };
 
-  const share = async () => {
-    try {
-      await navigator.clipboard.writeText(url);
-    } catch {
-      /* clipboard blocked: the toast still confirms the action like the mock */
-    }
-    say("คัดลอกลิงก์แล้ว");
-  };
+  // Share: the Work page's panel (preview, link + Copy, apps), so a blocked clipboard still leaves the link to copy.
+  const [shareOpen, setShareOpen] = useState(false);
 
   // ---------- About: "อ่านต่อ" only when the text is longer than the closed box ----------
   const aboutRef = useRef<HTMLDivElement>(null);
@@ -162,9 +174,17 @@ function EventBody({ event: e, venues, parent }: { event: EventPageRow; venues: 
   });
   const openReport = () => {
     if (repSent) return;
-    if (!user) return navigate(SC_LINKS.login);
+    if (!user) return navigate(loginHref());
     setRepWhy(null);
     setRepOpen(true);
+  };
+
+  // ---------- main button: a signed-in click on a published event is recorded (old page → My Profile › Events) ----------
+  const onRegister = () => {
+    if (!user || !published) return;
+    void recordEventRegistration(e.id)
+      .then(() => qc.invalidateQueries({ queryKey: ["events", "my-list"] }))
+      .catch(() => undefined);
   };
 
   // ---------- back: one step back inside the site, else the event (venue) or the Event tab ----------
@@ -187,9 +207,22 @@ function EventBody({ event: e, venues, parent }: { event: EventPageRow; venues: 
   // Each place opens its Google Maps page in a new tab (owner 2026-11-28); one place also sends its address.
   const placeLinks = multi ? [] : placeNames(e.location_name);
   const mapsQuery = (name: string) => (placeLinks.length === 1 && e.address?.trim() ? `${name}, ${e.address.trim()}` : name);
-  const ctaHref = e.registration_url || e.ticket_url || e.website_url || e.source_url || null;
-  const ctaLabel = openCall || e.registration_url || e.ticket_url ? "ไปสมัครที่เว็บผู้จัด" : "ไปเว็บไซต์งาน";
-  const site = siteLabel(e.website_url || e.registration_url || e.source_url);
+  // A venue without a place name: its address opens the venue's own pin (old page: venueMapsUrl).
+  const venueMap =
+    venue && !placeLinks.length && place
+      ? venueMapsUrl({ title: e.title, name_en: e.name_en, address: e.address, lat: e.lat, lng: e.lng, coords_approx: e.coords_approx ?? false })
+      : null;
+  // Main button: hidden once the event is over / the call has closed (old page, registration_open); a line says so instead.
+  const action = mainAction(e, insights, isoDay(new Date()));
+  const siteUrl = e.website_url || e.registration_url || e.source_url || "";
+  const site = siteLabel(siteUrl);
+  // A venue's own page (old page): open-now chip, date note, how to get there, its admission note.
+  const openNow = venue
+    ? venueStatus({ opening_hours: (Array.isArray(e.opening_hours) ? e.opening_hours : []) as OpeningHoursRule[], starts_on: e.starts_on, ends_on: e.ends_on, date_note: e.date_note })
+    : null;
+  const dates = e.starts_on ? dateRange(e.starts_on, e.ends_on) : venue ? e.date_note?.trim() || "" : "";
+  const fee = (venue && e.admission_note?.trim()) || feeLabel(e.fee_type, e.fee_note);
+  const transit = venue ? e.transit_note?.trim() || "" : "";
   const gcal = googleCalendarLink({
     title: e.title,
     starts_on: e.starts_on,
@@ -204,11 +237,16 @@ function EventBody({ event: e, venues, parent }: { event: EventPageRow; venues: 
   const closesLabel = closes ? deadlineLabel(closes, new Date(), "th") : null;
 
   // ---------- pictures: the cover and the extra pictures, one slider (owner 2026-11-28) ----------
-  const pictures = [e.cover_url, ...(e.gallery_urls ?? [])].filter((u, i, all): u is string => !!u && all.indexOf(u) === i);
+  const own = [e.cover_url, ...(e.gallery_urls ?? [])].filter((u, i, all): u is string => !!u && all.indexOf(u) === i);
+  // A venue with no picture of its own shows its event's cover (old page).
+  const pictures = own.length ? own : parent?.cover_url ? [parent.cover_url] : [];
   const size = (src: string): [number, number] | null => {
     const s = src === e.cover_url && e.cover_width && e.cover_height ? ([e.cover_width, e.cover_height] as [number, number]) : e.media_sizes?.[src];
     return s && s[0] > 0 && s[1] > 0 ? s : null;
   };
+
+  const firstSize = pictures[0] ? size(pictures[0]) : null;
+  const shareRatio = firstSize ? firstSize[0] / firstSize[1] : null;
 
   const jsonLd = useMemo(
     () =>
@@ -249,6 +287,21 @@ function EventBody({ event: e, venues, parent }: { event: EventPageRow; venues: 
             Calendar
           </button>
         </nav>
+
+        {published ? null : (
+          <div className="ev-draft" role="status">
+            <span className="ev-draft-st" lang="en">
+              {STATUS_LABEL[e.status] ?? "Draft"}
+            </span>
+            <span>หน้านี้มีแค่คุณกับทีมงานที่เห็น จนกว่าจะขึ้นเว็บนะ</span>
+            {isOwner ? (
+              <Link to={`/dashboard/exhibition/${e.id}/edit`} className="ev-draft-edit">
+                แก้ไข
+              </Link>
+            ) : null}
+            {(e.status === "needs_revision" || e.status === "rejected") && e.review_note?.trim() ? <span className="ev-draft-note">ทีมงาน: {e.review_note.trim()}</span> : null}
+          </div>
+        )}
 
         <div className="ev-grid">
           <article className="ev-card">
@@ -321,6 +374,13 @@ function EventBody({ event: e, venues, parent }: { event: EventPageRow; venues: 
                 ) : null}
               </p>
               <h1>{e.title}</h1>
+              {venue && e.name_en?.trim() && e.name_en.trim().toLowerCase() !== e.title.trim().toLowerCase() ? (
+                <p className="ev-en" lang="en">
+                  {e.name_en.trim()}
+                </p>
+              ) : null}
+              {/* Interested and share only on a published event: nobody else can open a draft. */}
+              {published ? (
               <div className="ev-acts">
                 <button type="button" className="ev-save" aria-pressed={interested} aria-label={interested ? "สนใจแล้ว" : "สนใจ"} onClick={onSave}>
                   <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.33" strokeLinecap="round" strokeLinejoin="round">
@@ -328,7 +388,7 @@ function EventBody({ event: e, venues, parent }: { event: EventPageRow; venues: 
                   </svg>
                   <span>{interested ? "สนใจแล้ว" : "สนใจ"}</span>
                 </button>
-                <button type="button" className="ev-cc ev-share" aria-label="แชร์ คัดลอกลิงก์" title="คัดลอกลิงก์" onClick={() => void share()}>
+                <button type="button" className="ev-cc ev-share" aria-label="แชร์" title="แชร์" aria-haspopup="dialog" onClick={() => setShareOpen(true)}>
                   <Icon>
                     <circle cx="18" cy="5.5" r="2.5" />
                     <circle cx="6" cy="12" r="2.5" />
@@ -337,17 +397,24 @@ function EventBody({ event: e, venues, parent }: { event: EventPageRow; venues: 
                   </Icon>
                 </button>
               </div>
+              ) : null}
             </div>
 
             <div className="ev-facts">
-              {e.starts_on ? (
+              {dates ? (
                 <div>
                   <span className="ev-ic">
                     <CalIcon />
                   </span>
                   <div>
-                    <span>{dateRange(e.starts_on, e.ends_on)}</span>
+                    <span>{dates}</span>
                     <span className="ev-sub">{time}</span>
+                    {openNow ? (
+                      <span className="ev-st" data-k={openNow.kind}>
+                        <i aria-hidden="true" />
+                        {openNow.label}
+                      </span>
+                    ) : null}
                     {gcal ? (
                       <a href={gcal} target="_blank" rel="noopener noreferrer" className="ev-gcal">
                         เพิ่มลง Google Calendar ↗
@@ -376,10 +443,30 @@ function EventBody({ event: e, venues, parent }: { event: EventPageRow; venues: 
                           </span>
                         ))}
                       </span>
+                    ) : venueMap ? (
+                      <span>
+                        <a href={venueMap} target="_blank" rel="noopener noreferrer" className="ev-maplink" aria-label={`${place} — เปิดใน Google Maps`}>
+                          {place} ↗
+                        </a>
+                      </span>
                     ) : (
                       <span>{place}</span>
                     )}
                     {placeNote ? <span className="ev-sub">{placeNote}</span> : null}
+                  </div>
+                </div>
+              ) : null}
+              {transit ? (
+                <div>
+                  <span className="ev-ic">
+                    <Icon>
+                      <rect x="5.5" y="3.5" width="13" height="13" rx="3" />
+                      <path d="M5.5 10.5h13M9 13.5h.01M15 13.5h.01M8.5 20.5l2-4M15.5 20.5l-2-4" />
+                    </Icon>
+                  </span>
+                  <div>
+                    <span className="ev-sub">วิธีเดินทาง</span>
+                    <span>{transit}</span>
                   </div>
                 </div>
               ) : null}
@@ -391,7 +478,7 @@ function EventBody({ event: e, venues, parent }: { event: EventPageRow; venues: 
                   </Icon>
                 </span>
                 <div>
-                  <span>{feeLabel(e.fee_type, e.fee_note)}</span>
+                  <span>{fee}</span>
                 </div>
               </div>
               {site ? (
@@ -403,21 +490,29 @@ function EventBody({ event: e, venues, parent }: { event: EventPageRow; venues: 
                     </Icon>
                   </span>
                   <div>
-                    <span>{site}</span>
+                    <span>
+                      <a href={siteUrl} target="_blank" rel="noopener noreferrer nofollow" className="ev-maplink">
+                        {site} ↗
+                      </a>
+                    </span>
                   </div>
                 </div>
               ) : null}
             </div>
 
-            {ctaHref || files.length ? (
+            {action || files.length ? (
               <div className="ev-act">
-                {ctaHref ? (
-                  <a href={ctaHref} className="ev-cta" target="_blank" rel="noopener noreferrer">
-                    {ctaLabel}
+                {action?.kind === "go" ? (
+                  <a href={action.href} className="ev-cta" target="_blank" rel="noopener noreferrer nofollow" onClick={action.counts ? onRegister : undefined}>
+                    {action.label}
                     <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="1.33" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" />
                     </svg>
                   </a>
+                ) : action ? (
+                  <p className="ev-done" data-k={action.kind}>
+                    {action.label}
+                  </p>
                 ) : null}
                 {files.map((l) => (
                   <a key={l.url} href={l.url} target="_blank" rel="noopener noreferrer" className="ev-file">
@@ -437,7 +532,8 @@ function EventBody({ event: e, venues, parent }: { event: EventPageRow; venues: 
               </div>
             ) : null}
 
-            {repOpen ? (
+            {/* Report: other people's published events only (old page). */}
+            {!published || isOwner ? null : repOpen ? (
               <div role="group" aria-label="แจ้งปัญหางานนี้" className="ev-rep">
                 <span>แจ้งปัญหางานนี้</span>
                 <div className="ev-rep-whys">
@@ -481,6 +577,9 @@ function EventBody({ event: e, venues, parent }: { event: EventPageRow; venues: 
           </div>
         ) : null}
       </main>
+      {shareOpen ? (
+        <SharePanel url={url} title={e.title} image={pictures[0] ?? ""} imageRatio={shareRatio} onClose={() => setShareOpen(false)} say={say} />
+      ) : null}
       {toast ? (
         <div role="status" className="ev-toast">
           {toast}

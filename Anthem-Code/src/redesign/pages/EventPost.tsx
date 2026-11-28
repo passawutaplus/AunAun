@@ -4,10 +4,10 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSubscription } from "@/core/subscription";
 import { useAuth } from "@/hooks/useAuth";
 import { isEventUuid } from "@/lib/exhibitionEvents";
-import { EVENT_FILE_MAX_BYTES, EVENT_FOLDER, saveEvent, submitEvent, uploadEventPdf, uploadEventPicture } from "@/server/mutations/eventPost";
+import { deleteEvent, EVENT_FILE_MAX_BYTES, EVENT_FOLDER, saveEvent, submitEvent, uploadEventPdf, uploadEventPicture } from "@/server/mutations/eventPost";
 import { getMyEvent, type MyEventRow } from "@/server/queries/eventPost";
 import logoUrl from "../assets/logo.svg";
-import { EpLeaveDialog, EpPublishedDialog } from "../eventpost/EventPostDialogs";
+import { EpDeleteDialog, EpLeaveDialog, EpPublishedDialog } from "../eventpost/EventPostDialogs";
 import EventPostPreview from "../eventpost/EventPostPreview";
 import { checksOf, EP_LIMITS, EP_TYPES, emptyForm, fileSize, fromRow, snapshot, toSaveData, type EpForm, type EpType } from "../eventpost/model";
 import { mapsSearchUrl } from "../event/eventSummary";
@@ -119,6 +119,7 @@ function EventPostEditor({ uid, row }: { uid: string; row: MyEventRow | null }) 
   const [agree, setAgree] = useState(false);
   const [leaveTo, setLeaveTo] = useState<string | null>(null);
   const [published, setPublished] = useState<"new" | "edit" | null>(null);
+  const [delOpen, setDelOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [dragging, setDragging] = useState<"cover" | "details" | null>(null);
   const [toast, setToast] = useState("");
@@ -266,8 +267,27 @@ function EventPostEditor({ uid, row }: { uid: string; row: MyEventRow | null }) 
       navigate(`/dashboard/exhibition/${id}/edit`, { replace: true });
     }
     setBase(snapshot(f, md));
-    for (const key of [["sc-studio-events", uid], ["sc-event-post", id], ["sc-event-page"], ["my-exhibition-events"]]) void qc.invalidateQueries({ queryKey: key });
+    for (const key of [["sc-studio-events", uid], ["sc-event-post", id], ["sc-event"], ["my-exhibition-events"]]) void qc.invalidateQueries({ queryKey: key });
     return id;
+  };
+
+  // ---------- delete (edit mode only, asks first) ----------
+  const removeEvent = async () => {
+    const id = eventId.current;
+    if (!id || busy) return;
+    setBusy(true);
+    try {
+      await deleteEvent(id);
+      liveCreated.delete(id);
+      for (const key of [["sc-studio-events"], ["sc-event"], ["sc-home-events"], ["events"], ["my-exhibition-events"]]) void qc.invalidateQueries({ queryKey: key });
+      qc.removeQueries({ queryKey: ["sc-event-post", id] });
+      navigate(STUDIO_EVENTS, { replace: true });
+    } catch (e) {
+      setDelOpen(false);
+      const m = errText(e);
+      say(m === SAVE_FAILED ? "ลบไม่สำเร็จ ลองใหม่อีกทีนะ" : m);
+      setBusy(false);
+    }
   };
 
   const saveDraft = async () => {
@@ -746,6 +766,14 @@ function EventPostEditor({ uid, row }: { uid: string; row: MyEventRow | null }) 
                 )}
               </div>
             </div>
+            {row ? (
+              <button type="button" className="ep-del" onClick={() => setDelOpen(true)}>
+                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 13h9l1-13M10 11v5.5M14 11v5.5" />
+                </svg>
+                ลบอีเว้นท์นี้
+              </button>
+            ) : null}
           </aside>
         </div>
       </main>
@@ -779,6 +807,8 @@ function EventPostEditor({ uid, row }: { uid: string; row: MyEventRow | null }) 
           }}
         />
       ) : null}
+
+      {delOpen ? <EpDeleteDialog live={row?.status === "published"} busy={busy} onCancel={() => setDelOpen(false)} onDelete={() => void removeEvent()} /> : null}
 
       {published ? <EpPublishedDialog cover={coverSrc} title={form.title} isEditPub={published === "edit"} studioHref={STUDIO_EVENTS} onAgain={again} /> : null}
 

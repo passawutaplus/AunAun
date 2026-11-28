@@ -24,6 +24,12 @@ export async function recordEventView(eventId: string): Promise<void> {
   if (error) throw error;
 }
 
+/** A signed-in click on the main button (apply / register / tickets), like the old page: it lands in My Profile → Events. */
+export async function recordEventRegistration(eventId: string): Promise<void> {
+  const { error } = await rpc("record_event_registration", { _event_id: eventId });
+  if (error) throw error;
+}
+
 /** "สนใจทุกสถานที่" on a multi-venue event: every venue on, or every venue off. */
 export async function setVenuesInterest(parentId: string, on: boolean): Promise<void> {
   const { error } = await rpc("set_event_venues_interest", { _parent_id: parentId, _on: on });

@@ -8,7 +8,8 @@ import { proxiedImageUrl } from "@/lib/imageProxy";
 import { toggleEventInterest } from "@/server/mutations/eventInterest";
 import type { HomeEventRow } from "@/server/queries/homeEvents";
 import { usePosterLabel } from "../event/usePosterLabel";
-import { SC_LINKS } from "../routes";
+import { loginHref } from "../lib/loginHref";
+import LoadError from "../shell/LoadError";
 import { useShellPanels } from "../shell/panels";
 import EventSearch from "./EventSearch";
 import ScLoader from "./ScLoader";
@@ -30,7 +31,7 @@ const Chevron = ({ d }: { d: string }) => (
  * The search field on top (owner 2026-11-28) replaces both with its results while it has text.
  */
 export default function Events({ view, type, q, onQuery }: { view: EventView; type: EventType | null; q: string; onQuery: (q: string) => void }) {
-  const { data, isPending, isError } = useHomeEvents();
+  const { data, isPending, isError, refetch } = useHomeEvents();
   const today = isoDay(new Date());
   const search = useEventSearch(q, data?.events, type && type !== "highlight" ? type : null);
 
@@ -46,8 +47,8 @@ export default function Events({ view, type, q, onQuery }: { view: EventView; ty
     return rows;
   }, [data, view, type, today]);
 
-  if (isPending) return <ScLoader label="กำลังโหลดผลงานเพิ่ม" />;
-  if (isError) return null;
+  if (isPending) return <ScLoader label="กำลังโหลดอีเว้นท์" />;
+  if (isError && !data) return <LoadError onRetry={() => void refetch()} />;
 
   const field = <EventSearch q={q} onQuery={onQuery} search={search} />;
   if (search) {
@@ -193,7 +194,7 @@ function Highlight({ events, venues, today }: { events: HomeEventRow[]; venues: 
               type="button"
               className="mn-ev-save"
               aria-pressed={interested}
-              onClick={() => (user ? toggle.mutate(e.id) : navigate(SC_LINKS.login))}
+              onClick={() => (user ? toggle.mutate(e.id) : navigate(loginHref()))}
             >
               <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" stroke="#282929" strokeWidth="1.5" strokeLinejoin="round">
                 <path d="M6 3h12v18l-6-4.5L6 21z" />

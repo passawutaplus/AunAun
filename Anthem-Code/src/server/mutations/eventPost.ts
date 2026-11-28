@@ -31,6 +31,12 @@ export async function submitEvent(id: string): Promise<void> {
   if (error) throw error;
 }
 
+/** Deletes one of my events for good (same RPC as the old My Exhibition page: owner only, any status). */
+export async function deleteEvent(id: string): Promise<void> {
+  const { error } = await rpc("event_delete", { _id: id });
+  if (error) throw error;
+}
+
 /**
  * A picture of the event (cover or details): the old pipeline (HEIC → JPEG, compression); GIFs stay GIFs.
  * A GIF that the pipeline would turn into a video cannot be an event picture.

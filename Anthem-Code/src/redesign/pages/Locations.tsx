@@ -3,6 +3,7 @@ import { Link, Navigate, useParams } from "react-router-dom";
 import { eventPath, isEventUuid } from "@/lib/exhibitionEvents";
 import { SC_LINKS } from "../routes";
 import Locations from "../event/Locations";
+import LoadError from "../shell/LoadError";
 import { useEventPage, useEventVenues } from "../event/useEventPage";
 import NotFound from "./NotFound";
 import "../styles/fonts.css";
@@ -42,8 +43,22 @@ export default function LocationsPage() {
   }, [e]);
 
   if (q.isPending || (e && !e.parent_id && venuesQ.isPending)) return <main className="sc-main lc-pg" aria-busy="true" style={{ minHeight: "70vh" }} />;
-  if (!e) return q.isError ? <main className="sc-main lc-pg" /> : <NotFound />;
+  if (!e)
+    return q.isError ? (
+      <main className="sc-main lc-pg">
+        <LoadError onRetry={() => void q.refetch()} />
+      </main>
+    ) : (
+      <NotFound />
+    );
   if (isEventUuid(id) && e.slug) return <Navigate to={`${eventPath(e)}/locations`} replace />;
+  // The venues did not load: try again here rather than sending the person to the event page.
+  if (!e.parent_id && venuesQ.isError && !venuesQ.data)
+    return (
+      <main className="sc-main lc-pg">
+        <LoadError onRetry={() => void venuesQ.refetch()} />
+      </main>
+    );
   // A single-place event (or a venue) has no Locations: its own page says where it is.
   if (e.parent_id || !venuesQ.data?.length) return <Navigate to={eventPath(e)} replace />;
 
