@@ -8,11 +8,14 @@ export type ShellPanels = {
   openSearch: (opener: HTMLElement | null, from: SearchFrom) => void;
   /** The "+" chooser: Showcase or Event. */
   openNew: (opener: HTMLElement | null) => void;
+  /** Event Calendar (Event page "Calendar", home Event tab "Full Calendar"). */
+  openCalendar: (opener: HTMLElement | null) => void;
 };
 
 export const ShellPanelsContext = createContext<ShellPanels>({
   openSearch: () => undefined,
   openNew: () => undefined,
+  openCalendar: () => undefined,
 });
 
 export const useShellPanels = () => useContext(ShellPanelsContext);

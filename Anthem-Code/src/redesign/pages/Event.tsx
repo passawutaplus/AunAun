@@ -11,6 +11,7 @@ import { reportEvent } from "@/server/mutations/eventPage";
 import { toggleEventInterest } from "@/server/mutations/eventInterest";
 import type { EventPageRow, EventPageVenue } from "@/server/queries/eventPage";
 import { SC_LINKS } from "../routes";
+import { useShellPanels } from "../shell/panels";
 import { closingDay, feeLabel, paragraphs, siteLabel, summaryRows } from "../event/eventSummary";
 import { useCountEventView, useEventPage, useEventVenues, useParentEvent } from "../event/useEventPage";
 import EventPictures from "../event/EventPictures";
@@ -78,6 +79,7 @@ function EventBody({ event: e, venues, parent }: { event: EventPageRow; venues: 
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { user } = useAuth();
+  const panels = useShellPanels();
   const insights = useMemo(() => parseEventInsights(e.insights), [e.insights]);
   const multi = venues.length > 0;
   const rows = multi ? [] : summaryRows(insights, e.category);
@@ -234,6 +236,10 @@ function EventBody({ event: e, venues, parent }: { event: EventPageRow; venues: 
             </>
           ) : null}
           <span aria-current="page">{e.title}</span>
+          <button type="button" className="sc-cal-pill ev-pl" lang="en" aria-haspopup="dialog" onClick={(ev) => panels.openCalendar(ev.currentTarget)}>
+            <CalIcon />
+            Calendar
+          </button>
         </nav>
 
         <div className="ev-grid">

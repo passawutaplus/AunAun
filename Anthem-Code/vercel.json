@@ -70,6 +70,7 @@
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/go", "destination": "/go.html" },
     { "source": "/auth/app-return", "destination": "/app-return.html" },
+    { "source": "/events.ics", "destination": "/api/events-ics" },
     {
       "source": "/((?!api/|_vercel/|assets/|line-icons/|sitemap|robots\\.txt|llms\\.txt|google.*\\.html|icons/|manifest\\.webmanifest|sw\\.js|\\.well-known/).*)",
       "destination": "/index.html"

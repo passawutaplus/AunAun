@@ -13,6 +13,7 @@ import { actorOf, isShownNotification, toNotificationRow, type NotificationRow }
 import { homeEventsQuery } from "../main/useHomeEvents";
 import { SC_LINKS, shellPageFor, type ShellPage } from "../routes";
 import AccountMenu from "./AccountMenu";
+import CalendarPanel from "./CalendarPanel";
 import NewChooser from "./NewChooser";
 import NotificationPanel from "./NotificationPanel";
 import SearchPanel from "./SearchPanel";
@@ -23,6 +24,7 @@ import "../styles/tokens.css";
 import "../styles/reset.css";
 import "../styles/shell.css";
 import "../styles/panels.css";
+import "../styles/calendar.css";
 
 const FALLBACK: ShellPage = { page: "", tabbar: false, tab: "", footer: true };
 
@@ -66,6 +68,8 @@ export default function RedesignShell() {
   const chooser = usePresence(220);
   const { open: openSearch, close: closeSearch } = spotlight;
   const { open: openChooser, close: closeChooser } = chooser;
+  const calendar = usePresence(220);
+  const { open: openCal, close: closeCal } = calendar;
   const opener = useRef<HTMLElement | null>(null);
   const [spot, setSpot] = useState({ top: "38%", centred: true });
 
@@ -103,9 +107,10 @@ export default function RedesignShell() {
       closeSearch();
       closeChooser();
       closeNoti();
+      closeCal();
       if (restoreFocus) opener.current?.focus();
     },
-    [closeSearch, closeChooser, closeNoti],
+    [closeSearch, closeChooser, closeNoti, closeCal],
   );
 
   const toggleNoti = (el: HTMLElement) => {
@@ -152,8 +157,16 @@ export default function RedesignShell() {
         closeNoti();
         openChooser();
       },
+      openCalendar: (el) => {
+        opener.current = el;
+        closeMenu();
+        closeSearch();
+        closeChooser();
+        closeNoti();
+        openCal();
+      },
     }),
-    [closeMenu, closeChooser, closeSearch, closeNoti, openSearch, openChooser],
+    [closeMenu, closeChooser, closeSearch, closeNoti, openSearch, openChooser, openCal],
   );
 
   // Page background outside .sc-app (overscroll, short pages), while the new frame is on screen.
@@ -168,7 +181,8 @@ export default function RedesignShell() {
     closeSearch();
     closeChooser();
     closeNoti();
-  }, [pathname, closeMenu, closeSearch, closeChooser, closeNoti]);
+    closeCal();
+  }, [pathname, closeMenu, closeSearch, closeChooser, closeNoti, closeCal]);
 
   const name = profile?.display_name?.trim() || profile?.username || "";
   const handle = profile?.username || null;
@@ -349,6 +363,7 @@ export default function RedesignShell() {
 
       {spotlight.mounted ? <SearchPanel top={spot.top} centred={spot.centred} leaving={spotlight.leaving} onClose={closePanel} /> : null}
       {user && chooser.mounted ? <NewChooser leaving={chooser.leaving} onClose={closePanel} /> : null}
+      {calendar.mounted ? <CalendarPanel leaving={calendar.leaving} onClose={closePanel} /> : null}
       {user && noti.mounted ? (
         <NotificationPanel
           rows={notiRows}

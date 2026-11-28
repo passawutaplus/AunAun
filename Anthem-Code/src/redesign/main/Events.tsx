@@ -8,6 +8,7 @@ import { proxiedImageUrl } from "@/lib/imageProxy";
 import { toggleEventInterest } from "@/server/mutations/eventInterest";
 import type { HomeEventRow } from "@/server/queries/homeEvents";
 import { SC_LINKS } from "../routes";
+import { useShellPanels } from "../shell/panels";
 import ScLoader from "./ScLoader";
 import { EVENT_KIND, dayOf, inView, isoDay, lastDay, monthCaps, shortDate, useHomeEvents, weekdayDay, type EventType, type EventView } from "./useHomeEvents";
 
@@ -206,6 +207,7 @@ function EventList({ events, byDay, today }: { events: HomeEventRow[]; byDay: bo
   }, [events, byDay, today]);
 
   const first = groups[0].day;
+  const panels = useShellPanels();
   // the first two days start open, as in the mock
   const [closed, setClosed] = useState<Record<string, boolean>>({});
   const isOpen = (day: string, i: number) => !(closed[day] ?? i > 1);
@@ -214,6 +216,13 @@ function EventList({ events, byDay, today }: { events: HomeEventRow[]; byDay: bo
     <section aria-label="อีเว้นท์" className="mn-ev-list">
       <div className="mn-ev-month">
         <span lang="en">{monthCaps(first)}</span>
+        <button type="button" className="mn-ev-cal" lang="en" aria-haspopup="dialog" onClick={(e) => panels.openCalendar(e.currentTarget)}>
+          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3.5" y="5" width="17" height="15.5" rx="2" />
+            <path d="M3.5 10h17M8 3v4M16 3v4" />
+          </svg>
+          Full Calendar
+        </button>
       </div>
       <div className="mn-ev-days">
         {groups.map((g, i) => (

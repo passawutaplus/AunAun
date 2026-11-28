@@ -1089,6 +1089,35 @@
   letter-spacing: .02em;
 }
 
+/* "Full Calendar" under the month (mock Main: opens the Event Calendar popup) */
+.sc-app .mn-ev-cal {
+  height: 40px;
+  padding: 0 14px;
+  box-sizing: border-box;
+  border: 1px solid #D4D4D1;
+  border-radius: 999px;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 300;
+  letter-spacing: 0;
+  color: var(--sc-ink);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.sc-app .mn-ev-cal:hover {
+  border-color: var(--sc-ink);
+}
+
+.sc-app .mn-ev-cal:focus-visible {
+  outline: 2px solid var(--sc-ink);
+  outline-offset: 3px;
+}
+
 .sc-app .mn-ev-days {
   display: flex;
   flex-direction: column;
