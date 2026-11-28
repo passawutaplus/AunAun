@@ -488,3 +488,20 @@
     height: 52px;
   }
 }
+
+/* Day header: the date, then its count on the same line at the right (owner 2026-11-28). */
+.sc-app .cal-dayhd {
+  justify-content: flex-start;
+  align-items: baseline;
+}
+
+.sc-app .cal-cnt {
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--sc-ink-3);
+  white-space: nowrap;
+}
+
+.sc-app .cal-cnt + .cal-today {
+  align-self: center;
+}
