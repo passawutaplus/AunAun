@@ -3,11 +3,12 @@ import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import SeoHead from "@/components/SeoHead";
 import { useAuth } from "@/hooks/useAuth";
-import { useMyEventInterests } from "@/hooks/useExhibitionEvents";
+import { useEventStats, useMyEventInterests } from "@/hooks/useExhibitionEvents";
 import { eventJsonLd } from "@/lib/eventJsonLd";
 import { deadlineLabel, eventPath, isEventUuid, parseEventInsights } from "@/lib/exhibitionEvents";
 import { venueMapsUrl, type OpeningHoursRule } from "@/lib/eventVenues";
 import { googleCalendarLink } from "@/lib/googleCalendarLink";
+import { proxiedImageUrl } from "@/lib/imageProxy";
 import { recordEventRegistration, reportEvent } from "@/server/mutations/eventPage";
 import { toggleEventInterest } from "@/server/mutations/eventInterest";
 import type { EventPageRow, EventPageVenue, ParentEventRow } from "@/server/queries/eventPage";
@@ -18,7 +19,9 @@ import { useShellPanels } from "../shell/panels";
 import { closingDay, feeLabel, mainAction, mapsSearchUrl, paragraphs, placeNames, siteLabel, summaryRows } from "../event/eventSummary";
 import { useCountEventView, useEventPage, useEventVenues, useParentEvent } from "../event/useEventPage";
 import EventPictures from "../event/EventPictures";
+import EventWorks from "../event/EventWorks";
 import Locations from "../event/Locations";
+import SponsorOffer from "../event/SponsorOffer";
 import { thaiHours, venueStatus } from "../event/venueText";
 import { usePosterLabel } from "../event/usePosterLabel";
 import { EVENT_KIND, isoDay, shortDate } from "../main/useHomeEvents";
@@ -33,6 +36,8 @@ import "../styles/event.css";
 
 /** Unpublished events (only the owner and the team can open them): same words as My Studio › Event. */
 const STATUS_LABEL: Record<string, string> = { draft: "Draft", pending: "In review", needs_revision: "Needs edit", rejected: "Rejected" };
+
+const COMPACT = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 });
 
 const REPORT_WHYS = [
   ["wrong", "ข้อมูลผิด"],
@@ -107,6 +112,10 @@ function EventBody({ event: e, venues, parent }: { event: EventPageRow; venues: 
   const url = typeof window === "undefined" ? path : window.location.origin + path;
   const published = e.status === "published";
   const isOwner = !!user && user.id === e.owner_id;
+  // Team-run events are owned by an admin account, so only a member's own event gets a profile link and a chat (old page).
+  const community = e.origin === "community";
+  const lastDay = e.ends_on ?? e.starts_on;
+  const over = !!lastDay && lastDay < isoDay(new Date());
   const venue = !!e.parent_id;
 
   const [toast, setToast] = useState("");
@@ -124,6 +133,9 @@ function EventBody({ event: e, venues, parent }: { event: EventPageRow; venues: 
   const shown = useInterestedSwitch(user?.id);
   const [picked, setPicked] = useState<boolean | null>(null);
   const interested = picked ?? !!mine?.has(e.id);
+  // How many people are interested (old EventActions), moved by this person's own tap until the counts refetch.
+  const { data: stats } = useEventStats(ids);
+  const interestCount = Math.max(0, (stats?.[e.id]?.interest_count ?? 0) + (interested ? 1 : 0) - (mine?.has(e.id) ? 1 : 0));
   const toggle = useMutation({
     mutationFn: toggleEventInterest,
     onSuccess: (on) => {
@@ -185,6 +197,22 @@ function EventBody({ event: e, venues, parent }: { event: EventPageRow; venues: 
     void recordEventRegistration(e.id)
       .then(() => qc.invalidateQueries({ queryKey: ["events", "my-list"] }))
       .catch(() => undefined);
+  };
+
+  // ---------- organiser: profile / site, ทักทาย, sponsors (old page) ----------
+  const orgName = e.organizer_name?.trim() || (community ? "ผู้จัดงาน" : "");
+  const orgSite = [e.website_url].find((u): u is string => !!u && /^https?:\/\//i.test(u)) ?? null;
+  const canChat = community && published && !isOwner;
+  const openForSponsors = !!e.open_for_sponsors && !over;
+  const canSponsor = openForSponsors && published && !isOwner;
+  const [sponsorOpen, setSponsorOpen] = useState(false);
+  const greet = (el: HTMLElement) => {
+    if (!user) return navigate(loginHref());
+    void panels.openChat({ otherId: e.owner_id }, el).catch((err: unknown) => say(err instanceof Error && err.message ? err.message : "เปิดแชทไม่สำเร็จ ลองอีกครั้ง"));
+  };
+  const offerSponsor = () => {
+    if (!user) return navigate(loginHref());
+    setSponsorOpen(true);
   };
 
   // ---------- back: one step back inside the site, else the event (venue) or the Event tab ----------
@@ -382,11 +410,18 @@ function EventBody({ event: e, venues, parent }: { event: EventPageRow; venues: 
               {/* Interested and share only on a published event: nobody else can open a draft. */}
               {published ? (
               <div className="ev-acts">
-                <button type="button" className="ev-save" aria-pressed={interested} aria-label={interested ? "สนใจแล้ว" : "สนใจ"} onClick={onSave}>
+                <button
+                  type="button"
+                  className="ev-save"
+                  aria-pressed={interested}
+                  aria-label={`${interested ? "สนใจแล้ว" : "สนใจ"}${interestCount ? ` · ${interestCount} คนสนใจ` : ""}`}
+                  onClick={onSave}
+                >
                   <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.33" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M6 3h12v18l-6-4.5L6 21z" />
                   </svg>
                   <span>{interested ? "สนใจแล้ว" : "สนใจ"}</span>
+                  {interestCount ? <span className="ev-save-n">{COMPACT.format(interestCount)}</span> : null}
                 </button>
                 <button type="button" className="ev-cc ev-share" aria-label="แชร์" title="แชร์" aria-haspopup="dialog" onClick={() => setShareOpen(true)}>
                   <Icon>
@@ -525,11 +560,68 @@ function EventBody({ event: e, venues, parent }: { event: EventPageRow; venues: 
               </div>
             ) : null}
 
-            {e.organizer_name?.trim() ? (
+            {orgName ? (
               <div className="ev-org">
                 <span lang="en">ORGANIZER</span>
-                <span>{e.organizer_name.trim()}</span>
+                <span>
+                  {community ? (
+                    <Link to={`/u/${e.owner_id}`} className="ev-maplink">
+                      {orgName}
+                    </Link>
+                  ) : orgSite ? (
+                    <a href={orgSite} target="_blank" rel="noopener noreferrer nofollow" className="ev-maplink">
+                      {orgName} ↗
+                    </a>
+                  ) : (
+                    orgName
+                  )}
+                </span>
+                {canChat ? (
+                  <button type="button" className="ev-greet" onClick={(ev) => greet(ev.currentTarget)}>
+                    ทักทาย
+                  </button>
+                ) : null}
               </div>
+            ) : null}
+
+            {e.sponsors?.length || openForSponsors ? (
+              <section className="ev-spon" aria-labelledby="ev-sp-h">
+                <h2 id="ev-sp-h" lang="en">
+                  SPONSORED BY
+                </h2>
+                {e.sponsors?.length ? (
+                  <ul>
+                    {e.sponsors.map((sp, i) => (
+                      <li key={`${sp.name}-${i}`}>
+                        {sp.logo_url ? (
+                          <img src={proxiedImageUrl(sp.logo_url, 120)} alt={`โลโก้ ${sp.name}`} className="ev-spon-logo" loading="lazy" />
+                        ) : (
+                          <span aria-hidden="true" className="ev-spon-logo">
+                            {sp.name.slice(0, 1).toUpperCase()}
+                          </span>
+                        )}
+                        <span className="ev-spon-tx">
+                          <span>{sp.name}</span>
+                          {sp.note ? <span className="ev-sub">{sp.note}</span> : null}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+                {openForSponsors ? (
+                  <div className="ev-spon-open">
+                    <p>
+                      <span lang="en">Open for Sponsorship</span>
+                      <span>{e.sponsors?.length ? "ยังรับสปอนเซอร์เพิ่มนะ" : "งานนี้กำลังหาสปอนเซอร์อยู่"} คุยกับผู้จัดได้เลย</span>
+                    </p>
+                    {canSponsor ? (
+                      <button type="button" className="ev-greet" aria-haspopup="dialog" onClick={offerSponsor}>
+                        เสนอเป็นสปอนเซอร์
+                      </button>
+                    ) : null}
+                  </div>
+                ) : null}
+              </section>
             ) : null}
 
             {/* Report: other people's published events only (old page). */}
@@ -576,7 +668,17 @@ function EventBody({ event: e, venues, parent }: { event: EventPageRow; venues: 
             <Locations event={e} venues={venues} onToast={say} />
           </div>
         ) : null}
+        <EventWorks projectIds={e.project_ids} categories={insights?.related_categories} />
       </main>
+      {sponsorOpen && user ? (
+        <SponsorOffer
+          userId={user.id}
+          event={e}
+          onClose={() => setSponsorOpen(false)}
+          onSent={(roomId) => void panels.openChat({ roomId }).catch(() => navigate(`/chat/${roomId}`))}
+          say={say}
+        />
+      ) : null}
       {shareOpen ? (
         <SharePanel url={url} title={e.title} image={pictures[0] ?? ""} imageRatio={shareRatio} onClose={() => setShareOpen(false)} say={say} />
       ) : null}
