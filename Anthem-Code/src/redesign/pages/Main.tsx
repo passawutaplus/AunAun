@@ -3,10 +3,13 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfilesByIds } from "@/core/profiles/useProfilesByIds";
 import { releaseBoot } from "@/lib/bootGate";
+import { COLOR_MATCH_MIN, parseColorList } from "@/lib/colorSearch";
+import { useCoverColorScores } from "@/hooks/useCoverColorScores";
 import { SC_CATEGORIES, isScCategory } from "../lib/categories";
 import { SC_LINKS } from "../routes";
 import { useShellPanels } from "../shell/panels";
 import { BENTO_FIRST, BENTO_STEP, MASONRY_GAP, bentoBlocks, masonrySpan } from "../main/bento";
+import ColorSearch from "../main/ColorSearch";
 import Creators from "../main/Creators";
 import Events from "../main/Events";
 import ScLoader from "../main/ScLoader";
@@ -48,7 +51,11 @@ export default function Main() {
   const typeParam = params.get("type");
   const evType = isEventType(typeParam) ? typeParam : null;
 
-  const set = (key: "tab" | "cat" | "view" | "type", value: string | null) => {
+  // Colour search: `?color=2e4a6b,c8553d` (Showcase only).
+  const colorParam = params.get("color");
+  const colors = useMemo(() => parseColorList(colorParam), [colorParam]);
+
+  const set = (key: "tab" | "cat" | "view" | "type" | "color", value: string | null) => {
     const next = new URLSearchParams(params);
     if (value) next.set(key, value);
     else next.delete(key);
@@ -62,6 +69,7 @@ export default function Main() {
     else next.set("tab", m);
     next.delete("view");
     if (m !== "event") next.delete("type");
+    if (m !== "showcase") next.delete("color");
     setParams(next, { preventScrollReset: true });
   };
 
@@ -100,6 +108,12 @@ export default function Main() {
     <main className="sc-main mn">
       <div className="mn-row">
         <div className="mn-tools">
+          {mode === "showcase" ? (
+            <ColorSearch
+              colors={colors}
+              onApply={(list) => set("color", list.length ? list.map((c) => c.replace("#", "").toLowerCase()).join(",") : null)}
+            />
+          ) : null}
           <button
             type="button"
             aria-label="ค้นหา"
@@ -173,7 +187,15 @@ export default function Main() {
       <div className="mn-card">
         <h1 className="sc-sr">Samecor — ผลงานล่าสุด</h1>
         {mode === "showcase" ? (
-          <Showcase key={`${view}:${category ?? "all"}`} view={view} category={category} label={MODE_LABEL[mode]} savedIds={saves.ids} onToggleSave={toggleSave} />
+          <Showcase
+            key={`${view}:${category ?? "all"}:${colors.join(",")}`}
+            view={view}
+            category={category}
+            colors={colors}
+            label={MODE_LABEL[mode]}
+            savedIds={saves.ids}
+            onToggleSave={toggleSave}
+          />
         ) : mode === "creators" ? (
           <Creators view={crView} category={category} />
         ) : (
@@ -253,17 +275,19 @@ function ViewMenu<V extends string>({ label, options, labels, value, onPick }: V
 type ShowcaseProps = {
   view: ShowcaseView;
   category: (typeof SC_CATEGORIES)[number] | null;
+  /** Colour search: only works whose cover matches, closest first. */
+  colors: string[];
   label: string;
   savedIds: Set<string>;
   onToggleSave: (id: string) => void;
 };
 
-function Showcase({ view, category, label, savedIds, onToggleSave }: ShowcaseProps) {
+function Showcase({ view, category, colors, label, savedIds, onToggleSave }: ShowcaseProps) {
   const { data: rows, isPending, isError, hasNextPage, isFetchingNextPage, fetchNextPage } = useShowcaseWorks(view, category);
   const owners = useMemo(() => [...new Set((rows ?? []).map((r) => r.owner_id).filter((id): id is string => !!id))], [rows]);
   const { data: profiles } = useProfilesByIds(owners);
 
-  const works = useMemo<TileWork[]>(
+  const allWorks = useMemo<TileWork[]>(
     () =>
       (rows ?? []).flatMap((r) => {
         const cover = r.cover_url || r.gallery_urls?.[0] || "";
@@ -281,6 +305,19 @@ function Showcase({ view, category, label, savedIds, onToggleSave }: ShowcasePro
       }),
     [rows, profiles],
   );
+
+  // Colour search measures the covers in the browser (the existing colour search of the site).
+  const colorKey = colors.join(",");
+  const targets = useMemo(() => (colorKey ? allWorks.map((w) => ({ id: w.id, image: w.cover })) : []), [colorKey, allWorks]);
+  const { scores, pending: measuring } = useCoverColorScores(targets, colorKey || null);
+  const scoreKey = colorKey ? [...scores].map(([id, s]) => `${id}:${s.toFixed(3)}`).join("|") : "";
+  const works = useMemo(() => {
+    if (!colorKey) return allWorks;
+    const score = (id: string) => scores.get(id) ?? 0;
+    return allWorks.filter((w) => score(w.id) >= COLOR_MATCH_MIN).sort((a, b) => score(b.id) - score(a.id));
+    // scores is a new Map on every render; scoreKey says when its content changed
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [colorKey, allWorks, scoreKey]);
 
   // Bento shows 14, then 17 more per step, so blocks already on screen never move.
   const [shown, setShown] = useState(BENTO_FIRST);
@@ -316,7 +353,7 @@ function Showcase({ view, category, label, savedIds, onToggleSave }: ShowcasePro
     if (!isPending) releaseBoot();
   }, [isPending]);
 
-  if (isPending) return <ScLoader label="กำลังโหลดผลงานเพิ่ม" />;
+  if (isPending || (colorKey && measuring && !works.length)) return <ScLoader label="กำลังโหลดผลงานเพิ่ม" />;
   if (isError) return null;
   if (!works.length) return <p className="mn-none">ไม่เจอสิ่งที่ตรงกัน</p>;
 

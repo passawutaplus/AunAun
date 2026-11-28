@@ -1287,3 +1287,152 @@
     padding: 0 8px;
   }
 }
+
+/* ---------- colour search (Showcase tab, mock: Main.dc.html "ค้นหาด้วยสี") ---------- */
+.sc-app .cs {
+  position: relative;
+}
+
+.sc-app .cs .mn-tool[data-open] {
+  background: #E6E6E3;
+}
+
+.sc-app .cs-on {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px #F2F2F0;
+}
+
+.sc-app .cs-catch {
+  position: fixed;
+  inset: 0;
+  z-index: 9;
+}
+
+.sc-app .cs-box {
+  position: absolute;
+  top: 60px;
+  left: 0;
+  z-index: 10;
+  width: 272px;
+  box-sizing: border-box;
+  background: #FFFFFF;
+  border-radius: 20px;
+  box-shadow: 0 1px 2px rgba(40, 41, 41, .06), 0 16px 48px rgba(40, 41, 41, .12);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transform-origin: top left;
+}
+
+.sc-app .cs-sat {
+  position: relative;
+  height: 140px;
+  border-radius: 12px;
+  background:
+    linear-gradient(to top, #000, rgba(0, 0, 0, 0)),
+    linear-gradient(to right, #FFF, hsl(calc(var(--cs-hue) * 1deg) 100% 50%));
+}
+
+.sc-app .cs-mark {
+  position: absolute;
+  left: 76%;
+  top: 26%;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, .25);
+}
+
+.sc-app .cs-hue {
+  width: 100%;
+  height: 10px;
+  margin: 0;
+  padding: 0;
+  border-radius: 999px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00);
+  cursor: pointer;
+}
+
+.sc-app .cs-hue::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  border: 0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .3);
+  cursor: pointer;
+}
+
+.sc-app .cs-hue::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  border: 0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .3);
+  cursor: pointer;
+}
+
+.sc-app .cs-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sc-app .cs-slots {
+  display: flex;
+  gap: 8px;
+}
+
+.sc-app .cs-slot {
+  all: unset;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+
+.sc-app .cs-add {
+  background: #F0F0EE;
+  color: #B5B5B2;
+  font-size: 17px;
+  font-weight: 300;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sc-app .cs-add:disabled {
+  cursor: default;
+}
+
+.sc-app .cs-go {
+  all: unset;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #282929;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sc-app :is(.cs-slot, .cs-go, .cs-hue):focus-visible {
+  outline: 2px solid #282929;
+  outline-offset: 3px;
+}
