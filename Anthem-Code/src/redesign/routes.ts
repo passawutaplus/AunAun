@@ -40,6 +40,8 @@ const PAGES: ReadonlyArray<{ match: RegExp; page: ShellPage }> = [
   { match: /^\/$/, page: { page: "main", tabbar: true, tab: "home", footer: true, header: "main" } },
   // Preview of the frame while pages are being rebuilt (step 2a).
   { match: /^\/sc\/shell\/?$/, page: { page: "not-found", tabbar: true, tab: "", footer: true } },
+  // Text pages (step 13), on their old URLs.
+  { match: /^\/legal\/terms\/?$/, page: { page: "terms", tabbar: true, tab: "", footer: true } },
 ];
 
 export function shellPageFor(pathname: string): ShellPage | null {

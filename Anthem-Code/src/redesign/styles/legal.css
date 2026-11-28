@@ -1,0 +1,103 @@
+/* Terms + Privacy (mock: pages/Terms.dc.html, pages/Privacy.dc.html) */
+.sc-app .lg-main {
+  width: 100%;
+  max-width: 1440px;
+  margin-inline: auto;
+  padding: 53px 40px 80px;
+  box-sizing: border-box;
+}
+
+.sc-app .lg-card {
+  background: #FFFFFF;
+  border-radius: 38px;
+  box-shadow: 0 1px 3px rgba(40, 41, 41, .08), 0 10px 32px rgba(40, 41, 41, .12);
+  max-width: 920px;
+  margin: 24px auto 0;
+  padding: 64px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.sc-app .lg-nav {
+  display: flex;
+  align-items: baseline;
+  gap: 28px;
+}
+
+.sc-app .lg-nav a {
+  font-size: 28px;
+  letter-spacing: -.01em;
+  text-decoration: none;
+  color: #A3A3A0;
+}
+
+.sc-app .lg-nav a[aria-current="page"] {
+  color: #282929;
+  font-weight: 500;
+}
+
+.sc-app .lg-nav a:focus-visible {
+  outline: 2px solid #282929;
+  outline-offset: 3px;
+}
+
+.sc-app .lg-note {
+  margin: 0;
+  font-size: 13px;
+  color: #8A8A87;
+}
+
+.sc-app .lg-sec {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 32px;
+  padding: 28px 0;
+  border-top: 1px solid #ECECEA;
+}
+
+.sc-app .lg-sec h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.sc-app .lg-sec h2 span {
+  color: #8A8A87;
+  margin-right: 8px;
+}
+
+.sc-app .lg-sec p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.8;
+  color: #4A4A4A;
+  white-space: pre-line;
+}
+
+@media (max-width: 900px) {
+  .sc-app .lg-card {
+    padding: 32px 20px;
+  }
+
+  .sc-app .lg-sec {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+}
+
+/* phones: full-width card, 12px edge, no shadow; content starts right under the header */
+@media (max-width: 600px) {
+  .sc-app .lg-main {
+    padding: 28px 12px 32px;
+  }
+
+  .sc-app .lg-card {
+    margin-top: 0;
+    padding: 24px 16px 28px;
+    border-radius: 24px;
+    box-shadow: none;
+  }
+}
