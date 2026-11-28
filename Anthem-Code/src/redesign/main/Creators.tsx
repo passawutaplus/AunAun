@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { proxiedImageUrl } from "@/lib/imageProxy";
 import type { ScCategory } from "../lib/categories";
 import { SC_LINKS } from "../routes";
+import { useGreet } from "../shell/panels";
 import ScLoader from "./ScLoader";
 import { useCreators, type Creator, type CreatorView } from "./useCreators";
 import { useFollows } from "./useFollows";
@@ -16,17 +17,19 @@ const Avatar = ({ src, size }: { src: string; size: 44 | 72 }) =>
     <span aria-hidden="true" className={`cr-av cr-av-${size}`} />
   );
 
-type FollowProps = { creator: Creator; followed: boolean; onToggle: (id: string) => void };
+type FollowProps = { creator: Creator; followed: boolean; onToggle: (id: string) => void; onGreet: (id: string, el: HTMLElement) => void };
 
 /**
  * Creators tab of the home page (mock: Main.dc.html, isCreators): "NEW THIS WEEK" strip and the
  * "ALL CREATORS" grid. No follower counts and nothing about hiring, by design.
- * "ทักทาย" (say hi) next to a followed creator opens the chat and comes with the Chat step.
+ * "ทักทาย" (say hi) next to a followed creator opens the small chat window (ChatDock), or the chat page on phones.
  */
 export default function Creators({ view, category }: { view: CreatorView; category: ScCategory | null }) {
   const navigate = useNavigate();
   const { data, isPending, isError } = useCreators();
   const follows = useFollows();
+  const greeting = useGreet();
+  const onGreet = (id: string, el: HTMLElement) => greeting.greet({ otherId: id }, el);
   const trackRef = useRef<HTMLDivElement>(null);
   // Discover shows people in a different order on every visit, so nobody owns the top row.
   const seed = useRef(Math.random());
@@ -88,7 +91,7 @@ export default function Creators({ view, category }: { view: CreatorView; catego
           </div>
           <div className="cr-track" ref={trackRef}>
             {fresh.map((c) => (
-              <NewCard key={c.id} creator={c} followed={follows.ids.has(c.id)} onToggle={onToggle} self={follows.selfId === c.id} />
+              <NewCard key={c.id} creator={c} followed={follows.ids.has(c.id)} onToggle={onToggle} onGreet={onGreet} self={follows.selfId === c.id} />
             ))}
           </div>
         </div>
@@ -99,15 +102,20 @@ export default function Creators({ view, category }: { view: CreatorView; catego
         </div>
         <div className="cr-all">
           {all.map((c) => (
-            <AllCard key={c.id} creator={c} followed={follows.ids.has(c.id)} onToggle={onToggle} self={follows.selfId === c.id} />
+            <AllCard key={c.id} creator={c} followed={follows.ids.has(c.id)} onToggle={onToggle} onGreet={onGreet} self={follows.selfId === c.id} />
           ))}
         </div>
       </div>
+      {greeting.error ? (
+        <div role="status" className="cd-say">
+          {greeting.error}
+        </div>
+      ) : null}
     </section>
   );
 }
 
-function NewCard({ creator: c, followed, onToggle, self }: FollowProps & { self: boolean }) {
+function NewCard({ creator: c, followed, onToggle, onGreet, self }: FollowProps & { self: boolean }) {
   return (
     <div className="cr-new">
       <span className="cr-new-av">
@@ -124,7 +132,13 @@ function NewCard({ creator: c, followed, onToggle, self }: FollowProps & { self:
         <span className="cr-who-n">{c.name}</span>
         <span className="cr-who-s">{c.sub}</span>
       </Link>
-      <div className="cr-hi" />
+      <div className="cr-hi">
+        {followed && !self ? (
+          <button type="button" className="cd-hi" onClick={(e) => onGreet(c.id, e.currentTarget)}>
+            ทักทาย
+          </button>
+        ) : null}
+      </div>
       <Link to={c.href} className="cr-th cr-th4" aria-label={`ผลงานของ ${c.name}`}>
         {c.covers.slice(0, 4).map((src) => (
           <img key={src} alt="" src={proxiedImageUrl(src, 256)} loading="lazy" decoding="async" />
@@ -134,7 +148,7 @@ function NewCard({ creator: c, followed, onToggle, self }: FollowProps & { self:
   );
 }
 
-function AllCard({ creator: c, followed, onToggle, self }: FollowProps & { self: boolean }) {
+function AllCard({ creator: c, followed, onToggle, onGreet, self }: FollowProps & { self: boolean }) {
   return (
     <div className="cr-card">
       {/* One or two works fill the row instead of leaving empty space (owner 2026-11-28). */}
@@ -151,6 +165,11 @@ function AllCard({ creator: c, followed, onToggle, self }: FollowProps & { self:
           <span className="cr-row-n">{c.name}</span>
           <span className="cr-who-s">{c.sub}</span>
         </Link>
+        {followed && !self ? (
+          <button type="button" className="cd-hi" onClick={(e) => onGreet(c.id, e.currentTarget)}>
+            ทักทาย
+          </button>
+        ) : null}
         {self ? null : (
           <button type="button" className="cr-follow" aria-label={`${followed ? "เลิกติดตาม" : "ติดตาม"} ${c.name}`} aria-pressed={followed} onClick={() => onToggle(c.id)}>
             {followed ? "✓" : "ติดตาม"}

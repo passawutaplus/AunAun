@@ -430,6 +430,7 @@ const RedesignPrivacy = lazy(() => import("./redesign/pages/Privacy.tsx"));
 const RedesignHelp = lazy(() => import("./redesign/pages/Help.tsx"));
 const RedesignFeedback = lazy(() => import("./redesign/pages/Feedback.tsx"));
 const RedesignGetInTouch = lazy(() => import("./redesign/pages/GetInTouch.tsx"));
+const RedesignChat = lazy(() => import("./redesign/pages/Chat.tsx"));
 
 /** Old site chrome (top nav, floating nav, banners, prompts): never mounted on a page of the new design. */
 const LegacyChrome = ({ children }: { children: ReactNode }) => {
@@ -552,6 +553,9 @@ const App = () => (
                         {/* Event or venue on its old URL (step 6). */}
                         <Route path="/exhibition/:id" element={<RedesignEvent />} />
                         <Route path="/exhibition/:id/locations" element={<RedesignLocations />} />
+                        {/* Chat (step 12) on the old URLs; the same page opens as the big popup of ChatDock. */}
+                        <Route path="/chat" element={<RedesignChat />} />
+                        <Route path="/chat/:id" element={<RedesignChat />} />
                         <Route path="/u/:userId" element={<RedesignProfile />} />
                         <Route path="/:vanityHandle" element={<RedesignProfile />} />
                       </Route>

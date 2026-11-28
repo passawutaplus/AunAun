@@ -1,10 +1,10 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { openConnectChat } from "@/lib/chat/openConnectChat";
 import { proxiedImageUrl } from "@/lib/imageProxy";
 import { getOpenCalls, getRecentFollowers, getStudioComments, type StudioProfile, type StudioWork } from "@/server/queries/studio";
 import { useMyEvents } from "../profile/useMyProfile";
+import { useGreet } from "../shell/panels";
 import { count } from "../profile/tiles";
 import { coverOf, editHref, ratioOf } from "./StudioWorks";
 import { interestWords, rankOpenCalls } from "./forYou";
@@ -79,15 +79,8 @@ export default function StudioOverview({ uid, profile, works, followers, goTab }
   const openCalls = useMemo(() => rankOpenCalls(calls.data ?? [], interests).slice(0, 3), [calls.data, interests]);
 
   const people = useQuery({ queryKey: ["sc-studio-followers", uid], queryFn: () => getRecentFollowers(uid), staleTime: 60_000 });
-  const greet = async (id: string) => {
-    // The floating chat comes with the Chat step; until then the old chat room opens.
-    try {
-      const room = await openConnectChat(uid, id, "");
-      navigate(`/chat/${room}`);
-    } catch {
-      // stay here if the room could not be opened
-    }
-  };
+  // Small chat window (ChatDock) on larger screens, the chat page on phones.
+  const greeting = useGreet();
 
   // Upcoming: events I am interested in that have not ended, soonest first.
   const mine = useMyEvents(uid, true);
@@ -242,7 +235,7 @@ export default function StudioOverview({ uid, profile, works, followers, goTab }
                 <span className="ms-oc-t">{p.username || p.display_name || "—"}</span>
                 <span className="ms-oc-s">ติดตามคุณ</span>
               </span>
-              <button type="button" className="ms-hb2 ms-hb2-xs" onClick={() => void greet(p.user_id)}>
+              <button type="button" className="ms-hb2 ms-hb2-xs" onClick={(e) => greeting.greet({ otherId: p.user_id }, e.currentTarget)}>
                 ทักทาย
               </button>
             </div>
@@ -270,6 +263,11 @@ export default function StudioOverview({ uid, profile, works, followers, goTab }
           {upcoming.length ? null : <p className="ms-dash">—</p>}
         </div>
       </div>
+      {greeting.error ? (
+        <div role="status" className="cd-say">
+          {greeting.error}
+        </div>
+      ) : null}
     </>
   );
 }

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type MouseEvent } from "react";
 import { Link } from "react-router-dom";
 import type { NotificationRow } from "../lib/notificationRows";
 import { onEscape } from "./panels";
@@ -10,7 +10,8 @@ type Props = {
   top: number;
   right: number;
   leaving: boolean;
-  onOpenRow: (row: NotificationRow) => void;
+  /** A chat row may `preventDefault` to open the room in ChatDock instead of following the link. */
+  onOpenRow: (row: NotificationRow, e: MouseEvent<HTMLAnchorElement>) => void;
   onReadAll: () => void;
   onClose: (restoreFocus?: boolean) => void;
 };
@@ -59,7 +60,7 @@ export default function NotificationPanel({ rows, loading, top, right, leaving, 
               to={r.href}
               className="nt-row"
               aria-label={`${r.who} ${r.what}${r.unread ? " ยังไม่อ่าน" : ""}`}
-              onClick={() => onOpenRow(r)}
+              onClick={(e) => onOpenRow(r, e)}
             >
               <span aria-hidden="true" className="nt-pic" data-round={r.round ? "" : undefined} style={pic(r.picture)} />
               <span className="nt-tx">

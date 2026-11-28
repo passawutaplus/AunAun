@@ -33,6 +33,7 @@ export const SHARED_TABLE_NAMES = [
   "conversation_members",
   "conversation_pins",
   "conversation_hides",
+  "conversation_prefs",
   "messages",
   "collab_plans",
   "collab_plan_change_requests",

@@ -3,7 +3,6 @@ import { Link, useLocation, useNavigate, useParams, type Location } from "react-
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useFeedProjectSelect } from "@/hooks/useFeedProjectSelect";
-import { openConnectChat } from "@/lib/chat/openConnectChat";
 import { shareFromApp } from "@/lib/nativeShell";
 import { getBackgroundLocation } from "@/lib/projectOverlay";
 import { proxiedImageSrcSet, proxiedImageUrl } from "@/lib/imageProxy";
@@ -21,6 +20,7 @@ import WorkComments from "../work/WorkComments";
 import { useImageLikes, useOwnerWorks, useWork, useWorkCatalog } from "../work/useWork";
 import { formatCount, licenceLine, neighbour, pickSimilar, workDateLine } from "../work/workContent";
 import NotFound from "./NotFound";
+import { useShellPanels } from "../shell/panels";
 import { instagramUrl, websiteUrl } from "../lib/contactLinks";
 import { indexableBySearch, useNoIndex } from "../lib/visibility";
 import "../styles/fonts.css";
@@ -224,19 +224,18 @@ function WorkView({ id, overlay, list, linkState, close }: ViewProps) {
     setShareFor({ image, ratio });
   };
 
-  const greet = async () => {
+  // Small chat window (ChatDock) with this work's card on top; the chat page on phones (mock greet-signal + greet-work).
+  const { openChat } = useShellPanels();
+  const greet = (el: HTMLElement) => {
     if (!user) {
       navigate(SC_LINKS.login);
       return;
     }
     if (!ownerId) return;
-    // The floating chat (ChatDock) comes with the Chat step; until then the old chat room opens.
-    try {
-      const room = await openConnectChat(user.id, ownerId, "");
-      navigate(`/chat/${room}`);
-    } catch (e) {
-      say(e instanceof Error && e.message ? e.message : "เปิดแชทไม่สำเร็จ");
-    }
+    const cover = row?.cover_url || media.find((m) => m.kind === "image")?.url || "";
+    openChat({ otherId: ownerId, work: { id, title, cover: proxiedImageUrl(cover, 96) } }, el).catch((e: unknown) =>
+      say(e instanceof Error && e.message ? e.message : "เปิดแชทไม่สำเร็จ"),
+    );
   };
 
   const toggleFollow = () => {
@@ -376,7 +375,7 @@ function WorkView({ id, overlay, list, linkState, close }: ViewProps) {
                     <button type="button" className="wk-follow" aria-pressed={followed} data-on={followed ? "" : undefined} onClick={toggleFollow}>
                       {followed ? "ติดตามแล้ว" : "ติดตาม"}
                     </button>
-                    <button type="button" className="wk-greet" onClick={() => void greet()}>
+                    <button type="button" className="wk-greet" onClick={(e) => greet(e.currentTarget)}>
                       ทักทาย
                     </button>
                   </>

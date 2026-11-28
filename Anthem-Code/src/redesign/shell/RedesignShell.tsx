@@ -4,7 +4,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useProfilesByIds } from "@/core/profiles/useProfilesByIds";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
-import { useChatInboxBadgeCount } from "@/hooks/useChat";
 import { useNotifications } from "@/core/notifications";
 import { hasCompletedProfileOnboarding } from "@/hooks/useFeedInterests";
 import { getMyOnboarding } from "@/server/queries/account";
@@ -13,14 +12,16 @@ import { signOutApp } from "@/lib/signOutApp";
 import { usePresence } from "../lib/usePresence";
 import { actorOf, isShownNotification, toNotificationRow, type NotificationRow } from "../lib/notificationRows";
 import { homeEventsQuery } from "../main/useHomeEvents";
+import { useOpenChatWith, useUnreadRooms } from "../chat/useChatStore";
 import { SC_LINKS, shellPageFor, type ShellPage } from "../routes";
 import AccountMenu from "./AccountMenu";
 import CalendarPanel from "./CalendarPanel";
+import ChatDock, { type ChatDockHandle } from "./ChatDock";
 import WelcomePanel from "./WelcomePanel";
 import NewChooser from "./NewChooser";
 import NotificationPanel from "./NotificationPanel";
 import SearchPanel from "./SearchPanel";
-import { ShellPanelsContext, type ShellPanels } from "./panels";
+import { setChatHost, ShellPanelsContext, type ShellPanels } from "./panels";
 import logoUrl from "../assets/logo.svg";
 import "../styles/fonts.css";
 import "../styles/tokens.css";
@@ -32,6 +33,20 @@ import "../styles/calendar.css";
 const FALLBACK: ShellPage = { page: "", tabbar: false, tab: "", footer: true };
 
 const bg = (url: string) => (url ? { backgroundImage: `url(${JSON.stringify(url)})` } : undefined);
+
+/**
+ * Pages with ChatDock (the mock pages that dc-import name="ChatDock": Main + the work over it, Work on its own,
+ * Profile, MyProfile, MyStudio, Settings, Upload, Event, Locations, GetInTouch, Help, Terms, Privacy, NotFound),
+ * plus the home's tag / similar-picture pages. Not on Chat, Feedback, Login, EventPost (none of them has it).
+ */
+const DOCK_PAGES = new Set([
+  "main", "work", "profile", "my-profile", "my-studio", "account-settings", "upload", "event", "locations",
+  "get-in-touch", "help", "terms", "privacy", "not-found", "explore", "similar",
+]);
+
+/** Phones (≤600px) have no floating chat (design rule B2): chat opens on the chat page. */
+const isPhone = () => !!window.matchMedia?.("(max-width: 600px)").matches;
+const plainClick = (e: MouseEvent) => e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey;
 
 /**
  * Frame of the new design: header, footer, floating tab bar on phones, account menu.
@@ -57,7 +72,11 @@ export default function RedesignShell() {
   });
   const [welcomeHidden, setWelcomeHidden] = useState(false);
   const needsWelcome = !!user && !!onboarding && !hasCompletedProfileOnboarding(onboarding) && !welcomeHidden && cfg.page !== "login";
-  const { data: chatUnread = 0 } = useChatInboxBadgeCount();
+  // Unread rooms that are not muted (mock: the red number of the tab bar's chat button).
+  const chatUnread = useUnreadRooms();
+  const openChatWith = useOpenChatWith();
+  const dockRef = useRef<ChatDockHandle>(null);
+  const dockOn = !!user && DOCK_PAGES.has(cfg.page);
   const { items: inbox, loading: inboxLoading, markRead, markAllRead } = useNotifications(user?.id);
   // Only the kinds the new design has (no hiring, collab, KYC …); the bell counts the same rows the panel shows.
   const shownInbox = useMemo(() => inbox.filter(isShownNotification), [inbox]);
@@ -133,15 +152,22 @@ export default function RedesignShell() {
     opener.current = el;
     const r = el.getBoundingClientRect();
     setNotiAt({ top: Math.round(r.bottom + 8), right: Math.max(16, Math.round(window.innerWidth - r.right - 8)) });
+    dockRef.current?.closeList();
     closeMenu();
     closeSearch();
     closeChooser();
     openNoti();
   };
 
-  const openNotiRow = (row: NotificationRow) => {
+  const openNotiRow = (row: NotificationRow, e: MouseEvent<HTMLAnchorElement>) => {
     if (row.unread) void markRead(row.id).catch(() => undefined);
     closePanel(false);
+    // A chat row opens its room in ChatDock (mock: the small chat window), on pages and screens that have it.
+    const room = /^\/chat\/([^/?#]+)/.exec(row.href)?.[1];
+    if (room && dockRef.current && !isPhone()) {
+      e.preventDefault();
+      void panels.openChat({ roomId: room }).catch(() => navigate(row.href));
+    }
   };
 
   const panels = useMemo<ShellPanels>(
@@ -157,6 +183,7 @@ export default function RedesignShell() {
             ? vh > 1200 && y ? `${y + 60}px` : "18vh"
             : vh > 1200 && y ? `${Math.max(200, y + 160)}px` : "38%";
         setSpot({ top, centred: from === "header" });
+        dockRef.current?.closeList();
         closeMenu();
         closeChooser();
         closeNoti();
@@ -164,6 +191,7 @@ export default function RedesignShell() {
       },
       openNew: (el) => {
         opener.current = el;
+        dockRef.current?.closeList();
         closeMenu();
         closeSearch();
         closeNoti();
@@ -171,15 +199,42 @@ export default function RedesignShell() {
       },
       openCalendar: (el) => {
         opener.current = el;
+        dockRef.current?.closeList();
         closeMenu();
         closeSearch();
         closeChooser();
         closeNoti();
         openCal();
       },
+      // "ทักทาย" / chat icon: the room (existing or new) in the small window, or the big popup; phones → /chat/<room>.
+      openChat: async (opts, el) => {
+        if (!user) {
+          navigate(SC_LINKS.login);
+          return;
+        }
+        const roomId = opts.roomId ?? (opts.otherId ? await openChatWith(opts.otherId) : null);
+        const dock = dockRef.current;
+        if (!dock || isPhone()) {
+          navigate(roomId ? `${SC_LINKS.chat}/${roomId}` : SC_LINKS.chat);
+          return;
+        }
+        closeMenu();
+        closeSearch();
+        closeChooser();
+        closeNoti();
+        closeCal();
+        if (opts.big || !roomId) dock.openBig(roomId, el ?? null);
+        else dock.openRoom(roomId, opts.work ?? null, el ?? null);
+      },
     }),
-    [closeMenu, closeChooser, closeSearch, closeNoti, openSearch, openChooser, openCal],
+    [closeMenu, closeChooser, closeSearch, closeNoti, closeCal, openSearch, openChooser, openCal, user, navigate, openChatWith],
   );
+
+  // A work open over the page renders outside this tree (App.tsx BackgroundAwareRoutes): it reaches openChat here.
+  useEffect(() => {
+    setChatHost(panels.openChat);
+    return () => setChatHost(null);
+  }, [panels.openChat]);
 
   // Page background outside .sc-app (overscroll, short pages), while the new frame is on screen.
   useEffect(() => {
@@ -261,7 +316,19 @@ export default function RedesignShell() {
               </Link>
               {user ? (
                 <>
-                  <Link to={SC_LINKS.chat} aria-label="แชท" className="sc-ib sc-hd-chat">
+                  {/* Larger screens: the big chat popup (mock open-signal); the link stays for new tabs and pages without ChatDock. */}
+                  <Link
+                    to={SC_LINKS.chat}
+                    aria-label="แชท"
+                    aria-current={cfg.page === "chat" ? "page" : undefined}
+                    aria-haspopup={dockOn ? "dialog" : undefined}
+                    className="sc-ib sc-hd-chat"
+                    onClick={(e) => {
+                      if (!dockOn || !plainClick(e) || isPhone()) return;
+                      e.preventDefault();
+                      panels.openChat({ big: true }, e.currentTarget).catch(() => undefined);
+                    }}
+                  >
                     <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.33" strokeLinejoin="round">
                       <path d="M12 3.5a8.5 8.5 0 0 1 0 17c-1.5 0-2.9-.4-4.1-1L3.5 20.5l1.1-4.2A8.5 8.5 0 0 1 12 3.5z" />
                     </svg>
@@ -360,8 +427,12 @@ export default function RedesignShell() {
             <path d="M12 5v14M5 12h14" />
           </svg>
         </Link>
-        {/* Count comes from the current chat hook; "unread rooms that are not muted" arrives with the Chat step. */}
-        <Link to={user ? SC_LINKS.chat : SC_LINKS.login} data-k="chat" aria-label={chatUnread ? `แชท ${chatUnread} ข้อความใหม่` : "แชท"}>
+        <Link
+          to={user ? SC_LINKS.chat : SC_LINKS.login}
+          data-k="chat"
+          aria-label={chatUnread ? `แชท ${chatUnread} ข้อความใหม่` : "แชท"}
+          aria-current={tab === "chat" ? "page" : undefined}
+        >
           <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" strokeWidth="1.4" strokeLinejoin="round">
             <path d="M12 3.5a8.5 8.5 0 0 1 0 17c-1.5 0-2.9-.4-4.1-1L3.5 20.5l1.1-4.2A8.5 8.5 0 0 1 12 3.5z" />
           </svg>
@@ -394,6 +465,7 @@ export default function RedesignShell() {
           onClose={() => setWelcomeHidden(true)}
         />
       ) : null}
+      {dockOn ? <ChatDock ref={dockRef} /> : null}
       {user && noti.mounted ? (
         <NotificationPanel
           rows={notiRows}

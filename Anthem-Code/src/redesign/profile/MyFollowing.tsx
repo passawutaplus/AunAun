@@ -1,11 +1,11 @@
-import { Link, useNavigate } from "react-router-dom";
-import { openConnectChat } from "@/lib/chat/openConnectChat";
+import { Link } from "react-router-dom";
 import { proxiedImageUrl } from "@/lib/imageProxy";
 import { displayProfileAddress } from "@/lib/profileAddress";
 import { parseProfileVisibility } from "@/lib/profileVisibility";
 import ScLoader from "../main/ScLoader";
 import { profileHref } from "../main/useCreators";
 import { useFollows } from "../main/useFollows";
+import { useGreet } from "../shell/panels";
 import { useMyFollowing } from "./useMyProfile";
 
 const Lock = () => (
@@ -22,19 +22,10 @@ export const OnlyYou = () => (
 
 /** Following: a card per person I follow — three newest works, name, CATEGORY · city, ทักทาย, follow toggle. */
 export default function MyFollowing({ uid }: { uid: string }) {
-  const navigate = useNavigate();
   const { list, pending } = useMyFollowing(uid, true);
   const follows = useFollows();
-
-  const greet = async (id: string) => {
-    // The floating chat (ChatDock) comes with the Chat step; until then the old chat room opens.
-    try {
-      const room = await openConnectChat(uid, id, "");
-      navigate(`/chat/${room}`);
-    } catch {
-      // the chat page shows its own errors; stay here if the room could not be opened
-    }
-  };
+  // Small chat window (ChatDock) on larger screens, the chat page on phones.
+  const greeting = useGreet();
 
   return (
     <>
@@ -58,7 +49,7 @@ export default function MyFollowing({ uid }: { uid: string }) {
                   <span>{name}</span>
                   {sub ? <span>{sub}</span> : null}
                 </Link>
-                <button type="button" className="mp-ib2" aria-label={`ทักทาย ${name}`} onClick={() => void greet(f.user_id)}>
+                <button type="button" className="mp-ib2" aria-label={`ทักทาย ${name}`} onClick={(e) => greeting.greet({ otherId: f.user_id }, e.currentTarget)}>
                   <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3.5a8.5 8.5 0 0 1 0 17c-1.5 0-2.9-.4-4.1-1L3.5 20.5l1.1-4.2A8.5 8.5 0 0 1 12 3.5z" /></svg>
                 </button>
               </span>
@@ -73,6 +64,11 @@ export default function MyFollowing({ uid }: { uid: string }) {
         })}
       </div>
       {pending ? <ScLoader label="กำลังโหลด" /> : null}
+      {greeting.error ? (
+        <div role="status" className="cd-say">
+          {greeting.error}
+        </div>
+      ) : null}
     </>
   );
 }

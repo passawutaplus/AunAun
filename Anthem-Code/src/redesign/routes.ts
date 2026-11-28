@@ -2,7 +2,7 @@
  * Pages of the new design and how the shared frame behaves on each of them.
  * A path listed here renders inside RedesignShell and the old site chrome stays off.
  */
-export type ShellTab = "home" | "event" | "me" | "";
+export type ShellTab = "home" | "event" | "chat" | "me" | "";
 
 export type ShellPage = {
   /** Mock route name (`data-page`), e.g. "my-profile"; some phone rules depend on it. */
@@ -68,6 +68,8 @@ const PAGES: ReadonlyArray<{ match: RegExp; page: ShellPage }> = [
   { match: /^\/similar\/[^/]+\/?$/, page: { page: "similar", tabbar: true, tab: "home", footer: true, back: true } },
   // Post / edit a work (step 9): the page has its own header (logo · New Work · ↶ ↷ · ×); no tab bar, no footer on phones (mock).
   { match: /^\/portfolio\/(new|[^/]+\/edit)\/?$/, page: { page: "upload", tabbar: false, tab: "", footer: true, header: "none" } },
+  // Chat (step 12): the list keeps the tab bar on phones (chat button current); an open room hides header + tab bar (chat.css).
+  { match: /^\/chat(\/[^/]+)?\/?$/, page: { page: "chat", tabbar: true, tab: "chat", footer: false } },
   // Someone's profile (step 5), on the old URLs /@handle and /u/:id.
   { match: /^\/(@[^/]+|u\/[^/]+)\/?$/, page: { page: "profile", tabbar: true, tab: "", footer: true, back: true } },
   // An event or venue (step 6), on its old URL. Phones hide the header; the page has its own bottom bar.
