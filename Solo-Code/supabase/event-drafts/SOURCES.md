@@ -131,6 +131,19 @@ Chiang Rai, Phrae, Uttaradit, Phitsanulok, Korat, Sisaket, Surin, Ubon Ratchatha
 | Khao Yai Art Forest | https://khaoyaiart.org | นครราชสีมา (เขาใหญ่) |
 | Hua Hin Artist Village | https://huahinartistvillage.wordpress.com | ประจวบคีรีขันธ์ |
 
+## Facebook pages (read in the desktop app's browser, logged in)
+
+Organisers that announce mainly on Facebook (checked 2026-11-28):
+DoiTung Club (Colors of Doi Tung, Dec–Jan) https://www.facebook.com/DoiTungClub ·
+Phraecraft แพร่คราฟท์ (Phrae Craft, early Dec) https://www.facebook.com/profile.php?id=61581600364358 ·
+Y.L.A Creative Assets Space, Yala https://www.facebook.com/profile.php?id=100064095640615 ·
+TCDC Songkhla https://www.facebook.com/tcdcsongkhla · TCDC Khon Kaen https://www.facebook.com/TCDCKhonKaen ·
+Pakk Taii Design Week https://www.facebook.com/pakktaiidesignweek · Illust Fusion https://www.facebook.com/illustfusion.
+
+How: Facebook's event search is weak for Thai places. Use post search (`/search/posts/?q=<event name>`)
+to verify a known lead, then read the organiser's own post or event (`/<page>/upcoming_hosted_events`).
+Use the post or event permalink as `source_url`. Leave Facebook pictures out: their links are long and expire.
+
 Discovery only (never `source_url`): TAT newsroom / thailand.go.th event listings, contest
 aggregators (Contest Thailand, thaiprize, Bounty Hunter), Time Out, news sites. Most provincial
 events are announced only on Facebook: confirm the page from the organiser's website first.
