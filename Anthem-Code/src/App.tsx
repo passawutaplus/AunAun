@@ -414,6 +414,7 @@ const RedesignWork = lazy(() => import("./redesign/pages/Work.tsx"));
 const RedesignProfile = lazy(() => import("./redesign/pages/Profile.tsx"));
 const RedesignEvent = lazy(() => import("./redesign/pages/Event.tsx"));
 const RedesignLogin = lazy(() => import("./redesign/pages/Login.tsx"));
+const RedesignSettings = lazy(() => import("./redesign/pages/Settings.tsx"));
 const RedesignLocations = lazy(() => import("./redesign/pages/Locations.tsx"));
 const RedesignWorkOverlay = lazy(() =>
   import("./redesign/pages/Work.tsx").then((m) => ({ default: m.WorkOverlay })),
@@ -519,6 +520,7 @@ const App = () => (
                         <Route path="/auth" element={<RedesignLogin />} />
                         <Route path="/auth/forgot" element={<RedesignLogin />} />
                         <Route path="/reset-password" element={<RedesignLogin />} />
+                        <Route path="/settings" element={<RedesignSettings />} />
                         {/* Event or venue on its old URL (step 6). */}
                         <Route path="/exhibition/:id" element={<RedesignEvent />} />
                         <Route path="/exhibition/:id/locations" element={<RedesignLocations />} />
