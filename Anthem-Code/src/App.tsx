@@ -414,6 +414,7 @@ const RedesignTerms = lazy(() => import("./redesign/pages/Terms.tsx"));
 const RedesignPrivacy = lazy(() => import("./redesign/pages/Privacy.tsx"));
 const RedesignHelp = lazy(() => import("./redesign/pages/Help.tsx"));
 const RedesignFeedback = lazy(() => import("./redesign/pages/Feedback.tsx"));
+const RedesignGetInTouch = lazy(() => import("./redesign/pages/GetInTouch.tsx"));
 
 /** Old site chrome (top nav, floating nav, banners, prompts): never mounted on a page of the new design. */
 const LegacyChrome = ({ children }: { children: ReactNode }) => {
@@ -490,6 +491,9 @@ const App = () => (
                         <Route path="/me/feedback" element={<RedesignFeedback />} />
                         {/* Unknown URLs still reach the old 404 (catch-all and /:vanityHandle) until step 14. */}
                         <Route path="/error/404" element={<RedesignNotFound />} />
+                        <Route path="/learn">
+                          <Route index element={<RedesignGetInTouch />} />
+                        </Route>
                       </Route>
                     ) : null}
                     <Route element={<LaunchMinimalGate />}>
