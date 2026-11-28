@@ -1051,6 +1051,112 @@ $j$::jsonb);
 SELECT public.scout_event_publish($j$
 {
   "scout_batch": "2026-11-29",
+  "title": "Illust Fusion Color Parade 2027 — เปิดรับสมัครบูธศิลปิน",
+  "category": "open_call",
+  "starts_on": "2026-11-27",
+  "ends_on": "2026-12-06",
+  "time_note": "",
+  "location_name": "สมัครออนไลน์ · งานจัดที่ QSNCC กรุงเทพฯ",
+  "location_note": "",
+  "description": "Illust Fusion เปิดรับสมัครศิลปินออกบูธในงานใหม่ Illust Fusion Color Parade 2027 ซึ่งจะจัดวันที่ 26–28 มีนาคม 2570 ที่ Event Hall ชั้น B2 ศูนย์การประชุมแห่งชาติสิริกิติ์ (QSNCC)\n\nเหมาะกับนักวาด นักออกแบบ และคนทำสินค้าจากงานวาด เช่น สติกเกอร์ โปสการ์ด สมุด หรืออาร์ตทอย ที่อยากมีบูธขายผลงานของตัวเองในงานสายวาดภาพขนาดใหญ่\n\nรอบนี้เปิดรับสมัครตั้งแต่วันประกาศจนถึง 6 ธันวาคม 2569 รายละเอียดประเภทบูธ ค่าบูธ และแบบฟอร์มสมัคร ดูได้จากประกาศในเพจทางการของ Illust Fusion\n\nตัวงาน Color Parade เปิดให้เข้าชมฟรี เวลา 10:00–20:00 น. ทั้งสามวัน",
+  "organizer_name": "Illust Fusion (Enterdock Co., Ltd.)",
+  "website_url": "https://www.facebook.com/illustfusion",
+  "registration_url": "",
+  "ticket_url": "",
+  "registration_open": true,
+  "fee_type": "unspecified",
+  "fee_note": "",
+  "open_for_sponsors": false,
+  "source_name": "Illust Fusion ประกอบร่างสร้างเส้น (เพจทางการ)",
+  "source_url": "https://www.facebook.com/illustfusion",
+  "insights": {
+    "who_for": [
+      "นักวาดที่อยากมีบูธขายงานของตัวเอง",
+      "คนทำสินค้าจากงานวาด เช่น สติกเกอร์ โปสการ์ด อาร์ตทอย"
+    ],
+    "steps": [
+      "อ่านประกาศรับสมัครในเพจ Illust Fusion",
+      "กรอกแบบฟอร์มสมัครบูธก่อน 6 ธ.ค. 2569"
+    ],
+    "related_categories": [
+      "Illustration / Art",
+      "Art Toy / Model",
+      "Craft / Handmade"
+    ],
+    "links": [
+      {
+        "kind": "info",
+        "label": "เพจ Illust Fusion",
+        "url": "https://www.facebook.com/illustfusion"
+      }
+    ]
+  }
+}
+$j$::jsonb);
+
+SELECT public.scout_event_publish($j$
+{
+  "scout_batch": "2026-11-29",
+  "title": "Illust Fusion EXPO WINTER 2026",
+  "category": "art_fair",
+  "starts_on": "2026-12-12",
+  "ends_on": "2026-12-13",
+  "time_note": "10:00–20:00 น.",
+  "location_name": "พารากอน ฮอลล์ ชั้น 5 สยามพารากอน กรุงเทพฯ",
+  "location_note": "",
+  "description": "Illust Fusion ประกอบร่างสร้างเส้น งานรวมตัวนักวาดที่ใหญ่ที่สุดงานหนึ่งของกรุงเทพฯ กลับมาอีกครั้งในรอบฤดูหนาว 12–13 ธันวาคม 2569 ที่พารากอน ฮอลล์ ชั้น 5\n\nในงานมีบูธศิลปินวันละ 924 บูธ รวมสองวันเกือบ 1,900 บูธ ทั้งนักวาด นักเขียน กราฟิกดีไซเนอร์ และจิตรกร มาวางขายผลงานเอง ตั้งแต่สติกเกอร์ โปสการ์ด สมุด มาสกิ้งเทป ไปจนถึงอาร์ตทอยและงานภาพวาด ศิลปินบางส่วนสลับชุดกันในแต่ละวัน\n\nเหมาะกับคนรักงานวาดที่อยากเดินเลือกซื้อของจากศิลปินไทยโดยตรง และนักวาดที่อยากดูว่าเพื่อนในวงการทำสินค้าแบบไหนกันบ้าง นอกจากบูธยังมีกิจกรรมของงานและกระดานประกอบร่างสร้างเส้นที่จัดต่อเนื่องทุกครั้ง\n\nบัตรเข้างาน 1 วัน 120 บาท หรือ 2 วัน 220 บาท ดูรายชื่อศิลปินและผังบูธได้บนเว็บไซต์ของงาน",
+  "organizer_name": "Illust Fusion (Enterdock Co., Ltd.)",
+  "website_url": "https://if.enterdock.com/info/",
+  "registration_url": "",
+  "ticket_url": "",
+  "registration_open": false,
+  "fee_type": "paid",
+  "fee_note": "1 วัน 120 บาท · 2 วัน 220 บาท",
+  "open_for_sponsors": false,
+  "source_name": "Illust Fusion",
+  "source_url": "https://if.enterdock.com/info/",
+  "insights": {
+    "who_for": [
+      "คนรักงานวาดที่อยากซื้อของจากศิลปินไทยโดยตรง",
+      "นักวาดที่อยากดูเทรนด์สินค้าและเจอเพื่อนในวงการ"
+    ],
+    "takeaways": [
+      "เดินดูบูธศิลปินได้เกือบ 2,000 บูธในสองวัน",
+      "ได้ไอเดียทำสินค้าจากงานวาดของตัวเอง"
+    ],
+    "know_before": [
+      "ศิลปินบางส่วนออกบูธคนละวัน เช็กรายชื่อก่อนไป",
+      "ดูผังบูธบนเว็บก่อน จะเดินหาง่ายขึ้นมาก"
+    ],
+    "related_categories": [
+      "Illustration / Art",
+      "Art Toy / Model",
+      "Graphic / Branding",
+      "Craft / Handmade"
+    ],
+    "highlights": [
+      "บูธศิลปินวันละ 924 บูธ",
+      "มีบูธแบรนด์ ร้านค้า และกิจกรรมภายในงาน"
+    ],
+    "links": [
+      {
+        "kind": "info",
+        "label": "ข้อมูลงาน",
+        "url": "https://if.enterdock.com/info/"
+      },
+      {
+        "kind": "info",
+        "label": "ผังบูธ",
+        "url": "https://if.enterdock.com/floorplan/"
+      }
+    ]
+  }
+}
+$j$::jsonb);
+
+SELECT public.scout_event_publish($j$
+{
+  "scout_batch": "2026-11-29",
   "title": "Bloom: Creative Creatures — เวิร์กชอปเด็ก (Art Around Us Project)",
   "category": "workshop",
   "starts_on": "2027-01-23",
@@ -1098,6 +1204,52 @@ SELECT public.scout_event_publish($j$
         "kind": "info",
         "label": "หน้าโครงการ Art Around Us",
         "url": "https://www.bacc.or.th/en/events/95772"
+      }
+    ]
+  }
+}
+$j$::jsonb);
+
+SELECT public.scout_event_publish($j$
+{
+  "scout_batch": "2026-11-29",
+  "title": "Illust Fusion Color Parade 2027",
+  "category": "art_fair",
+  "starts_on": "2027-03-26",
+  "ends_on": "2027-03-28",
+  "time_note": "10:00–20:00 น.",
+  "location_name": "Event Hall ชั้น B2 ศูนย์การประชุมแห่งชาติสิริกิติ์ (QSNCC) กรุงเทพฯ",
+  "location_note": "",
+  "description": "Illust Fusion Color Parade 2027 งานใหม่จากทีม Illust Fusion ประกอบร่างสร้างเส้น ชวนนักวาดและคนรักงานศิลปะมาเจอกันที่ Event Hall ชั้น B2 ศูนย์การประชุมแห่งชาติสิริกิติ์ (QSNCC) วันที่ 26–28 มีนาคม 2570\n\nบรรยากาศเป็นตลาดศิลปินแบบเดียวกับ Illust Fusion EXPO คือมีบูธนักวาดมาวางขายผลงานของตัวเอง ตั้งแต่ของกระจุกกระจิกไปจนถึงงานศิลปะ ใครอยากเจอศิลปินที่ติดตามตัวจริงก็มาได้\n\nงานนี้เข้าชมฟรีทั้งสามวัน เปิด 10:00–20:00 น. ส่วนนักวาดที่อยากออกบูธ เปิดรับสมัครถึง 6 ธันวาคม 2569\n\nรายชื่อศิลปินและกิจกรรมในงานจะประกาศผ่านเพจและอินสตาแกรมของ Illust Fusion",
+  "organizer_name": "Illust Fusion (Enterdock Co., Ltd.)",
+  "website_url": "https://www.instagram.com/illustfusionth/",
+  "registration_url": "",
+  "ticket_url": "",
+  "registration_open": false,
+  "fee_type": "free",
+  "fee_note": "เข้าชมฟรี",
+  "open_for_sponsors": false,
+  "source_name": "Illust Fusion (Instagram ทางการ)",
+  "source_url": "https://www.instagram.com/illustfusionth/",
+  "insights": {
+    "who_for": [
+      "คนรักงานวาดที่อยากเจอศิลปินและซื้องานตัวจริง",
+      "นักวาดที่อยากดูตลาดสินค้าศิลปะในไทย"
+    ],
+    "takeaways": [
+      "เดินตลาดศิลปินได้ฟรีทั้งสามวัน",
+      "ได้เห็นสินค้าและสไตล์งานวาดหลากหลายในที่เดียว"
+    ],
+    "related_categories": [
+      "Illustration / Art",
+      "Art Toy / Model",
+      "Craft / Handmade"
+    ],
+    "links": [
+      {
+        "kind": "info",
+        "label": "เพจ Illust Fusion",
+        "url": "https://www.facebook.com/illustfusion"
       }
     ]
   }

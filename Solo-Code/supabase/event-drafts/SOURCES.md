@@ -46,6 +46,10 @@ exhibition, workshop, art fair, talk, open call or other event.
 
 Find the official site first (no link yet): Bangkok Kunsthalle, ATT 19, Palette Artspace.
 
+Artist markets & illustration fairs (often announced only on Facebook / Instagram — check the
+page itself every run, in a browser): Illust Fusion (EXPO each June and December, Color Parade)
+https://if.enterdock.com · https://www.facebook.com/illustfusion · https://www.instagram.com/illustfusionth/
+
 More Bangkok: Japan Foundation Bangkok https://ba.jpf.go.jp/en/category/whats-on-en/ ·
 Goethe-Institut Thailand https://www.goethe.de/ins/th/en/kul/sup.html · Meetup drawing groups
 (https://www.meetup.com/drawn-together-bangkok/, https://www.meetup.com/bkk-sketchers,
