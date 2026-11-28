@@ -1250,12 +1250,6 @@
   background: #DADAD7;
 }
 
-.sc-app .mn-ev-cell > svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-
 .sc-app .mn-ev-item {
   display: flex;
   flex-direction: column;
@@ -1385,7 +1379,7 @@
   }
 }
 
-/* phone: no black rules, every event is its own grey card, no crossed-out empty boxes */
+/* phone: no black rules, every event is its own grey card */
 @media (max-width: 600px) {
   .sc-app .mn-ev-bar,
   .sc-app .mn-ev-month,
@@ -1406,9 +1400,6 @@
     box-sizing: border-box;
   }
 
-  .sc-app .mn-ev-cell[data-empty] {
-    display: none;
-  }
 
   .sc-app .mn-ev-item {
     gap: 10px;

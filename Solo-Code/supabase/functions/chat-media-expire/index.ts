@@ -36,7 +36,10 @@ type Row = { id: string; conversation_id: string; attachment_url: string | null 
 /** Same as _shared/supabase-keys.ts supabaseSecretKey(), inlined so the Dashboard editor takes this one file. */
 function secretKey(): string {
   try {
-    const keys = JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS") ?? "") as Record<string, unknown> | null;
+    const keys = JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS") ?? "") as Record<
+      string,
+      unknown
+    > | null;
     if (typeof keys?.default === "string" && keys.default) return keys.default;
   } catch {
     /* not set or not JSON — fall back */
@@ -81,7 +84,9 @@ Deno.serve(async (req) => {
     return json({ error: "invalid_body" }, 400);
   }
 
-  const admin = createClient(Deno.env.get("SUPABASE_URL")!, secretKey(), { auth: { persistSession: false } });
+  const admin = createClient(Deno.env.get("SUPABASE_URL")!, secretKey(), {
+    auth: { persistSession: false },
+  });
   // A fresh builder per call: supabase-js builders keep their URL and must not be reused.
   const messages = () => admin.schema("shared").from("messages");
   const cutoff = new Date(Date.now() - IMAGE_DAYS * DAY_MS).toISOString();
@@ -112,13 +117,31 @@ Deno.serve(async (req) => {
       console.error("[chat-media-expire] rooms", convErr.message);
       return json({ error: "load_failed" }, 500);
     }
-    for (const c of (convs ?? []) as Array<{ id: string; kind: string | null; conversation_type: string | null }>) {
-      kinds.set(c.id, (c.conversation_type ?? "direct") === "direct" && !["studio", "group"].includes(c.kind ?? ""));
+    for (const c of (convs ?? []) as Array<{
+      id: string;
+      kind: string | null;
+      conversation_type: string | null;
+    }>) {
+      kinds.set(
+        c.id,
+        (c.conversation_type ?? "direct") === "direct" &&
+          !["studio", "group"].includes(c.kind ?? ""),
+      );
     }
   }
-  const rows: Row[] = loaded.filter((r) => kinds.get(r.conversation_id) && !(r.content ?? "").startsWith("สลิปโอนเงิน"));
+  const rows: Row[] = loaded.filter(
+    (r) => kinds.get(r.conversation_id) && !(r.content ?? "").startsWith("สลิปโอนเงิน"),
+  );
   const skipped = rows.filter((r) => !ownPath(r)).length;
-  if (dryRun) return json({ found: rows.length, removed: 0, cleared: 0, skipped, kept: loaded.length - rows.length, dry_run: true });
+  if (dryRun)
+    return json({
+      found: rows.length,
+      removed: 0,
+      cleared: 0,
+      skipped,
+      kept: loaded.length - rows.length,
+      dry_run: true,
+    });
 
   let removed = 0;
   let cleared = 0;
@@ -139,7 +162,10 @@ Deno.serve(async (req) => {
     }
     const { data: done, error: upErr } = await messages()
       .update({ attachment_url: null })
-      .in("id", chunk.map((r) => r.id))
+      .in(
+        "id",
+        chunk.map((r) => r.id),
+      )
       .eq("message_type", "image")
       .select("id");
     if (upErr) {
@@ -150,7 +176,14 @@ Deno.serve(async (req) => {
     cleared += done?.length ?? 0;
   }
 
-  const result = { found: rows.length, removed, cleared, skipped, dry_run: false, ...(failed ? { failed } : {}) };
+  const result = {
+    found: rows.length,
+    removed,
+    cleared,
+    skipped,
+    dry_run: false,
+    ...(failed ? { failed } : {}),
+  };
   console.log("[chat-media-expire]", JSON.stringify(result));
   return json(result);
 });

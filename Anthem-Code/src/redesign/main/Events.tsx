@@ -269,13 +269,6 @@ function EventList({ events, byDay, today, days }: { events: HomeEventRow[]; byD
                     <EventItem event={e} untilEnd={!byDay} />
                   </div>
                 ))}
-                {Array.from({ length: (3 - (g.items.length % 3)) % 3 }, (_, k) => (
-                  <div className="mn-ev-cell" data-empty="" key={`empty-${k}`}>
-                    <svg aria-hidden="true" viewBox="0 0 100 100" preserveAspectRatio="none">
-                      <line x1="0" y1="100" x2="100" y2="0" stroke="#C8C8C5" strokeWidth="1" vectorEffect="non-scaling-stroke" />
-                    </svg>
-                  </div>
-                ))}
               </div>
             ) : null}
           </div>
