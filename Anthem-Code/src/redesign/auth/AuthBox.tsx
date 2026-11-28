@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ComponentType, type ReactNode } from "react";
-import { AppleIcon } from "@/components/auth/ProviderIcons";
+import { AppleIcon, FacebookIcon } from "@/components/auth/ProviderIcons";
 import { openOAuthPopup, signInWithApple, signInWithOAuth, type OAuthProviderId } from "@/integrations/oauth";
 import { isWebViewApp } from "@/lib/appShell";
 import { signInProviders } from "@/lib/authProviders";
@@ -58,11 +58,13 @@ const LineMark = () => (
   </svg>
 );
 
-const MARK: Record<string, ComponentType> = { google: GoogleMark, line: LineMark, apple: AppleIcon };
+const MARK: Record<string, ComponentType> = { google: GoogleMark, line: LineMark, facebook: FacebookIcon, apple: AppleIcon };
 
 /**
- * Google, then LINE, then (only inside the iOS app) Apple — owner decision: no Facebook, Apple only in the iOS app.
- * Old app builds that cannot open sign-in in the phone's browser get none (Google refuses embedded web views).
+ * Google, LINE, Facebook and Apple (owner 2026-11-28), each shown once it is set up (VITE_AUTH_EXTRA_PROVIDERS).
+ * Order of the mock: Google first, then LINE, Facebook, Apple; inside the iOS app Apple's native sheet comes first
+ * (App Review 4.8). Old app builds that cannot open sign-in in the phone's browser get none (Google refuses
+ * embedded web views).
  */
 export function SsoButtons({ verb, redirectTo, onError }: { verb: "Continue" | "Sign up"; redirectTo: string; onError: (text: string) => void }) {
   const [busy, setBusy] = useState<OAuthProviderId | null>(null);
@@ -76,7 +78,8 @@ export function SsoButtons({ verb, redirectTo, onError }: { verb: "Continue" | "
 
   if (isWebViewApp() && !hasShellFeature("auth")) return null;
   const nativeApple = hasShellFeature("apple");
-  const providers = signInProviders(nativeApple).filter((p) => p.key === "google" || p.key === "line" || (p.key === "apple" && nativeApple));
+  const ORDER = nativeApple ? ["apple", "google", "line", "facebook"] : ["google", "line", "facebook", "apple"];
+  const providers = signInProviders(nativeApple).sort((a, b) => ORDER.indexOf(a.key) - ORDER.indexOf(b.key));
 
   const start = async (id: OAuthProviderId, name: string) => {
     if (busy) return;
