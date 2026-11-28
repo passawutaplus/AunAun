@@ -1,0 +1,164 @@
+/* Event tab search (owner 2026-11-28, not in the mock — question for Beam). Sits at the top of the white card,
+   above HIGHLIGHT; while it has text the card shows its results instead (main/EventSearch.tsx). */
+
+.sc-app .mn-es {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-bottom: 32px;
+}
+
+.sc-app .mn-es-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: var(--sc-h-input);
+  padding: 0 8px 0 18px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  background: var(--sc-bg);
+  border: 1px solid transparent;
+  transition: border-color 0.15s ease;
+}
+
+.sc-app .mn-es-box:focus-within {
+  border-color: var(--sc-ink);
+  background: var(--sc-card);
+}
+
+.sc-app .mn-es-box > svg {
+  flex-shrink: 0;
+}
+
+.sc-app .mn-es-in {
+  all: unset;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 300;
+  color: var(--sc-ink);
+}
+
+.sc-app .mn-es-in::placeholder {
+  color: var(--sc-ink-3);
+  opacity: 1;
+  text-overflow: ellipsis;
+}
+
+.sc-app .mn-es-in::-webkit-search-cancel-button {
+  display: none;
+}
+
+.sc-app .mn-es-x {
+  all: unset;
+  cursor: pointer;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+}
+
+.sc-app .mn-es-x:hover {
+  background: var(--sc-seg);
+}
+
+.sc-app .mn-es-row {
+  display: flex;
+  align-items: center;
+  gap: 8px 16px;
+  flex-wrap: wrap;
+}
+
+.sc-app .mn-es-quick {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.sc-app .mn-es-chip {
+  all: unset;
+  cursor: pointer;
+  height: 32px;
+  padding: 0 14px;
+  box-sizing: border-box;
+  border: 1px solid var(--sc-line);
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 300;
+  white-space: nowrap;
+  color: var(--sc-ink);
+}
+
+.sc-app .mn-es-chip:hover {
+  border-color: var(--sc-ink);
+}
+
+.sc-app .mn-es-chip[aria-pressed="true"] {
+  background: var(--sc-ink);
+  border-color: var(--sc-ink);
+  color: var(--sc-card);
+}
+
+.sc-app :is(.mn-es-chip, .mn-es-x):focus-visible {
+  outline: 2px solid var(--sc-ink);
+  outline-offset: 3px;
+}
+
+.sc-app .mn-es-sum {
+  margin: 0;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 300;
+  color: var(--sc-ink-2);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+
+.sc-app .mn-es-note {
+  color: var(--sc-ink-3);
+}
+
+.sc-app .mn-es-res {
+  border-top: 1px solid var(--sc-ink);
+  padding-bottom: 56px;
+  transition: opacity 0.15s ease;
+}
+
+.sc-app .mn-es-res[data-loading] {
+  opacity: 0.55;
+}
+
+.sc-app .mn-es-count {
+  margin: 0;
+  padding: 16px 0 0;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--sc-ink);
+}
+
+@media (max-width: 600px) {
+  .sc-app .mn-es {
+    gap: 12px;
+    padding-bottom: 24px;
+  }
+
+  .sc-app .mn-es-box {
+    padding-left: 14px;
+  }
+
+  .sc-app .mn-es-in {
+    font-size: 16px; /* under 16px iOS zooms the page on focus */
+  }
+
+  .sc-app .mn-es-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

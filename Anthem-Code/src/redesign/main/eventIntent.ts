@@ -6,7 +6,7 @@
  * provinces, time words, "ใกล้ฉัน". What is left is split where the known words were, everyday words
  * ("ฉัน", "อยาก", "ไป", "งาน", "ที่" …) are trimmed off both ends, and the rest become keywords. Keywords
  * that have a Thai / English twin (เซรามิก ↔ ceramic) carry both, joined by "|".
- * The server half is public.event_search (migration 20261129130000).
+ * The server half is public.event_search (migration 20261129150000).
  */
 import { PROVINCES, type Province } from "./thaiProvinces";
 
@@ -335,7 +335,7 @@ function lowerSameLength(text: string): string {
 }
 
 /** The text the parser indexes; quick chips edit this same string. */
-export const normalizeInput = (input: string) => input.normalize("NFC").replace(/[​-‍﻿]/g, " ");
+export const normalizeInput = (input: string) => input.normalize("NFC").replace(/[\u200B-\u200D\uFEFF]/g, " ");
 
 export function parseEventIntent(input: string, today: string): EventIntent {
   const text = normalizeInput(input);

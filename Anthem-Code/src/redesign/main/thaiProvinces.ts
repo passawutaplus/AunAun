@@ -9,10 +9,13 @@
  */
 export type Province = { name: string; label: string; say: string[]; also: string[]; lat: number; lng: number };
 
+/** Province names that are also everyday words ("ไปเลย", "เผยแพร่", "ตากผ้า"): only with จังหวัด / จ. / English. */
+const EVERYDAY = new Set(["เลย", "แพร่", "ตาก"]);
+
 const p = (name: string, label: string, say: string[], also: string[], lat: number, lng: number): Province => ({
   name,
   label,
-  say: [name, ...say],
+  say: EVERYDAY.has(name) ? say : [name, ...say],
   also,
   lat,
   lng,
