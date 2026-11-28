@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Link, useLocation, useParams, useSearchParams } from "react-router-dom";
 import { DEFAULT_SIMILAR_ASPECTS, SIMILAR_ASPECTS, useSimilarImages, type SimilarAspect } from "@/hooks/useSimilarImages";
 import { isProxyableImageUrl, proxiedImageUrl } from "@/lib/imageProxy";
@@ -8,7 +8,7 @@ import Masonry from "../main/Masonry";
 import ScLoader from "../main/ScLoader";
 import { useSaveFlow } from "../main/useSaveFlow";
 import type { TileWork } from "../main/WorkTile";
-import { useWork } from "../work/useWork";
+import { usePictureRatios, useWork } from "../work/useWork";
 import "../styles/fonts.css";
 import "../styles/tokens.css";
 import "../styles/reset.css";
@@ -46,9 +46,20 @@ export default function SimilarPage() {
   const results = useMemo(() => (q.data ?? []).filter((s) => !ownerId || s.owner_id !== ownerId), [q.data, ownerId]);
   const strongRows = useMemo(() => results.filter((s) => s.similarity >= STRONG), [results]);
   const otherRows = useMemo(() => results.filter((s) => s.similarity < STRONG), [results]);
-  const toRow = (s: (typeof results)[number]) => ({ id: s.project_id, title: s.title, cover_url: null, owner_id: s.owner_id, picture: s.image_url, ratio: null });
-  const strong = useTiles(useMemo(() => strongRows.map(toRow), [strongRows]));
-  const others = useTiles(useMemo(() => otherRows.map(toRow), [otherRows]));
+  // Every picture at its own ratio (never cropped, like the tag page's masonry): the grid waits for the ratios.
+  const pics = useMemo(
+    () => [...(source ? [{ projectId, url: source }] : []), ...results.map((s) => ({ projectId: s.project_id, url: s.image_url }))],
+    [projectId, source, results],
+  );
+  const ratios = usePictureRatios(pics);
+  const { ratioOf } = ratios;
+  const toRow = useCallback(
+    (s: (typeof results)[number]) => ({ id: s.project_id, title: s.title, cover_url: null, owner_id: s.owner_id, picture: s.image_url, ratio: ratioOf(s.image_url) ?? null }),
+    [ratioOf],
+  );
+  const strong = useTiles(useMemo(() => strongRows.map(toRow), [strongRows, toRow]));
+  const others = useTiles(useMemo(() => otherRows.map(toRow), [otherRows, toRow]));
+  const srcRatio = sourceRatio ?? (source ? ratioOf(source) : undefined) ?? null;
   const linkState = useMemo(() => ({ backgroundLocation: location, scList: [...strong, ...others].map((t) => t.id) }), [location, strong, others]);
   const saves = useSaveFlow();
   const toggleSave = (w: TileWork, el: HTMLElement) => saves.toggle({ id: w.id, title: w.title }, el);
@@ -70,8 +81,8 @@ export default function SimilarPage() {
             </Link>
           ) : null}
           {source ? (
-            <span className="ex-src" style={{ aspectRatio: String(sourceRatio ?? 1) }}>
-              <img src={proxiedImageUrl(source, 640)} alt="" style={sourceRatio ? undefined : { objectFit: "contain" }} />
+            <span className="ex-src" style={{ aspectRatio: String(srcRatio ?? 1) }}>
+              <img src={proxiedImageUrl(source, 640)} alt="" style={srcRatio ? undefined : { objectFit: "contain" }} />
             </span>
           ) : null}
           {pictures.length > 1 ? (
@@ -94,7 +105,7 @@ export default function SimilarPage() {
         </aside>
 
         <section aria-label="ภาพคล้าย" className="pf-card ex-card">
-          {q.isPending ? (
+          {q.isPending || !ratios.done ? (
             <ScLoader label="กำลังหาภาพคล้าย" />
           ) : strong.length || others.length ? (
             <>

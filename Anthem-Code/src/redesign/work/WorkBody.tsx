@@ -43,10 +43,40 @@ export function bodyFromBlocks(raw: unknown, sizes: Record<string, [number, numb
   return out;
 }
 
+/** Every picture of a body, top to bottom — the same order (and index) `imageExtra` / `onOpen` get. */
+export function bodyPictures(items: readonly BodyItem[]): string[] {
+  const out: string[] = [];
+  for (const it of items) {
+    if (it.kind === "image") out.push(it.src);
+    else if (it.kind === "row") for (const c of it.cells) if (c && "image" in c) out.push(c.image);
+  }
+  return out;
+}
+
 const IMG_WIDTHS = [640, 1080, 1920] as const;
 
-function Img({ src, local, sizes, alt = "", eager, style, className }: { src: string; local?: boolean; sizes: string; alt?: string; eager?: boolean; style?: CSSProperties; className?: string }) {
-  if (local) return <img src={src} alt={alt} className={className} style={style} />;
+type ImgProps = { src: string; local?: boolean; sizes: string; alt?: string; eager?: boolean; style?: CSSProperties; className?: string; onOpen?: () => void };
+
+/** Tap / click / Enter on a picture that can open full screen. */
+export const pictureOpenProps = (onOpen: (() => void) | undefined) =>
+  onOpen
+    ? {
+        role: "button",
+        tabIndex: 0,
+        "aria-label": "ดูภาพเต็มจอ",
+        "data-open": "",
+        onClick: onOpen,
+        onKeyDown: (e: React.KeyboardEvent) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onOpen();
+          }
+        },
+      }
+    : {};
+
+function Img({ src, local, sizes, alt = "", eager, style, className, onOpen }: ImgProps) {
+  if (local) return <img src={src} alt={alt} className={className} style={style} {...pictureOpenProps(onOpen)} />;
   const srcSet = proxiedImageSrcSet(src, IMG_WIDTHS);
   return (
     <img
@@ -58,6 +88,7 @@ function Img({ src, local, sizes, alt = "", eager, style, className }: { src: st
       decoding="async"
       className={className}
       style={style}
+      {...pictureOpenProps(onOpen)}
     />
   );
 }
@@ -71,6 +102,7 @@ export default function WorkBody({
   sizes = "(max-width: 600px) 100vw, 1000px",
   firstAlt = "",
   imageExtra,
+  onOpen,
 }: {
   items: readonly BodyItem[];
   sizes?: string;
@@ -78,6 +110,8 @@ export default function WorkBody({
   firstAlt?: string;
   /** Drawn over each picture, numbered top to bottom (the Work page's like button). */
   imageExtra?: (src: string, index: number) => ReactNode;
+  /** Opens a picture full screen (the Work page's lightbox), by its index in `bodyPictures`. */
+  onOpen?: (index: number) => void;
 }) {
   let n = 0;
   const pic = () => n++;
@@ -88,7 +122,7 @@ export default function WorkBody({
           const i = pic();
           return (
             <div key={it.key} className="sc-wb-img" style={{ aspectRatio: String(it.ratio ?? 4 / 3) }}>
-              <Img src={it.src} local={it.local} sizes={sizes} alt={i === 0 ? firstAlt : ""} eager={i < 2} />
+              <Img src={it.src} local={it.local} sizes={sizes} alt={i === 0 ? firstAlt : ""} eager={i < 2} onOpen={onOpen ? () => onOpen(i) : undefined} />
               {imageExtra?.(it.src, i)}
             </div>
           );
@@ -121,7 +155,7 @@ export default function WorkBody({
               const k = pic();
               return (
                 <div key={i} className={c.fit ? "sc-wb-cell sc-wb-fit" : "sc-wb-cell"} style={place}>
-                  <Img src={c.image} local={c.local} sizes={sizes} alt={k === 0 ? firstAlt : ""} eager={k < 2} />
+                  <Img src={c.image} local={c.local} sizes={sizes} alt={k === 0 ? firstAlt : ""} eager={k < 2} onOpen={onOpen ? () => onOpen(k) : undefined} />
                   {imageExtra?.(c.image, k)}
                 </div>
               );
