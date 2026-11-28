@@ -62,8 +62,8 @@ const PAGES: ReadonlyArray<{ match: RegExp; page: ShellPage }> = [
   { match: /^\/settings\/?$/, page: { page: "account-settings", tabbar: false, tab: "me", footer: true } },
   // My profile (step 8): "ฉัน" in the tab bar; the account button becomes ☰ on phones (mock).
   { match: /^\/(portfolio|portfolio\/saved|portfolio\/followers|collections)\/?$/, page: { page: "my-profile", tabbar: true, tab: "me", footer: true } },
-  // My Studio (step 10) on /dashboard and the old studio URLs; "ฉัน" in the tab bar (mock).
-  { match: /^\/(dashboard(\/(projects|catalogs|insights|exhibition))?|portfolio\/manage)\/?$/, page: { page: "my-studio", tabbar: true, tab: "me", footer: true } },
+  // My Studio (step 10) on /dashboard and the old studio URLs (documents + billing → the Documents tab); "ฉัน" in the tab bar (mock).
+  { match: /^\/(dashboard(\/(projects|catalogs|insights|exhibition|documents|billing))?|portfolio\/manage)\/?$/, page: { page: "my-studio", tabbar: true, tab: "me", footer: true } },
   // Post / edit an event (step 11): the page has its own header (logo · New Event · ×); no tab bar, no footer on phones (mock).
   { match: /^\/dashboard\/exhibition\/(new|[^/]+\/edit)\/?$/, page: { page: "event-post", tabbar: false, tab: "", footer: true, header: "none" } },
   // Works of one tag / one tool, and pictures like one picture (owner 2026-11-28; old URLs, not in the mock).
@@ -132,7 +132,7 @@ const REDIRECTS: ReadonlyArray<{ match: RegExp; to: (m: RegExpMatchArray) => str
   { match: /^\/learn\/faq\/?$/, to: () => SC_LINKS.help },
   { match: /^\/learn\/[^/]+\/?$/, to: () => SC_LINKS.getInTouch },
   { match: /^\/(me\/reports|reports|feedback|research\/feedback)\/?$/, to: () => SC_LINKS.feedback },
-  // Studio tabs of cut features (hire, collab, packages, objects, documents, payout, reviews, billing / Pro)
+  // Studio tabs of cut features (hire, collab, packages, objects, payout, reviews)
   // and the packages editor → My Studio. The tabs My Studio has are pages above.
   { match: /^\/dashboard\/.+$/, to: () => SC_LINKS.myStudio },
   { match: /^\/portfolio\/packages(\/.*)?$/, to: () => SC_LINKS.myStudio },

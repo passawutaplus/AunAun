@@ -49,7 +49,7 @@ import {
   type RoomPrefPatch,
 } from "@/server/mutations/chatRooms";
 import { profileHref } from "../main/useCreators";
-import { docOf, eventOf, msgKind, msgLabel, objectOf, quoteText, textOf, type DocCard, type MsgKind, type ObjectCard } from "./chatFormat";
+import { collabOf, docOf, eventOf, msgKind, msgLabel, objectOf, offerOf, quoteText, textOf, type CollabCard, type DocCard, type MsgKind, type ObjectCard, type OfferCard } from "./chatFormat";
 
 export const chatKeys = {
   rooms: (uid?: string) => ["sc-chat-rooms", uid] as const,
@@ -105,6 +105,10 @@ export type ChatMsg = {
   /** Event card under a text that links to an event page. */
   event: ChatEvent | null;
   doc: DocCard | null;
+  /** Quotation (kind "offer"). */
+  offer: OfferCard | null;
+  /** Collab invite (kind "collab"). */
+  collab: CollabCard | null;
   object: ObjectCard | null;
   /** Picture still uploading: a preview from this device (null when the browser cannot show it, e.g. HEIC). */
   localUrl: string | null;
@@ -403,6 +407,8 @@ export function useRoomMessages(roomId: string | null) {
         profile: profileId ? { ...person(profileId, profiles?.[profileId]), ...(profiles ? null : { name: "โปรไฟล์" }) } : null,
         event: eventId ? { id: eventId, title: ev?.title?.trim() || "อีเวนต์", cover: proxiedImageUrl(ev?.cover_url, 240), when: eventWhen(ev) } : null,
         doc: kind === "doc" ? docOf(m.content) : null,
+        offer: kind === "offer" ? offerOf(m.content) : null,
+        collab: kind === "collab" ? collabOf(m.content) : null,
         object: kind === "object" ? objectOf(m.content) : null,
         localUrl: m.local_url ?? null,
         replyTo: (() => {
@@ -427,6 +433,9 @@ export function chatMsgQuote(m: ChatMsg): string {
   if (m.kind === "profile") return `โปรไฟล์ ${m.profile?.name ?? ""}`.trim();
   if (m.kind === "doc") return `${m.doc?.kind ?? "เอกสาร"} ${m.doc?.number ?? ""}`.trim();
   if (m.kind === "object") return `สินค้า ${m.object?.title ?? ""}`.trim();
+  if (m.kind === "offer") return `ใบเสนอราคา ${m.offer?.title ?? ""}`.trim();
+  if (m.kind === "collab") return "คำชวนคอลแลป";
+  if (m.kind === "plan") return "แผนคอลแลป";
   return m.text || (m.event ? `อีเวนต์ ${m.event.title}` : "ข้อความ");
 }
 
@@ -530,6 +539,14 @@ export function useChatActions() {
       if (about) await sendWork(roomId, about).catch(() => undefined);
     },
     sendWork,
+    /** A card blob (quotation, collab): shows at once with a clock like a text. */
+    sendCard: (roomId: string, content: string) =>
+      post(roomId, { message_type: "text", content }, () => send.mutateAsync({ conversationId: roomId, content })),
+    /** After a document tool posted its own card (invoice, receipt): read the room again. */
+    refreshRoom: (roomId: string) => {
+      void qc.invalidateQueries({ queryKey: chatKeys.msgs(uid, roomId) });
+      refresh();
+    },
     /** The picture shows at once with a clock while it uploads (HEIC has no preview in most browsers: a grey box). */
     sendImage: (roomId: string, file: File) => {
       const local = /^image\/(jpeg|png|webp|gif)$/.test(file.type) ? URL.createObjectURL(file) : null;

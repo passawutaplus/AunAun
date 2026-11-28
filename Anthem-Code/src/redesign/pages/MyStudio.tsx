@@ -10,6 +10,7 @@ import { SC_LINKS } from "../routes";
 import { usePageSeo } from "../lib/usePageSeo";
 import LoadError from "../shell/LoadError";
 import StudioCatalogs from "../studio/StudioCatalogs";
+import StudioDocuments from "../studio/StudioDocuments";
 import StudioEvents from "../studio/StudioEvents";
 import StudioInsights from "../studio/StudioInsights";
 import StudioOverview, { type StudioTab } from "../studio/StudioOverview";
@@ -28,6 +29,7 @@ const TABS: ReadonlyArray<readonly [StudioTab, string]> = [
   ["works", "Works"],
   ["event", "Event"],
   ["catalogs", "Catalogs"],
+  ["documents", "Documents"],
   ["insights", "Insights"],
 ];
 const isTab = (v: string | null): v is StudioTab => !!v && TABS.some(([k]) => k === v);
@@ -39,6 +41,9 @@ const PATH_TAB: Record<string, StudioTab> = {
   "/dashboard/catalogs": "catalogs",
   "/dashboard/insights": "insights",
   "/dashboard/exhibition": "event",
+  // Quotations / invoices / receipts (owner 2026-11-28; old "เอกสารและรายรับ").
+  "/dashboard/documents": "documents",
+  "/dashboard/billing": "documents",
 };
 
 export const studioHref = (tab: StudioTab) => (tab === "overview" ? SC_LINKS.myStudio : `${SC_LINKS.myStudio}?tab=${tab}`);
@@ -149,6 +154,8 @@ function MyStudioView({ uid }: { uid: string }) {
             ) : (
               <StudioCatalogs uid={uid} catalogs={catalogs} works={works} say={say} />
             )
+          ) : tab === "documents" ? (
+            <StudioDocuments uid={uid} say={say} />
           ) : (
             <StudioInsights uid={uid} works={works} />
           )}

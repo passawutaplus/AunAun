@@ -6,7 +6,9 @@ import { SC_LINKS } from "../routes";
 import LoadError from "../shell/LoadError";
 import { onEscape } from "../shell/panels";
 import { baht, clock, dayWord, listTime, newDay } from "../chat/chatFormat";
-import DocCardView from "../chat/DocCard";
+import ChatTools, { type ChatTool } from "../chat/ChatTools";
+import { CollabBar, CollabInviteCard, PlanCard } from "../chat/CollabCards";
+import DocCardView, { OfferCardView } from "../chat/DocCard";
 import ReportPicker from "../chat/ReportPicker";
 import {
   chatMsgQuote,
@@ -119,6 +121,8 @@ export function ChatView({ embedded = false, onClose, initialRoomId = null, gree
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [reporting, setReporting] = useState(false);
+  /** A chat tool opened from outside the "+" menu (the collab bar → the plan). */
+  const [tool, setTool] = useState<ChatTool | null>(null);
   /** Reply: the message the next text answers (bar above the text box). */
   const [replyTo, setReplyTo] = useState<{ id: string; mine: boolean; text: string } | null>(null);
   /** Message whose Reply / Unsend buttons show (a tap on phones; hover / focus on PC). */
@@ -178,6 +182,7 @@ export function ChatView({ embedded = false, onClose, initialRoomId = null, gree
     setReporting(false);
     setReplyTo(null);
     setSel(null);
+    setTool(null);
     if (embedded) setLocalId(id);
     else navigate(id ? `/chat/${id}` : SC_LINKS.chat, { replace: !!id && !!activeId });
   };
@@ -353,7 +358,7 @@ export function ChatView({ embedded = false, onClose, initialRoomId = null, gree
         ))}
       </div>
       {onReq && reqN > 0 ? <p className="ch-hint">ข้อความจากคนที่คุณยังไม่ได้ติดตาม เขาจะไม่รู้ว่าคุณอ่านแล้ว จนกว่าจะกด Accept</p> : null}
-      {notice ? (
+      {notice && !cur ? (
         <p role="status" className="ch-notice">
           {notice}
         </p>
@@ -374,6 +379,11 @@ export function ChatView({ embedded = false, onClose, initialRoomId = null, gree
                 <span className="ch-name" data-unread={r.unread ? "" : undefined}>
                   {r.other.name}
                 </span>
+                {r.kind === "collab" ? (
+                  <span lang="en" className="ct-tag">
+                    Collab
+                  </span>
+                ) : null}
                 {r.muted ? (
                   <svg role="img" aria-label="ปิดเสียงแล้ว" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8A8A87" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="ch-mut">
                     <path d="M6 16V11a6 6 0 0 1 9.5-4.9M18 11v5l1.5 2H8" />
@@ -423,6 +433,9 @@ export function ChatView({ embedded = false, onClose, initialRoomId = null, gree
         </Link>
       );
     if (m.kind === "doc" && m.doc) return <DocCardView doc={m.doc} />;
+    if (m.kind === "offer" && m.offer) return <OfferCardView offer={m.offer} />;
+    if (m.kind === "collab" && m.collab && cur) return <CollabInviteCard card={m.collab} room={cur} mine={m.me} say={say} onClose={toProfile} />;
+    if (m.kind === "plan" && cur) return <PlanCard room={cur} say={say} />;
     if (m.kind === "gone")
       return (
         <span className="ch-bub ch-unsent" data-me={m.me || undefined}>
@@ -559,7 +572,8 @@ export function ChatView({ embedded = false, onClose, initialRoomId = null, gree
           <span>{fqn ? (hits ? `${hits} ข้อความ` : "ไม่เจอ") : ""}</span>
         </div>
       ) : null}
-      <div role="log" aria-live="polite" className="ch-log" ref={logRef}>
+      {cur.kind === "collab" && !find ? <CollabBar room={cur} onPlan={() => setTool("plan")} /> : null}
+      <div role="log" aria-live="polite" className="ch-log" ref={logRef} data-collab={cur.kind === "collab" && !find ? "" : undefined}>
         {aboutWork ? (
           <Link to={`/showcase/${aboutWork.id}`} className="ch-about" onClick={toProfile}>
             <span aria-hidden="true" className="ch-about-th" style={bg(aboutWork.cover)} />
@@ -604,6 +618,11 @@ export function ChatView({ embedded = false, onClose, initialRoomId = null, gree
           </div>
         ))}
       </div>
+      {notice ? (
+        <p role="status" className="ct-room-note">
+          {notice}
+        </p>
+      ) : null}
       {cur.request && !lock ? (
         <div className="ch-req">
           <p>
@@ -651,6 +670,7 @@ export function ChatView({ embedded = false, onClose, initialRoomId = null, gree
           </div>
         ) : null}
         <div className="ch-cmp">
+          <ChatTools room={cur} say={say} onOpenRoom={(id) => go(id)} open={tool} onOpenChange={setTool} />
           <label className="ch-rb" title="ส่งรูป">
             <span className="sc-sr">ส่งรูป</span>
             <input type="file" accept="image/*" onChange={pickImg} className="sc-sr" />
