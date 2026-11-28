@@ -1,5 +1,5 @@
 /* Terms + Privacy (mock: pages/Terms.dc.html, pages/Privacy.dc.html) */
-.sc-app .lg-main {
+.sc-app .lgp-main {
   width: 100%;
   max-width: 1440px;
   margin-inline: auto;
@@ -7,7 +7,7 @@
   box-sizing: border-box;
 }
 
-.sc-app .lg-card {
+.sc-app .lgp-card {
   background: #FFFFFF;
   border-radius: 38px;
   box-shadow: 0 1px 3px rgba(40, 41, 41, .08), 0 10px 32px rgba(40, 41, 41, .12);
@@ -20,81 +20,148 @@
   gap: 28px;
 }
 
-.sc-app .lg-nav {
+.sc-app .lgp-nav {
   display: flex;
   align-items: baseline;
   gap: 28px;
 }
 
-.sc-app .lg-nav a {
+.sc-app .lgp-nav a {
   font-size: 28px;
   letter-spacing: -.01em;
   text-decoration: none;
   color: #A3A3A0;
 }
 
-.sc-app .lg-nav a[aria-current="page"] {
+.sc-app .lgp-nav a[aria-current="page"] {
   color: #282929;
   font-weight: 500;
 }
 
-.sc-app .lg-nav a:focus-visible {
+.sc-app .lgp-nav a:focus-visible {
   outline: 2px solid #282929;
   outline-offset: 3px;
 }
 
-.sc-app .lg-note {
+.sc-app .lgp-note {
   margin: 0;
   font-size: 13px;
   color: #8A8A87;
 }
 
-.sc-app .lg-sec {
-  display: grid;
-  grid-template-columns: 220px minmax(0, 1fr);
-  gap: 32px;
-  padding: 28px 0;
-  border-top: 1px solid #ECECEA;
+.sc-app .lgp-card .lgp-note a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
-.sc-app .lg-sec h2 {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 400;
-  line-height: 1.5;
-}
-
-.sc-app .lg-sec h2 span {
-  color: #8A8A87;
-  margin-right: 8px;
-}
-
-.sc-app .lg-sec p {
-  margin: 0;
+/* the full legal text (components/legal/*Content): plain h2 / h3 / p / lists / tables, styled like the mock */
+.sc-app .lgp-prose {
   font-size: 15px;
   line-height: 1.8;
   color: #4A4A4A;
-  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.sc-app .lgp-prose > :first-child {
+  margin-top: 0;
+}
+
+.sc-app .lgp-prose h2 {
+  margin: 36px 0 12px;
+  padding-top: 28px;
+  border-top: 1px solid #ECECEA;
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: #282929;
+  scroll-margin-top: 96px;
+}
+
+.sc-app .lgp-prose h3 {
+  margin: 24px 0 8px;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.6;
+  color: #282929;
+  scroll-margin-top: 96px;
+}
+
+.sc-app .lgp-prose p {
+  margin: 0 0 12px;
+}
+
+.sc-app .lgp-prose ul,
+.sc-app .lgp-prose ol {
+  margin: 0 0 12px;
+  padding-left: 22px;
+}
+
+.sc-app .lgp-prose ul {
+  list-style: disc;
+}
+
+.sc-app .lgp-prose ol {
+  list-style: decimal;
+}
+
+.sc-app .lgp-prose li + li {
+  margin-top: 6px;
+}
+
+.sc-app .lgp-prose strong {
+  font-weight: 500;
+  color: #282929;
+}
+
+.sc-app .lgp-prose a {
+  color: #282929;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.sc-app .lgp-card :is(.lgp-prose, .lgp-note) a:focus-visible {
+  outline: 2px solid #282929;
+  outline-offset: 2px;
+}
+
+.sc-app .lgp-prose table {
+  width: 100%;
+  margin: 0 0 12px;
+  border-collapse: collapse;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.sc-app .lgp-prose :is(th, td) {
+  padding: 8px 10px 8px 0;
+  border-bottom: 1px solid #ECECEA;
+  text-align: left;
+  vertical-align: top;
+}
+
+.sc-app .lgp-prose th {
+  font-weight: 500;
+  color: #282929;
 }
 
 @media (max-width: 900px) {
-  .sc-app .lg-card {
+  .sc-app .lgp-card {
     padding: 32px 20px;
   }
 
-  .sc-app .lg-sec {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 8px;
+  .sc-app .lgp-prose {
+    font-size: 14px;
   }
 }
 
 /* phones: full-width card, 12px edge, no shadow; content starts right under the header */
 @media (max-width: 600px) {
-  .sc-app .lg-main {
+  .sc-app .lgp-main {
     padding: 28px 12px 32px;
   }
 
-  .sc-app .lg-card {
+  .sc-app .lgp-card {
     margin-top: 0;
     padding: 24px 16px 28px;
     border-radius: 24px;
