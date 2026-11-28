@@ -53,6 +53,8 @@ const PAGES: ReadonlyArray<{ match: RegExp; page: ShellPage }> = [
   { match: /^\/learn\/?$/, page: { page: "get-in-touch", tabbar: true, tab: "", footer: true } },
   // Someone's profile (step 5), on the old URLs /@handle and /u/:id.
   { match: /^\/(@[^/]+|u\/[^/]+)\/?$/, page: { page: "profile", tabbar: true, tab: "", footer: true, back: true } },
+  // An event or venue (step 6), on its old URL. Phones hide the header; the page has its own bottom bar.
+  { match: /^\/exhibition\/(?!category(?:\/|$))[^/]+\/?$/, page: { page: "event", tabbar: false, tab: "event", footer: true } },
 ];
 
 export function shellPageFor(pathname: string): ShellPage | null {
