@@ -1,4 +1,4 @@
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useProfilesByIds } from "@/core/profiles/useProfilesByIds";
@@ -48,6 +48,14 @@ export default function RedesignShell() {
   // Only the kinds the new design has (no hiring, collab, KYC …); the bell counts the same rows the panel shows.
   const shownInbox = useMemo(() => inbox.filter(isShownNotification), [inbox]);
   const unreadCount = shownInbox.filter((n) => !n.is_read).length;
+
+  // Phone back arrow: one step back inside the site, or the home page when the page was opened directly.
+  const goBack = (e: MouseEvent<HTMLAnchorElement>) => {
+    if (((window.history.state as { idx?: number } | null)?.idx ?? 0) > 0) {
+      e.preventDefault();
+      navigate(-1);
+    }
+  };
 
   const menu = usePresence(180);
   const closeMenu = menu.close;
@@ -189,6 +197,13 @@ export default function RedesignShell() {
       {cfg.header === "none" ? null : (
         <header className="sc-hd">
           <div className="sc-hd-in">
+            {cfg.back ? (
+              <Link to={SC_LINKS.home} aria-label="ย้อนกลับ" className="sc-hd-back" onClick={goBack}>
+                <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M19 12H5M11 6l-6 6 6 6" />
+                </svg>
+              </Link>
+            ) : null}
             <Link to={SC_LINKS.home} aria-label="samecor. หน้าแรก" className="sc-hd-logo">
               <img src={logoUrl} alt="samecor." />
             </Link>

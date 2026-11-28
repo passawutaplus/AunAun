@@ -411,6 +411,7 @@ const RedesignShell = lazy(() => import("./redesign/shell/RedesignShell.tsx"));
 const RedesignNotFound = lazy(() => import("./redesign/pages/NotFound.tsx"));
 const RedesignMain = lazy(() => import("./redesign/pages/Main.tsx"));
 const RedesignWork = lazy(() => import("./redesign/pages/Work.tsx"));
+const RedesignProfile = lazy(() => import("./redesign/pages/Profile.tsx"));
 const RedesignWorkOverlay = lazy(() =>
   import("./redesign/pages/Work.tsx").then((m) => ({ default: m.WorkOverlay })),
 );
@@ -505,11 +506,14 @@ const App = () => (
                         </Route>
                         {/* Open to everyone; sending asks to log in (the old page needed a login to open). */}
                         <Route path="/me/feedback" element={<RedesignFeedback />} />
-                        {/* Unknown URLs still reach the old 404 (catch-all and /:vanityHandle) until step 14. */}
+                        {/* Unknown URLs still reach the old 404 (catch-all) until step 14; single-segment ones go to /error/404 (Profile). */}
                         <Route path="/error/404" element={<RedesignNotFound />} />
                         <Route path="/learn">
                           <Route index element={<RedesignGetInTouch />} />
                         </Route>
+                        {/* Profile on its old URLs: /@handle reaches /:vanityHandle (React Router cannot match `/@:x`). */}
+                        <Route path="/u/:userId" element={<RedesignProfile />} />
+                        <Route path="/:vanityHandle" element={<RedesignProfile />} />
                       </Route>
                     ) : null}
                     <Route element={<LaunchMinimalGate />}>

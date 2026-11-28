@@ -15,6 +15,7 @@ import WorkComments from "../work/WorkComments";
 import { useImageLikes, useOwnerWorks, useWork, useWorkCatalog } from "../work/useWork";
 import { formatCount, licenceLine, neighbour, pickSimilar, workDateLine } from "../work/workContent";
 import NotFound from "./NotFound";
+import { instagramUrl, websiteUrl } from "../lib/contactLinks";
 import "../styles/fonts.css";
 import "../styles/tokens.css";
 import "../styles/reset.css";
@@ -24,20 +25,6 @@ import "../styles/work.css";
 export type WorkOverlayState = { backgroundLocation: Location; scList?: string[] };
 
 const calm = () => !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-
-const instagramUrl = (v: string | null | undefined) => {
-  const s = (v ?? "").trim();
-  if (!s) return "";
-  if (/^https?:\/\//i.test(s)) return s;
-  const h = s.replace(/^@/, "").replace(/^(www\.)?instagram\.com\//i, "").replace(/\/+$/, "");
-  return h ? `https://www.instagram.com/${h}/` : "";
-};
-
-const websiteUrl = (v: string | null | undefined) => {
-  const s = (v ?? "").trim();
-  if (!s) return "";
-  return /^https?:\/\//i.test(s) ? s : `https://${s}`;
-};
 
 type ViewProps = {
   id: string;

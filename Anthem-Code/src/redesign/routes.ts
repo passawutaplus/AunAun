@@ -14,6 +14,8 @@ export type ShellPage = {
   footer: boolean;
   /** "main": the home header — search sits in the page instead of the header. "none": no header (Work on its own page). */
   header?: "main" | "none";
+  /** Phones: a back arrow takes the place of the logo (mock Profile: `.hd-back`). */
+  back?: boolean;
 };
 
 /** The old URLs stay (owner decision), so the new frame links to them. */
@@ -49,6 +51,8 @@ const PAGES: ReadonlyArray<{ match: RegExp; page: ShellPage }> = [
   { match: /^\/me\/feedback\/?$/, page: { page: "feedback", tabbar: true, tab: "", footer: true } },
   { match: /^\/error\/404\/?$/, page: { page: "not-found", tabbar: true, tab: "", footer: true } },
   { match: /^\/learn\/?$/, page: { page: "get-in-touch", tabbar: true, tab: "", footer: true } },
+  // Someone's profile (step 5), on the old URLs /@handle and /u/:id.
+  { match: /^\/(@[^/]+|u\/[^/]+)\/?$/, page: { page: "profile", tabbar: true, tab: "", footer: true, back: true } },
 ];
 
 export function shellPageFor(pathname: string): ShellPage | null {

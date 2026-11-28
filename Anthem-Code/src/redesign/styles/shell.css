@@ -32,6 +32,11 @@
   align-items: center;
 }
 
+/* phone back arrow (mock Profile: .hd-back) — only on phones, where it replaces the logo */
+.sc-app .sc-hd-back {
+  display: none;
+}
+
 .sc-app .sc-hd-logo img {
   height: 34px;
   width: auto;
@@ -427,6 +432,20 @@
 
   .sc-app .sc-hd-logo img {
     height: 24px;
+  }
+
+  .sc-app .sc-hd-back {
+    display: inline-flex;
+    width: 44px;
+    height: 44px;
+    margin-left: -12px;
+    align-items: center;
+    justify-content: center;
+    color: #282929;
+  }
+
+  .sc-app .sc-hd-in:has(.sc-hd-back) .sc-hd-logo {
+    display: none;
   }
 
   .sc-app .sc-hd-nav {
