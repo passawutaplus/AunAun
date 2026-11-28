@@ -1,9 +1,10 @@
 import { useMemo, useState, type CSSProperties } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { proxiedImageSrcSet, proxiedImageUrl } from "@/lib/imageProxy";
 import type { StudioWork } from "@/server/queries/studio";
 import { SC_LINKS } from "../routes";
 import { count } from "../profile/tiles";
+import EmptyNote from "../main/EmptyNote";
 
 type Filter = "all" | "Published" | "Draft" | "Private";
 const FILTERS: ReadonlyArray<readonly [Filter, string]> = [
@@ -47,8 +48,12 @@ export function StudioTile({ w, i, children, meta, className = "pf-tile ms-tile"
   );
 }
 
-/** My Studio → Works: every own work with Edit and Delete (mock MyStudio "Works"). Lock/unlock stays in My Profile. */
+/**
+ * My Studio → Works: every own work with Edit and Delete (mock MyStudio "Works"). Lock/unlock stays in My Profile.
+ * The card opens the work over this page, like My Profile; the two buttons sit above that link.
+ */
 export default function StudioWorks({ works, onDelete }: { works: StudioWork[]; onDelete: (w: StudioWork) => void }) {
+  const location = useLocation();
   const [filter, setFilter] = useState<Filter>("all");
   const [q, setQ] = useState("");
   const query = q.trim().toLocaleLowerCase("th");
@@ -56,6 +61,7 @@ export default function StudioWorks({ works, onDelete }: { works: StudioWork[]; 
     () => works.filter((w) => (filter === "all" || w.status === filter) && (!query || (w.title ?? "").toLocaleLowerCase("th").includes(query))),
     [works, filter, query],
   );
+  const linkState = useMemo(() => ({ backgroundLocation: location, scList: list.map((w) => w.id) }), [location, list]);
   return (
     <>
       <div className="ms-bar">
@@ -85,6 +91,7 @@ export default function StudioWorks({ works, onDelete }: { works: StudioWork[]; 
         ) : null}
         {list.map((w, i) => (
           <StudioTile key={w.id} w={w} i={i} meta={w.status === "Published" ? `${count(w.views ?? 0)} views` : ""}>
+            <Link to={`/showcase/${w.id}`} state={linkState} className="pf-open" aria-label={`เปิด ${w.title?.trim() || "Untitled"}`} />
             <div className="ms-tools">
               <Link to={editHref(w.id)} className="ms-tl2" aria-label={`แก้ไข ${w.title ?? ""}`} title="แก้ไข">
                 <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.85)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
@@ -101,6 +108,11 @@ export default function StudioWorks({ works, onDelete }: { works: StudioWork[]; 
           </StudioTile>
         ))}
       </div>
+      {list.length ? null : works.length ? (
+        <EmptyNote text="ไม่เจองานที่ตรงกัน" />
+      ) : (
+        <EmptyNote text="ยังไม่มีผลงานเลย ลงงานแรกกันนะ" />
+      )}
     </>
   );
 }

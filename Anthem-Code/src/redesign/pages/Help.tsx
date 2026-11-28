@@ -2,6 +2,7 @@ import { useId, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { HELP_CATEGORIES } from "@/data/helpContent";
 import { SC_LINKS } from "../routes";
+import { usePageSeo } from "../lib/usePageSeo";
 import "../styles/help.css";
 
 const TOPICS = ["All", "Account", "Posting", "Explore", "Collections", "Pricing"] as const;
@@ -27,6 +28,7 @@ const topicOf = (raw: string | null): Topic => TOPICS.find((t) => t.toLowerCase(
 
 /** Help Center (mock: pages/Help.dc.html). Topic and search text live in the URL: ?topic=posting&q=… */
 export default function Help() {
+  usePageSeo({ title: "Help Center", description: "คำถามที่พบบ่อยและวิธีใช้ SAMECOR ตั้งแต่ลงงาน จัดโปรไฟล์ ไปจนถึงอีเว้นท์", path: SC_LINKS.help });
   const [params, setParams] = useSearchParams();
   const topic = topicOf(params.get("topic"));
   // Typed text is local state so the field never waits for a router transition; the URL follows it.

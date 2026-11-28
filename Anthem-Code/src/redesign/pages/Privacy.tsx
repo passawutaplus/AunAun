@@ -1,4 +1,6 @@
 import LegalCard, { type LegalSection } from "../text/LegalCard";
+import { SC_LINKS } from "../routes";
+import { usePageSeo } from "../lib/usePageSeo";
 
 /** Text copied as is from the mock (pages/Privacy.dc.html); the owner reviews it before launch. */
 const SECTIONS: readonly LegalSection[] = [
@@ -110,5 +112,6 @@ const SECTIONS: readonly LegalSection[] = [
 ];
 
 export default function Privacy() {
+  usePageSeo({ title: "นโยบายความเป็นส่วนตัว", description: "นโยบายความเป็นส่วนตัวของ SAMECOR", path: SC_LINKS.privacy });
   return <LegalCard current="privacy" heading="นโยบายความเป็นส่วนตัว" sections={SECTIONS} />;
 }

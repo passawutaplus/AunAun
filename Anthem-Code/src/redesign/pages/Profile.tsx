@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
 import { Link, Navigate, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useProfilesByIds } from "@/core/profiles/useProfilesByIds";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,12 +12,18 @@ import { SC_LINKS } from "../routes";
 import { instagramHandle, instagramUrl, mailUrl, websiteLabel, websiteUrl } from "../lib/contactLinks";
 import AboutPanel from "../profile/AboutPanel";
 import { count, toTile, toolsOf, type Tile } from "../profile/tiles";
+import EmptyNote from "../main/EmptyNote";
 import ScLoader from "../main/ScLoader";
 import { profileHref } from "../main/useCreators";
 import { useFollows } from "../main/useFollows";
 import { EVENT_KIND } from "../main/useHomeEvents";
 import { useSaveFlow } from "../main/useSaveFlow";
+import LoadError from "../shell/LoadError";
 import { useGreet } from "../shell/panels";
+import { loginHref } from "../lib/loginHref";
+import { absoluteUrl } from "@/lib/seo";
+import { profilePageJsonLd } from "@/lib/seoSchemas";
+import { usePageSeo, type PageSeo } from "../lib/usePageSeo";
 import {
   useProfileCatalogs,
   useProfileCollections,
@@ -28,7 +34,7 @@ import {
   type ProfileEvent,
 } from "../profile/useProfilePage";
 import NotFound from "./NotFound";
-import { indexableBySearch, useNoIndex } from "../lib/visibility";
+import { indexableBySearch } from "../lib/visibility";
 import "../styles/fonts.css";
 import "../styles/tokens.css";
 import "../styles/reset.css";
@@ -50,8 +56,6 @@ function ProfileView({ slug, byId }: { slug: string; byId: boolean }) {
   const profile = useProfilePage(slug);
   const p = profile.data ?? null;
   const uid = p?.user_id;
-  // Settings → Privacy "ให้ค้นเจอจาก Google" off.
-  useNoIndex(!!p && !indexableBySearch(p.public_visibility));
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -93,14 +97,26 @@ function ProfileView({ slug, byId }: { slug: string; byId: boolean }) {
     setParams(next, { replace: true });
   };
 
-  useEffect(() => {
-    if (!name) return;
-    const before = document.title;
-    document.title = handle ? `${name} (@${handle}) | samecor.` : `${name} | samecor.`;
-    return () => {
-      document.title = before;
+  // Same words and the same "not indexed" rule as the bots' version (api/seo-preview.js): Settings → Privacy
+  // "ให้ค้นเจอจาก Google" off, or a thin profile (bio under 40 letters).
+  const bioText = p && parseProfileVisibility(p.public_visibility).bio ? p.bio?.trim() ?? "" : "";
+  const seo = useMemo<PageSeo>(() => {
+    if (!p || (!isSelf && blocked.has(p.user_id))) {
+      return profile.isPending ? { title: byId ? "" : `@${slug}`, noindex: true } : { title: "Page not found", noindex: true };
+    }
+    const path = handle ? `/@${handle}` : `/u/${p.user_id}`;
+    const description = bioText || `ดูผลงานของ ${name} บน SAMECOR`;
+    return {
+      title: handle ? `${name} (@${handle})` : name,
+      description,
+      path,
+      image: p.avatar_url || null,
+      type: "profile",
+      noindex: !indexableBySearch(p.public_visibility) || bioText.length < 40,
+      jsonLd: profilePageJsonLd({ name, description, image: p.avatar_url || undefined, url: absoluteUrl(path) }),
     };
-  }, [name, handle]);
+  }, [p, isSelf, blocked, profile.isPending, byId, slug, handle, name, bioText]);
+  usePageSeo(seo);
 
   const tiles = useMemo(() => {
     const all = works.map(toTile).filter((t): t is Tile => !!t);
@@ -118,6 +134,14 @@ function ProfileView({ slug, byId }: { slug: string; byId: boolean }) {
   const shownEvents = events.list.filter((e) => evFilter === "all" || (evFilter === "host" ? e.hosted : !e.hosted));
 
   if (profile.isPending) return <div className="pf-wait" aria-busy="true" />;
+  // A network or server error is not "no such person": the 404 only when the profile really is not there.
+  if (profile.isError && !p) {
+    return (
+      <main className="sc-main pf-m">
+        <LoadError onRetry={() => void profile.refetch()} />
+      </main>
+    );
+  }
   if (!p || (!isSelf && blocked.has(p.user_id))) return <NotFound />;
   // The old site sends /u/<id> to /@handle when the person has one.
   if (byId && handle) return <Navigate to={`/@${handle}${location.search}`} replace />;
@@ -133,14 +157,14 @@ function ProfileView({ slug, byId }: { slug: string; byId: boolean }) {
   const avatar = proxiedImageUrl(p.avatar_url, 256);
 
   const toggleFollow = () => {
-    if (!follows.signedIn) navigate(SC_LINKS.login);
+    if (!follows.signedIn) navigate(loginHref());
     else follows.toggle(p.user_id);
   };
 
   // Small chat window (ChatDock) on larger screens, the chat page on phones; a failure shows for a moment.
   const greet = (el: HTMLElement) => {
     if (!user) {
-      navigate(SC_LINKS.login);
+      navigate(loginHref());
       return;
     }
     greeting.greet({ otherId: p.user_id }, el);
@@ -253,7 +277,13 @@ function ProfileView({ slug, byId }: { slug: string; byId: boolean }) {
                 </div>
               ) : null}
               <Pin tiles={tiles} saved={saves.ids} onSave={saves.toggle} />
-              {worksQ.isPending ? <ScLoader label="กำลังโหลดผลงาน" /> : null}
+              {worksQ.isPending ? (
+                <ScLoader label="กำลังโหลดผลงาน" />
+              ) : worksQ.isError && !worksQ.data ? (
+                <LoadError onRetry={() => void worksQ.refetch()} />
+              ) : !tiles.length ? (
+                <EmptyNote text={isSelf ? "ยังไม่มีผลงานเลย ลงงานแรกกันนะ" : "ยังไม่มีผลงานนะ"} action={isSelf ? { label: "ลงงาน", to: SC_LINKS.upload } : null} />
+              ) : null}
             </>
           ) : null}
 

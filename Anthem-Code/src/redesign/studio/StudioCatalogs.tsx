@@ -5,6 +5,8 @@ import { proxiedImageUrl } from "@/lib/imageProxy";
 import { createCatalog, deleteCatalog, renameCatalog, setCatalogWork } from "@/server/mutations/studio";
 import type { MyCatalog } from "@/server/queries/myProfile";
 import type { StudioWork } from "@/server/queries/studio";
+import EmptyNote from "../main/EmptyNote";
+import { SC_LINKS } from "../routes";
 import { coverOf, StudioTile } from "./StudioWorks";
 
 const NEW_NAME = "Catalog ใหม่";
@@ -113,34 +115,41 @@ export default function StudioCatalogs({ uid, catalogs, works, say }: Props) {
 
   if (!cur) {
     return (
-      <div className="ms-cats">
-        {catalogs.map((c) => {
-          const imgs = c.projectIds.map((id) => byId.get(id)).filter((w): w is StudioWork => !!w).map(coverOf).filter(Boolean).slice(0, 3);
-          return (
-            <button key={c.id} type="button" className="ms-coll" onClick={() => open(c)}>
-              <span className="ms-mos" aria-hidden="true">
-                {[0, 1, 2].map((i) => (imgs[i] ? <img key={i} src={proxiedImageUrl(imgs[i], i === 0 ? 640 : 320)} alt="" /> : <span key={i} />))}
-              </span>
-              <span className="ms-coll-name">
-                {c.title || NEW_NAME}
-                {c.isPublic ? null : (
-                  <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8A8A87" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="5" y="11" width="14" height="9.5" rx="2" />
-                    <path d="M8 11V8a4 4 0 0 1 8 0v3" />
-                  </svg>
-                )}
-              </span>
-              <span className="ms-coll-n">{c.projectIds.length} งาน</span>
-            </button>
-          );
-        })}
-        <button type="button" className="ms-addt ms-addt-43" aria-busy={busy} onClick={() => void add()}>
-          <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-          <span>Catalog ใหม่</span>
-        </button>
-      </div>
+      <>
+        <div className="ms-cats">
+          {catalogs.map((c) => {
+            const imgs = c.projectIds.map((id) => byId.get(id)).filter((w): w is StudioWork => !!w).map(coverOf).filter(Boolean).slice(0, 3);
+            return (
+              <button key={c.id} type="button" className="ms-coll" onClick={() => open(c)}>
+                <span className="ms-mos" aria-hidden="true">
+                  {[0, 1, 2].map((i) => (imgs[i] ? <img key={i} src={proxiedImageUrl(imgs[i], i === 0 ? 640 : 320)} alt="" /> : <span key={i} />))}
+                </span>
+                <span className="ms-coll-name">
+                  {c.title || NEW_NAME}
+                  {c.isPublic ? null : (
+                    <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8A8A87" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="5" y="11" width="14" height="9.5" rx="2" />
+                      <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+                    </svg>
+                  )}
+                </span>
+                <span className="ms-coll-n">{c.projectIds.length} งาน</span>
+              </button>
+            );
+          })}
+          <button type="button" className="ms-addt ms-addt-43" aria-busy={busy} onClick={() => void add()}>
+            <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            <span>Catalog ใหม่</span>
+          </button>
+        </div>
+        {catalogs.length ? null : works.length ? (
+          <EmptyNote text="ยังไม่มี Catalog เลย จัดงานเป็นชุดให้คนดูง่ายขึ้นนะ" />
+        ) : (
+          <EmptyNote text="ลงงานก่อน แล้วค่อยจัดเป็นชุดนะ" action={{ label: "ลงงาน", to: SC_LINKS.upload }} />
+        )}
+      </>
     );
   }
 
@@ -198,7 +207,11 @@ export default function StudioCatalogs({ uid, catalogs, works, say }: Props) {
           );
         })}
       </div>
-      {!editing && !cur.projectIds.length ? <p className="ms-empty">ยังไม่มีงานใน Catalog นี้ · กด “จัดงาน” เพื่อเลือก</p> : null}
+      {editing && !works.length ? (
+        <EmptyNote text="ยังไม่มีงานให้จัดนะ" action={{ label: "ลงงาน", to: SC_LINKS.upload }} />
+      ) : !editing && !cur.projectIds.length ? (
+        <p className="ms-empty">ยังไม่มีงานใน Catalog นี้ · กด “จัดงาน” เพื่อเลือก</p>
+      ) : null}
       {editing ? (
         <div className="ms-catbar" role="toolbar" aria-label="จัดงานใน Catalog">
           <span>เลือก {cur.projectIds.length} งาน</span>
