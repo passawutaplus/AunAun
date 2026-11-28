@@ -601,8 +601,9 @@ html[data-native-app] .sc-app .sc-main {
     border-top: 1px solid #D4D4D1;
   }
 
+  /* same size as the Highlight title (34px), so NOV's capitals match its capitals */
   html[data-native-app] .sc-app .mn-ev-mo > span:first-child {
-    font-size: 44px;
-    line-height: 1.05;
+    font-size: 34px;
+    line-height: 1.1;
   }
 }
