@@ -44,14 +44,20 @@ export default function CookieBanner() {
       <>
         {pending && !prefsOpen ? (
           <section className="ck-bar ck-app" aria-label="สถิติการใช้งาน">
-            <p className="ck-tx">
-              <b>ให้เรานับสถิติการใช้งานไหม</b>
-              <br />
-              ช่วยให้เราปรับแอปให้ดีขึ้นนะ{" "}
-              <Link to={POLICY} className="ck-ln">
-                นโยบาย
-              </Link>
-            </p>
+            <div className="ck-row">
+              <p className="ck-tx">
+                <b>ให้เรานับสถิติการใช้งานไหม</b>
+                <br />
+                ช่วยให้เราปรับแอปให้ดีขึ้นนะ{" "}
+                <Link to={POLICY} className="ck-ln">
+                  นโยบาย
+                </Link>
+              </p>
+              <svg className="ck-ic" aria-hidden="true" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2.5a9.5 9.5 0 1 0 9.5 9.5 3.8 3.8 0 0 1-4.8-4.7A3.8 3.8 0 0 1 12 2.5z" />
+                <path d="M8.5 8.5v.01M15.5 15.5v.01M12 12v.01M11 16.5v.01M7.5 13.5v.01" strokeWidth="2.2" />
+              </svg>
+            </div>
             <div className="ck-btns">
               <button type="button" className="ck-b" onClick={() => acceptEssentialOnly()}>
                 ไม่เป็นไร

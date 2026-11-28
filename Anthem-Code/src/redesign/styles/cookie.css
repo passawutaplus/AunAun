@@ -244,6 +244,17 @@
     font-weight: 500;
   }
 
+  .sc-app .ck-app .ck-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .sc-app .ck-app .ck-ic {
+    flex: none;
+    margin: 2px 4px 0 auto;
+  }
+
   .sc-app .ck-app .ck-btns {
     display: grid;
     grid-template-columns: 1fr 1fr;

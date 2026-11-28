@@ -594,8 +594,8 @@
     height: 64px;
     padding: 0;
     border-radius: 50%;
-    background: #EE3D29;
-    box-shadow: 0 6px 18px rgba(238, 61, 41, .32);
+    background: #282929; /* owner 2026-11-28: dark grey, not red */
+    box-shadow: 0 6px 18px rgba(40, 41, 41, .28);
   }
 
   .sc-app .sc-tb a[data-k="add"] svg {
