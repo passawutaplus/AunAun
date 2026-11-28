@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { proxiedImageUrl } from "@/lib/imageProxy";
 import { getOpenCalls, getRecentFollowers, getStudioComments, type StudioProfile, type StudioWork } from "@/server/queries/studio";
+import { useChatRooms } from "../chat/useChatStore";
 import { useMyEvents } from "../profile/useMyProfile";
 import { useGreet } from "../shell/panels";
 import { count } from "../profile/tiles";
@@ -60,7 +61,10 @@ export default function StudioOverview({ uid, profile, works, followers, goTab }
   };
   const inboxComments = (comments.data ?? []).filter((c) => !done.includes(c.id)).slice(0, 3);
   const drafts = works.filter((w) => w.status === "Draft").slice(0, 3);
-  const inboxN = inboxComments.length + drafts.length;
+  // Chats with something unread come first (mock: mintra.k "ตอบ"); requests stay under Chat → Requests.
+  const { rooms } = useChatRooms(true);
+  const inboxChats = rooms.filter((r) => r.unread > 0 && !r.request).slice(0, 3);
+  const inboxN = inboxChats.length + inboxComments.length + drafts.length;
 
   // Profile steps (mock): picture · first work · bio · CATEGORY · a contact.
   const steps: ReadonlyArray<readonly [string, boolean, StudioTab]> = [
@@ -141,6 +145,18 @@ export default function StudioOverview({ uid, profile, works, followers, goTab }
             <h3 className="ms-h3">
               Inbox <span className="ms-mute">{inboxN}</span>
             </h3>
+            {inboxChats.map((r) => (
+              <div key={r.id} className="ms-evr ms-inbox">
+                {r.other.avatar ? <img src={r.other.avatar} alt="" className="ms-av44" /> : <span aria-hidden="true" className="ms-av44" />}
+                <span className="ms-inbox-tx">
+                  <span className="ms-inbox-t">{r.other.name}</span>
+                  <span className="ms-inbox-s">{/^(ส่งรูป|แชร์ผลงาน|รูปหมดอายุ|ไฟล์แนบ)/.test(r.last) ? r.last : `“${r.last}”`}</span>
+                </span>
+                <button type="button" className="ms-hb2 ms-hb2-s" onClick={(e) => greeting.greet({ roomId: r.id }, e.currentTarget)}>
+                  ตอบ
+                </button>
+              </div>
+            ))}
             {inboxComments.map((c) => (
               <div key={c.id} className="ms-evr ms-inbox">
                 {c.who?.avatar_url ? <img src={proxiedImageUrl(c.who.avatar_url, 96)} alt="" className="ms-av44" /> : <span aria-hidden="true" className="ms-av44" />}

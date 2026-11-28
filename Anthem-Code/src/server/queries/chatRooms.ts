@@ -17,6 +17,7 @@ const MESSAGE_LIMIT = 150;
 export type RoomRow = {
   id: string;
   kind: string | null;
+  request_id?: string | null;
   client_id: string | null;
   freelancer_id: string | null;
   created_by: string | null;
@@ -73,7 +74,7 @@ export async function getMyRooms(me: string): Promise<RoomRow[]> {
   const [rooms, hides] = await Promise.all([
     supabase
       .from("conversations")
-      .select("id, kind, client_id, freelancer_id, created_by, last_message_at, created_at, conversation_type")
+      .select("id, kind, request_id, client_id, freelancer_id, created_by, last_message_at, created_at, conversation_type")
       .or(`client_id.eq.${me},freelancer_id.eq.${me}`)
       .order("last_message_at", { ascending: false, nullsFirst: false })
       .limit(ROOM_LIMIT),
@@ -84,6 +85,18 @@ export async function getMyRooms(me: string): Promise<RoomRow[]> {
   return ((rooms.data ?? []) as Array<RoomRow & { conversation_type: string | null }>)
     .filter((r) => (r.conversation_type ?? "direct") === "direct" && r.kind !== "group" && r.kind !== "studio")
     .filter((r) => !hidden.has(r.id) && !!otherOf(r, me));
+}
+
+/** An old hire room whose request was declined with "lock the chat" refuses new messages (HIRE_CHAT_LOCKED). */
+export async function isHireRoomLocked(requestId: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("hiring_requests")
+    .select("id")
+    .eq("id", requestId)
+    .eq("post_reject_chat", "locked")
+    .maybeSingle();
+  if (error) return true;
+  return !!data;
 }
 
 /** Mute / accepted / seen / unread per room (one RPC); before the step-12 SQL: unread + "I wrote here" from messages. */

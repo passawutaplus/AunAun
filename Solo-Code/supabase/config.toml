@@ -80,3 +80,7 @@ verify_jwt = false
 # Weekly summary e-mail: cron (x-internal-secret) + signed one-click turn-off links, no sign-in.
 [functions.weekly-digest]
 verify_jwt = false
+
+# Deletes chat pictures 30 days after they were sent: daily cron only (x-internal-secret), no sign-in.
+[functions.chat-media-expire]
+verify_jwt = false

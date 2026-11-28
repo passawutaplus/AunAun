@@ -17,12 +17,14 @@ import {
   getRoomMessages,
   getRoomMeta,
   getUnreadRooms,
+  isHireRoomLocked,
   otherOf,
   subscribeRoom,
   subscribeRooms,
   type ChatPersonRow,
   type MessageRow,
   type RoomMeta,
+  type RoomRow,
 } from "@/server/queries/chatRooms";
 import { getProfileWorks, getWorksByIds, type ProfileWorkRow } from "@/server/queries/profilePage";
 import { blockPerson, hideRoom, markRoomRead, reportPerson, setRoomPref, unhideRoom, uploadChatImage, type RoomPrefPatch } from "@/server/mutations/chatRooms";
@@ -377,10 +379,16 @@ export function useOpenChatWith() {
   return useCallback(
     async (otherId: string): Promise<string> => {
       if (!user) throw new Error("ต้องเข้าสู่ระบบก่อน");
-      // An old collab room with this person is reused, so greeting does not add a second row (hire rooms may be locked).
-      const cached = qc.getQueryData<{ rows: Array<{ id: string; kind: string | null; client_id: string | null; freelancer_id: string | null }> }>(chatKeys.rooms(user.id));
-      const collab = cached?.rows.find((r) => r.kind === "collab" && otherOf(r, user.id) === otherId);
-      if (collab) return collab.id;
+      // An old collab / hire room with this person is reused, so greeting does not add a second row
+      // (not a hire room whose request locked the chat: it refuses new messages).
+      const cached = qc.getQueryData<{ rows: RoomRow[] }>(chatKeys.rooms(user.id));
+      const plain = cached?.rows.find((r) => r.kind === "connect" && otherOf(r, user.id) === otherId);
+      if (plain) return plain.id;
+      for (const r of cached?.rows ?? []) {
+        if (otherOf(r, user.id) !== otherId || (r.kind !== "collab" && r.kind !== "hire")) continue;
+        if (r.kind === "hire" && (!r.request_id || (await isHireRoomLocked(r.request_id)))) continue;
+        return r.id;
+      }
       const id = await openConnectChat(user.id, otherId, "").catch((e: unknown) => {
         const msg = String((e as { message?: string } | null)?.message ?? e);
         if (msg.includes("GREET_FOLLOWING_ONLY") || (e as { hint?: string } | null)?.hint === "GREET_FOLLOWING_ONLY") {
