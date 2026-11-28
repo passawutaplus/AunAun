@@ -1614,3 +1614,17 @@
   outline: 2px solid #282929;
   outline-offset: 3px;
 }
+
+/* One block per month (owner 2026-11-28): less room between months than after the list;
+   on phones, where the black rules are off, a thin rule between months. */
+.sc-app .mn-ev-list:not(:last-child) {
+  padding-bottom: 32px;
+}
+
+@media (max-width: 600px) {
+  .sc-app .mn-ev-list + .mn-ev-list {
+    margin-top: 8px;
+    padding-top: 24px;
+    border-top: 1px solid #D4D4D1;
+  }
+}

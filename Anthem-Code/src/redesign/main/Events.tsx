@@ -238,56 +238,73 @@ function EventList({ events, byDay, today, days }: { events: HomeEventRow[]; byD
     return entries.map(([day, items]) => ({ day, items }));
   }, [events, byDay, today]);
 
-  const first = groups[0].day;
+  // One block per month (owner 2026-11-28): every month gets its name in the left column (top on phones),
+  // like the first one, with a rule between months. "Full Calendar" and the week range stay on the first.
+  const months = useMemo(() => {
+    const out: { key: string; groups: typeof groups }[] = [];
+    for (const g of groups) {
+      const key = g.day.slice(0, 7);
+      const last = out[out.length - 1];
+      if (last && last.key === key) last.groups.push(g);
+      else out.push({ key, groups: [g] });
+    }
+    return out;
+  }, [groups]);
   const panels = useShellPanels();
   // Every day starts open and folds on a click (owner 2026-11-28; the mock opened the first two only).
   const [closed, setClosed] = useState<Record<string, boolean>>({});
   const isOpen = (day: string) => !closed[day];
 
   return (
-    <section aria-label="อีเว้นท์" className="mn-ev-list">
-      <div className="mn-ev-month">
-        <span className="mn-ev-mo">
-          <span lang="en">{monthCaps(first)}</span>
-          {days ? (
-            <span className="mn-ev-range" lang="en">
-              {days}
+    <div className="mn-ev-months">
+      {months.map((mo, i) => (
+        <section key={mo.key} aria-label={`อีเว้นท์ ${monthCaps(mo.groups[0].day)}`} className="mn-ev-list">
+          <div className="mn-ev-month">
+            <span className="mn-ev-mo">
+              <span lang="en">{monthCaps(mo.groups[0].day)}</span>
+              {i === 0 && days ? (
+                <span className="mn-ev-range" lang="en">
+                  {days}
+                </span>
+              ) : null}
             </span>
-          ) : null}
-        </span>
-        <button type="button" className="mn-ev-cal" lang="en" aria-haspopup="dialog" onClick={(e) => panels.openCalendar(e.currentTarget)}>
-          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3.5" y="5" width="17" height="15.5" rx="2" />
-            <path d="M3.5 10h17M8 3v4M16 3v4" />
-          </svg>
-          Full Calendar
-        </button>
-      </div>
-      <div className="mn-ev-days">
-        {groups.map((g) => (
-          <div className="mn-ev-group" key={g.day}>
-            {byDay ? (
-              <button type="button" className="mn-ev-day" aria-expanded={isOpen(g.day)} onClick={() => setClosed((c) => ({ ...c, [g.day]: isOpen(g.day) }))}>
-                <span lang="en">{g.day.slice(0, 7) === first.slice(0, 7) ? weekdayDay(g.day) : `${weekdayDay(g.day)} ${monthCaps(g.day)}`}</span>
-                <svg aria-hidden="true" width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="#282929" strokeWidth="1">
-                  <path d="M14 25V3M5 12l9-9 9 9" />
+            {i === 0 ? (
+              <button type="button" className="mn-ev-cal" lang="en" aria-haspopup="dialog" onClick={(e) => panels.openCalendar(e.currentTarget)}>
+                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3.5" y="5" width="17" height="15.5" rx="2" />
+                  <path d="M3.5 10h17M8 3v4M16 3v4" />
                 </svg>
+                Full Calendar
               </button>
             ) : null}
-            {!byDay || isOpen(g.day) ? (
-              <div className="mn-ev-grid">
-                {g.items.map((e) => (
-                  <div className="mn-ev-cell" key={e.id}>
-                    <EventItem event={e} untilEnd={!byDay} />
-                  </div>
-                ))}
-              </div>
-            ) : null}
           </div>
-        ))}
-        <div className="mn-ev-end" />
-      </div>
-    </section>
+          <div className="mn-ev-days">
+            {mo.groups.map((g) => (
+              <div className="mn-ev-group" key={g.day}>
+                {byDay ? (
+                  <button type="button" className="mn-ev-day" aria-expanded={isOpen(g.day)} onClick={() => setClosed((c) => ({ ...c, [g.day]: isOpen(g.day) }))}>
+                    <span lang="en">{weekdayDay(g.day)}</span>
+                    <svg aria-hidden="true" width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="#282929" strokeWidth="1">
+                      <path d="M14 25V3M5 12l9-9 9 9" />
+                    </svg>
+                  </button>
+                ) : null}
+                {!byDay || isOpen(g.day) ? (
+                  <div className="mn-ev-grid">
+                    {g.items.map((e) => (
+                      <div className="mn-ev-cell" key={e.id}>
+                        <EventItem event={e} untilEnd={!byDay} />
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            ))}
+            {i === months.length - 1 ? <div className="mn-ev-end" /> : null}
+          </div>
+        </section>
+      ))}
+    </div>
   );
 }
 
