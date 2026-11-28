@@ -123,15 +123,41 @@ function WorkView({ id, overlay, list, linkState, close }: ViewProps) {
   const prevId = neighbour(list, id, -1);
   const nextId = neighbour(list, id, 1);
 
+  // Over the home page, closing plays the opening backwards (owner 2026-11-28): the card sinks and
+  // fades, the buttons and the veil fade out, then the page underneath is back.
+  const cardRef = useRef<HTMLElement>(null);
+  const closing = useRef(false);
+  const dismiss = useCallback(() => {
+    const card = cardRef.current;
+    const layer = card?.closest(".wk-layer");
+    if (!overlay || calm() || !card || !layer || typeof card.animate !== "function") return close();
+    if (closing.current) return;
+    closing.current = true;
+    const out = "cubic-bezier(.55, 0, .78, 0)";
+    const runs = [
+      card.animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: "translateY(120px)" }], { duration: 520, easing: out, fill: "forwards" }),
+      ...Array.from(layer.querySelectorAll<HTMLElement>(".wk-ui, .wk-rail")).map((el) => el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 240, easing: "ease", fill: "forwards" })),
+      ...Array.from(layer.querySelectorAll<HTMLElement>(".wk-veil")).map((el) => el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 380, delay: 200, easing: "ease", fill: "forwards" })),
+    ];
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      close();
+    };
+    void Promise.all(runs.map((a) => a.finished)).then(finish, finish);
+    window.setTimeout(finish, 900);
+  }, [overlay, close]);
+
   // Esc closes (the save popup handles its own Esc first).
   const toastOpen = saves.open;
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !toastOpen) close();
+      if (e.key === "Escape" && !toastOpen) dismiss();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [close, toastOpen]);
+  }, [dismiss, toastOpen]);
 
   useEffect(() => {
     if (!title) return;
@@ -143,7 +169,6 @@ function WorkView({ id, overlay, list, linkState, close }: ViewProps) {
   }, [title, artistName]);
 
   // Another work in the same window: back to the top, the card fades in again (mock C7).
-  const cardRef = useRef<HTMLElement>(null);
   const firstId = useRef(id);
   useLayoutEffect(() => {
     if (firstId.current === id) return;
@@ -248,9 +273,9 @@ function WorkView({ id, overlay, list, linkState, close }: ViewProps) {
 
   return (
     <>
-      {overlay ? <div className="wk-veil" aria-hidden="true" onClick={close} /> : null}
+      {overlay ? <div className="wk-veil" aria-hidden="true" onClick={dismiss} /> : null}
 
-      <button type="button" className="wk-ui wk-rb wk-x" aria-label="ปิดผลงาน" onClick={close}>
+      <button type="button" className="wk-ui wk-rb wk-x" aria-label="ปิดผลงาน" onClick={dismiss}>
         <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
           <path d="M6 6l12 12M18 6L6 18" />
         </svg>
@@ -258,7 +283,14 @@ function WorkView({ id, overlay, list, linkState, close }: ViewProps) {
       {sideBtn("prev")}
       {sideBtn("next")}
 
-      <div className="wk-wrap" role={overlay ? "dialog" : undefined} aria-modal={overlay ? true : undefined} aria-label={`ผลงาน ${title}`}>
+      {/* Over the home page, a click anywhere outside the card and its buttons closes it like × (owner 2026-11-28). */}
+      <div
+        className="wk-wrap"
+        role={overlay ? "dialog" : undefined}
+        aria-modal={overlay ? true : undefined}
+        aria-label={`ผลงาน ${title}`}
+        onClick={overlay ? (e) => e.target === e.currentTarget && dismiss() : undefined}
+      >
         <article ref={cardRef} className="wk-card">
           <section aria-label="ตัวงาน" className="wk-body">
             {/* Made in the new editor: the body exactly as Upload's Preview showed it (owner 2026-11-28). */}
