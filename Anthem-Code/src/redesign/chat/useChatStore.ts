@@ -17,6 +17,7 @@ import {
   getChatPeople,
   getHireRoomLocked,
   getLastMessages,
+  getMessagesByIds,
   getMyBlockedIds,
   getMyRooms,
   getRoom,
@@ -41,12 +42,14 @@ import {
   reportPerson,
   setRoomPref,
   unhideRoom,
+  UNSEND_HOURS,
+  unsendMessage,
   uploadChatImage,
   type ChatReportReason,
   type RoomPrefPatch,
 } from "@/server/mutations/chatRooms";
 import { profileHref } from "../main/useCreators";
-import { docOf, eventOf, msgKind, msgLabel, objectOf, textOf, type DocCard, type MsgKind, type ObjectCard } from "./chatFormat";
+import { docOf, eventOf, msgKind, msgLabel, objectOf, quoteText, textOf, type DocCard, type MsgKind, type ObjectCard } from "./chatFormat";
 
 export const chatKeys = {
   rooms: (uid?: string) => ["sc-chat-rooms", uid] as const,
@@ -105,6 +108,10 @@ export type ChatMsg = {
   object: ObjectCard | null;
   /** Picture still uploading: a preview from this device (null when the browser cannot show it, e.g. HEIC). */
   localUrl: string | null;
+  /** The message this one answers: shown as a quote on top of the bubble (tap → that message). */
+  replyTo: { id: string; mine: boolean; text: string } | null;
+  /** Mine, stored and younger than 24 hours (old chat rule). */
+  canUnsend: boolean;
   pending: boolean;
 };
 
@@ -361,9 +368,22 @@ export function useRoomMessages(roomId: string | null) {
     queryFn: () => getChatEvents(eventIds),
   });
 
+  // Quotes of replies: from the loaded messages, older ones read once.
+  const quoteIds = useMemo(() => {
+    const have = new Set((query.data ?? []).map((m) => m.id));
+    return [...new Set((query.data ?? []).map((m) => m.reply_to_id).filter((x): x is string => !!x && !have.has(x)))].sort();
+  }, [query.data]);
+  const { data: olderQuoted } = useQuery({
+    queryKey: ["sc-chat-quoted", roomId, quoteIds],
+    enabled: quoteIds.length > 0,
+    staleTime: 5 * 60_000,
+    queryFn: () => getMessagesByIds(quoteIds),
+  });
+
   const items = useMemo((): ChatMsg[] => {
     const now = new Date();
     const byId = new Map((works ?? []).map((w) => [w.id, w]));
+    const quoted = new Map<string, MessageRow>([...(olderQuoted ?? []), ...(query.data ?? [])].map((m) => [m.id, m]));
     const out: ChatMsg[] = [];
     for (const m of query.data ?? []) {
       const kind = msgKind(m, now);
@@ -385,13 +405,29 @@ export function useRoomMessages(roomId: string | null) {
         doc: kind === "doc" ? docOf(m.content) : null,
         object: kind === "object" ? objectOf(m.content) : null,
         localUrl: m.local_url ?? null,
+        replyTo: (() => {
+          const q = m.reply_to_id && kind !== "gone" ? quoted.get(m.reply_to_id) : undefined;
+          return q ? { id: q.id, mine: q.sender_id === uid, text: quoteText(q, now) } : null;
+        })(),
+        canUnsend:
+          m.sender_id === uid && !m.pending && kind !== "gone" && now.getTime() - new Date(m.created_at).getTime() < UNSEND_HOURS * 3_600_000,
         pending: !!m.pending,
       });
     }
     return out;
-  }, [query.data, works, profiles, events, uid]);
+  }, [query.data, works, profiles, events, olderQuoted, uid]);
 
   return { items, loading: query.isLoading, error: query.error, refetch: query.refetch };
+}
+
+/** Short words of a message on screen, for the reply bar above the text box (old chat replyPreviewText). */
+export function chatMsgQuote(m: ChatMsg): string {
+  if (m.kind === "img" || m.kind === "exp") return "รูป";
+  if (m.kind === "work") return `ผลงาน ${m.work?.title ?? m.text}`.trim();
+  if (m.kind === "profile") return `โปรไฟล์ ${m.profile?.name ?? ""}`.trim();
+  if (m.kind === "doc") return `${m.doc?.kind ?? "เอกสาร"} ${m.doc?.number ?? ""}`.trim();
+  if (m.kind === "object") return `สินค้า ${m.object?.title ?? ""}`.trim();
+  return m.text || (m.event ? `อีเวนต์ ${m.event.title}` : "ข้อความ");
 }
 
 export const workCover = (w: Pick<ProfileWorkRow, "cover_url" | "gallery_urls"> | undefined, width = 520) =>
@@ -438,6 +474,7 @@ export function useChatActions() {
         created_at: new Date().toISOString(),
         deleted_at: null,
         read_at: null,
+        reply_to_id: row.reply_to_id ?? null,
         pending: true,
         local_url: row.local_url ?? null,
       };
@@ -480,9 +517,15 @@ export function useChatActions() {
     );
 
   return {
-    /** `about`: greeting from a work — its card goes right after the text, so the other person sees what it is about. */
-    sendText: async (roomId: string, text: string, about?: ChatWork | null) => {
-      await post(roomId, { message_type: "text", content: text }, () => send.mutateAsync({ conversationId: roomId, content: text }));
+    /**
+     * `replyTo`: the message this text answers (quote). `about`: greeting from a work — its card goes right after
+     * the text, so the other person sees what it is about.
+     */
+    sendText: async (roomId: string, text: string, opts: { about?: ChatWork | null; replyTo?: string | null } = {}) => {
+      const { about, replyTo } = opts;
+      await post(roomId, { message_type: "text", content: text, reply_to_id: replyTo ?? null }, () =>
+        send.mutateAsync({ conversationId: roomId, content: text, ...(replyTo ? { replyToId: replyTo } : {}) }),
+      );
       // Best effort, like the old greeting ("From : <work>"): the text already went out.
       if (about) await sendWork(roomId, about).catch(() => undefined);
     },
@@ -496,6 +539,21 @@ export function useChatActions() {
       }).finally(() => {
         if (local) window.setTimeout(() => URL.revokeObjectURL(local), 30_000);
       });
+    },
+    /** Unsend (24 hours): goes at once on screen, comes back if the server says no. */
+    unsend: async (roomId: string, msg: Pick<ChatMsg, "id" | "at">) => {
+      const key = chatKeys.msgs(uid, roomId);
+      const before = qc.getQueryData<PendingRow[]>(key);
+      qc.setQueryData<PendingRow[]>(key, (old) => (old ?? []).map((m) => (m.id === msg.id ? { ...m, deleted_at: new Date().toISOString() } : m)));
+      try {
+        await unsendMessage(msg.id, msg.at);
+      } catch (e) {
+        if (before) qc.setQueryData(key, before);
+        throw new Error(errText(e, "ยกเลิกไม่สำเร็จ ลองอีกครั้งนะ"));
+      } finally {
+        void qc.invalidateQueries({ queryKey: key });
+        refresh();
+      }
     },
     /** Opening a room: read it; a request is only marked seen, so the sender does not learn it was read. */
     openRoom: async (room: Pick<ChatRoom, "id" | "request" | "unread">) => {

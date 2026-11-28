@@ -55,6 +55,8 @@ export type MessageRow = {
   project_id: string | null;
   /** Whose profile a "profile" message shares (old rows without it share the sender). */
   profile_user_id?: string | null;
+  /** The message this one answers (reply with a quote). */
+  reply_to_id?: string | null;
   created_at: string;
   deleted_at: string | null;
   read_at: string | null;
@@ -213,16 +215,27 @@ export async function getChatEvents(ids: string[]): Promise<Record<string, ChatE
   return out;
 }
 
+const MESSAGE_SELECT =
+  "id, conversation_id, sender_id, content, attachment_url, message_type, project_id, profile_user_id, reply_to_id, created_at, deleted_at, read_at";
+
 /** Newest 150 messages of a room, oldest first. */
 export async function getRoomMessages(id: string): Promise<MessageRow[]> {
   const { data, error } = await supabase
     .from("messages")
-    .select("id, conversation_id, sender_id, content, attachment_url, message_type, project_id, profile_user_id, created_at, deleted_at, read_at")
+    .select(MESSAGE_SELECT)
     .eq("conversation_id", id)
     .order("created_at", { ascending: false })
     .limit(MESSAGE_LIMIT);
   if (error) throw error;
   return ((data ?? []) as MessageRow[]).reverse();
+}
+
+/** Messages a reply quotes that are older than the loaded 150. */
+export async function getMessagesByIds(ids: string[]): Promise<MessageRow[]> {
+  if (!ids.length) return [];
+  const { data, error } = await supabase.from("messages").select(MESSAGE_SELECT).in("id", ids);
+  if (error) throw error;
+  return (data ?? []) as MessageRow[];
 }
 
 let channelSeq = 0;

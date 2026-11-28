@@ -17,8 +17,10 @@ import { Link, useLocation } from "react-router-dom";
 import { SC_LINKS } from "../routes";
 import { usePresence } from "../lib/usePresence";
 import { clock, dayWord, listTime, newDay } from "../chat/chatFormat";
+import DocCardView from "../chat/DocCard";
 import ReportPicker from "../chat/ReportPicker";
 import {
+  chatMsgQuote,
   useChatActions,
   useChatRoom,
   useChatRooms,
@@ -121,6 +123,8 @@ const ChatDock = forwardRef<ChatDockHandle>(function ChatDock(_props, ref) {
   const [works, setWorks] = useState<Record<string, ChatWork>>({});
   const [big, setBig] = useState<{ room: string | null; work: ChatWork | null } | null>(null);
   const [reporting, setReporting] = useState(false);
+  /** Reply: the message the next text answers (bar above the text box). */
+  const [replyTo, setReplyTo] = useState<{ id: string; mine: boolean; text: string } | null>(null);
   const [filter, setFilter] = useState<"all" | "req">("all");
   const [q, setQ] = useState("");
   const [draft, setDraft] = useState("");
@@ -164,6 +168,7 @@ const ChatDock = forwardRef<ChatDockHandle>(function ChatDock(_props, ref) {
       setDraft("");
       setWinErr("");
       setReporting(false);
+      setReplyTo(null);
     }
     setActive(id);
     closeList();
@@ -286,10 +291,12 @@ const ChatDock = forwardRef<ChatDockHandle>(function ChatDock(_props, ref) {
     if (!cur || !text || lock) return;
     const roomId = cur.id;
     const about = aboutWork;
+    const answer = replyTo;
     setDraft("");
     setWinErr("");
+    setReplyTo(null);
     try {
-      await actions.sendText(roomId, text, about);
+      await actions.sendText(roomId, text, { about, replyTo: answer?.id });
       if (about)
         setWorks((w) => {
           const next = { ...w };
@@ -299,7 +306,29 @@ const ChatDock = forwardRef<ChatDockHandle>(function ChatDock(_props, ref) {
     } catch (e) {
       setWinErr(errText(e, "ส่งไม่สำเร็จ ลองอีกครั้ง"));
       setDraft((d) => d || text);
+      setReplyTo((r) => r ?? answer);
     }
+  };
+
+  const startReply = (m: ChatMsg) => {
+    setReplyTo({ id: m.id, mine: m.me, text: chatMsgQuote(m) });
+    inRef.current?.focus();
+  };
+
+  const unsend = (m: ChatMsg) => {
+    if (!cur) return;
+    if (replyTo?.id === m.id) setReplyTo(null);
+    setWinErr("");
+    void actions.unsend(cur.id, m).catch((e: unknown) => setWinErr(errText(e, "ยกเลิกไม่สำเร็จ ลองอีกครั้ง")));
+  };
+
+  /** Tap a quote → the message it answers (when it is among the loaded ones). */
+  const jump = (id: string) => {
+    const el = logRef.current?.querySelector<HTMLElement>(`[data-mid="${id}"]`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.dataset.hl = "";
+    window.setTimeout(() => delete el.dataset.hl, 1500);
   };
 
   const run = async (job: () => Promise<void>, done: () => void) => {
@@ -465,10 +494,12 @@ const ChatDock = forwardRef<ChatDockHandle>(function ChatDock(_props, ref) {
               const first = !prev || prev.me !== m.me || day;
               const href = cardHref(m);
               const words = label(m);
+              const q = m.replyTo;
+              const canWrite = !cur.request && !lock;
               return (
                 <Fragment key={m.id}>
                   {day ? <span className="cd-day">{dayWord(m.at, now)}</span> : null}
-                  <div className="cd-msg" data-me={m.me ? "" : undefined} data-gap={first && k && !day ? "" : undefined}>
+                  <div className="cd-msg" data-mid={m.id} data-me={m.me ? "" : undefined} data-gap={first && k && !day ? "" : undefined}>
                     {m.me ? (
                       <span className="cd-st">
                         {m.pending ? (
@@ -491,10 +522,22 @@ const ChatDock = forwardRef<ChatDockHandle>(function ChatDock(_props, ref) {
                     ) : (
                       <Face room={cur} size={28} hidden={!first} />
                     )}
-                    {href ? (
+                    {m.kind === "doc" && m.doc ? (
+                      <DocCardView doc={m.doc} compact />
+                    ) : m.kind === "gone" ? (
+                      <span className="cd-bub cd-unsent">{words}</span>
+                    ) : href ? (
                       <Link to={href} className="cd-bub cd-bub-link">
                         {words}
                       </Link>
+                    ) : q ? (
+                      <span className="cd-bub">
+                        <button type="button" className="cd-quote" aria-label={`ไปที่ข้อความที่ตอบ: ${q.text}`} onClick={() => jump(q.id)}>
+                          <span>{q.mine ? "คุณ" : cur.other.name}</span>
+                          <span>{q.text}</span>
+                        </button>
+                        {words}
+                      </span>
                     ) : m.event ? (
                       <span className="cd-stack">
                         {words ? <span className="cd-bub">{words}</span> : null}
@@ -506,6 +549,25 @@ const ChatDock = forwardRef<ChatDockHandle>(function ChatDock(_props, ref) {
                       <span className="cd-bub">{words}</span>
                     )}
                     {m.me ? null : <span className="cd-t">{clock(m.at)}</span>}
+                    {m.pending || m.kind === "gone" || (!canWrite && !m.canUnsend) ? null : (
+                      <span className="cd-macts" data-me={m.me ? "" : undefined}>
+                        {canWrite ? (
+                          <button type="button" className="cd-mact" aria-label="ตอบกลับข้อความนี้" title="ตอบกลับ" onClick={() => startReply(m)}>
+                            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M9.5 7L4.5 12l5 5" />
+                              <path d="M4.5 12H14a5.5 5.5 0 0 1 5.5 5.5V19" />
+                            </svg>
+                          </button>
+                        ) : null}
+                        {m.canUnsend ? (
+                          <button type="button" className="cd-mact" aria-label="ยกเลิกการส่งข้อความนี้" title="ยกเลิกการส่ง" onClick={() => unsend(m)}>
+                            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12" />
+                            </svg>
+                          </button>
+                        ) : null}
+                      </span>
+                    )}
                   </div>
                 </Fragment>
               );
@@ -554,6 +616,18 @@ const ChatDock = forwardRef<ChatDockHandle>(function ChatDock(_props, ref) {
               {lock}
             </p>
           ) : (
+            <>
+            {replyTo ? (
+              <div className="cd-replybar" role="status">
+                <span className="cd-replybar-t">
+                  <span>{replyTo.mine ? "ตอบกลับข้อความของคุณ" : `ตอบกลับ ${cur.other.name}`}</span>
+                  <span>{replyTo.text}</span>
+                </span>
+                <button type="button" className="cd-ib" aria-label="ยกเลิกการตอบกลับ" title="ยกเลิก" onClick={() => setReplyTo(null)}>
+                  <CloseIcon size={14} />
+                </button>
+              </div>
+            ) : null}
             <div className="cd-comp">
               <label htmlFor="cd-input" className="cd-sr">{`พิมพ์ข้อความถึง ${cur.other.name}`}</label>
               <textarea
@@ -569,6 +643,11 @@ const ChatDock = forwardRef<ChatDockHandle>(function ChatDock(_props, ref) {
                     e.preventDefault();
                     void send();
                   }
+                  // Esc while replying drops the reply first (the window stays open).
+                  if (e.key === "Escape" && replyTo && !e.nativeEvent.isComposing) {
+                    e.stopPropagation();
+                    setReplyTo(null);
+                  }
                 }}
                 placeholder="พิมพ์ข้อความ"
                 enterKeyHint="send"
@@ -579,6 +658,7 @@ const ChatDock = forwardRef<ChatDockHandle>(function ChatDock(_props, ref) {
                 </svg>
               </button>
             </div>
+            </>
           )}
           {reporting ? (
             <ReportPicker

@@ -39,6 +39,14 @@ export async function unhideRoom(me: string, roomId: string): Promise<void> {
   if (error) throw error;
 }
 
+/** Unsend one of my messages (old chat: within 24 hours; the server checks too). */
+export const UNSEND_HOURS = 24;
+export async function unsendMessage(messageId: string, createdAt: string): Promise<void> {
+  if (Date.now() - new Date(createdAt).getTime() > UNSEND_HOURS * 3_600_000) throw new Error("ยกเลิกได้ภายใน 24 ชั่วโมงเท่านั้นนะ");
+  const { error } = await rpc("unsend_message", { p_message_id: messageId });
+  if (error) throw error;
+}
+
 export async function markRoomRead(roomId: string): Promise<void> {
   const { error } = await rpc("mark_conversation_read", { p_conversation_id: roomId });
   if (error) throw error;

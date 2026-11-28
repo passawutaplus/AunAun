@@ -6,8 +6,10 @@ import { SC_LINKS } from "../routes";
 import LoadError from "../shell/LoadError";
 import { onEscape } from "../shell/panels";
 import { baht, clock, dayWord, listTime, newDay } from "../chat/chatFormat";
+import DocCardView from "../chat/DocCard";
 import ReportPicker from "../chat/ReportPicker";
 import {
+  chatMsgQuote,
   useChatActions,
   useChatRoom,
   useChatRooms,
@@ -117,6 +119,11 @@ export function ChatView({ embedded = false, onClose, initialRoomId = null, gree
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [reporting, setReporting] = useState(false);
+  /** Reply: the message the next text answers (bar above the text box). */
+  const [replyTo, setReplyTo] = useState<{ id: string; mine: boolean; text: string } | null>(null);
+  /** Message whose Reply / Unsend buttons show (a tap on phones; hover / focus on PC). */
+  const [sel, setSel] = useState<string | null>(null);
+  const [hl, setHl] = useState<string | null>(null);
   const noticeTimer = useRef<number>();
   const logRef = useRef<HTMLDivElement>(null);
   const inRef = useRef<HTMLTextAreaElement>(null);
@@ -169,6 +176,8 @@ export function ChatView({ embedded = false, onClose, initialRoomId = null, gree
     setShare(false);
     setWorksAll(false);
     setReporting(false);
+    setReplyTo(null);
+    setSel(null);
     if (embedded) setLocalId(id);
     else navigate(id ? `/chat/${id}` : SC_LINKS.chat, { replace: !!id && !!activeId });
   };
@@ -201,16 +210,47 @@ export function ChatView({ embedded = false, onClose, initialRoomId = null, gree
     const text = draft.trim();
     if (!cur || !text || lock) return;
     const work = aboutWork;
+    const answer = replyTo;
     setDraft("");
-    void actions.sendText(cur.id, text, work).then(
+    setReplyTo(null);
+    void actions.sendText(cur.id, text, { about: work, replyTo: answer?.id }).then(
       () => {
         if (work) setAbout(null);
       },
       (e: unknown) => {
         setDraft((d) => d || text);
+        setReplyTo((r) => r ?? answer);
         say(e instanceof Error ? e.message : "ส่งไม่สำเร็จ");
       },
     );
+  };
+  const startReply = (m: ChatMsg) => {
+    setReplyTo({ id: m.id, mine: m.me, text: chatMsgQuote(m) });
+    setSel(null);
+    inRef.current?.focus();
+  };
+  const unsend = (m: ChatMsg) => {
+    if (!cur) return;
+    setSel(null);
+    if (replyTo?.id === m.id) setReplyTo(null);
+    void actions.unsend(cur.id, m).catch((e: unknown) => say(e instanceof Error ? e.message : "ยกเลิกไม่สำเร็จ"));
+  };
+  /** Tap a quote → the message it answers (when it is among the loaded ones), lit for a moment. */
+  const jump = (id: string) => {
+    const el = logRef.current?.querySelector<HTMLElement>(`[data-mid="${id}"]`);
+    if (!el) {
+      say("ข้อความนี้เก่าไปหน่อย เลื่อนไปไม่ถึงนะ");
+      return;
+    }
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    setHl(id);
+    window.setTimeout(() => setHl((v) => (v === id ? null : v)), 1500);
+  };
+  /** A tap on a message row (not on a link / button / a box drawn over the chat) shows its buttons. */
+  const pickRow = (e: MouseEvent<HTMLDivElement>, m: ChatMsg) => {
+    const t = e.target as HTMLElement;
+    if (!e.currentTarget.contains(t) || t.closest("a, button, input, textarea, label")) return;
+    setSel((v) => (v === m.id ? null : m.id));
   };
   const sendReport = (reason: Parameters<typeof actions.report>[1]) => {
     if (!cur) return;
@@ -235,6 +275,11 @@ export function ChatView({ embedded = false, onClose, initialRoomId = null, gree
     if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
       send();
+    }
+    // Esc while replying drops the reply first (the big popup stays open).
+    if (e.key === "Escape" && replyTo && !e.nativeEvent.isComposing) {
+      e.stopPropagation();
+      setReplyTo(null);
     }
   };
   const toggleFind = () => {
@@ -377,22 +422,11 @@ export function ChatView({ embedded = false, onClose, initialRoomId = null, gree
           </span>
         </Link>
       );
-    if (m.kind === "doc" && m.doc)
+    if (m.kind === "doc" && m.doc) return <DocCardView doc={m.doc} />;
+    if (m.kind === "gone")
       return (
-        <span className="ch-card-l ch-doc">
-          <span aria-hidden="true" className="ch-doc-ic">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.4" strokeLinejoin="round">
-              <path d="M6.5 3.5h7l4 4v13h-11z" />
-              <path d="M13.5 3.5v4h4M9 12.5h6M9 16h4" strokeLinecap="round" />
-            </svg>
-          </span>
-          <span className="ch-wt">
-            <span>{m.doc.kind}</span>
-            <span>{m.doc.number || m.doc.kind}</span>
-            {m.doc.title || m.doc.net ? (
-              <span className="ch-cs">{[m.doc.title, m.doc.net ? baht(m.doc.net) : ""].filter(Boolean).join(" · ")}</span>
-            ) : null}
-          </span>
+        <span className="ch-bub ch-unsent" data-me={m.me || undefined}>
+          {m.text}
         </span>
       );
     if (m.kind === "object" && m.object) {
@@ -436,11 +470,19 @@ export function ChatView({ embedded = false, onClose, initialRoomId = null, gree
         </Link>
       );
     const ev = m.event;
-    const text = m.text ? (
-      <span className="ch-bub" data-me={m.me || undefined}>
-        {m.text}
-      </span>
-    ) : null;
+    const q = m.replyTo;
+    const text =
+      m.text || q ? (
+        <span className="ch-bub" data-me={m.me || undefined}>
+          {q ? (
+            <button type="button" className="ch-quote" aria-label={`ไปที่ข้อความที่ตอบ: ${q.text}`} onClick={() => jump(q.id)}>
+              <span>{q.mine ? "คุณ" : cur?.other.name}</span>
+              <span>{q.text}</span>
+            </button>
+          ) : null}
+          {m.text}
+        </span>
+      ) : null;
     if (!ev) return text;
     return (
       <span className="ch-stack" data-me={m.me || undefined}>
@@ -463,6 +505,29 @@ export function ChatView({ embedded = false, onClose, initialRoomId = null, gree
       </span>
     );
   };
+
+  // Reply (when I can write here) · Unsend (mine, 24 hours). On the outer side of the bubble.
+  const canWrite = !!cur && !cur.request && !lock;
+  const msgActs = (m: ChatMsg) =>
+    m.pending || m.kind === "gone" || (!canWrite && !m.canUnsend) ? null : (
+      <span className="ch-macts" data-me={m.me || undefined}>
+        {canWrite ? (
+          <button type="button" className="ch-mact" aria-label="ตอบกลับข้อความนี้" title="ตอบกลับ" onClick={() => startReply(m)}>
+            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9.5 7L4.5 12l5 5" />
+              <path d="M4.5 12H14a5.5 5.5 0 0 1 5.5 5.5V19" />
+            </svg>
+          </button>
+        ) : null}
+        {m.canUnsend ? (
+          <button type="button" className="ch-mact" aria-label="ยกเลิกการส่งข้อความนี้" title="ยกเลิกการส่ง" onClick={() => unsend(m)}>
+            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12" />
+            </svg>
+          </button>
+        ) : null}
+      </span>
+    );
 
   const room = cur ? (
     <>
@@ -507,9 +572,17 @@ export function ChatView({ embedded = false, onClose, initialRoomId = null, gree
         {msgsError && !items.length ? <LoadError label="โหลดข้อความไม่ขึ้น ลองใหม่อีกทีนะ" onRetry={() => void refetchMsgs()} /> : null}
         {!msgsLoading && !msgsError && !items.length ? <p className="ch-start">ลองบอกเขาสั้นๆ ว่าชอบอะไรในงานของเขา</p> : null}
         {msgs.map(({ m, day, first, hit, gap }) => (
-          <div key={m.id} className="ch-m">
+          <div key={m.id} className="ch-m" data-mid={m.id}>
             {day ? <span className="ch-day">{dayWord(m.at, now)}</span> : null}
-            <div className="ch-mr" data-me={m.me || undefined} data-gap={gap || undefined} data-miss={hit ? undefined : ""}>
+            <div
+              className="ch-mr"
+              data-me={m.me || undefined}
+              data-gap={gap || undefined}
+              data-miss={hit ? undefined : ""}
+              data-sel={sel === m.id || undefined}
+              data-hl={hl === m.id || undefined}
+              onClick={(e) => pickRow(e, m)}
+            >
               {m.me ? null : <Avatar room={cur} size={32} hidden={!first} />}
               {m.me ? (
                 <span className="ch-t">
@@ -526,6 +599,7 @@ export function ChatView({ embedded = false, onClose, initialRoomId = null, gree
               ) : null}
               {bubble(m)}
               {m.me ? null : <span className="ch-t">{clock(m.at)}</span>}
+              {msgActs(m)}
             </div>
           </div>
         ))}
@@ -562,6 +636,20 @@ export function ChatView({ embedded = false, onClose, initialRoomId = null, gree
           {lock}
         </p>
       ) : (
+        <>
+        {replyTo ? (
+          <div className="ch-replybar" role="status">
+            <span className="ch-replybar-t">
+              <span>{replyTo.mine ? "ตอบกลับข้อความของคุณ" : `ตอบกลับ ${cur.other.name}`}</span>
+              <span>{replyTo.text}</span>
+            </span>
+            <button type="button" className="ch-rb" aria-label="ยกเลิกการตอบกลับ" title="ยกเลิก" onClick={() => setReplyTo(null)}>
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+                <path d="M6 6l12 12M18 6L6 18" />
+              </svg>
+            </button>
+          </div>
+        ) : null}
         <div className="ch-cmp">
           <label className="ch-rb" title="ส่งรูป">
             <span className="sc-sr">ส่งรูป</span>
@@ -613,6 +701,7 @@ export function ChatView({ embedded = false, onClose, initialRoomId = null, gree
             </div>
           ) : null}
         </div>
+        </>
       )}
     </>
   ) : activeId ? (

@@ -5,7 +5,7 @@
  * in the new design). Card blobs (`__SAMECOR_DOC__:`, `[[object]]`) never show as raw JSON.
  */
 import { parseEventLink, stripEventLinkLine } from "@/lib/chat/eventLink";
-import { parseStudioDocCard, STUDIO_DOC_KIND_LABEL, STUDIO_DOC_PREFIX } from "@/lib/documents/studioDocuments";
+import { parseStudioDocCard, STUDIO_DOC_KIND_LABEL, STUDIO_DOC_PREFIX, type StudioDocChatCard } from "@/lib/documents/studioDocuments";
 import { OBJECT_CHAT_PREFIX, parseObjectChatCard } from "@/lib/objects/chatCard";
 
 export const IMAGE_DAYS = 30;
@@ -24,11 +24,16 @@ export type MsgInput = {
   deleted_at?: string | null;
 };
 
-export type MsgKind = "text" | "img" | "exp" | "work" | "file" | "profile" | "doc" | "object";
+/** `gone` = unsent (old chat: "ข้อความถูกยกเลิก"). */
+export type MsgKind = "text" | "img" | "exp" | "work" | "file" | "profile" | "doc" | "object" | "gone";
 
-/** How a message shows, or null when the new design leaves it out. */
+/** How a message shows, or null when the new design leaves it out. An unsent message keeps its place as `gone`. */
 export function msgKind(m: MsgInput, now: Date): MsgKind | null {
-  if (m.deleted_at) return null;
+  const kind = baseKind(m, now);
+  return kind && m.deleted_at ? "gone" : kind;
+}
+
+function baseKind(m: MsgInput, now: Date): MsgKind | null {
   const type = m.message_type || "text";
   const content = (m.content ?? "").trim();
   if (type === "system" || type === "service") return null;
@@ -42,13 +47,22 @@ export function msgKind(m: MsgInput, now: Date): MsgKind | null {
   return content ? "text" : null;
 }
 
-export type DocCard = { kind: string; number: string; title: string; net: number };
+export type DocCard = {
+  /** Kind in words (ใบแจ้งหนี้ · งวด 1/2). */
+  kind: string;
+  number: string;
+  title: string;
+  net: number;
+  /** The parsed pointer (opens the document); null when the blob does not parse. */
+  card: StudioDocChatCard | null;
+};
 
 /** Studio document card (quotation / invoice / receipt). A blob that does not parse still gets a plain card. */
 export function docOf(content: string | null | undefined): DocCard {
   const c = parseStudioDocCard(content?.trim());
-  if (!c) return { kind: "เอกสาร", number: "", title: "", net: 0 };
-  return { kind: STUDIO_DOC_KIND_LABEL[c.kind], number: c.number, title: c.title, net: c.net };
+  if (!c) return { kind: "เอกสาร", number: "", title: "", net: 0, card: null };
+  const part = c.installmentNo && (c.installmentTotal ?? 1) > 1 ? ` · งวด ${c.installmentNo}/${c.installmentTotal}` : "";
+  return { kind: `${STUDIO_DOC_KIND_LABEL[c.kind]}${part}`, number: c.number, title: c.title, net: c.net, card: c };
 }
 
 export type ObjectCard = { id: string | null; title: string; price: number; cover: string | null; note: string };
@@ -70,6 +84,15 @@ export function textOf(m: MsgInput): string {
   return eventOf(m) ? stripEventLinkLine(text).trim() : text;
 }
 
+export const UNSENT = "ข้อความถูกยกเลิก";
+
+/** Words of a quoted message (reply), short like the room list. */
+export function quoteText(m: MsgInput, now: Date): string {
+  const kind = msgKind(m, now);
+  if (kind === "img" || kind === "exp") return "รูป";
+  return msgLabel(m, now) || "ข้อความ";
+}
+
 export const baht = (n: number) => `฿${Math.round(n).toLocaleString("en-US")}`;
 
 /** Short words for the room list and the small chat (mock ChatStore.label). */
@@ -79,6 +102,7 @@ export function msgLabel(m: MsgInput, now: Date): string {
   if (kind === "exp") return "รูปหมดอายุแล้ว";
   if (kind === "work") return `แชร์ผลงาน ${m.content?.trim() || ""}`.trim();
   if (kind === "file") return "ไฟล์แนบ";
+  if (kind === "gone") return UNSENT;
   if (kind === "profile") return "แชร์โปรไฟล์";
   if (kind === "doc") {
     const d = docOf(m.content);
