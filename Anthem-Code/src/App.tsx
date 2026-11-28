@@ -411,6 +411,7 @@ const RedesignShell = lazy(() => import("./redesign/shell/RedesignShell.tsx"));
 const RedesignNotFound = lazy(() => import("./redesign/pages/NotFound.tsx"));
 const RedesignMain = lazy(() => import("./redesign/pages/Main.tsx"));
 const RedesignTerms = lazy(() => import("./redesign/pages/Terms.tsx"));
+const RedesignPrivacy = lazy(() => import("./redesign/pages/Privacy.tsx"));
 
 /** Old site chrome (top nav, floating nav, banners, prompts): never mounted on a page of the new design. */
 const LegacyChrome = ({ children }: { children: ReactNode }) => {
@@ -478,6 +479,7 @@ const App = () => (
                         <Route path="/sc/shell" element={<RedesignNotFound />} />
                         {/* Same paths as old pages below: on equal rank React Router takes the first route, so these win. */}
                         <Route path="/legal/terms" element={<RedesignTerms />} />
+                        <Route path="/legal/privacy" element={<RedesignPrivacy />} />
                       </Route>
                     ) : null}
                     <Route element={<LaunchMinimalGate />}>
