@@ -1,0 +1,1158 @@
+/*
+ * EventPost — post or edit an event (mock EventPost.dc.html). Every rule is `.sc-app .ep-*` (reset.css contract).
+ * Desktop first, then ≤900px (one column) and ≤600px (phone: thin header, floating action bar) as the mock.
+ * Dialog motion comes from .pv-veil / .pv-box (panels.css); the preview body uses the Event page's classes (event.css).
+ */
+
+.sc-app .ep-page {
+  position: relative;
+  flex: 1 0 auto;
+  background: #F2F2F0;
+  color: #282929;
+  font-weight: 300;
+}
+
+.sc-app .ep-wait {
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* buttons of the page — one class each, so this stays (0,2,0) and the rules below win */
+.sc-app :is(.ep-pill, .ep-tb, .ep-ib, .ep-drop, .ep-addbtn, .ep-addv, .ep-more, .ep-pub, .ep-pv-btn, .ep-draft, .ep-pvback, .ep-pvpub, .ep-x, .ep-btn-line, .ep-btn-ink) {
+  appearance: none;
+  margin: 0;
+  border: 0;
+  padding: 0;
+  background: none;
+  font: inherit;
+  color: #282929;
+  cursor: pointer;
+  box-sizing: border-box;
+  text-decoration: none;
+}
+
+.sc-app .ep-seg > button {
+  appearance: none;
+  margin: 0;
+  border: 0;
+  padding: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+/* ---------- header ---------- */
+.sc-app .ep-hdw {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  padding-top: 22px;
+  background: rgba(242, 242, 240, .72);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  backdrop-filter: blur(24px) saturate(1.4);
+}
+
+/* content-box as the mock: 1360 + the 40px sides = the full 1440 */
+.sc-app .ep-hd {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 16px 40px;
+  box-sizing: content-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.sc-app .ep-hd-l {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-width: 0;
+}
+
+.sc-app .ep-logo {
+  display: flex;
+  align-items: center;
+}
+
+.sc-app .ep-logo img {
+  display: block;
+  height: 34px;
+  width: auto;
+}
+
+.sc-app .ep-div {
+  width: 1px;
+  height: 20px;
+  background: #D4D4D1;
+  flex: none;
+}
+
+.sc-app .ep-h1 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 400;
+}
+
+.sc-app .ep-x {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+/* ---------- layout ---------- */
+.sc-app .ep-main {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 24px 40px 96px;
+  box-sizing: content-box;
+}
+
+.sc-app .ep-lay {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 48px;
+  align-items: start;
+}
+
+.sc-app .ep-card {
+  background: #FFFFFF;
+  border-radius: 38px;
+  box-shadow: 0 1px 3px rgba(40, 41, 41, .08), 0 10px 32px rgba(40, 41, 41, .12);
+  padding: 56px 64px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  min-width: 0;
+}
+
+/* sticky as the mock; when it is taller than the screen (Open Call + More) it scrolls by itself, so Publish stays reachable.
+   The 4px padding keeps focus rings and shadows inside the scroll box. */
+.sc-app .ep-side {
+  position: sticky;
+  top: 112px;
+  max-height: calc(100vh - 136px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  margin: -4px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  min-width: 0;
+}
+
+/* ---------- fields ---------- */
+.sc-app .ep-f {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.sc-app .ep-f12 {
+  gap: 12px;
+}
+
+.sc-app .ep-lab {
+  font-size: 12px;
+  letter-spacing: .08em;
+  font-weight: 400;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sc-app .ep-lab[data-miss] {
+  color: #B8321F;
+}
+
+.sc-app .ep-req {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #EE3D29;
+  display: block;
+  flex: none;
+}
+
+.sc-app .ep-count {
+  letter-spacing: .02em;
+  color: #8A8A87;
+  font-weight: 300;
+}
+
+.sc-app .ep-types {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sc-app .ep-pill {
+  height: 40px;
+  padding: 0 16px;
+  border: 1px solid #E2E2DF;
+  border-radius: 999px;
+  font-size: 14px;
+  color: #4A4A4A;
+  display: inline-flex;
+  align-items: center;
+}
+
+.sc-app .ep-pill[aria-pressed="true"] {
+  background: #282929;
+  border-color: #282929;
+  color: #FFFFFF;
+}
+
+.sc-app :is(.ep-fld, .ep-ta) {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #E2E2DF;
+  border-radius: 14px;
+  font: inherit;
+  font-size: 14px;
+  color: #282929;
+  background: #FFFFFF;
+  outline-color: #282929;
+  margin: 0;
+}
+
+.sc-app .ep-fld {
+  height: 44px;
+  padding: 0 14px;
+}
+
+.sc-app .ep-big {
+  height: 56px;
+  font-size: 22px;
+  font-weight: 300;
+  border-radius: 16px;
+}
+
+.sc-app .ep-ta {
+  padding: 12px 14px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.sc-app :is(.ep-fld, .ep-ta)::placeholder {
+  color: #8A8A87;
+}
+
+.sc-app :is(.ep-fld, .ep-ta)[aria-invalid="true"] {
+  border-color: #B8321F;
+}
+
+/* ---------- cover + details ---------- */
+.sc-app .ep-drop {
+  width: 100%;
+  border: 1px dashed #C8C8C5;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.sc-app .ep-drop-cover {
+  min-height: 360px;
+  gap: 14px;
+}
+
+.sc-app .ep-drop-det {
+  padding: 36px 24px;
+  gap: 10px;
+}
+
+.sc-app .ep-drop:hover,
+.sc-app .ep-drop:focus-visible,
+.sc-app .ep-drop[data-over] {
+  background: #F7F7F5;
+}
+
+.sc-app .ep-drop[data-over] {
+  border-color: #282929;
+}
+
+.sc-app .ep-drop-t {
+  font-size: 16px;
+  font-weight: 400;
+}
+
+.sc-app .ep-drop-t2 {
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.sc-app .ep-drop-btn {
+  height: 40px;
+  padding: 0 20px;
+  border-radius: 999px;
+  background: #282929;
+  color: #FFFFFF;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.sc-app .ep-hint {
+  font-size: 12px;
+  letter-spacing: .06em;
+  color: #666666;
+}
+
+.sc-app .ep-mod {
+  position: relative;
+}
+
+.sc-app .ep-mtools {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 8px;
+  opacity: 0;
+}
+
+.sc-app .ep-mod:hover .ep-mtools,
+.sc-app .ep-mod:focus-within .ep-mtools {
+  opacity: 1;
+}
+
+.sc-app .ep-tb {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .92);
+  box-shadow: 0 1px 3px rgba(40, 41, 41, .12);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sc-app :is(.ep-cover, .ep-pic) {
+  position: relative;
+}
+
+/* pictures are never cropped: the cover sits whole inside a 4:3 frame (mock posterStyle) */
+.sc-app .ep-cover-img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 20px;
+  background-color: #EDEDEA;
+  background-position: center;
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+
+.sc-app .ep-pic img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 20px;
+  background: #EDEDEA;
+}
+
+.sc-app :is(.ep-cover, .ep-pic)[data-loading] :is(img, .ep-cover-img) {
+  opacity: .35;
+}
+
+.sc-app .ep-pic[data-loading] img:not([height]) {
+  min-height: 200px;
+}
+
+.sc-app .ep-dets {
+  display: flex;
+  flex-direction: column;
+}
+
+.sc-app .ep-addrow {
+  position: relative;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sc-app .ep-addline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: #E2E2DF;
+}
+
+.sc-app .ep-addbtn {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  border: 1px solid #D4D4D1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sc-app .ep-addbtn:hover,
+.sc-app .ep-addbtn:focus-visible {
+  border-color: #282929;
+  transform: scale(1.08);
+}
+
+/* ---------- open call ---------- */
+.sc-app .ep-oc {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px;
+  border-radius: 20px;
+  background: #F7F7F5;
+}
+
+.sc-app .ep-oc-h {
+  font-size: 12px;
+  letter-spacing: .08em;
+  color: #EE3D29;
+}
+
+.sc-app .ep-2 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+}
+
+.sc-app .ep-2-8 {
+  gap: 8px;
+}
+
+/* ---------- side ---------- */
+.sc-app .ep-note {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: #F5F5F3;
+}
+
+.sc-app .ep-note span {
+  font-size: 12px;
+  letter-spacing: .08em;
+  font-weight: 400;
+  color: #B8321F;
+}
+
+.sc-app .ep-note p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #4A4A4A;
+  white-space: pre-line;
+}
+
+.sc-app .ep-dates {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+}
+
+.sc-app .ep-dash {
+  color: #A3A3A0;
+}
+
+.sc-app .ep-seg {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: #E8E8E5;
+}
+
+.sc-app .ep-seg > button {
+  flex: 1;
+  height: 36px;
+  border-radius: 999px;
+  font-size: 13px;
+  color: #8A8A87;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sc-app .ep-seg > button[aria-pressed="true"] {
+  background: #FFFFFF;
+  color: #282929;
+  box-shadow: 0 1px 3px rgba(40, 41, 41, .08);
+}
+
+.sc-app .ep-venue {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sc-app .ep-vn {
+  width: 24px;
+  height: 24px;
+  flex: none;
+  border-radius: 50%;
+  background: #282929;
+  color: #FFFFFF;
+  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sc-app .ep-ib {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sc-app .ep-ib:hover {
+  background: #E8E8E5;
+}
+
+.sc-app .ep-addv {
+  align-self: flex-start;
+  height: 36px;
+  padding: 0 14px;
+  border: 1px dashed #C8C8C5;
+  border-radius: 999px;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sc-app .ep-link {
+  position: relative;
+}
+
+.sc-app .ep-link > span {
+  position: absolute;
+  left: 14px;
+  top: 13px;
+  color: #8A8A87;
+  line-height: 0;
+}
+
+.sc-app .ep-link .ep-fld {
+  padding-left: 40px;
+}
+
+.sc-app .ep-more {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  letter-spacing: .08em;
+  font-weight: 400;
+  padding: 4px 0;
+}
+
+.sc-app .ep-more-ar {
+  display: inline-flex;
+}
+
+.sc-app .ep-more-ar[data-open] {
+  transform: rotate(180deg);
+}
+
+.sc-app .ep-more-b {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sc-app .ep-price {
+  position: relative;
+}
+
+.sc-app .ep-price .ep-fld {
+  padding-right: 56px;
+}
+
+.sc-app .ep-price > span {
+  position: absolute;
+  right: 16px;
+  top: 12px;
+  font-size: 14px;
+  color: #8A8A87;
+}
+
+.sc-app .ep-pdf-add {
+  cursor: pointer;
+  position: relative;
+  height: 44px;
+  padding: 0 16px;
+  box-sizing: border-box;
+  border: 1px dashed #C8C8C5;
+  border-radius: 14px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sc-app .ep-pdf-add input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.sc-app .ep-pdf-add:focus-within {
+  outline: 2px solid #282929;
+  outline-offset: 2px;
+}
+
+.sc-app .ep-pdf {
+  height: 52px;
+  padding: 0 6px 0 14px;
+  box-sizing: border-box;
+  border: 1px solid #E2E2DF;
+  border-radius: 14px;
+  background: #FFFFFF;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.sc-app .ep-pdf-tag {
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 5px;
+  background: #EE3D29;
+  color: #FFFFFF;
+  font-size: 10px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+}
+
+.sc-app .ep-pdf-tx {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sc-app .ep-pdf-tx > span:first-child {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sc-app .ep-pdf-tx > span + span {
+  font-size: 11px;
+  color: #8A8A87;
+}
+
+.sc-app .ep-pdf .ep-ib {
+  width: 40px;
+  height: 40px;
+}
+
+.sc-app .ep-pdf[aria-busy="true"] .ep-pdf-tag {
+  opacity: .5;
+}
+
+/* ---------- checks + actions ---------- */
+.sc-app .ep-checks {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding-top: 16px;
+  border-top: 1px solid #E2E2DF;
+}
+
+.sc-app .ep-chk {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  letter-spacing: .04em;
+  color: #8A8A87;
+}
+
+.sc-app .ep-chk[data-ok] {
+  color: #282929;
+}
+
+.sc-app .ep-chk[data-miss] {
+  color: #B8321F;
+}
+
+.sc-app .ep-chk-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: block;
+  background: #C8C8C5;
+}
+
+.sc-app .ep-chk[data-miss] .ep-chk-dot {
+  background: #B8321F;
+}
+
+.sc-app .ep-act {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.sc-app .ep-pub {
+  height: 48px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 400;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #282929;
+  color: #FFFFFF;
+}
+
+.sc-app .ep-pub[aria-disabled="true"] {
+  background: #DADAD7;
+  color: #666666;
+}
+
+.sc-app :is(.ep-pub, .ep-draft)[aria-busy="true"] {
+  opacity: .6;
+  cursor: progress;
+}
+
+.sc-app .ep-sub {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.sc-app .ep-sub[data-one] {
+  grid-template-columns: 1fr;
+}
+
+.sc-app .ep-pv-btn {
+  height: 48px;
+  border-radius: 999px;
+  border: 1px solid #282929;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.sc-app .ep-draft {
+  height: 48px;
+  border-radius: 999px;
+  border: 1px solid #D4D4D1;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---------- dialogs (mock: ยืนยัน · ออกจากหน้านี้ · ลงงานแล้ว) ---------- */
+.sc-app .ep-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 57;
+  background: rgba(242, 242, 240, .35);
+  -webkit-backdrop-filter: blur(10px) saturate(1.1);
+  backdrop-filter: blur(10px) saturate(1.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.sc-app .ep-veil-hit {
+  position: absolute;
+  inset: 0;
+}
+
+.sc-app .ep-box {
+  position: relative;
+  width: 400px;
+  max-width: 100%;
+  box-sizing: border-box;
+  background: #FFFFFF;
+  border-radius: 28px;
+  box-shadow: 0 1px 3px rgba(40, 41, 41, .08), 0 10px 32px rgba(40, 41, 41, .12);
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sc-app .ep-box h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 400;
+}
+
+.sc-app .ep-box p {
+  margin: 0;
+  font-size: 14px;
+  color: #666666;
+}
+
+.sc-app .ep-box-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.sc-app :is(.ep-btn-line, .ep-btn-ink) {
+  height: 44px;
+  padding: 0 18px;
+  border-radius: 999px;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.sc-app .ep-btn-line {
+  border: 1px solid #D4D4D1;
+  color: #282929;
+}
+
+.sc-app .ep-btn-ink {
+  padding: 0 20px;
+  background: #282929;
+  color: #FFFFFF;
+}
+
+.sc-app .ep-box-pub {
+  border-radius: 38px;
+  padding: 32px;
+  gap: 16px;
+  text-align: center;
+}
+
+.sc-app .ep-box-pub p {
+  font-size: 13px;
+}
+
+.sc-app .ep-pub-img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 5px;
+  background: #ECECEA center / cover no-repeat;
+}
+
+.sc-app .ep-pub-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.sc-app .ep-pub-row[data-one] {
+  grid-template-columns: 1fr;
+}
+
+.sc-app .ep-pub-row > * {
+  padding: 0 12px;
+}
+
+/* ---------- preview (the Event page as others see it) ---------- */
+.sc-app .ep-pv {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: #F2F2F0;
+}
+
+.sc-app .ep-pvbar-w {
+  position: sticky;
+  top: 16px;
+  z-index: 45;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.sc-app .ep-pvbar {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 6px 6px 20px;
+  border-radius: 999px;
+  background: #282929;
+  color: #FFFFFF;
+  box-shadow: 0 8px 24px rgba(40, 41, 41, .24);
+  font-size: 13px;
+}
+
+.sc-app .ep-pvtx {
+  margin-right: 10px;
+}
+
+.sc-app .ep-pvback {
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  color: #FFFFFF;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .3);
+}
+
+.sc-app .ep-pvpub {
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  background: #FFFFFF;
+  color: #282929;
+  font-weight: 400;
+}
+
+.sc-app .ep-pvpub[aria-disabled="true"] {
+  color: #8A8A87;
+}
+
+.sc-app .ep-pv .ep-pv-m {
+  padding-top: 32px;
+}
+
+.sc-app .ep-pv-nopic {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 20px;
+  background: #F2F2F0;
+}
+
+.sc-app :is(.ep-pill, .ep-tb, .ep-ib, .ep-addbtn, .ep-addv, .ep-more, .ep-pv-btn, .ep-draft, .ep-x, .ep-btn-line, .ep-btn-ink, .ep-pvback, .ep-pvpub):focus-visible,
+.sc-app .ep-seg > button:focus-visible {
+  outline: 2px solid #282929;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sc-app .ep-mtools {
+    transition: opacity .3s ease;
+  }
+
+  .sc-app .ep-drop {
+    transition: background .3s ease, border-color .3s ease;
+  }
+
+  .sc-app .ep-addbtn {
+    transition: border-color .2s ease, transform .2s ease;
+  }
+
+  .sc-app .ep-more-ar {
+    transition: transform .3s ease;
+  }
+
+  .sc-app :is(.ep-cover, .ep-pic) :is(img, .ep-cover-img) {
+    transition: opacity .3s ease;
+  }
+}
+
+/* ---------- narrow screens (<900px, mock): one column, the side panel under the card ---------- */
+@media (max-width: 900px) {
+  .sc-app .ep-main {
+    padding: 16px 16px 72px;
+  }
+
+  .sc-app .ep-lay {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+
+  .sc-app .ep-card {
+    padding: 32px 24px 40px;
+    border-radius: 28px;
+  }
+
+  .sc-app .ep-side {
+    position: static;
+    max-height: none;
+    overflow: visible;
+    margin: 0;
+    padding: 0;
+  }
+
+  .sc-app .ep-2 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sc-app .ep-hd {
+    padding: 12px 16px;
+  }
+}
+
+/* ---------- phones (≤600px, mock 26 พ.ย.): like Upload — thin header, cards, action bar floating at the bottom ---------- */
+@media (max-width: 600px) {
+  .sc-app[data-page="event-post"] .sc-ft {
+    display: none;
+  }
+
+  .sc-app .ep-hdw {
+    padding-top: 0;
+  }
+
+  .sc-app .ep-hd {
+    padding: 6px 6px 6px 16px;
+    min-height: 56px;
+    box-sizing: border-box;
+    gap: 8px;
+  }
+
+  .sc-app :is(.ep-logo, .ep-div) {
+    display: none;
+  }
+
+  .sc-app .ep-h1 {
+    font-size: 17px;
+    white-space: nowrap;
+  }
+
+  .sc-app .ep-main {
+    padding: 8px 12px 120px;
+  }
+
+  .sc-app .ep-lay {
+    gap: 12px;
+  }
+
+  .sc-app .ep-card {
+    padding: 24px 16px 28px;
+    border-radius: 24px;
+    box-shadow: none;
+    gap: 28px;
+  }
+
+  .sc-app .ep-side {
+    background: #FFFFFF;
+    border-radius: 24px;
+    padding: 20px 16px;
+    gap: 20px;
+  }
+
+  .sc-app .ep-2 {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .sc-app .ep-mtools {
+    opacity: 1;
+  }
+
+  .sc-app .ep-drop-cover {
+    min-height: 260px;
+  }
+
+  .sc-app .ep-act {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: 20px;
+    z-index: 20;
+    flex-direction: row-reverse;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .sc-app .ep-act::before {
+    content: "";
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 96px;
+    z-index: -1;
+    background: rgba(242, 242, 240, .9);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    -webkit-mask-image: linear-gradient(to top, #000 70%, transparent);
+    mask-image: linear-gradient(to top, #000 70%, transparent);
+    pointer-events: none;
+  }
+
+  .sc-app .ep-pub {
+    flex: 1 1 auto;
+    height: 52px;
+  }
+
+  .sc-app .ep-sub {
+    display: flex;
+    gap: 8px;
+    flex: none;
+  }
+
+  .sc-app .ep-sub > button {
+    height: 52px;
+    border: 0;
+    background: #FFFFFF;
+    box-shadow: 0 1px 3px rgba(40, 41, 41, .08), 0 6px 18px rgba(40, 41, 41, .12);
+  }
+
+  .sc-app .ep-sub > .ep-pv-btn {
+    width: 52px;
+    padding: 0;
+  }
+
+  .sc-app .ep-sub > .ep-draft {
+    padding: 0 18px;
+    white-space: nowrap;
+  }
+
+  .sc-app .ep-pvt {
+    display: none;
+  }
+
+  .sc-app .ep-toast {
+    bottom: 92px;
+  }
+
+  .sc-app .ep-pvbar {
+    padding: 6px;
+    margin: 0 12px;
+  }
+
+  .sc-app .ep-pvtx {
+    display: none;
+  }
+
+  .sc-app .ep-pv .ep-pv-m {
+    padding-top: 16px;
+  }
+}

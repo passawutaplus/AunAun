@@ -21,7 +21,7 @@ const FILTERS: ReadonlyArray<readonly [Filter, string]> = [
   ["draft", "Draft"],
 ];
 const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-const KIND: Record<string, string> = { open_call: "OPEN CALL", exhibition: "EXHIBITION", workshop: "WORKSHOP", talk: "TALK", art_fair: "ART FAIR", meetup: "MEETUP" };
+const KIND: Record<string, string> = { open_call: "OPEN CALL", exhibition: "EXHIBITION", workshop: "WORKSHOP", talk_forum: "TALK", art_fair: "ART FAIR", meetup: "MEETUP" };
 
 const todayIso = () => {
   const d = new Date();
@@ -37,7 +37,7 @@ function stateOf(e: StudioEvent, today: string): St {
   return end && end < today ? "ended" : "live";
 }
 
-/** The old editor edits events until EventPost is rebuilt (step 11). */
+/** EventPost (step 11) on the old editor URL. */
 const editHref = (id: string) => `/dashboard/exhibition/${id}/edit`;
 
 /** My Studio → Event: the events I posted, by status (mock MyStudio "Event"). */

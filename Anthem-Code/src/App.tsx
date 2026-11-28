@@ -418,6 +418,7 @@ const RedesignSettings = lazy(() => import("./redesign/pages/Settings.tsx"));
 const RedesignMyProfile = lazy(() => import("./redesign/pages/MyProfile.tsx"));
 const RedesignUpload = lazy(() => import("./redesign/pages/Upload.tsx"));
 const RedesignMyStudio = lazy(() => import("./redesign/pages/MyStudio.tsx"));
+const RedesignEventPost = lazy(() => import("./redesign/pages/EventPost.tsx"));
 const RedesignExplore = lazy(() => import("./redesign/pages/Explore.tsx"));
 const RedesignSimilar = lazy(() => import("./redesign/pages/Similar.tsx"));
 const RedesignLocations = lazy(() => import("./redesign/pages/Locations.tsx"));
@@ -534,13 +535,16 @@ const App = () => (
                         {/* Post or edit a work (step 9) on the old editor URLs; one element so the first save (new → :id/edit) keeps the page. */}
                         <Route path="/portfolio/new" element={<RedesignUpload />} />
                         <Route path="/portfolio/:id/edit" element={<RedesignUpload />} />
-                        {/* My Studio (step 10) on /dashboard; the old studio URLs open the matching tab. Event editing stays on the old pages until step 11. */}
+                        {/* My Studio (step 10) on /dashboard; the old studio URLs open the matching tab. */}
                         <Route path="/dashboard" element={<RedesignMyStudio />} />
                         <Route path="/dashboard/projects" element={<RedesignMyStudio />} />
                         <Route path="/dashboard/catalogs" element={<RedesignMyStudio />} />
                         <Route path="/dashboard/insights" element={<RedesignMyStudio />} />
                         <Route path="/dashboard/exhibition" element={<RedesignMyStudio />} />
                         <Route path="/portfolio/manage" element={<RedesignMyStudio />} />
+                        {/* Post or edit an event (step 11) on the old editor URLs; one element so the first save (new → :id/edit) keeps the page. */}
+                        <Route path="/dashboard/exhibition/new" element={<RedesignEventPost />} />
+                        <Route path="/dashboard/exhibition/:id/edit" element={<RedesignEventPost />} />
                         {/* Works of one tag / one tool, and pictures like one picture: old URLs, new look (owner 2026-11-28; not in the mock). */}
                         <Route path="/explore/tag/:value" element={<RedesignExplore />} />
                         <Route path="/explore/tool/:value" element={<RedesignExplore />} />

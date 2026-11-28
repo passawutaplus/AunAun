@@ -22,7 +22,15 @@ const scaled = (s: [number, number], gif: boolean): [number, number] => {
  * Pictures and videos of the work being edited: uploads with progress, retry, and their sizes
  * (recorded at upload, so the site never has to guess a picture's shape — mock rule "ห้ามครอป").
  */
-export function useWorkUploads(uid: string, folder: string, initial: Record<string, Media> = {}) {
+export type WorkUploadOptions = {
+  /** Largest file accepted (default: the 20 MB of a work) and the row's message when a file is bigger. */
+  maxBytes?: number;
+  tooBig?: string;
+  /** Another pipeline for the bytes (EventPost: pictures only, into the events folder). */
+  upload?: typeof uploadWorkFile;
+};
+
+export function useWorkUploads(uid: string, folder: string, initial: Record<string, Media> = {}, opts: WorkUploadOptions = {}) {
   const { tier } = useSubscription();
   const [media, setMediaState] = useState<Record<string, Media>>(initial);
   // Mirror updated at once, so a save right after an upload finishes sees it (state lands a render later).
@@ -35,9 +43,13 @@ export function useWorkUploads(uid: string, folder: string, initial: Record<stri
   const jobs = useRef(new Map<string, Promise<void>>());
   const aborts = useRef(new Set<AbortController>());
   const folderRef = useRef(folder);
+  const optsRef = useRef(opts);
   useEffect(() => {
     folderRef.current = folder;
   }, [folder]);
+  useEffect(() => {
+    optsRef.current = opts;
+  });
 
   useEffect(() => {
     const running = aborts.current;
@@ -56,8 +68,8 @@ export function useWorkUploads(uid: string, folder: string, initial: Record<stri
       files.current.set(id, file);
       const gif = isGifFile(file);
       const kind: Media["kind"] = file.type.startsWith("video/") ? "video" : "image";
-      if (file.size > WORK_FILE_MAX_BYTES) {
-        setMedia((m) => ({ ...m, [id]: { kind, url: "", size: null, progress: null, error: TOO_BIG, name: file.name } }));
+      if (file.size > (optsRef.current.maxBytes ?? WORK_FILE_MAX_BYTES)) {
+        setMedia((m) => ({ ...m, [id]: { kind, url: "", size: null, progress: null, error: optsRef.current.tooBig ?? TOO_BIG, name: file.name } }));
         return;
       }
       const preview = URL.createObjectURL(file);
@@ -85,7 +97,7 @@ export function useWorkUploads(uid: string, folder: string, initial: Record<stri
           patch(id, { progress: Math.round(sending ? 40 + p * 0.6 : p * 0.4) });
         },
       };
-      const job = uploadWorkFile(file, uid, folderRef.current, tier, reporter, ac.signal)
+      const job = (optsRef.current.upload ?? uploadWorkFile)(file, uid, folderRef.current, tier, reporter, ac.signal)
         .then(async (res) => {
           // HEIC and some formats do not open as a blob in every browser: measure the uploaded copy then.
           const size = res.kind === "image" ? measured ?? (await measureImage(res.url)) : null;
