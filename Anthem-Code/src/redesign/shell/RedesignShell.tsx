@@ -1,6 +1,7 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useProfilesByIds } from "@/core/profiles/useProfilesByIds";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useChatInboxBadgeCount } from "@/hooks/useChat";
@@ -8,9 +9,12 @@ import { useNotifications } from "@/core/notifications";
 import { proxiedImageUrl } from "@/lib/imageProxy";
 import { signOutApp } from "@/lib/signOutApp";
 import { usePresence } from "../lib/usePresence";
+import { actorOf, isShownNotification, toNotificationRow, type NotificationRow } from "../lib/notificationRows";
+import { homeEventsQuery } from "../main/useHomeEvents";
 import { SC_LINKS, shellPageFor, type ShellPage } from "../routes";
 import AccountMenu from "./AccountMenu";
 import NewChooser from "./NewChooser";
+import NotificationPanel from "./NotificationPanel";
 import SearchPanel from "./SearchPanel";
 import { ShellPanelsContext, type ShellPanels } from "./panels";
 import logoUrl from "../assets/logo.svg";
@@ -40,7 +44,10 @@ export default function RedesignShell() {
   const { user, loading } = useAuth();
   const { data: profile } = useProfile(user?.id);
   const { data: chatUnread = 0 } = useChatInboxBadgeCount();
-  const { unreadCount } = useNotifications(user?.id);
+  const { items: inbox, loading: inboxLoading, markRead, markAllRead } = useNotifications(user?.id);
+  // Only the kinds the new design has (no hiring, collab, KYC …); the bell counts the same rows the panel shows.
+  const shownInbox = useMemo(() => inbox.filter(isShownNotification), [inbox]);
+  const unreadCount = shownInbox.filter((n) => !n.is_read).length;
 
   const menu = usePresence(180);
   const closeMenu = menu.close;
@@ -54,14 +61,63 @@ export default function RedesignShell() {
   const opener = useRef<HTMLElement | null>(null);
   const [spot, setSpot] = useState({ top: "38%", centred: true });
 
+  // Notifications: a small panel under the bell.
+  const noti = usePresence(180);
+  const { open: openNoti, close: closeNoti } = noti;
+  const [notiAt, setNotiAt] = useState({ top: 80, right: 24 });
+  const actorIds = useMemo(
+    () => (noti.mounted ? [...new Set(shownInbox.map(actorOf).filter((id): id is string => !!id))] : []),
+    [noti.mounted, shownInbox],
+  );
+  const { data: actors } = useProfilesByIds(actorIds);
+  const { data: eventRows } = useQuery({
+    ...homeEventsQuery,
+    enabled: noti.mounted && shownInbox.some((n) => n.kind === "event_reminder"),
+  });
+  const notiRows = useMemo((): NotificationRow[] => {
+    if (!noti.mounted) return [];
+    const now = new Date();
+    const events = new Map((eventRows ?? []).map((e) => [e.id, e]));
+    return shownInbox.map((n) =>
+      toNotificationRow(n, {
+        now,
+        person: (id) => {
+          const p = id ? actors?.map[id] : undefined;
+          return p ? { name: p.username || p.display_name?.trim() || "", avatar: proxiedImageUrl(p.avatar_url, 96) } : null;
+        },
+        event: (id) => (id ? events.get(id) ?? null : null),
+      }),
+    );
+  }, [noti.mounted, shownInbox, actors, eventRows]);
+
   const closePanel = useCallback(
     (restoreFocus = true) => {
       closeSearch();
       closeChooser();
+      closeNoti();
       if (restoreFocus) opener.current?.focus();
     },
-    [closeSearch, closeChooser],
+    [closeSearch, closeChooser, closeNoti],
   );
+
+  const toggleNoti = (el: HTMLElement) => {
+    if (noti.isOpen) {
+      closePanel();
+      return;
+    }
+    opener.current = el;
+    const r = el.getBoundingClientRect();
+    setNotiAt({ top: Math.round(r.bottom + 8), right: Math.max(16, Math.round(window.innerWidth - r.right - 8)) });
+    closeMenu();
+    closeSearch();
+    closeChooser();
+    openNoti();
+  };
+
+  const openNotiRow = (row: NotificationRow) => {
+    if (row.unread) void markRead(row.id).catch(() => undefined);
+    closePanel(false);
+  };
 
   const panels = useMemo<ShellPanels>(
     () => ({
@@ -78,16 +134,18 @@ export default function RedesignShell() {
         setSpot({ top, centred: from === "header" });
         closeMenu();
         closeChooser();
+        closeNoti();
         openSearch();
       },
       openNew: (el) => {
         opener.current = el;
         closeMenu();
         closeSearch();
+        closeNoti();
         openChooser();
       },
     }),
-    [closeMenu, closeChooser, closeSearch, openSearch, openChooser],
+    [closeMenu, closeChooser, closeSearch, closeNoti, openSearch, openChooser],
   );
 
   // Page background outside .sc-app (overscroll, short pages), while the new frame is on screen.
@@ -101,7 +159,8 @@ export default function RedesignShell() {
     closeMenu();
     closeSearch();
     closeChooser();
-  }, [pathname, closeMenu, closeSearch, closeChooser]);
+    closeNoti();
+  }, [pathname, closeMenu, closeSearch, closeChooser, closeNoti]);
 
   const name = profile?.display_name?.trim() || profile?.username || "";
   const handle = profile?.username || null;
@@ -165,17 +224,20 @@ export default function RedesignShell() {
                     <path d="M12 3.5a8.5 8.5 0 0 1 0 17c-1.5 0-2.9-.4-4.1-1L3.5 20.5l1.1-4.2A8.5 8.5 0 0 1 12 3.5z" />
                   </svg>
                 </Link>
-                <Link
-                  to={SC_LINKS.notifications}
+                <button
+                  type="button"
                   aria-label={unreadCount ? `การแจ้งเตือน ${unreadCount} รายการ` : "การแจ้งเตือน"}
+                  aria-haspopup="dialog"
+                  aria-expanded={noti.isOpen}
                   className="sc-ib"
+                  onClick={(e) => toggleNoti(e.currentTarget)}
                 >
                   <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.33" strokeLinejoin="round">
                     <path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z" />
                     <path d="M10 20.5a2 2 0 0 0 4 0" />
                   </svg>
                   {unreadCount ? <span aria-hidden="true" className="sc-hd-bd">{unreadCount > 99 ? "99+" : unreadCount}</span> : null}
-                </Link>
+                </button>
                 <button
                   ref={acctRef}
                   type="button"
@@ -273,6 +335,18 @@ export default function RedesignShell() {
 
       {spotlight.mounted ? <SearchPanel top={spot.top} centred={spot.centred} leaving={spotlight.leaving} onClose={closePanel} /> : null}
       {user && chooser.mounted ? <NewChooser leaving={chooser.leaving} onClose={closePanel} /> : null}
+      {user && noti.mounted ? (
+        <NotificationPanel
+          rows={notiRows}
+          loading={inboxLoading}
+          top={notiAt.top}
+          right={notiAt.right}
+          leaving={noti.leaving}
+          onOpenRow={openNotiRow}
+          onReadAll={() => void markAllRead().catch(() => undefined)}
+          onClose={closePanel}
+        />
+      ) : null}
     </div>
   );
 }
