@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useFeedProjectSelect } from "@/hooks/useFeedProjectSelect";
 import { openConnectChat } from "@/lib/chat/openConnectChat";
+import { shareFromApp } from "@/lib/nativeShell";
 import { getBackgroundLocation } from "@/lib/projectOverlay";
 import { proxiedImageSrcSet, proxiedImageUrl } from "@/lib/imageProxy";
 import type { ShowcaseRow } from "@/server/queries/showcase";
@@ -11,6 +12,7 @@ import { SC_LINKS } from "../routes";
 import { homeWorksQuery, profileHref } from "../main/useCreators";
 import { useFollows } from "../main/useFollows";
 import { useSaveFlow } from "../main/useSaveFlow";
+import { exploreHref, similarHref } from "../explore/explore";
 import { ensureTextFonts } from "../lib/textFonts";
 import { isScContent } from "../work/workContent";
 import WorkBody, { bodyFromBlocks } from "../work/WorkBody";
@@ -68,26 +70,45 @@ function WorkView({ id, overlay, list, linkState, close }: ViewProps) {
   useEffect(() => {
     if (body?.some((b) => b.kind === "text" || b.kind === "row")) ensureTextFonts();
   }, [body]);
-  /** The heart on each picture (likes per picture, owner 2026-11-28). */
-  const likeButton = (url: string, i: number) => {
+  /**
+   * Buttons on each picture (owner 2026-11-28, from the old site): ♡ like (per picture), "ภาพคล้าย"
+   * (pictures like this one), share. Same white pills as the mock's like button, bottom left.
+   */
+  const pictureTools = (url: string, i: number) => {
     const like = likes.likeFor(url, i);
-    if (!like) return null;
     return (
-      <button
-        type="button"
-        className="wk-lk"
-        aria-label={`ถูกใจ ${formatCount(like.likes)}`}
-        aria-pressed={like.liked}
-        data-on={like.liked ? "" : undefined}
-        onClick={() => {
-          if (!likes.toggle(url)) navigate(SC_LINKS.login);
-        }}
-      >
-        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill={like.liked ? "#282929" : "none"} stroke="#282929" strokeWidth="1.33" strokeLinejoin="round">
-          <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" />
-        </svg>
-        {formatCount(like.likes)}
-      </button>
+      <div className="wk-ptools">
+        {like ? (
+          <button
+            type="button"
+            className="wk-lk"
+            aria-label={`ถูกใจ ${formatCount(like.likes)}`}
+            aria-pressed={like.liked}
+            data-on={like.liked ? "" : undefined}
+            onClick={() => {
+              if (!likes.toggle(url)) navigate(SC_LINKS.login);
+            }}
+          >
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill={like.liked ? "#282929" : "none"} stroke="#282929" strokeWidth="1.33" strokeLinejoin="round">
+              <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" />
+            </svg>
+            {formatCount(like.likes)}
+          </button>
+        ) : null}
+        <Link to={similarHref(id, url)} className="wk-lk wk-sim" title="ดูภาพคล้าย" aria-label="ภาพคล้าย">
+          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.33" strokeLinejoin="round">
+            <rect x="3.5" y="4.5" width="17" height="15" rx="2" />
+            <circle cx="9" cy="9.5" r="1.6" />
+            <path d="M4 17l5-4.5 4 3.5 3-2.5 4 3.5" />
+          </svg>
+          <span>ภาพคล้าย</span>
+        </Link>
+        <button type="button" className="wk-lk wk-lk-ic" aria-label="แชร์" title="แชร์" onClick={() => void share()}>
+          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.33" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 15V3.5M7.5 8L12 3.5 16.5 8M5 12.5V19a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 19v-6.5" />
+          </svg>
+        </button>
+      </div>
     );
   };
   const follows = useFollows();
@@ -185,6 +206,8 @@ function WorkView({ id, overlay, list, linkState, close }: ViewProps) {
 
   const share = async () => {
     const url = `${window.location.origin}/showcase/${id}`;
+    // In the store apps the phone's share sheet opens (as the old site); on the web the link is copied (mock).
+    if (shareFromApp({ title: title || "SAMECOR", url })) return;
     try {
       await navigator.clipboard?.writeText(url);
     } catch {
@@ -222,7 +245,8 @@ function WorkView({ id, overlay, list, linkState, close }: ViewProps) {
   const igUrl = instagramUrl(who?.instagram);
   const mailUrl = who?.contact_email?.trim() ? `mailto:${who.contact_email.trim()}` : "";
   const webUrl = websiteUrl(who?.website);
-  const tools = (row.tools ?? []).filter(Boolean).join(", ");
+  const toolList = (row.tools ?? []).filter(Boolean);
+  const tools = toolList.join(", ");
   const tags = (row.tags ?? []).filter((t) => t && !t.includes(":"));
   const licence = licenceLine(row.license_type, handle);
 
@@ -294,7 +318,7 @@ function WorkView({ id, overlay, list, linkState, close }: ViewProps) {
         <article ref={cardRef} className="wk-card">
           <section aria-label="ตัวงาน" className="wk-body">
             {/* Made in the new editor: the body exactly as Upload's Preview showed it (owner 2026-11-28). */}
-            {body ? <WorkBody items={body} firstAlt={firstAlt} sizes="(max-width: 1000px) 100vw, 1000px" imageExtra={likeButton} /> : null}
+            {body ? <WorkBody items={body} firstAlt={firstAlt} sizes="(max-width: 1000px) 100vw, 1000px" imageExtra={pictureTools} /> : null}
             {body ? null : media.map((m, i) => {
               return (
                 <div key={m.url} className="wk-pic">
@@ -321,7 +345,7 @@ function WorkView({ id, overlay, list, linkState, close }: ViewProps) {
                       style={m.ratio ? { aspectRatio: String(m.ratio), minHeight: 0 } : undefined}
                     />
                   )}
-                  {m.kind === "image" ? likeButton(m.url, i) : null}
+                  {m.kind === "image" ? pictureTools(m.url, i) : null}
                 </div>
               );
             })}
@@ -400,7 +424,17 @@ function WorkView({ id, overlay, list, linkState, close }: ViewProps) {
               {tools ? (
                 <div>
                   <dt>เครื่องมือ</dt>
-                  <dd>{tools}</dd>
+                  {/* Each tool opens the works made with it (owner 2026-11-28; the mock shows plain text). */}
+                  <dd className="wk-tools">
+                    {toolList.map((t, i) => (
+                      <span key={t}>
+                        <Link to={exploreHref("tool", t)} className="wk-tool">
+                          {t}
+                        </Link>
+                        {i < toolList.length - 1 ? ", " : null}
+                      </span>
+                    ))}
+                  </dd>
                 </div>
               ) : null}
               {tags.length ? (
@@ -408,7 +442,9 @@ function WorkView({ id, overlay, list, linkState, close }: ViewProps) {
                   <dt>แท็ก</dt>
                   <dd className="wk-tags">
                     {tags.map((t) => (
-                      <span key={t} className="wk-tag">{t}</span>
+                      <Link key={t} to={exploreHref("tag", t)} className="wk-tag">
+                        {t}
+                      </Link>
                     ))}
                   </dd>
                 </div>

@@ -61,6 +61,9 @@ const PAGES: ReadonlyArray<{ match: RegExp; page: ShellPage }> = [
   { match: /^\/(portfolio|portfolio\/saved|portfolio\/followers|collections)\/?$/, page: { page: "my-profile", tabbar: true, tab: "me", footer: true } },
   // My Studio (step 10) on /dashboard and the old studio URLs; "ฉัน" in the tab bar (mock). /dashboard/exhibition/new and :id/edit stay old (step 11).
   { match: /^\/(dashboard(\/(projects|catalogs|insights|exhibition))?|portfolio\/manage)\/?$/, page: { page: "my-studio", tabbar: true, tab: "me", footer: true } },
+  // Works of one tag / one tool, and pictures like one picture (owner 2026-11-28; old URLs, not in the mock).
+  { match: /^\/explore\/(tag|tool)\/[^/]+\/?$/, page: { page: "explore", tabbar: true, tab: "home", footer: true, back: true } },
+  { match: /^\/similar\/[^/]+\/?$/, page: { page: "similar", tabbar: true, tab: "home", footer: true, back: true } },
   // Post / edit a work (step 9): the page has its own header (logo · New Work · ↶ ↷ · ×); no tab bar, no footer on phones (mock).
   { match: /^\/portfolio\/(new|[^/]+\/edit)\/?$/, page: { page: "upload", tabbar: false, tab: "", footer: true, header: "none" } },
   // Someone's profile (step 5), on the old URLs /@handle and /u/:id.

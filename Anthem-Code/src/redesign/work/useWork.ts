@@ -7,7 +7,8 @@ import { recordWorkView, setCommentSmiled, setImageLiked, setWorkLiked } from "@
 import { workMedia, workText } from "./workContent";
 
 /** One work, its owner and what the page derives from it (pictures, words). */
-export function useWork(id: string | undefined) {
+export function useWork(id: string | undefined, opts: { countView?: boolean } = {}) {
+  const countView = opts.countView ?? true;
   const work = useQuery({ queryKey: ["sc-work", id], queryFn: () => getWork(id!), enabled: !!id, staleTime: 60_000 });
   const ownerId = work.data?.owner_id ?? undefined;
   const owner = useQuery({
@@ -20,8 +21,8 @@ export function useWork(id: string | undefined) {
   const text = useMemo(() => (work.data ? workText(work.data) : ""), [work.data]);
 
   useEffect(() => {
-    if (id && work.data) void recordWorkView(id).catch(() => undefined);
-  }, [id, work.data]);
+    if (countView && id && work.data) void recordWorkView(id).catch(() => undefined);
+  }, [countView, id, work.data]);
 
   return { work, owner, media, text };
 }

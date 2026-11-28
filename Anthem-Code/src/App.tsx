@@ -418,6 +418,8 @@ const RedesignSettings = lazy(() => import("./redesign/pages/Settings.tsx"));
 const RedesignMyProfile = lazy(() => import("./redesign/pages/MyProfile.tsx"));
 const RedesignUpload = lazy(() => import("./redesign/pages/Upload.tsx"));
 const RedesignMyStudio = lazy(() => import("./redesign/pages/MyStudio.tsx"));
+const RedesignExplore = lazy(() => import("./redesign/pages/Explore.tsx"));
+const RedesignSimilar = lazy(() => import("./redesign/pages/Similar.tsx"));
 const RedesignLocations = lazy(() => import("./redesign/pages/Locations.tsx"));
 const RedesignWorkOverlay = lazy(() =>
   import("./redesign/pages/Work.tsx").then((m) => ({ default: m.WorkOverlay })),
@@ -539,6 +541,10 @@ const App = () => (
                         <Route path="/dashboard/insights" element={<RedesignMyStudio />} />
                         <Route path="/dashboard/exhibition" element={<RedesignMyStudio />} />
                         <Route path="/portfolio/manage" element={<RedesignMyStudio />} />
+                        {/* Works of one tag / one tool, and pictures like one picture: old URLs, new look (owner 2026-11-28; not in the mock). */}
+                        <Route path="/explore/tag/:value" element={<RedesignExplore />} />
+                        <Route path="/explore/tool/:value" element={<RedesignExplore />} />
+                        <Route path="/similar/:projectId" element={<RedesignSimilar />} />
                         {/* Event or venue on its old URL (step 6). */}
                         <Route path="/exhibition/:id" element={<RedesignEvent />} />
                         <Route path="/exhibition/:id/locations" element={<RedesignLocations />} />

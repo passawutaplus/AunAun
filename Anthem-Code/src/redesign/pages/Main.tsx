@@ -8,7 +8,7 @@ import { useCoverColorScores } from "@/hooks/useCoverColorScores";
 import { SC_CATEGORIES, isScCategory } from "../lib/categories";
 import { SC_LINKS } from "../routes";
 import { useShellPanels } from "../shell/panels";
-import { BENTO_FIRST, BENTO_STEP, MASONRY_GAP, bentoBlocks, masonrySpan } from "../main/bento";
+import { BENTO_FIRST, BENTO_STEP, bentoBlocks } from "../main/bento";
 import ColorSearch from "../main/ColorSearch";
 import Creators from "../main/Creators";
 import Events from "../main/Events";
@@ -16,6 +16,7 @@ import ScLoader from "../main/ScLoader";
 import { EVENT_TYPES, EVENT_VIEWS, EVENT_VIEW_LABEL, isEventType, type EventView } from "../main/useHomeEvents";
 import { CREATOR_VIEWS, type CreatorView } from "../main/useCreators";
 import WorkTile, { type TileWork } from "../main/WorkTile";
+import Masonry from "../main/Masonry";
 import { SHOWCASE_VIEWS, VIEW_NEEDS_LOGIN, useShowcaseWorks, type ShowcaseView } from "../main/useShowcaseWorks";
 import { useSaveFlow } from "../main/useSaveFlow";
 import "../styles/main.css";
@@ -442,44 +443,3 @@ function Showcase({ view, category, colors, label, savedIds, onToggleSave }: Sho
   );
 }
 
-type MasonryProps = {
-  works: TileWork[];
-  label: string;
-  savedIds: Set<string>;
-  onToggleSave: (work: TileWork, button: HTMLElement) => void;
-  linkState: unknown;
-};
-
-function Masonry({ works, label, savedIds, onToggleSave, linkState }: MasonryProps) {
-  const ref = useRef<HTMLElement>(null);
-  // Card inner width at 1440 is 1168 → four columns of 277; measured again on every resize.
-  const [grid, setGrid] = useState({ columns: 4, columnWidth: 277 });
-
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const measure = () => {
-      const columns = getComputedStyle(el).gridTemplateColumns.split(" ").filter(Boolean).length || 4;
-      const columnWidth = (el.clientWidth - (columns - 1) * MASONRY_GAP) / columns;
-      setGrid((g) => (g.columns === columns && Math.abs(g.columnWidth - columnWidth) < 0.5 ? g : { columns, columnWidth }));
-    };
-    measure();
-    if (!("ResizeObserver" in window)) return;
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-
-  return (
-    <section ref={ref} aria-label={label} className="mn-mas">
-      {works.map((w, i) => {
-        const span = masonrySpan(w.ratio ?? 1, grid.columnWidth, grid.columns);
-        return (
-          <div className="mn-cell" key={w.id} style={{ gridColumn: `span ${span.cols}`, gridRow: `span ${span.rows}` }}>
-            <WorkTile work={w} saved={savedIds.has(w.id)} onToggleSave={onToggleSave} linkState={linkState} eager={i < 4} />
-          </div>
-        );
-      })}
-    </section>
-  );
-}
