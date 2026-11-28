@@ -47,7 +47,10 @@ export async function enqueueAnthemNotificationEmail(
       });
       return { ok: true };
     }
-    console.warn(`[${opts.label}] Resend direct send failed, falling back to queue`, resend.message);
+    console.warn(
+      `[${opts.label}] Resend direct send failed, falling back to queue`,
+      resend.message,
+    );
   }
 
   await admin.from("email_send_log").insert({
@@ -120,7 +123,10 @@ export async function shouldSendAnthemEmail(
   if (opts.kind === "job_match" && profile?.notify_job_match === false) return { send: false };
   if (opts.kind === "collab" && profile?.notify_collab === false) return { send: false };
   // Settings → Notifications switches (redesign step 7c); the RPC answers true for kinds without a switch.
-  const { data: allowed } = await admin.rpc("notification_allowed", { _user: userId, _kind: opts.kind });
+  const { data: allowed } = await admin.rpc("notification_allowed", {
+    _user: userId,
+    _kind: opts.kind,
+  });
   if (allowed === false) return { send: false };
 
   const { data: authUser } = await admin.auth.admin.getUserById(userId);

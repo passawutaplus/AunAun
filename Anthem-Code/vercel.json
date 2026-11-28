@@ -70,6 +70,7 @@
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/go", "destination": "/go.html" },
     { "source": "/auth/app-return", "destination": "/app-return.html" },
+    { "source": "/email/off", "destination": "/email-off.html" },
     { "source": "/events.ics", "destination": "/api/events-ics" },
     {
       "source": "/((?!api/|_vercel/|assets/|line-icons/|sitemap|robots\\.txt|llms\\.txt|google.*\\.html|icons/|manifest\\.webmanifest|sw\\.js|\\.well-known/).*)",
@@ -105,6 +106,14 @@
     },
     {
       "source": "/auth/app-return",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow" },
+        { "key": "Referrer-Policy", "value": "no-referrer" },
+        { "key": "Cache-Control", "value": "no-store" }
+      ]
+    },
+    {
+      "source": "/email/off",
       "headers": [
         { "key": "X-Robots-Tag", "value": "noindex, nofollow" },
         { "key": "Referrer-Policy", "value": "no-referrer" },
