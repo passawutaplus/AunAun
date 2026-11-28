@@ -1,5 +1,12 @@
+import { lazy, Suspense, useState } from "react";
 import { instagramHandle, websiteLabel } from "../lib/contactLinks";
+import { SocialRows } from "./ProfileExtras";
+import { hasSocials, NO_SOCIALS, type Socials } from "./socials";
 import { count } from "./tiles";
+
+// The CV and its editor pull in the A4 templates, the PDF builder and the old editor kit: only when About opens.
+const AboutCv = lazy(() => import("./AboutCv"));
+const CvEditorSheet = lazy(() => import("./CvEditorSheet"));
 
 /** The About tab, the same on Profile and MyProfile (mock 03b: contact lives here only). */
 export default function AboutPanel({
@@ -14,6 +21,9 @@ export default function AboutPanel({
   instagram,
   website,
   email,
+  socials = NO_SOCIALS,
+  cvUserId,
+  cvOwner = false,
 }: {
   bio: string;
   cats: readonly string[];
@@ -27,61 +37,83 @@ export default function AboutPanel({
   instagram: string | null;
   website: string | null;
   email: string | null;
+  /** Facebook, LINE and other links (already filtered by the profile's visibility). */
+  socials?: Socials;
+  /** Whose CV to show under the short About (all of it: experience, education, awards…). */
+  cvUserId?: string;
+  /** My Profile: "แก้ CV" opens the CV editor, an empty CV shows a "make one" box. */
+  cvOwner?: boolean;
 }) {
+  const [editCv, setEditCv] = useState(false);
   return (
-    <div className="pf-about">
-      <h3>About</h3>
-      <div className="pf-about-body">
-        {bio ? <p>{bio}</p> : null}
-        <dl>
-          {cats.length ? (
-            <>
-              <dt>หมวด</dt>
-              <dd>{cats.join(", ")}</dd>
-            </>
-          ) : null}
-          {tools ? (
-            <>
-              <dt>เครื่องมือ</dt>
-              <dd>{tools}</dd>
-            </>
-          ) : null}
-          {city ? (
-            <>
-              <dt>เมือง</dt>
-              <dd>{city}</dd>
-            </>
-          ) : null}
-          <dt>ผู้ติดตาม</dt>
-          <dd>{count(followers)} คน</dd>
-        </dl>
-        {ig || web || mail ? (
-          <div className="pf-contact" aria-label="ติดต่อ">
-            <h4>CONTACT</h4>
-            {ig ? (
-              <a href={ig} target="_blank" rel="noopener noreferrer">
-                <span><svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.4"><rect x="4" y="4" width="16" height="16" rx="4.5" /><circle cx="12" cy="12" r="3.6" /></svg></span>
-                <span><small>INSTAGRAM</small>{instagramHandle(instagram)}</span>
-                <i aria-hidden="true">↗</i>
-              </a>
+    <>
+      <div className="pf-about">
+        <h3>About</h3>
+        <div className="pf-about-body">
+          {bio ? <p>{bio}</p> : null}
+          <dl>
+            {cats.length ? (
+              <>
+                <dt>หมวด</dt>
+                <dd>{cats.join(", ")}</dd>
+              </>
             ) : null}
-            {web ? (
-              <a href={web} target="_blank" rel="noopener noreferrer">
-                <span><svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.4" strokeLinecap="round"><circle cx="12" cy="12" r="8.5" /><path d="M3.5 12h17M12 3.5c2.5 2.6 2.5 14.4 0 17M12 3.5c-2.5 2.6-2.5 14.4 0 17" /></svg></span>
-                <span><small>WEBSITE</small>{websiteLabel(website)}</span>
-                <i aria-hidden="true">↗</i>
-              </a>
+            {tools ? (
+              <>
+                <dt>เครื่องมือ</dt>
+                <dd>{tools}</dd>
+              </>
             ) : null}
-            {mail ? (
-              <a href={mail}>
-                <span><svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.4" strokeLinejoin="round"><rect x="3.5" y="6" width="17" height="12.5" rx="2" /><path d="M4 7l8 6 8-6" /></svg></span>
-                <span><small>EMAIL</small>{email?.trim()}</span>
-                <i aria-hidden="true">↗</i>
-              </a>
+            {city ? (
+              <>
+                <dt>เมือง</dt>
+                <dd>{city}</dd>
+              </>
             ) : null}
-          </div>
-        ) : null}
+            <dt>ผู้ติดตาม</dt>
+            <dd>{count(followers)} คน</dd>
+          </dl>
+          {ig || web || mail || hasSocials(socials) ? (
+            <div className="pf-contact" aria-label="ติดต่อ">
+              <h4>CONTACT</h4>
+              {ig ? (
+                <a href={ig} target="_blank" rel="noopener noreferrer">
+                  <span><svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.4"><rect x="4" y="4" width="16" height="16" rx="4.5" /><circle cx="12" cy="12" r="3.6" /></svg></span>
+                  <span><small>INSTAGRAM</small>{instagramHandle(instagram)}</span>
+                  <i aria-hidden="true">↗</i>
+                </a>
+              ) : null}
+              {web ? (
+                <a href={web} target="_blank" rel="noopener noreferrer">
+                  <span><svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.4" strokeLinecap="round"><circle cx="12" cy="12" r="8.5" /><path d="M3.5 12h17M12 3.5c2.5 2.6 2.5 14.4 0 17M12 3.5c-2.5 2.6-2.5 14.4 0 17" /></svg></span>
+                  <span><small>WEBSITE</small>{websiteLabel(website)}</span>
+                  <i aria-hidden="true">↗</i>
+                </a>
+              ) : null}
+              {mail ? (
+                <a href={mail}>
+                  <span><svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.4" strokeLinejoin="round"><rect x="3.5" y="6" width="17" height="12.5" rx="2" /><path d="M4 7l8 6 8-6" /></svg></span>
+                  <span><small>EMAIL</small>{email?.trim()}</span>
+                  <i aria-hidden="true">↗</i>
+                </a>
+              ) : null}
+              <SocialRows s={socials} />
+            </div>
+          ) : null}
+        </div>
       </div>
-    </div>
+      {cvUserId ? (
+        <>
+          <Suspense fallback={null}>
+            <AboutCv userId={cvUserId} owner={cvOwner} shownLinks={[ig, web, mail, socials.facebook, ...socials.links.map((l) => l.href)]} shownLine={socials.line} topBio={bio} topTools={tools} onEdit={cvOwner ? () => setEditCv(true) : undefined} />
+          </Suspense>
+          {cvOwner && editCv ? (
+            <Suspense fallback={null}>
+              <CvEditorSheet uid={cvUserId} onClose={() => setEditCv(false)} />
+            </Suspense>
+          ) : null}
+        </>
+      ) : null}
+    </>
   );
 }

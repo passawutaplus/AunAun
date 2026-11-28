@@ -1,12 +1,21 @@
-import { useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSubscription } from "@/core/subscription";
 import { proxiedImageUrl } from "@/lib/imageProxy";
+import { parseSocialLinks } from "@/lib/parseSocialLinks";
 import { displayProfileAddress } from "@/lib/profileAddress";
 import { saveStudioProfile, uploadAvatar, type StudioProfilePatch } from "@/server/mutations/studio";
 import type { StudioProfile as Row } from "@/server/queries/studio";
 import { SC_CATEGORIES } from "../lib/categories";
+import { FACEBOOK_OK } from "../profile/socials";
+import { cleanLinkUrl, LINKS_MAX, type LinkRow } from "./links";
+import StudioCover from "./StudioCover";
+import StudioLinks from "./StudioLinks";
 import { refreshMine } from "./useStudio";
+import "../styles/about-cv.css";
+
+// The CV editor is the old full editor (templates, A4 preview…): loaded only when opened.
+const CvEditorSheet = lazy(() => import("../profile/CvEditorSheet"));
 
 const BIO_MAX = 160;
 const NAME_MAX = 60;
@@ -18,7 +27,7 @@ const errText = (e: unknown) => (e instanceof Error ? e.message : typeof e === "
 
 const splitList = (s: string) => [...new Set(s.split(/[,，、\n]/).map((t) => t.trim()).filter(Boolean))].slice(0, 20);
 
-type Form = { name: string; bio: string; cats: string[]; tools: string; city: string; ig: string; mail: string; web: string };
+type Form = { name: string; bio: string; cats: string[]; tools: string; city: string; ig: string; mail: string; web: string; fb: string; line: string; links: LinkRow[] };
 
 const formOf = (p: Row | null): Form => ({
   name: p?.display_name ?? "",
@@ -29,6 +38,9 @@ const formOf = (p: Row | null): Form => ({
   ig: p?.instagram ?? "",
   mail: p?.contact_email ?? "",
   web: p?.website ?? "",
+  fb: p?.facebook ?? "",
+  line: p?.line_id ?? "",
+  links: parseSocialLinks(p?.social_links),
 });
 
 /** My Studio → Profile: picture, name, bio, CATEGORY, tools, city, contacts (mock MyStudio "Profile"). */
@@ -40,8 +52,25 @@ export default function StudioProfile({ uid, profile, say }: { uid: string; prof
   const [avatar, setAvatar] = useState(profile?.avatar_url ?? "");
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [cvOpen, setCvOpen] = useState(false);
   const fileIn = useRef<HTMLInputElement>(null);
   const set = (p: Partial<Form>) => setF((x) => ({ ...x, ...p }));
+
+  // When the row changes underneath (CV editor saved city/tools, a new photo…), take the new values
+  // for every field not being edited here, so Save never writes an older value back.
+  const prevStart = useRef(start);
+  useEffect(() => {
+    const old = prevStart.current;
+    prevStart.current = start;
+    if (old === start) return;
+    setF((cur) => {
+      const next: Record<string, unknown> = { ...cur };
+      for (const k of Object.keys(start) as (keyof Form)[]) {
+        if (JSON.stringify(cur[k]) === JSON.stringify(old[k])) next[k] = start[k];
+      }
+      return next as Form;
+    });
+  }, [start]);
 
   // The name can change once every 30 days after sign-up (DB trigger); the welcome step does not count.
   const changedAt = profile?.display_name_changed_at && profile.profile_onboarding_at ? new Date(profile.display_name_changed_at) : null;
@@ -92,6 +121,29 @@ export default function StudioProfile({ uid, profile, say }: { uid: string; prof
       patch.contact_email = m || null;
     }
     if (f.web.trim() !== start.web.trim()) patch.website = f.web.trim() || null;
+    if (f.fb.trim() !== start.fb.trim()) {
+      const fb = f.fb.trim();
+      if (!FACEBOOK_OK(fb)) {
+        say("Facebook ใส่เป็นลิงก์ https:// หรือชื่อเพจนะ");
+        return;
+      }
+      patch.facebook = fb || null;
+    }
+    if (f.line.trim() !== start.line.trim()) patch.line_id = f.line.trim() || null;
+    if (JSON.stringify(f.links) !== JSON.stringify(start.links)) {
+      const links: LinkRow[] = [];
+      for (const r of f.links) {
+        const title = r.title.trim();
+        if (!title && !r.url.trim()) continue;
+        const url = cleanLinkUrl(r.url);
+        if (!title || !url) {
+          say(!title ? "ใส่ชื่อลิงก์ด้วยนะ" : `ลิงก์ ${title} ไม่ถูกต้อง`);
+          return;
+        }
+        links.push({ id: r.id, title, url });
+      }
+      patch.social_links = links.slice(0, LINKS_MAX);
+    }
     setSaving(true);
     try {
       await saveStudioProfile(uid, patch);
@@ -126,6 +178,7 @@ export default function StudioProfile({ uid, profile, say }: { uid: string; prof
         />
       </div>
       <div className="ms-pf-r">
+        <StudioCover uid={uid} cover={profile?.cover_url} original={profile?.cover_original_url} say={say} />
         <div className="ms-pfr">
           <label className="ms-pfl" htmlFor="pf-name">
             NAME
@@ -182,13 +235,35 @@ export default function StudioProfile({ uid, profile, say }: { uid: string; prof
             <input aria-label="อีเมล" className="ms-pfi" type="email" value={f.mail} maxLength={254} onChange={(e) => set({ mail: e.target.value })} placeholder="อีเมล" />
             <input aria-label="เว็บไซต์" className="ms-pfi" type="url" value={f.web} maxLength={255} onChange={(e) => set({ web: e.target.value })} placeholder="เว็บไซต์" />
           </div>
+          <div className="ms-pf-two sc-pf-two">
+            <input aria-label="Facebook" className="ms-pfi" type="text" value={f.fb} maxLength={200} onChange={(e) => set({ fb: e.target.value })} placeholder="Facebook (ลิงก์หรือชื่อเพจ)" />
+            <input aria-label="LINE ID" className="ms-pfi" type="text" value={f.line} maxLength={50} onChange={(e) => set({ line: e.target.value })} placeholder="LINE ID" />
+          </div>
+        </div>
+        <div className="ms-pfr">
+          <span className="ms-pfl">LINKS</span>
+          <StudioLinks value={f.links} onChange={(links) => set({ links })} />
         </div>
         <div className="ms-pf-save">
           <button type="button" className="ms-btn-ink" aria-busy={saving} onClick={() => void save()}>
             บันทึก
           </button>
         </div>
+        <div className="ms-pfr acv-studio">
+          <span className="ms-pfl">CV</span>
+          <div className="acv-studio-box">
+            <p>ประสบการณ์ การศึกษา รางวัล ภาษา — ใส่ไว้แล้วโหลดเป็น PDF ไปสมัครงานได้เลย</p>
+            <button type="button" className="ms-cpill" onClick={() => setCvOpen(true)}>
+              แก้ CV
+            </button>
+          </div>
+        </div>
       </div>
+      {cvOpen ? (
+        <Suspense fallback={null}>
+          <CvEditorSheet uid={uid} onClose={() => setCvOpen(false)} />
+        </Suspense>
+      ) : null}
     </div>
   );
 }

@@ -1,0 +1,144 @@
+/*
+ * CvEditorSheet: the old CV editor in a full-screen sheet outside `.sc-app`.
+ * Tokens are the old light theme (already the brand palette) pinned here so the sheet stays light
+ * like the new design even when the app is dark; type and surfaces follow the new design.
+ */
+.sc-cved {
+  --background: 60 7.1% 94.5%;
+  --foreground: 180 1% 16%;
+  --card: 0 0% 100%;
+  --card-foreground: 180 1% 16%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 180 1% 16%;
+  --primary: 180 1% 16%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 60 5% 96%;
+  --secondary-foreground: 180 1% 16%;
+  --muted: 60 5% 96%;
+  --muted-foreground: 0 0% 40%;
+  --accent: 60 4% 90%;
+  --accent-foreground: 180 1% 16%;
+  --border: 60 4% 88%;
+  --input: 60 4% 88%;
+  --ring: 180 1% 16%;
+  --radius: 14px;
+  --font-body: "Elms Sans", "IBM Plex Sans Thai", sans-serif;
+
+  position: fixed;
+  inset: 0;
+  /* below Radix dialogs/popovers (z-50) the editor opens; above the new shell (≤48) */
+  z-index: 49;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  background: #F2F2F0;
+  color: #282929;
+  color-scheme: light;
+  font-family: "Elms Sans", "IBM Plex Sans Thai", sans-serif;
+  font-weight: 300;
+}
+
+.sc-cved-in {
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 32px 40px 96px;
+  box-sizing: border-box;
+}
+
+.sc-cved-card {
+  padding: 32px;
+  border-radius: 38px;
+  background: #FFFFFF;
+}
+
+/* title + Cancel / Save stay on top while the form scrolls */
+.sc-cved-in > .space-y-4 > div:first-child {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  margin: -32px -40px 0;
+  padding: 20px 40px 14px;
+  background: rgba(242, 242, 240, .94);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+/* the save bar may wrap onto two lines instead of running off a phone screen */
+.sc-cved .flex.shrink-0.flex-wrap.justify-end {
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+/* the editor's sticky nav and preview sat under the old site header (top-20); here under the bar above */
+.sc-cved .top-20 {
+  top: 96px;
+}
+
+.sc-cved h2 {
+  font-size: 22px;
+  font-weight: 300;
+}
+
+.sc-cved-note {
+  max-width: 420px;
+  margin: 18vh auto 0;
+  padding: 24px;
+  border-radius: 20px;
+  background: #FFFFFF;
+  text-align: center;
+  font-size: 15px;
+}
+
+.sc-cved-note p {
+  margin: 0;
+}
+
+.sc-cved-acts {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.sc-cved-btn {
+  height: 40px;
+  padding: 0 18px;
+  border: 1px solid #E2E2DF;
+  border-radius: 999px;
+  background: #FFFFFF;
+  color: #282929;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.sc-cved-btn-ink {
+  border-color: #282929;
+  background: #282929;
+  color: #FFFFFF;
+}
+
+@media (max-width: 600px) {
+  .sc-cved-in {
+    padding: 16px 10px 64px;
+  }
+
+  .sc-cved-in > .space-y-4 > div:first-child {
+    margin: -16px -10px 0;
+    padding: 12px 10px 10px;
+  }
+
+  .sc-cved .flex.shrink-0.flex-wrap.justify-end {
+    justify-content: flex-start;
+  }
+
+  .sc-cved-card {
+    padding: 16px;
+    border-radius: 24px;
+  }
+
+  .sc-cved h2 {
+    font-size: 19px;
+  }
+}

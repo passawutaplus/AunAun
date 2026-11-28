@@ -9,6 +9,8 @@ import { instagramHandle, instagramUrl, mailUrl, websiteLabel, websiteUrl } from
 import ScLoader from "../main/ScLoader";
 import { profileHref } from "../main/useCreators";
 import AboutPanel from "../profile/AboutPanel";
+import { ProfileCover, SocialIcons } from "../profile/ProfileExtras";
+import { hasSocials, socialsOf } from "../profile/socials";
 import MyEvents from "../profile/MyEvents";
 import MyFollowing from "../profile/MyFollowing";
 import MySaved from "../profile/MySaved";
@@ -101,6 +103,7 @@ function MyProfileView({ uid }: { uid: string }) {
   const ig = instagramUrl(p?.instagram);
   const web = websiteUrl(p?.website);
   const mail = mailUrl(p?.contact_email);
+  const socials = socialsOf(p);
   const avatar = proxiedImageUrl(p?.avatar_url, 256);
   const publicHref = profileHref({ user_id: uid, username: handle || null });
 
@@ -126,6 +129,7 @@ function MyProfileView({ uid }: { uid: string }) {
 
   return (
     <main className="sc-main pf-m mp-m">
+      <ProfileCover url={p?.cover_url} />
       <div className="pf-grid">
         <aside aria-label="โปรไฟล์ของฉัน" className="pf-aside">
           {avatar ? <img alt="" src={avatar} className="pf-av" /> : <span aria-hidden="true" className="pf-av" />}
@@ -155,7 +159,7 @@ function MyProfileView({ uid }: { uid: string }) {
               <span>แชร์โปรไฟล์</span>
             </button>
           </div>
-          {ig || mail || web ? (
+          {ig || mail || web || hasSocials(socials) ? (
             <div className="pf-cc-row">
               {ig ? (
                 <a href={ig} target="_blank" rel="noopener noreferrer" className="pf-cc" aria-label={`Instagram @${instagramHandle(p?.instagram)}`} title={`Instagram @${instagramHandle(p?.instagram)}`}>
@@ -172,6 +176,7 @@ function MyProfileView({ uid }: { uid: string }) {
                   <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.33" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="8.5" /><path d="M3.5 12h17M12 3.5c2.5 2.6 2.5 14.4 0 17M12 3.5c-2.5 2.6-2.5 14.4 0 17" /></svg>
                 </a>
               ) : null}
+              <SocialIcons s={socials} />
             </div>
           ) : null}
           <Link to={publicHref} className="mp-public">
@@ -237,6 +242,9 @@ function MyProfileView({ uid }: { uid: string }) {
               instagram={p?.instagram ?? null}
               website={p?.website ?? null}
               email={p?.contact_email ?? null}
+              socials={socials}
+              cvUserId={uid}
+              cvOwner
             />
           ) : null}
         </section>
