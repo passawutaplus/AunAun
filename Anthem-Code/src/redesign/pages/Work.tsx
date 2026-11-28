@@ -2,7 +2,9 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { Link, useLocation, useNavigate, useParams, type Location } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserBlocks } from "@/hooks/useCommunityPostInteractions";
 import { useFeedProjectSelect } from "@/hooks/useFeedProjectSelect";
+import { mapWriteFlowError } from "@/lib/writeFlowErrors";
 import { shareFromApp } from "@/lib/nativeShell";
 import { getBackgroundLocation } from "@/lib/projectOverlay";
 import { proxiedImageSrcSet, proxiedImageUrl } from "@/lib/imageProxy";
@@ -17,8 +19,12 @@ import { isScContent } from "../work/workContent";
 import WorkBody, { bodyFromBlocks } from "../work/WorkBody";
 import SharePanel from "../work/SharePanel";
 import WorkComments from "../work/WorkComments";
-import { useImageLikes, useOwnerWorks, useWork, useWorkCatalog } from "../work/useWork";
+import { ConfirmBox, MoreMenu, ReportBox, type MenuItem } from "../work/WorkMenu";
+import { useBlockPerson, useHiddenWorks, useImageLikes, useOwnerWorks, useWork, useWorkCatalog } from "../work/useWork";
 import { formatCount, licenceLine, neighbour, pickSimilar, workDateLine } from "../work/workContent";
+import { useDeleteWork } from "../studio/useStudio";
+import { loginHref } from "../lib/loginHref";
+import LoadError from "../shell/LoadError";
 import NotFound from "./NotFound";
 import { bigChatOpen, useShellPanels } from "../shell/panels";
 import { instagramUrl, websiteUrl } from "../lib/contactLinks";
@@ -64,6 +70,8 @@ function WorkView({ id, overlay, list, linkState, close }: ViewProps) {
   const title = row?.title?.trim() || "";
   const avatar = proxiedImageUrl(who?.avatar_url, 96);
   const profHref = isOwn ? SC_LINKS.myProfile : who ? profileHref(who) : SC_LINKS.home;
+  // Signed out, an action that needs an account goes to Log In and back to this work.
+  const toLogin = useCallback(() => navigate(loginHref()), [navigate]);
 
   const likes = useImageLikes(id, media.find((m) => m.kind === "image")?.url);
   const firstAlt = artistName ? `${title} โดย ${artistName}` : title;
@@ -87,7 +95,7 @@ function WorkView({ id, overlay, list, linkState, close }: ViewProps) {
             aria-pressed={like.liked}
             data-on={like.liked ? "" : undefined}
             onClick={() => {
-              if (!likes.toggle(url)) navigate(SC_LINKS.login);
+              if (!likes.toggle(url)) toLogin();
             }}
           >
             <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill={like.liked ? "#282929" : "none"} stroke="#282929" strokeWidth="1.33" strokeLinejoin="round">
@@ -228,7 +236,7 @@ function WorkView({ id, overlay, list, linkState, close }: ViewProps) {
   const { openChat } = useShellPanels();
   const greet = (el: HTMLElement) => {
     if (!user) {
-      navigate(SC_LINKS.login);
+      toLogin();
       return;
     }
     if (!ownerId) return;
@@ -240,14 +248,80 @@ function WorkView({ id, overlay, list, linkState, close }: ViewProps) {
 
   const toggleFollow = () => {
     if (!ownerId) return;
-    if (!follows.signedIn) navigate(SC_LINKS.login);
+    if (!follows.signedIn) toLogin();
     else follows.toggle(ownerId);
   };
+
+  const toggleSave = (el: HTMLElement) => {
+    if (!user) toLogin();
+    else saves.toggle({ id, title }, el);
+  };
+
+  // ⋯ on the rail (old ProjectViewerMenu; App Store / Play rules for user content): the owner edits or deletes
+  // the work; anyone else hides it on this device, blocks the owner or reports it.
+  const hiddenWorks = useHiddenWorks();
+  const { data: iBlocked } = useUserBlocks(user?.id);
+  const block = useBlockPerson();
+  const del = useDeleteWork(user?.id ?? "");
+  const [modal, setModal] = useState<"delete" | "block" | "report" | null>(null);
+  // After hiding or blocking, the toast shows a moment, then the work closes.
+  const leaveTimer = useRef<number | undefined>(undefined);
+  useEffect(() => () => window.clearTimeout(leaveTimer.current), []);
+  const leaveSoon = () => {
+    window.clearTimeout(leaveTimer.current);
+    leaveTimer.current = window.setTimeout(dismiss, 900);
+  };
+  const ownerName = handle || "คนนี้";
+  const ownerBlocked = !!ownerId && !!iBlocked?.has(ownerId);
+  const menuItems: MenuItem[] = isOwn
+    ? [
+        { key: "edit", label: "แก้ไขผลงาน", onSelect: () => navigate(`/portfolio/${id}/edit`) },
+        { key: "delete", label: "ลบผลงาน", danger: true, onSelect: () => setModal("delete") },
+      ]
+    : [
+        {
+          key: "hide",
+          label: "ซ่อนผลงานนี้",
+          hint: "จะไม่โชว์ในฟีดของคุณอีก",
+          onSelect: () => {
+            hiddenWorks.hide(id);
+            say("ซ่อนแล้วนะ");
+            leaveSoon();
+          },
+        },
+        ...(ownerId
+          ? [
+              {
+                key: "block",
+                label: ownerBlocked ? `บล็อก ${ownerName} แล้ว` : `บล็อก ${ownerName}`,
+                hint: "จะไม่เห็นกันและทักกันไม่ได้",
+                disabled: ownerBlocked,
+                onSelect: () => (user ? setModal("block") : toLogin()),
+              },
+            ]
+          : []),
+        { key: "report", label: "รายงานผลงาน", onSelect: () => (user ? setModal("report") : toLogin()) },
+      ];
 
   const toComments = () => document.getElementById("cm-h")?.scrollIntoView({ behavior: calm() ? "auto" : "smooth", block: "start" });
 
   if (work.isPending) return <div className={overlay ? "wk-wait" : "wk-wait wk-wait-page"} aria-busy="true" />;
-  if (!row) return overlay ? <div className="wk-missing"><NotFound /></div> : <NotFound />;
+  if (!row) {
+    // 404 only when the work is truly not there (or not visible to this person); a failed load can be retried.
+    const box = work.isError ? (
+      <>
+        <button type="button" className="wk-ui wk-rb wk-x" aria-label="ปิดผลงาน" onClick={dismiss}>
+          <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+        <LoadError onRetry={() => void work.refetch()} />
+      </>
+    ) : (
+      <NotFound />
+    );
+    return overlay ? <div className="wk-missing">{box}</div> : box;
+  }
 
   const igUrl = instagramUrl(who?.instagram);
   const mailUrl = who?.contact_email?.trim() ? `mailto:${who.contact_email.trim()}` : "";
@@ -533,7 +607,7 @@ function WorkView({ id, overlay, list, linkState, close }: ViewProps) {
             className="wk-rb"
             aria-label="เก็บเข้าคอลเลคชั่น"
             aria-pressed={saved}
-            onClick={(e) => saves.toggle({ id, title }, e.currentTarget)}
+            onClick={(e) => toggleSave(e.currentTarget)}
           >
             <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill={saved ? "#282929" : "none"} stroke="#282929" strokeWidth="1.33" strokeLinejoin="round">
               <path d="M6 3h12v18l-6-4.5L6 21z" />
@@ -552,6 +626,7 @@ function WorkView({ id, overlay, list, linkState, close }: ViewProps) {
           <Link to={profHref} className="wk-rb" aria-label={`โปรไฟล์ ${handle}`}>
             {avatar ? <img alt="" src={avatar} className="wk-av" style={{ width: 36, height: 36 }} /> : <span aria-hidden="true" className="wk-av" style={{ width: 36, height: 36 }} />}
           </Link>
+          <MoreMenu items={menuItems} label={isOwn ? "จัดการผลงาน" : "ตัวเลือกเพิ่มเติม"} place="rail" buttonClass="wk-rb" />
         </nav>
       </div>
 
@@ -561,6 +636,60 @@ function WorkView({ id, overlay, list, linkState, close }: ViewProps) {
         </div>
       ) : null}
       {saves.element}
+      {modal === "delete" ? (
+        <ConfirmBox
+          title={`ลบ ${title || "Untitled"}?`}
+          body="ลบแล้วกู้คืนไม่ได้นะ"
+          yes="ลบ"
+          danger
+          onClose={() => setModal(null)}
+          onYes={async () => {
+            try {
+              await del.mutateAsync(id);
+            } catch (e) {
+              say(mapWriteFlowError(e, "ลบไม่สำเร็จ ลองใหม่อีกทีนะ"));
+              return;
+            }
+            setModal(null);
+            if (overlay) close();
+            else navigate(SC_LINKS.myStudio, { replace: true });
+          }}
+        />
+      ) : null}
+      {modal === "block" && ownerId ? (
+        <ConfirmBox
+          title={`บล็อก ${ownerName}?`}
+          body="จะไม่เห็นงานกับคอมเมนต์ของกันและกัน และทักกันไม่ได้ เลิกบล็อกได้ที่ Settings นะ"
+          yes="บล็อก"
+          danger
+          onClose={() => setModal(null)}
+          onYes={async () => {
+            try {
+              await block.mutateAsync(ownerId);
+            } catch (e) {
+              say(mapWriteFlowError(e, "บล็อกไม่สำเร็จ ลองใหม่อีกทีนะ"));
+              return;
+            }
+            setModal(null);
+            say(`บล็อก ${ownerName} แล้ว`);
+            leaveSoon();
+          }}
+        />
+      ) : null}
+      {modal === "report" ? (
+        <ReportBox
+          target={{ type: "project", id }}
+          ownerId={ownerId}
+          ownerName={ownerName}
+          canBlock={!!ownerId && !ownerBlocked}
+          onClose={() => setModal(null)}
+          onDone={(note, blocked) => {
+            setModal(null);
+            say(note);
+            if (blocked) leaveSoon();
+          }}
+        />
+      ) : null}
       {shareFor ? <SharePanel url={shareUrl} title={title} image={shareFor.image} imageRatio={shareFor.ratio} onClose={() => setShareFor(null)} say={say} chat={user && id ? { userId: user.id, work: { id, title } } : null} /> : null}
     </>
   );

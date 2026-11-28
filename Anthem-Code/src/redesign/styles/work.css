@@ -1324,3 +1324,230 @@ html.sc-wk-open:not(.sc-wk-closing) .sc-app .sc-tb {
 .sc-app .sh-t:hover .sh-ic {
   background: #ECECEA;
 }
+
+/* ---------- ⋯ menus (owner 2026-11-28, from the old site: hide / block / report; the owner's edit / delete) ---------- */
+.sc-app .wk-mn {
+  position: relative;
+  display: inline-flex;
+}
+
+.sc-app .wk-c-acts .wk-c-act {
+  color: #8A8A87;
+}
+
+.sc-app .wk-mn-list {
+  position: absolute;
+  z-index: 40;
+  width: max-content;
+  min-width: 200px;
+  max-width: min(280px, calc(100vw - 32px));
+  box-sizing: border-box;
+  padding: 6px;
+  background: #FFFFFF;
+  border-radius: 20px;
+  box-shadow: var(--sc-shadow);
+  display: flex;
+  flex-direction: column;
+}
+
+.sc-app .wk-mn[data-place="below"] .wk-mn-list {
+  top: calc(100% + 4px);
+  left: 0;
+}
+
+/* beside the rail on the right of the card (opens towards the card) */
+.sc-app .wk-mn[data-place="rail"] .wk-mn-list {
+  top: -6px;
+  right: calc(100% + 14px);
+}
+
+.sc-app .wk-mn-it {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  min-height: 44px;
+  box-sizing: border-box;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 14px;
+  background: none;
+  font: inherit;
+  font-size: 14px;
+  color: var(--sc-ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.sc-app .wk-mn-it:is(:hover, :focus-visible):not(:disabled) {
+  background: var(--sc-soft);
+  outline: none;
+}
+
+.sc-app .wk-mn-it:disabled {
+  color: var(--sc-ink-3);
+  cursor: default;
+}
+
+.sc-app .wk-mn-it[data-danger] {
+  color: #B8321F;
+}
+
+.sc-app .wk-mn-hint {
+  font-size: 12px;
+  color: var(--sc-ink-3);
+}
+
+/* ---------- yes/no and report boxes (the share panel's frame, My Studio's buttons) ---------- */
+.sc-app .wk-dlg {
+  width: 400px;
+  gap: 16px;
+}
+
+.sc-app .wk-dlg h2 {
+  font-size: 18px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.sc-app .wk-dlg-p {
+  margin: -8px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--sc-ink-2);
+}
+
+.sc-app .wk-dlg-row,
+.sc-app .wk-c-edit-row {
+  display: flex;
+  gap: 10px;
+}
+
+.sc-app :is(.wk-dlg-line, .wk-dlg-ink) {
+  appearance: none;
+  margin: 0;
+  height: 44px;
+  padding: 0 20px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.sc-app .wk-dlg-line {
+  border: 1px solid #D4D4D1;
+  background: none;
+  color: var(--sc-ink);
+}
+
+.sc-app .wk-dlg-ink {
+  border: 0;
+  background: var(--sc-ink);
+  color: #FFFFFF;
+}
+
+.sc-app .wk-dlg-ink[data-danger] {
+  background: #B8321F;
+}
+
+.sc-app :is(.wk-dlg-line, .wk-dlg-ink):disabled {
+  opacity: .5;
+  cursor: default;
+}
+
+.sc-app .wk-dlg-reasons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sc-app .wk-dlg-reason {
+  height: 36px;
+  padding: 0 14px;
+  box-sizing: border-box;
+  border: 1px solid #D4D4D1;
+  border-radius: 999px;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  color: var(--sc-ink-2);
+  cursor: pointer;
+}
+
+.sc-app .wk-dlg-reason[aria-checked="true"] {
+  border-color: var(--sc-ink);
+  background: var(--sc-ink);
+  color: #FFFFFF;
+}
+
+.sc-app .wk-dlg-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--sc-ink-3);
+}
+
+.sc-app :is(.wk-dlg-field, .wk-c-edit) textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  border: 1px solid #D4D4D1;
+  border-radius: 14px;
+  padding: 12px 14px;
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--sc-ink);
+  background: #FFFFFF;
+  outline-color: var(--sc-ink);
+}
+
+.sc-app .wk-dlg-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.sc-app .wk-dlg-check input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--sc-ink);
+}
+
+.sc-app .wk-dlg-err {
+  margin: 0;
+  font-size: 13px;
+  color: #B8321F;
+}
+
+/* a comment being edited */
+.sc-app .wk-c-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.sc-app .wk-c-edit-row :is(.wk-dlg-line, .wk-dlg-ink) {
+  height: 36px;
+  padding: 0 16px;
+  font-size: 13px;
+}
+
+/* ≤1000px the rail is a row under the card (a floating row on phones): the menu opens above it */
+@media (max-width: 1000px) {
+  .sc-app .wk-mn[data-place="rail"] .wk-mn-list {
+    top: auto;
+    bottom: calc(100% + 14px);
+    right: -6px;
+  }
+}

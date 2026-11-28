@@ -39,6 +39,8 @@ export async function getWork(id: string): Promise<WorkRow | null> {
   let { data, error } = await read(`${WORK_SELECT}, made_year, ask_viewers`);
   // Before migration 20261129110000 the two columns do not exist yet.
   if (error && isSchemaMismatchError(error)) ({ data, error } = await read(WORK_SELECT));
+  // Not a work id at all (/showcase/abc): no such work — the 404, not "try again".
+  if (error && String((error as { code?: unknown }).code) === "22P02") return null;
   if (error) throw error;
   return (data as WorkRow | null) ?? null;
 }
@@ -139,4 +141,25 @@ export async function getCommentSmiles(commentIds: readonly string[]): Promise<A
     throw error;
   }
   return (data ?? []) as Array<{ comment_id: string; user_id: string }>;
+}
+
+/**
+ * The own ratio (width / height) of the pictures of some works, by picture url, from the sizes saved with
+ * each work (media_sizes, and the cover's size). Pictures of old works may have none.
+ */
+export async function getPictureRatios(projectIds: readonly string[]): Promise<Record<string, number>> {
+  if (!projectIds.length) return {};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase.from("projects") as any)
+    .select("id, cover_url, cover_width, cover_height, media_sizes")
+    .in("id", projectIds as string[]);
+  if (error) throw error;
+  const out: Record<string, number> = {};
+  for (const r of (data ?? []) as Array<Pick<WorkRow, "cover_url" | "cover_width" | "cover_height" | "media_sizes">>) {
+    for (const [url, size] of Object.entries(r.media_sizes ?? {})) {
+      if (Array.isArray(size) && size[0] > 0 && size[1] > 0) out[url] = size[0] / size[1];
+    }
+    if (r.cover_url && r.cover_width && r.cover_height && !out[r.cover_url]) out[r.cover_url] = r.cover_width / r.cover_height;
+  }
+  return out;
 }
