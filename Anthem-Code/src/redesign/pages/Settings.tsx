@@ -1,10 +1,27 @@
-import { useEffect, useState, type ReactNode } from "react";
-import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { Navigate, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { checkUsernameAvailability } from "@/hooks/useUsernameAvailability";
+import { requestOpenCookiePreferences } from "@/lib/cookieConsent";
 import { proxiedImageUrl } from "@/lib/imageProxy";
-import { markSensitiveActionVerified, userHasEmailPassword, verifyEmailConfirmation, verifyUserPassword } from "@/lib/sensitiveActionAuth";
+import {
+  disablePush,
+  enablePush,
+  getPushState,
+  getRecommendationPushes,
+  pushBlockedMessage,
+  setRecommendationPushes,
+  type PushState,
+} from "@/lib/pushNotifications";
+import {
+  isSensitiveActionVerified,
+  markSensitiveActionVerified,
+  userHasEmailPassword,
+  verifyEmailConfirmation,
+  verifyUserPassword,
+} from "@/lib/sensitiveActionAuth";
+import { userFacingError } from "@/lib/userFacingError";
 import {
   cancelAccountDeletion,
   changeHandle,
@@ -27,6 +44,7 @@ import {
   getMyVisibility,
   type MySettings,
 } from "@/server/queries/account";
+import { exportMyData } from "../lib/exportMyData";
 import { SC_LINKS } from "../routes";
 import "../styles/fonts.css";
 import "../styles/tokens.css";
@@ -49,6 +67,75 @@ function handleFormatError(h: string): string {
 
 const errMessage = (e: unknown) => String((e as { message?: string } | null)?.message ?? "");
 
+/** Short message at the bottom of the page; `bad` = something failed. */
+type Say = (text: string, bad?: boolean) => void;
+
+/**
+ * Tab from the address: `?tab=` (any case), the push button's `?mute=recommendations`, and the old site's
+ * hashes that e-mail footers still use (`/settings#notifications`).
+ */
+function tabFromUrl(params: URLSearchParams, hash: string): Tab {
+  const raw = (params.get("tab") ?? "").toLowerCase();
+  const byParam = TABS.find((t) => t.toLowerCase() === raw);
+  if (byParam) return byParam;
+  if (params.get("mute") === "recommendations") return "Notifications";
+  return TABS.find((t) => `#${t.toLowerCase()}` === hash.toLowerCase()) ?? "Account";
+}
+
+/**
+ * How a sensitive step (delete account, download my data) is confirmed: the password, else the account's e-mail,
+ * else — accounts with no e-mail (LINE sign-up) — the @handle.
+ */
+type ProofKind = "password" | "email" | "handle";
+
+function proofKindOf(hasPassword: boolean, email: string): ProofKind {
+  if (hasPassword && email) return "password";
+  return email ? "email" : "handle";
+}
+
+async function checkProof(kind: ProofKind, typed: string, email: string, handle: string): Promise<void> {
+  if (kind === "password") {
+    await verifyUserPassword(email, typed);
+    return;
+  }
+  if (kind === "email") {
+    verifyEmailConfirmation(email, typed);
+    return;
+  }
+  if (!handle || typed.trim().replace(/^@/, "").toLowerCase() !== handle.toLowerCase()) throw new Error("handle ไม่ตรงกับบัญชีนี้");
+  markSensitiveActionVerified();
+}
+
+const PROOF_FALLBACK: Record<ProofKind, string> = {
+  password: "รหัสผ่านไม่ถูกต้อง",
+  email: "อีเมลไม่ตรงกับบัญชี",
+  handle: "handle ไม่ตรงกับบัญชีนี้",
+};
+
+function ProofField({ kind, handle, value, error, onChange }: { kind: ProofKind; handle: string; value: string; error: string; onChange: (v: string) => void }) {
+  return (
+    <label className="st-rl st-proof">
+      <span>{kind === "password" ? "ใส่รหัสผ่านเพื่อยืนยัน" : kind === "email" ? "พิมพ์อีเมลของบัญชีเพื่อยืนยัน" : `พิมพ์ @${handle} เพื่อยืนยัน`}</span>
+      <input
+        className="st-inp"
+        type={kind === "password" ? "password" : kind === "email" ? "email" : "text"}
+        autoComplete={kind === "password" ? "current-password" : "off"}
+        autoCapitalize="off"
+        spellCheck={false}
+        placeholder={kind === "handle" && handle ? `@${handle}` : undefined}
+        value={value}
+        aria-invalid={!!error || undefined}
+        onChange={(e) => onChange(e.target.value)}
+      />
+      {error ? (
+        <span role="alert" data-bad="">
+          {error}
+        </span>
+      ) : null}
+    </label>
+  );
+}
+
 /** `/settings` (mock: Settings.dc.html): Account, Notifications, Privacy. Plan is hidden with the Pro page. */
 export default function SettingsPage() {
   const { user, loading } = useAuth();
@@ -61,11 +148,29 @@ function SettingsView() {
   const { user } = useAuth();
   const uid = user!.id;
   const navigate = useNavigate();
+  const { hash } = useLocation();
   const [params, setParams] = useSearchParams();
-  const asked = params.get("tab") as Tab | null;
-  const tab: Tab = asked && TABS.includes(asked) ? asked : "Account";
+  const tab = tabFromUrl(params, hash);
   const account = useQuery({ queryKey: ["sc-account", uid], queryFn: () => getMyAccount(uid), staleTime: 30_000 });
   const handle = account.data?.username ?? "";
+
+  // Arrived from a hash or `?mute=` link: write the tab into `?tab=`, so it stays when those go away.
+  useEffect(() => {
+    if (tab === "Account" || params.get("tab")) return;
+    const next = new URLSearchParams(params);
+    next.set("tab", tab);
+    navigate({ search: `?${next}`, hash: "" }, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, on arrival
+  }, []);
+
+  const [toast, setToast] = useState<{ text: string; bad: boolean } | null>(null);
+  const toastTimer = useRef<number | undefined>(undefined);
+  const say = useCallback<Say>((text, bad = true) => {
+    window.clearTimeout(toastTimer.current);
+    setToast({ text, bad });
+    toastTimer.current = window.setTimeout(() => setToast(null), 3200);
+  }, []);
+  useEffect(() => () => window.clearTimeout(toastTimer.current), []);
 
   const goBack = () => {
     if (((window.history.state as { idx?: number } | null)?.idx ?? 0) > 0) navigate(-1);
@@ -109,11 +214,16 @@ function SettingsView() {
               </button>
             ))}
           </nav>
-          {tab === "Account" ? <AccountTab key={account.data ? "ready" : "wait"} handle={handle} changedAt={account.data?.username_changed_at ?? null} /> : null}
-          {tab === "Notifications" ? <NotificationsTab /> : null}
-          {tab === "Privacy" ? <PrivacyTab /> : null}
+          {tab === "Account" ? <AccountTab key={account.data ? "ready" : "wait"} handle={handle} changedAt={account.data?.username_changed_at ?? null} say={say} /> : null}
+          {tab === "Notifications" ? <NotificationsTab say={say} /> : null}
+          {tab === "Privacy" ? <PrivacyTab handle={handle} say={say} /> : null}
         </section>
       </div>
+      {toast ? (
+        <div className="st-toast" role={toast.bad ? "alert" : "status"} data-bad={toast.bad ? "" : undefined}>
+          {toast.text}
+        </div>
+      ) : null}
     </main>
   );
 }
@@ -131,13 +241,14 @@ function Row({ label, sub, subBad, htmlFor, children }: { label: string; sub?: R
   );
 }
 
-function AccountTab({ handle: savedHandle, changedAt }: { handle: string; changedAt: string | null }) {
+function AccountTab({ handle: savedHandle, changedAt, say }: { handle: string; changedAt: string | null; say: Say }) {
   const { user } = useAuth();
   const uid = user!.id;
   const qc = useQueryClient();
   const email = user?.email ?? "";
   const pendingEmail = (user as { new_email?: string } | null)?.new_email ?? "";
   const hasPassword = userHasEmailPassword(user);
+  const proofKind = proofKindOf(hasPassword, email);
 
   const lockEnds = changedAt ? new Date(new Date(changedAt).getTime() + HANDLE_LOCK_DAYS * 86_400_000) : null;
   const locked = !!lockEnds && lockEnds.getTime() > Date.now();
@@ -229,11 +340,9 @@ function AccountTab({ handle: savedHandle, changedAt }: { handle: string; change
     act("del", async () => {
       setDelErr("");
       try {
-        if (hasPassword) await verifyUserPassword(email, delProof);
-        else verifyEmailConfirmation(email, delProof);
-        markSensitiveActionVerified();
+        await checkProof(proofKind, delProof, email, savedHandle);
       } catch (e) {
-        setDelErr(errMessage(e) || (hasPassword ? "รหัสผ่านไม่ถูกต้อง" : "อีเมลไม่ตรงกับบัญชี"));
+        setDelErr(errMessage(e) || PROOF_FALLBACK[proofKind]);
         return;
       }
       try {
@@ -298,7 +407,18 @@ function AccountTab({ handle: savedHandle, changedAt }: { handle: string; change
 
         {pendingEmail ? (
           <Row label="ยืนยันอีเมลใหม่" sub={vSent ? "ส่งลิงก์ยืนยันแล้ว · ตรวจสอบอีเมล" : `รอยืนยัน ${pendingEmail}`} subBad={!vSent}>
-            <button type="button" className="st-ln" aria-busy={busy === "verify"} onClick={() => void act("verify", async () => resendEmailChange(pendingEmail).then(() => setVSent(true)).catch(() => undefined))}>
+            <button
+              type="button"
+              className="st-ln"
+              aria-busy={busy === "verify"}
+              onClick={() =>
+                void act("verify", async () =>
+                  resendEmailChange(pendingEmail)
+                    .then(() => setVSent(true))
+                    .catch(() => say("ส่งลิงก์ไม่สำเร็จ ลองใหม่อีกทีนะ")),
+                )
+              }
+            >
               ส่งลิงก์ยืนยัน
             </button>
           </Row>
@@ -323,7 +443,13 @@ function AccountTab({ handle: savedHandle, changedAt }: { handle: string; change
             className="st-ln"
             disabled={!email}
             aria-busy={busy === "pw"}
-            onClick={() => void act("pw", async () => sendPasswordLink(email).then(() => setPwSent(true)).catch(() => undefined))}
+            onClick={() =>
+              void act("pw", async () =>
+                sendPasswordLink(email)
+                  .then(() => setPwSent(true))
+                  .catch(() => say("ส่งลิงก์ไม่สำเร็จ ลองใหม่อีกทีนะ")),
+              )
+            }
           >
             {hasPassword ? "เปลี่ยนรหัสผ่าน" : "ตั้งรหัสผ่าน"}
           </button>
@@ -353,9 +479,13 @@ function AccountTab({ handle: savedHandle, changedAt }: { handle: string; change
                 aria-busy={busy === "out"}
                 onClick={() =>
                   void act("out", async () => {
-                    await signOutOtherDevices().catch(() => undefined);
-                    setOutOpen(false);
-                    setOutDone(true);
+                    try {
+                      await signOutOtherDevices();
+                      setOutOpen(false);
+                      setOutDone(true);
+                    } catch {
+                      say("ออกจากอุปกรณ์อื่นไม่สำเร็จ ลองใหม่อีกทีนะ");
+                    }
                     void qc.invalidateQueries({ queryKey: ["sc-sessions", uid] });
                   })
                 }
@@ -377,7 +507,8 @@ function AccountTab({ handle: savedHandle, changedAt }: { handle: string; change
               aria-busy={busy === "cancel"}
               onClick={() =>
                 void act("cancel", async () => {
-                  await cancelAccountDeletion().catch(() => false);
+                  const cancelled = await cancelAccountDeletion().catch(() => false);
+                  if (!cancelled) say("ยกเลิกคำขอไม่สำเร็จ ลองใหม่อีกทีนะ");
                   await qc.invalidateQueries({ queryKey: ["sc-delete-request", uid] });
                 })
               }
@@ -404,25 +535,16 @@ function AccountTab({ handle: savedHandle, changedAt }: { handle: string; change
             <b>ลบบัญชีถาวร?</b>
             <span>ทีมงานจะซ่อนโปรไฟล์และผลงานภายใน 7 วันทำการ แล้วลบถาวรหลัง 30 วัน · ยกเลิกได้ก่อนถึงวันนั้น</span>
           </span>
-          <label className="st-rl st-proof">
-            <span>{hasPassword ? "ใส่รหัสผ่านเพื่อยืนยัน" : "พิมพ์อีเมลของบัญชีเพื่อยืนยัน"}</span>
-            <input
-              className="st-inp"
-              type={hasPassword ? "password" : "email"}
-              autoComplete={hasPassword ? "current-password" : "off"}
-              value={delProof}
-              aria-invalid={!!delErr || undefined}
-              onChange={(e) => {
-                setDelProof(e.target.value);
-                setDelErr("");
-              }}
-            />
-            {delErr ? (
-              <span role="alert" data-bad="">
-                {delErr}
-              </span>
-            ) : null}
-          </label>
+          <ProofField
+            kind={proofKind}
+            handle={savedHandle}
+            value={delProof}
+            error={delErr}
+            onChange={(v) => {
+              setDelProof(v);
+              setDelErr("");
+            }}
+          />
           <div className="st-confirm-btns">
             <button type="button" className="st-ln" onClick={() => setDelOpen(false)}>
               ยกเลิก
@@ -437,9 +559,9 @@ function AccountTab({ handle: savedHandle, changedAt }: { handle: string; change
   );
 }
 
-function Switch({ label, on, onToggle }: { label: string; on: boolean; onToggle: () => void }) {
+function Switch({ label, on, disabled, onToggle }: { label: string; on: boolean; disabled?: boolean; onToggle: () => void }) {
   return (
-    <button type="button" className="st-sw" role="switch" aria-checked={on} aria-label={label} onClick={onToggle}>
+    <button type="button" className="st-sw" role="switch" aria-checked={on} aria-label={label} disabled={disabled} onClick={onToggle}>
       <i />
     </button>
   );
@@ -480,10 +602,101 @@ function useMySettings() {
   return { settings: q.data ?? { ...DEFAULT_SETTINGS, ready: false, weeklyReady: false }, set, err };
 }
 
-function NotificationsTab() {
+/** Push on this device (web push, or APNs / FCM inside the store apps — lib/pushNotifications). Old PushNotificationSection. */
+function usePushState(say: Say) {
+  const [state, setState] = useState<PushState | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    void getPushState()
+      .then((s) => alive && setState(s))
+      .catch(() => alive && setState("unsupported"));
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const set = async (on: boolean) => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const next = on ? await enablePush() : await disablePush();
+      setState(next);
+      if (on && next === "on") say("เปิดแจ้งเตือนแล้ว", false);
+      if (on && next === "denied") say(pushBlockedMessage());
+    } catch (e) {
+      say(userFacingError(e, "เปิดแจ้งเตือนไม่สำเร็จ ลองใหม่อีกทีนะ"));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return { state, busy, set };
+}
+
+/** Recommendation pushes for the account; the push's own button opens `?mute=recommendations`, which turns them off. */
+function useRecommendationPushes(say: Say) {
+  const [, setParams] = useSearchParams();
+  const [on, setOn] = useState<boolean | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const set = async (next: boolean) => {
+    setBusy(true);
+    try {
+      await setRecommendationPushes(next);
+      setOn(next);
+      say(next ? "เปิดแจ้งเตือนแนะนำผลงานแล้ว" : "ปิดแจ้งเตือนแนะนำผลงานแล้ว", false);
+    } catch (e) {
+      say(userFacingError(e, "บันทึกไม่สำเร็จ ลองใหม่อีกทีนะ"));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  useEffect(() => {
+    let alive = true;
+    void getRecommendationPushes().then((value) => {
+      if (!alive) return;
+      setOn(value);
+      // The address as it is now (the tab may have been written into it meanwhile).
+      const url = new URLSearchParams(window.location.search);
+      if (value !== null && url.get("mute") === "recommendations") {
+        url.delete("mute");
+        setParams(url, { replace: true });
+        if (value) void set(false);
+      }
+    });
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- read once on open
+  }, []);
+
+  return { on, busy, set };
+}
+
+function NotificationsTab({ say }: { say: Say }) {
   const { settings, set, err } = useMySettings();
+  const push = usePushState(say);
+  const recs = useRecommendationPushes(say);
+  const pushShown = push.state === "on" || push.state === "off" || push.state === "denied";
   return (
     <div>
+      {pushShown ? (
+        <Row
+          label="แจ้งเตือนบนเครื่องนี้"
+          sub={push.state === "denied" ? pushBlockedMessage() : "เด้งบอกทันทีเมื่อมีคนทัก ติดตาม หรือถูกใจงาน"}
+          subBad={push.state === "denied"}
+        >
+          <Switch label="แจ้งเตือนบนเครื่องนี้" on={push.state === "on"} disabled={push.busy || push.state === "denied"} onToggle={() => void push.set(push.state !== "on")} />
+        </Row>
+      ) : null}
+      {pushShown && recs.on !== null ? (
+        <Row label="แนะนำผลงาน" sub="งานใหม่จากคนที่ติดตาม · ไม่เกินวันละครั้ง">
+          <Switch label="แนะนำผลงาน" on={recs.on} disabled={recs.busy} onToggle={() => void recs.set(!recs.on)} />
+        </Row>
+      ) : null}
       {NOTI_ROWS.filter(([k]) => k !== "weekly" || settings.weeklyReady).map(([k, label, sub]) => (
         <Row key={k} label={label} sub={sub}>
           <Switch label={label} on={settings[k]} onToggle={() => void set(k, !settings[k])} />
@@ -503,11 +716,56 @@ const GREET_OPTIONS = [
   ["following", "คนที่ฉันติดตาม"],
 ] as const;
 
-function PrivacyTab() {
+/** "ดาวน์โหลดข้อมูลของฉัน" (PDPA): confirmed like the old site (password / e-mail / @handle; skipped for 10 minutes after). */
+function useExportMyData(handle: string, say: Say) {
+  const { user } = useAuth();
+  const email = user?.email ?? "";
+  const kind = proofKindOf(userHasEmailPassword(user), email);
+  const [open, setOpen] = useState(false);
+  const [proof, setProof] = useState("");
+  const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const run = async (withProof: boolean) => {
+    if (busy || !user) return;
+    setBusy(true);
+    setErr("");
+    try {
+      if (withProof) {
+        try {
+          await checkProof(kind, proof, email, handle);
+        } catch (e) {
+          setErr(errMessage(e) || PROOF_FALLBACK[kind]);
+          return;
+        }
+      }
+      try {
+        await exportMyData(user);
+        setOpen(false);
+        setProof("");
+        say("ดาวน์โหลดไฟล์แล้ว", false);
+      } catch {
+        say("ดาวน์โหลดไม่สำเร็จ ลองใหม่อีกทีนะ");
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const start = () => {
+    if (isSensitiveActionVerified()) void run(false);
+    else setOpen((v) => !v);
+  };
+
+  return { kind, open, setOpen, proof, setProof, err, setErr, busy, start, confirm: () => void run(true) };
+}
+
+function PrivacyTab({ handle, say }: { handle: string; say: Say }) {
   const { user } = useAuth();
   const uid = user!.id;
   const qc = useQueryClient();
   const { settings, set, err } = useMySettings();
+  const dl = useExportMyData(handle, say);
   const vis = useQuery({ queryKey: ["sc-visibility", uid], queryFn: () => getMyVisibility(uid), staleTime: 60_000 });
   const blocked = useQuery({ queryKey: ["sc-blocked", uid], queryFn: () => getBlockedPeople(uid), staleTime: 60_000 });
   const [blockOpen, setBlockOpen] = useState(false);
@@ -574,6 +832,38 @@ function PrivacyTab() {
             </div>
           ))
         : null}
+      <Row label="ดาวน์โหลดข้อมูลของฉัน" sub="ไฟล์ JSON ข้อมูลบัญชีของคุณ">
+        <button type="button" className="st-ln" aria-expanded={dl.open} aria-busy={dl.busy && !dl.open} onClick={dl.start}>
+          ดาวน์โหลด
+        </button>
+      </Row>
+      {dl.open ? (
+        <div className="st-confirm">
+          <ProofField
+            kind={dl.kind}
+            handle={handle}
+            value={dl.proof}
+            error={dl.err}
+            onChange={(v) => {
+              dl.setProof(v);
+              dl.setErr("");
+            }}
+          />
+          <div className="st-confirm-btns">
+            <button type="button" className="st-ln" onClick={() => dl.setOpen(false)}>
+              ยกเลิก
+            </button>
+            <button type="button" className="st-pri" aria-busy={dl.busy} disabled={!dl.proof.trim()} onClick={dl.confirm}>
+              ดาวน์โหลด
+            </button>
+          </div>
+        </div>
+      ) : null}
+      <Row label="คุกกี้" sub="เลือกว่าจะให้เว็บเก็บอะไรในเครื่องนี้">
+        <button type="button" className="st-ln" aria-haspopup="dialog" onClick={() => requestOpenCookiePreferences()}>
+          ตั้งค่าคุกกี้
+        </button>
+      </Row>
       {err || visErr ? (
         <p role="alert" className="st-err">
           {err || visErr}
