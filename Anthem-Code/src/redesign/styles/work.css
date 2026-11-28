@@ -1551,3 +1551,297 @@ html.sc-wk-open:not(.sc-wk-closing) .sc-app .sc-tb {
     right: -6px;
   }
 }
+
+/* ---------- Made with (old credits: made together with, team credits, studio) ---------- */
+.sc-app .wk-credits {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sc-app .wk-cr-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sc-app .wk-cr {
+  height: 36px;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 0 14px 0 4px;
+  border: 1px solid var(--sc-line);
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--sc-ink);
+  text-decoration: none;
+}
+
+.sc-app .wk-cr:hover {
+  border-color: var(--sc-ink);
+}
+
+.sc-app .wk-cr .wk-av {
+  width: 28px;
+  height: 28px;
+  flex: none;
+}
+
+.sc-app .wk-cr-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sc-app .wk-cr-tag {
+  font-size: 11px;
+  color: var(--sc-ink-3);
+}
+
+/* ---------- attached files / links with the safety scan (old ProjectAssetsSection) ---------- */
+.sc-app .wk-assets {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sc-app .wk-assets ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sc-app .wk-asset {
+  width: 100%;
+  min-height: 48px;
+  box-sizing: border-box;
+  padding: 10px 12px 10px 14px;
+  border: 1px solid var(--sc-line);
+  border-radius: 14px;
+  background: #FFFFFF;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--sc-ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.sc-app .wk-asset:hover:not(:disabled) {
+  border-color: var(--sc-ink);
+}
+
+.sc-app .wk-asset:disabled {
+  cursor: default;
+  color: var(--sc-ink-3);
+}
+
+.sc-app .wk-asset[aria-busy="true"] {
+  opacity: .6;
+}
+
+.sc-app .wk-asset > svg {
+  flex: none;
+}
+
+.sc-app .wk-asset-t {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sc-app .wk-asset-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sc-app .wk-asset-why {
+  font-size: 12px;
+  color: #B8321F;
+}
+
+.sc-app .wk-scan {
+  flex: none;
+  height: 24px;
+  padding: 0 9px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  white-space: nowrap;
+  color: var(--sc-ink-2);
+  background: var(--sc-soft);
+}
+
+.sc-app .wk-scan[data-s="clean"] {
+  color: #2E7048;
+  background: #EAF3EC;
+}
+
+.sc-app .wk-scan[data-s="blocked"] {
+  color: #B8321F;
+  background: #FBECE9;
+}
+
+/* ---------- full screen picture (old ImageLightbox): tap to zoom, drag, ‹ ›, swipe ---------- */
+.sc-app .wk-body img[data-open] {
+  cursor: zoom-in;
+}
+
+.sc-app .wk-body img[data-open]:focus-visible {
+  outline: 2px solid var(--sc-ink);
+  outline-offset: 3px;
+}
+
+.sc-app.wk-lb {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  min-height: 0;
+  display: block;
+  background: var(--sc-bg);
+}
+
+.sc-app .wk-lb-stage {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.sc-app .wk-lb-img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: calc(100vw - 176px);
+  max-height: calc(100vh - 112px);
+  max-height: calc(100dvh - 112px);
+  border-radius: var(--sc-r-img);
+  cursor: zoom-in;
+  transform-origin: center;
+  transition: transform .28s var(--sc-ease);
+  will-change: transform;
+  -webkit-user-drag: none;
+}
+
+.sc-app .wk-lb-stage[data-zoomed] .wk-lb-img {
+  cursor: grab;
+}
+
+.sc-app .wk-lb-stage[data-live] .wk-lb-img {
+  transition: none;
+}
+
+.sc-app .wk-lb-stage[data-zoomed][data-live] .wk-lb-img {
+  cursor: grabbing;
+}
+
+.sc-app .wk-lb-btn {
+  position: absolute;
+  z-index: 2;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #FFFFFF;
+  color: var(--sc-ink);
+  box-shadow: 0 1px 2px rgba(40, 41, 41, .06), 0 6px 20px rgba(40, 41, 41, .1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.sc-app .wk-lb-x {
+  top: 20px;
+  right: 24px;
+}
+
+.sc-app .wk-lb-side {
+  top: 50%;
+  margin-top: -22px;
+}
+
+.sc-app .wk-lb-prev {
+  left: 24px;
+}
+
+.sc-app .wk-lb-next {
+  right: 24px;
+}
+
+.sc-app .wk-lb-n {
+  position: absolute;
+  z-index: 2;
+  top: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 13px;
+  color: var(--sc-ink-3);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sc-app.wk-lb {
+    animation: wk-fade .25s ease both;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sc-app .wk-lb-img {
+    transition: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .sc-app .wk-lb-img {
+    max-width: 100vw;
+    max-height: calc(100vh - 160px);
+    max-height: calc(100dvh - 160px);
+    border-radius: 0;
+  }
+
+  .sc-app .wk-lb-x {
+    top: 10px;
+    right: 12px;
+  }
+
+  .sc-app .wk-lb-n {
+    top: 22px;
+  }
+
+  /* ‹ › at the bottom, like the work's own ‹ › on phones; a swipe does the same */
+  .sc-app .wk-lb-side {
+    top: auto;
+    bottom: 16px;
+    margin-top: 0;
+  }
+
+  .sc-app .wk-lb-prev {
+    left: 12px;
+  }
+
+  .sc-app .wk-lb-next {
+    right: 12px;
+  }
+}

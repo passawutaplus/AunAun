@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useUserBlocks } from "@/hooks/useCommunityPostInteractions";
 import { useFeedProjectSelect } from "@/hooks/useFeedProjectSelect";
 import { mapWriteFlowError } from "@/lib/writeFlowErrors";
+import { hasPendingProjectAssets, parseProjectAssets } from "@/lib/projectAssets";
 import { shareFromApp } from "@/lib/nativeShell";
 import { getBackgroundLocation } from "@/lib/projectOverlay";
 import { proxiedImageSrcSet, proxiedImageUrl } from "@/lib/imageProxy";
@@ -16,11 +17,13 @@ import { useSaveFlow } from "../main/useSaveFlow";
 import { exploreHref, similarHref } from "../explore/explore";
 import { ensureTextFonts } from "../lib/textFonts";
 import { isScContent } from "../work/workContent";
-import WorkBody, { bodyFromBlocks } from "../work/WorkBody";
+import WorkBody, { bodyFromBlocks, bodyPictures, pictureOpenProps } from "../work/WorkBody";
+import WorkAssets from "../work/WorkAssets";
+import WorkLightbox from "../work/WorkLightbox";
 import SharePanel from "../work/SharePanel";
 import WorkComments from "../work/WorkComments";
 import { ConfirmBox, MoreMenu, ReportBox, type MenuItem } from "../work/WorkMenu";
-import { useBlockPerson, useHiddenWorks, useImageLikes, useOwnerWorks, useWork, useWorkCatalog } from "../work/useWork";
+import { useBlockPerson, useHiddenWorks, useImageLikes, useOwnerWorks, useWork, useWorkCatalog, useWorkCredits } from "../work/useWork";
 import { formatCount, licenceLine, neighbour, pickSimilar, workDateLine } from "../work/workContent";
 import { useDeleteWork } from "../studio/useStudio";
 import { loginHref } from "../lib/loginHref";
@@ -79,6 +82,25 @@ function WorkView({ id, overlay, list, linkState, close }: ViewProps) {
   useEffect(() => {
     if (body?.some((b) => b.kind === "text" || b.kind === "row")) ensureTextFonts();
   }, [body]);
+
+  // Tap a picture: full screen (old ImageLightbox), going through every picture of the work in order.
+  const pictures = useMemo(() => (body ? bodyPictures(body) : media.filter((m) => m.kind === "image").map((m) => m.url)), [body, media]);
+  const [lightbox, setLightbox] = useState<number | null>(null);
+
+  // Made with (old credits) and the attached files / links with their safety scan.
+  const credits = useWorkCredits(row);
+  const assets = useMemo(() => (row ? parseProjectAssets(row.project_assets, row.external_links) : []), [row]);
+  // The owner sees a new file's scan finish: refresh every few seconds for up to two minutes (old page).
+  const refetchWork = work.refetch;
+  useEffect(() => {
+    if (!isOwn || !hasPendingProjectAssets(assets)) return;
+    const every = window.setInterval(() => void refetchWork(), 5000);
+    const stop = window.setTimeout(() => window.clearInterval(every), 120_000);
+    return () => {
+      window.clearInterval(every);
+      window.clearTimeout(stop);
+    };
+  }, [isOwn, assets, refetchWork]);
   /**
    * Buttons on each picture (owner 2026-11-28, from the old site): ♡ like (per picture), "ภาพคล้าย"
    * (pictures like this one), share. Same white pills as the mock's like button, bottom left.
@@ -399,7 +421,7 @@ function WorkView({ id, overlay, list, linkState, close }: ViewProps) {
         <article ref={cardRef} className="wk-card">
           <section aria-label="ตัวงาน" className="wk-body">
             {/* Made in the new editor: the body exactly as Upload's Preview showed it (owner 2026-11-28). */}
-            {body ? <WorkBody items={body} firstAlt={firstAlt} sizes="(max-width: 1000px) 100vw, 1000px" imageExtra={pictureTools} /> : null}
+            {body ? <WorkBody items={body} firstAlt={firstAlt} sizes="(max-width: 1000px) 100vw, 1000px" imageExtra={pictureTools} onOpen={setLightbox} /> : null}
             {body ? null : media.map((m, i) => {
               return (
                 <div key={m.url} className="wk-pic">
@@ -424,6 +446,7 @@ function WorkView({ id, overlay, list, linkState, close }: ViewProps) {
                       loading={i < 2 ? "eager" : "lazy"}
                       decoding="async"
                       style={m.ratio ? { aspectRatio: String(m.ratio), minHeight: 0 } : undefined}
+                      {...pictureOpenProps(() => setLightbox(Math.max(0, pictures.indexOf(m.url))))}
                     />
                   )}
                   {m.kind === "image" ? pictureTools(m.url, i) : null}
@@ -455,6 +478,27 @@ function WorkView({ id, overlay, list, linkState, close }: ViewProps) {
                   </>
                 )}
               </div>
+
+              {credits.people.length || credits.studio ? (
+                <div className="wk-credits">
+                  <span className="wk-lbl">Made with</span>
+                  <div className="wk-cr-list">
+                    {credits.studio ? (
+                      <Link to={`/s/${credits.studio.slug}`} className="wk-cr">
+                        {credits.studio.avatar_url ? <img alt="" src={proxiedImageUrl(credits.studio.avatar_url, 64)} className="wk-av" /> : <span aria-hidden="true" className="wk-av" />}
+                        <span className="wk-cr-name">{credits.studio.name}</span>
+                        <span className="wk-cr-tag">Studio</span>
+                      </Link>
+                    ) : null}
+                    {credits.people.map((p) => (
+                      <Link key={p.id} to={p.id === user?.id ? SC_LINKS.myProfile : profileHref({ user_id: p.id, username: p.username })} className="wk-cr">
+                        {p.avatar_url ? <img alt="" src={proxiedImageUrl(p.avatar_url, 64)} className="wk-av" /> : <span aria-hidden="true" className="wk-av" />}
+                        <span className="wk-cr-name">{p.display_name?.trim() || p.username || ""}</span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
 
               {text ? <p className="wk-desc">{text}</p> : null}
 
@@ -493,6 +537,8 @@ function WorkView({ id, overlay, list, linkState, close }: ViewProps) {
                   </div>
                 </div>
               ) : null}
+
+              <WorkAssets projectId={id} assets={assets} isOwn={isOwn} say={say} />
             </div>
 
             <dl className="wk-dl">
@@ -690,6 +736,7 @@ function WorkView({ id, overlay, list, linkState, close }: ViewProps) {
           }}
         />
       ) : null}
+      {lightbox !== null && pictures.length ? <WorkLightbox pictures={pictures} start={lightbox} title={title} onClose={() => setLightbox(null)} /> : null}
       {shareFor ? <SharePanel url={shareUrl} title={title} image={shareFor.image} imageRatio={shareFor.ratio} onClose={() => setShareFor(null)} say={say} chat={user && id ? { userId: user.id, work: { id, title } } : null} /> : null}
     </>
   );

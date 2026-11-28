@@ -1,7 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-import { getCommentSmiles, getPictureRatios, getWork, getWorkCatalog, getWorkImageLikes, getWorkLike, getWorkOwner } from "@/server/queries/work";
+import {
+  getCommentSmiles,
+  getPictureRatios,
+  getWork,
+  getWorkCatalog,
+  getWorkImageLikes,
+  getWorkLike,
+  getWorkOwner,
+  getWorkStudio,
+  type WorkRow,
+} from "@/server/queries/work";
+import { useProfilesByIds } from "@/core/profiles/useProfilesByIds";
 import { proxiedImageUrl } from "@/lib/imageProxy";
 import { getShowcaseRows, type ShowcaseRow } from "@/server/queries/showcase";
 import {
@@ -281,4 +292,25 @@ export function usePictureRatios(items: ReadonlyArray<{ projectId: string; url: 
   const ratioOf = useCallback((url: string): number | undefined => known?.[url] || measured[url], [known, measured]);
   const done = !!known && items.every((i) => known[i.url] || i.url in measured);
   return { ratioOf, done: items.length === 0 || done };
+}
+
+/**
+ * Who made the work with its owner (old page): "ทำร่วมกับ" (collab_user_ids) and team credits
+ * (credited_user_ids) as one list without the owner, and the studio it is credited to.
+ */
+export function useWorkCredits(row: WorkRow | null | undefined) {
+  const ids = useMemo(() => {
+    const all = [...(row?.collab_user_ids ?? []), ...(row?.credited_user_ids ?? [])];
+    return [...new Set(all.filter((x): x is string => typeof x === "string" && !!x && x !== row?.owner_id))];
+  }, [row]);
+  const { data: profiles } = useProfilesByIds(ids);
+  const people = useMemo(() => ids.map((x) => profiles?.map[x]).filter((p): p is NonNullable<typeof p> => !!p), [ids, profiles]);
+  const studioId = row?.studio_id ?? null;
+  const { data: studio = null } = useQuery({
+    queryKey: ["sc-work-studio", studioId],
+    enabled: !!studioId,
+    staleTime: 10 * 60_000,
+    queryFn: () => getWorkStudio(studioId!),
+  });
+  return { people, studio };
 }
