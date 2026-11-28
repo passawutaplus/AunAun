@@ -137,7 +137,8 @@ function NewCard({ creator: c, followed, onToggle, self }: FollowProps & { self:
 function AllCard({ creator: c, followed, onToggle, self }: FollowProps & { self: boolean }) {
   return (
     <div className="cr-card">
-      <Link to={c.href} className="cr-th cr-th3" aria-label={`ผลงานของ ${c.name}`}>
+      {/* One or two works fill the row instead of leaving empty space (owner 2026-11-28). */}
+      <Link to={c.href} className="cr-th cr-th3" data-n={Math.min(3, Math.max(1, c.covers.length))} aria-label={`ผลงานของ ${c.name}`}>
         {c.covers.slice(0, 3).map((src) => (
           <img key={src} alt="" src={proxiedImageUrl(src, 384)} loading="lazy" decoding="async" />
         ))}

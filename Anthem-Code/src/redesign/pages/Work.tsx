@@ -16,6 +16,7 @@ import { exploreHref, similarHref } from "../explore/explore";
 import { ensureTextFonts } from "../lib/textFonts";
 import { isScContent } from "../work/workContent";
 import WorkBody, { bodyFromBlocks } from "../work/WorkBody";
+import SharePanel from "../work/SharePanel";
 import WorkComments from "../work/WorkComments";
 import { useImageLikes, useOwnerWorks, useWork, useWorkCatalog } from "../work/useWork";
 import { formatCount, licenceLine, neighbour, pickSimilar, workDateLine } from "../work/workContent";
@@ -103,9 +104,10 @@ function WorkView({ id, overlay, list, linkState, close }: ViewProps) {
           </svg>
           <span>ภาพคล้าย</span>
         </Link>
-        <button type="button" className="wk-lk wk-lk-ic" aria-label="แชร์" title="แชร์" onClick={() => void share()}>
+        <button type="button" className="wk-lk wk-lk-ic" aria-label="แชร์" title="แชร์" onClick={() => share(url)}>
           <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.33" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 15V3.5M7.5 8L12 3.5 16.5 8M5 12.5V19a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 19v-6.5" />
+            <path d="M13.5 5.5L20 12l-6.5 6.5" />
+            <path d="M20 12h-8.5A6.5 6.5 0 0 0 5 18.5V20" />
           </svg>
         </button>
       </div>
@@ -172,13 +174,15 @@ function WorkView({ id, overlay, list, linkState, close }: ViewProps) {
 
   // Esc closes (the save popup handles its own Esc first).
   const toastOpen = saves.open;
+  // The share panel (below) handles its own Esc; the work stays open behind it.
+  const [shareFor, setShareFor] = useState<{ image: string; ratio: number | null } | null>(null);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !toastOpen) dismiss();
+      if (e.key === "Escape" && !toastOpen && !shareFor) dismiss();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [dismiss, toastOpen]);
+  }, [dismiss, toastOpen, shareFor]);
 
   useEffect(() => {
     if (!title) return;
@@ -204,16 +208,17 @@ function WorkView({ id, overlay, list, linkState, close }: ViewProps) {
     }
   }, [id]);
 
-  const share = async () => {
-    const url = `${window.location.origin}/showcase/${id}`;
-    // In the store apps the phone's share sheet opens (as the old site); on the web the link is copied (mock).
-    if (shareFromApp({ title: title || "SAMECOR", url })) return;
-    try {
-      await navigator.clipboard?.writeText(url);
-    } catch {
-      // clipboard blocked: the toast still confirms the action like the mock
-    }
-    say("คัดลอกลิงก์แล้ว");
+  // Share (owner 2026-11-28): the store apps open the phone's share sheet; the web opens the share panel
+  // (preview, link + copy, places to send it) like the old site. A picture's button previews that picture.
+  const shareUrl = `${typeof window === "undefined" ? "" : window.location.origin}/showcase/${id}`;
+  const share = (picture?: string) => {
+    if (shareFromApp({ title: title || "SAMECOR", url: shareUrl })) return;
+    const cover = row?.cover_url || media.find((m) => m.kind === "image")?.url || "";
+    const image = picture || cover;
+    const ratio =
+      media.find((m) => m.url === image)?.ratio ??
+      (image === row?.cover_url && row?.cover_width && row?.cover_height ? row.cover_width / row.cover_height : null);
+    setShareFor({ image, ratio });
   };
 
   const greet = async () => {
@@ -418,7 +423,12 @@ function WorkView({ id, overlay, list, linkState, close }: ViewProps) {
               {row.sc_category ? (
                 <div>
                   <dt>หมวด</dt>
-                  <dd>{row.sc_category}</dd>
+                  {/* Opens the home Showcase on this CATEGORY (owner 2026-11-28). */}
+                  <dd>
+                    <Link to={`${SC_LINKS.home}?cat=${encodeURIComponent(row.sc_category)}`} className="wk-tool">
+                      {row.sc_category}
+                    </Link>
+                  </dd>
                 </div>
               ) : null}
               {tools ? (
@@ -521,7 +531,7 @@ function WorkView({ id, overlay, list, linkState, close }: ViewProps) {
               <path d="M6 3h12v18l-6-4.5L6 21z" />
             </svg>
           </button>
-          <button type="button" className="wk-rb" aria-label="แชร์" title="คัดลอกลิงก์" onClick={() => void share()}>
+          <button type="button" className="wk-rb" aria-label="แชร์" title="แชร์" onClick={() => share()}>
             <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.33" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 15V3.5M7.5 8L12 3.5 16.5 8M5 12.5V19a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 19v-6.5" />
             </svg>
@@ -543,6 +553,7 @@ function WorkView({ id, overlay, list, linkState, close }: ViewProps) {
         </div>
       ) : null}
       {saves.element}
+      {shareFor ? <SharePanel url={shareUrl} title={title} image={shareFor.image} imageRatio={shareFor.ratio} onClose={() => setShareFor(null)} say={say} /> : null}
     </>
   );
 }

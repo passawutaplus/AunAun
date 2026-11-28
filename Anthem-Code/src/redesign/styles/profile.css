@@ -368,6 +368,18 @@
   fill: rgba(255, 255, 255, .85);
 }
 
+/* computers: the collect button shows while the mouse is on the card (owner 2026-11-28); saved works keep it.
+   My Profile's globe/lock (.mp-vis) is a state, not collect, and stays. */
+@media (hover: hover) {
+  .sc-app .pf-sv {
+    transition: opacity .25s ease;
+  }
+
+  .sc-app .pf-tile:not(:hover, :focus-within) .pf-sv:not(.mp-vis, [aria-pressed="true"]) {
+    opacity: 0;
+  }
+}
+
 /* name over the picture: hidden until hover; always shown on touch screens (Beam 22 Nov) */
 @media (hover: hover) {
   .sc-app .pf-tile .pf-shade,

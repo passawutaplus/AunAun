@@ -4,6 +4,7 @@ import { LEGAL_ATTESTATION_VERSION } from "@/lib/legalConfig";
 import { isGifFile, uploadProjectGif } from "@/lib/uploadProjectGif";
 import { uploadProjectImage } from "@/lib/uploadImage";
 import { uploadProjectVideoWithPoster } from "@/lib/uploadVideo";
+import { setCatalogWork } from "./studio";
 import type { UploadStageReporter } from "@/lib/uploadProgress";
 
 /** Mock Upload: "JPG · PNG · GIF · MP4 · ≤ 20 MB" per file. The storage quota of the plan still applies. */
@@ -71,32 +72,20 @@ export async function saveWork(id: string, ownerId: string, fields: WorkWrite, o
   if (error) throw error;
 }
 
-/** The catalog (project_series) a work is in; a work is in one catalog at most. */
+/** One catalog (project_series) the work is in — the first it was added to — for Upload's CATALOG field. */
 export async function getWorkCatalogId(workId: string): Promise<string | null> {
-  const { data, error } = await supabase.from("project_series_items").select("series_id").eq("project_id", workId).limit(1).maybeSingle();
+  const { data, error } = await supabase.from("project_series_items").select("series_id").eq("project_id", workId).order("added_at", { ascending: true }).limit(1).maybeSingle();
   if (error) throw error;
   return (data?.series_id as string | undefined) ?? null;
 }
 
-/** Puts a work into one of my catalogs (last place), or takes it out with `null`. */
+/**
+ * Upload's CATALOG field shows one catalog of the work: changing it takes the work out of that one and
+ * puts it in the new one (last place). Its other catalogs (My Studio) stay.
+ */
 export async function setWorkCatalog(workId: string, catalogId: string | null): Promise<void> {
   const current = await getWorkCatalogId(workId);
   if (current === catalogId) return;
-  if (current) {
-    const { error } = await supabase.from("project_series_items").delete().eq("project_id", workId);
-    if (error) throw error;
-  }
-  if (!catalogId) return;
-  const { data: last, error: lErr } = await supabase
-    .from("project_series_items")
-    .select("position")
-    .eq("series_id", catalogId)
-    .order("position", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (lErr) throw lErr;
-  const { error } = await supabase
-    .from("project_series_items")
-    .insert({ series_id: catalogId, project_id: workId, position: ((last?.position as number | undefined) ?? -1) + 1 });
-  if (error) throw error;
+  if (current) await setCatalogWork(current, workId, false);
+  if (catalogId) await setCatalogWork(catalogId, workId, true);
 }

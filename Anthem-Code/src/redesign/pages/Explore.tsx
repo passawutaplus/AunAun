@@ -17,6 +17,7 @@ import "../styles/fonts.css";
 import "../styles/tokens.css";
 import "../styles/reset.css";
 import "../styles/main.css";
+import "../styles/profile.css";
 import "../styles/explore.css";
 
 const SORTS: ReadonlyArray<readonly [ExploreSort, string]> = [
@@ -30,8 +31,8 @@ export const explorePoolQuery = { queryKey: ["sc-explore-pool"] as const, queryF
 
 /**
  * `/explore/tag/:value` and `/explore/tool/:value` (old URLs) — every published work with one tag or one
- * tool, in the home page's look: title above the card, sort as folder tabs, the works grid, and a
- * follow button (new works with it reach my notifications). Not in the mock: owner asked 2026-11-28.
+ * tool, laid out like a profile (owner 2026-11-28): the tag on the left with its count and a follow button
+ * (new works with it reach my notifications), the works on the right with the sorts as tabs. Not in the mock.
  */
 export default function ExplorePage() {
   const location = useLocation();
@@ -70,12 +71,12 @@ export default function ExplorePage() {
 
   const title = kind === "tag" ? `#${value}` : value;
   return (
-    <main className="sc-main mn ex-m">
-      <div className="ex-head">
-        <span className="ex-kick">{kind === "tag" ? "TAG" : "TOOL"}</span>
-        <h1>{title}</h1>
-        <div className="ex-meta">
-          <span>{pool.isPending ? "" : `${count(rows.length)} ผลงาน`}</span>
+    <main className="sc-main pf-m ex-m">
+      <div className="pf-grid">
+        <aside aria-label={title} className="pf-aside ex-aside">
+          <span className="ex-kick">{kind === "tag" ? "TAG" : "TOOL"}</span>
+          <h1>{title}</h1>
+          <p className="ex-count">{pool.isPending ? "" : `${count(rows.length)} ผลงาน`}</p>
           {value ? (
             <button
               type="button"
@@ -91,27 +92,24 @@ export default function ExplorePage() {
               {isFollowing ? "ติดตามแล้ว" : "ติดตาม"}
             </button>
           ) : null}
-        </div>
-      </div>
+        </aside>
 
-      <div className="mn-fld">
-        <div className="mn-chips" role="group" aria-label="เรียงผลงาน">
-          {SORTS.map(([k, label]) => (
-            <button key={k} type="button" className="mn-chip" aria-pressed={sort === k} onClick={() => pickSort(k)}>
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="mn-card">
-        {pool.isPending ? (
-          <ScLoader label="กำลังโหลดผลงาน" />
-        ) : tiles.length ? (
-          <Masonry works={tiles} label={title} savedIds={saves.ids} onToggleSave={toggleSave} linkState={linkState} />
-        ) : (
-          <p className="mn-none">ไม่เจอสิ่งที่ตรงกัน</p>
-        )}
+        <section aria-label="ผลงาน" className="pf-card ex-card">
+          <nav aria-label="เรียงผลงาน" className="pf-tabs">
+            {SORTS.map(([k, label]) => (
+              <button key={k} type="button" aria-pressed={sort === k} onClick={() => pickSort(k)}>
+                {label}
+              </button>
+            ))}
+          </nav>
+          {pool.isPending ? (
+            <ScLoader label="กำลังโหลดผลงาน" />
+          ) : tiles.length ? (
+            <Masonry works={tiles} label={title} savedIds={saves.ids} onToggleSave={toggleSave} linkState={linkState} />
+          ) : (
+            <p className="mn-none">ไม่เจอสิ่งที่ตรงกัน</p>
+          )}
+        </section>
       </div>
       {saves.element}
     </main>

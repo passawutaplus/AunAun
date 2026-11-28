@@ -44,7 +44,32 @@ export async function getStudioEvents(userId: string): Promise<StudioEvent[]> {
   return (data ?? []) as StudioEvent[];
 }
 
-export type InsightDay = { day: string; views: number; followers: number; likes: number };
+export type OpenCallRow = {
+  id: string;
+  title: string;
+  description: string | null;
+  insights: unknown;
+  cover_url: string | null;
+  starts_on: string | null;
+  ends_on: string | null;
+};
+
+/** Published open calls still taking work (closing today or later), with their text for "FOR YOU". */
+export async function getOpenCalls(todayIso: string): Promise<OpenCallRow[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase.from("events" as never) as any)
+    .select("id, title, description, insights, cover_url, starts_on, ends_on")
+    .eq("category", "open_call")
+    .eq("status", "published")
+    .is("parent_id", null)
+    .gte("ends_on", todayIso)
+    .order("ends_on", { ascending: true })
+    .limit(100);
+  if (error) throw error;
+  return (data ?? []) as OpenCallRow[];
+}
+
+export type InsightDay ={ day: string; views: number; followers: number; likes: number };
 
 /**
  * My numbers per day for the last 2 × `days` days (earlier half = the period before), from

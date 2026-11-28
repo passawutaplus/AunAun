@@ -13,6 +13,7 @@ import "../styles/fonts.css";
 import "../styles/tokens.css";
 import "../styles/reset.css";
 import "../styles/main.css";
+import "../styles/profile.css";
 import "../styles/explore.css";
 
 /** A match this close is "ใกล้เคียงมาก" (old page). */
@@ -20,8 +21,8 @@ const STRONG = 0.3;
 
 /**
  * `/similar/:projectId?src=<picture>` (old URL; `?img=N` still works) — pictures by other people that
- * look like one picture of this work, in the new look: the picture on top, the four kinds of likeness
- * as toggles, then the matches. Not in the mock: owner asked 2026-11-28. Matching is the old engine.
+ * look like one picture of this work, laid out like a profile (owner 2026-11-28): the picture, its work and the
+ * four kinds of likeness on the left, the matches on the right. Not in the mock. Matching is the old engine.
  */
 export default function SimilarPage() {
   const { projectId = "" } = useParams<{ projectId: string }>();
@@ -58,66 +59,62 @@ export default function SimilarPage() {
   const title = row?.title?.trim() || "";
   const artist = owner.data?.display_name?.trim() || owner.data?.username || "";
   return (
-    <main className="sc-main mn ex-m">
-      <div className="ex-head">
-        <span className="ex-kick">SIMILAR</span>
-        <h1>ภาพคล้าย</h1>
-        {row ? (
-          <Link to={`/showcase/${projectId}`} className="ex-from">
-            จาก “{title || "Untitled"}”{artist ? ` · ${artist}` : ""}
-          </Link>
-        ) : null}
-        {source ? (
-          <span className="ex-src" style={{ aspectRatio: String(sourceRatio ?? 1) }}>
-            <img src={proxiedImageUrl(source, 640)} alt="" style={sourceRatio ? undefined : { objectFit: "contain" }} />
-          </span>
-        ) : null}
-        {pictures.length > 1 ? (
-          <div className="ex-thumbs" role="group" aria-label="ค้นจากภาพอื่นในงานนี้">
-            {pictures.map((p, i) => (
-              <Link
-                key={p.url}
-                to={similarHref(projectId, p.url)}
-                replace
-                className="ex-thumb"
-                aria-label={`ภาพที่ ${i + 1}`}
-                aria-current={p.url === source ? "true" : undefined}
-              >
-                <img src={proxiedImageUrl(p.url, 160)} alt="" />
-              </Link>
+    <main className="sc-main pf-m ex-m">
+      <div className="pf-grid">
+        <aside aria-label="ภาพต้นทาง" className="pf-aside ex-aside">
+          <span className="ex-kick">SIMILAR</span>
+          <h1>ภาพคล้าย</h1>
+          {row ? (
+            <Link to={`/showcase/${projectId}`} className="ex-from">
+              จาก “{title || "Untitled"}”{artist ? ` · ${artist}` : ""}
+            </Link>
+          ) : null}
+          {source ? (
+            <span className="ex-src" style={{ aspectRatio: String(sourceRatio ?? 1) }}>
+              <img src={proxiedImageUrl(source, 640)} alt="" style={sourceRatio ? undefined : { objectFit: "contain" }} />
+            </span>
+          ) : null}
+          {pictures.length > 1 ? (
+            <div className="ex-thumbs" role="group" aria-label="ค้นจากภาพอื่นในงานนี้">
+              {pictures.map((p, i) => (
+                <Link key={p.url} to={similarHref(projectId, p.url)} replace className="ex-thumb" aria-label={`ภาพที่ ${i + 1}`} aria-current={p.url === source ? "true" : undefined}>
+                  <img src={proxiedImageUrl(p.url, 160)} alt="" />
+                </Link>
+              ))}
+            </div>
+          ) : null}
+          <span className="ex-aspects-lab">คล้ายกันด้าน</span>
+          <div className="ex-aspects" role="group" aria-label="คล้ายกันด้าน">
+            {SIMILAR_ASPECTS.map((a) => (
+              <button key={a.key} type="button" className="ex-aspect" aria-pressed={aspects.includes(a.key)} title={a.hint} onClick={() => flip(a.key)}>
+                {a.label}
+              </button>
             ))}
           </div>
-        ) : null}
-        <div className="ex-aspects" role="group" aria-label="คล้ายกันด้าน">
-          {SIMILAR_ASPECTS.map((a) => (
-            <button key={a.key} type="button" className="ex-aspect" aria-pressed={aspects.includes(a.key)} title={a.hint} onClick={() => flip(a.key)}>
-              {a.label}
-            </button>
-          ))}
-        </div>
-      </div>
+        </aside>
 
-      <div className="mn-card ex-card">
-        {q.isPending ? (
-          <ScLoader label="กำลังหาภาพคล้าย" />
-        ) : strong.length || others.length ? (
-          <>
-            {strong.length ? (
-              <section className="ex-sec">
-                <h2 className="ex-h2">ใกล้เคียงมาก</h2>
-                <Masonry works={strong} label="ใกล้เคียงมาก" savedIds={saves.ids} onToggleSave={toggleSave} linkState={linkState} />
-              </section>
-            ) : null}
-            {others.length ? (
-              <section className="ex-sec">
-                <h2 className="ex-h2">{strong.length ? "อาจสนใจ" : "ใกล้เคียง"}</h2>
-                <Masonry works={others} label="อาจสนใจ" savedIds={saves.ids} onToggleSave={toggleSave} linkState={linkState} />
-              </section>
-            ) : null}
-          </>
-        ) : (
-          <p className="mn-none">ยังไม่พบภาพที่ใกล้เคียงพอ · ลองเปิดด้านอื่นเพิ่ม</p>
-        )}
+        <section aria-label="ภาพคล้าย" className="pf-card ex-card">
+          {q.isPending ? (
+            <ScLoader label="กำลังหาภาพคล้าย" />
+          ) : strong.length || others.length ? (
+            <>
+              {strong.length ? (
+                <section className="ex-sec">
+                  <h2 className="ex-h2">ใกล้เคียงมาก</h2>
+                  <Masonry works={strong} label="ใกล้เคียงมาก" savedIds={saves.ids} onToggleSave={toggleSave} linkState={linkState} />
+                </section>
+              ) : null}
+              {others.length ? (
+                <section className="ex-sec">
+                  <h2 className="ex-h2">{strong.length ? "อาจสนใจ" : "ใกล้เคียง"}</h2>
+                  <Masonry works={others} label="อาจสนใจ" savedIds={saves.ids} onToggleSave={toggleSave} linkState={linkState} />
+                </section>
+              ) : null}
+            </>
+          ) : (
+            <p className="mn-none">ยังไม่พบภาพที่ใกล้เคียงพอ · ลองเปิดด้านอื่นเพิ่ม</p>
+          )}
+        </section>
       </div>
       {saves.element}
     </main>

@@ -58,8 +58,9 @@ export async function deleteCatalog(id: string): Promise<void> {
 }
 
 /**
- * Puts a work in a catalog (last place) or takes it out. A work is in one catalog at most (unique
- * index), so putting it here takes it out of any other catalog first.
+ * Puts a work in a catalog (last place) or takes it out. A work may be in several catalogs (owner
+ * 2026-11-28, migration 20261128190000). Before that migration runs, the old one-catalog index refuses
+ * a second catalog: then the work moves here from the other one, as before.
  */
 export async function setCatalogWork(catalogId: string, workId: string, inside: boolean): Promise<void> {
   if (!inside) {
@@ -67,13 +68,22 @@ export async function setCatalogWork(catalogId: string, workId: string, inside: 
     if (error) throw error;
     return;
   }
+  const insert = async () => {
+    const { data: last } = await supabase.from("project_series_items").select("position").eq("series_id", catalogId).order("position", { ascending: false }).limit(1).maybeSingle();
+    return supabase
+      .from("project_series_items")
+      .insert({ series_id: catalogId, project_id: workId, position: ((last?.position as number | undefined) ?? -1) + 1 });
+  };
+  const { error } = await insert();
+  if (!error) return;
+  if ((error as { code?: string }).code !== "23505") throw error;
+  // Already in this catalog: nothing to do. Otherwise the old index: move it here.
+  const { data: here } = await supabase.from("project_series_items").select("project_id").eq("series_id", catalogId).eq("project_id", workId).maybeSingle();
+  if (here) return;
   const { error: dErr } = await supabase.from("project_series_items").delete().eq("project_id", workId);
   if (dErr) throw dErr;
-  const { data: last } = await supabase.from("project_series_items").select("position").eq("series_id", catalogId).order("position", { ascending: false }).limit(1).maybeSingle();
-  const { error } = await supabase
-    .from("project_series_items")
-    .insert({ series_id: catalogId, project_id: workId, position: ((last?.position as number | undefined) ?? -1) + 1 });
-  if (error) throw error;
+  const { error: again } = await insert();
+  if (again) throw again;
 }
 
 /** Deletes one of my works, then its files that nothing else uses (as the old manage page). */

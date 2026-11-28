@@ -1,15 +1,11 @@
 /*
- * Tag / tool pages and Similar pictures (not in the mock — owner asked 2026-11-28). Built from the home
- * page (main.css: .mn, .mn-fld folder tabs, .mn-card, Masonry) with a centred head in the site's type.
+ * Tag / tool pages and Similar pictures (not in the mock — owner asked 2026-11-28): laid out like a profile
+ * (profile.css: .pf-m / .pf-grid / .pf-aside / .pf-card / .pf-tabs) — what they are about on the left, the
+ * works on the right in the home grid (main.css: Masonry, tiles).
  */
 
-.sc-app .ex-head {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+.sc-app .ex-aside {
   gap: 10px;
-  padding: 24px 16px 0;
-  text-align: center;
 }
 
 .sc-app .ex-kick {
@@ -18,7 +14,7 @@
   color: #8A8A87;
 }
 
-.sc-app .ex-head h1 {
+.sc-app .ex-aside h1 {
   margin: 0;
   font-size: 40px;
   font-weight: 400;
@@ -27,24 +23,23 @@
   overflow-wrap: anywhere;
 }
 
-.sc-app .ex-meta {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  min-height: 36px;
+.sc-app .ex-count {
+  margin: 0;
   font-size: 13px;
   color: #8A8A87;
+  min-height: 18px;
 }
 
 .sc-app .ex-follow {
-  height: 36px;
-  padding: 0 16px;
+  margin-top: 14px;
+  width: 200px;
+  height: 48px;
   box-sizing: border-box;
   border: 1px solid #282929;
   border-radius: 999px;
   background: none;
   font: inherit;
-  font-size: 13px;
+  font-size: 14px;
   color: #282929;
   cursor: pointer;
 }
@@ -68,10 +63,9 @@
 /* the source picture at its own ratio (never cropped) */
 .sc-app .ex-src {
   display: block;
-  width: 240px;
-  max-width: 70vw;
-  max-height: 360px;
-  margin-top: 8px;
+  width: 100%;
+  max-width: 260px;
+  margin-top: 14px;
   border-radius: 20px;
   overflow: hidden;
   background: #ECECEA;
@@ -89,13 +83,13 @@
   flex-wrap: wrap;
   justify-content: center;
   gap: 8px;
-  max-width: 560px;
+  max-width: 260px;
 }
 
 .sc-app .ex-thumb {
   display: block;
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   border-radius: 10px;
   overflow: hidden;
   opacity: .55;
@@ -118,12 +112,19 @@
   object-fit: cover;
 }
 
+.sc-app .ex-aspects-lab {
+  margin-top: 14px;
+  font-size: 11px;
+  letter-spacing: .08em;
+  color: #8A8A87;
+}
+
 .sc-app .ex-aspects {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: 8px;
-  margin-top: 6px;
+  max-width: 260px;
 }
 
 .sc-app .ex-aspect {
@@ -145,8 +146,10 @@
   color: #FFFFFF;
 }
 
-.sc-app .ex-card {
-  margin-top: 28px;
+/* the works: three columns in the card (four on the home page) */
+.sc-app .ex-card .mn-mas {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding-bottom: 0;
 }
 
 .sc-app .ex-sec + .ex-sec {
@@ -159,12 +162,18 @@
   font-weight: 300;
 }
 
+@media (max-width: 900px) {
+  .sc-app .ex-card .mn-mas {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 600px) {
-  .sc-app .ex-head h1 {
+  .sc-app .ex-aside h1 {
     font-size: 28px;
   }
 
   .sc-app .ex-src {
-    width: 180px;
+    max-width: 200px;
   }
 }

@@ -183,7 +183,11 @@ html.sc-wk-open .sc-app .sc-tb {
   background: #ECECEA;
 }
 
-/* the buttons on each picture: ♡ like · ภาพคล้าย · share (owner 2026-11-28), the mock's like pill style */
+/*
+ * The buttons on each picture: ♡ like · ภาพคล้าย · share (owner 2026-11-28, the mock's like pill style).
+ * Computers: they appear while the mouse is on the picture; "ภาพคล้าย" is an icon whose word slides in
+ * on hover. Phones: always shown, icons only.
+ */
 .sc-app .wk-ptools {
   position: absolute;
   left: 16px;
@@ -193,10 +197,21 @@ html.sc-wk-open .sc-app .sc-tb {
   flex-wrap: wrap;
   gap: 8px;
   pointer-events: none;
+  transition: opacity .25s ease;
 }
 
 .sc-app .wk-ptools > * {
   pointer-events: auto;
+}
+
+@media (hover: hover) {
+  .sc-app .wk-ptools {
+    opacity: 0;
+  }
+
+  .sc-app :is(.wk-pic, .sc-wb-img, .sc-wb-cell):is(:hover, :focus-within) .wk-ptools {
+    opacity: 1;
+  }
 }
 
 .sc-app .wk-lk {
@@ -214,13 +229,6 @@ html.sc-wk-open .sc-app .sc-tb {
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  opacity: .4;
-  transition: opacity .25s ease;
-}
-
-.sc-app .wk-lk:is(:hover, :focus-visible, [data-on]),
-.sc-app :is(.wk-pic, .sc-wb-img, .sc-wb-cell):hover .wk-lk {
-  opacity: 1;
 }
 
 .sc-app .wk-lk-ic {
@@ -229,34 +237,24 @@ html.sc-wk-open .sc-app .sc-tb {
   justify-content: center;
 }
 
-/* small Template frames and phones: "ภาพคล้าย" keeps its icon only */
-.sc-app .sc-wb-cell .wk-sim span {
-  display: none;
+.sc-app .wk-sim {
+  padding: 0 11px;
+  gap: 0;
 }
 
-.sc-app .sc-wb-cell .wk-sim {
-  width: 40px;
-  padding: 0;
-  justify-content: center;
+.sc-app .wk-sim span {
+  display: block;
+  max-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  opacity: 0;
+  transition: max-width .45s var(--sc-ease), margin .45s var(--sc-ease), opacity .25s ease;
 }
 
-@media (max-width: 600px) {
-  .sc-app .wk-sim span {
-    display: none;
-  }
-
-  .sc-app .wk-sim {
-    width: 40px;
-    padding: 0;
-    justify-content: center;
-  }
-}
-
-/* no hover on touch screens: keep the buttons readable */
-@media (hover: none) {
-  .sc-app .wk-lk {
-    opacity: .85;
-  }
+.sc-app .wk-sim:is(:hover, :focus-visible) span {
+  max-width: 90px;
+  margin-left: 8px;
+  opacity: 1;
 }
 
 /* ---------- about the work ---------- */
@@ -917,4 +915,207 @@ html.sc-wk-open .sc-app .sc-tb {
   .sc-app .wk-toast {
     bottom: 88px;
   }
+}
+
+/* ---------- share panel (owner 2026-11-28: the old share sheet, new look — Upload's dialog style) ---------- */
+.sc-app .sh-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(242, 242, 240, .35);
+  -webkit-backdrop-filter: blur(10px) saturate(1.1);
+  backdrop-filter: blur(10px) saturate(1.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.sc-app .sh-hit {
+  position: absolute;
+  inset: 0;
+}
+
+/* a tall list scrolls the panel; its parts never squeeze (the preview card would be cut) */
+.sc-app .sh-box > * {
+  flex-shrink: 0;
+}
+
+.sc-app .sh-box {
+  position: relative;
+  width: 440px;
+  max-width: 100%;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  box-sizing: border-box;
+  background: #FFFFFF;
+  border-radius: 28px;
+  box-shadow: 0 1px 3px rgba(40, 41, 41, .08), 0 10px 32px rgba(40, 41, 41, .12);
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.sc-app .sh-x {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.sc-app .sh-box h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 400;
+}
+
+.sc-app .sh-card {
+  display: flex;
+  flex-direction: column;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #F5F5F3;
+}
+
+.sc-app .sh-pic {
+  position: relative;
+  display: block;
+  aspect-ratio: 1.91 / 1;
+  background: #ECECEA;
+}
+
+.sc-app .sh-pic img:not(.sh-logo) {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sc-app .sh-logo {
+  position: absolute;
+  left: 14px;
+  bottom: 12px;
+  height: 22px;
+  width: auto;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .92);
+}
+
+.sc-app .sh-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 16px 14px;
+}
+
+.sc-app .sh-title {
+  font-size: 15px;
+  font-weight: 400;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sc-app .sh-host {
+  font-size: 12px;
+  color: #8A8A87;
+}
+
+.sc-app .sh-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.sc-app .sh-link {
+  display: flex;
+  gap: 8px;
+}
+
+.sc-app .sh-link input {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  box-sizing: border-box;
+  border: 1px solid #E2E2DF;
+  border-radius: 14px;
+  padding: 0 14px;
+  font: inherit;
+  font-size: 13px;
+  color: #4A4A4A;
+  background: #FFFFFF;
+  outline-color: #282929;
+}
+
+.sc-app .sh-link button {
+  height: 44px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 999px;
+  background: #282929;
+  color: #FFFFFF;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  flex: none;
+}
+
+.sc-app .sh-targets {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px 8px;
+}
+
+.sc-app .sh-t {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 12px;
+  color: #4A4A4A;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.sc-app .sh-ic {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #F5F5F3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: background .2s ease;
+}
+
+.sc-app .sh-ic :is(img, svg[viewBox="0 0 52 52"]) {
+  width: 52px;
+  height: 52px;
+  display: block;
+}
+
+.sc-app .sh-t:hover .sh-ic {
+  background: #ECECEA;
 }

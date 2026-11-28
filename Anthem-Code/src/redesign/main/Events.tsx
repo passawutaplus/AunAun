@@ -47,7 +47,8 @@ export default function Events({ view, type }: { view: EventView; type: EventTyp
 
   return (
     <>
-      {featured.length ? <Highlight events={featured} venues={data!.venues} today={today} /> : null}
+      {/* The highlight shows on All and Highlight only, not on one type of event (owner 2026-11-28). */}
+      {featured.length && (!type || type === "highlight") ? <Highlight events={featured} venues={data!.venues} today={today} /> : null}
       {type === "highlight" ? (
         featured.length ? null : <p className="mn-none">ไม่เจอสิ่งที่ตรงกัน</p>
       ) : listed.length ? (

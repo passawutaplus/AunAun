@@ -3,11 +3,11 @@ import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { openConnectChat } from "@/lib/chat/openConnectChat";
 import { proxiedImageUrl } from "@/lib/imageProxy";
-import { getRecentFollowers, getStudioComments, type StudioProfile, type StudioWork } from "@/server/queries/studio";
-import { homeEventsQuery } from "../main/useHomeEvents";
+import { getOpenCalls, getRecentFollowers, getStudioComments, type StudioProfile, type StudioWork } from "@/server/queries/studio";
 import { useMyEvents } from "../profile/useMyProfile";
 import { count } from "../profile/tiles";
 import { coverOf, editHref, ratioOf } from "./StudioWorks";
+import { interestWords, rankOpenCalls } from "./forYou";
 import { splitPeriods, useInsights } from "./StudioInsights";
 
 export type StudioTab = "overview" | "profile" | "works" | "event" | "catalogs" | "insights";
@@ -73,16 +73,10 @@ export default function StudioOverview({ uid, profile, works, followers, goTab }
   const stepsDone = steps.filter((s) => s[1]).length;
   const nextStep = steps.findIndex((s) => !s[1]);
 
-  // Open calls that are still open, closing soonest (no per-person matching yet — question for Beam).
-  const home = useQuery(homeEventsQuery);
-  const openCalls = useMemo(
-    () =>
-      (home.data ?? [])
-        .filter((e) => e.category === "open_call" && !e.parent_id && (e.ends_on ?? "") >= today)
-        .sort((a, b) => (a.ends_on ?? "").localeCompare(b.ends_on ?? ""))
-        .slice(0, 3),
-    [home.data, today],
-  );
+  // FOR YOU (owner 2026-11-28): open calls that fit the kind of work this person posts come first.
+  const calls = useQuery({ queryKey: ["sc-open-calls", today], queryFn: () => getOpenCalls(today), staleTime: 5 * 60_000 });
+  const interests = useMemo(() => interestWords(works, profile?.sc_categories), [works, profile?.sc_categories]);
+  const openCalls = useMemo(() => rankOpenCalls(calls.data ?? [], interests).slice(0, 3), [calls.data, interests]);
 
   const people = useQuery({ queryKey: ["sc-studio-followers", uid], queryFn: () => getRecentFollowers(uid), staleTime: 60_000 });
   const greet = async (id: string) => {

@@ -95,17 +95,14 @@ export default function StudioCatalogs({ uid, catalogs, works, say }: Props) {
     if (!cur) return;
     const inside = cur.projectIds.includes(w.id);
     const id = cur.id;
-    patchCache((list) =>
-      list.map((c) => {
-        if (c.id === id) return { ...c, projectIds: inside ? c.projectIds.filter((x) => x !== w.id) : [...c.projectIds, w.id] };
-        // One catalog per work: taking it into this one takes it out of the others.
-        return inside ? c : { ...c, projectIds: c.projectIds.filter((x) => x !== w.id) };
-      }),
-    );
-    setCatalogWork(id, w.id, !inside).catch(() => {
-      say("บันทึกไม่สำเร็จ");
-      refresh();
-    });
+    // A work may be in several catalogs (owner 2026-11-28); the refresh shows a move if the old one-catalog rule still holds.
+    patchCache((list) => list.map((c) => (c.id === id ? { ...c, projectIds: inside ? c.projectIds.filter((x) => x !== w.id) : [...c.projectIds, w.id] } : c)));
+    setCatalogWork(id, w.id, !inside)
+      .then(refresh)
+      .catch(() => {
+        say("บันทึกไม่สำเร็จ");
+        refresh();
+      });
   };
 
   const finish = () => {

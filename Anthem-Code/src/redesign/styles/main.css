@@ -320,6 +320,18 @@
   background: rgba(255, 255, 255, .95);
 }
 
+/* computers: the collect button shows while the mouse is on the card (owner 2026-11-28); a saved work keeps
+   its filled button so the state stays visible. Touch screens show it always. */
+@media (hover: hover) {
+  .sc-app .mn-save {
+    transition: opacity .25s ease;
+  }
+
+  .sc-app .mn-tile:not(:hover, :focus-within) .mn-save:not([aria-pressed="true"]) {
+    opacity: 0;
+  }
+}
+
 .sc-app .mn-save[aria-pressed="true"] svg {
   fill: #282929;
   stroke: #282929;
@@ -742,6 +754,16 @@
 
 .sc-app .cr-th3 {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  container-type: inline-size;
+}
+
+/* fewer than three works: they share the whole row, at the height a row of three has (owner 2026-11-28) */
+.sc-app .cr-th3[data-n="1"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.sc-app .cr-th3[data-n="2"] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .sc-app .cr-th img {
@@ -757,7 +779,8 @@
 }
 
 .sc-app .cr-th3 img {
-  aspect-ratio: 4 / 3;
+  aspect-ratio: auto;
+  height: calc((100cqw - 16px) / 4);
 }
 
 .sc-app .cr-th:hover img {
