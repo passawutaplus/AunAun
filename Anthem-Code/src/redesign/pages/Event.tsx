@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import SeoHead from "@/components/SeoHead";
@@ -7,13 +7,13 @@ import { useMyEventInterests } from "@/hooks/useExhibitionEvents";
 import { eventJsonLd } from "@/lib/eventJsonLd";
 import { deadlineLabel, eventPath, isEventUuid, parseEventInsights } from "@/lib/exhibitionEvents";
 import { googleCalendarLink } from "@/lib/googleCalendarLink";
-import { proxiedImageSrcSet, proxiedImageUrl } from "@/lib/imageProxy";
 import { reportEvent } from "@/server/mutations/eventPage";
 import { toggleEventInterest } from "@/server/mutations/eventInterest";
 import type { EventPageRow, EventPageVenue } from "@/server/queries/eventPage";
 import { SC_LINKS } from "../routes";
 import { closingDay, feeLabel, paragraphs, siteLabel, summaryRows } from "../event/eventSummary";
 import { useCountEventView, useEventPage, useEventVenues, useParentEvent } from "../event/useEventPage";
+import EventPictures from "../event/EventPictures";
 import Locations from "../event/Locations";
 import { thaiHours } from "../event/venueText";
 import { EVENT_KIND, shortDate } from "../main/useHomeEvents";
@@ -193,12 +193,12 @@ function EventBody({ event: e, venues, parent }: { event: EventPageRow; venues: 
   const closes = openCall ? closingDay(insights, e.ends_on, e.starts_on) : null;
   const closesLabel = closes ? deadlineLabel(closes, new Date(), "th") : null;
 
-  // ---------- pictures: the cover, then the extra pictures under it, each at its own ratio ----------
-  const ratio = (src: string): CSSProperties | undefined => {
-    const s = src === e.cover_url && e.cover_width && e.cover_height ? [e.cover_width, e.cover_height] : e.media_sizes?.[src];
-    return s && s[0] > 0 && s[1] > 0 ? { aspectRatio: `${s[0]} / ${s[1]}` } : undefined;
+  // ---------- pictures: the cover and the extra pictures, one slider (owner 2026-11-28) ----------
+  const pictures = [e.cover_url, ...(e.gallery_urls ?? [])].filter((u, i, all): u is string => !!u && all.indexOf(u) === i);
+  const size = (src: string): [number, number] | null => {
+    const s = src === e.cover_url && e.cover_width && e.cover_height ? ([e.cover_width, e.cover_height] as [number, number]) : e.media_sizes?.[src];
+    return s && s[0] > 0 && s[1] > 0 ? s : null;
   };
-  const gallery = (e.gallery_urls ?? []).filter((u) => !!u && u !== e.cover_url);
 
   const jsonLd = useMemo(
     () =>
@@ -238,35 +238,7 @@ function EventBody({ event: e, venues, parent }: { event: EventPageRow; venues: 
 
         <div className="ev-grid">
           <article className="ev-card">
-            <div className="ev-cover" data-empty={e.cover_url ? undefined : ""}>
-              {e.cover_url ? (
-                <img
-                  src={proxiedImageUrl(e.cover_url, 1600)}
-                  srcSet={proxiedImageSrcSet(e.cover_url, [640, 1080, 1600, 2048]) || undefined}
-                  sizes="(max-width: 600px) 100vw, (max-width: 1440px) calc(100vw - 536px), 904px"
-                  alt={e.title}
-                  style={ratio(e.cover_url)}
-                  decoding="async"
-                />
-              ) : null}
-            </div>
-
-            {gallery.length ? (
-              <div className="ev-pics">
-                {gallery.map((src, i) => (
-                  <img
-                    key={src}
-                    src={proxiedImageUrl(src, 1600)}
-                    srcSet={proxiedImageSrcSet(src, [640, 1080, 1600]) || undefined}
-                    sizes="(max-width: 600px) 100vw, 904px"
-                    alt={`ภาพรายละเอียด ${i + 1}`}
-                    style={ratio(src)}
-                    loading="lazy"
-                    decoding="async"
-                  />
-                ))}
-              </div>
-            ) : null}
+            <EventPictures pictures={pictures} title={e.title} size={size} />
 
             {about.length ? (
               <section aria-labelledby="ev-ab" className="ev-sec ev-about">
