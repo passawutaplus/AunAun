@@ -1,4 +1,4 @@
--- Rollback of 20261129100000_redesign_event_post.sql: event_save / event_submit / event_image_ok as before step 11.
+-- Rollback of 20261129100100_redesign_event_post.sql: event_save / event_submit / event_image_ok as before step 11.
 -- Picture sizes, insights and pictures saved in between stay in the rows; only the functions and the limit go back.
 -- The 8-picture check comes back NOT VALID, so events that already have more pictures keep them.
 

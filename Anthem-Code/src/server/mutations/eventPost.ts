@@ -1,6 +1,6 @@
 /**
  * EventPost (step 11): save / send an event of the signed-in member, and the files of its form.
- * Rules live in event_save / event_submit (migration 20261129100000_redesign_event_post.sql).
+ * Rules live in event_save / event_submit (migration 20261129100100_redesign_event_post.sql).
  */
 import { supabase } from "@/integrations/supabase/client";
 import type { Tier } from "@/core/subscription";

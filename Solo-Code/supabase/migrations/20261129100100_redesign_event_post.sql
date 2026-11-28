@@ -10,7 +10,7 @@
 --   * event_submit asks only what the mock asks: title, a start day and a place (open calls: link + deadline are
 --     checked by the page, so the old editor is not broken). No end day = a one-day event. Cover and description
 --     are no longer required; the team still reviews every member event. One published work is still required.
--- Rollback: supabase/manual/rollback-20261129100000_redesign_event_post.sql
+-- Rollback: supabase/manual/rollback-20261129100100_redesign_event_post.sql
 
 ALTER TABLE anthem.events DROP CONSTRAINT IF EXISTS events_gallery_urls_check;
 

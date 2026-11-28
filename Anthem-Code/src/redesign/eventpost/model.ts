@@ -1,6 +1,6 @@
 /**
  * EventPost (mock EventPost.dc.html) ↔ anthem.events. The form keeps the mock's fields; this file says where each
- * one lives (event_save `_data`, migration 20261129100000):
+ * one lives (event_save `_data`, migration 20261129100100):
  *   TYPE → category (Talk = talk_forum) · TITLE → title · COVER → cover_url + cover_size · DETAILS (pictures) →
  *   gallery_urls + media_sizes · ABOUT → description · OPEN CALL: DEADLINE / WHO CAN APPLY / HOW TO APPLY (one step
  *   a line) / PRIZES → insights deadline / eligibility / steps / benefits (the "Summary" of the Event page) ·
