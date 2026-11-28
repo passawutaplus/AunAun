@@ -29,7 +29,14 @@ export type DigestMember = {
   works: WorkSignal[];
 };
 
-export type BoardCall = {
+/** Cover picture of an open call or event (sizes may be missing on old rows). */
+type Cover = {
+  cover_url?: string | null;
+  cover_width?: number | null;
+  cover_height?: number | null;
+};
+
+export type BoardCall = Cover & {
   id: string;
   slug: string | null;
   title: string;
@@ -42,7 +49,7 @@ export type BoardCall = {
   closes_on: string;
 };
 
-export type BoardEvent = {
+export type BoardEvent = Cover & {
   id: string;
   slug: string | null;
   title: string;
@@ -157,11 +164,35 @@ export function planDigest(m: DigestMember, board: Board): DigestPlan {
 const SUPABASE_PUBLIC =
   /^https:\/\/zkflkpbmbozrchqncpzi\.supabase\.co\/storage\/v1\/object\/public\/.+\.(jpe?g|png|webp|avif)$/i;
 
-/** Work pictures go through the site's image resizer (Supabase egress), like the web app does. */
-export function emailImageUrl(src: string, site: string): string {
+/**
+ * Pictures go through the site's image resizer (Supabase egress), like the web app does. `width` must be
+ * one of images.sizes in Anthem-Code/vercel.json.
+ */
+export function emailImageUrl(src: string, site: string, width = 1080): string {
   return SUPABASE_PUBLIC.test(src)
-    ? `${site}/_vercel/image?url=${encodeURIComponent(src)}&w=1080&q=75`
+    ? `${site}/_vercel/image?url=${encodeURIComponent(src)}&w=${width}&q=75`
     : src;
+}
+
+const THUMB_W = 80;
+const THUMB_H = 60;
+
+/** Fixed 80×60 tile; the cover is fitted inside it (never cropped). No cover = the plain tile. */
+function thumbCell(c: Cover, href: string, site: string): string {
+  let img = "";
+  if (c.cover_url) {
+    const w = c.cover_width ?? 0;
+    const h = c.cover_height ?? 0;
+    // Unknown size: fill the tile's width and let the height follow (still no crop).
+    const fit =
+      w > 0 && h > 0
+        ? w / h >= THUMB_W / THUMB_H
+          ? { width: THUMB_W, height: Math.max(1, Math.round((THUMB_W * h) / w)) }
+          : { width: Math.max(1, Math.round((THUMB_H * w) / h)), height: THUMB_H }
+        : { width: THUMB_W, height: null };
+    img = `<a href="${escapeHtml(href)}" target="_blank" style="text-decoration:none"><img src="${escapeHtml(emailImageUrl(c.cover_url, site, 256))}" alt="" width="${fit.width}"${fit.height ? ` height="${fit.height}"` : ""} style="display:block;width:${fit.width}px;${fit.height ? `height:${fit.height}px` : `height:auto;max-height:${THUMB_H}px`};border:0;margin:0 auto"/></a>`;
+  }
+  return `<td width="${THUMB_W}" valign="top" style="width:${THUMB_W}px;padding:12px 14px 12px 0"><table role="presentation" width="${THUMB_W}" cellspacing="0" cellpadding="0" border="0"><tr><td width="${THUMB_W}" height="${THUMB_H}" align="center" valign="middle" bgcolor="${brand.surface}" style="width:${THUMB_W}px;height:${THUMB_H}px;background-color:${brand.surface};border-radius:6px;overflow:hidden">${img}</td></tr></table></td>`;
 }
 
 const num = (n: number) => n.toLocaleString("en-US");
@@ -202,10 +233,17 @@ function topWorkBlock(t: TopWork, site: string): string {
 <p style="margin:0 0 28px;font-size:13px;line-height:1.5;color:${brand.mute}">Views ${num(t.views)} · Likes ${num(t.likes)}</p>`;
 }
 
-function listRow(href: string, title: string, meta: string, last: boolean): string {
-  return `<tr><td style="padding:12px 0;${last ? "" : `border-bottom:1px solid ${brand.border};`}font-family:${FONT}">
+function listRow(
+  href: string,
+  title: string,
+  meta: string,
+  last: boolean,
+  thumb: { cover: Cover; site: string },
+): string {
+  const line = last ? "" : `border-bottom:1px solid ${brand.border};`;
+  return `<tr><td style="${line}padding:0"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr>${thumbCell(thumb.cover, href, thumb.site)}<td valign="top" style="padding:12px 0;font-family:${FONT}">
 <p style="margin:0 0 2px;font-size:15px;line-height:1.5"><a href="${escapeHtml(href)}" target="_blank" style="color:${brand.ink};text-decoration:none">${escapeHtml(title)}</a></p>
-<p style="margin:0;font-size:13px;line-height:1.5;color:${brand.mute}">${escapeHtml(meta)}</p></td></tr>`;
+<p style="margin:0;font-size:13px;line-height:1.5;color:${brand.mute}">${escapeHtml(meta)}</p></td></tr></table></td></tr>`;
 }
 
 const listTable = (rows: string, after = "") =>
@@ -258,6 +296,7 @@ export function renderDigest(
               s.call.title,
               callMeta(s.call, week.sendDay),
               i === plan.calls.length - 1,
+              { cover: s.call, site },
             ),
           )
           .join(""),
@@ -276,6 +315,7 @@ export function renderDigest(
               e.title,
               eventMeta(e),
               i === plan.events.length - 1,
+              { cover: e, site },
             ),
           )
           .join(""),

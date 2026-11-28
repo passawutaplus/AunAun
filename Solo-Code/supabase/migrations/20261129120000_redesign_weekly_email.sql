@@ -237,7 +237,8 @@ REVOKE ALL ON FUNCTION public.weekly_digest_members(date, uuid, integer, uuid[])
 GRANT EXECUTE ON FUNCTION public.weekly_digest_members(date, uuid, integer, uuid[]) TO service_role;
 
 -- 3. The same board for everyone: open calls closing in the 14 days from the sending Monday (closing day =
---    insights.deadline, else the last day, like the open-call reminders) and events starting that week.
+--    insights.deadline, else the last day, like the open-call reminders) and events starting that week,
+--    with their cover and its size (thumbnails, fitted without cropping).
 CREATE OR REPLACE FUNCTION public.weekly_digest_board(_week_start date)
 RETURNS jsonb
 LANGUAGE sql
@@ -247,14 +248,16 @@ SET search_path = ''
 AS $$
   WITH d AS (SELECT _week_start + 7 AS mon),
   calls AS (
-    SELECT e.id, e.slug, e.title, e.description, e.insights, e.cover_url, e.location_name, e.starts_on, e.ends_on,
+    SELECT e.id, e.slug, e.title, e.description, e.insights, e.cover_url, e.cover_width, e.cover_height,
+           e.location_name, e.starts_on, e.ends_on,
            coalesce(CASE WHEN (e.insights ->> 'deadline') ~ '^\d{4}-\d{2}-\d{2}$' THEN (e.insights ->> 'deadline')::date END,
                     e.ends_on) AS closes_on
       FROM anthem.events e
      WHERE e.category = 'open_call' AND e.status = 'published' AND e.parent_id IS NULL
   ),
   events AS (
-    SELECT e.id, e.slug, e.title, e.category, e.cover_url, e.location_name, e.starts_on, e.ends_on, e.is_featured
+    SELECT e.id, e.slug, e.title, e.category, e.cover_url, e.cover_width, e.cover_height, e.location_name,
+           e.starts_on, e.ends_on, e.is_featured
       FROM anthem.events e, d
      WHERE e.category <> 'open_call' AND e.status = 'published' AND e.parent_id IS NULL
        AND e.starts_on BETWEEN d.mon AND d.mon + 6

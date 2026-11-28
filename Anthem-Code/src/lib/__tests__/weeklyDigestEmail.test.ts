@@ -54,6 +54,9 @@ const board: Board = {
       title: "ประกวดออกแบบและตั้งชื่อ Mascot",
       description: "",
       insights: null,
+      cover_url: "https://zkflkpbmbozrchqncpzi.supabase.co/storage/v1/object/public/project-media/e/mascot.png",
+      cover_width: 1600,
+      cover_height: 900,
       location_name: null,
       starts_on: null,
       ends_on: "2026-12-10",
@@ -146,6 +149,13 @@ describe("the e-mail", () => {
     expect(mail.html.match(/\/exhibition\/e\d/g)?.length).toBe(4);
     expect(mail.html).toContain("ดู Event สัปดาห์นี้ทั้งหมด 10 งาน");
     expect(mail.html).toContain("พ. 2 ธ.ค. · Meetup · Attika Studio");
+  });
+
+  it("shows a thumbnail tile on every row, the cover fitted inside (owner 2026-11-28)", () => {
+    // 3 + 4 rows, each with an 80×60 tile; only the Mascot call has a cover (wide → 80×45, resized to 256).
+    expect(mail.html.match(/height="60" align="center"/g)?.length).toBe(6);
+    expect(mail.html).toContain('width="80" height="45"');
+    expect(mail.html).toContain(encodeURIComponent("project-media/e/mascot.png") + "&amp;w=256");
   });
 
   it("has the one-click turn-off link and the redesign settings page", () => {
