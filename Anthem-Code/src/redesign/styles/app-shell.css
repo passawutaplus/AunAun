@@ -127,6 +127,9 @@ html[data-native-app] .sc-app .sc-main {
 
   .sc-app .ap-hd-below .mn-chips {
     gap: 2px;
+    /* no fade at the right edge (owner 2026-11-28): chips just scroll */
+    -webkit-mask-image: none;
+    mask-image: none;
   }
 
   .sc-app .ap-hd-below .mn-chip {
