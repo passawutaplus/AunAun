@@ -140,6 +140,16 @@ Y.L.A Creative Assets Space, Yala https://www.facebook.com/profile.php?id=100064
 TCDC Songkhla https://www.facebook.com/tcdcsongkhla · TCDC Khon Kaen https://www.facebook.com/TCDCKhonKaen ·
 Pakk Taii Design Week https://www.facebook.com/pakktaiidesignweek · Illust Fusion https://www.facebook.com/illustfusion.
 
+Followed with the owner's account (2026-11-29): the pages above plus art4d (https://www.facebook.com/art4dMagazine,
+monthly CALENDAR posts). Joined groups. These are discovery only: open the organiser's own post before using any event.
+- กลุ่มแจ้งข่าวงานศิลปะ อีเว้นต์ นิทรรศการ เทศกาลทั่วไทย https://www.facebook.com/groups/897411652441774/
+- ART Hopping (exhibition / event updates) https://www.facebook.com/groups/1914117565710512/
+- Workshops in BKK https://www.facebook.com/groups/1447534295422567/
+- workshop heal jai https://www.facebook.com/groups/3593841967572571/
+- สายผลิตชอบออกบูธ (booth calls for makers) https://www.facebook.com/groups/1475566276854836/
+
+Each run, start with the Facebook home feed and these groups (newest posts), then check the organiser pages.
+
 How: Facebook's event search is weak for Thai places. Use post search (`/search/posts/?q=<event name>`)
 to verify a known lead, then read the organiser's own post or event (`/<page>/upcoming_hosted_events`).
 Use the post or event permalink as `source_url`. Leave Facebook pictures out: their links are long and expire.
