@@ -305,19 +305,18 @@ export default function RedesignShell() {
         </footer>
       ) : null}
 
+      {/* Icons only on phones (owner 2026-11-28); the names stay as aria-labels. */}
       <nav className="sc-tb" aria-label="เมนูหลัก">
-        <Link to={SC_LINKS.home} data-k="home" aria-current={tab === "home" ? "page" : undefined}>
+        <Link to={SC_LINKS.home} data-k="home" aria-label="หน้าแรก" aria-current={tab === "home" ? "page" : undefined}>
           <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" strokeWidth="1.4" strokeLinejoin="round">
             <path d="M4 10.5L12 4l8 6.5V20h-5.5v-5h-5v5H4z" />
           </svg>
-          หน้าแรก
         </Link>
-        <Link to={SC_LINKS.events} data-k="event" aria-current={tab === "event" ? "page" : undefined}>
+        <Link to={SC_LINKS.events} data-k="event" aria-label="Event" aria-current={tab === "event" ? "page" : undefined}>
           <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
             <rect x="3.5" y="5" width="17" height="15.5" rx="2" />
             <path d="M3.5 10h17M8 3v4M16 3v4" />
           </svg>
-          Event
         </Link>
         <Link to={user ? SC_LINKS.upload : SC_LINKS.login} data-k="add" aria-label="ลงงาน">
           <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" strokeWidth="1.6" strokeLinecap="round">
@@ -329,12 +328,10 @@ export default function RedesignShell() {
           <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" strokeWidth="1.4" strokeLinejoin="round">
             <path d="M12 3.5a8.5 8.5 0 0 1 0 17c-1.5 0-2.9-.4-4.1-1L3.5 20.5l1.1-4.2A8.5 8.5 0 0 1 12 3.5z" />
           </svg>
-          แชท
           {chatUnread ? <span className="sc-tb-bd" aria-hidden="true">{chatUnread}</span> : null}
         </Link>
-        <Link to={user ? SC_LINKS.myProfile : SC_LINKS.login} data-k="me" aria-current={tab === "me" ? "page" : undefined}>
+        <Link to={user ? SC_LINKS.myProfile : SC_LINKS.login} data-k="me" aria-label="ฉัน" aria-current={tab === "me" ? "page" : undefined}>
           <span className="sc-tb-av" aria-hidden="true" style={bg(avatar)} />
-          ฉัน
         </Link>
       </nav>
 
