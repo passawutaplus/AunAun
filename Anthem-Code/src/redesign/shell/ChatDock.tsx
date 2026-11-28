@@ -17,7 +17,8 @@ import { SC_LINKS } from "../routes";
 import { usePresence } from "../lib/usePresence";
 import { clock, dayWord, listTime, newDay } from "../chat/chatFormat";
 import { useChatActions, useChatRooms, useRoomMessages, useUnreadRooms, type ChatMsg, type ChatRoom, type ChatWork } from "../chat/useChatStore";
-import { onEscape } from "./panels";
+import { getBackgroundLocation } from "@/lib/projectOverlay";
+import { onEscape, workOverlayOpen } from "./panels";
 import "../styles/chat-dock.css";
 
 /** Big chat popup = the chat page itself, embedded (mock: dc-import name="Chat" embedded). */
@@ -77,7 +78,9 @@ const BigIcon = ({ size }: { size: number }) => (
  * header chat icon open the big popup (the Chat page, embedded). Hidden on phones (≤600px), which use /chat.
  */
 const ChatDock = forwardRef<ChatDockHandle>(function ChatDock(_props, ref) {
-  const { pathname } = useLocation();
+  const location = useLocation();
+  // A work opening over the page (or closing again) is not "another page": the popups stay.
+  const page = getBackgroundLocation(location.state)?.pathname ?? location.pathname;
   const unread = useUnreadRooms();
   const actions = useChatActions();
 
@@ -183,14 +186,15 @@ const ChatDock = forwardRef<ChatDockHandle>(function ChatDock(_props, ref) {
     closeList();
     closeWin();
     setBig(null);
-  }, [pathname, closeList, closeWin]);
+  }, [page, closeList, closeWin]);
 
-  // Esc while the focus is elsewhere on the page.
+  // Esc while the focus is elsewhere on the page. A work open over the page answers first (the chat waits for the next Esc).
   const anyOpen = list.isOpen || win.isOpen;
   useEffect(
     () =>
       anyOpen
         ? onEscape(() => {
+            if (workOverlayOpen()) return;
             closeList();
             closeWin();
           })
