@@ -413,6 +413,7 @@ const RedesignMain = lazy(() => import("./redesign/pages/Main.tsx"));
 const RedesignWork = lazy(() => import("./redesign/pages/Work.tsx"));
 const RedesignProfile = lazy(() => import("./redesign/pages/Profile.tsx"));
 const RedesignEvent = lazy(() => import("./redesign/pages/Event.tsx"));
+const RedesignLogin = lazy(() => import("./redesign/pages/Login.tsx"));
 const RedesignLocations = lazy(() => import("./redesign/pages/Locations.tsx"));
 const RedesignWorkOverlay = lazy(() =>
   import("./redesign/pages/Work.tsx").then((m) => ({ default: m.WorkOverlay })),
@@ -514,6 +515,10 @@ const App = () => (
                           <Route index element={<RedesignGetInTouch />} />
                         </Route>
                         {/* Profile on its old URLs: /@handle reaches /:vanityHandle (React Router cannot match `/@:x`). */}
+                        {/* Login, sign-up and password pages on their old URLs (step 7). */}
+                        <Route path="/auth" element={<RedesignLogin />} />
+                        <Route path="/auth/forgot" element={<RedesignLogin />} />
+                        <Route path="/reset-password" element={<RedesignLogin />} />
                         {/* Event or venue on its old URL (step 6). */}
                         <Route path="/exhibition/:id" element={<RedesignEvent />} />
                         <Route path="/exhibition/:id/locations" element={<RedesignLocations />} />

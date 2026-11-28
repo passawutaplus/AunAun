@@ -6,6 +6,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useChatInboxBadgeCount } from "@/hooks/useChat";
 import { useNotifications } from "@/core/notifications";
+import { hasCompletedProfileOnboarding } from "@/hooks/useFeedInterests";
+import { getMyOnboarding } from "@/server/queries/account";
 import { proxiedImageUrl } from "@/lib/imageProxy";
 import { signOutApp } from "@/lib/signOutApp";
 import { usePresence } from "../lib/usePresence";
@@ -14,6 +16,7 @@ import { homeEventsQuery } from "../main/useHomeEvents";
 import { SC_LINKS, shellPageFor, type ShellPage } from "../routes";
 import AccountMenu from "./AccountMenu";
 import CalendarPanel from "./CalendarPanel";
+import WelcomePanel from "./WelcomePanel";
 import NewChooser from "./NewChooser";
 import NotificationPanel from "./NotificationPanel";
 import SearchPanel from "./SearchPanel";
@@ -45,6 +48,15 @@ export default function RedesignShell() {
 
   const { user, loading } = useAuth();
   const { data: profile } = useProfile(user?.id);
+  // New account: sign-up step 2 ("Nice to meet you", name + CATEGORY) over the page until it is done.
+  const { data: onboarding } = useQuery({
+    queryKey: ["sc-onboarding", user?.id],
+    queryFn: () => getMyOnboarding(user!.id),
+    enabled: !!user,
+    staleTime: 5 * 60_000,
+  });
+  const [welcomeHidden, setWelcomeHidden] = useState(false);
+  const needsWelcome = !!user && !!onboarding && !hasCompletedProfileOnboarding(onboarding) && !welcomeHidden && cfg.page !== "login";
   const { data: chatUnread = 0 } = useChatInboxBadgeCount();
   const { items: inbox, loading: inboxLoading, markRead, markAllRead } = useNotifications(user?.id);
   // Only the kinds the new design has (no hiring, collab, KYC …); the bell counts the same rows the panel shows.
@@ -364,6 +376,13 @@ export default function RedesignShell() {
       {spotlight.mounted ? <SearchPanel top={spot.top} centred={spot.centred} leaving={spotlight.leaving} onClose={closePanel} /> : null}
       {user && chooser.mounted ? <NewChooser leaving={chooser.leaving} onClose={closePanel} /> : null}
       {calendar.mounted ? <CalendarPanel leaving={calendar.leaving} onClose={closePanel} /> : null}
+      {needsWelcome ? (
+        <WelcomePanel
+          userId={user!.id}
+          initialName={onboarding?.display_name && onboarding.display_name !== user?.email?.split("@")[0] ? onboarding.display_name : ""}
+          onClose={() => setWelcomeHidden(true)}
+        />
+      ) : null}
       {user && noti.mounted ? (
         <NotificationPanel
           rows={notiRows}

@@ -51,6 +51,8 @@ const PAGES: ReadonlyArray<{ match: RegExp; page: ShellPage }> = [
   { match: /^\/me\/feedback\/?$/, page: { page: "feedback", tabbar: true, tab: "", footer: true } },
   { match: /^\/error\/404\/?$/, page: { page: "not-found", tabbar: true, tab: "", footer: true } },
   { match: /^\/learn\/?$/, page: { page: "get-in-touch", tabbar: true, tab: "", footer: true } },
+  // Login, sign-up and password pages (step 7): the mock's centre box only, no header, footer or tab bar.
+  { match: /^\/(auth|auth\/forgot|reset-password)\/?$/, page: { page: "login", tabbar: false, tab: "", footer: false, header: "none" } },
   // Someone's profile (step 5), on the old URLs /@handle and /u/:id.
   { match: /^\/(@[^/]+|u\/[^/]+)\/?$/, page: { page: "profile", tabbar: true, tab: "", footer: true, back: true } },
   // An event or venue (step 6), on its old URL. Phones hide the header; the page has its own bottom bar.
