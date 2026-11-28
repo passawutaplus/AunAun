@@ -33,6 +33,8 @@ export default function CalendarPanel({ leaving, onClose }: Props) {
   const now = new Date();
   const today = { y: now.getFullYear(), m: now.getMonth(), d: now.getDate() };
   const [sel, setSel] = useState(today);
+  // "i" next to Follow in Google Calendar: what the button does (owner 2026-11-28).
+  const [info, setInfo] = useState(false);
   const closeRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -194,6 +196,34 @@ export default function CalendarPanel({ leaving, onClose }: Props) {
               <path d="M7 17L17 7M9 7h8v8" />
             </svg>
           </a>
+          <button
+            type="button"
+            className="cal-info-btn"
+            aria-label="Follow in Google Calendar คืออะไร"
+            aria-expanded={info}
+            aria-controls="sc-cal-info"
+            onClick={() => setInfo((v) => !v)}
+          >
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.5" strokeLinecap="round">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 11v5.5" />
+              <path d="M12 7.6v.01" strokeWidth="2.2" />
+            </svg>
+          </button>
+          {info ? (
+            <div id="sc-cal-info" className="cal-info" role="note">
+              <p className="cal-info-h">ติดตามปฏิทินนี้ใน Google Calendar</p>
+              <ul>
+                <li>กดแล้ว Google Calendar จะเปิดขึ้นมา กด “เพิ่ม” ได้เลย</li>
+                <li>อีเว้นท์ของ SAMECOR จะขึ้นในปฏิทินคุณ แยกเป็นอีกปฏิทิน</li>
+                <li>มีงานใหม่ก็อัปเดตเอง (Google ดึงใหม่ทุกไม่กี่ชั่วโมง)</li>
+                <li>ไม่อยากเห็นแล้ว ลบปฏิทินนี้ออกใน Google Calendar ได้ทุกเมื่อ</li>
+              </ul>
+              <button type="button" className="cal-info-ok" onClick={() => setInfo(false)}>
+                เข้าใจแล้ว
+              </button>
+            </div>
+          ) : null}
         </div>
       </div>
     </div>
