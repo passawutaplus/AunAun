@@ -1,5 +1,7 @@
 import { lazy, Suspense, useState } from "react";
 import { instagramHandle, websiteLabel } from "../lib/contactLinks";
+import { SocialRows } from "./ProfileExtras";
+import { hasSocials, NO_SOCIALS, type Socials } from "./socials";
 import { count } from "./tiles";
 
 // The CV and its editor pull in the A4 templates, the PDF builder and the old editor kit: only when About opens.
@@ -19,6 +21,7 @@ export default function AboutPanel({
   instagram,
   website,
   email,
+  socials = NO_SOCIALS,
   cvUserId,
   cvOwner = false,
 }: {
@@ -34,6 +37,8 @@ export default function AboutPanel({
   instagram: string | null;
   website: string | null;
   email: string | null;
+  /** Facebook, LINE and other links (already filtered by the profile's visibility). */
+  socials?: Socials;
   /** Whose CV to show under the short About (all of it: experience, education, awards…). */
   cvUserId?: string;
   /** My Profile: "แก้ CV" opens the CV editor, an empty CV shows a "make one" box. */
@@ -68,7 +73,7 @@ export default function AboutPanel({
             <dt>ผู้ติดตาม</dt>
             <dd>{count(followers)} คน</dd>
           </dl>
-          {ig || web || mail ? (
+          {ig || web || mail || hasSocials(socials) ? (
             <div className="pf-contact" aria-label="ติดต่อ">
               <h4>CONTACT</h4>
               {ig ? (
@@ -92,6 +97,7 @@ export default function AboutPanel({
                   <i aria-hidden="true">↗</i>
                 </a>
               ) : null}
+              <SocialRows s={socials} />
             </div>
           ) : null}
         </div>
@@ -99,7 +105,7 @@ export default function AboutPanel({
       {cvUserId ? (
         <>
           <Suspense fallback={null}>
-            <AboutCv userId={cvUserId} owner={cvOwner} shownLinks={[ig, web, mail]} topBio={bio} topTools={tools} onEdit={cvOwner ? () => setEditCv(true) : undefined} />
+            <AboutCv userId={cvUserId} owner={cvOwner} shownLinks={[ig, web, mail, socials.facebook, ...socials.links.map((l) => l.href)]} shownLine={socials.line} topBio={bio} topTools={tools} onEdit={cvOwner ? () => setEditCv(true) : undefined} />
           </Suspense>
           {cvOwner && editCv ? (
             <Suspense fallback={null}>

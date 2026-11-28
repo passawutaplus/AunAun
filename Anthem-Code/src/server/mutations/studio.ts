@@ -16,6 +16,11 @@ export type StudioProfilePatch = Partial<{
   contact_email: string | null;
   website: string | null;
   avatar_url: string;
+  facebook: string | null;
+  line_id: string | null;
+  social_links: { id: string; title: string; url: string }[];
+  cover_url: string | null;
+  cover_original_url: string | null;
 }>;
 
 export async function saveStudioProfile(userId: string, patch: StudioProfilePatch): Promise<void> {

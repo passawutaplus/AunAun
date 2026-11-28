@@ -84,6 +84,7 @@ export default function AboutCv({
   userId,
   owner = false,
   shownLinks = [],
+  shownLine = "",
   topBio = "",
   topTools = "",
   onEdit,
@@ -93,6 +94,8 @@ export default function AboutCv({
   owner?: boolean;
   /** Links the short About already shows (Instagram, website, email) — not listed twice. */
   shownLinks?: readonly string[];
+  /** LINE ID the short About already shows. */
+  shownLine?: string;
   /** Bio shown above; the CV's own About text appears only when it says something else. */
   topBio?: string;
   /** The short About's tools line: skills already listed there are not repeated as chips. */
@@ -142,7 +145,12 @@ export default function AboutCv({
   }
 
   const shown = new Set(shownLinks.filter(Boolean).map(linkKey));
-  const contacts = model.contacts.filter((c) => c.kind !== "profile" && !(c.href && shown.has(linkKey(c.href))));
+  const contacts = model.contacts.filter(
+    (c) =>
+      c.kind !== "profile" &&
+      !(c.href && shown.has(linkKey(c.href))) &&
+      !(c.kind === "line" && shownLine && c.value.trim().toLowerCase() === shownLine.trim().toLowerCase()),
+  );
   const listed = new Set(topTools.split(",").map((t) => t.trim().toLowerCase()).filter(Boolean));
   const skills = model.craftSkills.filter((s) => !listed.has(s.trim().toLowerCase()));
   const cvBio = model.bio.trim() && model.bio.trim() !== topBio.trim() ? model.bio.trim() : "";

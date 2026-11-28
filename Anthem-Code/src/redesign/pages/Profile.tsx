@@ -11,6 +11,8 @@ import { parseProfileVisibility } from "@/lib/profileVisibility";
 import { SC_LINKS } from "../routes";
 import { instagramHandle, instagramUrl, mailUrl, websiteLabel, websiteUrl } from "../lib/contactLinks";
 import AboutPanel from "../profile/AboutPanel";
+import { ProfileCover, SocialIcons } from "../profile/ProfileExtras";
+import { hasSocials, NO_SOCIALS, socialsOf } from "../profile/socials";
 import { count, toTile, toolsOf, type Tile } from "../profile/tiles";
 import ScLoader from "../main/ScLoader";
 import { profileHref } from "../main/useCreators";
@@ -155,10 +157,12 @@ function ProfileView({ slug, byId }: { slug: string; byId: boolean }) {
     : "";
   const followerList = followerIds.slice(0, 20).map((id) => faceMap[id]).filter((f): f is NonNullable<typeof f> => !!f);
 
-  const contactIcons = ig || mail || web;
+  const socials = vis.socials ? socialsOf(p) : NO_SOCIALS;
+  const contactIcons = ig || mail || web || hasSocials(socials);
 
   return (
     <main className="sc-main pf-m">
+      <ProfileCover url={p.cover_url} />
       <div className="pf-grid">
         <aside aria-label="ข้อมูลศิลปิน" className="pf-aside">
           {avatar ? <img alt="" src={avatar} className="pf-av" /> : <span aria-hidden="true" className="pf-av" />}
@@ -206,6 +210,7 @@ function ProfileView({ slug, byId }: { slug: string; byId: boolean }) {
                   <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.33" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="8.5" /><path d="M3.5 12h17M12 3.5c2.5 2.6 2.5 14.4 0 17M12 3.5c-2.5 2.6-2.5 14.4 0 17" /></svg>
                 </a>
               ) : null}
+              <SocialIcons s={socials} />
             </div>
           ) : null}
           {followerLine ? (
@@ -325,6 +330,7 @@ function ProfileView({ slug, byId }: { slug: string; byId: boolean }) {
               instagram={p.instagram}
               website={p.website}
               email={p.contact_email}
+              socials={socials}
               cvUserId={p.user_id}
             />
           ) : null}
