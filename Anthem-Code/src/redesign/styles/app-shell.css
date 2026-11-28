@@ -85,8 +85,35 @@ html[data-native-app] .sc-app .sc-hd {
     min-width: 0;
   }
 
+  /* owner 2026-11-28: a lower header — the chip row tucks up under the bar; chips are words, no outline
+     (the chosen one stays a dark capsule). The solid app header needs no room for the web's fade. */
+  html[data-native-app] .sc-app .sc-hd {
+    padding-bottom: 4px;
+  }
+
+  .sc-app .sc-hd-in:has(.ap-hd-below) {
+    min-height: 0;
+    padding-top: 2px;
+  }
+
   .sc-app .ap-hd-below .mn-fld {
-    margin: 4px -8px 8px 0;
+    margin: -4px -8px 6px 0;
+  }
+
+  .sc-app .ap-hd-below .mn-chips {
+    gap: 2px;
+  }
+
+  .sc-app .ap-hd-below .mn-chip {
+    height: 32px;
+    padding: 0 12px;
+    border-color: transparent;
+    background: none;
+  }
+
+  .sc-app .ap-hd-below .mn-chip[aria-pressed="true"] {
+    background: #282929;
+    border-color: #282929;
   }
 
   .sc-app:has(.sc-hd-slot > *) .mn {
