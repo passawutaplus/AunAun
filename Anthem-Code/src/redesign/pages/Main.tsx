@@ -268,10 +268,8 @@ export default function Main() {
       const options = CREATOR_VIEWS.map((v) => [v === "discover" ? "" : v, CREATOR_VIEW_LABEL[v]] as const);
       return [{ key: "view", label: "View", value: here && crView !== "discover" ? crView : "", options }, cats];
     }
-    return [
-      { key: "view", label: "When", value: here && evView !== "all" ? evView : "", options: EVENT_VIEWS.map((v) => [v === "all" ? "" : v, EVENT_VIEW_LABEL[v]] as const) },
-      { key: "type", label: "Type", value: here ? (evType ?? "") : "", options: [["", "All"], ...EVENT_TYPES] },
-    ];
+    // Event: When + Type sit on the Event page under the header (owner 2026-11-28), not in the search screen.
+    return [];
   };
   // What the page is filtered by, as tags over the card (the rows themselves are in the search screen).
   const appActiveFilters = (): ActiveFilter[] => {
@@ -281,12 +279,7 @@ export default function Main() {
     if (mode === "creators" && crView !== "discover") {
       out.push({ key: "view", name: CREATOR_VIEW_LABEL[crView], label: CREATOR_VIEW_LABEL[crView], onRemove: () => set("view", null) });
     }
-    if (mode === "event" && evView !== "all") out.push({ key: "view", name: EVENT_VIEW_LABEL[evView], label: EVENT_VIEW_LABEL[evView], onRemove: () => set("view", null) });
     if (mode !== "event" && category) out.push({ key: "cat", name: category, label: category, onRemove: () => set("cat", null) });
-    if (mode === "event" && evType) {
-      const name = EVENT_TYPES.find(([k]) => k === evType)?.[1] ?? evType;
-      out.push({ key: "type", name, label: name, onRemove: () => set("type", null) });
-    }
     if (mode === "showcase" && colors.length) {
       const label = (
         <>
@@ -408,7 +401,8 @@ export default function Main() {
           </div>
         </div>
       ) : (
-        <div className="mn-fld">
+        // The app shows this row too (owner 2026-11-28), right under the header, like the website.
+        <div className="mn-fld" data-mode="event">
           <ViewMenu label="ช่วงเวลา" options={EVENT_VIEWS} labels={EVENT_VIEW_LABEL} value={evView} onPick={(v) => set("view", v === "all" ? null : v)} />
           <span aria-hidden="true" className="mn-fld-rule" />
           <div className="mn-chips" role="group" aria-label="ประเภทอีเว้นท์">

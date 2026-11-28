@@ -118,7 +118,6 @@ export default function AppSearch({ initialMode, initialValue, colors, leaving, 
           </div>
         ) : (
           <>
-            {recent.length ? <span className="as-flabel">Recent</span> : null}
             {recent.length ? (
               <ul className="as-recent">
                 {recent.map((q) => (

@@ -61,8 +61,10 @@ html[data-native-app] .sc-app .sc-hd {
     margin-left: auto;
   }
 
-  /* search and the tabs moved up; categories / views and the Event search moved into the search screen */
-  .sc-app:has(.sc-hd-slot > *) :is(.mn-row, .mn-fld, .mn-es) {
+  /* search and the tabs moved up; categories / views and the Event search moved into the search screen.
+     The Event page keeps its When + Type row under the header, like the website (owner 2026-11-28). */
+  .sc-app:has(.sc-hd-slot > *) :is(.mn-row, .mn-es),
+  .sc-app:has(.sc-hd-slot > *) .mn-fld:not([data-mode="event"]) {
     display: none;
   }
 
