@@ -1,8 +1,12 @@
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useFeedProjectSelect } from "@/hooks/useFeedProjectSelect";
+import { parseProfileVisibility } from "@/lib/profileVisibility";
 import { getCreatorProfiles } from "@/server/queries/creators";
 import { getHomeHiddenIds, getShowcaseRows } from "@/server/queries/showcase";
+import { workSearchTextQuery } from "@/server/queries/siteSearch";
 import { listedOnCreators } from "../lib/visibility";
+import { matchesFind } from "./homeFind";
 
 export const CREATOR_VIEWS = ["discover", "new", "following"] as const;
 export type CreatorView = (typeof CREATOR_VIEWS)[number];
@@ -19,6 +23,8 @@ export type Creator = {
   joinedAt: number;
   /** Up to four newest covers. */
   covers: string[];
+  /** What the text filter (`?find=`) reads: name, handle, role, skills, categories, city, titles of their works. */
+  words: string[];
 };
 
 /** Works looked at to find who has something on show. Enough for today's size; a database view comes with scale. */
@@ -43,13 +49,18 @@ export const homeWorksQuery = {
 export const profileHref = (p: { user_id: string; username: string | null }) =>
   p.username ? `/@${p.username}` : `/u/${p.user_id}`;
 
-export function useCreators() {
+/** `find` (`?find=`) keeps the creators whose words or works (title, category, tags, tools) match: the old Creators search. */
+export function useCreators(find = "") {
   const visible = useFeedProjectSelect();
-  return useQuery({
+  const q = find.trim();
+  const words = useQuery({ ...workSearchTextQuery, enabled: !!q });
+  const query = useQuery({
     ...homeWorksQuery,
     select: ({ works, profiles }): Creator[] => {
       const covers = new Map<string, string[]>();
+      const titles = new Map<string, string[]>();
       for (const w of visible(works)) {
+        if (w.owner_id) titles.set(w.owner_id, [...(titles.get(w.owner_id) ?? []), w.title ?? "", w.sc_category ?? ""]);
         const cover = w.cover_url || w.gallery_urls?.[0];
         if (!w.owner_id || !cover) continue;
         const list = covers.get(w.owner_id) ?? [];
@@ -71,8 +82,29 @@ export function useCreators() {
           sub: [categories[0], p.location?.trim()].filter(Boolean).join(" · "),
           joinedAt: p.created_at ? Date.parse(p.created_at) : 0,
           covers: own,
+          words: [
+            p.display_name,
+            p.username,
+            p.role,
+            ...(parseProfileVisibility(p.public_visibility).skills ? (p.skills ?? []) : []),
+            ...categories,
+            p.location,
+            ...(titles.get(p.user_id) ?? []),
+          ].filter((w): w is string => !!w),
         }];
       });
     },
   });
+
+  const data = useMemo(() => {
+    if (!q || !query.data) return query.data;
+    // Tags and tools of each creator's works; without them the match falls back to the creator's own words.
+    const more = new Map<string, string[]>();
+    for (const w of words.data ?? []) {
+      if (w.owner_id) more.set(w.owner_id, [...(more.get(w.owner_id) ?? []), ...(w.tags ?? []), ...(w.tools ?? [])]);
+    }
+    return query.data.filter((c) => matchesFind(q, [...c.words, ...(more.get(c.id) ?? [])]));
+  }, [q, query.data, words.data]);
+
+  return { ...query, data, isPending: query.isPending || (!!q && words.isPending) };
 }

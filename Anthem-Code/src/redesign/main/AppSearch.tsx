@@ -43,7 +43,7 @@ type Props = {
   colors: string[];
   leaving: boolean;
   onClose: () => void;
-  /** Runs the Event search on the home page (`?tab=event&q=`); the screen closes itself. */
+  /** Filters the home page: Showcase / Creators grid (`?find=`), Event list (`?tab=event&q=`). The screen closes itself. */
   onSubmit: (mode: HomeMode, query: string) => void;
   onColors: (colors: string[]) => void;
   /** The view / category / type buttons of a mode (they moved here from the page, owner 2026-11-28). */
@@ -55,8 +55,8 @@ type Props = {
 /**
  * Store app search (owner 2026-11-28: "เหมือนแอปเก่าเป๊ะ"): the old app's full-screen phone search in the new
  * design. Title, recent searches, the mode pill and the text box sit at the bottom near the thumb; Showcase
- * also has the colour search. Typing lists matching works / creators / events of that mode; Event's search
- * button runs the Event tab's own search.
+ * also has the colour search. Typing lists matching works / creators / events of that mode; the search button
+ * filters that tab of the home page and closes the screen, like the old app.
  */
 export default function AppSearch({ initialMode, initialValue, colors, leaving, onClose, onSubmit, onColors, filtersFor, onFilter }: Props) {
   const [mode, setMode] = useState<HomeMode>(initialMode);
@@ -93,18 +93,12 @@ export default function AppSearch({ initialMode, initialValue, colors, leaving, 
     [onClose],
   );
 
-  // Only the Event tab filters its list by text (`?tab=event&q=`). Showcase / Creators have no text filter
-  // (home `?q=` opens the Spotlight panel instead), so their matches stay listed right here.
+  // Search filters the feed (old app): Showcase / Creators by `?find=`, Event by its own search (`?q=`).
   const submit = (q: string) => {
     const query = q.trim();
     if (query) record(query);
-    if (mode === "event") {
-      onSubmit(mode, query);
-      onClose();
-      return;
-    }
-    setValue(query);
-    inputRef.current?.blur();
+    onSubmit(mode, query);
+    onClose();
   };
 
   return (
@@ -128,7 +122,7 @@ export default function AppSearch({ initialMode, initialValue, colors, leaving, 
               </Link>
             ))}
             {ready && !shown.length ? (
-              <p className="as-p">{mode === "event" ? "กดค้นหาเพื่อดูทั้งหมดได้เลย" : "ไม่เจอที่ตรงกัน ลองคำอื่นดูนะ"}</p>
+              <p className="as-p">กดค้นหาเพื่อดูทั้งหมดได้เลย</p>
             ) : null}
           </div>
         ) : (
