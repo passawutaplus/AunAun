@@ -1,24 +1,11 @@
 /* Store app layout (owner 2026-11-28, arranged like the old app, drawn in Beam's design) + the glass tab bar.
-   html[data-native-app] = inside the Android / iOS app; "app home" = the header slot is filled (shell/appHeaderSlot.ts). */
+   html[data-native-app] = inside the Android / iOS app; "app home" = the header slot is filled (shell/appHeaderSlot.ts).
+   The app layout is for phones (≤600px) only: wider screens keep the mock's layout (owner: "ใน pc เอาโหมดกลับมาที่เดิม"). */
 
-/* ---------- every app header: logo mark only, under the safe area ---------- */
+/* ---------- every app header: under the safe area; on phones the mark only and it hides while scrolling ---------- */
 html[data-native-app] .sc-app .sc-hd {
   padding-top: max(22px, env(safe-area-inset-top));
   transition: transform .3s var(--sc-ease);
-}
-
-/* the mark only, no "samecor." (the app icon already says it) */
-html[data-native-app] .sc-app .sc-hd-logo img {
-  height: 26px;
-  aspect-ratio: 1;
-  width: auto;
-  object-fit: cover;
-  object-position: left center;
-}
-
-/* top-level pages: slides up while scrolling down, back on scroll up (useAppHeaderChrome); stays while a key is in it */
-.sc-app .sc-hd[data-hide]:not(:focus-within) {
-  transform: translateY(-100%);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -31,27 +18,117 @@ html[data-native-app] .sc-app .sc-hd-logo img {
   html[data-native-app] .sc-app .sc-hd {
     padding-top: max(2px, env(safe-area-inset-top));
   }
+
+  /* app on a phone: the mark only, no "samecor." — little room, and the app icon already says it */
+  html[data-native-app] .sc-app .sc-hd-logo img {
+    height: 26px;
+    aspect-ratio: 1;
+    width: auto;
+    object-fit: cover;
+    object-position: left center;
+  }
+
+  /* top-level pages: slides up while scrolling down, back on scroll up (useAppHeaderChrome); stays while a key is in it */
+  .sc-app .sc-hd[data-hide]:not(:focus-within) {
+    transform: translateY(-100%);
+  }
 }
 
-/* ---------- app home header: [mark] …… 🔔 🔍 [▦ 👥 ▥] ---------- */
+/* ---------- app home on a phone: [mark] …… 🔔 🔍 [▦ 👥] ---------- */
 .sc-app .sc-hd-slot {
   display: contents; /* empty on the website: no box, no gap */
 }
 
-.sc-app .sc-hd-in:has(.sc-hd-slot > *) {
-  justify-content: flex-start;
-  flex-wrap: nowrap;
-  gap: 4px;
+@media (min-width: 601px) {
+  .sc-app .sc-hd .sc-hd-slot > *,
+  .sc-app .mn .ap-active {
+    display: none;
+  }
 }
 
-.sc-app .sc-hd-in:has(.sc-hd-slot > *) .sc-hd-nav {
-  margin-left: auto;
+@media (max-width: 600px) {
+  .sc-app .sc-hd-in:has(.sc-hd-slot > *) {
+    justify-content: flex-start;
+    gap: 4px;
+  }
+
+  .sc-app .sc-hd-in:has(.sc-hd-slot > *) .sc-hd-nav {
+    margin-left: auto;
+  }
+
+  /* search and the tabs moved up; categories / views and the Event search moved into the search screen */
+  .sc-app:has(.sc-hd-slot > *) :is(.mn-row, .mn-fld, .mn-es) {
+    display: none;
+  }
+
+  .sc-app:has(.sc-hd-slot > *) .mn {
+    padding-top: 12px;
+  }
+
+  /* the line split the in-page Event search from its results; that field is gone here */
+  .sc-app:has(.sc-hd-slot > *) .mn-es-res {
+    border-top: 0;
+  }
 }
 
-/* search and the tabs moved up; the colour search lives in the search screen */
-.sc-app:has(.sc-hd-slot > *) .mn-tools,
-.sc-app:has(.sc-hd-slot > *) .mn-modes {
-  display: none;
+/* filters in use, over the card (AppActiveFilters) */
+.sc-app .ap-active {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 4px 12px;
+}
+
+.sc-app .ap-tag {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  height: 32px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  background: var(--sc-card);
+  box-shadow: inset 0 0 0 1px var(--sc-line);
+  font-size: 13px;
+  color: var(--sc-ink);
+}
+
+.sc-app .ap-tag-t {
+  all: unset;
+  cursor: pointer;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 4px 0 12px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.sc-app .ap-tag-x {
+  all: unset;
+  cursor: pointer;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  margin-right: 2px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sc-ink-3);
+}
+
+.sc-app :is(.ap-tag-t, .ap-tag-x):focus-visible {
+  outline: 2px solid var(--sc-ink);
+  outline-offset: 2px;
+}
+
+.sc-app .ap-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(40, 41, 41, .12);
 }
 
 /* ---------- mode switch (old app's pill, Beam's segmented look) ---------- */
@@ -216,6 +293,70 @@ html[data-native-app] .sc-app .sc-hd-logo img {
   margin-top: 24px;
 }
 
+/* filter buttons of the mode (moved here from the page): label + a row that scrolls sideways */
+.sc-app .as-filters {
+  align-self: stretch;
+  min-width: 0;
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sc-app .as-frow {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sc-app .as-flabel {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--sc-ink-3);
+}
+
+.sc-app .as-chips {
+  display: flex;
+  gap: 6px;
+  margin: 0 -16px;
+  padding: 2px 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+
+.sc-app .as-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.sc-app .as-chip {
+  all: unset;
+  cursor: pointer;
+  flex: none;
+  height: 34px;
+  box-sizing: border-box;
+  padding: 0 14px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 13px;
+  white-space: nowrap;
+  color: var(--sc-ink-2);
+  box-shadow: inset 0 0 0 1px var(--sc-line);
+}
+
+.sc-app .as-chip[aria-pressed="true"] {
+  background: var(--sc-ink);
+  color: #FFFFFF;
+  box-shadow: none;
+}
+
+.sc-app .as-chip:focus-visible {
+  outline: 2px solid var(--sc-ink);
+  outline-offset: 2px;
+}
+
 .sc-app .as-form {
   align-self: stretch;
   margin-top: 12px;
@@ -326,13 +467,5 @@ html[data-native-app] .sc-app .sc-hd-logo img {
       inset 0 0 0 1px rgba(255, 255, 255, .55),
       0 1px 3px rgba(40, 41, 41, .06),
       0 10px 32px rgba(40, 41, 41, .12);
-  }
-
-  .sc-app:has(.sc-hd-slot > *) .mn-row {
-    display: none; /* nothing left in it on phones: + is in the tab bar */
-  }
-
-  .sc-app:has(.sc-hd-slot > *) .mn {
-    padding-top: 4px; /* the category row sits right under the header */
   }
 }

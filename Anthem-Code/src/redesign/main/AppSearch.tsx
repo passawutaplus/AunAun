@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useSearchHistory, type SearchHistoryScope } from "@/hooks/useSearchHistory";
@@ -6,9 +6,26 @@ import { useSiteSearch, type SearchKind } from "../lib/useSiteSearch";
 import { onEscape } from "../shell/panels";
 import { AppModeSwitch, type HomeMode } from "./AppHomeBar";
 import ColorSearch from "./ColorSearch";
+import { hasIntent, parseEventIntent, toggleIntentWord } from "./eventIntent";
+import { isoDay } from "./useHomeEvents";
 
 const RECENT_LIMIT = 8;
 const HIT_LIMIT = 6;
+
+/** Words the Event search understands, as buttons (they were under the old in-page Event search field). */
+const QUICK = [
+  ["free", "ฟรี"],
+  ["weekend", "สุดสัปดาห์นี้"],
+  ["near", "ใกล้ฉัน"],
+] as const;
+
+/** One row of filter buttons: a URL param of the home page and its choices ("" = the default). */
+export type AppFilterRow = {
+  key: "view" | "cat" | "type";
+  label: string;
+  value: string;
+  options: readonly (readonly [string, string])[];
+};
 
 const SCOPE: Record<HomeMode, { label: string; placeholder: string; hint: string; kind: SearchKind; history?: SearchHistoryScope }> = {
   showcase: { label: "Showcase", placeholder: "ค้นหาผลงาน", hint: "พิมพ์ชื่อผลงาน สไตล์ หรือเครื่องมือที่ใช้", kind: "WORK" },
@@ -29,6 +46,10 @@ type Props = {
   /** Runs the Event search on the home page (`?tab=event&q=`); the screen closes itself. */
   onSubmit: (mode: HomeMode, query: string) => void;
   onColors: (colors: string[]) => void;
+  /** The view / category / type buttons of a mode (they moved here from the page, owner 2026-11-28). */
+  filtersFor: (mode: HomeMode) => AppFilterRow[];
+  /** A filter button: applies at once to the page behind (like the old app's filter sheet). */
+  onFilter: (mode: HomeMode, key: AppFilterRow["key"], value: string) => void;
 };
 
 /**
@@ -37,7 +58,7 @@ type Props = {
  * also has the colour search. Typing lists matching works / creators / events of that mode; Event's search
  * button runs the Event tab's own search.
  */
-export default function AppSearch({ initialMode, initialValue, colors, leaving, onClose, onSubmit, onColors }: Props) {
+export default function AppSearch({ initialMode, initialValue, colors, leaving, onClose, onSubmit, onColors, filtersFor, onFilter }: Props) {
   const [mode, setMode] = useState<HomeMode>(initialMode);
   const [value, setValue] = useState(initialValue);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -49,6 +70,7 @@ export default function AppSearch({ initialMode, initialValue, colors, leaving, 
   const { hits, ready } = useSiteSearch(typed ? value : "");
   const shown = hits.filter((h) => h.kind === meta.kind).slice(0, HIT_LIMIT);
   const recent = queries.slice(0, RECENT_LIMIT);
+  const intent = useMemo(() => parseEventIntent(value, isoDay(new Date())), [value]);
 
   useEffect(() => {
     // Focus once the screen has slid up, so the keyboard does not fight the animation.
@@ -136,6 +158,39 @@ export default function AppSearch({ initialMode, initialValue, colors, leaving, 
         )}
 
         <AppModeSwitch labels value={mode} onPick={setMode} />
+
+        <div className="as-filters">
+          {mode === "event" ? (
+            <div className="as-frow">
+              <span className="as-flabel">ค้นหาด่วน</span>
+              <div className="as-chips" role="group" aria-label="ค้นหาด่วน">
+                {QUICK.map(([kind, label]) => (
+                  <button
+                    key={kind}
+                    type="button"
+                    className="as-chip"
+                    aria-pressed={hasIntent(intent, kind)}
+                    onClick={() => setValue(toggleIntentWord(value, intent, kind))}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+          {filtersFor(mode).map((row) => (
+            <div key={row.key} className="as-frow">
+              <span className="as-flabel">{row.label}</span>
+              <div className="as-chips" role="group" aria-label={row.label}>
+                {row.options.map(([v, label]) => (
+                  <button key={v || "all"} type="button" className="as-chip" aria-pressed={row.value === v} onClick={() => onFilter(mode, row.key, v)}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
 
         <form
           className="as-form"

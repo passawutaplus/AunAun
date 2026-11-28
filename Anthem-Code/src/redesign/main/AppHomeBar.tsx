@@ -1,4 +1,4 @@
-import type { MouseEvent } from "react";
+import type { MouseEvent, ReactNode } from "react";
 
 export type HomeMode = "showcase" | "creators" | "event";
 
@@ -8,7 +8,7 @@ const MODES: readonly { key: HomeMode; label: string }[] = [
   { key: "event", label: "Event" },
 ];
 
-/** The old app's mode icons (grid, people, three hung frames) drawn in the new design's thin line. */
+/** The old app's mode icons (grid, people) and the tab bar's calendar for Event, in the new design's thin line. */
 function ModeIcon({ mode }: { mode: HomeMode }) {
   const common = {
     "aria-hidden": true,
@@ -39,11 +39,11 @@ function ModeIcon({ mode }: { mode: HomeMode }) {
       </svg>
     );
   }
+  // Event: the tab bar's calendar (owner 2026-11-28).
   return (
-    <svg {...common}>
-      <rect x="3.5" y="8" width="4.5" height="9" rx="1" />
-      <rect x="9.75" y="5" width="4.5" height="15" rx="1" />
-      <rect x="16" y="8" width="4.5" height="9" rx="1" />
+    <svg {...common} strokeLinecap="round">
+      <rect x="3.5" y="5" width="17" height="15.5" rx="2" />
+      <path d="M3.5 10h17M8 3v4M16 3v4" />
     </svg>
   );
 }
@@ -51,15 +51,16 @@ function ModeIcon({ mode }: { mode: HomeMode }) {
 type SwitchProps = {
   value: HomeMode;
   onPick: (mode: HomeMode) => void;
-  /** Icon + name (the search screen); the header shows icons only. */
+  /** Icon + name and the Event mode (the search screen). The header shows icons only, without Event:
+   *  the tab bar's calendar already opens it (owner 2026-11-28). */
   labels?: boolean;
 };
 
-/** Showcase / Creators / Event as one capsule, like the old app's mode pill. */
+/** Showcase / Creators (/ Event) as one capsule, like the old app's mode pill. */
 export function AppModeSwitch({ value, onPick, labels = false }: SwitchProps) {
   return (
     <div role="group" aria-label="เลือกมุมมอง" className="ap-modes" data-labels={labels ? "" : undefined}>
-      {MODES.map(({ key, label }) => (
+      {MODES.filter(({ key }) => labels || key !== "event").map(({ key, label }) => (
         <button
           key={key}
           type="button"
@@ -72,6 +73,32 @@ export function AppModeSwitch({ value, onPick, labels = false }: SwitchProps) {
           <ModeIcon mode={key} />
           {labels ? <span>{label}</span> : null}
         </button>
+      ))}
+    </div>
+  );
+}
+
+export type ActiveFilter = { key: string; label: ReactNode; name: string; onRemove: () => void };
+
+/**
+ * Store app home: the categories and views moved into the search screen, so the filters in use show here
+ * as small tags; a tag opens the search screen, its × drops that filter.
+ */
+export function AppActiveFilters({ items, onOpen }: { items: ActiveFilter[]; onOpen: (e: MouseEvent<HTMLButtonElement>) => void }) {
+  if (!items.length) return null;
+  return (
+    <div className="ap-active" role="group" aria-label="ตัวกรองที่ใช้อยู่">
+      {items.map((it) => (
+        <span key={it.key} className="ap-tag">
+          <button type="button" className="ap-tag-t" aria-haspopup="dialog" onClick={onOpen}>
+            {it.label}
+          </button>
+          <button type="button" className="ap-tag-x" aria-label={`เอา ${it.name} ออก`} onClick={it.onRemove}>
+            <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+              <path d="M6 6l12 12M18 6L6 18" />
+            </svg>
+          </button>
+        </span>
       ))}
     </div>
   );
