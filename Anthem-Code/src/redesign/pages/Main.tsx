@@ -359,7 +359,9 @@ export default function Main() {
       <button type="button" className="mn-chip" aria-pressed={!evType} onClick={() => set("type", null)}>
         All
       </button>
-      {EVENT_TYPES.map(([key, label]) => (
+      {/* No "Highlight" chip (owner 2026-11-28): few events, and the team picks the highlight itself.
+          An old `?type=highlight` link still shows the highlight alone. */}
+      {EVENT_TYPES.filter(([key]) => key !== "highlight").map(([key, label]) => (
         <button key={key} type="button" className="mn-chip" aria-pressed={evType === key} onClick={() => set("type", key)}>
           {label}
         </button>
