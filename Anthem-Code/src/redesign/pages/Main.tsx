@@ -312,7 +312,10 @@ export default function Main() {
     if (v === "following" && !user) navigate(loginHref());
     else set("view", v === "discover" ? null : v);
   };
-  const evView: EventView = (EVENT_VIEWS as readonly string[]).includes(viewParam ?? "") ? (viewParam as EventView) : "all";
+  // Store app (owner 2026-11-28): no "Anytime" there — its When menu starts at Now, which is its default.
+  const evDefault: EventView = appSlot ? "now" : "all";
+  const evView: EventView =
+    (EVENT_VIEWS as readonly string[]).includes(viewParam ?? "") && !(appSlot && viewParam === "all") ? (viewParam as EventView) : evDefault;
   // "ไม่เจอสิ่งที่ตรงกัน" → "ล้างตัวกรอง": back to every work / creator of this tab.
   const filtered =
     !!find || (mode === "showcase" ? !!category || colors.length > 0 || view !== "explore" : mode === "creators" && (!!category || crView !== "discover"));
@@ -338,9 +341,18 @@ export default function Main() {
 
   // Event filters: When + Type. On the website they sit over the card; in the store app they are part of the
   // header (owner 2026-11-28), so they hide and come back with it while scrolling.
-  // The app has no When menu (owner 2026-11-28: always Anytime); its header shows the type chips below the bar.
+  // In the app the When menu sits in the header before the calendar and search, without "Anytime" (owner 2026-11-28).
   const eventView = (
     <ViewMenu label="ช่วงเวลา" options={EVENT_VIEWS} labels={EVENT_VIEW_LABEL} value={evView} onPick={(v) => set("view", v === "all" ? null : v)} />
+  );
+  const eventViewApp = (
+    <ViewMenu
+      label="ช่วงเวลา"
+      options={EVENT_VIEWS.filter((v) => v !== "all")}
+      labels={EVENT_VIEW_LABEL}
+      value={evView}
+      onPick={(v) => set("view", v === evDefault ? null : v)}
+    />
   );
   const eventChips = (
     <div className="mn-chips" role="group" aria-label="ประเภทอีเว้นท์">
@@ -468,6 +480,7 @@ export default function Main() {
               mode={mode}
               onPick={pickMode}
               onSearch={(e) => openAppSearch(e.currentTarget)}
+              lead={mode === "event" ? eventViewApp : null}
               onCalendar={mode === "event" ? (e) => panels.openCalendar(e.currentTarget) : undefined}
               below={
                 mode === "event" ? (
