@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { useEventProjects, useRelatedWorks } from "@/hooks/useExhibitionEvents";
+import { useEventProjects } from "@/hooks/useExhibitionEvents";
 import { proxiedImageUrl } from "@/lib/imageProxy";
 
 type Card = { id: string; title: string; cover_url: string | null };
@@ -26,19 +26,14 @@ function Row({ id, title, works, all }: { id: string; title: string; works: Card
   );
 }
 
-/** Under the event (old page): works the organiser attached to it, then "Works Like This" from its summary's categories. */
-export default function EventWorks({ projectIds, categories }: { projectIds: string[] | null | undefined; categories: string[] | undefined }) {
+/**
+ * Under the event (old page): works the organiser attached to it. "Works Like This" became
+ * "Event Like This" (owner 2026-11-28) — see EventLikeThis.
+ */
+export default function EventWorks({ projectIds }: { projectIds: string[] | null | undefined }) {
   const ownQ = useEventProjects(projectIds?.length ? projectIds : undefined).data;
-  const likeQ = useRelatedWorks(categories?.length ? categories : undefined, 6).data;
   const own = useMemo(() => ownQ ?? [], [ownQ]);
-  const like = useMemo(() => likeQ ?? [], [likeQ]);
   const ownIds = useMemo(() => own.map((w) => w.id), [own]);
-  const likeIds = useMemo(() => like.map((w) => w.id), [like]);
-  if (!own.length && !like.length) return null;
-  return (
-    <>
-      {own.length ? <Row id="ev-wk-own" title="Works by the Organizer" works={own} all={ownIds} /> : null}
-      {like.length ? <Row id="ev-wk-like" title="Works Like This" works={like} all={likeIds} /> : null}
-    </>
-  );
+  if (!own.length) return null;
+  return <Row id="ev-wk-own" title="Works by the Organizer" works={own} all={ownIds} />;
 }

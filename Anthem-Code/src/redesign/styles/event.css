@@ -1308,3 +1308,17 @@
     gap: 12px;
   }
 }
+
+/* "Event Like This" cards: type over the title, dates under it (owner 2026-11-28) */
+.sc-app .ev-work-k {
+  font-size: 11px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--sc-ink-3);
+}
+
+.sc-app .ev-work-d {
+  font-size: 12px;
+  color: var(--sc-ink-3);
+  white-space: nowrap;
+}

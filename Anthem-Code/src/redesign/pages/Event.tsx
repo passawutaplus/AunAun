@@ -20,6 +20,7 @@ import { closingDay, feeLabel, mainAction, mapsSearchUrl, paragraphs, placeNames
 import { useCountEventView, useEventPage, useEventVenues, useParentEvent } from "../event/useEventPage";
 import EventPictures from "../event/EventPictures";
 import EventWorks from "../event/EventWorks";
+import EventLikeThis from "../event/EventLikeThis";
 import Locations from "../event/Locations";
 import SponsorOffer from "../event/SponsorOffer";
 import { thaiHours, venueStatus } from "../event/venueText";
@@ -668,7 +669,8 @@ function EventBody({ event: e, venues, parent }: { event: EventPageRow; venues: 
             <Locations event={e} venues={venues} onToast={say} />
           </div>
         ) : null}
-        <EventWorks projectIds={e.project_ids} categories={insights?.related_categories} />
+        <EventWorks projectIds={e.project_ids} />
+        <EventLikeThis event={e} />
       </main>
       {sponsorOpen && user ? (
         <SponsorOffer
