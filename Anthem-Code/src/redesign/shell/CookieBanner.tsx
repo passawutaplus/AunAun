@@ -41,9 +41,9 @@ export default function CookieBanner() {
       {pending && !prefsOpen ? (
         <section className="ck-bar" aria-label="คุกกี้">
           <p className="ck-tx">
-            เราใช้คุกกี้ให้เว็บทำงานได้ และนับสถิติการเข้าชมด้วยนะ{" "}
+            ใช้คุกกี้ให้เว็บทำงานและนับสถิตินะ{" "}
             <Link to={POLICY} className="ck-ln">
-              นโยบายคุกกี้
+              นโยบาย
             </Link>
           </p>
           <div className="ck-btns">

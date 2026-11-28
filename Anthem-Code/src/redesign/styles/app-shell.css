@@ -460,12 +460,30 @@ html[data-native-app] .sc-app .sc-hd {
 /* ---------- glass tab bar (phones: website and app, owner 2026-11-28) ---------- */
 @media (max-width: 600px) {
   .sc-app[data-tab] .sc-tb {
-    background: rgba(255, 255, 255, .5);
+    background: rgba(255, 255, 255, .68);
     -webkit-backdrop-filter: blur(24px) saturate(1.8);
     backdrop-filter: blur(24px) saturate(1.8);
     box-shadow:
       inset 0 0 0 1px rgba(255, 255, 255, .55),
       0 1px 3px rgba(40, 41, 41, .06),
       0 10px 32px rgba(40, 41, 41, .12);
+  }
+
+  /* On the see-through bar the mock's grey (#8A8A87) washes out over bright pictures (owner 2026-11-28):
+     idle icons and labels use the dark ink, a touch lighter than the current tab. */
+  .sc-app[data-tab] .sc-tb a:not([data-k="add"]) {
+    color: #4A4B4A;
+  }
+
+  .sc-app[data-tab] .sc-tb a:not([data-k="add"]):not([aria-current="page"]) svg {
+    stroke: #4A4B4A;
+  }
+
+  .sc-app[data-tab] .sc-tb a[aria-current="page"] {
+    color: #282929;
+  }
+
+  .sc-app[data-tab] .sc-tb-av {
+    box-shadow: 0 0 0 1px rgba(40, 41, 41, .18);
   }
 }
