@@ -6,6 +6,12 @@
 html[data-native-app] .sc-app .sc-hd {
   padding-top: max(22px, env(safe-area-inset-top));
   transition: transform .3s var(--sc-ease);
+  /* owner 2026-11-28: a solid header in the page colour — the see-through fade was hard to read */
+  background: var(--sc-bg);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  -webkit-mask-image: none;
+  mask-image: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
