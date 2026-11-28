@@ -65,16 +65,20 @@ export async function getMySessionCount(): Promise<number | null> {
   return data;
 }
 
-export type MySettings = { chat: boolean; comment: boolean; follow: boolean; event: boolean; greet_from: "everyone" | "following" };
+export type MySettings = { chat: boolean; comment: boolean; follow: boolean; event: boolean; weekly: boolean; greet_from: "everyone" | "following" };
 
-export const DEFAULT_SETTINGS: MySettings = { chat: true, comment: true, follow: true, event: true, greet_from: "everyone" };
+/** `weekly` (the weekly summary e-mail) is off until the person turns it on, like the mock. */
+export const DEFAULT_SETTINGS: MySettings = { chat: true, comment: true, follow: true, event: true, weekly: false, greet_from: "everyone" };
 
-/** Settings → Notifications / "who can greet me" (step 7c SQL); defaults until that SQL has run. */
-export async function getMySettings(): Promise<MySettings & { ready: boolean }> {
+/**
+ * Settings → Notifications / "who can greet me" (step 7c SQL); defaults until that SQL has run.
+ * `weeklyReady` = the weekly e-mail SQL (20261129120000) has run, so its switch can be shown.
+ */
+export async function getMySettings(): Promise<MySettings & { ready: boolean; weeklyReady: boolean }> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase.rpc as any)("get_my_settings");
-  if (error || !data || typeof data !== "object") return { ...DEFAULT_SETTINGS, ready: false };
-  return { ...DEFAULT_SETTINGS, ...(data as Partial<MySettings>), ready: true };
+  if (error || !data || typeof data !== "object") return { ...DEFAULT_SETTINGS, ready: false, weeklyReady: false };
+  return { ...DEFAULT_SETTINGS, ...(data as Partial<MySettings>), ready: true, weeklyReady: "weekly" in data };
 }
 
 /** profiles.public_visibility of the signed-in person (holds the "creators" and "search" switches). */

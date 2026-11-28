@@ -445,14 +445,18 @@ function Switch({ label, on, onToggle }: { label: string; on: boolean; onToggle:
   );
 }
 
-type SwitchKey = "chat" | "comment" | "follow" | "event";
+type SwitchKey = "chat" | "comment" | "follow" | "event" | "weekly";
 
-/** Mock rows; "อีเมลสรุปรายสัปดาห์" stays hidden until there is such an e-mail (question for the owner / Beam). */
+/**
+ * Mock rows. "อีเมลสรุปรายสัปดาห์" = the weekly-digest edge function (Mondays 09:00), off by default like the
+ * mock; the row shows once its SQL (20261129120000) has run.
+ */
 const NOTI_ROWS: Array<[SwitchKey, string, string]> = [
   ["chat", "ข้อความใหม่", "มีคนทักทายหรือตอบแชท"],
   ["comment", "คอมเมนต์", "มีคนคอมเมนต์บนงานของฉัน"],
   ["follow", "ผู้ติดตามใหม่", "มีคนกดติดตาม"],
   ["event", "Open call ใกล้ปิดรับ", "งานที่กดสนใจไว้ เหลือ 3 วัน"],
+  ["weekly", "อีเมลสรุปรายสัปดาห์", "ส่งทุกวันจันทร์"],
 ];
 
 /** Settings shared by the Notifications and Privacy tabs, saved one switch at a time (optimistic). */
@@ -463,8 +467,8 @@ function useMySettings() {
   const q = useQuery({ queryKey: key, queryFn: getMySettings, staleTime: 60_000 });
   const [err, setErr] = useState("");
   const set = async <K extends keyof MySettings>(k: K, v: MySettings[K]) => {
-    const before = qc.getQueryData<MySettings & { ready: boolean }>(key);
-    qc.setQueryData(key, { ...(before ?? { ...DEFAULT_SETTINGS, ready: false }), [k]: v });
+    const before = qc.getQueryData<MySettings & { ready: boolean; weeklyReady: boolean }>(key);
+    qc.setQueryData(key, { ...(before ?? { ...DEFAULT_SETTINGS, ready: false, weeklyReady: false }), [k]: v });
     setErr("");
     try {
       await setMySetting(k, v as never);
@@ -473,14 +477,14 @@ function useMySettings() {
       setErr("บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง");
     }
   };
-  return { settings: q.data ?? { ...DEFAULT_SETTINGS, ready: false }, set, err };
+  return { settings: q.data ?? { ...DEFAULT_SETTINGS, ready: false, weeklyReady: false }, set, err };
 }
 
 function NotificationsTab() {
   const { settings, set, err } = useMySettings();
   return (
     <div>
-      {NOTI_ROWS.map(([k, label, sub]) => (
+      {NOTI_ROWS.filter(([k]) => k !== "weekly" || settings.weeklyReady).map(([k, label, sub]) => (
         <Row key={k} label={label} sub={sub}>
           <Switch label={label} on={settings[k]} onToggle={() => void set(k, !settings[k])} />
         </Row>
