@@ -312,10 +312,10 @@ export default function Main() {
     if (v === "following" && !user) navigate(loginHref());
     else set("view", v === "discover" ? null : v);
   };
-  // Store app (owner 2026-11-28): no "Anytime" there — its When menu starts at Now, which is its default.
-  const evDefault: EventView = appSlot ? "now" : "all";
+  // Store app (owner 2026-11-28): its "Now" means not over yet — on now and coming (the website's Anytime);
+  // the website's on-now-only view isn't offered there.
   const evView: EventView =
-    (EVENT_VIEWS as readonly string[]).includes(viewParam ?? "") && !(appSlot && viewParam === "all") ? (viewParam as EventView) : evDefault;
+    (EVENT_VIEWS as readonly string[]).includes(viewParam ?? "") && !(appSlot && viewParam === "now") ? (viewParam as EventView) : "all";
   // "ไม่เจอสิ่งที่ตรงกัน" → "ล้างตัวกรอง": back to every work / creator of this tab.
   const filtered =
     !!find || (mode === "showcase" ? !!category || colors.length > 0 || view !== "explore" : mode === "creators" && (!!category || crView !== "discover"));
@@ -348,10 +348,10 @@ export default function Main() {
   const eventViewApp = (
     <ViewMenu
       label="ช่วงเวลา"
-      options={EVENT_VIEWS.filter((v) => v !== "all")}
-      labels={EVENT_VIEW_LABEL}
+      options={EVENT_VIEWS.filter((v) => v !== "now")}
+      labels={{ ...EVENT_VIEW_LABEL, all: "Now" }}
       value={evView}
-      onPick={(v) => set("view", v === evDefault ? null : v)}
+      onPick={(v) => set("view", v === "all" ? null : v)}
     />
   );
   const eventChips = (
