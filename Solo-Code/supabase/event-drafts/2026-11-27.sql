@@ -54,6 +54,9 @@ SELECT public.scout_event_publish($j$
   "source_name": "Mango Art Festival",
   "source_url": "https://www.mangoartfestival.com/visittreasurediscovered26",
   "cover_source_url": "https://cea-design-week-cdn.5lab.co/wp-content/uploads/2026/09/1789987246743.png",
+  "gallery_source_urls": [
+    "https://static.wixstatic.com/media/4011c0_d7d84f6ef60a4eaa98f01ef04078e8d2~mv2.png/v1/fill/w_720,h_438,al_c,lg_1,q_85,enc_avif,quality_auto/4011c0_d7d84f6ef60a4eaa98f01ef04078e8d2~mv2.png"
+  ],
   "insights": {
     "who_for": [
       "คนที่อยากดูงานศิลปินไทยและต่างชาติในบรรยากาศสวน",
@@ -114,6 +117,12 @@ SELECT public.scout_event_publish($j$
   "source_name": "Chiang Mai Design Week 2026 (โปรแกรม)",
   "source_url": "https://www.chiangmaidesignweek.com/en/cmdw2026/program/166041",
   "cover_source_url": "https://cea-design-week-cdn.5lab.co/wp-content/uploads/2026/06/1782798704315.png",
+  "gallery_source_urls": [
+    "https://cea-design-week-cdn.5lab.co/wp-content/uploads/2026/06/1782798739097.png",
+    "https://cea-design-week-cdn.5lab.co/wp-content/uploads/2026/06/1782798765548.png",
+    "https://cea-design-week-cdn.5lab.co/wp-content/uploads/2026/06/1782798791500.png",
+    "https://cea-design-week-cdn.5lab.co/wp-content/uploads/2026/06/1782807450786.png"
+  ],
   "insights": {
     "who_for": [
       "คนทำงานคราฟต์และสินค้าสร้างสรรค์ที่อยากดูงานของร้านท้องถิ่น",
@@ -342,6 +351,10 @@ SELECT public.scout_event_publish($j$
   "source_name": "Chiang Mai Design Week 2026 (โปรแกรม)",
   "source_url": "https://www.chiangmaidesignweek.com/en/cmdw2026/program/162043",
   "cover_source_url": "https://cea-design-week-cdn.5lab.co/wp-content/uploads/2026/06/1780389133588.png",
+  "gallery_source_urls": [
+    "https://cea-design-week-cdn.5lab.co/wp-content/uploads/2026/06/1780388934822.png",
+    "https://cea-design-week-cdn.5lab.co/wp-content/uploads/2026/06/1780388992309.png"
+  ],
   "insights": {
     "who_for": [
       "ผู้ประกอบการ นักออกแบบ ศิลปิน และนักสร้างสรรค์ที่อยากปกป้องผลงานของตัวเอง",
@@ -447,6 +460,13 @@ SELECT public.scout_event_publish($j$
   "source_name": "Chiang Mai Design Week 2026 (โปรแกรม)",
   "source_url": "https://www.chiangmaidesignweek.com/en/cmdw2026/program/166860",
   "cover_source_url": "https://cea-design-week-cdn.5lab.co/wp-content/uploads/2026/10/1793069743784.png",
+  "gallery_source_urls": [
+    "https://cea-design-week-cdn.5lab.co/wp-content/uploads/2026/06/1782830793298.png",
+    "https://cea-design-week-cdn.5lab.co/wp-content/uploads/2026/06/1782830834789.png",
+    "https://cea-design-week-cdn.5lab.co/wp-content/uploads/2026/06/1782830862701.png",
+    "https://cea-design-week-cdn.5lab.co/wp-content/uploads/2026/06/1782830872635.png",
+    "https://cea-design-week-cdn.5lab.co/wp-content/uploads/2026/06/1782830900536.png"
+  ],
   "insights": {
     "who_for": [
       "คนที่อยากลองทำเครื่องประดับเงินด้วยมือ ไม่ต้องมีพื้นฐาน",
@@ -493,6 +513,12 @@ SELECT public.scout_event_publish($j$
   "description": "The Warehouse - Paint Club ชวนมาเพนต์เรื่องราวของตัวเองลงผ้าใบ ในพื้นที่โล่งกว้างของโกดังเก่าแก่บนถนนราชวงศ์ เชียงใหม่ เป็นหนึ่งในเวิร์กช็อปของ Chiang Mai Design Week 2026\n\nไม่เคยวาดมาก่อนก็ร่วมได้ มีทีมผู้สอนคอยแนะนำเทคนิคการเพนต์ การร่างภาพ และการผสมสี ถ้ายังไม่มีแบบในใจ มีเทมเพลตให้เลือกเป็นแรงบันดาลใจกว่า 100 แบบ\n\nเปิดแบบ walk-in เข้ามาได้ทุกช่วงเวลาตั้งแต่ 10:00–16:00 วันที่ 5–13 ธันวาคม 2569 ยกเว้นวันพฤหัสบดีที่ 10 ธันวาคมที่ไม่มีรอบ ค่าเข้าร่วม 400 บาท รับสูงสุด 30 คน",
   "organizer_name": "The Warehouse - Paint Club",
   "website_url": "https://www.chiangmaidesignweek.com/en/cmdw2026/program/164269",
+  "gallery_source_urls": [
+    "https://cea-design-week-cdn.5lab.co/wp-content/uploads/2026/06/1782541641394.png",
+    "https://cea-design-week-cdn.5lab.co/wp-content/uploads/2026/06/1782541929686.png",
+    "https://cea-design-week-cdn.5lab.co/wp-content/uploads/2026/06/1782541955380.png",
+    "https://cea-design-week-cdn.5lab.co/wp-content/uploads/2026/06/1782541981731.png"
+  ],
   "registration_url": "",
   "ticket_url": "",
   "registration_open": false,
@@ -535,6 +561,13 @@ SELECT public.scout_event_publish($j$
   "description": "WASOO แบรนด์วัสดุชีวภาพเป็นมิตรกับสิ่งแวดล้อมที่ทำจากเศษวัสดุทางการเกษตร จับมือกับกลุ่มแม่ ๆ จากวิสาหกิจชุมชน Gokmonsangsook จัดเวิร์กช็อปงานคราฟต์ยั่งยืน ภายใต้แนวคิด \"Sustainability Art for Longevity and Happiness\" ในโปรแกรม Chiang Mai Design Week 2026\n\nผู้เข้าร่วมจะได้เรียนรู้วิธีเปลี่ยนวัสดุธรรมชาติและของเหลือใช้ให้เป็นชิ้นงานออกแบบ ผ่านกระบวนการที่ผสมภูมิปัญญาท้องถิ่นกับงานดีไซน์ร่วมสมัย และได้ทำชิ้นงานของตัวเอง\n\nมีให้เลือก 5 กิจกรรม เลือกได้ครั้งละ 1 กิจกรรมต่อคน จัดทุกวันตั้งแต่ 5–13 ธันวาคม 2569 เสาร์–อาทิตย์ 13:00–16:00 และจันทร์–ศุกร์ 09:00–12:00 ที่ WASOO Art Space อำเภอดอยสะเก็ด ค่าเข้าร่วม 450 บาท รับไม่เกิน 10 คน",
   "organizer_name": "WASOO",
   "website_url": "https://www.chiangmaidesignweek.com/en/cmdw2026/program/165451",
+  "gallery_source_urls": [
+    "https://cea-design-week-cdn.5lab.co/wp-content/uploads/2026/06/1782806134335.png",
+    "https://cea-design-week-cdn.5lab.co/wp-content/uploads/2026/06/1782806154787.png",
+    "https://cea-design-week-cdn.5lab.co/wp-content/uploads/2026/06/1782806278227.png",
+    "https://cea-design-week-cdn.5lab.co/wp-content/uploads/2026/06/1782811071868.png",
+    "https://cea-design-week-cdn.5lab.co/wp-content/uploads/2026/06/1782806451509.png"
+  ],
   "registration_url": "",
   "ticket_url": "",
   "registration_open": false,
