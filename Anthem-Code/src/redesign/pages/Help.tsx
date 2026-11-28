@@ -1,5 +1,6 @@
 import { useId, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { HELP_CATEGORIES } from "@/data/helpContent";
 import { SC_LINKS } from "../routes";
 import "../styles/help.css";
 
@@ -15,6 +16,12 @@ const FAQ: ReadonlyArray<{ topic: Exclude<Topic, "All">; q: string; a: string }>
   { topic: "Collections", q: "บันทึกงานและคอลเลคชั่น", a: "กดปุ่มบันทึกบนผลงาน แล้วเลือกคอลเลคชั่น งานที่บันทึกไว้อยู่ที่ My Profile › Saved" },
   { topic: "Pricing", q: "ใช้งานฟรีหรือไม่", a: "ใช้งานหลักได้ฟรี ได้แก่ ดูผลงาน ลงผลงาน แชท และตั้ง handle · Samecor Pro ฿99 ต่อเดือน เพิ่มพื้นที่เก็บไฟล์เป็น 10 GB และเครื่องมือดูสถิติ โดยไม่มีผลกับการมองเห็นผลงาน" },
 ];
+
+/**
+ * The old site's help articles stay on their pages (/help/<topic>/<article>, old look) and are linked from here
+ * (owner 2026-11-28, Beam 24). Hiring and job topics are hidden features, so they are not linked.
+ */
+const GUIDES = HELP_CATEGORIES.filter((c) => c.id !== "opportunity" && c.id !== "hirers").map((c) => ({ title: c.title, to: c.hubTo ?? `/help/${c.id}` }));
 
 const topicOf = (raw: string | null): Topic => TOPICS.find((t) => t.toLowerCase() === raw) ?? "All";
 
@@ -77,6 +84,16 @@ export default function Help() {
           })}
           {list.length ? null : <p className="hp-none">No results.</p>}
         </div>
+        <nav aria-label="คู่มือฉบับเต็ม" className="hp-guides">
+          <span lang="en">Guides</span>
+          <div>
+            {GUIDES.map((g) => (
+              <Link key={g.to} to={g.to}>
+                {g.title}
+              </Link>
+            ))}
+          </div>
+        </nav>
         <div className="hp-more">
           <span lang="en">Still need help?</span>
           <div>

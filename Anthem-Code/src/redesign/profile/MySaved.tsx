@@ -27,6 +27,8 @@ export default function MySaved({ uid, say }: { uid: string; say: (t: string) =>
   const [selecting, setSelecting] = useState(false);
   const [picked, setPicked] = useState<ReadonlySet<string>>(new Set());
   const [menu, setMenu] = useState(false);
+  // Deleting a collection asks first, like deleting a work (owner 2026-11-28, Beam 46).
+  const [askDel, setAskDel] = useState(false);
   const [moveMenu, setMoveMenu] = useState(false);
 
   const groups = useMemo(
@@ -115,10 +117,14 @@ export default function MySaved({ uid, say }: { uid: string; say: (t: string) =>
     if (ids.length > 1) s.reorder.mutate({ id: cur.id, ids: [...ids.slice(1), ids[0]] });
   };
   const remove = () => {
-    setMenu(false);
+    setAskDel(false);
     s.remove.mutate(cur.id);
     setOpen(null);
     say(`ลบ ${cur.name} แล้ว`);
+  };
+  const askRemove = () => {
+    setMenu(false);
+    setAskDel(true);
   };
   const moveTo = (to: string | null) => {
     s.move.mutate(
@@ -208,7 +214,7 @@ export default function MySaved({ uid, say }: { uid: string; say: (t: string) =>
                     <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="2" /><circle cx="9" cy="9.5" r="1.6" /><path d="M4 17l5-4.5 4 3.5 3-2.5 4 3.5" /></svg>
                     เปลี่ยนปก
                   </button>
-                  <button type="button" role="menuitem" className="mp-mi mp-mi-red" onClick={remove}>
+                  <button type="button" role="menuitem" className="mp-mi mp-mi-red" onClick={askRemove}>
                     <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 13h9l1-13" /></svg>
                     ลบคอลเลคชั่น
                   </button>
@@ -256,6 +262,23 @@ export default function MySaved({ uid, say }: { uid: string; say: (t: string) =>
           <button type="button" className="mp-bb mp-bb-x" aria-label="ยกเลิกการเลือก" onClick={reset}>
             <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
           </button>
+        </div>
+      ) : null}
+      {askDel ? (
+        <div className="mp-veil pv-veil">
+          <div aria-hidden="true" className="mp-veil-hit" onClick={() => setAskDel(false)} />
+          <div className="mp-box pv-box" role="dialog" aria-modal="true" aria-labelledby="mp-del-h">
+            <h2 id="mp-del-h">ลบ {cur.name}?</h2>
+            <p>งานที่บันทึกไว้ยังอยู่ใน ทั้งหมดที่บันทึก</p>
+            <div className="mp-box-row">
+              <button type="button" className="mp-btn-line" autoFocus onClick={() => setAskDel(false)}>
+                ยกเลิก
+              </button>
+              <button type="button" className="mp-btn-del" onClick={remove}>
+                ลบ
+              </button>
+            </div>
+          </div>
         </div>
       ) : null}
     </>

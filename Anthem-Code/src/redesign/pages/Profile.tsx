@@ -154,7 +154,7 @@ function ProfileView({ slug, byId }: { slug: string; byId: boolean }) {
   const firstFollower = followerIds[0] ? faceMap[followerIds[0]] : undefined;
   const followerLine = firstFollower?.username
     ? followerIds.length > 1
-      ? `${firstFollower.username} และเพื่อนอีก ${count(followerIds.length - 1)} คนติดตามอยู่`
+      ? `${firstFollower.username} และอีก ${count(followerIds.length - 1)} คนติดตามอยู่`
       : `${firstFollower.username} ติดตามอยู่`
     : "";
   const followerList = followerIds.slice(0, 20).map((id) => faceMap[id]).filter((f): f is NonNullable<typeof f> => !!f);

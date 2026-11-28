@@ -434,6 +434,12 @@ function WorkView({ id, overlay, list, linkState, close }: ViewProps) {
                   </dd>
                 </div>
               ) : null}
+              {row.made_year ? (
+                <div>
+                  <dt>ปี</dt>
+                  <dd>{row.made_year}</dd>
+                </div>
+              ) : null}
               {tools ? (
                 <div>
                   <dt>เครื่องมือ</dt>
@@ -502,7 +508,7 @@ function WorkView({ id, overlay, list, linkState, close }: ViewProps) {
             </dl>
           </section>
 
-          <WorkComments projectId={id} ownerId={ownerId} ownerHandle={handle} onToast={say} />
+          <WorkComments projectId={id} ownerId={ownerId} ownerHandle={handle} ask={row.ask_viewers} onToast={say} />
 
           {moreRows.length ? (
             <section aria-labelledby="mf-h" className="wk-more">

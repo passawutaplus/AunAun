@@ -82,7 +82,7 @@ export function useProfileEvents(userId: string | undefined) {
   return { list, pending: hosted.isPending || interestIds.isPending };
 }
 
-/** Followers, the people the viewer follows first ("… และเพื่อนอีก N คนติดตามอยู่"). */
+/** Followers, the people the viewer follows first ("… และอีก N คนติดตามอยู่", owner 2026-11-28). */
 export function useProfileFollowers(userId: string | undefined, viewerFollows: ReadonlySet<string>) {
   const q = useQuery({ queryKey: ["sc-profile-followers", userId], queryFn: () => getFollowerIds(userId!), enabled: !!userId, staleTime: 60_000 });
   return useMemo(() => {

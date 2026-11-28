@@ -61,3 +61,13 @@ export function paragraphs(text: string | null | undefined): string[] {
   const blocks = t.split(/\n\s*\n/);
   return (blocks.length > 1 ? blocks : t.split("\n")).map((p) => p.trim()).filter(Boolean);
 }
+
+/** Google Maps search for a place, opened outside the site (owner 2026-11-28: no map inside SAMECOR, no API cost). */
+export const mapsSearchUrl = (query: string) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query.trim())}`;
+
+/** Places of one event that can be looked up: the venues of `location_name` (" · " between them); none when online. */
+export function placeNames(locationName: string | null | undefined): string[] {
+  const loc = locationName?.trim() ?? "";
+  if (!loc || /^(ออนไลน์|online)$/i.test(loc)) return [];
+  return loc.split(" · ").map((s) => s.trim()).filter(Boolean);
+}

@@ -378,7 +378,7 @@ function UploadEditor({ uid, opened }: { uid: string; opened: Opened | null }) {
 
   // ---------- editing ----------
 
-  const setField = <K extends "title" | "desc" | "tags">(k: K, v: string) => h.update((dd) => ({ ...dd, [k]: v }), k);
+  const setField = <K extends "title" | "desc" | "tags" | "year" | "ask">(k: K, v: string) => h.update((dd) => ({ ...dd, [k]: v }), k);
   const moveBlock = (i: number, dir: -1 | 1) =>
     h.update((dd) => {
       const j = i + dir;
@@ -785,7 +785,8 @@ function UploadEditor({ uid, opened }: { uid: string; opened: Opened | null }) {
 
             {moreOpen ? (
               <div className="up-morebox">
-                {/* YEAR and ASK VIEWERS are hidden for now (owner 2026-11-28); "+ New" waits for Beam (question 47). */}
+                {/* YEAR + ASK VIEWERS shown again (owner 2026-11-28); "+ New" waits for Beam (question 47). */}
+                <div className="up-catyr">
                 <div className="up-f">
                   <label htmlFor="up-cat" className="up-lab">
                     CATALOG
@@ -800,6 +801,19 @@ function UploadEditor({ uid, opened }: { uid: string; opened: Opened | null }) {
                         </option>
                       ))}
                   </select>
+                </div>
+                <div className="up-f">
+                  <label htmlFor="up-year" className="up-lab">
+                    YEAR
+                  </label>
+                  <input id="up-year" className="up-fld" type="text" inputMode="numeric" maxLength={4} value={d.year} onChange={(e) => setField("year", e.target.value.replace(/\D/g, ""))} />
+                </div>
+                </div>
+                <div className="up-f">
+                  <label htmlFor="up-ask" className="up-lab">
+                    ASK VIEWERS
+                  </label>
+                  <textarea id="up-ask" className="up-ta" rows={2} maxLength={140} value={d.ask} onChange={(e) => setField("ask", e.target.value)} placeholder="ตรงไหนดึงสายตาที่สุด?" />
                 </div>
               </div>
             ) : null}

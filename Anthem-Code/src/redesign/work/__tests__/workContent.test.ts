@@ -94,7 +94,9 @@ describe("small formatters", () => {
   it("only words the licence the mock has", () => {
     expect(licenceLine("all_rights", "mintra.k")).toBe("All rights reserved · © mintra.k");
     expect(licenceLine(null, "mintra.k")).toBe("All rights reserved · © mintra.k");
-    expect(licenceLine("attribution_ok", "mintra.k")).toBeNull();
+    expect(licenceLine("attribution_ok", "mintra.k")).toBe("ใช้ได้ถ้าให้เครดิต · © mintra.k");
+    expect(licenceLine("portfolio_only", "mintra.k")).toBe("ดูได้อย่างเดียว · © mintra.k");
+    expect(licenceLine("free_use", "mintra.k")).toBeNull();
   });
 });
 

@@ -691,3 +691,89 @@
     }
   }
 }
+
+/* ---------- ask before deleting a collection (owner 2026-11-28), same box as deleting a work in My Studio ---------- */
+.sc-app .mp-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(242, 242, 240, .35);
+  -webkit-backdrop-filter: blur(10px) saturate(1.1);
+  backdrop-filter: blur(10px) saturate(1.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.sc-app .mp-veil-hit {
+  position: absolute;
+  inset: 0;
+}
+
+.sc-app .mp-box {
+  position: relative;
+  width: 380px;
+  max-width: 100%;
+  box-sizing: border-box;
+  background: #FFFFFF;
+  border-radius: 28px;
+  box-shadow: 0 1px 3px rgba(40, 41, 41, .08), 0 10px 32px rgba(40, 41, 41, .12);
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.sc-app .mp-box h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.sc-app .mp-box p {
+  margin: 0;
+  font-size: 13px;
+  color: #666666;
+}
+
+.sc-app .mp-box-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.sc-app :is(.mp-btn-line, .mp-btn-del) {
+  appearance: none;
+  margin: 0;
+  height: 44px;
+  padding: 0 20px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.sc-app .mp-btn-line {
+  border: 1px solid #D4D4D1;
+  background: none;
+  color: #282929;
+}
+
+.sc-app .mp-btn-del {
+  border: 0;
+  background: #B8321F;
+  color: #FFFFFF;
+}
+
+.sc-app :is(.mp-btn-line, .mp-btn-del):focus-visible {
+  outline: 2px solid #282929;
+  outline-offset: 3px;
+}

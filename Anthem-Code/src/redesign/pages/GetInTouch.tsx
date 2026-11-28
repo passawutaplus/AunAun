@@ -5,6 +5,13 @@ import { proxiedImageUrl } from "@/lib/imageProxy";
 import { SC_LINKS } from "../routes";
 import SamecorMark from "../text/SamecorMark";
 import { useTouchWorks, type TouchWork } from "../text/useTouchWorks";
+import p1 from "../assets/people/p1.jpg";
+import p2 from "../assets/people/p2.jpg";
+import p3 from "../assets/people/p3.jpg";
+import p4 from "../assets/people/p4.jpg";
+import p5 from "../assets/people/p5.jpg";
+import p6 from "../assets/people/p6.jpg";
+import p7 from "../assets/people/p7.jpg";
 import "../styles/get-in-touch.css";
 
 /**
@@ -39,14 +46,12 @@ const DECO = (() => {
 })();
 
 /**
- * People in the illustrations. The mock uses generated portraits (img/people), which may not go on the
- * real site; until that is settled these are Beam's earlier "untitled user" circles (question for Beam).
+ * People in the illustrations: the mock's portraits (img/people p1–p7, made in Magnific), used for now on the
+ * owner's word (2026-11-28, Beam 21) until real photos come.
  */
-const PERSON_ICON =
-  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23FFFFFF' fill-opacity='.6'%3E%3Ccircle cx='12' cy='9' r='4.2'/%3E%3Cpath d='M3.5 23c0-5 3.8-8.6 8.5-8.6s8.5 3.6 8.5 8.6z'/%3E%3C/svg%3E\")";
-const PERSON_COLORS = ["#2E4A6B", "#C8553D", "#5E8C61"];
-const person = (i: number, extra?: CSSProperties): CSSProperties => ({
-  background: `${PERSON_COLORS[i % 3]} ${PERSON_ICON} center / 100% no-repeat`,
+const PEOPLE = [p1, p2, p3, p4, p5, p6, p7];
+const person = (n: number, extra?: CSSProperties): CSSProperties => ({
+  background: `#D9D9D6 url("${PEOPLE[n - 1]}") center / cover no-repeat`,
   ...extra,
 });
 
@@ -328,13 +333,13 @@ export default function GetInTouch() {
               </div>
               <div className="gt-vis gt-fr" aria-hidden="true">
                 <div className="gt-fr-people">
-                  <span data-step={0} data-fx="pop" style={person(0)} />
-                  <span data-step={1} data-fx="pop" style={person(1)} />
-                  <span data-step={2} data-fx="pop" style={person(2)} />
+                  <span data-step={0} data-fx="pop" style={person(1)} />
+                  <span data-step={1} data-fx="pop" style={person(2)} />
+                  <span data-step={2} data-fx="pop" style={person(3)} />
                   <span data-step={3} data-fx="pop" className="gt-fr-more">+4</span>
                 </div>
                 <span className="gt-bob gt-chip gt-c1" data-step={4} data-fx="pop">
-                  <span className="gt-chip-av" style={person(1)} />
+                  <span className="gt-chip-av" style={person(5)} />
                   <b>nok.studio</b> เริ่มติดตามคุณ
                   <span className="gt-dot" />
                 </span>
@@ -342,12 +347,12 @@ export default function GetInTouch() {
                 <span className="gt-bob gt-bubble gt-me gt-c3" data-step={6} data-fx="pop">ขอบคุณครับ พิมพ์ริโซ 3 สี</span>
                 <span className="gt-bob gt-bubble gt-c4" data-step={7} data-fx="pop">ไว้ไปดูงานจริงที่ BACC นะ</span>
                 <span className="gt-bob gt-chip gt-c5" data-step={8} data-fx="pop">
-                  <span className="gt-chip-av" style={person(2)} />
+                  <span className="gt-chip-av" style={person(6)} />
                   <b>mintra.k</b> ทักทายคุณ
                   <span className="gt-dot" />
                 </span>
                 <span className="gt-bob gt-chip gt-c6" data-step={9} data-fx="pop">
-                  <span className="gt-chip-av" style={person(0)} />
+                  <span className="gt-chip-av" style={person(7)} />
                   <b>ploy.draws</b> ถูกใจ Night Bus
                 </span>
                 <span className="gt-bob gt-hi gt-c7" data-step={10} data-fx="pop">ทักทาย</span>
@@ -364,7 +369,7 @@ export default function GetInTouch() {
               </div>
               <div className="gt-vis gt-prof" aria-hidden="true">
                 <div data-step={0} data-fx="rise" className="gt-prof-card">
-                  <span className="gt-prof-av" style={person(0)} />
+                  <span className="gt-prof-av" style={person(4)} />
                   <span className="gt-prof-name">Beam</span>
                   <span className="gt-prof-handle">@beam.riso</span>
                   <span className="gt-prof-works">
@@ -414,7 +419,8 @@ export default function GetInTouch() {
                 Discover opportunities.
               </p>
               <p className="gt-sub">
-                <span className="gt-nw">1 โปรไฟล์ สู่ 100+ โอกาส</span>
+                {/* Owner 2026-11-28 (Beam 22): the English line instead of the mock's Thai one. */}
+                <span lang="en" className="gt-nw">1 Profile to 100+ Opportunities</span>
                 <br />
                 <span lang="en" className="gt-nw">Work from every creative field.</span>
               </p>

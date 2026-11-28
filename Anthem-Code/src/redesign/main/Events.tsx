@@ -213,9 +213,9 @@ function EventList({ events, byDay, today, days }: { events: HomeEventRow[]; byD
 
   const first = groups[0].day;
   const panels = useShellPanels();
-  // the first two days start open, as in the mock
+  // Every day starts open and folds on a click (owner 2026-11-28; the mock opened the first two only).
   const [closed, setClosed] = useState<Record<string, boolean>>({});
-  const isOpen = (day: string, i: number) => !(closed[day] ?? i > 1);
+  const isOpen = (day: string) => !closed[day];
 
   return (
     <section aria-label="อีเว้นท์" className="mn-ev-list">
@@ -237,17 +237,17 @@ function EventList({ events, byDay, today, days }: { events: HomeEventRow[]; byD
         </button>
       </div>
       <div className="mn-ev-days">
-        {groups.map((g, i) => (
+        {groups.map((g) => (
           <div className="mn-ev-group" key={g.day}>
             {byDay ? (
-              <button type="button" className="mn-ev-day" aria-expanded={isOpen(g.day, i)} onClick={() => setClosed((c) => ({ ...c, [g.day]: isOpen(g.day, i) }))}>
+              <button type="button" className="mn-ev-day" aria-expanded={isOpen(g.day)} onClick={() => setClosed((c) => ({ ...c, [g.day]: isOpen(g.day) }))}>
                 <span lang="en">{g.day.slice(0, 7) === first.slice(0, 7) ? weekdayDay(g.day) : `${weekdayDay(g.day)} ${monthCaps(g.day)}`}</span>
                 <svg aria-hidden="true" width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="#282929" strokeWidth="1">
                   <path d="M14 25V3M5 12l9-9 9 9" />
                 </svg>
               </button>
             ) : null}
-            {!byDay || isOpen(g.day, i) ? (
+            {!byDay || isOpen(g.day) ? (
               <div className="mn-ev-grid">
                 {g.items.map((e) => (
                   <div className="mn-ev-cell" key={e.id}>

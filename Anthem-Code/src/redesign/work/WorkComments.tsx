@@ -12,6 +12,8 @@ type Props = {
   ownerId: string | null;
   /** The owner's handle, as shown on the page ("passawut.a.plus"). */
   ownerHandle: string;
+  /** The owner's question from Upload "ASK VIEWERS"; without one, the same sentence for every work (owner 2026-11-28). */
+  ask?: string | null;
   /** Shows a short message under the page (errors). */
   onToast: (text: string) => void;
 };
@@ -55,7 +57,7 @@ function Avatar({ src, size }: { src: string; size: number }) {
 }
 
 /** Comments of a work (mock: Work.dc.html "คอมเมนต์"): the owner's question, a box to write, then the threads. */
-export default function WorkComments({ projectId, ownerId, ownerHandle, onToast }: Props) {
+export default function WorkComments({ projectId, ownerId, ownerHandle, ask, onToast }: Props) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: me } = useProfile(user?.id);
@@ -110,7 +112,7 @@ export default function WorkComments({ projectId, ownerId, ownerHandle, onToast 
 
       <div className="wk-ask">
         <span className="wk-lbl">{ownerHandle} อยากรู้</span>
-        <p>ตรงไหนของงานนี้ที่ทำให้คุณหยุดดูนานที่สุด</p>
+        <p>{ask?.trim() || "ตรงไหนของงานนี้ที่ทำให้คุณหยุดดูนานที่สุด"}</p>
       </div>
 
       <div className="wk-write">

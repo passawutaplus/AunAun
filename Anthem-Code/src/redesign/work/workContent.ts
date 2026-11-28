@@ -122,9 +122,16 @@ export function workDateLine(createdAt: string, views: number | null): string {
  * The licence line. The mock only has "All rights reserved"; the two other licences of the old
  * site have no wording in the new design yet (question for Beam), so they show no line for now.
  */
+/** Owner 2026-11-28 (Beam 25): the two other rights of works today get Thai words. */
+const LICENCE_WORDS: Record<string, string> = {
+  all_rights: "All rights reserved",
+  attribution_ok: "ใช้ได้ถ้าให้เครดิต",
+  portfolio_only: "ดูได้อย่างเดียว",
+};
+
 export function licenceLine(type: string | null, handle: string): string | null {
-  if (type && type !== "all_rights") return null;
-  return `All rights reserved · © ${handle}`;
+  const words = LICENCE_WORDS[type ?? "all_rights"];
+  return words ? `${words} · © ${handle}` : null;
 }
 
 /** Mock: same CATEGORY from other people first, then other works; never the current owner's. */

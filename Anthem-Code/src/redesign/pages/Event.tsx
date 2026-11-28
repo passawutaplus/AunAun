@@ -12,7 +12,7 @@ import { toggleEventInterest } from "@/server/mutations/eventInterest";
 import type { EventPageRow, EventPageVenue } from "@/server/queries/eventPage";
 import { SC_LINKS } from "../routes";
 import { useShellPanels } from "../shell/panels";
-import { closingDay, feeLabel, paragraphs, siteLabel, summaryRows } from "../event/eventSummary";
+import { closingDay, feeLabel, mapsSearchUrl, paragraphs, placeNames, siteLabel, summaryRows } from "../event/eventSummary";
 import { useCountEventView, useEventPage, useEventVenues, useParentEvent } from "../event/useEventPage";
 import EventPictures from "../event/EventPictures";
 import Locations from "../event/Locations";
@@ -184,6 +184,9 @@ function EventBody({ event: e, venues, parent }: { event: EventPageRow; venues: 
       : venues[0].title
     : e.location_name?.trim() || e.address?.trim() || "";
   const placeNote = multi ? "" : e.location_note?.trim() || (e.location_name?.trim() ? e.address?.trim() : "") || "";
+  // Each place opens its Google Maps page in a new tab (owner 2026-11-28); one place also sends its address.
+  const placeLinks = multi ? [] : placeNames(e.location_name);
+  const mapsQuery = (name: string) => (placeLinks.length === 1 && e.address?.trim() ? `${name}, ${e.address.trim()}` : name);
   const ctaHref = e.registration_url || e.ticket_url || e.website_url || e.source_url || null;
   const ctaLabel = openCall || e.registration_url || e.ticket_url ? "ไปสมัครที่เว็บผู้จัด" : "ไปเว็บไซต์งาน";
   const site = siteLabel(e.website_url || e.registration_url || e.source_url);
@@ -362,7 +365,20 @@ function EventBody({ event: e, venues, parent }: { event: EventPageRow; venues: 
                     </Icon>
                   </span>
                   <div>
-                    <span>{place}</span>
+                    {placeLinks.length ? (
+                      <span>
+                        {placeLinks.map((n, i) => (
+                          <span key={`${n}-${i}`}>
+                            <a href={mapsSearchUrl(mapsQuery(n))} target="_blank" rel="noopener noreferrer" className="ev-maplink" aria-label={`${n} — เปิดใน Google Maps`}>
+                              {n} ↗
+                            </a>
+                            {i < placeLinks.length - 1 ? " · " : null}
+                          </span>
+                        ))}
+                      </span>
+                    ) : (
+                      <span>{place}</span>
+                    )}
                     {placeNote ? <span className="ev-sub">{placeNote}</span> : null}
                   </div>
                 </div>

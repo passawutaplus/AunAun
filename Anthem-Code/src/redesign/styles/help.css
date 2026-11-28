@@ -190,3 +190,48 @@
     font-size: 30px;
   }
 }
+
+/* the old site's help articles, linked from here (owner 2026-11-28; not in the mock) */
+.sc-app .hp-guides {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 24px;
+  border-top: 1px solid #E2E2DF;
+}
+
+.sc-app .hp-guides > span {
+  font-size: 12px;
+  letter-spacing: .08em;
+  font-weight: 400;
+  color: #8A8A87;
+}
+
+.sc-app .hp-guides > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sc-app .hp-guides a {
+  height: 36px;
+  padding: 0 16px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  border: 1px solid #E2E2DF;
+  font-size: 13px;
+  color: #282929;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  transition: border-color .2s ease;
+}
+
+.sc-app .hp-guides a:hover {
+  border-color: #282929;
+}
+
+.sc-app .hp-guides a:focus-visible {
+  outline: 2px solid #282929;
+  outline-offset: 3px;
+}

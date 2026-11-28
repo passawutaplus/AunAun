@@ -196,6 +196,9 @@ export type Draft = {
   desc: string;
   tags: string;
   catalogId: string | null;
+  /** More: YEAR (the year the work was made) and ASK VIEWERS (owner 2026-11-28; migration 20261129110000). */
+  year: string;
+  ask: string;
 };
 
 export const slotKey = (rowId: string, i: number) => `${rowId}:${i}`;
@@ -213,7 +216,15 @@ export function emptyDraft(firstRowId: string): Draft {
     desc: "",
     tags: "",
     catalogId: null,
+    year: String(new Date().getFullYear()),
+    ask: "",
   };
+}
+
+/** "2026" → 2026; anything outside 1900–2100 → null. */
+export function parseYear(s: string): number | null {
+  const n = Number(s.trim());
+  return Number.isInteger(n) && n >= 1900 && n <= 2100 ? n : null;
 }
 
 export const isUploaded = (m: Media | undefined): m is Media =>
@@ -339,6 +350,8 @@ export type WorkFields = {
   media_sizes: Record<string, [number, number]>;
   gallery_urls: string[];
   video_urls: string[];
+  made_year: number | null;
+  ask_viewers: string | null;
 };
 
 /** The columns of `anthem.projects` for a work, from what is on screen. Unfinished uploads and errors are left out. */
@@ -402,6 +415,8 @@ export function toWorkFields(mode: Mode, d: Draft, media: Record<string, Media>)
     media_sizes: sizes,
     gallery_urls: images,
     video_urls: videos,
+    made_year: parseYear(d.year),
+    ask_viewers: d.ask.trim() || null,
   };
 }
 
@@ -419,6 +434,8 @@ export type StoredWork = {
   cover_width: number | null;
   cover_height: number | null;
   media_sizes: Record<string, [number, number]> | null;
+  made_year?: number | null;
+  ask_viewers?: string | null;
 };
 
 const isHttp = (u: unknown): u is string => typeof u === "string" && /^https?:\/\//i.test(u.trim());
@@ -537,6 +554,8 @@ export function fromWork(row: StoredWork, newId: () => string): { mode: Mode; dr
     desc: htmlToText(row.description ?? ""),
     tags: (row.tags ?? []).join(", "),
     catalogId: null,
+    year: row.made_year ? String(row.made_year) : "",
+    ask: row.ask_viewers ?? "",
   };
   return { mode, draft, media };
 }

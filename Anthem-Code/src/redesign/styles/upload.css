@@ -1052,6 +1052,17 @@
   margin-top: -8px;
 }
 
+/* CATALOG + YEAR on one row (mock: minmax(0,1fr) 96px, gap 12) */
+.sc-app .up-catyr {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 96px;
+  gap: 12px;
+}
+
+.sc-app .up-catyr > .up-f {
+  min-width: 0;
+}
+
 .sc-app .up-hr {
   height: 1px;
   background: #E0E0DD;

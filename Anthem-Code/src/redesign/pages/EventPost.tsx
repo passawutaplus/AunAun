@@ -10,6 +10,7 @@ import logoUrl from "../assets/logo.svg";
 import { EpLeaveDialog, EpPublishedDialog } from "../eventpost/EventPostDialogs";
 import EventPostPreview from "../eventpost/EventPostPreview";
 import { checksOf, EP_LIMITS, EP_TYPES, emptyForm, fileSize, fromRow, snapshot, toSaveData, type EpForm, type EpType } from "../eventpost/model";
+import { mapsSearchUrl } from "../event/eventSummary";
 import ScLoader from "../main/ScLoader";
 import { SC_LINKS } from "../routes";
 import { ErrorRow, ImageAddIcon, mediaSrc, Progress } from "../upload/BasicEditor";
@@ -590,12 +591,21 @@ function EventPostEditor({ uid, row }: { uid: string; row: MyEventRow | null }) 
                         id={venueId(v.id)}
                         className="ep-fld"
                         type="text"
-                        placeholder="ชื่อสถานที่"
+                        placeholder="ชื่อสถานที่ใน Google Maps"
                         value={v.val}
                         maxLength={EP_LIMITS.place}
                         aria-invalid={(i === 0 && miss("place")) || undefined}
                         onChange={(e) => setForm((f) => ({ ...f, venues: f.venues.map((x) => (x.id === v.id ? { ...x, val: e.target.value } : x)) }))}
                       />
+                      {/* Looks the place up on Google Maps in a new tab (owner 2026-11-28: no search inside the site). */}
+                      {v.val.trim() ? (
+                        <a className="ep-ib" href={mapsSearchUrl(v.val)} target="_blank" rel="noopener noreferrer" aria-label={`ค้นหา ${v.val.trim()} ใน Google Maps`} title="ค้นใน Google Maps">
+                          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#282929" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z" />
+                            <circle cx="12" cy="10" r="2.3" />
+                          </svg>
+                        </a>
+                      ) : null}
                       {form.venues.length > 1 ? (
                         <button type="button" className="ep-ib" aria-label="เอาสถานที่นี้ออก" onClick={() => setForm((f) => ({ ...f, venues: f.venues.filter((x) => x.id !== v.id) }))}>
                           <X />

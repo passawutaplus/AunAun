@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { profilesPublicFrom } from "@/lib/profileAccess";
-import { isOptionalQueryError } from "@/lib/supabaseErrors";
+import { isOptionalQueryError, isSchemaMismatchError } from "@/lib/supabaseErrors";
 
 /** Columns of the Work page. The redesign columns (migration 20261127100000) are not in the generated types yet. */
 const WORK_SELECT =
@@ -27,12 +27,18 @@ export type WorkRow = {
   created_at: string;
   owner_id: string | null;
   status: string | null;
+  /** Upload YEAR / ASK VIEWERS (migration 20261129110000); undefined until it runs. */
+  made_year?: number | null;
+  ask_viewers?: string | null;
 };
 
 /** One work for the Work page (RLS decides who may read an unpublished one). */
 export async function getWork(id: string): Promise<WorkRow | null> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase.from("projects") as any).select(WORK_SELECT).eq("id", id).maybeSingle();
+  const read = (cols: string) => (supabase.from("projects") as any).select(cols).eq("id", id).maybeSingle();
+  let { data, error } = await read(`${WORK_SELECT}, made_year, ask_viewers`);
+  // Before migration 20261129110000 the two columns do not exist yet.
+  if (error && isSchemaMismatchError(error)) ({ data, error } = await read(WORK_SELECT));
   if (error) throw error;
   return (data as WorkRow | null) ?? null;
 }

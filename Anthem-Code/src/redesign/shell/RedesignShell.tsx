@@ -344,7 +344,18 @@ export default function RedesignShell() {
             <path d="M3.5 10h17M8 3v4M16 3v4" />
           </svg>
         </Link>
-        <Link to={user ? SC_LINKS.upload : SC_LINKS.login} data-k="add" aria-label="ลงงาน">
+        {/* "+" opens the New chooser (Showcase / Event) like the home "+" (owner 2026-11-28: members can post events now). */}
+        <Link
+          to={user ? SC_LINKS.upload : SC_LINKS.login}
+          data-k="add"
+          aria-label="ลงงาน"
+          aria-haspopup={user ? "dialog" : undefined}
+          onClick={(e) => {
+            if (!user) return;
+            e.preventDefault();
+            panels.openNew(e.currentTarget);
+          }}
+        >
           <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" strokeWidth="1.6" strokeLinecap="round">
             <path d="M12 5v14M5 12h14" />
           </svg>

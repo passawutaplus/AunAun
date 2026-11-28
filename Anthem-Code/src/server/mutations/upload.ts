@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Tier } from "@/core/subscription";
 import { LEGAL_ATTESTATION_VERSION } from "@/lib/legalConfig";
+import { isSchemaMismatchError } from "@/lib/supabaseErrors";
 import { isGifFile, uploadProjectGif } from "@/lib/uploadProjectGif";
 import { uploadProjectImage } from "@/lib/uploadImage";
 import { uploadProjectVideoWithPoster } from "@/lib/uploadVideo";
@@ -51,6 +52,9 @@ export type WorkWrite = {
   gallery_urls: string[];
   video_urls: string[];
   status: "Draft" | "Published" | "Private";
+  /** Upload YEAR / ASK VIEWERS (migration 20261129110000). */
+  made_year?: number | null;
+  ask_viewers?: string | null;
 };
 
 /**
@@ -66,9 +70,14 @@ export async function saveWork(id: string, ownerId: string, fields: WorkWrite, o
   // The redesign columns are not in the generated types yet.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const projects = supabase.from("projects") as any;
-  const { error } = opts.insert
-    ? await projects.insert({ id, owner_id: ownerId, ...row })
-    : await projects.update(row).eq("id", id).eq("owner_id", ownerId);
+  const write = (r: Record<string, unknown>) =>
+    opts.insert ? projects.insert({ id, owner_id: ownerId, ...r }) : projects.update(r).eq("id", id).eq("owner_id", ownerId);
+  let { error } = await write(row);
+  // Before migration 20261129110000 the YEAR / ASK VIEWERS columns do not exist: save the rest.
+  if (error && isSchemaMismatchError(error) && ("made_year" in row || "ask_viewers" in row)) {
+    const { made_year: _y, ask_viewers: _a, ...rest } = row;
+    ({ error } = await write(rest));
+  }
   if (error) throw error;
 }
 
