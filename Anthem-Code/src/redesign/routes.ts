@@ -43,6 +43,7 @@ const PAGES: ReadonlyArray<{ match: RegExp; page: ShellPage }> = [
   // Text pages (step 13), on their old URLs.
   { match: /^\/legal\/terms\/?$/, page: { page: "terms", tabbar: true, tab: "", footer: true } },
   { match: /^\/legal\/privacy\/?$/, page: { page: "privacy", tabbar: true, tab: "", footer: true } },
+  { match: /^\/help\/?$/, page: { page: "help", tabbar: true, tab: "", footer: true } },
 ];
 
 export function shellPageFor(pathname: string): ShellPage | null {

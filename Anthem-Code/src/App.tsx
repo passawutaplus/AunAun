@@ -412,6 +412,7 @@ const RedesignNotFound = lazy(() => import("./redesign/pages/NotFound.tsx"));
 const RedesignMain = lazy(() => import("./redesign/pages/Main.tsx"));
 const RedesignTerms = lazy(() => import("./redesign/pages/Terms.tsx"));
 const RedesignPrivacy = lazy(() => import("./redesign/pages/Privacy.tsx"));
+const RedesignHelp = lazy(() => import("./redesign/pages/Help.tsx"));
 
 /** Old site chrome (top nav, floating nav, banners, prompts): never mounted on a page of the new design. */
 const LegacyChrome = ({ children }: { children: ReactNode }) => {
@@ -480,6 +481,10 @@ const App = () => (
                         {/* Same paths as old pages below: on equal rank React Router takes the first route, so these win. */}
                         <Route path="/legal/terms" element={<RedesignTerms />} />
                         <Route path="/legal/privacy" element={<RedesignPrivacy />} />
+                        {/* Index route like the old /help, so it ranks the same; old article pages under /help/… stay. */}
+                        <Route path="/help">
+                          <Route index element={<RedesignHelp />} />
+                        </Route>
                       </Route>
                     ) : null}
                     <Route element={<LaunchMinimalGate />}>
