@@ -9,7 +9,7 @@ export type StudioWork = ProfileWorkRow & { status: string | null; views: number
 export async function getStudioWorks(userId: string): Promise<StudioWork[]> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase.from("projects") as any)
-    .select(`${PROFILE_WORK_SELECT}, status, views, created_at`)
+    .select(`${PROFILE_WORK_SELECT}, status, views, created_at, is_pinned, sort_order`)
     .eq("owner_id", userId)
     .order("created_at", { ascending: false })
     .limit(500);

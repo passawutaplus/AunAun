@@ -1,0 +1,47 @@
+/* Pinned works (My Studio › Works, My Profile): a pin + its place, top left of the card (old site). */
+.sc-app .sc-pin-mark {
+  position: absolute;
+  left: 14px;
+  top: 14px;
+  z-index: 1;
+  height: 28px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .9);
+  color: #282929;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  pointer-events: none;
+}
+
+/* A pinned draft / private work: its status chip goes under the pin. */
+.sc-app .sc-pin-mark + .ms-stc {
+  top: 50px;
+}
+
+/* Order mode of My Studio › Works: pin, earlier, later. */
+.sc-app .ms-tl2:disabled {
+  opacity: .35;
+  cursor: default;
+}
+
+.sc-app .ms-tl2[aria-pressed="true"] {
+  background: #FFFFFF;
+}
+
+@media (max-width: 600px) {
+  .sc-app .sc-pin-mark {
+    height: 24px;
+    padding: 0 8px;
+    font-size: 11px;
+  }
+
+  .sc-app .sc-pin-mark + .ms-stc {
+    top: 44px;
+  }
+}

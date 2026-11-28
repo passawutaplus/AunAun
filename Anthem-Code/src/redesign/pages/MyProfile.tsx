@@ -16,6 +16,7 @@ import MySaved from "../profile/MySaved";
 import { count, toTile, toolsOf, type Tile } from "../profile/tiles";
 import { useMyCatalogs, useMyProfile, useMyWorks } from "../profile/useMyProfile";
 import { usePageSeo } from "../lib/usePageSeo";
+import { PinMark } from "../studio/StudioWorks";
 import LoadError from "../shell/LoadError";
 import "../styles/fonts.css";
 import "../styles/tokens.css";
@@ -85,13 +86,16 @@ function MyProfileView({ uid }: { uid: string }) {
 
   const current = catalogs.find((k) => k.id === cat) ?? null;
   const tiles = useMemo(() => {
+    // Works come in the profile order: pinned first, numbered like the old site (pinned in My Studio › Works).
+    let pins = 0;
     const all = works.map((w) => {
       const t = toTile(w);
-      return t ? { ...t, locked: w.status === "Private" } : null;
-    }).filter((t): t is Tile & { locked: boolean } => !!t);
+      const pin = w.is_pinned ? ++pins : 0;
+      return t ? { ...t, locked: w.status === "Private", pin } : null;
+    }).filter((t): t is MyTile => !!t);
     if (!current) return all;
     const byId = new Map(all.map((t) => [t.id, t]));
-    return current.projectIds.map((id) => byId.get(id)).filter((t): t is Tile & { locked: boolean } => !!t);
+    return current.projectIds.map((id) => byId.get(id)).filter((t): t is MyTile => !!t);
   }, [works, current]);
 
   if (profile.isPending) return <div className="pf-wait" aria-busy="true" />;
@@ -122,7 +126,7 @@ function MyProfileView({ uid }: { uid: string }) {
     say("คัดลอกลิงก์โปรไฟล์แล้ว");
   };
 
-  const toggleLock = (t: Tile & { locked: boolean }) => {
+  const toggleLock = (t: MyTile) => {
     lock.mutate({ id: t.id, locked: !t.locked });
     say(t.locked ? "โชว์ในโปรไฟล์แล้ว" : "ล็อกไว้ เห็นแค่คุณ");
   };
@@ -269,8 +273,10 @@ function MyProfileView({ uid }: { uid: string }) {
   );
 }
 
+type MyTile = Tile & { locked: boolean; pin: number };
+
 /** My works: each opens over this page; the corner button is the globe (shown) / lock (only me). */
-function MyPin({ tiles, onLock }: { tiles: Array<Tile & { locked: boolean }>; onLock: (t: Tile & { locked: boolean }) => void }) {
+function MyPin({ tiles, onLock }: { tiles: MyTile[]; onLock: (t: MyTile) => void }) {
   const location = useLocation();
   const linkState = useMemo(() => ({ backgroundLocation: location, scList: tiles.map((t) => t.id) }), [location, tiles]);
   return (
@@ -293,6 +299,7 @@ function MyPin({ tiles, onLock }: { tiles: Array<Tile & { locked: boolean }>; on
             />
             <span className="pf-art pf-shade" aria-hidden="true" />
             <Link to={`/showcase/${t.id}`} state={linkState} aria-label={`เปิด ${t.title}`} className="pf-open" />
+            {t.pin ? <PinMark n={t.pin} /> : null}
             <span className="pf-tt">
               <b>{t.title}</b>
               {t.cat ? <span>{t.cat}</span> : null}
