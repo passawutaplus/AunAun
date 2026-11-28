@@ -63,9 +63,24 @@ html[data-native-app] .sc-app .sc-hd {
 
   /* search and the tabs moved up; categories / views and the Event search moved into the search screen.
      The Event page keeps its When + Type row under the header, like the website (owner 2026-11-28). */
-  .sc-app:has(.sc-hd-slot > *) :is(.mn-row, .mn-es),
-  .sc-app:has(.sc-hd-slot > *) .mn-fld:not([data-mode="event"]) {
+  .sc-app:has(.sc-hd-slot > *) .mn :is(.mn-row, .mn-fld, .mn-es) {
     display: none;
+  }
+
+  /* Event page: When + Type are a second header row, right under the bar, and scroll away / back with it */
+  .sc-app .sc-hd-in:has(.ap-hd-below) {
+    flex-wrap: wrap;
+    padding-bottom: 0;
+  }
+
+  .sc-app .ap-hd-below {
+    flex: 0 0 100%;
+    order: 99;
+    min-width: 0;
+  }
+
+  .sc-app .ap-hd-below .mn-fld {
+    margin: 4px -8px 8px 0;
   }
 
   .sc-app:has(.sc-hd-slot > *) .mn {

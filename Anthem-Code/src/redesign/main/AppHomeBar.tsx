@@ -108,10 +108,15 @@ type BarProps = {
   mode: HomeMode;
   onPick: (mode: HomeMode) => void;
   onSearch: (e: MouseEvent<HTMLButtonElement>) => void;
+  /** A second header row (the Event page's When + Type), which hides and returns with the header. */
+  below?: ReactNode;
 };
 
-/** Store app home, right end of the header: search, then the mode switch (the bell sits before them). */
-export default function AppHomeBar({ mode, onPick, onSearch }: BarProps) {
+/**
+ * Store app home, right end of the header: search, then the mode switch (the bell sits before them).
+ * On the Event page there is no mode switch — the tab bar's Event tab is the way in (owner 2026-11-28).
+ */
+export default function AppHomeBar({ mode, onPick, onSearch, below }: BarProps) {
   return (
     <>
       <button type="button" aria-label="ค้นหา" title="ค้นหา" aria-haspopup="dialog" className="sc-ib" onClick={onSearch}>
@@ -120,7 +125,8 @@ export default function AppHomeBar({ mode, onPick, onSearch }: BarProps) {
           <path d="M16 16l4 4" />
         </svg>
       </button>
-      <AppModeSwitch value={mode} onPick={onPick} />
+      {mode === "event" ? null : <AppModeSwitch value={mode} onPick={onPick} />}
+      {below ? <div className="ap-hd-below">{below}</div> : null}
     </>
   );
 }

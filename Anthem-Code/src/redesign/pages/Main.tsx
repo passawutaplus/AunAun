@@ -336,6 +336,25 @@ export default function Main() {
     if (mode !== "showcase") releaseBoot();
   }, [mode]);
 
+  // Event filters: When + Type. On the website they sit over the card; in the store app they are part of the
+  // header (owner 2026-11-28), so they hide and come back with it while scrolling.
+  const eventFld = (
+    <div className="mn-fld" data-mode="event">
+      <ViewMenu label="ช่วงเวลา" options={EVENT_VIEWS} labels={EVENT_VIEW_LABEL} value={evView} onPick={(v) => set("view", v === "all" ? null : v)} />
+      <span aria-hidden="true" className="mn-fld-rule" />
+      <div className="mn-chips" role="group" aria-label="ประเภทอีเว้นท์">
+        <button type="button" className="mn-chip" aria-pressed={!evType} onClick={() => set("type", null)}>
+          All
+        </button>
+        {EVENT_TYPES.map(([key, label]) => (
+          <button key={key} type="button" className="mn-chip" aria-pressed={evType === key} onClick={() => set("type", key)}>
+            {label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
   return (
     <main className="sc-main mn">
       <div className="mn-row">
@@ -401,21 +420,7 @@ export default function Main() {
           </div>
         </div>
       ) : (
-        // The app shows this row too (owner 2026-11-28), right under the header, like the website.
-        <div className="mn-fld" data-mode="event">
-          <ViewMenu label="ช่วงเวลา" options={EVENT_VIEWS} labels={EVENT_VIEW_LABEL} value={evView} onPick={(v) => set("view", v === "all" ? null : v)} />
-          <span aria-hidden="true" className="mn-fld-rule" />
-          <div className="mn-chips" role="group" aria-label="ประเภทอีเว้นท์">
-            <button type="button" className="mn-chip" aria-pressed={!evType} onClick={() => set("type", null)}>
-              All
-            </button>
-            {EVENT_TYPES.map(([key, label]) => (
-              <button key={key} type="button" className="mn-chip" aria-pressed={evType === key} onClick={() => set("type", key)}>
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
+        eventFld
       )}
 
       {appSlot ? <AppActiveFilters items={appActiveFilters()} onOpen={(e) => openAppSearch(e.currentTarget)} /> : null}
@@ -456,6 +461,7 @@ export default function Main() {
               mode={mode}
               onPick={pickMode}
               onSearch={(e) => openAppSearch(e.currentTarget)}
+              below={mode === "event" ? eventFld : null}
             />,
             appSlot,
           )
