@@ -338,20 +338,27 @@ export default function Main() {
 
   // Event filters: When + Type. On the website they sit over the card; in the store app they are part of the
   // header (owner 2026-11-28), so they hide and come back with it while scrolling.
+  // In the app the When menu sits in the header bar before the search button (owner 2026-11-28), the type chips below.
+  const eventView = (
+    <ViewMenu label="ช่วงเวลา" options={EVENT_VIEWS} labels={EVENT_VIEW_LABEL} value={evView} onPick={(v) => set("view", v === "all" ? null : v)} />
+  );
+  const eventChips = (
+    <div className="mn-chips" role="group" aria-label="ประเภทอีเว้นท์">
+      <button type="button" className="mn-chip" aria-pressed={!evType} onClick={() => set("type", null)}>
+        All
+      </button>
+      {EVENT_TYPES.map(([key, label]) => (
+        <button key={key} type="button" className="mn-chip" aria-pressed={evType === key} onClick={() => set("type", key)}>
+          {label}
+        </button>
+      ))}
+    </div>
+  );
   const eventFld = (
     <div className="mn-fld" data-mode="event">
-      <ViewMenu label="ช่วงเวลา" options={EVENT_VIEWS} labels={EVENT_VIEW_LABEL} value={evView} onPick={(v) => set("view", v === "all" ? null : v)} />
+      {eventView}
       <span aria-hidden="true" className="mn-fld-rule" />
-      <div className="mn-chips" role="group" aria-label="ประเภทอีเว้นท์">
-        <button type="button" className="mn-chip" aria-pressed={!evType} onClick={() => set("type", null)}>
-          All
-        </button>
-        {EVENT_TYPES.map(([key, label]) => (
-          <button key={key} type="button" className="mn-chip" aria-pressed={evType === key} onClick={() => set("type", key)}>
-            {label}
-          </button>
-        ))}
-      </div>
+      {eventChips}
     </div>
   );
 
@@ -461,7 +468,14 @@ export default function Main() {
               mode={mode}
               onPick={pickMode}
               onSearch={(e) => openAppSearch(e.currentTarget)}
-              below={mode === "event" ? eventFld : null}
+              lead={mode === "event" ? eventView : null}
+              below={
+                mode === "event" ? (
+                  <div className="mn-fld" data-mode="event">
+                    {eventChips}
+                  </div>
+                ) : null
+              }
             />,
             appSlot,
           )

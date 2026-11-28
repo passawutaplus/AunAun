@@ -100,6 +100,19 @@ html[data-native-app] .sc-app .sc-hd {
     margin: -4px -8px 6px 0;
   }
 
+  /* Event page: the When menu sits before the search button, a thin rule between (owner 2026-11-28) */
+  .sc-app .ap-hd-lead {
+    display: flex;
+    align-items: center;
+  }
+
+  .sc-app .ap-hd-rule {
+    width: 1px;
+    height: 18px;
+    margin: 0 4px;
+    background: var(--sc-line);
+  }
+
   .sc-app .ap-hd-below .mn-chips {
     gap: 2px;
   }
