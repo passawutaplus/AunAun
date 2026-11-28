@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useSearchHistory, type SearchHistoryScope } from "@/hooks/useSearchHistory";
@@ -6,18 +6,9 @@ import { useSiteSearch, type SearchKind } from "../lib/useSiteSearch";
 import { onEscape } from "../shell/panels";
 import { AppModeSwitch, type HomeMode } from "./AppHomeBar";
 import ColorSearch from "./ColorSearch";
-import { hasIntent, parseEventIntent, toggleIntentWord } from "./eventIntent";
-import { isoDay } from "./useHomeEvents";
 
 const RECENT_LIMIT = 8;
 const HIT_LIMIT = 6;
-
-/** Words the Event search understands, as buttons (they were under the old in-page Event search field). */
-const QUICK = [
-  ["free", "ฟรี"],
-  ["weekend", "สุดสัปดาห์นี้"],
-  ["near", "ใกล้ฉัน"],
-] as const;
 
 /** One row of filter buttons: a URL param of the home page and its choices ("" = the default). */
 export type AppFilterRow = {
@@ -70,7 +61,6 @@ export default function AppSearch({ initialMode, initialValue, colors, leaving, 
   const { hits, ready } = useSiteSearch(typed ? value : "");
   const shown = hits.filter((h) => h.kind === meta.kind).slice(0, HIT_LIMIT);
   const recent = queries.slice(0, RECENT_LIMIT);
-  const intent = useMemo(() => parseEventIntent(value, isoDay(new Date())), [value]);
 
   useEffect(() => {
     // Focus once the screen has slid up, so the keyboard does not fight the animation.
@@ -152,27 +142,7 @@ export default function AppSearch({ initialMode, initialValue, colors, leaving, 
           </>
         )}
 
-        <AppModeSwitch labels value={mode} onPick={setMode} />
-
         <div className="as-filters">
-          {mode === "event" ? (
-            <div className="as-frow">
-              <span className="as-flabel">Quick</span>
-              <div className="as-chips" role="group" aria-label="Quick">
-                {QUICK.map(([kind, label]) => (
-                  <button
-                    key={kind}
-                    type="button"
-                    className="as-chip"
-                    aria-pressed={hasIntent(intent, kind)}
-                    onClick={() => setValue(toggleIntentWord(value, intent, kind))}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : null}
           {filtersFor(mode).map((row) => (
             <div key={row.key} className="as-frow">
               <span className="as-flabel">{row.label}</span>
@@ -185,6 +155,11 @@ export default function AppSearch({ initialMode, initialValue, colors, leaving, 
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Owner 2026-11-28: the mode switch sits right above the search field, words only. */}
+        <div className="as-modebar">
+          <AppModeSwitch labels value={mode} onPick={setMode} />
         </div>
 
         <form

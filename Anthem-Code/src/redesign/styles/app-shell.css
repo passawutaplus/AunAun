@@ -294,8 +294,33 @@ html[data-native-app] .sc-app .sc-hd {
   margin: 10px;
 }
 
-.sc-app .as .ap-modes {
-  margin-top: 24px;
+/* mode switch right above the search field, words only: no icons, no pill (owner 2026-11-28) */
+.sc-app .as-modebar {
+  align-self: stretch;
+  margin-top: 20px;
+}
+
+.sc-app .as-modebar .ap-modes {
+  gap: 20px;
+  padding: 0;
+  background: none;
+}
+
+.sc-app .as-modebar .ap-mode {
+  height: 40px;
+  min-width: 0;
+  padding: 0;
+  font-size: 17px;
+  font-weight: 500;
+}
+
+.sc-app .as-modebar .ap-mode svg {
+  display: none;
+}
+
+.sc-app .as-modebar .ap-mode[aria-pressed="true"] {
+  background: none;
+  box-shadow: none;
 }
 
 /* filter buttons of the mode (moved here from the page): label + a row that scrolls sideways */
