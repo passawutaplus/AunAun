@@ -31,6 +31,8 @@ import "../styles/reset.css";
 import "../styles/shell.css";
 import "../styles/panels.css";
 import "../styles/calendar.css";
+import "../styles/app-shell.css";
+import { APP_HEADER_SLOT_ID, useAppHeaderChrome } from "./appHeaderSlot";
 
 const FALLBACK: ShellPage = { page: "", tabbar: false, tab: "", footer: true };
 
@@ -62,6 +64,8 @@ export default function RedesignShell({ children }: { children?: ReactNode }) {
   const cfg = shellPageFor(pathname) ?? FALLBACK;
   // On the home page the Event tab of the page is the Event button of the tab bar.
   const tab = cfg.page === "main" && new URLSearchParams(search).get("tab") === "event" ? "event" : cfg.tab;
+  // Store apps: logo mark only; the top-level pages' header hides while scrolling down (appHeaderSlot.ts).
+  useAppHeaderChrome(!!cfg.tab && !cfg.back && cfg.header !== "none", pathname);
 
   const { user, loading } = useAuth();
   const { data: profile } = useProfile(user?.id);
@@ -374,6 +378,8 @@ export default function RedesignShell({ children }: { children?: ReactNode }) {
                 <Link to={loginTo()} className="sc-hd-text sc-hd-login">Log In</Link>
               )}
             </nav>
+            {/* Store app home: Main puts its search and mode switch here (appHeaderSlot.ts). */}
+            <div id={APP_HEADER_SLOT_ID} className="sc-hd-slot" />
           </div>
         </header>
       )}
