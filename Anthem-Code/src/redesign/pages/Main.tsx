@@ -469,6 +469,7 @@ export default function Main() {
               onPick={pickMode}
               onSearch={(e) => openAppSearch(e.currentTarget)}
               lead={mode === "event" ? eventView : null}
+              onCalendar={mode === "event" ? (e) => panels.openCalendar(e.currentTarget) : undefined}
               below={
                 mode === "event" ? (
                   <div className="mn-fld" data-mode="event">

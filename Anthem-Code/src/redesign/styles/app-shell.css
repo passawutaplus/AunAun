@@ -120,6 +120,11 @@ html[data-native-app] .sc-app .sc-main {
     background: var(--sc-line);
   }
 
+  /* the list's "Full Calendar" button moved up into the header as an icon */
+  .sc-app:has(.sc-hd-slot > *) .mn-ev-cal {
+    display: none;
+  }
+
   .sc-app .ap-hd-below .mn-chips {
     gap: 2px;
   }
