@@ -5,8 +5,8 @@ import { isLikelyMobileShareClient, messengerHref } from "@/lib/shareTargets";
  * Places to share a work from the new design's share panel (owner 2026-11-28: the old list plus Lemon8,
  * IG Story, Threads, Pinterest, Telegram, LinkedIn). Apps without a share link open with the link copied.
  * Facebook / Messenger / Instagram / LINE / WhatsApp / WeChat use the old site's icons (/public/brand-icons);
- * X / Threads / Pinterest / LinkedIn are their real marks drawn here; Lemon8 waits for the owner's logo file
- * (drop it in as /public/brand-icons/lemon8.svg and switch its icon to file("lemon8")).
+ * X / Threads / Pinterest / LinkedIn are their real marks drawn here; Lemon8 is the owner's logo file
+ * (2026-11-28, /public/brand-icons/lemon8.png, 156 px).
  */
 export type ScShareTarget = {
   key: string;
@@ -18,7 +18,7 @@ export type ScShareTarget = {
 };
 
 const enc = encodeURIComponent;
-const file = (name: string) => <img src={`/brand-icons/${name}.svg`} alt="" />;
+const file = (name: string, ext = "svg") => <img src={`/brand-icons/${name}.${ext}`} alt="" />;
 
 /** A brand-coloured circle with a white mark inside (24-unit box). */
 const disc = (bg: string, mark: ReactNode, fg = "#FFFFFF") => (
@@ -99,7 +99,7 @@ export const SC_SHARE_TARGETS: ScShareTarget[] = [
   {
     key: "lemon8",
     label: "Lemon8",
-    icon: disc("#FFF04D", word("8", 20, 800), "#1A1A1A"),
+    icon: file("lemon8", "png"),
     href: () => "https://www.lemon8-app.com/",
     copyHint: "คัดลอกแล้ว — วางลิงก์ในโพสต์ Lemon8 ได้เลย",
   },
